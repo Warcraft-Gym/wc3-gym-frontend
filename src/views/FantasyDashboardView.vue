@@ -1029,14 +1029,13 @@ const fetchFantasyData = async () => {
 
   try {
     // Fetch fantasy series (where is_fantasy_match = true)
-    const allSeriesResponse = await seriesStore.fetchSeriesBySeason(teamForm.value.season_id);
-    console.log('All series:', allSeriesResponse);
-    fantasySeries.value = allSeriesResponse.filter(s => s.is_fantasy_match === true);
-    console.log('Fantasy series:', fantasySeries.value);
+    await seriesStore.searchSeriesBySeason(teamForm.value.season_id, 'is_fantasy_match==True');
+    console.log('Fantasy series:', seriesStore.series);
+    fantasySeries.value = seriesStore.series ?? [];
 
     // Fetch user's fantasy bets (if we have a user id)
     if (playerData.value?.user?.id) {
-      const betsQuery = `user_id == ${playerData.value.user.id}`;
+      const betsQuery = `season_id == ${teamForm.value.season_id} AND user_id == ${playerData.value.user.id}`;
       fantasyBets.value = await fantasyStore.searchBets(betsQuery);
       console.log('Fantasy bets:', fantasyBets.value);
     }

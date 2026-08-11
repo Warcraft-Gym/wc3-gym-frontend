@@ -479,7 +479,7 @@ const fetchData = async () => {
     await fantasyStore.searchBets(betsQuery);
     
     // Fetch series for selected season
-    const seriesResponse = await seriesStore.fetchSeriesBySeason(selectedSeasonId.value);
+    const seriesResponse = await seriesStore.searchSeriesBySeason(selectedSeasonId.value, 'is_fantasy_match==True');
     allSeries.value = seriesResponse || [];
     
     // Fetch fantasy teams for selected season

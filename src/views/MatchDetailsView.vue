@@ -658,14 +658,14 @@
         <v-dialog v-model="editSeriesDialogOpen" max-width="65vw" persistent>
       <v-card style="display: flex; flex-direction: column; height: 95vh;">
         <v-alert
-          v-if="updateError"
+          v-if="updateSeriesError"
           type="error"
           class="mx-4 my-2"
           dense
           border="start"
           border-color="red"
         >
-          {{ updateError }}
+          {{ updateSeriesError }}
         </v-alert>
         <v-card-title>Edit Series</v-card-title>
         <v-card-text>
@@ -1276,7 +1276,7 @@ const hostPlayers = ref(null);
 const selectedDate = ref(null);
 const selectedTime = ref(null);
 const creationSeriesError = ref(null);
-const updateSeriesError = ref(false);
+const updateSeriesError = ref('');
 
 // UI state
 const teamRostersPanel = ref(null);
@@ -1666,7 +1666,8 @@ const updateSeries = async () => {
     cancelEditSeries();
   } catch (error) {
     console.error('Error updating series:', error);
-    updateSeriesError.value = 'Error updating series: ' + error;
+    const detail = error?.error || error?.message || String(error);
+    updateSeriesError.value = 'Error updating series: ' + detail;
   } finally {
     isLoading.value = false;
   }

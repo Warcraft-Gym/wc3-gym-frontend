@@ -330,6 +330,7 @@ import '@/assets/base.css';
 import { ref, computed, onMounted } from 'vue';
 import { useFantasyStore, useSeriesStore, usePlayerStore, useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import { resolveCurrentSeasonId } from '@/helpers/current-season';
 
 defineOptions({ name: 'FantasyBetsView' });
 
@@ -464,12 +465,11 @@ const fetchData = async () => {
   try {
     // If no season selected, get current season
     if (!selectedSeasonId.value) {
-      const currentSeasonSetting = await configStore.fetchSetting('current_gnl_season');
-      selectedSeasonId.value = currentSeasonSetting?.value ? parseInt(currentSeasonSetting.value) : null;
+      selectedSeasonId.value = await resolveCurrentSeasonId();
     }
-    
+
     if (!selectedSeasonId.value) {
-      errorMessage.value = 'No current season configured. Please contact an administrator.';
+      errorMessage.value = 'No season is available. Please contact an administrator.';
       isLoading.value = false;
       return;
     }

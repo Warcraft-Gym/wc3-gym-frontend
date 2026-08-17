@@ -596,7 +596,7 @@
 import '@/assets/base.css';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useFantasyStore, useSeasonStore, useTeamStore, usePlayerStore, useConfigStore, useSeriesStore } from '@/stores';
+import { useFantasyStore, useTeamStore, usePlayerStore, useConfigStore, useSeriesStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
 import RaceIcon from '@/components/RaceIcon.vue';
 import RaceSelect from '@/components/RaceSelect.vue';
@@ -604,12 +604,12 @@ import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import { DateTime } from 'luxon';
 import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
 import { getW3CMMR } from '@/helpers/w3c-stats';
+import { resolveCurrentSeasonId } from '@/helpers/current-season';
 
 defineOptions({ name: 'FantasyDashboardView' });
 
 const route = useRoute();
 const fantasyStore = useFantasyStore();
-const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 const playerStore = usePlayerStore();
 const configStore = useConfigStore();
@@ -626,7 +626,6 @@ const successMessage = ref(null);
 const playerToken = ref(null);
 const playerData = ref(null);
 const existingTeam = ref(null);
-const seasons = ref([]);
 const teams = ref([]);
 const teamImages = ref({});
 const availablePlayers = ref([]);
@@ -828,24 +827,13 @@ const fetchInitialData = async () => {
     }
 
     // Get current season from config
-    try {
-      const currentSeasonSetting = await configStore.fetchSetting('current_gnl_season');
-      if (!currentSeasonSetting || !currentSeasonSetting.value) {
-        errorMessage.value = 'No current season configured. Please contact an administrator.';
-        isLoading.value = false;
-        return;
-      }
-      teamForm.value.season_id = parseInt(currentSeasonSetting.value);
-      
-      // Fetch current season details
-      const currentSeason = await seasonStore.fetchSeason(teamForm.value.season_id);
-      seasons.value = currentSeason ? [currentSeason] : [];
-    } catch (err) {
-      console.error('Error fetching current season:', err);
-      errorMessage.value = 'Failed to load current season. Please try again later.';
+    const currentSeasonId = await resolveCurrentSeasonId();
+    if (!currentSeasonId) {
+      errorMessage.value = 'No season is available. Please contact an administrator.';
       isLoading.value = false;
       return;
     }
+    teamForm.value.season_id = currentSeasonId;
 
     // Fetch teams for the current season
     await teamStore.fetchTeamsBySeasonBasic(teamForm.value.season_id);

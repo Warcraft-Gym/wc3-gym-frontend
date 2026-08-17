@@ -633,17 +633,17 @@
 <script setup>
 import '@/assets/base.css';
 import { ref, computed, onMounted } from 'vue';
-import { useFantasyStore, useSeasonStore, useConfigStore, usePlayerStore, useTeamStore } from '@/stores';
+import { useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import RaceIcon from '@/components/RaceIcon.vue';
+import { resolveCurrentSeasonId } from '@/helpers/current-season';
 
 defineOptions({ name: 'FantasyLeaderboardView' });
 
 const router = useRouter();
 const fantasyStore = useFantasyStore();
 const seasonStore = useSeasonStore();
-const configStore = useConfigStore();
 const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
 
@@ -750,12 +750,11 @@ const fetchData = async () => {
   try {
     // If no season selected, get current season
     if (!selectedSeasonId.value) {
-      const currentSeasonSetting = await configStore.fetchSetting('current_gnl_season');
-      selectedSeasonId.value = currentSeasonSetting?.value ? parseInt(currentSeasonSetting.value) : null;
+      selectedSeasonId.value = await resolveCurrentSeasonId();
     }
-    
+
     if (!selectedSeasonId.value) {
-      errorMessage.value = 'No season configured. Please contact an administrator.';
+      errorMessage.value = 'No season is available. Please contact an administrator.';
       isLoading.value = false;
       return;
     }

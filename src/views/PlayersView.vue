@@ -440,6 +440,7 @@ import { storeToRefs } from 'pinia';
 import { onMounted, ref, computed } from 'vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
+import { resolveCurrentSeasonId } from '@/helpers/current-season';
 import { 
   getW3CMMR,
   getW3CStatsWithFallback,
@@ -630,7 +631,7 @@ onMounted( async () => {
   
   await fetchPlayers();
   // ensure seasons are loaded and resolve the current season id
-  await resolveCurrentSeasonId();
+  currentSeasonId.value = await resolveCurrentSeasonId();
   // resolve current W3C season for stats fallback
   await resolveCurrentW3CSeason();
 });
@@ -638,7 +639,7 @@ onMounted( async () => {
 // Open player details dialog and ensure we have the player's data
 const openPlayerDetails = async (player) => {
   // ensure currentSeasonId is resolved
-  if (!currentSeasonId.value) await resolveCurrentSeasonId();
+  if (!currentSeasonId.value) currentSeasonId.value = await resolveCurrentSeasonId();
 
   // if player object doesn't include stats, we rely on the players list
   playerDetails.value = player;
@@ -671,32 +672,6 @@ const hasLowGames = (player) => {
   // Use combined games count from current + previous season
   return hasLowGamesTwoSeasons(player, currentW3CSeason.value);
 };
-
-// Resolve and store the current season id (prefers config setting, falls back to latest season)
-async function resolveCurrentSeasonId() {
-  let resolvedSeasonId = null;
-  try {
-    const setting = await configStore.fetchSetting('current_gnl_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) resolvedSeasonId = num;
-    }
-  } catch (err) {
-    // ignore — we'll fallback to seasons list
-  }
-
-  if (!resolvedSeasonId) {
-    try {
-      await seasonStore.fetchSeasons();
-      const latest = (seasons.value || []).slice().sort((a,b) => b.id - a.id)[0];
-      if (latest) resolvedSeasonId = latest.id;
-    } catch (err) {
-      console.error('Failed to fetch seasons for fallback current season id:', err);
-    }
-  }
-
-  currentSeasonId.value = resolvedSeasonId;
-}
 
 // Resolve and store the current W3C season number
 async function resolveCurrentW3CSeason() {

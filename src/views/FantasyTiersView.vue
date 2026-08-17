@@ -191,14 +191,14 @@
 <script setup>
 import '@/assets/base.css';
 import { ref, onMounted, computed } from 'vue';
-import { usePlayerStore, useSeasonStore, useConfigStore, useTeamStore } from '@/stores';
+import { usePlayerStore, useConfigStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
+import { resolveCurrentSeasonId } from '@/helpers/current-season';
 
 defineOptions({ name: 'FantasyTiersView' })
 
 const playerStore = usePlayerStore();
-const seasonStore = useSeasonStore();
 const configStore = useConfigStore();
 const teamStore = useTeamStore();
 const { players } = storeToRefs(playerStore);
@@ -254,33 +254,6 @@ const currentSeasonPlayers = computed(() => {
   return players.value.filter(player => playerIdsOnTeams.has(player.id));
 });
 
-// Resolve current season ID
-const resolveCurrentSeasonId = async () => {
-  let resolvedSeasonId = null;
-  try {
-    const setting = await configStore.fetchSetting('current_gnl_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) resolvedSeasonId = num;
-    }
-  } catch (err) {
-    console.error('Failed to fetch current season setting:', err);
-  }
-
-  if (!resolvedSeasonId) {
-    try {
-      await seasonStore.fetchSeasons();
-      const { seasons } = storeToRefs(seasonStore);
-      const latest = (seasons.value || []).slice().sort((a, b) => b.id - a.id)[0];
-      if (latest) resolvedSeasonId = latest.id;
-    } catch (err) {
-      console.error('Failed to fetch seasons for fallback:', err);
-    }
-  }
-
-  currentSeasonId.value = resolvedSeasonId;
-};
-
 // Resolve current W3C season from config
 const resolveCurrentW3CSeason = async () => {
   try {
@@ -314,7 +287,7 @@ const loadData = async () => {
   errorMessage.value = null;
   
   try {
-    await resolveCurrentSeasonId();
+    currentSeasonId.value = await resolveCurrentSeasonId();
     await resolveCurrentW3CSeason();
     await playerStore.fetchPlayers();
     

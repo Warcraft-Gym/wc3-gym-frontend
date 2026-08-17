@@ -23,10 +23,6 @@ export const useSeriesStore = defineStore({
         async deleteSeries(series_id) {
             await fetchWrapper.delete(`${backendUrl}/series/${series_id}`);
         },
-        async toggleDraft(series_id) {
-            const updatedSeries = await fetchWrapper.post(`${backendUrl}/series/${series_id}/toggle-draft`);
-            return updatedSeries;
-        },
         async deleteAllSeries() {
             this.series.forEach(async(s) => {
                 await fetchWrapper.delete(`${backendUrl}/series/${s.id}`);                
@@ -109,15 +105,6 @@ export const useSeriesStore = defineStore({
             try {
                 this.isLoading = true;
                 this.series = await fetchWrapper.get(`${backendUrl}/series/season/${season_id}`);
-                return this.series;
-            } finally {
-                this.isLoading = false;
-            }
-        },
-        async fetchSeries() {
-            try {
-                this.isLoading = true;
-                this.series = await fetchWrapper.get(`${backendUrl}/series`);
                 return this.series;
             } finally {
                 this.isLoading = false;

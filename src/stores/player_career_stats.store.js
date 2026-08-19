@@ -7,15 +7,18 @@ export const usePlayerCareerStatsStore = defineStore({
     id: 'playerCareerStats',
     state: () => ({
         stats: [],
+        totalStats: 0,
         isLoading: false
     }),
     actions: {
-        async fetchAll() {
+        async fetchPage({ limit, offset }) {
             this.isLoading = true;
             try {
-                const data = await fetchWrapper.get(`${backendUrl}/stats/career`);
-                this.stats = data;
-                return data;
+                const url = `${backendUrl}/stats/career?limit=${limit}&offset=${offset}`;
+                const { items, total } = await fetchWrapper.getPage(url);
+                this.stats = items || [];
+                this.totalStats = total ?? this.stats.length;
+                return this.stats;
             } finally {
                 this.isLoading = false;
             }

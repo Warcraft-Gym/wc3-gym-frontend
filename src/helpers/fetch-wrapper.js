@@ -10,7 +10,8 @@ export const fetchWrapper = {
     fileUpload: request('FILE_UPLOAD'),
     getFile: request('GET_FILE'),
     postBinary: request('POST_BINARY'),  // POST request that receives binary data
-    postPage: request('POST_PAGE')  // POST that returns { items, total } from X-Total-Count
+    postPage: request('POST_PAGE'),  // POST that returns { items, total } from X-Total-Count
+    getPage: request('GET_PAGE')  // GET that returns { items, total } from X-Total-Count
 };
 
 function request(method) {
@@ -39,6 +40,10 @@ function request(method) {
         let receivePage = false;
         if (requestMethod === "POST_PAGE") {
             requestMethod = "POST";
+            receivePage = true;
+        }
+        if (requestMethod === "GET_PAGE") {
+            requestMethod = "GET";
             receivePage = true;
         }
 

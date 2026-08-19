@@ -1,6 +1,6 @@
 <script setup>
 import '@/assets/base.css';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePlayerCareerStatsStore } from '@/stores/player_career_stats.store';
 import { usePlayerStore } from '@/stores/player.store';
@@ -8,7 +8,7 @@ import { usePlayerStore } from '@/stores/player.store';
 defineOptions({ name: 'PlayerCareerStatsView' })
 
 const store = usePlayerCareerStatsStore();
-const { stats } = storeToRefs(store);
+const { stats, totalStats } = storeToRefs(store);
 const playerStore = usePlayerStore();
 const { players } = storeToRefs(playerStore);
 
@@ -22,27 +22,41 @@ const selectedStat = ref(null);
 const selectedFile = ref(null);
 const search = ref('');
 const showUnmappedOnly = ref(false);
+const page = ref(1);
+const itemsPerPage = ref(25);
 
+// The server pages and orders by rating, so column sort is off
 const headers = [
-  { title: 'Display Name', key: 'display_name', sortable: true },
-  { title: 'Status', key: 'status', sortable: true },
-  { title: 'Rating', key: 'rating', sortable: true },
+  { title: 'Display Name', key: 'display_name', sortable: false },
+  { title: 'Status', key: 'status', sortable: false },
+  { title: 'Rating', key: 'rating', sortable: false },
   { title: 'Series W-L', key: 'series_record', sortable: false },
-  { title: 'Series %', key: 'series_winrate', sortable: true },
+  { title: 'Series %', key: 'series_winrate', sortable: false },
   { title: 'Games W-L', key: 'games_record', sortable: false },
-  { title: 'Games %', key: 'games_winrate', sortable: true },
-  { title: 'Seasons', key: 'seasons_played', sortable: true },
+  { title: 'Games %', key: 'games_winrate', sortable: false },
+  { title: 'Seasons', key: 'seasons_played', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false }
 ];
 
+// The search field and the toggle narrow the loaded page only
+const hasPageFilter = computed(() => showUnmappedOnly.value || !!search.value?.trim());
+
 const statsWithRecords = computed(() => {
   let filteredStats = stats.value;
-  
+
   // Filter unmapped if toggle is active
   if (showUnmappedOnly.value) {
     filteredStats = filteredStats.filter(stat => !stat.user_id);
   }
-  
+
+  const term = search.value?.trim().toLowerCase();
+  if (term) {
+    filteredStats = filteredStats.filter(stat => {
+      const name = stat.user ? stat.user.name : stat.player_name;
+      return (name || '').toLowerCase().includes(term);
+    });
+  }
+
   return filteredStats.map(stat => ({
     ...stat,
     display_name: stat.user ? stat.user.name : stat.player_name,
@@ -52,17 +66,39 @@ const statsWithRecords = computed(() => {
   }));
 });
 
+const itemsLength = computed(() =>
+  hasPageFilter.value ? statsWithRecords.value.length : totalStats.value
+);
+
 const fetchStats = async () => {
   isLoading.value = true;
   errorMessage.value = null;
   try {
-    await store.fetchAll();
+    await store.fetchPage({
+      limit: itemsPerPage.value,
+      offset: (page.value - 1) * itemsPerPage.value
+    });
+
+    // A delete can empty the last page; step back onto the table
+    if (stats.value.length === 0 && page.value > 1 && totalStats.value > 0) {
+      page.value = Math.max(1, Math.ceil(totalStats.value / itemsPerPage.value));
+    }
   } catch (error) {
     errorMessage.value = error.message || 'Failed to load player career stats';
   } finally {
     isLoading.value = false;
   }
 };
+
+// The table controls drive the page state
+watch([page, itemsPerPage], () => {
+  fetchStats();
+});
+
+// A filter change restarts at the first page
+watch([search, showUnmappedOnly], () => {
+  page.value = 1;
+});
 
 const openEditDialog = (stat) => {
   selectedStat.value = {
@@ -227,7 +263,7 @@ onMounted(async () => {
                 <v-text-field
                   v-model="search"
                   prepend-inner-icon="mdi-magnify"
-                  label="Search players..."
+                  label="Search this page..."
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -237,7 +273,7 @@ onMounted(async () => {
               <v-col cols="12" md="2">
                 <v-checkbox
                   v-model="showUnmappedOnly"
-                  label="Unmapped only"
+                  label="Unmapped only (this page)"
                   color="primary"
                   hide-details
                 />
@@ -265,10 +301,12 @@ onMounted(async () => {
 
         <!-- Data Table -->
         <v-card>
-          <v-data-table
+          <v-data-table-server
             :headers="headers"
             :items="statsWithRecords"
-            :search="search"
+            :items-length="itemsLength"
+            v-model:page="page"
+            v-model:items-per-page="itemsPerPage"
             :loading="isLoading"
             item-value="id"
             class="elevation-1"
@@ -307,7 +345,7 @@ onMounted(async () => {
                 @click="openDeleteDialog(item)"
               />
             </template>
-          </v-data-table>
+          </v-data-table-server>
         </v-card>
       </v-col>
     </v-row>

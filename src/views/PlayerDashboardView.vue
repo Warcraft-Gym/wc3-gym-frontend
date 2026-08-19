@@ -63,18 +63,21 @@
           <span>My Series</span>
         </div>
         <v-chip color="white" variant="outlined">
-          {{ series.length }} series
+          {{ totalSeries }} series
         </v-chip>
       </v-card-title>
       
       <!-- Desktop: Data Table -->
       <v-card-text v-if="!isMobile" class="pa-0">
-      <v-data-table
+      <v-data-table-server
         :headers="headers"
         :items="series"
+        :items-length="totalSeries"
+        v-model:page="page"
+        v-model:items-per-page="itemsPerPage"
         :loading="isLoading"
         class="elevation-1"
-        item-key="id"
+        item-value="id"
       >
         <template #item.opponent="{ item }">
           <span v-if="item.player1_id === playerData.player.id">
@@ -138,7 +141,7 @@
             Report Result
           </v-btn>
         </template>
-      </v-data-table>
+      </v-data-table-server>
       </v-card-text>
 
       <!-- Mobile: Card Layout -->
@@ -222,6 +225,14 @@
         <v-alert v-if="series.length === 0" type="info" variant="tonal">
           No series scheduled yet.
         </v-alert>
+
+        <v-pagination
+          v-if="pageCount > 1"
+          v-model="page"
+          :length="pageCount"
+          density="comfortable"
+          class="mt-2"
+        ></v-pagination>
       </v-card-text>
     </v-card>
   </v-container>
@@ -354,7 +365,7 @@
 
 <script setup>
 import '@/assets/base.css';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchWrapper } from '@/helpers';
 import { getW3CMMR } from '@/helpers/w3c-stats';
@@ -415,6 +426,9 @@ const errorMessage = ref(null);
 const successMessage = ref(null);
 const playerData = ref(null);
 const series = ref([]);
+const totalSeries = ref(0);
+const page = ref(1);
+const itemsPerPage = ref(25);
 const token = ref(null);
 
 // Schedule / Result dialog state
@@ -445,13 +459,16 @@ const rules = {
   }
 };
 
+// The server pages the series, so column sort is off
 const headers = [
   { title: 'Opponent', key: 'opponent', sortable: false },
-  { title: 'Date & Time', key: 'date_time', sortable: true },
+  { title: 'Date & Time', key: 'date_time', sortable: false },
   { title: 'Score', key: 'score', sortable: false },
-  { title: 'Week', key: 'week', sortable: true },
+  { title: 'Week', key: 'week', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false }
 ];
+
+const pageCount = computed(() => Math.max(1, Math.ceil(totalSeries.value / itemsPerPage.value)));
 
 // Load player dashboard data
 const fetchPlayerData = async () => {
@@ -473,10 +490,18 @@ const fetchPlayerData = async () => {
       return;
     }
 
-    // Get player series data
-    const response = await fetchWrapper.get(`${backendUrl}/player-series?token=${token.value}`);
+    // Get one page of the player series data
+    const offset = (page.value - 1) * itemsPerPage.value;
+    const url = `${backendUrl}/player-series?token=${token.value}&limit=${itemsPerPage.value}&offset=${offset}`;
+    const { items: response, total } = await fetchWrapper.getPage(url);
     playerData.value = response;
     series.value = response.series || [];
+    totalSeries.value = total ?? series.value.length;
+
+    // A page can fall past the end; step back onto the table
+    if (series.value.length === 0 && page.value > pageCount.value) {
+      page.value = pageCount.value;
+    }
 
   } catch (error) {
     console.error('Error fetching player data:', error);
@@ -491,6 +516,11 @@ const fetchPlayerData = async () => {
     isLoading.value = false;
   }
 };
+
+// The table controls drive the page state
+watch([page, itemsPerPage], () => {
+  if (token.value) fetchPlayerData();
+});
 
 const fetchFantasyData = async () => {
   if (!playerData.value?.player?.id) return;

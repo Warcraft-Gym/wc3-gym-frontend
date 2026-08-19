@@ -185,7 +185,7 @@
           <v-card-text v-if="series && series.length > 0" class="pa-0">
             <v-data-table
               :headers="seriesTableHeader"
-              :items="series"
+              :items="enrichedSeries"
               fixed-header
               hover
               density="comfortable"
@@ -320,7 +320,7 @@
           <v-card-text v-if="draftSeries && draftSeries.length > 0" class="pa-0">
             <v-data-table
               :headers="draftSeriesTableHeader"
-              :items="draftSeries"
+              :items="enrichedDraftSeries"
               fixed-header
               hover
               density="comfortable"
@@ -1123,6 +1123,7 @@ import { DateTime } from "luxon";
 import { useMatchStore, useSeriesStore, useTeamStore, useSeasonStore, useConfigStore } from '@/stores';
 import { useDate } from 'vuetify';
 import { storeToRefs } from 'pinia';
+import { fetchWrapper } from '@/helpers';
 import FlagIcon from '../components/FlagIcon.vue';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
@@ -1260,8 +1261,50 @@ const search = ref('');
 const date = useDate();
 
 // Team state
+const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
+
 const team1 = ref({});
 const team2 = ref({});
+const extraPlayersById = ref({});
+
+// Full players for the series tables: rosters first, fetched extras second.
+// The series routes answer reduced players, so the stats come from here.
+const seriesPlayerById = computed(() => {
+  const map = {};
+  for (const team of [team1.value, team2.value]) {
+    for (const list of Object.values(team?.player_by_season || {})) {
+      for (const player of list || []) map[player.id] = player;
+    }
+  }
+  return { ...map, ...extraPlayersById.value };
+});
+
+const withFullPlayers = (row) => ({
+  ...row,
+  player1: seriesPlayerById.value[row.player1_id] || row.player1,
+  player2: seriesPlayerById.value[row.player2_id] || row.player2,
+});
+
+const enrichedSeries = computed(() => (series.value || []).map(withFullPlayers));
+const enrichedDraftSeries = computed(() => (draftSeries.value || []).map(withFullPlayers));
+
+// Fetch the series players the rosters do not hold
+const loadMissingSeriesPlayers = async () => {
+  const ids = new Set();
+  for (const row of [...(series.value || []), ...(draftSeries.value || [])]) {
+    for (const id of [row.player1_id, row.player2_id]) {
+      if (id && !seriesPlayerById.value[id]) ids.add(id);
+    }
+  }
+  if (ids.size === 0) return;
+  const query = [...ids].map(id => `id == ${id}`).join(' or ');
+  try {
+    const found = await fetchWrapper.post(`${backendUrl}/users/search?query=${encodeURIComponent(query)}`);
+    for (const player of found || []) extraPlayersById.value[player.id] = player;
+  } catch (error) {
+    console.error('Failed to load series players:', error);
+  }
+};
 const teamImages = ref({});
 
 // Series state
@@ -1450,6 +1493,7 @@ const navigateToMatch = async (newMatchId) => {
       await fetchTeamDetails();
     }
     await seriesStore.getSeriesByMatchId(newMatchId);
+    await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match details:', error);
   } finally {
@@ -1597,6 +1641,7 @@ const fetchMatchSeries = async () => {
       seriesStore.getSeriesByMatchId(matchId.value),
       seriesStore.getDraftSeriesByMatchId(matchId.value)
     ]);
+    await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match series:', error);
   } finally {

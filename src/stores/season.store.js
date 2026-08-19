@@ -68,14 +68,6 @@ export const useSeasonStore = defineStore({
             await fetchWrapper.fileUpload(url, formData)
             return true;
         },
-        async recalculateSeasonScores(season_id) {
-            const result = await fetchWrapper.post(`${backendUrl}/season/${season_id}/calculate/`);
-            return result;
-        },
-        async getCalculationProgress(season_id) {
-            const progress = await fetchWrapper.get(`${backendUrl}/season/${season_id}/calculate/status`);
-            return progress;
-        },
         async exportSeason(season_id) {
             // Use fetchWrapper for consistent authentication handling
             const response = await fetchWrapper.postBinary(`${backendUrl}/export?season_id=${season_id}`);

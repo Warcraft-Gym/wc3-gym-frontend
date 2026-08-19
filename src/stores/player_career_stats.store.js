@@ -32,9 +32,6 @@ export const usePlayerCareerStatsStore = defineStore({
         async delete(id) {
             return await fetchWrapper.delete(`${backendUrl}/stats/career/${id}`);
         },
-        async recalculateAll() {
-            return await fetchWrapper.post(`${backendUrl}/stats/career/recalculate`);
-        },
         async importCsv(file) {
             const formData = new FormData();
             formData.append('file', file);

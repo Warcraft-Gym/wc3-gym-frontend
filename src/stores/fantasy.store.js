@@ -125,10 +125,6 @@ export const useFantasyStore = defineStore({
             }
         },
 
-        async calculateSeasonScores(seasonId) {
-            return await fetchWrapper.post(`${backendUrl}/fantasy/season/${seasonId}/calculate/`);
-        },
-
         // Public endpoints (token-based, no JWT required)
         async public_getUserInfo(token) {
             const response = await fetch(`${backendUrl}/user-info?token=${token}`);

@@ -40,13 +40,19 @@
                 </v-col>
                 <v-spacer />
                 <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" block>
-                    Create Team
-                  </v-btn>
+                  <v-alert
+                    type="info"
+                    variant="tonal"
+                    density="compact"
+                    icon="mdi-information-outline"
+                    class="text-caption mb-0"
+                  >
+                    All scores are computed automatically and don't need to be recalculated manually.
+                  </v-alert>
                 </v-col>
                 <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="secondary" prepend-icon="mdi-calculator" @click="calculateScores" :loading="isCalculating" :disabled="!selectedSeasonId" block>
-                    Calculate Scores
+                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" block>
+                    Create Team
                   </v-btn>
                 </v-col>
               </v-row>
@@ -650,7 +656,6 @@ const teamStore = useTeamStore();
 const { teams } = storeToRefs(fantasyStore);
 
 const isLoading = ref(false);
-const isCalculating = ref(false);
 const isSaving = ref(false);
 const isDeleting = ref(false);
 const errorMessage = ref(null);
@@ -781,25 +786,6 @@ const loadSeasons = async () => {
   } catch (error) {
     console.error('Failed to load seasons:', error);
     seasons.value = [];
-  }
-};
-
-const calculateScores = async () => {
-  if (!selectedSeasonId.value) {
-    errorMessage.value = 'Please select a season first.';
-    return;
-  }
-  
-  isCalculating.value = true;
-  errorMessage.value = null;
-  try {
-    await fantasyStore.calculateSeasonScores(selectedSeasonId.value);
-    await fetchData(); // Refresh the data
-  } catch (error) {
-    console.error('Failed to calculate scores:', error);
-    errorMessage.value = 'Failed to calculate scores. Please try again later.';
-  } finally {
-    isCalculating.value = false;
   }
 };
 

@@ -200,21 +200,6 @@ const handleFileUpload = async () => {
   }
 };
 
-const recalculateStats = async () => {
-  errorMessage.value = null;
-  successMessage.value = null;
-  isLoading.value = true;
-  try {
-    await store.recalculateAll();
-    successMessage.value = 'Stats recalculated successfully';
-    await fetchStats();
-  } catch (error) {
-    errorMessage.value = error.message || 'Failed to recalculate stats';
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 onMounted(async () => {
   await playerStore.fetchPlayers();
   await fetchStats();
@@ -283,17 +268,22 @@ onMounted(async () => {
                   color="primary"
                   prepend-icon="mdi-upload"
                   @click="openImportDialog"
-                  class="mr-2"
                 >
                   Import CSV
                 </v-btn>
-                <v-btn
-                  color="secondary"
-                  prepend-icon="mdi-calculator"
-                  @click="recalculateStats"
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-alert
+                  type="info"
+                  variant="tonal"
+                  density="compact"
+                  icon="mdi-information-outline"
+                  class="text-caption mb-0"
                 >
-                  Recalculate All
-                </v-btn>
+                  All statistics are computed automatically and don't need to be recalculated manually.
+                </v-alert>
               </v-col>
             </v-row>
           </v-card-text>
@@ -330,20 +320,22 @@ onMounted(async () => {
             </template>
 
             <template v-slot:item.actions="{ item }">
-              <v-btn
-                icon="mdi-pencil"
-                size="small"
-                variant="text"
-                color="primary"
-                @click="openEditDialog(item)"
-              />
-              <v-btn
-                icon="mdi-delete"
-                size="small"
-                variant="text"
-                color="error"
-                @click="openDeleteDialog(item)"
-              />
+              <template v-if="item.id !== null">
+                <v-btn
+                  icon="mdi-pencil"
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  @click="openEditDialog(item)"
+                />
+                <v-btn
+                  icon="mdi-delete"
+                  size="small"
+                  variant="text"
+                  color="error"
+                  @click="openDeleteDialog(item)"
+                />
+              </template>
             </template>
           </v-data-table-server>
         </v-card>

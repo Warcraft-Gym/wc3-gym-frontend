@@ -15,7 +15,7 @@ export const usePlayerStore = defineStore({
         async fetchPlayers() {
             try{
                 this.isLoading = true; // Set loading to true
-                const resp = await fetchWrapper.get(`${backendUrl}/users`);
+                const resp = await fetchWrapper.getAll(`${backendUrl}/users`);
                 this.players = resp
 
             } finally {

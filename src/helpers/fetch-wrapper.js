@@ -11,8 +11,31 @@ export const fetchWrapper = {
     getFile: request('GET_FILE'),
     postBinary: request('POST_BINARY'),  // POST request that receives binary data
     postPage: request('POST_PAGE'),  // POST that returns { items, total } from X-Total-Count
-    getPage: request('GET_PAGE')  // GET that returns { items, total } from X-Total-Count
+    getPage: request('GET_PAGE'),  // GET that returns { items, total } from X-Total-Count
+    getAll: getAllPages  // GET every row of a route, one limit/offset page at a time
 };
+
+const PAGE_LIMIT = 500;  // the largest limit the backend accepts
+
+// Read pages until the collected rows reach the X-Total-Count of the route
+async function getAllPages(url) {
+    const separator = url.includes('?') ? '&' : '?';
+    const items = [];
+    let total = 0;
+
+    do {
+        const pageUrl = `${url}${separator}limit=${PAGE_LIMIT}&offset=${items.length}`;
+        const page = await fetchWrapper.getPage(pageUrl);
+        const pageItems = page.items || [];
+        total = page.total ?? items.length + pageItems.length;
+        items.push(...pageItems);
+        if (pageItems.length === 0) {
+            break;  // stop when the route sends no more rows
+        }
+    } while (items.length < total);
+
+    return items;
+}
 
 function request(method) {
     return async (url, body) => {  // Mark as async

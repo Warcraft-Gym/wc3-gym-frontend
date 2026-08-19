@@ -16,7 +16,7 @@ export const useFantasyStore = defineStore({
         async fetchTeams() {
             this.isLoading = true;
             try {
-                const result = await fetchWrapper.get(`${backendUrl}/fantasy/teams`);
+                const result = await fetchWrapper.getAll(`${backendUrl}/fantasy/teams`);
                 this.teams = result || [];
                 return this.teams;
             } finally {

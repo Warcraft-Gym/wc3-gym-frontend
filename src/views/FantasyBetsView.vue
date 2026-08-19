@@ -53,10 +53,13 @@
             <v-alert v-if="enrichedBets.length === 0 && !isLoading" type="info" variant="tonal" class="mb-4">
               No fantasy bets found. Bets will appear here once team captains place them.
             </v-alert>
-            <v-data-table
+            <v-data-table-server
               :headers="headers"
               :items="enrichedBets"
-              :items-per-page="25"
+              :items-length="totalBets"
+              v-model:page="page"
+              v-model:items-per-page="itemsPerPage"
+              :loading="isLoading"
               class="elevation-1"
               density="comfortable"
             >
@@ -120,7 +123,7 @@
                   </v-list>
                 </v-menu>
               </template>
-            </v-data-table>
+            </v-data-table-server>
           </v-card-text>
         </v-card>
 
@@ -327,7 +330,7 @@
 
 <script setup>
 import '@/assets/base.css';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useFantasyStore, useSeriesStore, usePlayerStore, useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
@@ -340,7 +343,7 @@ const playerStore = usePlayerStore();
 const configStore = useConfigStore();
 const seasonStore = useSeasonStore();
 
-const { bets } = storeToRefs(fantasyStore);
+const { bets, totalBets } = storeToRefs(fantasyStore);
 
 const isLoading = ref(false);
 const isBetSaving = ref(false);
@@ -357,6 +360,9 @@ const allSeries = ref([]);
 const fantasyTeams = ref([]);
 const seasons = ref([]);
 const selectedSeasonId = ref(null);
+const page = ref(1);
+const itemsPerPage = ref(25);
+const captainBetSeriesIds = ref([]);
 const useFixedBetPoints = ref(false);
 const fixedBetPointsValue = ref(0);
 const minBetPoints = ref(null);
@@ -371,15 +377,16 @@ const newBet = ref({
 });
 const selectedSeriesForNew = ref(null);
 
+// The server pages and orders by id, so column sort is off
 const headers = [
-  { title: 'ID', value: 'id', width: '70px' },
-  { title: 'Captain', value: 'captain', sortable: true },
+  { title: 'ID', value: 'id', width: '70px', sortable: false },
+  { title: 'Captain', value: 'captain', sortable: false },
   { title: 'Series', value: 'series', sortable: false },
   { title: 'Bet On', value: 'bet_on', sortable: false },
   { title: 'Score', value: 'score', sortable: false, align: 'center' },
-  { title: 'Result', value: 'bet_result', align: 'center' },
-  { title: 'Points', value: 'bet_points', align: 'end' },
-  { title: 'Locked', value: 'is_locked', align: 'center' },
+  { title: 'Result', value: 'bet_result', sortable: false, align: 'center' },
+  { title: 'Points', value: 'bet_points', sortable: false, align: 'end' },
+  { title: 'Locked', value: 'is_locked', sortable: false, align: 'center' },
   { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
 ];
 
@@ -401,11 +408,6 @@ const availableSeries = computed(() => {
     return [];
   }
 
-  // Get all series IDs this captain already has bets on
-  const captainBetSeriesIds = bets.value
-    .filter(bet => bet.user_id === newBet.value.captain_id)
-    .map(bet => bet.series_id);
-
   // Filter series that are:
   // 1. Fantasy matches
   // 2. Not yet played (both scores are 0 or null)
@@ -413,10 +415,27 @@ const availableSeries = computed(() => {
   return allSeries.value.filter(s => {
     const isFantasy = s.is_fantasy_match === true;
     const notPlayed = !isSeriesPlayed(s);
-    const noBetYet = !captainBetSeriesIds.includes(s.id);
+    const noBetYet = !captainBetSeriesIds.value.includes(s.id);
     
     return isFantasy && notPlayed && noBetYet;
   });
+});
+
+// The table holds one page, so the duplicate check asks the server
+watch(() => newBet.value.captain_id, async (captainId) => {
+  if (!captainId || !selectedSeasonId.value) {
+    captainBetSeriesIds.value = [];
+    return;
+  }
+  try {
+    const captainBets = await fantasyStore.queryBets(
+      `user_id == ${captainId} and season_id == ${selectedSeasonId.value}`
+    );
+    captainBetSeriesIds.value = captainBets.map(bet => bet.series_id);
+  } catch (error) {
+    console.error('Failed to load the captain bets:', error);
+    captainBetSeriesIds.value = [];
+  }
 });
 
 // Validate bet points
@@ -474,9 +493,18 @@ const fetchData = async () => {
       return;
     }
     
-    // Fetch all bets for selected season
+    // Fetch one page of bets for the selected season
     const betsQuery = `season_id == ${selectedSeasonId.value}`;
-    await fantasyStore.searchBets(betsQuery);
+    await fantasyStore.searchBetsPage(betsQuery, {
+      limit: itemsPerPage.value,
+      offset: (page.value - 1) * itemsPerPage.value
+    });
+
+    // A delete can empty the last page; step back onto the table
+    if (bets.value.length === 0 && page.value > 1 && totalBets.value > 0) {
+      page.value = Math.max(1, Math.ceil(totalBets.value / itemsPerPage.value));
+      return fetchData();
+    }
     
     // Fetch series for selected season
     const seriesResponse = await seriesStore.searchSeriesBySeason(selectedSeasonId.value, 'is_fantasy_match==True');
@@ -496,8 +524,17 @@ const fetchData = async () => {
 };
 
 const onSeasonChange = async () => {
+  if (page.value !== 1) {
+    page.value = 1; // The watcher fetches
+    return;
+  }
   await fetchData();
 };
+
+// The table controls drive the page state
+watch([page, itemsPerPage], () => {
+  if (selectedSeasonId.value) fetchData();
+});
 
 const loadSeasons = async () => {
   try {

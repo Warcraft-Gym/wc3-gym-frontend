@@ -8,6 +8,7 @@ export const useFantasyStore = defineStore({
     state: () => ({
         teams: [],
         bets: [],
+        totalBets: 0,
         currentTeam: null,
         isLoading: false
     }),
@@ -91,6 +92,26 @@ export const useFantasyStore = defineStore({
         async deleteBet(betId) {
             await fetchWrapper.delete(`${backendUrl}/fantasy/bets/${betId}`);
             this.bets = this.bets.filter(b => b.id !== betId);
+        },
+
+        // One page of bets; the server orders by id and reports the total
+        async searchBetsPage(query, { limit, offset }) {
+            this.isLoading = true;
+            try {
+                const url = `${backendUrl}/fantasy/bets/search?query=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`;
+                const { items, total } = await fetchWrapper.postPage(url);
+                this.bets = items || [];
+                this.totalBets = total ?? this.bets.length;
+                return this.bets;
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        // A search that does not touch the table state
+        async queryBets(query) {
+            const result = await fetchWrapper.post(`${backendUrl}/fantasy/bets/search?query=${encodeURIComponent(query)}`);
+            return result || [];
         },
 
         async searchBets(query) {

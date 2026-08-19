@@ -9,7 +9,8 @@ export const fetchWrapper = {
     delete: request('DELETE'),
     fileUpload: request('FILE_UPLOAD'),
     getFile: request('GET_FILE'),
-    postBinary: request('POST_BINARY')  // POST request that receives binary data
+    postBinary: request('POST_BINARY'),  // POST request that receives binary data
+    postPage: request('POST_PAGE')  // POST that returns { items, total } from X-Total-Count
 };
 
 function request(method) {
@@ -35,6 +36,11 @@ function request(method) {
             requestMethod = "POST";
             receiveBinary = true;
         }
+        let receivePage = false;
+        if (requestMethod === "POST_PAGE") {
+            requestMethod = "POST";
+            receivePage = true;
+        }
 
         // **Wait for headers to be resolved before passing them**
         const headers = await authHeader(requestMethod, url, requireAuth);
@@ -51,7 +57,7 @@ function request(method) {
 
         // **Await the fetch response**
         const response = await fetch(url, requestOptions);
-        return handleResponse(response, receiveBinary); // Awaiting inside handleResponse
+        return handleResponse(response, receiveBinary, receivePage); // Awaiting inside handleResponse
     };
 }
 
@@ -84,7 +90,7 @@ async function authHeader(method, url, requireAuth = false) {
     return {};
 }
 
-async function handleResponse(response, receiveBinary) {
+async function handleResponse(response, receiveBinary, receivePage = false) {
     if (!response.ok) {
         const { user, logout } = useAuthStore();
 
@@ -110,9 +116,16 @@ async function handleResponse(response, receiveBinary) {
     }
 
     const text = await response.text();
+    let data;
     try {
-        return text ? JSON.parse(text) : text;
+        data = text ? JSON.parse(text) : text;
     } catch (parseError) {
-        return text;
+        data = text;
     }
+
+    if (receivePage) {
+        const total = response.headers.get('X-Total-Count');
+        return { items: data, total: total === null ? null : Number(total) };
+    }
+    return data;
 }

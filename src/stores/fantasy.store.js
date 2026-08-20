@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, pageQuery } from '@/helpers';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
@@ -83,11 +83,11 @@ export const useFantasyStore = defineStore({
             this.bets = this.bets.filter(b => b.id !== betId);
         },
 
-        // One page of bets; the server orders by id and reports the total
-        async searchBetsPage(query, { limit, offset }) {
+        // One page of bets; the server orders by id unless sort is given, and reports the total
+        async searchBetsPage(query, { limit, offset, sort, order }) {
             this.isLoading = true;
             try {
-                const url = `${backendUrl}/fantasy/bets/search?query=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`;
+                const url = `${backendUrl}/fantasy/bets/search?query=${encodeURIComponent(query)}&${pageQuery({ limit, offset, sort, order })}`;
                 const { items, total } = await fetchWrapper.postPage(url);
                 this.bets = items || [];
                 this.totalBets = total ?? this.bets.length;

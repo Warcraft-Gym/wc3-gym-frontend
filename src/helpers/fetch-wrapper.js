@@ -17,6 +17,20 @@ export const fetchWrapper = {
 
 const PAGE_LIMIT = 500;  // the largest limit the backend accepts
 
+// Build the query string of a paged list request; keys without a value are left out
+export function pageQuery({ limit, offset, search, sort, order } = {}) {
+    const params = new URLSearchParams();
+    const term = typeof search === 'string' ? search.trim() : search;
+
+    for (const [key, value] of Object.entries({ limit, offset, search: term, sort, order })) {
+        if (value !== undefined && value !== null && value !== '') {
+            params.append(key, value);
+        }
+    }
+
+    return params.toString();  // no leading '?'; the caller picks the separator
+}
+
 // Read pages until the collected rows reach the X-Total-Count of the route
 async function getAllPages(url) {
     const separator = url.includes('?') ? '&' : '?';

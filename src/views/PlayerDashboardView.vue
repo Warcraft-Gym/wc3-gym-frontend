@@ -75,6 +75,7 @@
         :items-length="totalSeries"
         v-model:page="page"
         v-model:items-per-page="itemsPerPage"
+        v-model:sort-by="sortBy"
         :loading="isLoading"
         class="elevation-1"
         item-value="id"
@@ -367,7 +368,7 @@
 import '@/assets/base.css';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, pageQuery } from '@/helpers';
 import { getW3CMMR } from '@/helpers/w3c-stats';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
@@ -429,6 +430,7 @@ const series = ref([]);
 const totalSeries = ref(0);
 const page = ref(1);
 const itemsPerPage = ref(25);
+const sortBy = ref([]);  // Vuetify single sort: [] or [{ key, order }]
 const token = ref(null);
 
 // Schedule / Result dialog state
@@ -459,12 +461,12 @@ const rules = {
   }
 };
 
-// The server pages the series, so column sort is off
+// The server sorts date_time and week; opponent and score are computed per side here
 const headers = [
   { title: 'Opponent', key: 'opponent', sortable: false },
-  { title: 'Date & Time', key: 'date_time', sortable: false },
+  { title: 'Date & Time', key: 'date_time', sortable: true },
   { title: 'Score', key: 'score', sortable: false },
-  { title: 'Week', key: 'week', sortable: false },
+  { title: 'Week', key: 'week', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false }
 ];
 
@@ -492,7 +494,12 @@ const fetchPlayerData = async () => {
 
     // Get one page of the player series data
     const offset = (page.value - 1) * itemsPerPage.value;
-    const url = `${backendUrl}/player-series?token=${token.value}&limit=${itemsPerPage.value}&offset=${offset}`;
+    const url = `${backendUrl}/player-series?token=${encodeURIComponent(token.value)}&${pageQuery({
+      limit: itemsPerPage.value,
+      offset,
+      sort: sortBy.value[0]?.key,
+      order: sortBy.value[0]?.order
+    })}`;
     const { items: response, total } = await fetchWrapper.getPage(url);
     playerData.value = response;
     series.value = response.series || [];
@@ -520,6 +527,16 @@ const fetchPlayerData = async () => {
 // The table controls drive the page state
 watch([page, itemsPerPage], () => {
   if (token.value) fetchPlayerData();
+});
+
+// A header click reloads from the first page in the new order
+watch(sortBy, () => {
+  if (!token.value) return;
+  if (page.value === 1) {
+    fetchPlayerData();
+  } else {
+    page.value = 1;
+  }
 });
 
 const fetchFantasyData = async () => {

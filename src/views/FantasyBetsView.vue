@@ -59,6 +59,7 @@
               :items-length="totalBets"
               v-model:page="page"
               v-model:items-per-page="itemsPerPage"
+              v-model:sort-by="sortBy"
               :loading="isLoading"
               class="elevation-1"
               density="comfortable"
@@ -362,6 +363,7 @@ const seasons = ref([]);
 const selectedSeasonId = ref(null);
 const page = ref(1);
 const itemsPerPage = ref(25);
+const sortBy = ref([]);  // Vuetify single sort: [] or [{ key, order }]
 const captainBetSeriesIds = ref([]);
 const useFixedBetPoints = ref(false);
 const fixedBetPointsValue = ref(0);
@@ -377,15 +379,15 @@ const newBet = ref({
 });
 const selectedSeriesForNew = ref(null);
 
-// The server pages and orders by id, so column sort is off
+// The server sorts the columns it stores; the columns joined in the browser stay unsorted
 const headers = [
-  { title: 'ID', value: 'id', width: '70px', sortable: false },
-  { title: 'Captain', value: 'captain', sortable: false },
+  { title: 'ID', value: 'id', width: '70px', sortable: true },
+  { title: 'Captain', value: 'captain', sortable: true },
   { title: 'Series', value: 'series', sortable: false },
   { title: 'Bet On', value: 'bet_on', sortable: false },
   { title: 'Score', value: 'score', sortable: false, align: 'center' },
   { title: 'Result', value: 'bet_result', sortable: false, align: 'center' },
-  { title: 'Points', value: 'bet_points', sortable: false, align: 'end' },
+  { title: 'Points', value: 'bet_points', sortable: true, align: 'end' },
   { title: 'Locked', value: 'is_locked', sortable: false, align: 'center' },
   { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
 ];
@@ -495,9 +497,12 @@ const fetchData = async () => {
     
     // Fetch one page of bets for the selected season
     const betsQuery = `season_id == ${selectedSeasonId.value}`;
+    const sort = sortBy.value[0];
     await fantasyStore.searchBetsPage(betsQuery, {
       limit: itemsPerPage.value,
-      offset: (page.value - 1) * itemsPerPage.value
+      offset: (page.value - 1) * itemsPerPage.value,
+      sort: sort ? sort.key : undefined,
+      order: sort ? sort.order : undefined
     });
 
     // A delete can empty the last page; step back onto the table
@@ -534,6 +539,15 @@ const onSeasonChange = async () => {
 // The table controls drive the page state
 watch([page, itemsPerPage], () => {
   if (selectedSeasonId.value) fetchData();
+});
+
+// A header click reloads from the first page in the new order
+watch(sortBy, () => {
+  if (page.value === 1) {
+    fetchData();
+  } else {
+    page.value = 1;
+  }
 });
 
 const loadSeasons = async () => {

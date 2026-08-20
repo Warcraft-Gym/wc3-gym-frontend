@@ -24,19 +24,27 @@ const search = ref('');
 const showUnmappedOnly = ref(false);
 const page = ref(1);
 const itemsPerPage = ref(25);
+const sortBy = ref([]);  // Vuetify single sort: [] or [{ key, order }]
 
-// The server pages and orders by rating, so column sort is off
 const headers = [
-  { title: 'Display Name', key: 'display_name', sortable: false },
-  { title: 'Status', key: 'status', sortable: false },
-  { title: 'Rating', key: 'rating', sortable: false },
-  { title: 'Series W-L', key: 'series_record', sortable: false },
-  { title: 'Series %', key: 'series_winrate', sortable: false },
-  { title: 'Games W-L', key: 'games_record', sortable: false },
-  { title: 'Games %', key: 'games_winrate', sortable: false },
-  { title: 'Seasons', key: 'seasons_played', sortable: false },
+  { title: 'Display Name', key: 'display_name', sortable: true },
+  { title: 'Status', key: 'status', sortable: true },
+  { title: 'Rating', key: 'rating', sortable: true },
+  { title: 'Series W-L', key: 'series_record', sortable: true },
+  { title: 'Series %', key: 'series_winrate', sortable: true },
+  { title: 'Games W-L', key: 'games_record', sortable: true },
+  { title: 'Games %', key: 'games_winrate', sortable: true },
+  { title: 'Seasons', key: 'seasons_played', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false }
 ];
+
+// Header keys the server names differently
+const sortNames = {
+  display_name: 'name',
+  status: 'mapped',
+  series_record: 'series_won',
+  games_record: 'games_won'
+};
 
 // The server answers the search; only the unmapped toggle narrows the loaded page
 const hasPageFilter = computed(() => showUnmappedOnly.value);
@@ -66,10 +74,13 @@ const fetchStats = async () => {
   isLoading.value = true;
   errorMessage.value = null;
   try {
+    const sort = sortBy.value[0];
     await store.fetchPage({
       limit: itemsPerPage.value,
       offset: (page.value - 1) * itemsPerPage.value,
-      search: search.value?.trim() || undefined
+      search: search.value?.trim() || undefined,
+      sort: sort ? (sortNames[sort.key] ?? sort.key) : undefined,
+      order: sort ? sort.order : undefined
     });
 
     // A delete can empty the last page; step back onto the table
@@ -99,6 +110,15 @@ watch(search, () => {
       page.value = 1;
     }
   }, 300);
+});
+
+// A header click reloads from the first page in the new order
+watch(sortBy, () => {
+  if (page.value === 1) {
+    fetchStats();
+  } else {
+    page.value = 1;
+  }
 });
 
 // A toggle change restarts at the first page
@@ -303,6 +323,7 @@ onMounted(async () => {
             :items-length="itemsLength"
             v-model:page="page"
             v-model:items-per-page="itemsPerPage"
+            v-model:sort-by="sortBy"
             :loading="isLoading"
             item-value="id"
             class="elevation-1"

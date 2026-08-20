@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchWrapper } from '@/helpers';
+import { fetchWrapper, pageQuery } from '@/helpers';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
@@ -11,13 +11,11 @@ export const usePlayerCareerStatsStore = defineStore({
         isLoading: false
     }),
     actions: {
-        async fetchPage({ limit, offset, search }) {
+        async fetchPage({ limit, offset, search, sort, order }) {
             this.isLoading = true;
             try {
-                const term = search?.trim();
-                const searchParam = term ? `&search=${encodeURIComponent(term)}` : '';
-                const url = `${backendUrl}/stats/career?limit=${limit}&offset=${offset}${searchParam}`;
-                const { items, total } = await fetchWrapper.getPage(url);
+                const query = pageQuery({ limit, offset, search, sort, order });
+                const { items, total } = await fetchWrapper.getPage(`${backendUrl}/stats/career?${query}`);
                 this.stats = items || [];
                 this.totalStats = total ?? this.stats.length;
                 return this.stats;

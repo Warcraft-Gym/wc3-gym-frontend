@@ -66,17 +66,6 @@ export const useFantasyStore = defineStore({
             }
         },
 
-        async fetchBets() {
-            this.isLoading = true;
-            try {
-                const result = await fetchWrapper.get(`${backendUrl}/fantasy/bets`);
-                this.bets = result || [];
-                return this.bets;
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
         async fetchBet(betId) {
             return await fetchWrapper.get(`${backendUrl}/fantasy/bets/${betId}`);
         },

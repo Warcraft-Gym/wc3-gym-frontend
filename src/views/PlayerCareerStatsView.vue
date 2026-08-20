@@ -38,8 +38,8 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false }
 ];
 
-// The search field and the toggle narrow the loaded page only
-const hasPageFilter = computed(() => showUnmappedOnly.value || !!search.value?.trim());
+// The server answers the search; only the unmapped toggle narrows the loaded page
+const hasPageFilter = computed(() => showUnmappedOnly.value);
 
 const statsWithRecords = computed(() => {
   let filteredStats = stats.value;
@@ -47,14 +47,6 @@ const statsWithRecords = computed(() => {
   // Filter unmapped if toggle is active
   if (showUnmappedOnly.value) {
     filteredStats = filteredStats.filter(stat => !stat.user_id);
-  }
-
-  const term = search.value?.trim().toLowerCase();
-  if (term) {
-    filteredStats = filteredStats.filter(stat => {
-      const name = stat.user ? stat.user.name : stat.player_name;
-      return (name || '').toLowerCase().includes(term);
-    });
   }
 
   return filteredStats.map(stat => ({
@@ -76,7 +68,8 @@ const fetchStats = async () => {
   try {
     await store.fetchPage({
       limit: itemsPerPage.value,
-      offset: (page.value - 1) * itemsPerPage.value
+      offset: (page.value - 1) * itemsPerPage.value,
+      search: search.value?.trim() || undefined
     });
 
     // A delete can empty the last page; step back onto the table
@@ -95,8 +88,21 @@ watch([page, itemsPerPage], () => {
   fetchStats();
 });
 
-// A filter change restarts at the first page
-watch([search, showUnmappedOnly], () => {
+// A search edit waits for the typing pause, then reloads from the first page
+let searchTimer = null;
+watch(search, () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    if (page.value === 1) {
+      fetchStats();
+    } else {
+      page.value = 1;
+    }
+  }, 300);
+});
+
+// A toggle change restarts at the first page
+watch(showUnmappedOnly, () => {
   page.value = 1;
 });
 
@@ -248,7 +254,7 @@ onMounted(async () => {
                 <v-text-field
                   v-model="search"
                   prepend-inner-icon="mdi-magnify"
-                  label="Search this page..."
+                  label="Search all players..."
                   variant="outlined"
                   density="compact"
                   hide-details

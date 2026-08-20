@@ -11,10 +11,12 @@ export const usePlayerCareerStatsStore = defineStore({
         isLoading: false
     }),
     actions: {
-        async fetchPage({ limit, offset }) {
+        async fetchPage({ limit, offset, search }) {
             this.isLoading = true;
             try {
-                const url = `${backendUrl}/stats/career?limit=${limit}&offset=${offset}`;
+                const term = search?.trim();
+                const searchParam = term ? `&search=${encodeURIComponent(term)}` : '';
+                const url = `${backendUrl}/stats/career?limit=${limit}&offset=${offset}${searchParam}`;
                 const { items, total } = await fetchWrapper.getPage(url);
                 this.stats = items || [];
                 this.totalStats = total ?? this.stats.length;

@@ -323,6 +323,7 @@ onMounted(async () => {
             :items-length="itemsLength"
             v-model:page="page"
             v-model:items-per-page="itemsPerPage"
+            :items-per-page-options="[10, 25, 50, 100]"
             v-model:sort-by="sortBy"
             :loading="isLoading"
             item-value="id"

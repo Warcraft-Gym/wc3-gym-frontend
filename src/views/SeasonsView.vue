@@ -446,7 +446,7 @@ const tableHeader = [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
   { title: 'Weeks', value: 'number_weeks', sortable: true },
-  { title: 'Pick Ban', value: 'pick_ban', sortable: true },
+  { title: 'Pick Ban', value: 'pick_ban', sortable: false },
   { title: 'Series/Week', value: 'series_per_week', sortable: true },
   { title: 'Actions', key: 'actions', align: 'end', sortable: false },
 ];

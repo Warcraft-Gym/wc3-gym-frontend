@@ -24,7 +24,7 @@ const search = ref('');
 const showUnmappedOnly = ref(false);
 const page = ref(1);
 const itemsPerPage = ref(25);
-const sortBy = ref([]);  // Vuetify single sort: [] or [{ key, order }]
+const sortBy = ref([{ key: 'rating', order: 'desc' }]);  // the order the server pages by
 
 const headers = [
   { title: 'Display Name', key: 'display_name', sortable: true },
@@ -325,6 +325,7 @@ onMounted(async () => {
             v-model:items-per-page="itemsPerPage"
             :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
             v-model:sort-by="sortBy"
+            must-sort
             :loading="isLoading"
             item-value="id"
             class="elevation-1"

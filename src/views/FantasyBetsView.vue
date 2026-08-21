@@ -61,6 +61,7 @@
               v-model:items-per-page="itemsPerPage"
               :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
               v-model:sort-by="sortBy"
+              must-sort
               :loading="isLoading"
               class="elevation-1"
               density="comfortable"
@@ -364,7 +365,7 @@ const seasons = ref([]);
 const selectedSeasonId = ref(null);
 const page = ref(1);
 const itemsPerPage = ref(25);
-const sortBy = ref([]);  // Vuetify single sort: [] or [{ key, order }]
+const sortBy = ref([{ key: 'id', order: 'asc' }]);  // the order the server pages by
 const captainBetSeriesIds = ref([]);
 const useFixedBetPoints = ref(false);
 const fixedBetPointsValue = ref(0);

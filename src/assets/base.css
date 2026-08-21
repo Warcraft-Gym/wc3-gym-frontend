@@ -1,5 +1,33 @@
 /* Show the sort icon of an unsorted sortable header at rest, not only on hover. */
 .v-data-table .v-table__wrapper > table > thead > tr > th:not(.v-data-table__th--sorted) .v-data-table-header__sort-icon,
 .v-data-table .v-table__wrapper > table tbody > tr > th:not(.v-data-table__th--sorted) .v-data-table-header__sort-icon {
-  opacity: 0.3;
+  opacity: 0.22;
+}
+
+.v-data-table .v-table__wrapper > table > thead > tr > th:not(.v-data-table__th--sorted):hover .v-data-table-header__sort-icon,
+.v-data-table .v-table__wrapper > table tbody > tr > th:not(.v-data-table__th--sorted):hover .v-data-table-header__sort-icon {
+  opacity: 0.45;
+}
+
+/* A hint next to the label, not a second label. */
+.v-data-table .v-data-table-header__sort-icon {
+  font-size: 0.875rem;
+  margin-inline-start: 2px;
+}
+
+/* The column the table is sorted by reads in the primary colour. */
+.v-data-table .v-table__wrapper > table > thead > tr > th.v-data-table__th--sorted,
+.v-data-table .v-table__wrapper > table tbody > tr > th.v-data-table__th--sorted {
+  color: rgb(var(--v-theme-primary));
+}
+
+.v-data-table .v-table__wrapper > table > thead > tr > th.v-data-table__th--sorted .v-data-table-header__sort-icon,
+.v-data-table .v-table__wrapper > table tbody > tr > th.v-data-table__th--sorted .v-data-table-header__sort-icon {
+  opacity: 1;
+  color: rgb(var(--v-theme-primary));
+}
+
+.v-data-table .v-table__wrapper > table > thead > tr > th.v-data-table__th--sorted:hover,
+.v-data-table .v-table__wrapper > table tbody > tr > th.v-data-table__th--sorted:hover {
+  color: rgb(var(--v-theme-primary));
 }

@@ -77,14 +77,14 @@ const fetchStats = async () => {
     const sort = sortBy.value[0];
     await store.fetchPage({
       limit: itemsPerPage.value,
-      offset: (page.value - 1) * itemsPerPage.value,
+      offset: itemsPerPage.value === -1 ? 0 : (page.value - 1) * itemsPerPage.value,
       search: search.value?.trim() || undefined,
       sort: sort ? (sortNames[sort.key] ?? sort.key) : undefined,
       order: sort ? sort.order : undefined
     });
 
     // A delete can empty the last page; step back onto the table
-    if (stats.value.length === 0 && page.value > 1 && totalStats.value > 0) {
+    if (stats.value.length === 0 && page.value > 1 && totalStats.value > 0 && itemsPerPage.value !== -1) {
       page.value = Math.max(1, Math.ceil(totalStats.value / itemsPerPage.value));
     }
   } catch (error) {
@@ -323,7 +323,7 @@ onMounted(async () => {
             :items-length="itemsLength"
             v-model:page="page"
             v-model:items-per-page="itemsPerPage"
-            :items-per-page-options="[10, 25, 50, 100]"
+            :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
             v-model:sort-by="sortBy"
             :loading="isLoading"
             item-value="id"

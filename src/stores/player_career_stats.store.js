@@ -14,6 +14,12 @@ export const usePlayerCareerStatsStore = defineStore({
         async fetchPage({ limit, offset, search, sort, order }) {
             this.isLoading = true;
             try {
+                if (limit === -1) {  // 'All': walk the server pages, which keeps the server order
+                    this.stats = await fetchWrapper.getAll(`${backendUrl}/stats/career?${pageQuery({ search, sort, order })}`);
+                    this.totalStats = this.stats.length;
+                    return this.stats;
+                }
+
                 const query = pageQuery({ limit, offset, search, sort, order });
                 const { items, total } = await fetchWrapper.getPage(`${backendUrl}/stats/career?${query}`);
                 this.stats = items || [];

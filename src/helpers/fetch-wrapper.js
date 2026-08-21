@@ -12,10 +12,11 @@ export const fetchWrapper = {
     postBinary: request('POST_BINARY'),  // POST request that receives binary data
     postPage: request('POST_PAGE'),  // POST that returns { items, total } from X-Total-Count
     getPage: request('GET_PAGE'),  // GET that returns { items, total } from X-Total-Count
-    getAll: getAllPages  // GET every row of a route, one limit/offset page at a time
+    getAll: getAllPages('GET'),  // GET every row of a route, one limit/offset page at a time
+    postAll: getAllPages('POST')  // POST every row of a route, one limit/offset page at a time
 };
 
-const PAGE_LIMIT = 500;  // the largest limit the backend accepts
+export const PAGE_LIMIT = 500;  // the largest limit the backend accepts
 
 // Build the query string of a paged list request; keys without a value are left out
 export function pageQuery({ limit, offset, search, sort, order } = {}) {
@@ -32,23 +33,27 @@ export function pageQuery({ limit, offset, search, sort, order } = {}) {
 }
 
 // Read pages until the collected rows reach the X-Total-Count of the route
-async function getAllPages(url) {
-    const separator = url.includes('?') ? '&' : '?';
-    const items = [];
-    let total = 0;
+function getAllPages(method) {
+    const readPage = method === 'POST' ? 'postPage' : 'getPage';
 
-    do {
-        const pageUrl = `${url}${separator}limit=${PAGE_LIMIT}&offset=${items.length}`;
-        const page = await fetchWrapper.getPage(pageUrl);
-        const pageItems = page.items || [];
-        total = page.total ?? items.length + pageItems.length;
-        items.push(...pageItems);
-        if (pageItems.length === 0) {
-            break;  // stop when the route sends no more rows
-        }
-    } while (items.length < total);
+    return async (url) => {
+        const base = url.endsWith('?') || url.endsWith('&') ? url : `${url}${url.includes('?') ? '&' : '?'}`;
+        const items = [];
+        let total = 0;
 
-    return items;
+        do {
+            const pageUrl = `${base}limit=${PAGE_LIMIT}&offset=${items.length}`;
+            const page = await fetchWrapper[readPage](pageUrl);
+            const pageItems = page.items || [];
+            total = page.total ?? items.length + pageItems.length;
+            items.push(...pageItems);
+            if (pageItems.length === 0) {
+                break;  // stop when the route sends no more rows
+            }
+        } while (items.length < total);
+
+        return items;
+    };
 }
 
 function request(method) {

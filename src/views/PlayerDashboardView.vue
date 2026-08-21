@@ -75,7 +75,7 @@
         :items-length="totalSeries"
         v-model:page="page"
         v-model:items-per-page="itemsPerPage"
-        :items-per-page-options="[10, 25, 50, 100]"
+        :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
         v-model:sort-by="sortBy"
         :loading="isLoading"
         class="elevation-1"
@@ -369,7 +369,7 @@
 import '@/assets/base.css';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { fetchWrapper, pageQuery } from '@/helpers';
+import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { getW3CMMR } from '@/helpers/w3c-stats';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
@@ -471,7 +471,7 @@ const headers = [
   { title: 'Actions', key: 'actions', sortable: false }
 ];
 
-const pageCount = computed(() => Math.max(1, Math.ceil(totalSeries.value / itemsPerPage.value)));
+const pageCount = computed(() => itemsPerPage.value === -1 ? 1 : Math.max(1, Math.ceil(totalSeries.value / itemsPerPage.value)));
 
 // Load player dashboard data
 const fetchPlayerData = async () => {
@@ -493,15 +493,39 @@ const fetchPlayerData = async () => {
       return;
     }
 
-    // Get one page of the player series data
-    const offset = (page.value - 1) * itemsPerPage.value;
-    const url = `${backendUrl}/player-series?token=${encodeURIComponent(token.value)}&${pageQuery({
-      limit: itemsPerPage.value,
+    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?token=${encodeURIComponent(token.value)}&${pageQuery({
+      limit,
       offset,
       sort: sortBy.value[0]?.key,
       order: sortBy.value[0]?.order
     })}`;
-    const { items: response, total } = await fetchWrapper.getPage(url);
+
+    // 'All': read the server pages and keep the player fields of the first one
+    if (itemsPerPage.value === -1) {
+      const collected = [];
+      let firstPage = null;
+      let total = 0;
+
+      do {
+        const { items: pageData, total: pageTotal } = await fetchWrapper.getPage(seriesUrl(PAGE_LIMIT, collected.length));
+        const rows = pageData?.series || [];
+        firstPage = firstPage ?? pageData;
+        total = pageTotal ?? collected.length + rows.length;
+        collected.push(...rows);
+        if (rows.length === 0) {
+          break;  // stop when the route sends no more rows
+        }
+      } while (collected.length < total);
+
+      playerData.value = firstPage;
+      series.value = collected;
+      totalSeries.value = collected.length;
+      return;
+    }
+
+    // Get one page of the player series data
+    const offset = (page.value - 1) * itemsPerPage.value;
+    const { items: response, total } = await fetchWrapper.getPage(seriesUrl(itemsPerPage.value, offset));
     playerData.value = response;
     series.value = response.series || [];
     totalSeries.value = total ?? series.value.length;

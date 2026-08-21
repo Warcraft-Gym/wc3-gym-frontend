@@ -87,6 +87,13 @@ export const useFantasyStore = defineStore({
         async searchBetsPage(query, { limit, offset, sort, order }) {
             this.isLoading = true;
             try {
+                if (limit === -1) {  // 'All': walk the server pages, which keeps the server order
+                    const allUrl = `${backendUrl}/fantasy/bets/search?query=${encodeURIComponent(query)}&${pageQuery({ sort, order })}`;
+                    this.bets = await fetchWrapper.postAll(allUrl);
+                    this.totalBets = this.bets.length;
+                    return this.bets;
+                }
+
                 const url = `${backendUrl}/fantasy/bets/search?query=${encodeURIComponent(query)}&${pageQuery({ limit, offset, sort, order })}`;
                 const { items, total } = await fetchWrapper.postPage(url);
                 this.bets = items || [];

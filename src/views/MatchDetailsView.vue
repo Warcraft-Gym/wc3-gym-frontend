@@ -1599,7 +1599,7 @@ const syncW3CTeams = async () => {
   } catch (error) {
     console.error('Failed to sync Team 1:', error);
     syncError1.value = true;
-    syncMessage1.value = error?.message || error || "Some players could not be synced.";
+    syncMessage1.value = error.message;
   }
   
   try {
@@ -1609,7 +1609,7 @@ const syncW3CTeams = async () => {
   } catch (error) {
     console.error('Failed to sync Team 2:', error);
     syncError2.value = true;
-    syncMessage2.value = error?.message || error || "Some players could not be synced.";
+    syncMessage2.value = error.message;
   }
 
   // Always reload team details to get any successfully synced W3C stats

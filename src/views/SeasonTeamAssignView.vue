@@ -664,8 +664,7 @@ const syncAllDraftPlayers = async () => {
         perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [p.id]: { state: 'success' } };
       } catch (err) {
         console.error('Failed to sync player', p.id, err);
-        const message = err && (err.message || err.msg || err.error) ? (err.message || err.msg || err.error) : (typeof err === 'string' ? err : JSON.stringify(err));
-        perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [p.id]: { state: 'error', message } };
+        perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [p.id]: { state: 'error', message: err.message } };
       }
     }
     // refresh teams after all syncs
@@ -710,7 +709,7 @@ const updatePlayer = async () => {
     cancelEdit();
   } catch (error) {
     console.error('Error updating user:', error);
-    updateError.value = 'Error updating user: ' + error;
+    updateError.value = 'Error updating user: ' + error.message;
   }
 };
 

@@ -470,7 +470,7 @@ const fetchSettings = async () => {
       }
     });
   } catch (error) {
-    errorMessage.value = 'Failed to load settings: ' + error;
+    errorMessage.value = 'Failed to load settings: ' + error.message;
   } finally {
     isLoading.value = false;
   }
@@ -492,7 +492,7 @@ const saveSettings = async () => {
     await configStore.updateSettings(settingsToSave);
     successMessage.value = 'Settings saved successfully!';
   } catch (error) {
-    errorMessage.value = 'Failed to save settings: ' + error;
+    errorMessage.value = 'Failed to save settings: ' + error.message;
   } finally {
     isSaving.value = false;
   }
@@ -531,7 +531,7 @@ const generateKothToken = async () => {
     successMessage.value = 'New KOTH Nightbot token generated successfully!';
     kothTokenVisible.value = true; // Show the new token
   } catch (error) {
-    errorMessage.value = 'Failed to generate KOTH token: ' + error;
+    errorMessage.value = 'Failed to generate KOTH token: ' + error.message;
   } finally {
     isGeneratingKothToken.value = false;
   }

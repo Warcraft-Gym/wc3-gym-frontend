@@ -504,7 +504,7 @@ const createNewSeason = async () => {
     cancelAddNewSeason();
   } catch (err) {
     console.error('Error creating season:', err);
-    creationError.value = 'Error creating season: ' + (err?.message || err);
+    creationError.value = 'Error creating season: ' + err.message;
   }
 };
 
@@ -542,7 +542,7 @@ const updateSeason = async () => {
     cancelEdit();
   } catch (err) {
     console.error('Error updating season:', err);
-    updateError.value = 'Error updating season: ' + (err?.message || err);
+    updateError.value = 'Error updating season: ' + err.message;
   }
 };
 
@@ -559,7 +559,7 @@ const removeSeason = async (seasonIdVal) => {
     await fetchSeasons();
   } catch (err) {
     console.error('Error deleting season:', err);
-    errorMessage.value = 'Error deleting season: ' + (err?.message || err);
+    errorMessage.value = 'Error deleting season: ' + err.message;
   }
 };
 
@@ -626,7 +626,7 @@ const exportSeason = async (seasonId, seasonName) => {
     uploadMessage.value = `Successfully exported ${seasonName}!`;
   } catch (err) {
     console.error('Error exporting season:', err);
-    errorMessage.value = 'Error exporting season: ' + (err?.message || err);
+    errorMessage.value = 'Error exporting season: ' + err.message;
   } finally {
     isLoading.value = false;
   }

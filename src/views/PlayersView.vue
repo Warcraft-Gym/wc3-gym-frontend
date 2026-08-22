@@ -780,7 +780,7 @@ const updatePlayer = async () => {
     cancelEdit(); // Reset the form
   } catch (error) {
     console.error('Error updating user:', error);
-    updateError.value = 'Error updating user: ' + error;
+    updateError.value = 'Error updating user: ' + error.message;
   }
 };
 
@@ -823,7 +823,7 @@ const createNewPlayer = async () => {
         console.log('All season signups completed');
       } catch (err) {
         console.error('Failed to add user signup for new player:', err);
-        creationError.value = 'Player created but failed to add to seasons: ' + err;
+        creationError.value = 'Player created but failed to add to seasons: ' + err.message;
       }
     }
 
@@ -832,7 +832,7 @@ const createNewPlayer = async () => {
     cancelAddNewPlayer();
   } catch (error) {
     console.error('Error creating user:', error);
-    creationError.value = 'Error creating user: ' + error;
+    creationError.value = 'Error creating user: ' + error.message;
   } finally {
     isCreating.value = false;
   }
@@ -856,8 +856,7 @@ const syncW3CPlayer = async (playerId) => {
     await refreshPlayers(); // refresh list without resetting filters
   } catch (error) {
     console.error('Error syncing player:', playerId, error);
-    const message = error && (error.message || error.msg || error.error) ? (error.message || error.msg || error.error) : (typeof error === 'string' ? error : JSON.stringify(error));
-    perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [playerId]: { state: 'error', message } };
+    perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [playerId]: { state: 'error', message: error.message } };
   }
 };
 

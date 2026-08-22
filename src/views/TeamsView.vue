@@ -434,7 +434,7 @@ const removeTeam = async (teamId) => {
     await fetchTeams(); // Refresh the list after deletion
   } catch (error) {
     console.error('Error deleting Team:', error);
-    errorMessage.value = 'Error deleting Team:' + error;
+    errorMessage.value = 'Error deleting Team:' + error.message;
   }
 };
 

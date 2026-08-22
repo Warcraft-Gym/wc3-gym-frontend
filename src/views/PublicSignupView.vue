@@ -256,7 +256,7 @@ onMounted(async () => {
     }
   } catch (err) {
     tokenInvalid.value = true;
-    tokenInvalidReason.value = (err && err.message) || (err && err.error) || 'invalid';
+    tokenInvalidReason.value = err.message;
   } finally {
     loading.value = false;
   }

@@ -137,6 +137,12 @@ async function authHeader(method, url, requireAuth = false) {
     return {};
 }
 
+// Turn a failed response into an Error, keeping the body fields callers read for a code
+function responseError(body, text, status) {
+    const message = body?.message || body?.error || body?.msg || text.trim() || `HTTP ${status}`;
+    return Object.assign(new Error(message), body, { message, status, body });
+}
+
 async function handleResponse(response, receiveBinary, receivePage = false) {
     if (!response.ok) {
         const { user, logout } = useAuthStore();
@@ -147,15 +153,16 @@ async function handleResponse(response, receiveBinary, receivePage = false) {
 
         // **Properly await the response before rejecting**
         const text = await response.text();
-        let error;
+        let body = null;
 
         try {
-            error = text ? JSON.parse(text) : text;
+            const parsed = text ? JSON.parse(text) : null;
+            body = parsed && typeof parsed === 'object' ? parsed : null;
         } catch (parseError) {
-            error = text; // Fallback if parsing fails
+            body = null; // the raw text carries the message
         }
-        
-        return Promise.reject(error);
+
+        return Promise.reject(responseError(body, text, response.status));
     }
 
     if (receiveBinary) {

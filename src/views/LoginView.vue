@@ -13,7 +13,7 @@ function onSubmit(values, { setErrors }) {
     const { password } = values;
 
     return authStore.login(password)
-        .catch(error => setErrors({ apiError: error }));
+        .catch(error => setErrors({ apiError: error.message }));
 }
 </script>
 

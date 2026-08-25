@@ -503,13 +503,13 @@
                   :custom-filter="customFilter"
                   :search="searchQueryT1"
                   v-model="newSeries_Player_1"
-                  :items="team1.player_by_season ? team1.player_by_season[match.season_id] : []"
+                  :items="roster1"
+                  item-value="id"
                   select-strategy="single"
                   density="compact"
                   multi-sort
                   fixed-header
                   hover
-                  return-object
                   show-select
                   class="flex-grow-1"
                 >
@@ -567,13 +567,13 @@
                   :custom-filter="customFilter"
                   :search="searchQueryT2"
                   v-model="newSeries_Player_2"
-                  :items="team2.player_by_season ? team2.player_by_season[match.season_id] : []"
+                  :items="roster2"
+                  item-value="id"
                   select-strategy="single"
                   density="compact"
                   multi-sort
                   fixed-header
                   hover
-                  return-object
                   show-select
                   class="flex-grow-1"
                 >
@@ -616,7 +616,7 @@
             color="primary"
             prepend-icon="mdi-plus"
             @click="createSeries"
-            :disabled="!newSeries_Player_1 || !newSeries_Player_2"
+            :disabled="!newSeriesPlayer1 || !newSeriesPlayer2"
           >
             Create Series
           </v-btn>
@@ -757,7 +757,8 @@
                 <v-card-text class="pa-0">
                   <v-data-table
                     :headers="tablePlayerHeader"
-                    :items="team1.player_by_season?.[match.season_id] || []"
+                    :items="roster1"
+                    item-value="id"
                     :custom-filter="customFilter"
                     :search="searchQueryT1"
                     v-model="proposePlayersTeam_1"
@@ -766,7 +767,6 @@
                     multi-sort
                     fixed-header
                     hover
-                    return-object
                     show-select
                   >
                     <template v-slot:loading>
@@ -817,7 +817,8 @@
                 <v-card-text class="pa-0">
                   <v-data-table
                     :headers="tablePlayerHeader"
-                    :items="team2.player_by_season?.[match.season_id] || []"
+                    :items="roster2"
+                    item-value="id"
                     :custom-filter="customFilter"
                     :search="searchQueryT2"
                     v-model="proposePlayersTeam_2"
@@ -826,7 +827,6 @@
                     multi-sort
                     fixed-header
                     hover
-                    return-object
                     show-select
                   >
                     <template v-slot:loading>
@@ -905,6 +905,7 @@
           v-if="proposedSeries.length > 0"
           :headers="proposedSeriesTableHeader"
           :items="proposedSeries"
+          item-value="key"
           :custom-filter="customFilterSeries"
           :search="searchQuerySeries"
           select-strategy="all"
@@ -913,7 +914,6 @@
           multi-sort
           fixed-header
           hover
-          return-object
           show-select
           :row-props="getRowClass"
         >
@@ -998,7 +998,7 @@
               variant="text"
               size="small"
               color="error"
-              @click.stop="openDeleteDialog(item.proposedId, removeProposedSeries)"
+              @click.stop="openDeleteDialog(item.key, removeProposedSeries)"
             ></v-btn>
           </template>
         </v-data-table>
@@ -1279,8 +1279,8 @@ const loadMissingSeriesPlayers = async () => {
 // Series state
 const showNewSeriesModal = ref(false);
 const createNewSeriesDialogOpen = ref(false);
-const newSeries_Player_1 = ref(null);
-const newSeries_Player_2 = ref(null);
+const newSeries_Player_1 = ref([]);
+const newSeries_Player_2 = ref([]);
 const newSeries_IsDraft = ref(false);
 const editSeriesDialogOpen = ref(false);
 const selectedSeries = ref(null);
@@ -1348,6 +1348,15 @@ const getHighestW3CMMR = (player) => {
 };
 
 // Computed properties
+const roster1 = computed(() => team1.value?.player_by_season?.[matchStore.match?.season_id] || []);
+const roster2 = computed(() => team2.value?.player_by_season?.[matchStore.match?.season_id] || []);
+// The tables hold ids, so a roster reload never leaves a selection pointing at a stale row
+const playersById = (roster, ids) => roster.filter(p => ids.includes(p.id));
+const newSeriesPlayer1 = computed(() => playersById(roster1.value, newSeries_Player_1.value)[0]);
+const newSeriesPlayer2 = computed(() => playersById(roster2.value, newSeries_Player_2.value)[0]);
+const selectedProposed = computed(() => proposedSeries.value.filter(ps => selectedProposedSeries.value.includes(ps.key)));
+const proposedKey = (p1, p2) => `${p1.id}-${p2.id}`;
+
 const isProposeValid = computed(() => 
   proposePlayersTeam_1.value != null && 
   proposePlayersTeam_2.value != null && 
@@ -1377,9 +1386,7 @@ const customFilter = (value, search, item) => {
 
 const getRowClass = item => {
   // Highlight if this exact matchup is selected
-  const isMatchSelected = selectedProposedSeries.value.some(
-    sel => sel.player1.id === item.item.player1.id && sel.player2.id === item.item.player2.id
-  );
+  const isMatchSelected = selectedProposedSeries.value.includes(item.item.key);
   if(isMatchSelected){
     return {class: 'highlight-selected-row'}; 
   }
@@ -1395,7 +1402,7 @@ const getRowClass = item => {
   }
   
   // Highlight if either player is in the selected proposed series
-  const isPlayerSelected = selectedProposedSeries.value.some(
+  const isPlayerSelected = selectedProposed.value.some(
     sel => sel.player1.id === item.item.player1.id || sel.player2.id === item.item.player2.id
   );
   return {class: isPlayerSelected ? 'highlight-row' : ''};
@@ -1436,16 +1443,16 @@ const seriesHeaders = [
 
 const openCreateNewSeries = () => {
   createNewSeriesDialogOpen.value = true;
-  newSeries_Player_1.value = null;
-  newSeries_Player_2.value = null;
+  newSeries_Player_1.value = [];
+  newSeries_Player_2.value = [];
   newSeries_IsDraft.value = false;
   creationSeriesError.value = null;
 };
 
 const openCreateNewDraftSeries = () => {
   createNewSeriesDialogOpen.value = true;
-  newSeries_Player_1.value = null;
-  newSeries_Player_2.value = null;
+  newSeries_Player_1.value = [];
+  newSeries_Player_2.value = [];
   newSeries_IsDraft.value = true; // Force draft mode
   creationSeriesError.value = null;
 };
@@ -1511,12 +1518,6 @@ const fetchMatchDetails = async () => {
   }
 };
 
-const reselect = (selected, team, season_id) => {
-  const roster = team?.player_by_season?.[season_id] || [];
-  const ids = new Set(selected.map(p => p.id));
-  return roster.filter(p => ids.has(p.id));
-};
-
 const fetchTeamDetails = async () => {
   try {
     const { team1_id, team2_id, season_id } = matchStore.match;
@@ -1524,9 +1525,6 @@ const fetchTeamDetails = async () => {
       teamStore.getTeamDetailsSeason(team1_id, season_id),
       teamStore.getTeamDetailsSeason(team2_id, season_id),
     ]);
-    // The tables select by object identity, so point the selection at the new roster objects
-    proposePlayersTeam_1.value = reselect(proposePlayersTeam_1.value, team1.value, season_id);
-    proposePlayersTeam_2.value = reselect(proposePlayersTeam_2.value, team2.value, season_id);
   } catch (error) {
     console.error('Failed to fetch match details:', error);
   }
@@ -1666,8 +1664,8 @@ const updateSeries = async () => {
   }
 }
 
-const removeProposedSeries = (proposedId) => {
-  proposedSeries.value = proposedSeries.value.filter(series => series.proposedId !== proposedId);
+const removeProposedSeries = (key) => {
+  proposedSeries.value = proposedSeries.value.filter(series => series.key !== key);
 
 }
 
@@ -1718,9 +1716,10 @@ const getRaceIconUrl = (race) => {
 const proposeSeries = async () => {
   isLoading.value = true;
   try {
+    const kept = selectedProposed.value;
     proposedSeries.value = []
-    let t1_player = proposePlayersTeam_1.value;
-    let t2_player = proposePlayersTeam_2.value;
+    let t1_player = playersById(roster1.value, proposePlayersTeam_1.value);
+    let t2_player = playersById(roster2.value, proposePlayersTeam_2.value);
 
     for(let i = 0; i< t1_player.length; i++) {
       let p1 = t1_player[i];
@@ -1758,19 +1757,10 @@ const proposeSeries = async () => {
           }
         }
 
-        if(selectedProposedSeries.value) {
-          let selectedPropSeriesExists = false;
-          for (let m = 0; m < selectedProposedSeries.value.length; m++){
-            let sPropS = selectedProposedSeries.value[m];
-            if(p1.id == sPropS.player1_id && p2.id == sPropS.player2_id){
-              proposedSeries.value.push(sPropS);
-              selectedPropSeriesExists = true;
-              break;
-            }
-          }
-          if(selectedPropSeriesExists){
-            continue;
-          }
+        const keptSeries = kept.find(sPropS => sPropS.key === proposedKey(p1, p2));
+        if(keptSeries) {
+          proposedSeries.value.push(keptSeries);
+          continue;
         }
 
         p2_mmr = getW3CMMR(p2) || 0;
@@ -1781,7 +1771,7 @@ const proposeSeries = async () => {
         }
         if(mmr_diff <= proposeSeriesMMRDiff.value){
           const newSeries = {}
-          newSeries.proposedId = proposedSeries.value.length+1
+          newSeries.key = proposedKey(p1, p2)
           newSeries.match_id = matchStore.match.id
           newSeries.season_id = matchStore.match.season_id
           newSeries.host_player_id = p1.id
@@ -1795,11 +1785,9 @@ const proposeSeries = async () => {
         }
       }
     }
-    if (selectedProposedSeries.value) {
-      selectedProposedSeries.value = selectedProposedSeries.value.filter(sps =>
-        proposedSeries.value.some(ps => sps.player1_id === ps.player1_id && sps.player2_id === ps.player2_id)
-      );
-    }
+    selectedProposedSeries.value = selectedProposedSeries.value.filter(key =>
+      proposedSeries.value.some(ps => ps.key === key)
+    );
   } catch (error) {
     console.error('Failed to fetch match details:', error);
   } finally {
@@ -1825,7 +1813,7 @@ const createSelectedProposedSeries = async (isDraft = false) => {
       : [...(series.value || [])];
     let { team1Hosts, team2Hosts } = countTeamHosts(baseSeries);
 
-    for (const ps of selectedProposedSeries.value) {
+    for (const ps of selectedProposed.value) {
       const hostId = getAutoHostPlayerId(ps.player1, ps.player2, team1Hosts, team2Hosts);
       const seriesWithHost = { ...ps, host_player_id: hostId };
 
@@ -1855,15 +1843,15 @@ const createSeries = async () => {
   newSeries.season_id = matchStore.match.season_id
   newSeries.player1_score = 0
   newSeries.player2_score = 0
-  newSeries.player1_id = newSeries_Player_1.value[0].id
-  newSeries.player2_id = newSeries_Player_2.value[0].id
+  newSeries.player1_id = newSeriesPlayer1.value.id
+  newSeries.player2_id = newSeriesPlayer2.value.id
 
   // Auto-assign host to keep counts balanced between teams
   const allCurrent = [...(series.value || []), ...(draftSeries.value || [])];
   const { team1Hosts, team2Hosts } = countTeamHosts(allCurrent);
   newSeries.host_player_id = getAutoHostPlayerId(
-    newSeries_Player_1.value[0],
-    newSeries_Player_2.value[0],
+    newSeriesPlayer1.value,
+    newSeriesPlayer2.value,
     team1Hosts,
     team2Hosts
   );

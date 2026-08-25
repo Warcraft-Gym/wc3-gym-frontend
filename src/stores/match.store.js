@@ -39,9 +39,10 @@ export const useMatchStore = defineStore({
         async searchMatchesBySeason(season_id) {
             try{
                 this.isLoading = true; // Set loading to true
-                search = `season_id == ${season_id}`
+                const search = `season_id == ${season_id}`
                 const resp = await fetchWrapper.post(`${backendUrl}/matches/search?query=${search}`);
                 this.matches =  resp
+                return resp
             } finally {
                 this.isLoading = false; // Set loading to false once complete
             }

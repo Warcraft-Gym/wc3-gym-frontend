@@ -1454,10 +1454,10 @@ const navigateToMatch = async (newMatchId) => {
   isLoading.value = true;
   try {
     await matchStore.fetchMatchDetails(newMatchId);
-    if (matchStore.match.team1_id && matchStore.match.team2_id) {
-      await fetchTeamDetails();
-    }
-    await seriesStore.getSeriesByMatchId(newMatchId);
+    await Promise.all([
+      matchStore.match.team1_id && matchStore.match.team2_id ? fetchTeamDetails() : null,
+      fetchSeriesRows(),
+    ]);
     await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match details:', error);
@@ -1481,41 +1481,26 @@ const fetchTeamImage = async (teamId) => {
 
 const fetchSeasonMatches = async () => {
   if (!match.value?.season_id) return;
-  
+
   try {
-    // Fetch season details to get number of weeks
-    const seasonData = await seasonStore.fetchSeason(match.value.season_id);
+    // One search for the season, one season read for the week count
+    const [, seasonMatches] = await Promise.all([
+      seasonStore.fetchSeason(match.value.season_id),
+      matchStore.searchMatchesBySeason(match.value.season_id),
+    ]);
     const numberOfWeeks = seasonStore.current_season.number_weeks;
-    
-    // Fetch matches for all weeks
-    const allMatchesPromises = [];
-    for (let week = 1; week <= numberOfWeeks; week++) {
-      allMatchesPromises.push(
-        matchStore.searchMatchesBySeasonAndPlayday(match.value.season_id, week)
-          .then(() => ({ week, matches: [...matches.value] }))
-      );
-    }
-    
-    const weeklyData = await Promise.all(allMatchesPromises);
-    
-    // Organize matches by week
-    weeklyMatches.value = weeklyData.map(data => ({
-      weekNumber: data.week,
-      matches: data.matches
-    })).sort((a, b) => a.weekNumber - b.weekNumber);
-    
-    // Fetch team images for all matches
+
+    weeklyMatches.value = Array.from({ length: numberOfWeeks }, (_, i) => ({
+      weekNumber: i + 1,
+      matches: seasonMatches.filter(m => m.playday === i + 1),
+    }));
+
     const teamIds = new Set();
-    weeklyMatches.value.forEach(week => {
-      week.matches.forEach(match => {
-        if (match.team1_id) teamIds.add(match.team1_id);
-        if (match.team2_id) teamIds.add(match.team2_id);
-      });
+    seasonMatches.forEach(m => {
+      if (m.team1_id) teamIds.add(m.team1_id);
+      if (m.team2_id) teamIds.add(m.team2_id);
     });
-    
-    // Load all team images in parallel
     await Promise.all([...teamIds].map(teamId => fetchTeamImage(teamId)));
-    
   } catch (error) {
     console.error('Failed to fetch season matches:', error);
   }
@@ -1525,11 +1510,13 @@ const fetchMatchDetails = async () => {
   isLoading.value = true;
   try {
     await matchStore.fetchMatchDetails(matchId.value);
-    if (matchStore.match.team1_id && matchStore.match.team2_id) {
-      await fetchTeamDetails(); // Fetch team details only after match details are loaded
-    }
-    await fetchMatchSeries();
-    await fetchSeasonMatches(); // Fetch all matches for navigation
+    // The rosters, the series rows and the season navigation do not depend on each other
+    await Promise.all([
+      matchStore.match.team1_id && matchStore.match.team2_id ? fetchTeamDetails() : null,
+      fetchSeriesRows(),
+      fetchSeasonMatches(),
+    ]);
+    await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match details:', error);
   } finally {
@@ -1538,15 +1525,14 @@ const fetchMatchDetails = async () => {
 };
 
 const fetchTeamDetails = async () => {
-  isLoading.value = true;
   try {
-    
-    team1.value = await teamStore.getTeamDetailsSeason(matchStore.match.team1_id, matchStore.match.season_id);
-    team2.value = await teamStore.getTeamDetailsSeason(matchStore.match.team2_id, matchStore.match.season_id);
+    const { team1_id, team2_id, season_id } = matchStore.match;
+    [team1.value, team2.value] = await Promise.all([
+      teamStore.getTeamDetailsSeason(team1_id, season_id),
+      teamStore.getTeamDetailsSeason(team2_id, season_id),
+    ]);
   } catch (error) {
     console.error('Failed to fetch match details:', error);
-  } finally {
-    isLoading.value = false;
   }
 };
 
@@ -1598,14 +1584,15 @@ const showStats = async(player) => {
   playerDetails.value = player;
 }
 
+const fetchSeriesRows = () => Promise.all([
+  seriesStore.getSeriesByMatchId(matchId.value),
+  seriesStore.getDraftSeriesByMatchId(matchId.value),
+]);
+
 const fetchMatchSeries = async () => {
   isLoading.value = true;
   try {
-    // Fetch both published series and draft series
-    await Promise.all([
-      seriesStore.getSeriesByMatchId(matchId.value),
-      seriesStore.getDraftSeriesByMatchId(matchId.value)
-    ]);
+    await fetchSeriesRows();
     await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match series:', error);

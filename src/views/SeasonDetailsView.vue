@@ -166,25 +166,10 @@
                 </v-chip>
               </v-col>
               <v-col cols="auto">
-                <v-menu location="bottom end">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      icon="mdi-dots-vertical"
-                      variant="text"
-                      size="small"
-                      v-bind="props"
-                      @click.stop
-                    ></v-btn>
-                  </template>
-                  <v-list density="compact">
-                    <v-list-item @click.stop="editMatch(match)" prepend-icon="mdi-pencil">
-                      <v-list-item-title>Edit Match</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item @click.stop="openDeleteDialog(match.id, removeMatch)" prepend-icon="mdi-delete" class="text-error">
-                      <v-list-item-title>Delete Match</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
+                <RowActions :actions="[
+                  { icon: 'mdi-pencil', label: 'Edit Match', onClick: () => editMatch(match) },
+                  { icon: 'mdi-delete', label: 'Delete Match', color: 'error', onClick: () => openDeleteDialog(match.id, removeMatch) },
+                ]" />
               </v-col>
             </v-row>
           </v-card-text>
@@ -477,6 +462,7 @@
 </template>
   
   <script setup>
+import RowActions from '@/components/RowActions.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useSeasonStore, useMatchStore, useTeamStore, useMapStore } from '@/stores';

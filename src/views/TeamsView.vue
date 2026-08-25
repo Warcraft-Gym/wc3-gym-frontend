@@ -62,24 +62,10 @@
           </template>
 
           <template #[`item.actions`]="{ item }">
-            <v-menu location="bottom end">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  icon="mdi-dots-vertical"
-                  variant="text"
-                  size="small"
-                  v-bind="props"
-                ></v-btn>
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="editTeam(item)" prepend-icon="mdi-pencil">
-                  <v-list-item-title>Edit Team</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="openDeleteDialog(item.id, removeTeam)" prepend-icon="mdi-delete" class="text-error">
-                  <v-list-item-title>Delete Team</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
+            <RowActions :actions="[
+              { icon: 'mdi-pencil', label: 'Edit Team', onClick: () => editTeam(item) },
+              { icon: 'mdi-delete', label: 'Delete Team', color: 'error', onClick: () => openDeleteDialog(item.id, removeTeam) },
+            ]" />
           </template>
 
           <template #no-data>
@@ -251,6 +237,7 @@
   </v-container>
 </template>
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import '@/assets/base.css';
 import { useTeamStore } from '@/stores';
 import { computed, onMounted, ref } from 'vue';

@@ -263,24 +263,10 @@
                     <span v-else class="text-grey">—</span>
                   </td>
                   <td class="text-center">
-                    <v-menu location="bottom end">
-                      <template v-slot:activator="{ props }">
-                        <v-btn
-                          icon="mdi-dots-vertical"
-                          variant="text"
-                          size="small"
-                          v-bind="props"
-                        ></v-btn>
-                      </template>
-                      <v-list density="compact">
-                        <v-list-item @click="editSeries(item)" prepend-icon="mdi-pencil">
-                          <v-list-item-title>Edit Series</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item @click="openDeleteDialog(item.id, removeSeries)" prepend-icon="mdi-delete" class="text-error">
-                          <v-list-item-title>Delete Series</v-list-item-title>
-                        </v-list-item>
-                      </v-list>
-                    </v-menu>
+                    <RowActions :actions="[
+                      { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
+                      { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
+                    ]" />
                   </td>
                 </tr>
               </template>
@@ -421,33 +407,11 @@
                     <span v-else class="text-grey">—</span>
                   </td>
                   <td class="text-center">
-                    <v-menu location="bottom end">
-                      <template v-slot:activator="{ props }">
-                        <v-btn
-                          icon="mdi-dots-vertical"
-                          variant="text"
-                          size="small"
-                          v-bind="props"
-                        ></v-btn>
-                      </template>
-                      <v-list density="compact">
-                        <v-list-item 
-                          @click="toggleDraftFantasyMatch(item)" 
-                          :prepend-icon="item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star'"
-                          :class="item.is_fantasy_match ? 'text-orange' : 'text-purple'"
-                        >
-                          <v-list-item-title>
-                            {{ item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match' }}
-                          </v-list-item-title>
-                        </v-list-item>
-                        <v-list-item @click="publishDraftSeries(item)" prepend-icon="mdi-publish" class="text-success">
-                          <v-list-item-title>Publish Series</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item @click="openDeleteDialog(item.id, removeDraftSeries)" prepend-icon="mdi-delete" class="text-error">
-                          <v-list-item-title>Delete Draft</v-list-item-title>
-                        </v-list-item>
-                      </v-list>
-                    </v-menu>
+                    <RowActions :actions="[
+                      { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
+                      { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
+                      { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
+                    ]" />
                   </td>
                 </tr>
               </template>
@@ -1115,6 +1079,7 @@
 
 
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
 import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
 import { useRouter } from 'vue-router';

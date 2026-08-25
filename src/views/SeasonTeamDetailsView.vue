@@ -188,19 +188,10 @@
                   <div v-else>—</div>
                 </td>
                 <td>
-                  <v-menu location="bottom end">
-                    <template v-slot:activator="{ props }">
-                      <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" size="small"></v-btn>
-                    </template>
-                    <v-list density="compact">
-                      <v-list-item @click="showStats(item)" prepend-icon="mdi-chart-box">
-                        <v-list-item-title>View Stats</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="removePlayerFromTeam(item.id)" prepend-icon="mdi-delete">
-                        <v-list-item-title>Remove from Team</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
+                  <RowActions :actions="[
+                    { icon: 'mdi-chart-box', label: 'View Stats', onClick: () => showStats(item) },
+                    { icon: 'mdi-account-minus', label: 'Remove from Team', color: 'error', onClick: () => removePlayerFromTeam(item.id) },
+                  ]" />
                 </td>
               </tr>
             </template>
@@ -275,6 +266,7 @@
 </template>
 
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import '@/assets/base.css';
 import { useRouter } from 'vue-router';
 import { useTeamStore, usePlayerStore, useConfigStore } from '@/stores';
@@ -475,6 +467,7 @@ onMounted(async () => {
 });
 
 const removePlayerFromTeam = async (playerId) => {
+  if (!confirm('Remove this player from the team?')) return;
   try {
     await teamStore.removePlayersFromTeamForSeason(
       teamId.value,

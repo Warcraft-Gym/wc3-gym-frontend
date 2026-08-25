@@ -108,23 +108,10 @@
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
-                <v-menu location="bottom end">
-                  <template v-slot:activator="{ props }">
-                    <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" size="small"></v-btn>
-                  </template>
-                  <v-list density="compact">
-                    <v-list-item 
-                      @click="editBet(item)" 
-                      prepend-icon="mdi-pencil"
-                      :disabled="isSeriesPlayed(item.series)"
-                    >
-                      <v-list-item-title>Edit</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item @click="confirmDeleteBet(item)" prepend-icon="mdi-delete">
-                      <v-list-item-title>Delete</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
+                <RowActions :actions="[
+                  { icon: 'mdi-pencil', label: 'Edit', disabled: isSeriesPlayed(item.series), onClick: () => editBet(item) },
+                  { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => confirmDeleteBet(item) },
+                ]" />
               </template>
             </v-data-table-server>
           </v-card-text>
@@ -332,6 +319,7 @@
 </template>
 
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import '@/assets/base.css';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useFantasyStore, useSeriesStore, usePlayerStore, useConfigStore, useSeasonStore } from '@/stores';

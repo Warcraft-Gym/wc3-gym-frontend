@@ -134,35 +134,11 @@
                     <div v-else>—</div>
                   </td>
                   <td>
-                    <v-menu location="bottom end">
-                      <template v-slot:activator="{ props }">
-                        <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" size="small"></v-btn>
-                      </template>
-                      <v-list density="compact">
-                        <!-- details reachable by clicking the player name; keep menu focused on edit/sync/delete -->
-                        <v-list-item @click="editPlayer(item)" prepend-icon="mdi-pencil">
-                          <v-list-item-title>Edit</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item 
-                          @click="syncW3CPlayer(item.id)"
-                          prepend-icon="mdi-sync"
-                          :disabled="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'loading'"
-                        >
-                          <v-list-item-title>
-                            <span v-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'success'">
-                              <v-icon small color="green" class="mr-1">mdi-check-circle</v-icon> Synced
-                            </span>
-                            <span v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'error'">
-                              <v-icon small color="red" class="mr-1">mdi-alert-circle</v-icon> Retry Sync
-                            </span>
-                            <span v-else>Sync W3C</span>
-                          </v-list-item-title>
-                        </v-list-item>
-                        <v-list-item @click="openDeleteDialog(item.id, removePlayer)" prepend-icon="mdi-delete">
-                          <v-list-item-title>Delete</v-list-item-title>
-                        </v-list-item>
-                      </v-list>
-                    </v-menu>
+                    <RowActions :actions="[
+                      { icon: 'mdi-pencil', label: 'Edit', onClick: () => editPlayer(item) },
+                      { icon: syncIcon(item.id), label: syncLabel(item.id), color: syncColor(item.id), loading: syncState(item.id) === 'loading', onClick: () => syncW3CPlayer(item.id) },
+                      { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item.id, removePlayer) },
+                    ]" />
                   </td>
                 </tr>
               </template>
@@ -435,6 +411,7 @@
   </v-container>
 </template>
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import { usePlayerStore, useSeasonStore, useConfigStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref, computed } from 'vue';
@@ -835,6 +812,11 @@ const removePlayer = async (playerId) => {
     console.error('Error deleting player:', error);
   }
 };
+
+const syncState = (playerId) => perPlayerSyncStatus.value[playerId]?.state;
+const syncIcon = (playerId) => ({ success: 'mdi-check-circle', error: 'mdi-alert-circle' }[syncState(playerId)] ?? 'mdi-sync');
+const syncLabel = (playerId) => ({ success: 'Synced', error: 'Retry Sync' }[syncState(playerId)] ?? 'Sync W3C');
+const syncColor = (playerId) => ({ success: 'success', error: 'error' }[syncState(playerId)]);
 
 const syncW3CPlayer = async (playerId) => {
   if (!playerId) return;

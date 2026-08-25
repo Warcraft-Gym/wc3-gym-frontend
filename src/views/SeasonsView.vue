@@ -128,28 +128,11 @@
               <td>{{ item.pick_ban }}</td>
               <td>{{ item.series_per_week }}</td>
               <td class="text-end">
-                <v-menu location="bottom end">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      icon="mdi-dots-vertical"
-                      variant="text"
-                      size="small"
-                      v-bind="props"
-                      @click.stop
-                    ></v-btn>
-                  </template>
-                  <v-list density="compact">
-                    <v-list-item @click.stop="editSeason(item)" prepend-icon="mdi-pencil">
-                      <v-list-item-title>Edit Season</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item @click.stop="exportSeason(item.id, item.name)" prepend-icon="mdi-download">
-                      <v-list-item-title>Export Season</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item @click.stop="openDeleteDialog(item.id, removeSeason)" prepend-icon="mdi-delete" class="text-error">
-                      <v-list-item-title>Delete Season</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
+                <RowActions :actions="[
+                  { icon: 'mdi-pencil', label: 'Edit Season', onClick: () => editSeason(item) },
+                  { icon: 'mdi-download', label: 'Export Season', onClick: () => exportSeason(item.id, item.name) },
+                  { icon: 'mdi-delete', label: 'Delete Season', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeason) },
+                ]" />
               </td>
             </tr>
           </template>
@@ -412,6 +395,7 @@
 </template>
 
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import { ref, onMounted } from 'vue';
 import { useSeasonStore, useMapStore } from '@/stores';
 

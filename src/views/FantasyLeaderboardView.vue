@@ -112,25 +112,12 @@
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
-                <v-menu location="bottom end">
-                  <template v-slot:activator="{ props }">
-                    <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" size="small"></v-btn>
-                  </template>
-                  <v-list density="compact">
-                    <v-list-item prepend-icon="mdi-eye" @click="viewTeamDetails(item.id)">
-                      <v-list-item-title>View Details</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item prepend-icon="mdi-chart-box" @click="viewScoreBreakdown(item)">
-                      <v-list-item-title>Score Breakdown</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item prepend-icon="mdi-pencil" @click="openEditDialog(item)">
-                      <v-list-item-title>Edit</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item prepend-icon="mdi-delete" @click="openDeleteDialog(item)">
-                      <v-list-item-title>Delete</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
+                <RowActions :actions="[
+                  { icon: 'mdi-eye', label: 'View Details', onClick: () => viewTeamDetails(item.id) },
+                  { icon: 'mdi-chart-box', label: 'Score Breakdown', onClick: () => viewScoreBreakdown(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', onClick: () => openEditDialog(item) },
+                  { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item) },
+                ]" />
               </template>
             </v-data-table>
           </v-card-text>
@@ -637,6 +624,7 @@
 </template>
 
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import '@/assets/base.css';
 import { ref, computed, onMounted } from 'vue';
 import { useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';

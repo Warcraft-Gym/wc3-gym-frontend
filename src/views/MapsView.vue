@@ -48,19 +48,10 @@
           </template>
 
           <template v-slot:[`item.actions`]="{ item }">
-            <v-menu location="bottom end">
-              <template v-slot:activator="{ props }">
-                <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" size="small"></v-btn>
-              </template>
-              <v-list density="compact">
-                <v-list-item @click="editMap(item)" prepend-icon="mdi-pencil">
-                  <v-list-item-title>Edit</v-list-item-title>
-                </v-list-item>
-                <v-list-item @click="openDeleteDialog(item.id, removeMap)" prepend-icon="mdi-delete">
-                  <v-list-item-title>Delete</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
+            <RowActions :actions="[
+              { icon: 'mdi-pencil', label: 'Edit', onClick: () => editMap(item) },
+              { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item.id, removeMap) },
+            ]" />
           </template>
         </v-data-table>
       </v-card-text>
@@ -188,6 +179,7 @@
   </v-container>
 </template>
 <script setup>
+import RowActions from '@/components/RowActions.vue';
 import '@/assets/base.css';
 import { useMapStore } from '@/stores';
 import { computed, onMounted, ref } from 'vue';

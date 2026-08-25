@@ -1511,6 +1511,12 @@ const fetchMatchDetails = async () => {
   }
 };
 
+const reselect = (selected, team, season_id) => {
+  const roster = team?.player_by_season?.[season_id] || [];
+  const ids = new Set(selected.map(p => p.id));
+  return roster.filter(p => ids.has(p.id));
+};
+
 const fetchTeamDetails = async () => {
   try {
     const { team1_id, team2_id, season_id } = matchStore.match;
@@ -1518,6 +1524,9 @@ const fetchTeamDetails = async () => {
       teamStore.getTeamDetailsSeason(team1_id, season_id),
       teamStore.getTeamDetailsSeason(team2_id, season_id),
     ]);
+    // The tables select by object identity, so point the selection at the new roster objects
+    proposePlayersTeam_1.value = reselect(proposePlayersTeam_1.value, team1.value, season_id);
+    proposePlayersTeam_2.value = reselect(proposePlayersTeam_2.value, team2.value, season_id);
   } catch (error) {
     console.error('Failed to fetch match details:', error);
   }

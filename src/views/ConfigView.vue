@@ -67,7 +67,9 @@
                   <v-text-field
                     v-model="settingsMap.current_wc3_season"
                     label="Current WC3 Season"
-                    hint="Current Warcraft 3 Champions season number"
+                    :placeholder="w3cSeasonPlaceholder"
+                    hint="Leave blank to follow the latest W3Champions season."
+                    persistent-placeholder
                     variant="outlined"
                     prepend-inner-icon="mdi-trophy"
                     type="number"
@@ -78,7 +80,9 @@
                   <v-text-field
                     v-model="settingsMap.w3c_url"
                     label="W3Champions API URL"
-                    hint="Base URL for W3Champions API"
+                    :placeholder="w3cUrlPlaceholder"
+                    hint="Base URL for W3Champions API. Leave blank to use the default."
+                    persistent-placeholder
                     variant="outlined"
                     prepend-inner-icon="mdi-api"
                   ></v-text-field>
@@ -476,6 +480,24 @@ const fetchSettings = async () => {
   }
 };
 
+// What the backend uses while these two fields are blank
+const w3cConfig = ref(null);
+
+const fetchW3cConfig = async () => {
+  try {
+    w3cConfig.value = await configStore.fetchW3cConfig();
+  } catch (error) {
+    w3cConfig.value = null;
+  }
+};
+
+const w3cUrlPlaceholder = computed(() => w3cConfig.value?.w3c_url ?? '');
+
+const w3cSeasonPlaceholder = computed(() => {
+  const season = w3cConfig.value?.current_season;
+  return season == null ? '' : String(season);
+});
+
 // Save settings
 const saveSettings = async () => {
   isSaving.value = true;
@@ -550,6 +572,7 @@ const copyKothToken = async () => {
 onMounted(async () => {
   await Promise.all([
     fetchSettings(),
+    fetchW3cConfig(),
     seasonStore.fetchSeasons(),
     fetchKothToken()
   ]);

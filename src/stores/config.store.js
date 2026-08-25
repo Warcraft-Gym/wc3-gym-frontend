@@ -7,6 +7,7 @@ export const useConfigStore = defineStore({
     id: 'configStore',
     state: () => ({
         settings: [],
+        w3cConfig: null,
         isLoading: false,
         error: null
     }),
@@ -24,6 +25,12 @@ export const useConfigStore = defineStore({
             } finally {
                 this.isLoading = false;
             }
+        },
+
+        async fetchW3cConfig() {
+            const response = await fetchWrapper.get(`${backendUrl}/config/w3c`);
+            this.w3cConfig = response;
+            return response;
         },
 
         async fetchSetting(key) {

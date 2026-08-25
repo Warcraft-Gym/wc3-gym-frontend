@@ -610,17 +610,6 @@ const fetchPlayers = async () => {
 };
 
 // Refresh data without resetting filters (for sync operations)
-const refreshPlayers = async () => {
-  isLoading.value = true;
-  try {
-    await playerStore.fetchPlayers();
-  } catch (error) {
-    console.error('Failed to refresh players:', error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 onMounted( async () => {
   // Ensure seasons are loaded first for the filter dropdown
   try {
@@ -853,7 +842,6 @@ const syncW3CPlayer = async (playerId) => {
   try {
     await playerStore.syncW3CPlayer(playerId);
     perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [playerId]: { state: 'success' } };
-    await refreshPlayers(); // refresh list without resetting filters
   } catch (error) {
     console.error('Error syncing player:', playerId, error);
     perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [playerId]: { state: 'error', message: error.message } };

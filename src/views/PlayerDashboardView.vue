@@ -376,34 +376,16 @@ import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import { DateTime } from 'luxon';
 import { useDisplay } from 'vuetify';
-import { useConfigStore } from '@/stores';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 defineOptions({ name: 'PlayerDashboardView' })
 
 const route = useRoute();
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const { mobile, mdAndUp } = useDisplay();
-const configStore = useConfigStore();
 
 // Current W3C season
 const currentW3CSeason = ref(null);
-
-// Resolve current W3C season from config
-async function resolveCurrentW3CSeason() {
-  try {
-    const setting = await configStore.fetchSetting('current_wc3_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) {
-        currentW3CSeason.value = num;
-        return;
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to fetch current_wc3_season setting:', err);
-  }
-  currentW3CSeason.value = null;
-}
 
 // Computed property for mobile detection
 const isMobile = computed(() => {
@@ -897,7 +879,7 @@ const isScoreValid = computed(() => {
 });
 
 onMounted(async () => {
-  await resolveCurrentW3CSeason();
+  currentW3CSeason.value = await resolveCurrentW3CSeason();
   fetchPlayerData();
 });
 </script>

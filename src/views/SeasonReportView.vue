@@ -115,7 +115,7 @@
                 <td>
                   <div class="d-flex align-center">
                     <v-avatar size="24" rounded="sm" class="mr-2" style="flex-shrink:0">
-                      <v-img :src="teamImages[team.id]" cover />
+                      <img class="team-icon" :src="teamImageUrl(team.id)" @error="showDefaultTeamImage">
                     </v-avatar>
                     <span class="font-weight-medium">{{ team.name }}</span>
                   </div>
@@ -195,7 +195,7 @@
                   <v-tooltip v-if="player.teamId" :text="player.teamName" location="top">
                     <template #activator="{ props }">
                       <v-avatar v-bind="props" size="24" rounded="sm">
-                        <v-img :src="teamImages[player.teamId]" cover />
+                        <img class="team-icon" :src="teamImageUrl(player.teamId)" @error="showDefaultTeamImage">
                       </v-avatar>
                     </template>
                   </v-tooltip>
@@ -406,7 +406,7 @@ import { useTeamStore } from '@/stores/team.store';
 import { useSeriesStore } from '@/stores/series.store';
 import { useFantasyStore } from '@/stores/fantasy.store';
 import RaceIcon from '@/components/RaceIcon.vue';
-import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
+import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
 defineOptions({ name: 'SeasonReportView' });
 
@@ -425,7 +425,6 @@ const { series } = storeToRefs(seriesStore);
 const selectedSeasonId = ref(null);
 const isLoading = ref(false);
 const errorMessage = ref(null);
-const teamImages = ref({}); // team.id → object URL or default
 
 // ─── Read-only mode: ?readonly=1 hides the season selector ───────────────────
 const isReadonly = computed(() => route.query.readonly === '1' || route.query.readonly === 'true');
@@ -604,18 +603,6 @@ const loadReport = async () => {
             seriesStore.searchSeriesBySeason(selectedSeasonId.value, null),
             fantasyStore.fetchTeams(),
         ]);
-        // Fetch team images (same pattern as TeamsView)
-        const imagePromises = teamStore.teams.map(async (team) => {
-            try {
-                const resp = await teamStore.getTeamImage(team.id);
-                if (!resp.ok) throw new Error('no image');
-                const blob = await resp.blob();
-                teamImages.value[team.id] = URL.createObjectURL(blob);
-            } catch {
-                teamImages.value[team.id] = teamDefaultImg;
-            }
-        });
-        await Promise.all(imagePromises);
     } catch (e) {
         errorMessage.value = 'Failed to load report data.';
     } finally {
@@ -627,6 +614,13 @@ const printReport = () => window.print();
 </script>
 
 <style scoped>
+
+.team-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* ── Loading overlay ──────────────────────────────────────────────────────── */
 .loading-overlay {
   display: flex;

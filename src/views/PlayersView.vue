@@ -108,7 +108,10 @@
                     </div>
                   </td>
                   <td>{{ item.discordTag }}</td>
-                  <td>{{ getW3CMMR(item, currentW3CSeason) }}</td>
+                  <td>
+                    {{ getW3CMMR(item, currentW3CSeason) }}
+                    <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                  </td>
                   <td>
                     <div v-if="item.race">
                       <RaceIcon :raceIdentifier="item.race" />                                          
@@ -407,19 +410,22 @@
       v-model="showPlayerDetails"
       :player="playerDetails"
       :seasonId="currentSeasonId"
+      :seasonName="currentSeasonName"
+      :w3cSeason="currentW3CSeason"
     />
   </v-container>
 </template>
 <script setup>
 import RowActions from '@/components/RowActions.vue';
-import { usePlayerStore, useSeasonStore, useConfigStore } from '@/stores';
+import { usePlayerStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref, computed } from 'vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
-import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { 
   getW3CMMR,
+  getW3CMMRSeason,
   getW3CStatsWithFallback,
   getW3CGamesCount,
   hasW3CStatsTwoSeasons,
@@ -452,7 +458,6 @@ const newPlayer = ref({
 const selectedSignupSeasonIdsNew = ref([]);
 const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
-const configStore = useConfigStore();
 const { players } = storeToRefs(playerStore);
 const { seasons } = storeToRefs(seasonStore);
 // filter for season in the grid
@@ -544,17 +549,17 @@ W3C Stats
 Fantasy Tier
 Actions
 */
-const tableHeader = [
+const tableHeader = computed(() => [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },  
   { title: 'Battletag', value: 'battleTag', sortable: true },    
   { title: 'Country', value: 'country', sortable: true },
   { title: 'Discord Name', value: 'discordTag', sortable: true }, 
-  { title: 'W3C MMR', value: 'mmr', sortable: false }, 
+  { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'mmr', sortable: false }, 
   { title: 'Main Race', value: 'race', sortable: true },  
   { title: 'Signups', value: 'signups', sortable: false },    
   { title: 'Actions', key: 'actions', align: 'end', sortable: false }, 
-];
+]);
 
 // Fetch users when the component is mounted
 const fetchPlayers = async () => {
@@ -598,8 +603,7 @@ onMounted( async () => {
   await fetchPlayers();
   // ensure seasons are loaded and resolve the current season id
   currentSeasonId.value = await resolveCurrentSeasonId();
-  // resolve current W3C season for stats fallback
-  await resolveCurrentW3CSeason();
+  currentW3CSeason.value = await resolveCurrentW3CSeason();
 });
 
 // Open player details dialog and ensure we have the player's data
@@ -621,8 +625,15 @@ const playerDetails = ref(null);
 
 // current season id preference (resolved from settings or fallback)
 const currentSeasonId = ref(null);
+const currentSeasonName = computed(() => (seasons.value || []).find(s => s.id === currentSeasonId.value)?.name || '');
 // Current W3C season number (for stats fallback logic)
 const currentW3CSeason = ref(null);
+
+// Names the season an MMR came from when it is not the one in the column header
+const mmrSeasonLabel = (player) => {
+  const season = getW3CMMRSeason(player, currentW3CSeason.value);
+  return season && season !== currentW3CSeason.value ? `S${season}` : '';
+};
 
 // W3C stats helper functions with season fallback
 const getW3CStats = (player) => {
@@ -638,25 +649,6 @@ const hasLowGames = (player) => {
   // Use combined games count from current + previous season
   return hasLowGamesTwoSeasons(player, currentW3CSeason.value);
 };
-
-// Resolve and store the current W3C season number
-async function resolveCurrentW3CSeason() {
-  try {
-    const setting = await configStore.fetchSetting('current_wc3_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) {
-        currentW3CSeason.value = num;
-        return;
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to fetch current_wc3_season setting:', err);
-  }
-
-  // Default fallback if not found in config
-  currentW3CSeason.value = null;
-}
 
 const openDeleteDialog = (id, action) => {
   selectedDeleteItemId.value = id;

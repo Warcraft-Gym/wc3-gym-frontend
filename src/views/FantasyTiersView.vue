@@ -191,15 +191,14 @@
 <script setup>
 import '@/assets/base.css';
 import { ref, onMounted, computed } from 'vue';
-import { usePlayerStore, useConfigStore, useTeamStore } from '@/stores';
+import { usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
-import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 defineOptions({ name: 'FantasyTiersView' })
 
 const playerStore = usePlayerStore();
-const configStore = useConfigStore();
 const teamStore = useTeamStore();
 const { players } = storeToRefs(playerStore);
 const { teams } = storeToRefs(teamStore);
@@ -254,23 +253,6 @@ const currentSeasonPlayers = computed(() => {
   return players.value.filter(player => playerIdsOnTeams.has(player.id));
 });
 
-// Resolve current W3C season from config
-const resolveCurrentW3CSeason = async () => {
-  try {
-    const setting = await configStore.fetchSetting('current_wc3_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) {
-        currentW3CSeason.value = num;
-        return;
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to fetch current_wc3_season setting:', err);
-  }
-  currentW3CSeason.value = null;
-};
-
 // Update tier player allocations based on MMR ranges
 const updateTierRanges = () => {
   tiers.value.forEach(tier => {
@@ -288,7 +270,7 @@ const loadData = async () => {
   
   try {
     currentSeasonId.value = await resolveCurrentSeasonId();
-    await resolveCurrentW3CSeason();
+    currentW3CSeason.value = await resolveCurrentW3CSeason();
     await playerStore.fetchPlayers();
     
     // Fetch teams for the current season

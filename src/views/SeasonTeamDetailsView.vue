@@ -269,7 +269,8 @@
 import RowActions from '@/components/RowActions.vue';
 import '@/assets/base.css';
 import { useRouter } from 'vue-router';
-import { useTeamStore, usePlayerStore, useConfigStore } from '@/stores';
+import { useTeamStore, usePlayerStore } from '@/stores';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import FlagIcon from '@/components/FlagIcon.vue';
@@ -284,7 +285,6 @@ defineOptions({ name: 'SeasonTeamDetailsView' });
 const router = useRouter();
 const teamStore = useTeamStore();
 const playerStore = usePlayerStore();
-const configStore = useConfigStore();
 
 // Route params
 const teamId = computed(() => router.currentRoute.value.params.id);
@@ -444,25 +444,8 @@ watch(showNewPlayerModal, (newValue) => {
   }
 });
 
-// Resolve current W3C season from config
-async function resolveCurrentW3CSeason() {
-  try {
-    const setting = await configStore.fetchSetting('current_wc3_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) {
-        currentW3CSeason.value = num;
-        return;
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to fetch current_wc3_season setting:', err);
-  }
-  currentW3CSeason.value = null;
-}
-
 onMounted(async () => {
-  await resolveCurrentW3CSeason();
+  currentW3CSeason.value = await resolveCurrentW3CSeason();
   fetchTeam(); 
 });
 

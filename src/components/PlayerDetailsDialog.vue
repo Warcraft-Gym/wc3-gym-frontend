@@ -16,8 +16,11 @@
           </tbody>
           <tbody>
             <tr>
-              <td class="text-left text-overline">{{ selectedGnl?.season?.name || 'N/A' }} <RaceIcon v-if="player" :raceIdentifier="player.race" /></td>
-              <td class="text-left text-overline">{{ playerW3CMMR }}</td>
+              <td class="text-left text-overline">{{ seasonName || 'N/A' }} <RaceIcon v-if="fullPlayer" :raceIdentifier="fullPlayer.race" /></td>
+              <td class="text-left text-overline">
+                {{ playerW3CMMR }}
+                <span v-if="mmrSeasonLabel" class="text-caption ml-1">{{ mmrSeasonLabel }}</span>
+              </td>
               <td class="text-right text-green">{{ selectedGnl?.wins || 0 }}</td>
               <td class="text-right text-red">{{ selectedGnl?.losses || 0 }}</td>
               <td class="text-right">{{ selectedGnl?.games || 0 }}</td>
@@ -25,7 +28,7 @@
             </tr>
             <tr>
               <td>W3Champion Stats: 
-                <a v-if="player" :href="`https://w3champions.com/player/${encodeURIComponent(player.battleTag)}`" target="_blank">
+                <a v-if="fullPlayer" :href="`https://w3champions.com/player/${encodeURIComponent(fullPlayer.battleTag)}`" target="_blank">
                   <img src="https://w3champions.com/assets/logos/small-logo-full-black.png" alt="W3Champions" width="100" style="margin-left: 10px;">
                 </a>
               </td>
@@ -49,9 +52,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import RaceIcon from '@/components/RaceIcon.vue';
-import { getAllRaceStats, getW3CMMR } from '@/helpers/w3c-stats';
+import { usePlayerStore } from '@/stores';
+import { getAllRaceStats, getW3CMMR, getW3CMMRSeason } from '@/helpers/w3c-stats';
 
 const props = defineProps({
   modelValue: {
@@ -66,6 +70,10 @@ const props = defineProps({
     type: Number,
     default: null
   },
+  seasonName: {
+    type: String,
+    default: ''
+  },
   w3cSeason: {
     type: Number,
     default: null
@@ -74,33 +82,52 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
+const playerStore = usePlayerStore();
+
+// The player list has no gnl_stats, so the open dialog reads the full player
+const loadedPlayer = ref(null);
+const fullPlayer = computed(() => loadedPlayer.value || props.player);
+
+watch(() => [props.modelValue, props.player?.id], async ([open, playerId]) => {
+  loadedPlayer.value = null;
+  if (!open || !playerId || props.player?.gnl_stats) return;
+  try {
+    loadedPlayer.value = await playerStore.getPlayer(playerId);
+  } catch (error) {
+    console.error('Failed to load the player details:', error);
+  }
+}, { immediate: true });
+
 const internalShow = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 });
 
-const isObjectEmpty = (obj) => {
-  return !obj || (Object.keys(obj).length === 0 && obj.constructor === Object);
-};
-
 const selectedGnl = computed(() => {
-  if (!props.player || !props.player.gnl_stats || !props.seasonId) {
+  const stats = fullPlayer.value?.gnl_stats;
+  if (!stats || !props.seasonId) {
     return null;
   }
-  return props.player.gnl_stats.find(stat => stat.season?.id === props.seasonId);
+  return stats.find(stat => stat.season_id === props.seasonId);
 });
 
 // Get W3C stats - shows stats for current W3C season if provided
 const w3cStatsToDisplay = computed(() => {
-  if (!props.player) return [];
-  
+  if (!fullPlayer.value) return [];
+
   // Pass w3cSeason to filter stats to current season
-  return getAllRaceStats(props.player, props.w3cSeason);
+  return getAllRaceStats(fullPlayer.value, props.w3cSeason);
 });
 
 // Get W3C MMR with fallback for display
 const playerW3CMMR = computed(() => {
-  if (!props.player) return 0;
-  return getW3CMMR(props.player, props.w3cSeason);
+  if (!fullPlayer.value) return 0;
+  return getW3CMMR(fullPlayer.value, props.w3cSeason);
+});
+
+// Names the season the MMR came from when it is not the requested one
+const mmrSeasonLabel = computed(() => {
+  const season = getW3CMMRSeason(fullPlayer.value, props.w3cSeason);
+  return season && season !== props.w3cSeason ? `S${season}` : '';
 });
 </script>

@@ -22,6 +22,9 @@ export const usePlayerStore = defineStore({
                 this.isLoading = false; // Set loading to false once complete
             }
         },
+        async getPlayer(player_id) {
+            return await fetchWrapper.get(`${backendUrl}/users/${player_id}`);
+        },
         async updatePlayer(player) {
             const playerId = player.id;
             const updatedPlayer = await fetchWrapper.put(`${backendUrl}/users/${playerId}`, player);

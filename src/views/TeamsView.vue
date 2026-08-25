@@ -53,7 +53,7 @@
 
           <template #[`item.icon`]="{ item }">
             <v-avatar size="40">
-              <v-img :src="item.image_url" cover />
+              <img class="team-icon" :src="teamImageUrl(item.id)" @error="showDefaultTeamImage">
             </v-avatar>
           </template>
 
@@ -242,7 +242,7 @@ import '@/assets/base.css';
 import { useTeamStore } from '@/stores';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import  teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
+import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
 const extractErrorMessage = (error) => {
   if (!error) return 'Unknown error';
@@ -298,19 +298,6 @@ const fetchTeams = async () => {
     if (teamStore.teams.length === 0) {
       errorMessage.value = 'No Teams found.';
     }
-    const teamPromises = teamStore.teams.map(async (team) => {
-      try {
-        const imgResponse = await teamStore.getTeamImage(team.id);
-        if (!imgResponse.ok) throw new Error("Image not found");
-        const imgBlob = await imgResponse.blob();
-        team.image_url = URL.createObjectURL(imgBlob);
-      } catch (error) {
-        team.image_url = teamDefaultImg; // Assign default image if fetch fails
-      }
-      return team;
-    });
-    // Wait for all images to be fetched before storing updated teams
-    await Promise.all(teamPromises);
   } catch (error) {
     errorMessage.value = 'Failed to load Teams. Please try again later.';
   } finally {
@@ -461,5 +448,10 @@ const cancelDeleteDialog = () => {
 </script>
 
 <style scoped>
-/* No custom styles needed - using Vuetify defaults */
+
+.team-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 </style>

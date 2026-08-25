@@ -118,7 +118,7 @@
               <v-col cols="5" class="text-center">
                 <div class="team-section">
                   <v-avatar size="80" class="mb-3 team-avatar">
-                    <v-img :src="teamImages[match.team1.id] || teamDefaultImg" cover></v-img>
+                    <img class="team-icon" :src="teamImageUrl(match.team1.id)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <div class="team-name-enhanced">{{ match.team1.name }}</div>
                   <v-chip 
@@ -143,7 +143,7 @@
               <v-col cols="5" class="text-center">
                 <div class="team-section">
                   <v-avatar size="80" class="mb-3 team-avatar">
-                    <v-img :src="teamImages[match.team2.id] || teamDefaultImg" cover></v-img>
+                    <img class="team-icon" :src="teamImageUrl(match.team2.id)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <div class="team-name-enhanced">{{ match.team2.name }}</div>
                   <v-chip 
@@ -232,7 +232,7 @@
               >
                 <v-card-text class="text-center pa-4">
                   <v-avatar size="64" class="mb-3">
-                    <v-img :src="teamImages[team.id] || teamDefaultImg" cover></v-img>
+                    <img class="team-icon" :src="teamImageUrl(team.id)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <div class="text-h6 mb-2">{{ team.name }}</div>
                   <v-divider class="my-2"></v-divider>
@@ -468,7 +468,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useSeasonStore, useMatchStore, useTeamStore, useMapStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import bannerImg from '@/assets/media/GNL_Banner.png';
-import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
+  import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
 defineOptions({
   name: 'SeasonDetailsView'
@@ -515,7 +515,6 @@ const selectedMap = ref(null);
 const newMatch = ref(null);
 
 // Team state
-const teamImages = ref({});
 const allTeams = ref(null);
 const selectedTeams = ref(null);
 const selectedTeam1 = ref(null);
@@ -716,22 +715,6 @@ const fetchAllWeekMatchCounts = async () => {
   isLoading.value = true;
   try {
     await teamStore.fetchTeamsBySeasonBasic(seasonId);
-
-    // Fetch team images concurrently
-    const teamPromises = teamStore.teams.map(async (team) => {
-      try {
-        const imgResponse = await teamStore.getTeamImage(team.id);
-        if (!imgResponse.ok) throw new Error("Image not found");
-        const imgBlob = await imgResponse.blob();
-        teamImages.value[team.id] = URL.createObjectURL(imgBlob);
-      } catch (error) {
-        teamImages.value[team.id] = teamDefaultImg; // Assign default image if fetch fails
-      }
-      return team;
-    });
-
-    // Wait for all images to be fetched before storing updated teams
-    await Promise.all(teamPromises);
   } catch (error) {
     console.error('Failed to fetch teams for the season:', error);
   } finally {
@@ -805,6 +788,13 @@ watch(() => route.hash, (newHash) => {
   </script>
 
   <style scoped>
+
+  .team-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   /* Header Styles */
   #seasonHeader {
     position: relative;

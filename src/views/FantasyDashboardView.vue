@@ -136,7 +136,7 @@
                                 <v-list-item v-bind="props">
                                   <template v-slot:prepend>
                                     <v-avatar size="32" class="mr-2">
-                                      <v-img :src="teamImages[item.raw.id] || teamDefaultImg" />
+                                      <img class="team-icon" :src="teamImageUrl(item.raw.id)" @error="showDefaultTeamImage">
                                     </v-avatar>
                                   </template>
                                 </v-list-item>
@@ -602,9 +602,9 @@ import RaceIcon from '@/components/RaceIcon.vue';
 import RaceSelect from '@/components/RaceSelect.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import { DateTime } from 'luxon';
-import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
 import { getW3CMMR } from '@/helpers/w3c-stats';
-import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
 defineOptions({ name: 'FantasyDashboardView' });
 
@@ -627,23 +627,10 @@ const playerToken = ref(null);
 const playerData = ref(null);
 const existingTeam = ref(null);
 const teams = ref([]);
-const teamImages = ref({});
 const availablePlayers = ref([]);
 
 // Current W3C season for MMR display
 const currentW3CSeason = ref(null);
-async function resolveCurrentW3CSeason() {
-  try {
-    const setting = await configStore.fetchSetting('current_wc3_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) { currentW3CSeason.value = num; return; }
-    }
-  } catch (err) {
-    console.warn('Failed to fetch current_wc3_season setting:', err);
-  }
-  currentW3CSeason.value = null;
-}
 
 const displayMMR = (player) => {
   const mmr = getW3CMMR(player, currentW3CSeason.value);
@@ -838,19 +825,6 @@ const fetchInitialData = async () => {
     // Fetch teams for the current season
     await teamStore.fetchTeamsBySeasonBasic(teamForm.value.season_id);
     teams.value = teamStore.teams || [];
-
-    // Fetch team images
-    const teamPromises = teams.value.map(async (team) => {
-      try {
-        const imgResponse = await teamStore.getTeamImage(team.id);
-        if (!imgResponse.ok) throw new Error("Image not found");
-        const imgBlob = await imgResponse.blob();
-        teamImages.value[team.id] = URL.createObjectURL(imgBlob);
-      } catch (error) {
-        teamImages.value[team.id] = teamDefaultImg;
-      }
-    });
-    await Promise.all(teamPromises);
 
     // Fetch players
     await playerStore.fetchPlayers();
@@ -1182,7 +1156,7 @@ const openW3CStats = (battleTag) => {
 };
 
 onMounted(async () => {
-  await resolveCurrentW3CSeason();
+  currentW3CSeason.value = await resolveCurrentW3CSeason();
   fetchInitialData();
 });
 
@@ -1198,6 +1172,13 @@ const showPlayerDetails = (player) => {
 </script>
 
 <style scoped>
+
+.team-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .v-card-title {
   word-break: break-word;
 }

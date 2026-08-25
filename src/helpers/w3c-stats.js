@@ -182,6 +182,18 @@ export function getW3CMMR(player, currentSeason = null) {
 }
 
 /**
+ * Get the w3champions season the MMR shown for a player came from
+ *
+ * @param {Object} player - Player object
+ * @param {number} currentSeason - Current W3C season (optional, null = newest available)
+ * @returns {number|null} - Season number of the stats used, or null when there are none
+ */
+export function getW3CMMRSeason(player, currentSeason = null) {
+  const stats = getW3CStatsWithFallback(player, null, currentSeason);
+  return stats ? (stats.wc3_season ?? null) : null;
+}
+
+/**
  * Check if player has W3C stats for current OR previous season (currentSeason - 1).
  * Used for eligibility warning display.
  *

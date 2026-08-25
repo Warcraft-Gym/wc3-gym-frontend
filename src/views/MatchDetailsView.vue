@@ -100,7 +100,7 @@
                         <!-- Team 1 -->
                         <div class="d-flex flex-column align-center" style="width: 45%;">
                           <v-avatar size="32" class="mb-1">
-                            <v-img :src="teamImages[matchItem.team1_id] || teamDefaultImg" cover></v-img>
+                            <img class="team-icon" :src="teamImageUrl(matchItem.team1_id)" @error="hideMissingImage">
                           </v-avatar>
                           <div class="text-caption text-center">{{ matchItem.team1_name }}</div>
                         </div>
@@ -111,7 +111,7 @@
                         <!-- Team 2 -->
                         <div class="d-flex flex-column align-center" style="width: 45%;">
                           <v-avatar size="32" class="mb-1">
-                            <v-img :src="teamImages[matchItem.team2_id] || teamDefaultImg" cover></v-img>
+                            <img class="team-icon" :src="teamImageUrl(matchItem.team2_id)" @error="hideMissingImage">
                           </v-avatar>
                           <div class="text-caption text-center">{{ matchItem.team2_name }}</div>
                         </div>
@@ -521,7 +521,10 @@
                     <span @click.stop="showStats(item)">{{ item.name }}</span>
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
-                    <td>{{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}</td>
+                    <td>
+                      {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
+                      <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                    </td>
                   </template>
                 </v-data-table>
               </v-card>                    
@@ -582,7 +585,10 @@
                     <span @click.stop="showStats(item)">{{ item.name }}</span>
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
-                    <td>{{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}</td>
+                    <td>
+                      {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
+                      <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                    </td>
                   </template>
                 </v-data-table>
               </v-card> 
@@ -1030,6 +1036,7 @@
     v-model="showPlayerDetails" 
     :player="playerDetails" 
     :seasonId="match?.season_id"
+    :seasonName="match?.season?.name"
     :w3cSeason="currentW3CSeason"
   />
 
@@ -1081,11 +1088,10 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
-import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
 import { useRouter } from 'vue-router';
 import { ref, onMounted, computed } from 'vue';
 import { DateTime } from "luxon";
-import { useMatchStore, useSeriesStore, useTeamStore, useSeasonStore, useConfigStore } from '@/stores';
+import { useMatchStore, useSeriesStore, useTeamStore } from '@/stores';
 import { useDate } from 'vuetify';
 import { storeToRefs } from 'pinia';
 import { fetchWrapper } from '@/helpers';
@@ -1093,7 +1099,9 @@ import FlagIcon from '../components/FlagIcon.vue';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
-import { getW3CMMR, getW3CStatsWithFallback } from '@/helpers/w3c-stats';
+import { getW3CMMR, getW3CMMRSeason, getW3CStatsWithFallback } from '@/helpers/w3c-stats';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { teamImageUrl, hideMissingImage } from '@/helpers/team-image';
 
 defineOptions({
   name: 'MatchDetailsView'
@@ -1104,8 +1112,6 @@ const router = useRouter();
 const matchStore = useMatchStore();
 const seriesStore = useSeriesStore();
 const teamStore = useTeamStore();
-const seasonStore = useSeasonStore();
-const configStore = useConfigStore();
 const { match, matches } = storeToRefs(matchStore);
 const { series, draftSeries } = storeToRefs(seriesStore);
 
@@ -1205,17 +1211,16 @@ const proposedSeriesTableHeader = [
   { title: '', value: 'actions', sortable: true }, 
 ];
 
-const tablePlayerHeader = [
+const tablePlayerHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
   { title: 'GNL Games', key: 'gnl_stats[0].games', sortable: true },
-  { title: 'MMR', key: 'w3c_mmr', value:'item', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a) || 0;
-    let bValue = getW3CMMR(b) || 0;
+  { title: currentW3CSeason.value ? `MMR (S${currentW3CSeason.value})` : 'MMR', key: 'w3c_mmr', value: 'item', sortable: true, sortRaw: (a, b) => {
+    let aValue = getW3CMMR(a, currentW3CSeason.value) || 0;
+    let bValue = getW3CMMR(b, currentW3CSeason.value) || 0;
     return aValue - bValue;
   }
-
-}, 
-];
+},
+]);
 
 // Route params - use computed to get the current route param
 const matchId = computed(() => router.currentRoute.value.params.id);
@@ -1270,7 +1275,6 @@ const loadMissingSeriesPlayers = async () => {
     console.error('Failed to load series players:', error);
   }
 };
-const teamImages = ref({});
 
 // Series state
 const showNewSeriesModal = ref(false);
@@ -1321,6 +1325,12 @@ const deleteAction = ref(null);
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
+
+// Names the season an MMR came from when it is not the one in the column header
+const mmrSeasonLabel = (player) => {
+  const season = getW3CMMRSeason(player, currentW3CSeason.value);
+  return season && season !== currentW3CSeason.value ? `S${season}` : '';
+};
 
 // Helper to get highest MMR across all races, preferring current season with fallback to previous
 const getHighestW3CMMR = (player) => {
@@ -1466,41 +1476,18 @@ const navigateToMatch = async (newMatchId) => {
   }
 };
 
-const fetchTeamImage = async (teamId) => {
-  if (teamImages.value[teamId]) return; // Already loaded
-  
-  try {
-    const imgResponse = await teamStore.getTeamImage(teamId);
-    if (!imgResponse.ok) throw new Error("Image not found");
-    const imgBlob = await imgResponse.blob();
-    teamImages.value[teamId] = URL.createObjectURL(imgBlob);
-  } catch (error) {
-    teamImages.value[teamId] = teamDefaultImg;
-  }
-};
-
 const fetchSeasonMatches = async () => {
   if (!match.value?.season_id) return;
 
   try {
-    // One search for the season, one season read for the week count
-    const [, seasonMatches] = await Promise.all([
-      seasonStore.fetchSeason(match.value.season_id),
-      matchStore.searchMatchesBySeason(match.value.season_id),
-    ]);
-    const numberOfWeeks = seasonStore.current_season.number_weeks;
+    const seasonMatches = await matchStore.searchMatchesBySeason(match.value.season_id);
+    const numberOfWeeks = match.value.season?.number_weeks
+      || Math.max(0, ...seasonMatches.map(m => m.playday || 0));
 
     weeklyMatches.value = Array.from({ length: numberOfWeeks }, (_, i) => ({
       weekNumber: i + 1,
       matches: seasonMatches.filter(m => m.playday === i + 1),
     }));
-
-    const teamIds = new Set();
-    seasonMatches.forEach(m => {
-      if (m.team1_id) teamIds.add(m.team1_id);
-      if (m.team2_id) teamIds.add(m.team2_id);
-    });
-    await Promise.all([...teamIds].map(teamId => fetchTeamImage(teamId)));
   } catch (error) {
     console.error('Failed to fetch season matches:', error);
   }
@@ -2023,30 +2010,20 @@ const toggleDraftFantasyMatch = async (draftSeriesItem) => {
   }
 };
 
-// Resolve current W3C season from config
-async function resolveCurrentW3CSeason() {
-  try {
-    const setting = await configStore.fetchSetting('current_wc3_season');
-    if (setting && setting.value) {
-      const num = Number(setting.value);
-      if (!Number.isNaN(num)) {
-        currentW3CSeason.value = num;
-        return;
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to fetch current_wc3_season setting:', err);
-  }
-  currentW3CSeason.value = null;
-}
-
 onMounted(async () => {
-  await resolveCurrentW3CSeason();
-  fetchMatchDetails();
+  // The w3champions season does not depend on the match, so both reads start together
+  const [w3cSeason] = await Promise.all([resolveCurrentW3CSeason(), fetchMatchDetails()]);
+  currentW3CSeason.value = w3cSeason;
 });
 </script>
 
 <style scoped>
+
+.team-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
 .toolbar-btn { margin-right: 12px !important; }
 

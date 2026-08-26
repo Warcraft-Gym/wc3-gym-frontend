@@ -97,6 +97,14 @@
                   <template v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'success'">
                     <v-icon small color="green">mdi-check-circle</v-icon>
                   </template>
+                  <template v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'skipped'">
+                    <v-tooltip>
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" small color="grey">mdi-clock-outline</v-icon>
+                      </template>
+                      <span>Synced in the last 10 minutes</span>
+                    </v-tooltip>
+                  </template>
                   <template v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'error'">
                     <v-tooltip>
                       <template #activator="{ props }">
@@ -109,6 +117,7 @@
               </template>
               <template #item.w3c_mmr="{ item }">
                 <div>{{ getW3CMMR(item, currentW3CSeason) ?? 'N/A' }}</div>
+                <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
               </template>
               <template #item.race="{ item }">
                 <RaceIcon :raceIdentifier="item.race" />
@@ -301,6 +310,14 @@
                           <template v-else-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'success'">
                             <v-icon small color="green">mdi-check-circle</v-icon>
                           </template>
+                          <template v-else-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'skipped'">
+                            <v-tooltip>
+                              <template #activator="{ props }">
+                                <v-icon v-bind="props" small color="grey">mdi-clock-outline</v-icon>
+                              </template>
+                              <span>Synced in the last 10 minutes</span>
+                            </v-tooltip>
+                          </template>
                           <template v-else-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'error'">
                             <v-tooltip>
                               <template #activator="{ props }">
@@ -311,6 +328,7 @@
                           </template>
                         </div>
                         <div class="text--secondary">{{ getW3CMMR(p, currentW3CSeason) ?? 'N/A' }} — <RaceIcon :raceIdentifier="p.race" /></div>
+                        <div class="text-caption text-medium-emphasis">{{ syncedAgo(p) }}<v-tooltip activator="parent" location="top">{{ syncedAt(p) }}</v-tooltip></div>
                       </div>
                       <div style="display:flex;align-items:center;gap:6px;">
                           <v-btn
@@ -359,7 +377,9 @@ import {
   getW3CStatsWithFallback,
   getW3CGamesCount,
   hasW3CStatsTwoSeasons,
-  hasLowGamesTwoSeasons
+  hasLowGamesTwoSeasons,
+  syncedAgo,
+  syncedAt
 } from '@/helpers/w3c-stats';
 
 defineOptions({ name: 'SeasonTeamAssignView' });
@@ -632,27 +652,23 @@ const removePlayerFromTeam = async (teamId, playerId) => {
   }
 };
 
-// sync all players in teams for the current season
+// sync every player signed up to the season in one backend call
 const syncAllDraftPlayers = async () => {
   syncAllLoading.value = true;
+  const list = signedUpPlayers.value || [];
+  perPlayerSyncStatus.value = Object.fromEntries(list.map(p => [p.id, { state: 'loading' }]));
   try {
-    const list = signedUpPlayers.value || [];
-    for (const p of list) {
-      // mark loading for each player and call player store sync
-      perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [p.id]: { state: 'loading' } };
-      try {
-        if (playerStore && playerStore.syncW3CPlayer) {
-          await playerStore.syncW3CPlayer(p.id);
-        }
-        perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [p.id]: { state: 'success' } };
-      } catch (err) {
-        console.error('Failed to sync player', p.id, err);
-        perPlayerSyncStatus.value = { ...perPlayerSyncStatus.value, [p.id]: { state: 'error', message: err.message } };
-      }
-    }
-    // refresh teams after all syncs
-    await fetchData();
+    const result = await teamStore.syncSeasonW3C(seasonId.value);
+    const status = {};
+    for (const id of result.synced ?? []) status[id] = { state: 'success' };
+    for (const id of result.skipped ?? []) status[id] = { state: 'skipped' };
+    for (const f of result.failed ?? []) status[f.id] = { state: 'error', message: f.reason };
+    perPlayerSyncStatus.value = status;
+  } catch (err) {
+    console.error('Failed to sync season players:', err);
+    perPlayerSyncStatus.value = Object.fromEntries(list.map(p => [p.id, { state: 'error', message: err.message }]));
   } finally {
+    await fetchData();
     syncAllLoading.value = false;
   }
 };

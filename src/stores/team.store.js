@@ -90,6 +90,9 @@ export const useTeamStore = defineStore({
         async syncPlayersW3C(team_id, season_id) {
             return await fetchWrapper.post(`${backendUrl}/teams/${team_id}/seasons/${season_id}/w3c-sync`);
         },
+        async syncSeasonW3C(season_id) {
+            return await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/w3c-sync`);
+        },
         async setCoaches(team_id, season_id, coach_ids) {
             const updatedTeam = await fetchWrapper.put(`${backendUrl}/teams/${team_id}/seasons/${season_id}/coaches`, {'coach_ids': coach_ids});
             return updatedTeam;

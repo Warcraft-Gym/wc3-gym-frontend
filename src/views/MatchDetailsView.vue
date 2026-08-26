@@ -227,6 +227,7 @@
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player1) ?? 'N/A' }}
                     </v-chip>
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
                   <td class="text-center">
                     <v-chip :color="item.player1_score > item.player2_score ? 'success' : 'default'" size="small">
@@ -248,6 +249,7 @@
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player2) ?? 'N/A' }}
                     </v-chip>
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
                   <td>
                     <span v-if="item.host_player_id === item.player1.id">
@@ -358,6 +360,7 @@
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player1) ?? 'N/A' }}
                     </v-chip>
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="purple">
@@ -387,6 +390,7 @@
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player2) ?? 'N/A' }}
                     </v-chip>
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="purple">
@@ -524,6 +528,7 @@
                     <td>
                       {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
                       <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                      <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </td>
                   </template>
                 </v-data-table>
@@ -588,6 +593,7 @@
                     <td>
                       {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
                       <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                      <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </td>
                   </template>
                 </v-data-table>
@@ -799,6 +805,7 @@
                       <v-chip size="small" color="info">
                         {{ getW3CMMR(item) ?? 'N/A' }}
                       </v-chip>
+                      <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </template>
                   </v-data-table>
                 </v-card-text>
@@ -859,6 +866,7 @@
                       <v-chip size="small" color="info">
                         {{ getW3CMMR(item) ?? 'N/A' }}
                       </v-chip>
+                      <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </template>
                   </v-data-table>
                 </v-card-text>
@@ -981,13 +989,17 @@
                 </div>
               </template>
               <template v-slot:[`item.p1_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player1) ?? 'N/A' }}</td>
+                  <td>{{ getW3CMMR(item.player1) ?? 'N/A' }}
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
+                  </td>
               </template>
               <template v-slot:[`item.p1_w3c_high_mmr`]="{ item }">
                   <td>{{ getHighestW3CMMR(item.player1) ?? 'N/A' }}</td>
               </template>
               <template v-slot:[`item.p2_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player2) ?? 'N/A' }}</td>
+                  <td>{{ getW3CMMR(item.player2) ?? 'N/A' }}
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
+                  </td>
               </template>
               <template v-slot:[`item.p2_w3c_high_mmr`]="{ item }">
                   <td>{{ getHighestW3CMMR(item.player2) ?? 'N/A' }}</td>
@@ -1040,29 +1052,7 @@
     :w3cSeason="currentW3CSeason"
   />
 
-  <!-- Sync Results Dialog -->
-  <v-dialog v-model="syncDialog" persistent max-width="500">
-    <v-card>
-      <v-card-title class="bg-primary">
-        <v-icon class="mr-2">mdi-sync</v-icon>
-        Sync Results
-      </v-card-title>
-      <v-card-text class="pt-4">
-        <div class="mb-2">
-          <strong>{{ team1.name }}: </strong>
-          <span :class="syncError1 ? 'text-error' : 'text-success'">{{ syncMessage1 }}</span>
-        </div>
-        <div>
-          <strong>{{ team2.name }}: </strong>
-          <span :class="syncError2 ? 'text-error' : 'text-success'">{{ syncMessage2 }}</span>
-        </div>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" @click="syncDialog = false" :disabled="isLoading">OK</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+  <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
 
   <!-- Delete Confirmation Dialog -->
   <v-dialog v-model="showDeleteDialog" max-width="400">
@@ -1099,7 +1089,8 @@ import FlagIcon from '../components/FlagIcon.vue';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
-import { getW3CMMR, getW3CMMRSeason, getW3CStatsWithFallback } from '@/helpers/w3c-stats';
+import { getW3CMMR, getW3CMMRSeason, getW3CStatsWithFallback, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
+import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, hideMissingImage } from '@/helpers/team-image';
 
@@ -1313,10 +1304,7 @@ const playerDetails = ref(null);
 
 // Sync state
 const syncDialog = ref(false);
-const syncMessage1 = ref("");
-const syncMessage2 = ref("");
-const syncError1 = ref(false);
-const syncError2 = ref(false);
+const syncEntries = ref([]);
 
 // Delete dialog state
 const showDeleteDialog = ref(false);
@@ -1530,48 +1518,28 @@ const fetchTeamDetails = async () => {
   }
 };
 
+const syncEntry = (title, settled) =>
+  settled.status === 'fulfilled' ? { title, result: settled.value } : { title, error: settled.reason };
+
 const syncW3CTeams = async () => {
   isLoading.value = true;
-  syncError1.value = false;
-  syncError2.value = false;
+  syncEntries.value = [];
   syncDialog.value = true;
-  syncMessage1.value = "Sync Ongoing!";
-  syncMessage2.value = "Not started!";
 
-  try {
-    await teamStore.syncPlayersW3C(matchStore.match.team1_id, matchStore.match.season_id);
-    syncMessage1.value = "Team 1 synced successfully!";
-  } catch (error) {
-    console.error('Failed to sync Team 1:', error);
-    syncError1.value = true;
-    syncMessage1.value = error.message;
-  }
-  
-  try {
-    syncMessage2.value = "Sync Ongoing!";
-    await teamStore.syncPlayersW3C(matchStore.match.team2_id, matchStore.match.season_id);
-    syncMessage2.value = "Team 2 synced successfully!";
-  } catch (error) {
-    console.error('Failed to sync Team 2:', error);
-    syncError2.value = true;
-    syncMessage2.value = error.message;
-  }
+  const [r1, r2] = await Promise.allSettled([
+    teamStore.syncPlayersW3C(matchStore.match.team1_id, matchStore.match.season_id),
+    teamStore.syncPlayersW3C(matchStore.match.team2_id, matchStore.match.season_id),
+  ]);
+  syncEntries.value = [syncEntry(team1.value.name, r1), syncEntry(team2.value.name, r2)];
 
-  // Always reload team details to get any successfully synced W3C stats
-  // This ensures we show updated data even if some players failed to sync
   try {
     await fetchTeamDetails();
   } catch (error) {
     console.error('Failed to refresh team details after sync:', error);
-    if (!syncError1.value && !syncError2.value) {
-      syncError1.value = true;
-      syncMessage1.value = "Failed to refresh team data";
-    }
   }
 
-  isLoading.value = false; // Show results
+  isLoading.value = false;
 };
-          
 
 const showStats = async(player) => {
   showPlayerDetails.value = true;

@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon';
+
 /**
  * W3Champions Stats Helper
  * 
@@ -293,4 +295,26 @@ export function hasLowGamesCurrentSeasonOnly(player, currentSeason, threshold = 
   const games = wins + losses;
 
   return games > 0 && games < threshold;
+}
+
+/**
+ * Relative time since a player's W3C stats were last fetched
+ *
+ * @param {Object} player - Player object
+ * @returns {string} - e.g. "2 hours ago", or "never synced"
+ */
+export function syncedAgo(player) {
+  const at = player?.w3c_synced_at;
+  return at ? DateTime.fromISO(at, { zone: 'utc' }).toRelative() : 'never synced';
+}
+
+/**
+ * Full local timestamp of a player's last W3C stats fetch
+ *
+ * @param {Object} player - Player object
+ * @returns {string} - e.g. "2026-08-26 14:03", or "never synced"
+ */
+export function syncedAt(player) {
+  const at = player?.w3c_synced_at;
+  return at ? DateTime.fromISO(at, { zone: 'utc' }).toLocal().toFormat('yyyy-LL-dd HH:mm') : 'never synced';
 }

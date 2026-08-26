@@ -163,7 +163,9 @@
                   </div>
                 </td>
                 <td>{{ item.discordTag }}</td>
-                <td>{{ getW3CMMR(item, currentW3CSeason) }}</td>
+                <td>{{ getW3CMMR(item, currentW3CSeason) }}
+                  <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
+                </td>
                 <td>
                   <div v-if="item.race">
                     <RaceIcon :raceIdentifier="item.race" />                                          
@@ -262,6 +264,8 @@
     :player="playerDetails" 
     :seasonId="seasonId"
   />
+
+  <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
   </v-container>
 </template>
 
@@ -277,7 +281,8 @@ import FlagIcon from '@/components/FlagIcon.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
-import { getW3CMMR } from '@/helpers/w3c-stats';
+import { getW3CMMR, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
+import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 
 defineOptions({ name: 'SeasonTeamDetailsView' });
 
@@ -463,13 +468,19 @@ const removePlayerFromTeam = async (playerId) => {
   }
 };
 
+const syncDialog = ref(false);
+const syncEntries = ref([]);
+
 const syncW3CTeam = async () => {
   isLoading.value = true;
+  syncEntries.value = [];
+  syncDialog.value = true;
   try {
-    await teamStore.syncPlayersW3C(teamId.value, seasonId.value);
+    syncEntries.value = [{ title: team.value?.name ?? 'Team', result: await teamStore.syncPlayersW3C(teamId.value, seasonId.value) }];
     await fetchTeam();
   } catch (error) {
     console.error('Error syncing W3C data:', error);
+    syncEntries.value = [{ title: team.value?.name ?? 'Team', error }];
   } finally {
     isLoading.value = false;
   }

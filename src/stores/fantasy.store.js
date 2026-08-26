@@ -48,11 +48,11 @@ export const useFantasyStore = defineStore({
         },
 
         async addPlayers(teamId, playerIds) {
-            return await fetchWrapper.post(`${backendUrl}/fantasy/teams/addPlayers/${teamId}`, { player_ids: playerIds });
+            return await fetchWrapper.post(`${backendUrl}/fantasy/teams/${teamId}/players`, { player_ids: playerIds });
         },
 
         async removePlayers(teamId, playerIds) {
-            return await fetchWrapper.post(`${backendUrl}/fantasy/teams/removePlayers/${teamId}`, { player_ids: playerIds });
+            return await fetchWrapper.delete(`${backendUrl}/fantasy/teams/${teamId}/players`, { player_ids: playerIds });
         },
 
         async searchTeams(query) {

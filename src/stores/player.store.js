@@ -36,7 +36,7 @@ export const usePlayerStore = defineStore({
             await fetchWrapper.delete(`${backendUrl}/users/${player_id}`);
         },
         async syncW3CPlayer(player_id) {
-            const updated = await fetchWrapper.post(`${backendUrl}/users/w3c_sync/${player_id}`);
+            const updated = await fetchWrapper.post(`${backendUrl}/users/${player_id}/w3c-sync`);
             const i = this.players.findIndex(p => p.id === updated.id);
             if (i === -1) this.players.push(updated); else this.players.splice(i, 1, updated);
             return updated;

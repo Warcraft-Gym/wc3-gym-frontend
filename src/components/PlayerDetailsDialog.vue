@@ -2,7 +2,13 @@
   <v-dialog v-model="internalShow" max-width="65vw">
     <v-card>
       <v-card-title>Player Details</v-card-title>
+      <v-tabs v-model="tab" bg-color="surface" class="flex-0-0">
+        <v-tab value="details">Details</v-tab>
+        <v-tab value="ladder">Ladder</v-tab>
+      </v-tabs>
       <v-card-text>
+        <v-tabs-window v-model="tab">
+        <v-tabs-window-item value="details">
         <v-table border density="compact" class="pb-2">
           <tbody>
             <tr>
@@ -46,6 +52,16 @@
             </tr>
           </tbody>
         </v-table>
+        </v-tabs-window-item>
+        <v-tabs-window-item value="ladder">
+          <PlayerLadderTab
+            v-if="tab === 'ladder' && fullPlayer"
+            :player="fullPlayer"
+            :seasonId="seasonId"
+            @open-player="openPlayer"
+          />
+        </v-tabs-window-item>
+        </v-tabs-window>
       </v-card-text>
     </v-card>
   </v-dialog>
@@ -54,6 +70,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import RaceIcon from '@/components/RaceIcon.vue';
+import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import { usePlayerStore } from '@/stores';
 import { getAllRaceStats, getW3CMMR, getW3CMMRSeason } from '@/helpers/w3c-stats';
 
@@ -77,6 +94,10 @@ const props = defineProps({
   w3cSeason: {
     type: Number,
     default: null
+  },
+  openTab: {
+    type: String,
+    default: 'details'
   }
 });
 
@@ -84,12 +105,24 @@ const emit = defineEmits(['update:modelValue']);
 
 const playerStore = usePlayerStore();
 
+const tab = ref(props.openTab);
+
 // The player list has no gnl_stats, so the open dialog reads the full player
 const loadedPlayer = ref(null);
 const fullPlayer = computed(() => loadedPlayer.value || props.player);
 
+// A GNL opponent of the Ladder tab replaces the player the dialog shows
+const openPlayer = async (userId) => {
+  try {
+    loadedPlayer.value = await playerStore.getPlayer(userId);
+  } catch (error) {
+    console.error('Failed to load the opponent:', error);
+  }
+};
+
 watch(() => [props.modelValue, props.player?.id], async ([open, playerId]) => {
   loadedPlayer.value = null;
+  if (open) tab.value = props.openTab;
   if (!open || !playerId || props.player?.gnl_stats) return;
   try {
     loadedPlayer.value = await playerStore.getPlayer(playerId);

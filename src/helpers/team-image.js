@@ -7,6 +7,21 @@ export function teamImageUrl(teamId) {
   return `${backendUrl}/teams/${teamId}/image`;
 }
 
+const MAX_ICON_PX = 150;  // the largest avatar draws a team icon at 80 px
+
+export async function shrinkTeamImage(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = MAX_ICON_PX / Math.max(bitmap.width, bitmap.height);
+  if (scale >= 1) return file;
+
+  const canvas = new OffscreenCanvas(
+    Math.round(bitmap.width * scale),
+    Math.round(bitmap.height * scale),
+  );
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return canvas.convertToBlob({ type: 'image/png' });
+}
+
 export function hideMissingImage(event) {
   event.target.style.display = 'none';
 }

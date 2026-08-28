@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { fetchWrapper } from '@/helpers';
+import { shrinkTeamImage } from '@/helpers/team-image';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
 
@@ -48,7 +49,7 @@ export const useTeamStore = defineStore({
         },
         async uploadTeamImage(team_id, file){
             const formData = new FormData();
-            formData.append("image", file);
+            formData.append("image", await shrinkTeamImage(file), "icon.png");
             await fetchWrapper.fileUpload(`${backendUrl}/teams/${team_id}/image`, formData);
         },
         async fetchTeamBySeason(team_id, season_id) {

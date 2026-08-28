@@ -8,3 +8,4 @@ export * from './map.store';
 export * from './config.store';
 export * from './fantasy.store';
 export * from './koth.store';
+export * from './ladder.store';

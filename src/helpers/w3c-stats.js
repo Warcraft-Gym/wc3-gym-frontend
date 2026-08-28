@@ -304,8 +304,7 @@ export function hasLowGamesCurrentSeasonOnly(player, currentSeason, threshold = 
  * @returns {string} - e.g. "2 hours ago", or "never synced"
  */
 export function syncedAgo(player) {
-  const at = player?.w3c_synced_at;
-  return at ? DateTime.fromISO(at, { zone: 'utc' }).toRelative() : 'never synced';
+  return agoFromIso(player?.w3c_synced_at);
 }
 
 /**
@@ -315,6 +314,25 @@ export function syncedAgo(player) {
  * @returns {string} - e.g. "2026-08-26 14:03", or "never synced"
  */
 export function syncedAt(player) {
-  const at = player?.w3c_synced_at;
-  return at ? DateTime.fromISO(at, { zone: 'utc' }).toLocal().toFormat('yyyy-LL-dd HH:mm') : 'never synced';
+  return localFromIso(player?.w3c_synced_at);
+}
+
+/**
+ * Relative time since a UTC timestamp
+ *
+ * @param {string|null} iso - UTC timestamp the backend sent
+ * @returns {string} - e.g. "2 hours ago", or "never synced"
+ */
+export function agoFromIso(iso) {
+  return iso ? DateTime.fromISO(iso, { zone: 'utc' }).toRelative() : 'never synced';
+}
+
+/**
+ * A UTC timestamp as a full local timestamp
+ *
+ * @param {string|null} iso - UTC timestamp the backend sent
+ * @returns {string} - e.g. "2026-08-26 14:03", or "never synced"
+ */
+export function localFromIso(iso) {
+  return iso ? DateTime.fromISO(iso, { zone: 'utc' }).toLocal().toFormat('yyyy-LL-dd HH:mm') : 'never synced';
 }

@@ -315,6 +315,74 @@
         </v-row>
       </div>
 
+      <!-- ── Ladder Activity ── -->
+      <div v-if="heatRows.length" class="report-section mb-6">
+        <div class="section-title">
+          <v-icon color="amber-darken-2" class="mr-2">mdi-podium</v-icon>
+          Ladder Activity
+        </div>
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-card elevation="2" class="fill-height">
+              <v-card-title class="text-body-2 d-flex align-center">
+                <span>Games by hour</span>
+                <v-spacer />
+                <span class="text-caption text-medium-emphasis">UTC</span>
+              </v-card-title>
+              <v-card-text>
+                <div class="heat-grid">
+                  <span></span>
+                  <span v-for="day in dayLabels" :key="day" class="heat-day">{{ day }}</span>
+                  <template v-for="row in heatRows" :key="row.hour">
+                    <span class="heat-hour">{{ row.label }}</span>
+                    <div
+                      v-for="cell in row.cells"
+                      :key="cell.key"
+                      class="heat-cell"
+                      :style="{ opacity: cell.opacity }"
+                      :title="cell.title"
+                    ></div>
+                  </template>
+                </div>
+                <div class="heat-legend">
+                  <template v-for="step in heatLegend" :key="step.label">
+                    <span class="heat-swatch" :style="{ opacity: step.opacity }"></span>
+                    <span>{{ step.label }}</span>
+                  </template>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-card elevation="2" class="fill-height d-flex flex-column">
+              <v-card-title class="text-body-2 d-flex align-center">
+                <span>Games per day</span>
+                <v-spacer />
+                <span class="text-caption text-medium-emphasis">{{ ladder.total_games }} games</span>
+              </v-card-title>
+              <v-card-text class="flex-grow-1 d-flex flex-column">
+                <div class="day-chart">
+                  <div class="day-max-line"></div>
+                  <span class="day-max-label">{{ dayMax }}</span>
+                  <div class="day-bars">
+                    <div
+                      v-for="bar in dayBars"
+                      :key="bar.d"
+                      class="day-bar"
+                      :style="{ height: bar.height }"
+                      :title="bar.title"
+                    ></div>
+                  </div>
+                </div>
+                <div class="day-ticks">
+                  <span v-for="tick in dayTicks" :key="tick.d" :style="{ width: tick.width }">{{ tick.label }}</span>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
+
       <!-- ── Fantasy Leaderboard ── -->
       <div v-if="sortedFantasyTeams.length > 0" class="report-section mb-6">
         <div class="section-title">
@@ -405,6 +473,7 @@ import { useSeasonStore } from '@/stores/season.store';
 import { useTeamStore } from '@/stores/team.store';
 import { useSeriesStore } from '@/stores/series.store';
 import { useFantasyStore } from '@/stores/fantasy.store';
+import { useLadderStore } from '@/stores/ladder.store';
 import RaceIcon from '@/components/RaceIcon.vue';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
@@ -417,12 +486,14 @@ const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 const seriesStore = useSeriesStore();
 const fantasyStore = useFantasyStore();
+const ladderStore = useLadderStore();
 
 const { seasons, current_season } = storeToRefs(seasonStore);
 const { teams } = storeToRefs(teamStore);
 const { series } = storeToRefs(seriesStore);
 
 const selectedSeasonId = ref(null);
+const ladder = ref(null);
 const isLoading = ref(false);
 const errorMessage = ref(null);
 
@@ -603,6 +674,12 @@ const loadReport = async () => {
             seriesStore.searchSeriesBySeason(selectedSeasonId.value, null),
             fantasyStore.fetchTeams(),
         ]);
+        // A season with no synced ladder answers an error, and the card stays hidden
+        try {
+            ladder.value = await ladderStore.seasonLadder(selectedSeasonId.value);
+        } catch {
+            ladder.value = null;
+        }
     } catch (e) {
         errorMessage.value = 'Failed to load report data.';
     } finally {
@@ -611,6 +688,59 @@ const loadReport = async () => {
 };
 
 const printReport = () => window.print();
+
+/* ── Ladder activity ──────────────────────────────────────────────────────── */
+
+// Row 0 of by_hour is Sunday, the heatmap reads Monday first
+const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const dayRows = [1, 2, 3, 4, 5, 6, 0];
+
+const pad2 = (n) => String(n).padStart(2, '0');
+const monthDay = (iso) =>
+    new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+const hourMax = computed(() => Math.max(1, ...(ladder.value?.by_hour ?? []).flat()));
+
+const heatRows = computed(() => {
+    const grid = ladder.value?.by_hour;
+    if (!grid?.length || !ladder.value?.total_games) return [];
+    return Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        label: hour % 3 === 0 ? `${pad2(hour)}:00` : '',
+        cells: dayRows.map((row, col) => {
+            const games = grid[row]?.[hour] ?? 0;
+            return {
+                key: `${row}-${hour}`,
+                opacity: games ? 0.15 + (0.85 * games) / hourMax.value : 0.05,
+                title: `${dayLabels[col]} ${pad2(hour)}:00 \u00b7 ${games} games`,
+            };
+        }),
+    }));
+});
+
+const heatLegend = computed(() => {
+    const step = Math.ceil(hourMax.value / 5);
+    return Array.from({ length: 5 }, (_, i) => ({
+        opacity: 0.15 + (0.85 * (i + 1)) / 5,
+        label: i === 4 ? `${step * 4 + 1}+` : `${i * step + (i ? 1 : 0)}-${(i + 1) * step}`,
+    }));
+});
+
+// One entry per season day, as the answer serves it, and they add up to total_games
+const ladderDays = computed(() => ladder.value?.per_day ?? []);
+
+const dayMax = computed(() => Math.max(1, ...ladderDays.value.map(day => day.g)));
+
+const dayBars = computed(() => ladderDays.value.map(day => ({
+    d: day.d,
+    height: `${Math.max(2, Math.round((day.g / dayMax.value) * 100))}%`,
+    title: `${monthDay(day.d)} \u00b7 ${day.g} games`,
+})));
+
+const dayTicks = computed(() => {
+    const weeks = ladderDays.value.filter((_, i) => i % 7 === 0);
+    return weeks.map(day => ({ d: day.d, label: monthDay(day.d), width: `${100 / weeks.length}%` }));
+});
 </script>
 
 <style scoped>
@@ -753,6 +883,82 @@ const printReport = () => window.print();
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ── Ladder activity ─────────────────────────────────────────────────────── */
+.heat-grid {
+  display: grid;
+  grid-template-columns: 46px repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  font-size: 0.6875rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+.heat-day {
+  text-align: center;
+}
+.heat-hour {
+  text-align: right;
+  padding-right: 6px;
+  line-height: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.heat-cell {
+  height: 12px;
+  border-radius: 2px;
+  background: #1867C0;
+}
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.6875rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+.heat-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  background: #1867C0;
+}
+.day-chart {
+  position: relative;
+  flex-grow: 1;
+  min-height: 232px;
+}
+.day-max-line {
+  position: absolute;
+  inset: 0 0 auto 0;
+  border-top: 1px dotted rgba(var(--v-theme-on-surface), 0.38);
+}
+.day-max-label {
+  position: absolute;
+  right: 0;
+  top: 2px;
+  font-size: 0.6875rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  background: rgb(var(--v-theme-surface));
+  padding-left: 4px;
+}
+.day-bars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.day-bar {
+  flex: 1;
+  min-width: 4px;
+  background: #1867C0;
+  border-radius: 1px 1px 0 0;
+}
+.day-ticks {
+  display: flex;
+  margin-top: 6px;
+  font-size: 0.6875rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
 }
 
 /* ── Race cards ───────────────────────────────────────────────────────────── */

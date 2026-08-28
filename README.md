@@ -317,4 +317,4 @@ The Vercel project `wc3-gym-frontend` builds this repository.
 
 The backend the build talks to is the `VITE_BACKEND_URL` environment variable in the Vercel project, which overrides the value in `.env`. It is set for production, preview and development.
 
-A branch that needs an unmerged backend points at that backend's own preview: add `VITE_BACKEND_URL` in the Vercel project scoped to the preview environment and to that git branch. Delete it once the backend is merged, and the branch falls back to the shared value.
+A branch that needs an unmerged backend gets it by name: give the branch in this repository the same name as the branch in the backend repository, and the preview build talks to that backend's own preview. `vite.config.js` does this, and falls back to the project variable when the backend has no branch of that name. Nothing has to be set or removed by hand, and production is never affected.

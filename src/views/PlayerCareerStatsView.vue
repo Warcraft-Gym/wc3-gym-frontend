@@ -21,7 +21,6 @@ const importDialog = ref(false);
 const selectedStat = ref(null);
 const selectedFile = ref(null);
 const search = ref('');
-const showUnmappedOnly = ref(false);
 const page = ref(1);
 const itemsPerPage = ref(25);
 const sortBy = ref([{ key: 'rating', order: 'desc' }]);  // the order the server pages by
@@ -46,28 +45,14 @@ const sortNames = {
   games_record: 'games_won'
 };
 
-// The server answers the search; only the unmapped toggle narrows the loaded page
-const hasPageFilter = computed(() => showUnmappedOnly.value);
-
-const statsWithRecords = computed(() => {
-  let filteredStats = stats.value;
-
-  // Filter unmapped if toggle is active
-  if (showUnmappedOnly.value) {
-    filteredStats = filteredStats.filter(stat => !stat.user_id);
-  }
-
-  return filteredStats.map(stat => ({
+const statsWithRecords = computed(() =>
+  stats.value.map(stat => ({
     ...stat,
     display_name: stat.user ? stat.user.name : stat.player_name,
     status: stat.user ? 'Mapped' : 'Unmapped',
     series_record: `${stat.series_won}-${stat.series_lost}`,
     games_record: `${stat.games_won}-${stat.games_lost}`
-  }));
-});
-
-const itemsLength = computed(() =>
-  hasPageFilter.value ? statsWithRecords.value.length : totalStats.value
+  }))
 );
 
 const fetchStats = async () => {
@@ -119,11 +104,6 @@ watch(sortBy, () => {
   } else {
     page.value = 1;
   }
-});
-
-// A toggle change restarts at the first page
-watch(showUnmappedOnly, () => {
-  page.value = 1;
 });
 
 const openEditDialog = (stat) => {
@@ -281,14 +261,6 @@ onMounted(async () => {
                   clearable
                 />
               </v-col>
-              <v-col cols="12" md="2">
-                <v-checkbox
-                  v-model="showUnmappedOnly"
-                  label="Unmapped only (this page)"
-                  color="primary"
-                  hide-details
-                />
-              </v-col>
               <v-col cols="12" md="6" class="text-right">
                 <v-btn
                   color="primary"
@@ -320,7 +292,7 @@ onMounted(async () => {
           <v-data-table-server
             :headers="headers"
             :items="statsWithRecords"
-            :items-length="itemsLength"
+            :items-length="totalStats"
             v-model:page="page"
             v-model:items-per-page="itemsPerPage"
             :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"

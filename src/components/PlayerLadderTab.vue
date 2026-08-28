@@ -34,7 +34,7 @@
     <v-card variant="outlined" class="mb-4">
       <v-card-text class="d-flex flex-wrap align-center py-2" style="gap: 28px">
         <div v-if="scoped">
-          <ColumnNote title="Points" :note="SCORED_NOTE" class="text-caption text-medium-emphasis" />
+          <ColumnNote title="Total Points" :note="SCORED_NOTE" class="text-caption text-medium-emphasis" />
           <div class="text-h6">{{ data?.points ?? 0 }} <span class="text-caption text-medium-emphasis">{{ ladderPointsLine }}</span></div>
         </div>
         <div>

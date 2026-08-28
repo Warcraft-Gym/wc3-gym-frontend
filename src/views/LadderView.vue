@@ -30,8 +30,18 @@
         />
       </v-col>
       <v-spacer />
-      <v-col cols="auto" class="text-right">
-        <div class="text-caption text-medium-emphasis">
+      <v-col cols="auto" class="text-right" style="min-width: 240px">
+        <v-progress-linear
+          v-if="syncProgress"
+          :model-value="syncPercent"
+          :indeterminate="!syncProgress.total"
+          color="primary"
+          height="20"
+          rounded
+        >
+          <span class="text-caption">syncing {{ syncProgress.done }} of {{ syncProgress.total }} players</span>
+        </v-progress-linear>
+        <div v-else class="text-caption text-medium-emphasis">
           {{ syncCaption }}
           <v-tooltip activator="parent" location="top">{{ syncStamp }}</v-tooltip>
         </div>
@@ -79,6 +89,18 @@
         >
           Sync Ladder
         </v-btn>
+        <v-progress-linear
+          v-if="syncProgress"
+          :model-value="syncPercent"
+          :indeterminate="!syncProgress.total"
+          color="primary"
+          height="20"
+          rounded
+          class="mt-4 mx-auto"
+          style="max-width: 320px"
+        >
+          <span class="text-caption">syncing {{ syncProgress.done }} of {{ syncProgress.total }} players</span>
+        </v-progress-linear>
       </v-card-text>
     </v-card>
 
@@ -100,7 +122,7 @@
             <tr>
               <th>Team</th>
               <th class="text-center">
-                <ColumnNote title="Points" :note="SCORED_NOTE" />
+                <ColumnNote title="Total Points" :note="SCORED_NOTE" />
               </th>
               <th class="text-center">Games</th>
               <th class="text-center">Players</th>
@@ -190,7 +212,7 @@
               <ColumnNote :title="column.title" :note="ACHIEVEMENTS_NOTE" />
             </template>
             <template v-slot:[`item.achievements`]="{ item }">
-              <AchievementChip :badges="item.achievements" :show-points="false" />
+              <AchievementChip :badges="item.achievements" />
             </template>
             <template v-slot:[`item.ladder_points`]="{ item }">{{ item.ladder_points }}</template>
             <template v-slot:[`header.mmrDiff`]="{ column, isSorted, getSortIcon }">
@@ -205,6 +227,10 @@
                 <FlagIcon v-if="item.country" :countryIdentifier="item.country" />
                 <span class="player-name-link" @click.stop="openPlayerDetails(item)">
                   <strong>{{ item.name }}</strong>
+                </span>
+                <span v-if="!item.synced_at" class="d-inline-flex">
+                  <v-icon size="x-small" color="amber-darken-2">mdi-sync-alert</v-icon>
+                  <v-tooltip activator="parent" location="top">not fully synced</v-tooltip>
                 </span>
               </div>
             </template>
@@ -296,9 +322,9 @@ const tableHeader = computed(() => [
   { title: 'Race', key: 'race', sortable: true, width: 64 },
   { title: 'Name', key: 'name', sortable: true },
   { title: 'Team', key: 'teamName', sortable: true },
-  { title: 'Ladder', key: 'ladder_points', sortable: true },
+  { title: 'Ladder Points', key: 'ladder_points', sortable: true },
   { title: 'Achievements', key: 'achievements', sortable: false },
-  { title: 'Points', key: 'points', sortable: true },
+  { title: 'Total Points', key: 'points', sortable: true },
   { title: 'Wins', key: 'wins', sortable: true },
   { title: 'Losses', key: 'losses', sortable: true },
   { title: 'MMR', key: 'mmr', sortable: true },
@@ -322,12 +348,18 @@ const seasonPlayers = computed(() =>
   (ladder.value?.teams ?? []).reduce((sum, team) => sum + team.players.length, 0)
 );
 
-// The newest ladder_synced_at of the season, or the chunk the running sync reached
-const syncCaption = computed(() => {
+const syncPercent = computed(() => {
   const progress = syncProgress.value;
-  if (progress) return `syncing ${progress.done} of ${progress.total} players`;
-  const at = ladder.value?.season?.synced_at;
-  return at ? `synced ${agoFromIso(at)}` : 'never synced';
+  return progress?.total ? (progress.done / progress.total) * 100 : 0;
+});
+
+// A season counts as synced only while every player of it carries a stamp
+const syncCaption = computed(() => {
+  const players = allPlayers.value;
+  const synced = players.filter(player => player.synced_at).length;
+  if (!synced) return 'never synced';
+  if (synced < players.length) return `partly synced \u00b7 ${synced} of ${players.length} players`;
+  return `synced ${agoFromIso(ladder.value?.season?.synced_at)}`;
 });
 
 const syncStamp = computed(() => localFromIso(ladder.value?.season?.synced_at));

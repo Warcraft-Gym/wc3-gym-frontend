@@ -308,3 +308,13 @@ The admin UI requires authentication via JWT tokens:
 - [Vuetify Documentation](https://vuetifyjs.com/)
 - [Vue 3 Documentation](https://vuejs.org/)
 - [Vite Documentation](https://vitejs.dev/)
+
+## Vercel
+
+The Vercel project `wc3-gym-frontend` builds this repository.
+
+`main` deploys to production at https://wc3-gym-frontend.vercel.app. Every other branch gets its own preview deployment when it is pushed.
+
+The backend the build talks to is the `VITE_BACKEND_URL` environment variable in the Vercel project, which overrides the value in `.env`. It is set for production, preview and development.
+
+A branch that needs an unmerged backend points at that backend's own preview: add `VITE_BACKEND_URL` in the Vercel project scoped to the preview environment and to that git branch. Delete it once the backend is merged, and the branch falls back to the shared value.

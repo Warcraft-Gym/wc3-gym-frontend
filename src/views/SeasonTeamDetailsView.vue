@@ -123,7 +123,7 @@
           <v-chip variant="outlined" size="small">{{ ladderTeam.games }} games</v-chip>
           <v-spacer />
           <span class="text-caption text-medium-emphasis">
-            {{ seasonLadder.season.synced_at ? `synced ${agoFromIso(seasonLadder.season.synced_at)}` : 'never synced' }}
+            {{ ladderSyncCaption }}
             <v-tooltip activator="parent" location="top">{{ localFromIso(seasonLadder.season.synced_at) }}</v-tooltip>
           </span>
         </v-row>
@@ -134,13 +134,13 @@
             <th style="width: 64px">Race</th>
             <th>Name</th>
             <th class="text-right">
-              <ColumnNote title="Ladder" :note="LADDER_NOTE" />
+              <ColumnNote title="Ladder Points" :note="LADDER_NOTE" />
             </th>
             <th>
               <ColumnNote title="Achievements" :note="ACHIEVEMENTS_NOTE" />
             </th>
             <th class="text-right">
-              <ColumnNote title="Points" :note="SCORED_NOTE" />
+              <ColumnNote title="Total Points" :note="SCORED_NOTE" />
             </th>
             <th class="text-right">W</th>
             <th class="text-right">L</th>
@@ -161,7 +161,7 @@
             </td>
             <td class="text-right">{{ row.ladder_points }}</td>
             <td>
-              <AchievementChip :badges="row.achievements" :show-points="false" />
+              <AchievementChip :badges="row.achievements" />
             </td>
             <td class="text-right font-weight-bold">{{ row.points }}</td>
             <td class="text-right text-green">{{ row.wins }}</td>
@@ -408,6 +408,15 @@ const seasonLadder = ref(null);
 const ladderTeam = computed(() =>
   (seasonLadder.value?.teams ?? []).find(t => String(t.id) === String(teamId.value)) ?? null
 );
+
+// The card is as synced as its least synced player, and says so when one is behind
+const ladderSyncCaption = computed(() => {
+  const players = ladderTeam.value?.players ?? [];
+  const synced = players.filter(player => player.synced_at).length;
+  if (!synced) return 'never synced';
+  if (synced < players.length) return `partly synced · ${synced} of ${players.length} players`;
+  return `synced ${agoFromIso(seasonLadder.value?.season?.synced_at)}`;
+});
 
 // The teams of the answer are ordered by ladder points
 const ladderRank = computed(() =>

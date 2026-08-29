@@ -10,7 +10,7 @@
           <strong>{{ entry.title }}</strong>
           <div v-if="entry.error" class="text-error">{{ entry.error.message }}</div>
           <div v-else-if="entry.result">
-            <div>{{ entry.result.synced?.length ?? 0 }} synced, {{ entry.result.skipped?.length ?? 0 }} skipped</div>
+            <div>{{ syncLine(entry.result) }}</div>
             <div v-for="f in entry.result.failed ?? []" :key="f.id" class="text-caption text-error">
               {{ f.name }} ({{ f.battleTag || 'no BattleTag' }}): {{ f.reason }}
             </div>
@@ -32,6 +32,15 @@ defineProps({
   // one entry per team or season: { title, result } or { title, error }
   entries: { type: Array, default: () => [] },
 });
+
+// The total counts every player the run touched, so a failure does not look like a missing sync
+const syncLine = (result) => {
+  const synced = result.synced?.length ?? 0;
+  const skipped = result.skipped?.length ?? 0;
+  const failed = result.failed?.length ?? 0;
+  const total = result.total ?? synced + skipped + failed;
+  return `${synced} of ${total} synced \u00b7 ${skipped} skipped \u00b7 ${failed} failed`;
+};
 
 const emit = defineEmits(['update:modelValue']);
 </script>

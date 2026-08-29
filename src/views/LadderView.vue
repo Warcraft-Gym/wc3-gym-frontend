@@ -31,20 +31,7 @@
       </v-col>
       <v-spacer />
       <v-col cols="auto" class="text-right" style="min-width: 240px">
-        <v-progress-linear
-          v-if="syncProgress"
-          :model-value="syncPercent"
-          :indeterminate="!syncProgress.total"
-          color="primary"
-          height="20"
-          rounded
-        >
-          <span class="text-caption">syncing {{ syncProgress.done }} of {{ syncProgress.total }} players</span>
-        </v-progress-linear>
-        <div v-else class="text-caption text-medium-emphasis">
-          {{ syncCaption }}
-          <v-tooltip activator="parent" location="top">{{ syncStamp }}</v-tooltip>
-        </div>
+        <SyncProgress :caption="syncCaption" :stamp="syncStamp" />
       </v-col>
       <v-col cols="auto">
         <v-btn
@@ -55,7 +42,8 @@
           :disabled="isSyncing || !selectedSeasonId"
           @click="syncLadder"
         >
-          Sync Ladder
+          Sync W3C
+          <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
         </v-btn>
       </v-col>
     </v-row>
@@ -87,20 +75,10 @@
           :disabled="isSyncing"
           @click="syncLadder"
         >
-          Sync Ladder
+          Sync W3C
+          <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
         </v-btn>
-        <v-progress-linear
-          v-if="syncProgress"
-          :model-value="syncPercent"
-          :indeterminate="!syncProgress.total"
-          color="primary"
-          height="20"
-          rounded
-          class="mt-4 mx-auto"
-          style="max-width: 320px"
-        >
-          <span class="text-caption">syncing {{ syncProgress.done }} of {{ syncProgress.total }} players</span>
-        </v-progress-linear>
+        <SyncProgress class="mt-4 mx-auto" style="max-width: 320px" />
       </v-card-text>
     </v-card>
 
@@ -294,12 +272,12 @@ import RaceIcon from '@/components/RaceIcon.vue';
 import FlagIcon from '@/components/FlagIcon.vue';
 import AchievementChip from '@/components/AchievementChip.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
+import SyncProgress from '@/components/SyncProgress.vue';
 
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();
 
 const { seasons } = storeToRefs(seasonStore);
-const { syncProgress } = storeToRefs(ladderStore);
 
 const selectedSeasonId = ref(null);
 const ladder = ref(null);
@@ -347,11 +325,6 @@ const seasonPoints = computed(() =>
 const seasonPlayers = computed(() =>
   (ladder.value?.teams ?? []).reduce((sum, team) => sum + team.players.length, 0)
 );
-
-const syncPercent = computed(() => {
-  const progress = syncProgress.value;
-  return progress?.total ? (progress.done / progress.total) * 100 : 0;
-});
 
 // A season counts as synced only while every player of it carries a stamp
 const syncCaption = computed(() => {

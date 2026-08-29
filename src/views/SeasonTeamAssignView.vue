@@ -20,9 +20,13 @@
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2">
             <v-spacer />
+            <v-col cols="12" sm="auto" style="min-width: 240px">
+              <SyncProgress />
+            </v-col>
             <v-col cols="12" sm="auto">
               <v-btn variant="elevated" color="primary" @click="syncAllDraftPlayers" :loading="syncAllLoading" prepend-icon="mdi-sync" block>
-                Sync W3C Info
+                Sync W3C
+                <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
               </v-btn>
             </v-col>
           </v-row>
@@ -357,19 +361,22 @@
         </div>
       </v-col>
     </v-row>
+    <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
   </v-container>
 </template>
 
 <script setup>
 import '@/assets/base.css';
 import { computed, onMounted, ref } from 'vue';
-import { usePlayerStore, useTeamStore, useSeasonStore } from '@/stores';
+import { useLadderStore, usePlayerStore, useTeamStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import RaceIcon from '@/components/RaceIcon.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
+import SyncProgress from '@/components/SyncProgress.vue';
+import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
 import RaceSelect from '@/components/RaceSelect.vue';
 import { 
@@ -392,6 +399,7 @@ const seasonId = computed(() => {
   return id ? Number(id) : null;
 });
 
+const ladderStore = useLadderStore();
 const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
 const seasonStore = useSeasonStore();
@@ -419,6 +427,9 @@ const playerTeamSelection = ref({});
 
 // per-player sync status: { state: 'idle'|'loading'|'success'|'error', message?: string }
 const perPlayerSyncStatus = ref({});
+
+const syncDialog = ref(false);
+const syncEntries = ref([]);
 
 // Edit player state
 const showEditPlayerModal = ref(false);
@@ -652,18 +663,20 @@ const removePlayerFromTeam = async (teamId, playerId) => {
   }
 };
 
-// sync every player signed up to the season in one backend call
+// sync every player signed up to the season, one chunk of players per request
 const syncAllDraftPlayers = async () => {
   syncAllLoading.value = true;
   const list = signedUpPlayers.value || [];
   perPlayerSyncStatus.value = Object.fromEntries(list.map(p => [p.id, { state: 'loading' }]));
   try {
-    const result = await teamStore.syncSeasonW3C(seasonId.value);
+    const result = await ladderStore.syncSeason(seasonId.value);
     const status = {};
     for (const id of result.synced ?? []) status[id] = { state: 'success' };
     for (const id of result.skipped ?? []) status[id] = { state: 'skipped' };
     for (const f of result.failed ?? []) status[f.id] = { state: 'error', message: f.reason };
     perPlayerSyncStatus.value = status;
+    syncEntries.value = [{ title: seasonName.value, result }];
+    syncDialog.value = true;
   } catch (err) {
     console.error('Failed to sync season players:', err);
     perPlayerSyncStatus.value = Object.fromEntries(list.map(p => [p.id, { state: 'error', message: err.message }]));

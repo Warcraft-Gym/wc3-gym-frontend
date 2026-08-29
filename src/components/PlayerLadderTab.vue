@@ -216,9 +216,7 @@ const mmrRange = computed(() => {
 });
 
 // The earned rules come with the player, the whole catalogue with the season
-const earned = computed(() =>
-  [...(data.value?.achievements ?? [])].sort((a, b) => a.achieved_at.localeCompare(b.achieved_at))
-);
+const earned = computed(() => data.value?.achievements ?? []);
 const achievedPoints = computed(() => achievementPoints(earned.value));
 
 // The tile total is the two halves added, so the caption names both
@@ -250,7 +248,8 @@ const teamOf = (userId) => {
 };
 
 const matchDate = (iso) => DateTime.fromISO(iso, { zone: 'utc' }).toFormat('yyyy-LL-dd HH:mm');
-const badgeDate = (iso) => DateTime.fromISO(iso, { zone: 'utc' }).toFormat('yyyy-LL-dd');
+// Stored in UTC, shown in the viewer's own time
+const badgeDate = (iso) => DateTime.fromISO(iso, { zone: 'utc' }).toLocal().toFormat('yyyy-LL-dd HH:mm');
 const duration = (seconds) => {
   const total = seconds ?? 0;
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;

@@ -366,30 +366,25 @@
 </template>
 
 <script setup>
-import '@/assets/base.css';
 import { computed, onMounted, ref } from 'vue';
 import { useLadderStore, usePlayerStore, useTeamStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
-import RaceIcon from '@/components/RaceIcon.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
-import CountrySelect from '@/components/CountrySelect.vue';
-import RaceSelect from '@/components/RaceSelect.vue';
 import { 
   getW3CMMR,
-  getW3CStatsWithFallback,
   getW3CGamesCount,
   hasW3CStatsTwoSeasons,
   hasLowGamesTwoSeasons,
   syncedAgo,
   syncedAt
 } from '@/helpers/w3c-stats';
+import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
 
-defineOptions({ name: 'SeasonTeamAssignView' });
 
 const router = useRouter();
 
@@ -404,7 +399,6 @@ const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
 const seasonStore = useSeasonStore();
 
-const { players } = storeToRefs(playerStore);
 const { teams } = storeToRefs(teamStore);
 const { current_season } = storeToRefs(seasonStore);
 
@@ -413,12 +407,6 @@ const signedUpPlayersData = ref([]);
 
 const searchName = ref('');
 const searchRace = ref(null);
-const races = ref([
-  { name: 'HU' },
-  { name: 'OC' },
-  { name: 'UD' },
-  { name: 'NE' }
-]);
 const rangeValues = ref([0, 3000]);
 const hideNoW3CStats = ref(false);
 
@@ -440,11 +428,6 @@ let originalSignupSeasonIds = [];
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
-
-// W3C stats helper functions with season fallback for display
-const getW3CStats = (player) => {
-  return getW3CStatsWithFallback(player, null, currentW3CSeason.value);
-};
 
 const hasW3CStats = (player) => {
   // Check current season OR previous season for warning display
@@ -537,29 +520,12 @@ const signedUpPlayers = computed(() => {
 const filteredPlayers = computed(() => {
   let list = signedUpPlayers.value || [];
   if (searchName.value && searchName.value.trim().length > 0) {
-    const q = searchName.value.trim().toLowerCase();
-    list = list.filter(p =>
-      (p.name || '').toLowerCase().includes(q) ||
-      (p.battleTag || '').toLowerCase().includes(q) ||
-      (p.discordTag || '').toLowerCase().includes(q)
-    );
+    list = list.filter(p => matchesPlayerSearch(p, searchName.value));
   }
   if (searchRace.value) list = list.filter(p => p.race === searchRace.value);
   
   // filter by mmr range — only apply if user changed from defaults
-  const DEFAULT_MMR_MIN = 0;
-  const DEFAULT_MMR_MAX = 3000;
-  if (Array.isArray(rangeValues.value) && rangeValues.value.length === 2) {
-    const mmrMin = Number(rangeValues.value[0]);
-    const mmrMax = Number(rangeValues.value[1]);
-    const rangeChanged = (mmrMin !== DEFAULT_MMR_MIN) || (mmrMax !== DEFAULT_MMR_MAX);
-    if (rangeChanged) {
-      list = list.filter(p => {
-        const mmr = getW3CMMR(p) ?? 0;
-        return mmr >= mmrMin && mmr <= mmrMax;
-      });
-    }
-  }
+  list = filterByMmrRange(list, rangeValues.value, p => getW3CMMR(p) ?? 0);
   
   // filter out players without W3C stats if checkbox is checked
   if (hideNoW3CStats.value) {
@@ -606,14 +572,10 @@ function getTeamPlayersForSeason(team) {
 }
 
 // per-team loading state to avoid double-clicks
-const addLoading = ref({});
 const removeLoading = ref({});
 const syncAllLoading = ref(false);
 const assignAllLoading = ref(false);
 
-const isAddLoading = (teamId) => {
-  return !!addLoading.value[teamId];
-};
 const isRemoveLoading = (teamId, playerId) => {
   return !!removeLoading.value[`${teamId}_${playerId}`];
 };

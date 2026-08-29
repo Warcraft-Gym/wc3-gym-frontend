@@ -399,14 +399,10 @@
 </template>
 
 <script setup>
-import '@/assets/base.css';
 import { ref, onMounted, computed } from 'vue';
 import { useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 
-defineOptions({
-  name: 'ConfigView'
-});
 
 const configStore = useConfigStore();
 const seasonStore = useSeasonStore();

@@ -9,7 +9,6 @@ export const useFantasyStore = defineStore({
         teams: [],
         bets: [],
         totalBets: 0,
-        currentTeam: null,
         isLoading: false
     }),
     actions: {
@@ -19,16 +18,6 @@ export const useFantasyStore = defineStore({
                 const result = await fetchWrapper.getAll(`${backendUrl}/fantasy/teams`);
                 this.teams = result || [];
                 return this.teams;
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        async fetchTeam(teamId) {
-            this.isLoading = true;
-            try {
-                this.currentTeam = await fetchWrapper.get(`${backendUrl}/fantasy/teams/${teamId}`);
-                return this.currentTeam;
             } finally {
                 this.isLoading = false;
             }
@@ -64,10 +53,6 @@ export const useFantasyStore = defineStore({
             } finally {
                 this.isLoading = false;
             }
-        },
-
-        async fetchBet(betId) {
-            return await fetchWrapper.get(`${backendUrl}/fantasy/bets/${betId}`);
         },
 
         async createBet(bet) {

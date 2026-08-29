@@ -255,10 +255,8 @@
 </template>
 
 <script setup>
-import '@/assets/base.css';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { RouterLink } from 'vue-router';
 import { useLadderStore, useSeasonStore } from '@/stores';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
@@ -268,8 +266,6 @@ import { SCORED_NOTE, MMR_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers
 import ColumnNote from '@/components/ColumnNote.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
-import RaceIcon from '@/components/RaceIcon.vue';
-import FlagIcon from '@/components/FlagIcon.vue';
 import AchievementChip from '@/components/AchievementChip.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import SyncProgress from '@/components/SyncProgress.vue';

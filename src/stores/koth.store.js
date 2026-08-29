@@ -9,7 +9,6 @@ export const useKothStore = defineStore({
         events: [],
         activeEvent: null,
         signups: [],
-        matches: [],
         kings: {},
         isLoading: false,
     }),
@@ -19,30 +18,6 @@ export const useKothStore = defineStore({
             try {
                 this.isLoading = true;
                 this.events = await fetchWrapper.get(`${backendUrl}/koth/events`);
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        async fetchActiveEvent() {
-            try {
-                this.isLoading = true;
-                this.activeEvent = await fetchWrapper.get(`${backendUrl}/koth/events/active`);
-                return this.activeEvent;
-            } catch (error) {
-                this.activeEvent = null;
-                throw error;
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        async fetchEvent(eventId) {
-            try {
-                this.isLoading = true;
-                const event = await fetchWrapper.get(`${backendUrl}/koth/events/${eventId}`);
-                this.activeEvent = event;
-                return event;
             } finally {
                 this.isLoading = false;
             }
@@ -123,18 +98,6 @@ export const useKothStore = defineStore({
             this.signups = this.signups.filter(s => s.id !== signupId);
         },
 
-        async updateSignupBracket(signupId, bracket) {
-            const updatedSignup = await fetchWrapper.put(
-                `${backendUrl}/koth/signups/${signupId}/bracket`,
-                { bracket }
-            );
-            const index = this.signups.findIndex(s => s.id === signupId);
-            if (index !== -1) {
-                this.signups[index] = updatedSignup;
-            }
-            return updatedSignup;
-        },
-
         async setKing(signupId) {
             const updatedSignup = await fetchWrapper.post(`${backendUrl}/koth/signups/${signupId}/king`);
             // Update signups to reflect new king status
@@ -150,15 +113,6 @@ export const useKothStore = defineStore({
             return updatedSignup;
         },
 
-        async addKing(signupId) {
-            const updatedSignup = await fetchWrapper.post(`${backendUrl}/koth/signups/${signupId}/add-king`);
-            const index = this.signups.findIndex(s => s.id === signupId);
-            if (index !== -1) {
-                this.signups[index] = updatedSignup;
-            }
-            return updatedSignup;
-        },
-
         async unsetKing(signupId) {
             const updatedSignup = await fetchWrapper.delete(`${backendUrl}/koth/signups/${signupId}/king`);
             const index = this.signups.findIndex(s => s.id === signupId);
@@ -166,53 +120,6 @@ export const useKothStore = defineStore({
                 this.signups[index] = updatedSignup;
             }
             return updatedSignup;
-        },
-
-        // ============ Match Actions ============
-        async fetchMatches(eventId) {
-            try {
-                this.isLoading = true;
-                this.matches = await fetchWrapper.get(`${backendUrl}/koth/events/${eventId}/matches`);
-                return this.matches;
-            } finally {
-                this.isLoading = false;
-            }
-        },
-
-        async createMatch(matchData) {
-            const newMatch = await fetchWrapper.post(`${backendUrl}/koth/matches`, matchData);
-            this.matches.push(newMatch);
-            return newMatch;
-        },
-
-        async updateMatch(matchId, matchData) {
-            const updatedMatch = await fetchWrapper.put(`${backendUrl}/koth/matches/${matchId}`, matchData);
-            const index = this.matches.findIndex(m => m.id === matchId);
-            if (index !== -1) {
-                this.matches[index] = updatedMatch;
-            }
-            return updatedMatch;
-        },
-
-        async updateMatchResult(matchId, winnerTeamNumber) {
-            const updatedMatch = await fetchWrapper.put(
-                `${backendUrl}/koth/matches/${matchId}/result`,
-                { winner_team_number: winnerTeamNumber }
-            );
-            const index = this.matches.findIndex(m => m.id === matchId);
-            if (index !== -1) {
-                this.matches[index] = updatedMatch;
-            }
-            // Refresh signups to get updated king status
-            if (this.activeEvent) {
-                await this.fetchSignups(this.activeEvent.id);
-            }
-            return updatedMatch;
-        },
-
-        async deleteMatch(matchId) {
-            await fetchWrapper.delete(`${backendUrl}/koth/matches/${matchId}`);
-            this.matches = this.matches.filter(m => m.id !== matchId);
         },
 
         // ============ Utility Actions ============
@@ -231,12 +138,6 @@ export const useKothStore = defineStore({
             return this.signups
                 .filter(s => s.bracket === bracket && s.is_active === 1)
                 .sort((a, b) => b.mmr - a.mmr);
-        },
-
-        getMatchesByBracket(bracket) {
-            return this.matches
-                .filter(m => m.bracket === bracket)
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         },
 
         getBracketThresholdText(event) {

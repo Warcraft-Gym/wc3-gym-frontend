@@ -33,9 +33,6 @@ export const useSeasonStore = defineStore({
         async addTeamsToSeason(season_id, team_ids) {
             const updatedTeam = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/teams`, {'team_ids': team_ids});
         },
-        async removeTeamsFromSeason(season_id, team_ids) {
-            const updatedTeam = await fetchWrapper.delete(`${backendUrl}/seasons/${season_id}/teams`, {'team_ids': team_ids});
-        },
         async addMapsToSeason(season_id, map_ids) {
             const updatedTeam = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/maps`, {'map_ids': map_ids});
         },

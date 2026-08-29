@@ -1,5 +1,4 @@
 <template>
-  <raceIcon />
   <v-container fluid class="pa-4">
     <!-- Page Header -->
     <v-row class="mb-4">
@@ -426,15 +425,12 @@ import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/curre
 import { 
   getW3CMMR,
   getW3CMMRSeason,
-  getW3CStatsWithFallback,
   getW3CGamesCount,
   hasW3CStatsTwoSeasons,
   hasLowGamesTwoSeasons
 } from '@/helpers/w3c-stats';
+import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
 
-defineOptions({
-  name: 'PlayersView'
-})
 
 // State for editing
 const selectedPlayer = ref(null);
@@ -468,13 +464,7 @@ const filteredPlayers = computed(() => {
 
   // filter by name / battletag / discord
   if (searchName.value && searchName.value.trim().length > 0) {
-    const q = searchName.value.trim().toLowerCase();
-    list = list.filter(p => {
-      const name = (p.name || '').toLowerCase();
-      const bt = (p.battleTag || '').toLowerCase();
-      const discord = (p.discordTag || '').toLowerCase();
-      return name.includes(q) || bt.includes(q) || discord.includes(q);
-    });
+    list = list.filter(p => matchesPlayerSearch(p, searchName.value));
   }
 
   // filter by race
@@ -487,21 +477,8 @@ const filteredPlayers = computed(() => {
     list = list.filter(p => (p.signup_seasons || []).some(s => s.id === selectedSeasonFilter.value));
   }
 
-  // filter by mmr range
   // filter by mmr range — only apply if user changed from defaults
-  const DEFAULT_MMR_MIN = 0;
-  const DEFAULT_MMR_MAX = 3000;
-  if (Array.isArray(rangeValues.value) && rangeValues.value.length === 2) {
-      const mmrMin = Number(rangeValues.value[0]);
-      const mmrMax = Number(rangeValues.value[1]);
-    const rangeChanged = (mmrMin !== DEFAULT_MMR_MIN) || (mmrMax !== DEFAULT_MMR_MAX);
-    if (rangeChanged) {
-      list = list.filter(p => {
-        const mmr = Number(getW3CMMR(p, currentW3CSeason.value) ?? 0);
-        return mmr >= mmrMin && mmr <= mmrMax;
-      });
-    }
-  }
+  list = filterByMmrRange(list, rangeValues.value, p => Number(getW3CMMR(p, currentW3CSeason.value) ?? 0));
 
   // filter by W3C stats
   if (selectedW3CFilter.value && selectedW3CFilter.value.length > 0) {
@@ -528,7 +505,6 @@ const deleteAction = ref(null);
 //research models
 const searchRace = ref(null);
 const searchName = ref(null);
-const searchEnabled = ref(false);
 const rangeValues = ref([0, 3000]);
 const selectedW3CFilter = ref([]);
 const w3cFilterOptions = [
@@ -579,7 +555,6 @@ const fetchPlayers = async () => {
     isLoading.value = false;
 
     //reset placeholders
-    searchEnabled.value = false;
     searchName.value = ''
     searchRace.value = ''
     // reset season filter as well
@@ -633,11 +608,6 @@ const currentW3CSeason = ref(null);
 const mmrSeasonLabel = (player) => {
   const season = getW3CMMRSeason(player, currentW3CSeason.value);
   return season && season !== currentW3CSeason.value ? `S${season}` : '';
-};
-
-// W3C stats helper functions with season fallback
-const getW3CStats = (player) => {
-  return getW3CStatsWithFallback(player, null, currentW3CSeason.value);
 };
 
 const hasW3CStats = (player) => {
@@ -754,7 +724,6 @@ const createNewPlayer = async () => {
   try {
     // send newPlayer directly — fields use backend schema names
     const created = await playerStore.createPlayer(newPlayer.value);
-    console.log('Player created:', created);
 
     // determine created player id: prefer API return, otherwise refetch and find by unique battletag
     let createdId = created && created.id ? created.id : null;
@@ -765,20 +734,14 @@ const createNewPlayer = async () => {
       createdId = found ? found.id : null;
     }
 
-    console.log('Created player ID:', createdId);
-    console.log('Selected signup seasons:', selectedSignupSeasonIdsNew.value);
 
     // If seasons were selected, register the user for those seasons
     if (createdId && Array.isArray(selectedSignupSeasonIdsNew.value) && selectedSignupSeasonIdsNew.value.length > 0) {
       try {
-        console.log('Adding user to seasons...');
         await Promise.all(selectedSignupSeasonIdsNew.value.map(async sid => {
-          console.log(`Adding user ${createdId} to season ${sid}`);
           const result = await seasonStore.addUserSignup(sid, [createdId]);
-          console.log(`Result for season ${sid}:`, result);
           return result;
         }));
-        console.log('All season signups completed');
       } catch (err) {
         console.error('Failed to add user signup for new player:', err);
         creationError.value = 'Player created but failed to add to seasons: ' + err.message;

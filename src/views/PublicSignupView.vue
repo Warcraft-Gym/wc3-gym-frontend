@@ -282,7 +282,6 @@ async function onSubmit() {
       // include season id if token had one or it was provided
       season_id: selectedSignupSeasonId.value ? selectedSignupSeasonId.value : undefined
     };
-    console.log('Submitting signup payload', payload);
     const backend = import.meta.env.VITE_BACKEND_URL || '';
     const res = await fetch(`${backend}/signup`, {
       method: 'POST',
@@ -305,6 +304,3 @@ async function onSubmit() {
   }
 }
 </script>
-
-<style scoped>
-</style>

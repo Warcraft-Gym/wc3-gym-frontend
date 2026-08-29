@@ -320,17 +320,15 @@
 
 <script setup>
 import RowActions from '@/components/RowActions.vue';
-import '@/assets/base.css';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useFantasyStore, useSeriesStore, usePlayerStore, useConfigStore, useSeasonStore } from '@/stores';
+import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 
-defineOptions({ name: 'FantasyBetsView' });
 
 const fantasyStore = useFantasyStore();
 const seriesStore = useSeriesStore();
-const playerStore = usePlayerStore();
 const configStore = useConfigStore();
 const seasonStore = useSeasonStore();
 
@@ -430,19 +428,7 @@ watch(() => newBet.value.captain_id, async (captainId) => {
   }
 });
 
-// Validate bet points
-const validateBetPoints = (points) => {
-  if (!points || points <= 0) {
-    return 'Bet points must be greater than 0';
-  }
-  if (minBetPoints.value && points < minBetPoints.value) {
-    return `Bet points must be at least ${minBetPoints.value}`;
-  }
-  if (maxBetPoints.value && points > maxBetPoints.value) {
-    return `Bet points must not exceed ${maxBetPoints.value}`;
-  }
-  return null;
-};
+const validateBetPoints = (points) => checkBetPoints(points, minBetPoints.value, maxBetPoints.value);
 
 const isSeriesPlayed = (series) => {
   if (!series) return false;

@@ -366,7 +366,6 @@
 </template>
 
 <script setup>
-import '@/assets/base.css';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
@@ -375,14 +374,14 @@ import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import { DateTime } from 'luxon';
+import { formatDateTime } from '@/helpers/datetime';
 import { useDisplay } from 'vuetify';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 
-defineOptions({ name: 'PlayerDashboardView' })
 
 const route = useRoute();
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
-const { mobile, mdAndUp } = useDisplay();
+const { mobile } = useDisplay();
 
 // Current W3C season
 const currentW3CSeason = ref(null);
@@ -545,104 +544,6 @@ watch(sortBy, () => {
     page.value = 1;
   }
 });
-
-const fetchFantasyData = async () => {
-  if (!playerData.value?.player?.id) return;
-
-  try {
-    // Check if player is a fantasy team captain
-    const teams = await fantasyStore.fetchTeams();
-    fantasyTeam.value = teams.find(t => t.captain_id === playerData.value.player.id);
-
-    if (!fantasyTeam.value) return; // Not a captain
-
-    // Fetch fantasy series (where is_fantasy_match = true and no score)
-    const seasonId = playerData.value.season_id;
-    if (seasonId) {
-      const allSeriesResponse = await fetchWrapper.get(`${backendUrl}/series/season/${seasonId}`);
-      fantasySeries.value = allSeriesResponse.filter(s => 
-        s.is_fantasy_match === true
-      );
-    }
-
-    // Fetch user's fantasy bets
-    const betsQuery = `user_id == ${playerData.value.player.id}`;
-    fantasyBets.value = await fantasyStore.searchBets(betsQuery);
-
-  } catch (error) {
-    console.error('Error fetching fantasy data:', error);
-    // Don't show error to user, fantasy is optional
-  }
-};
-
-// Fantasy betting handlers
-const placeBet = (series) => {
-  betSeries.value = series;
-  selectedBetWinnerId.value = series.myBet?.winner_id || null;
-  betDialog.value = true;
-};
-
-const closeBet = () => {
-  betDialog.value = false;
-  betSeries.value = {};
-  selectedBetWinnerId.value = null;
-};
-
-const saveBet = async () => {
-  isBetSaving.value = true;
-  try {
-    const betData = {
-      series_id: betSeries.value.id,
-      season_id: playerData.value.season_id,
-      user_id: playerData.value.player.id,
-      winner_id: selectedBetWinnerId.value,
-      bet_points: 0, // Will be calculated by backend
-      bet_result: null // Will be determined when series is complete
-    };
-
-    if (betSeries.value.myBet) {
-      // Update existing bet
-      await fantasyStore.updateBet(betSeries.value.myBet.id, betData);
-      successMessage.value = 'Bet updated successfully!';
-    } else {
-      // Create new bet
-      await fantasyStore.createBet(betData);
-      successMessage.value = 'Bet placed successfully!';
-    }
-
-    closeBet();
-    await fetchFantasyData(); // Refresh fantasy data
-  } catch (error) {
-    console.error('Error saving bet:', error);
-    errorMessage.value = error.message || 'Error saving bet. Please try again.';
-  } finally {
-    isBetSaving.value = false;
-  }
-};
-
-// Format date/time for display
-const formatDateTime = (dateTimeStr) => {
-  if (!dateTimeStr) return 'Not set';
-  try {
-    // Backend stores datetime in UTC as naive datetime (e.g., "2025-01-15 18:00:00")
-    // Parse it as UTC and display in user's local timezone
-    const dt = DateTime.fromISO(dateTimeStr + 'Z', { zone: 'UTC' });
-    
-    if (!dt.isValid) return dateTimeStr;
-    
-    // Convert to user's local timezone and format
-    return dt.toLocal().toLocaleString({
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    });
-  } catch {
-    return dateTimeStr;
-  }
-};
 
 // Get score color based on win/loss
 const getScoreColor = (item) => {

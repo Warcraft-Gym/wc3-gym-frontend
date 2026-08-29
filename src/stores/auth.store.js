@@ -1,48 +1,48 @@
 import { defineStore } from 'pinia';
-import { jwtDecode } from "jwt-decode";
 
 import { fetchWrapper, router } from '@/helpers';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
 
+let clerk = null;  // Clerk's useAuth(), handed over by App.vue where composables are legal
+
 export const useAuthStore = defineStore({
     id: 'auth',
     state: () => ({
-        // initialize state from local storage to enable user to stay logged in
-        user: JSON.parse(localStorage.getItem('user')),
+        user: JSON.parse(localStorage.getItem('user')),  // the legacy admin-token session only
+        me: JSON.parse(localStorage.getItem('me')),
         returnUrl: null
     }),
     actions: {
+        useClerkAuth(auth) {
+            clerk = auth;
+        },
+        // break-glass admin-token login, reached only from /login?legacy=1
         async login(token) {
-            const user = await fetchWrapper.post(`${backendUrl}/login`, { token: token });
-           // update pinia state
-            this.user = user;
-
-            // store user details and jwt in local storage to keep user logged in between page refreshes
-            localStorage.setItem('user', JSON.stringify(user));
-
-            // redirect to previous url or default to home page
+            this.user = await fetchWrapper.post(`${backendUrl}/login`, { token });
+            this.me = { role: 'admin' };  // the admin token is an admin session by definition
+            localStorage.setItem('user', JSON.stringify(this.user));
+            localStorage.setItem('me', JSON.stringify(this.me));
             router.push(this.returnUrl || '/');
         },
-        async refresh(token) {
-            const user = await fetchWrapper.post(`${backendUrl}/refresh`, { access_token: token });
-            // update pinia state
-            this.user.access_token = user.access_token;
-
-            // store user details and jwt in local storage to keep user logged in between page refreshes
-            localStorage.setItem('user', JSON.stringify(user));
+        // the legacy token wins; every other session sends the Clerk session JWT
+        async token() {
+            return this.user?.access_token || (clerk ? await clerk.getToken.value() : null);
         },
-    	isTokenExpired(token) {
-            if (!token) {
-                return true;
-            }
-            const payload = jwtDecode(token);
-            const currentTime = Math.floor(Date.now() / 1000);
-            return payload.exp && payload.exp < currentTime;
+        async fetchMe() {
+            this.me = await fetchWrapper.get(`${backendUrl}/me`);
+            localStorage.setItem('me', JSON.stringify(this.me));
+            return this.me;
         },
-        logout() {
+        clear() {
             this.user = null;
+            this.me = null;
             localStorage.removeItem('user');
+            localStorage.removeItem('me');
+        },
+        async logout() {
+            if (!this.user) await clerk?.signOut.value();  // the legacy token has no Clerk session
+            this.clear();
             router.push('/login');
         }
     }

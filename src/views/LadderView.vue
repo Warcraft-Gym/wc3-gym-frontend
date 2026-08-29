@@ -201,16 +201,12 @@
               <RaceIcon v-if="item.race" :raceIdentifier="item.race" />
             </template>
             <template v-slot:[`item.name`]="{ item }">
-              <div class="d-flex align-center" style="gap: 6px">
-                <FlagIcon v-if="item.country" :countryIdentifier="item.country" />
-                <span class="player-name-link" @click.stop="openPlayerDetails(item)">
-                  <strong>{{ item.name }}</strong>
-                </span>
+              <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
                 <span v-if="!item.synced_at" class="d-inline-flex">
                   <v-icon size="x-small" color="amber-darken-2">mdi-sync-alert</v-icon>
                   <v-tooltip activator="parent" location="top">not fully synced</v-tooltip>
                 </span>
-              </div>
+              </PlayerName>
             </template>
             <template v-slot:[`item.teamName`]="{ item }">
               <div class="d-flex align-center">
@@ -439,9 +435,5 @@ onMounted(async () => {
 }
 .standings-first {
   background: rgba(var(--v-theme-primary), 0.06);
-}
-.player-name-link {
-  cursor: pointer;
-  text-decoration: underline;
 }
 </style>

@@ -77,8 +77,7 @@
                 ></v-select>
               </template>
               <template #item.name="{ item }">
-                <div class="d-flex align-center" style="gap:8px;">
-                  <span style="cursor: pointer; color: var(--v-theme-primary);" @click="showStats(item)"><strong>{{ item.name }}</strong></span>
+                <PlayerName :player="item" @click.stop="showStats(item)">
                   <template v-if="!hasW3CStats(item)">
                     <v-tooltip>
                       <template #activator="{ props }">
@@ -117,7 +116,7 @@
                       <span>{{ perPlayerSyncStatus[item.id].message || 'Sync failed' }}</span>
                     </v-tooltip>
                   </template>
-                </div>
+                </PlayerName>
               </template>
               <template #item.w3c_mmr="{ item }">
                 <div>{{ getW3CMMR(item, currentW3CSeason) ?? 'N/A' }}</div>

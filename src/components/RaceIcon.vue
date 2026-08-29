@@ -3,34 +3,24 @@
         v-if="currentRace"
         location="top"
         :text="currentRace.name">
-        <template v-slot:activator="{ props }"> 
-            <v-avatar 
-            v-bind="props" 
+        <template v-slot:activator="{ props }">
+            <v-avatar
+            v-bind="props"
             :image="currentRace.icon"
-            rounded="0" 
-            size="x-small">
-            </v-avatar>                                                   
+            rounded="0"
+            :size="size">
+            </v-avatar>
         </template>
-    </v-tooltip> 
+    </v-tooltip>
 </template>
 
-<script>
-
+<script setup>
+import { computed } from 'vue'
 import { raceWrapper } from '@/helpers/races.js'
 
-export default {
-    props: {
-        raceIdentifier: {
-            type: String,
-        },
-    },
-    setup( props ){
-        const currentRace = raceWrapper.getRaceObject( props.raceIdentifier );
-        return {
-            currentRace,
-        }
-    },
-}
-    
+const props = defineProps({
+    raceIdentifier: String,
+    size: { type: [String, Number], default: 'x-small' },
+})
+const currentRace = computed(() => raceWrapper.getRaceObject(props.raceIdentifier))
 </script>
-

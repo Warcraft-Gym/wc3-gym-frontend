@@ -184,10 +184,7 @@
                                   :value="item.value"
                                   @click="tierSelections.tier1 = item.value"
                                 >
-                                  <template v-slot:prepend>
-                                    <RaceIcon v-if="item.raw.race" :raceIdentifier="item.raw.race" size="small" />
-                                  </template>
-                                  <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
                                   <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -220,10 +217,7 @@
                                   :value="item.value"
                                   @click="tierSelections.tier2 = item.value"
                                 >
-                                  <template v-slot:prepend>
-                                    <RaceIcon v-if="item.raw.race" :raceIdentifier="item.raw.race" size="small" />
-                                  </template>
-                                  <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
                                   <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -256,10 +250,7 @@
                                   :value="item.value"
                                   @click="tierSelections.tier3 = item.value"
                                 >
-                                  <template v-slot:prepend>
-                                    <RaceIcon v-if="item.raw.race" :raceIdentifier="item.raw.race" size="small" />
-                                  </template>
-                                  <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
                                   <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -292,10 +283,7 @@
                                   :value="item.value"
                                   @click="tierSelections.tier4 = item.value"
                                 >
-                                  <template v-slot:prepend>
-                                    <RaceIcon v-if="item.raw.race" :raceIdentifier="item.raw.race" size="small" />
-                                  </template>
-                                  <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
                                   <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -328,10 +316,7 @@
                                   :value="item.value"
                                   @click="tierSelections.tier5 = item.value"
                                 >
-                                  <template v-slot:prepend>
-                                    <RaceIcon v-if="item.raw.race" :raceIdentifier="item.raw.race" size="small" />
-                                  </template>
-                                  <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
                                   <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -364,10 +349,7 @@
                                   :value="item.value"
                                   @click="tierSelections.tier6 = item.value"
                                 >
-                                  <template v-slot:prepend>
-                                    <RaceIcon v-if="item.raw.race" :raceIdentifier="item.raw.race" size="small" />
-                                  </template>
-                                  <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
                                   <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -388,10 +370,7 @@
                           <strong>Selected Players ({{ selectedPlayers.length }}):</strong>
                           <v-chip-group class="mt-2">
                             <v-chip v-for="player in selectedPlayers" :key="player.id" size="small" color="primary" @click="showPlayerDetails(player)" style="cursor: pointer;">
-                              {{ player.name }}
-                              <template v-slot:prepend>
-                                <RaceIcon v-if="player.race" :raceIdentifier="player.race" size="small" class="mr-1" />
-                              </template>
+                              <PlayerName :player="player" :race="player.race" />
                             </v-chip>
                           </v-chip-group>
                         </div>

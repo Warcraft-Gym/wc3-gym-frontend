@@ -186,7 +186,7 @@
                 :key="player.id"
               >
                 <td class="text-center text-caption text-medium-emphasis">{{ idx + 1 }}</td>
-                <td class="font-weight-medium">{{ player.name }}</td>
+                <td><PlayerName :player="player" /></td>
                 <td class="text-center">
                   <RaceIcon v-if="player.race" :raceIdentifier="player.race" />
                   <span v-else class="text-caption">–</span>

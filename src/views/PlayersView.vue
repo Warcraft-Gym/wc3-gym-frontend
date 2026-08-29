@@ -78,10 +78,7 @@
                 <tr class="text-no-wrap">
                   <td>{{ item.id }}</td>
                   <td>
-                    <div class="d-flex align-center" style="gap:8px;">
-                      <span @click.stop="openPlayerDetails(item)" class="player-name-link">
-                        <strong>{{ item.name }}</strong>
-                      </span>
+                    <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
                       <template v-if="!hasW3CStats(item)">
                         <v-tooltip>
                           <template #activator="{ props }">
@@ -98,14 +95,9 @@
                           <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason) }} games) for {{ item.race }}</span>
                         </v-tooltip>
                       </template>
-                    </div>
+                    </PlayerName>
                   </td>
                   <td>{{ item.battleTag }}</td>
-                  <td>
-                    <div v-if="item.country">
-                      <FlagIcon :countryIdentifier="item.country" />
-                    </div>
-                  </td>
                   <td>{{ item.discordTag }}</td>
                   <td>
                     {{ getW3CMMR(item, currentW3CSeason) }}
@@ -529,7 +521,6 @@ const tableHeader = computed(() => [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },  
   { title: 'Battletag', value: 'battleTag', sortable: true },    
-  { title: 'Country', value: 'country', sortable: true },
   { title: 'Discord Name', value: 'discordTag', sortable: true }, 
   { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'mmr', sortable: false }, 
   { title: 'Main Race', value: 'race', sortable: true },  
@@ -808,15 +799,5 @@ const cancelAddNewPlayer = () => {
 
 .player-row:hover {
   background-color: rgba(var(--v-theme-primary), 0.05) !important;
-}
-
-.player-name-link {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.player-name-link:hover {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: underline;
 }
 </style>

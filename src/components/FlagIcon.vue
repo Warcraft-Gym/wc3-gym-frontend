@@ -1,32 +1,18 @@
 <template>
-    <v-tooltip 
+    <v-tooltip
         v-if="currentCountry"
         location="top"
         :text="currentCountry.name">
-        <template v-slot:activator="{ props }">                          
+        <template v-slot:activator="{ props }">
             <span v-bind="props" :class="'fp '+ currentCountry.a2.toLowerCase()"></span>
-        </template>    
+        </template>
     </v-tooltip>
 </template>
 
-<script>
-
+<script setup>
+import { computed } from 'vue'
 import CountryCodes from 'country-code-info'
 
-export default {
-    props: {
-        countryIdentifier: {
-            type: String,
-        },
-    },
-    setup( props ){
-        const currentCountry = CountryCodes.findCountry({'a2': props.countryIdentifier});
-
-        return {
-            currentCountry,
-        }
-    },
-}
-    
+const props = defineProps({ countryIdentifier: String })
+const currentCountry = computed(() => props.countryIdentifier ? CountryCodes.findCountry({ a2: props.countryIdentifier }) : null)
 </script>
-

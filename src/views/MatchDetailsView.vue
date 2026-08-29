@@ -219,7 +219,7 @@
                     <span v-else class="text-grey">Not scheduled</span>
                   </td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.race" @click.stop="showStats(item.player1)" />
+                    <PlayerName :player="item.player1" :race="item.player1.race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
@@ -238,22 +238,13 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.race" @click.stop="showStats(item.player2)" />
+                    <PlayerName :player="item.player2" :race="item.player2.race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player2) ?? 'N/A' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
-                  </td>
-                  <td>
-                    <span v-if="item.host_player_id === item.player1.id">
-                      {{ item.player1.name }}
-                    </span>
-                    <span v-else-if="item.host_player_id === item.player2.id">
-                      {{ item.player2.name }}
-                    </span>
-                    <span v-else class="text-grey">—</span>
                   </td>
                   <td class="text-center">
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
@@ -333,7 +324,7 @@
                 <tr class="series-row draft-series-row">
                   <td>{{ item.id }}</td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.race" @click.stop="showStats(item.player1)" />
+                    <PlayerName :player="item.player1" :race="item.player1.race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
@@ -360,7 +351,7 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.race" @click.stop="showStats(item.player2)" />
+                    <PlayerName :player="item.player2" :race="item.player2.race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
@@ -385,15 +376,6 @@
                     <v-chip size="small" color="purple">
                       {{ getHighestW3CMMR(item.player2) ?? 'N/A' }}
                     </v-chip>
-                  </td>
-                  <td>
-                    <span v-if="item.host_player_id === item.player1.id">
-                      {{ item.player1.name }}
-                    </span>
-                    <span v-else-if="item.host_player_id === item.player2.id">
-                      {{ item.player2.name }}
-                    </span>
-                    <span v-else class="text-grey">—</span>
                   </td>
                   <td class="text-center">
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
@@ -1086,7 +1068,6 @@ const seriesTableHeader = [
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value) || 0;
     return aValue - bValue;
   }},
-  { title: 'Host' },
   { title: 'Fantasy Match'},  
   { title: '', value: 'actions', sortable: true }
 ];
@@ -1117,7 +1098,6 @@ const draftSeriesTableHeader = [
     let bValue = getHighestW3CMMR(b?.player2) || 0;
     return aValue - bValue;
   }},
-  { title: 'Host' },
   { title: 'Fantasy Match'},  
   { title: '', value: 'actions', sortable: true }
 ];

@@ -3,6 +3,7 @@
     <RaceIcon v-if="race" :raceIdentifier="race" />
     <FlagIcon v-if="player.country" :countryIdentifier="player.country" />
     <strong>{{ player.name }}</strong>
+    <v-chip v-if="host" size="x-small" variant="tonal" color="primary">Host</v-chip>
     <slot />
   </span>
 </template>
@@ -11,6 +12,7 @@
 defineProps({
   player: { type: Object, required: true }, // needs name, country
   race: String, // the race for this (race, player) pair; omit to show none
+  host: Boolean,
 })
 </script>
 

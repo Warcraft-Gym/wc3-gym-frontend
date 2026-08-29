@@ -84,7 +84,7 @@
       </v-card-title>
       <v-card-text class="pt-0">
         <div v-for="badge in earned" :key="badge.id" class="d-flex align-center badge-row">
-          <v-icon size="small" color="amber-darken-2" class="mr-3">{{ badge.icon }}</v-icon>
+          <AchievementIcon :id="badge.id" class="mr-3 text-amber-darken-2" />
           <span class="text-body-2 font-weight-medium mr-3">{{ badge.name }}</span>
           <span class="text-caption text-medium-emphasis">{{ badge.description }}</span>
           <v-spacer />
@@ -100,13 +100,14 @@
         </div>
         <template v-if="showLocked">
           <div v-for="badge in locked" :key="badge.id" class="d-flex align-center badge-row text-medium-emphasis">
-            <v-icon size="small" class="mr-3">{{ badge.icon }}</v-icon>
+            <AchievementIcon :id="badge.id" class="mr-3" />
             <span class="text-body-2 mr-3">{{ badge.name }}</span>
             <span class="text-caption">{{ badge.description }}</span>
             <v-spacer />
             <span class="text-body-2 ml-3">+{{ badge.points }}</span>
           </div>
         </template>
+        <div class="text-caption text-medium-emphasis mt-3">{{ BADGES_CREDIT }}</div>
       </v-card-text>
     </v-card>
 
@@ -163,7 +164,8 @@ import { DateTime } from 'luxon';
 import { useLadderStore, useSeasonStore } from '@/stores';
 import RaceIcon from '@/components/RaceIcon.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
-import { achievementPoints, SCORED_NOTE, MMR_NOTE } from '@/helpers/achievements';
+import { achievementPoints, SCORED_NOTE, MMR_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
+import AchievementIcon from '@/components/AchievementIcon.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 
 const props = defineProps({

@@ -564,7 +564,7 @@ const editSchedule = (item) => {
   if (item.date_time) {
     // Backend stores datetime in UTC as naive datetime (no timezone info)
     // Parse as UTC and convert to user's local timezone
-    const utcDateTime = DateTime.fromISO(item.date_time + 'Z', { zone: 'UTC' });
+    const utcDateTime = DateTime.fromISO(item.date_time, { zone: 'UTC' });
     
     if (utcDateTime.isValid) {
       // Convert to local timezone

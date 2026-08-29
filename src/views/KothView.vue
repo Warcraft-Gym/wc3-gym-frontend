@@ -369,6 +369,7 @@
 </template>
 
 <script setup>
+import { DateTime } from 'luxon';
 import { ref, computed, onMounted } from 'vue';
 import { useKothStore } from '@/stores';
 import { storeToRefs } from 'pinia';
@@ -688,13 +689,7 @@ function getBracketSignups(bracket) {
 
 function formatEventDate(dateString) {
   if (!dateString) return 'Not set';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  return DateTime.fromISO(dateString, { zone: 'UTC' }).toFormat('ccc, LLL d, yyyy');
 }
 </script>
 

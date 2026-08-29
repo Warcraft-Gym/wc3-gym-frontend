@@ -60,9 +60,7 @@ const showBar = computed(() => route.meta.bar !== false && !isReadonly.value);
 // a link is drawn only when the session role reaches the target route's meta.role
 const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.role);
 
-const avatarUrl = computed(() => me.value?.avatar
-    ? `https://cdn.discordapp.com/avatars/${me.value.discord_id}/${me.value.avatar}.png`
-    : null);
+const avatarUrl = computed(() => me.value?.avatar || null); // /me already answers the CDN URL
 const initials = computed(() => (me.value?.name || '?').slice(0, 2).toUpperCase());
 const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCase()));
 </script>

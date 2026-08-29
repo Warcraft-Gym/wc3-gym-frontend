@@ -202,7 +202,8 @@
                 <v-spacer />
                 <v-col cols="12" sm="auto">
                   <v-btn variant="elevated" color="primary" @click="syncW3CTeam" :loading="isLoading" :disabled="isLoading" prepend-icon="mdi-sync" block>
-                    Sync W3C Info
+                    Sync W3C
+                    <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
                   </v-btn>
                 </v-col>
                 <v-col cols="12" sm="auto">

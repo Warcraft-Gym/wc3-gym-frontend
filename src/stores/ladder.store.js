@@ -9,7 +9,7 @@ export const useLadderStore = defineStore({
     state: () => ({
         // season ladder answers, keyed by season id, so a dialog reuses the page's read
         ladders: {},
-        // { done, total } while a season sync runs, null otherwise
+        // { done, total } once a season sync knows its player count, null otherwise
         syncProgress: null,
     }),
     actions: {
@@ -31,15 +31,16 @@ export const useLadderStore = defineStore({
         async syncSeason(season_id) {
             const result = { synced: [], skipped: [], failed: [] };
             let offset = 0;
-            this.syncProgress = { done: 0, total: 0 };
             try {
                 while (offset !== null) {
+                    // No limit is sent, so the server picks the chunk size from its worker count
                     const chunk = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/ladder-sync?offset=${offset}`);
                     result.synced.push(...(chunk.synced ?? []));
                     result.skipped.push(...(chunk.skipped ?? []));
                     result.failed.push(...(chunk.failed ?? []));
                     offset = chunk.next_offset ?? null;
-                    this.syncProgress = { done: offset ?? chunk.total ?? 0, total: chunk.total ?? 0 };
+                    // The bar stays hidden until the first chunk answers with the player count
+                    if (chunk.total) this.syncProgress = { done: offset ?? chunk.total, total: chunk.total };
                 }
             } finally {
                 this.syncProgress = null;

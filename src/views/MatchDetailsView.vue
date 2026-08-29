@@ -138,6 +138,7 @@
               block
             >
               Sync W3C
+              <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
             </v-btn>
           </v-col>
         </v-row>
@@ -545,7 +546,8 @@
                 :loading="isLoading" 
                 :disabled="isLoading"
               >
-                Sync W3C Info
+                Sync W3C
+                <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
               </v-btn>
             </v-col> 
 

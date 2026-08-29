@@ -3,7 +3,7 @@
   <div v-if="badges.length">
     <div class="d-flex align-center flex-wrap" style="gap: 2px">
       <span v-for="badge in badges" :key="badge.id" class="badge-icon">
-        <v-icon size="small" color="amber-darken-2">{{ badge.icon }}</v-icon>
+        <AchievementIcon :id="badge.id" :size="16" class="text-amber-darken-2" />
         <v-tooltip activator="parent" location="top">{{ badge.name }} (+{{ badge.points }})</v-tooltip>
       </span>
     </div>
@@ -14,6 +14,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import AchievementIcon from '@/components/AchievementIcon.vue';
 import { achievementPoints } from '@/helpers/achievements';
 
 const props = defineProps({

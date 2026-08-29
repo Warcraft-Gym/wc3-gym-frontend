@@ -465,7 +465,6 @@
 </template>
 
 <script setup>
-import '@/assets/base.css';
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
@@ -474,10 +473,9 @@ import { useTeamStore } from '@/stores/team.store';
 import { useSeriesStore } from '@/stores/series.store';
 import { useFantasyStore } from '@/stores/fantasy.store';
 import { useLadderStore } from '@/stores/ladder.store';
-import RaceIcon from '@/components/RaceIcon.vue';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
+import { raceWrapper } from '@/helpers/races';
 
-defineOptions({ name: 'SeasonReportView' });
 
 const route = useRoute();
 const router = useRouter();
@@ -621,15 +619,8 @@ const raceColors = {
     NE: '#2E7D32',     // green
     RANDOM: '#F9A825', // yellow
 };
-const raceNames = {
-    HU: 'Human',
-    OC: 'Orc',
-    UD: 'Undead',
-    NE: 'Night Elf',
-    RANDOM: 'Random',
-};
 const getRaceColor = race => raceColors[race] || '#607D8B';
-const getRaceName = race => raceNames[race] || race;
+const getRaceName = race => raceWrapper.getRaceObject(race)?.name || race;
 
 // ─── Rank medal ───────────────────────────────────────────────────────────────
 const rankMedal = rank => {
@@ -855,34 +846,6 @@ const dayTicks = computed(() => {
 }
 .win-rate-bar {
   flex: 1;
-}
-
-/* ── Performer cards ──────────────────────────────────────────────────────── */
-.performer-card {
-  position: relative;
-  overflow: visible;
-  padding-top: 16px;
-}
-.performer-badge {
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-  z-index: 1;
-}
-.performer-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ── Ladder activity ─────────────────────────────────────────────────────── */

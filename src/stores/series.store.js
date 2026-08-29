@@ -58,15 +58,6 @@ export const useSeriesStore = defineStore({
             return promoted;
         },
         
-        async searchSeries(search) {
-            try{
-                this.isLoading = true; // Set loading to true
-                const resp = await fetchWrapper.post(`${backendUrl}/series/search?query=${search}`);
-                this.series =  resp
-            } finally {
-                this.isLoading = false; // Set loading to false once complete
-            }
-        },
         async getSeriesByMatchId(match_id) {
             try{
                 this.isLoading = true; // Set loading to true
@@ -87,27 +78,6 @@ export const useSeriesStore = defineStore({
                 }
             } finally {
                 this.isLoading = false; // Set loading to false once complete
-            }
-        },
-        async searchSeriesBySeasonAndPlayday(season_id, playday, search) {
-            try{
-                this.isLoading = true; // Set loading to true
-                if (search){
-                    this.series = await fetchWrapper.post(`${backendUrl}/series/season/${season_id}/playday/${playday}/search?query=${search}`);
-                } else {
-                    this.series = await fetchWrapper.post(`${backendUrl}/series/season/${season_id}/playday/${playday}/search`);
-                }
-            } finally {
-                this.isLoading = false; // Set loading to false once complete
-            }
-        },
-        async fetchSeriesBySeason(season_id) {
-            try {
-                this.isLoading = true;
-                this.series = await fetchWrapper.get(`${backendUrl}/series/season/${season_id}`);
-                return this.series;
-            } finally {
-                this.isLoading = false;
             }
         }
     }

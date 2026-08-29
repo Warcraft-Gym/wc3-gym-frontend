@@ -29,9 +29,6 @@ export const usePlayerCareerStatsStore = defineStore({
                 this.isLoading = false;
             }
         },
-        async getById(id) {
-            return await fetchWrapper.get(`${backendUrl}/stats/career/${id}`);
-        },
         async update(id, data) {
             return await fetchWrapper.put(`${backendUrl}/stats/career/${id}`, data);
         },

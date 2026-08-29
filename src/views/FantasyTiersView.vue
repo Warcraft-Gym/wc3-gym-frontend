@@ -189,14 +189,12 @@
 </template>
 
 <script setup>
-import '@/assets/base.css';
 import { ref, onMounted, computed } from 'vue';
 import { usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 
-defineOptions({ name: 'FantasyTiersView' })
 
 const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
@@ -341,10 +339,6 @@ onMounted(() => {
 <style scoped>
 .border-b {
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.w-100 {
-  width: 100%;
 }
 
 .v-expansion-panel-text :deep(.v-expansion-panel-text__wrapper) {

@@ -164,8 +164,4 @@ watch(localRangeValues, v => {
 </script>
 
 <style scoped>
-.filter-actions {
-  display: flex;
-  justify-content: center;
-}
 </style>

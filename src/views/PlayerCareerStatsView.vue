@@ -1,11 +1,9 @@
 <script setup>
-import '@/assets/base.css';
 import { ref, onMounted, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePlayerCareerStatsStore } from '@/stores/player_career_stats.store';
 import { usePlayerStore } from '@/stores/player.store';
 
-defineOptions({ name: 'PlayerCareerStatsView' })
 
 const store = usePlayerCareerStatsStore();
 const { stats, totalStats } = storeToRefs(store);

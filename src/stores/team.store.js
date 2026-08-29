@@ -35,14 +35,8 @@ export const useTeamStore = defineStore({
         async fetchTeams() {
             this.teams = await fetchWrapper.get(`${backendUrl}/teams`);
         },
-        async getTeams() {
-            return await fetchWrapper.get(`${backendUrl}/teams`);
-        },
         async getTeamsBasic() {
             return await fetchWrapper.get(`${backendUrl}/teams/basic`);
-        },
-        async getTeamDetails(team_id) {
-            return await fetchWrapper.get(`${backendUrl}/teams/${team_id}`);
         },
         async getTeamDetailsSeason(team_id, season_id) {
             return await fetchWrapper.get(`${backendUrl}/teams/${team_id}/seasons/${season_id}`);
@@ -72,15 +66,6 @@ export const useTeamStore = defineStore({
         },
         async deleteTeam(team_id) {
             await fetchWrapper.delete(`${backendUrl}/teams/${team_id}`);
-        },
-        async searchTeams(search) {
-            try{
-                this.isLoading = true; // Set loading to true
-                const resp = await fetchWrapper.post(`${backendUrl}/teams/search?query=${search}`);
-                this.teams =  resp
-            } finally {
-                this.isLoading = false; // Set loading to false once complete
-            }
         },
         async addPlayersToTeamForSeason(team_id, season_id, player_ids) {
             const updatedTeam = await fetchWrapper.post(`${backendUrl}/teams/${team_id}/seasons/${season_id}/players`, {'player_ids': player_ids});

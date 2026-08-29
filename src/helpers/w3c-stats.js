@@ -119,59 +119,6 @@ export function getAllRaceStats(player, currentSeason = null) {
 }
 
 /**
- * Get the season that was used for the stats (useful for displaying fallback info)
- * 
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season
- * @returns {Object|null} - { season: number, isFallback: boolean, stats: Object }
- */
-export function getW3CStatsInfo(player, currentSeason = null) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
-    return null;
-  }
-
-  const targetRace = player.race;
-  if (!targetRace) {
-    return null;
-  }
-
-  const raceStats = player.w3c_stats.filter(s => 
-    s.race && s.race.toUpperCase() === targetRace.toUpperCase()
-  );
-  if (raceStats.length === 0) {
-    return null;
-  }
-
-  // Try current season
-  let stats = raceStats.find(s => s.wc3_season === currentSeason);
-  if (stats) {
-    return { season: currentSeason, isFallback: false, stats };
-  }
-
-  // Try previous season
-  stats = raceStats.find(s => s.wc3_season === currentSeason - 1);
-  if (stats) {
-    return { season: currentSeason - 1, isFallback: true, stats };
-  }
-
-  // Get most recent
-  stats = raceStats.reduce((latest, current) => {
-    if (!latest) return current;
-    return (current.wc3_season || 0) > (latest.wc3_season || 0) ? current : latest;
-  }, null);
-
-  if (stats) {
-    return { 
-      season: stats.wc3_season, 
-      isFallback: stats.wc3_season !== currentSeason, 
-      stats 
-    };
-  }
-
-  return null;
-}
-
-/**
  * Get W3C MMR for a player with fallback
  * 
  * @param {Object} player - Player object
@@ -234,66 +181,6 @@ export function hasLowGamesTwoSeasons(player, currentSeason, threshold = 20) {
   }
 
   const games = getW3CGamesCount(player, currentSeason);
-  return games > 0 && games < threshold;
-}
-
-/**
- * Check if player has W3C stats for current season ONLY (no fallback)
- * Used for validation/eligibility checks
- * 
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
- * @returns {boolean} - True if stats exist for current season only
- */
-export function hasW3CStatsCurrentSeasonOnly(player, currentSeason) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
-    return false;
-  }
-
-  const targetRace = player.race;
-  if (!targetRace) {
-    return false;
-  }
-
-  // Only check current season - no fallback (case-insensitive comparison)
-  return player.w3c_stats.some(s => 
-    s.race && s.race.toUpperCase() === targetRace.toUpperCase() && 
-    s.wc3_season === currentSeason
-  );
-}
-
-/**
- * Check if player has low games in current season ONLY (no fallback)
- * Used for validation/eligibility checks
- * 
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
- * @param {number} threshold - Minimum games threshold (default: 20)
- * @returns {boolean} - True if games count is below threshold in current season only
- */
-export function hasLowGamesCurrentSeasonOnly(player, currentSeason, threshold = 20) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
-    return false;
-  }
-
-  const targetRace = player.race;
-  if (!targetRace) {
-    return false;
-  }
-
-  // Only check current season - no fallback (case-insensitive comparison)
-  const stats = player.w3c_stats.find(s => 
-    s.race && s.race.toUpperCase() === targetRace.toUpperCase() && 
-    s.wc3_season === currentSeason
-  );
-  if (!stats) {
-    return false;
-  }
-
-  const wins = Number(stats.wins || 0);
-  const losses = Number(stats.losses || 0);
-  const games = wins + losses;
-
   return games > 0 && games < threshold;
 }
 

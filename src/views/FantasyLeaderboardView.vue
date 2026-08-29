@@ -625,15 +625,12 @@
 
 <script setup>
 import RowActions from '@/components/RowActions.vue';
-import '@/assets/base.css';
 import { ref, computed, onMounted } from 'vue';
 import { useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
-import RaceIcon from '@/components/RaceIcon.vue';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
 
-defineOptions({ name: 'FantasyLeaderboardView' });
 
 const router = useRouter();
 const fantasyStore = useFantasyStore();
@@ -667,15 +664,18 @@ const races = ref([
   { title: 'Undead', value: 'UD' },
   { title: 'Random', value: 'RANDOM' }
 ]);
-const editedTeam = ref({
+const emptyTeam = (seasonId = null) => ({
   id: null,
   name: '',
-  season_id: null,
+  season_id: seasonId,
   captain_id: null,
   drafted_team_id: null,
   drafted_race: null,
   player_ids: []
 });
+const emptyTierSelection = () => ({ 1: null, 2: null, 3: null, 4: null, 5: null, 6: null });
+
+const editedTeam = ref(emptyTeam());
 const teamForm = ref(null);
 const dialogErrorMessage = ref(null);
 const tierPlayers = ref({
@@ -686,14 +686,7 @@ const tierPlayers = ref({
   5: [],
   6: []
 });
-const selectedTierPlayers = ref({
-  1: null,
-  2: null,
-  3: null,
-  4: null,
-  5: null,
-  6: null
-});
+const selectedTierPlayers = ref(emptyTierSelection());
 
 const headers = [
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
@@ -790,23 +783,8 @@ const closeTeamDialog = () => {
 const openCreateDialog = async () => {
   isEditing.value = false;
   dialogErrorMessage.value = null;
-  editedTeam.value = {
-    id: null,
-    name: '',
-    season_id: selectedSeasonId.value,
-    captain_id: null,
-    drafted_team_id: null,
-    drafted_race: null,
-    player_ids: []
-  };
-  selectedTierPlayers.value = {
-    1: null,
-    2: null,
-    3: null,
-    4: null,
-    5: null,
-    6: null
-  };
+  editedTeam.value = emptyTeam(selectedSeasonId.value);
+  selectedTierPlayers.value = emptyTierSelection();
   await loadPlayersAndTeams();
   editDialog.value = true;
 };
@@ -829,14 +807,7 @@ const openEditDialog = async (team) => {
   await loadPlayersAndTeams();
   
   // Reset tier selections
-  selectedTierPlayers.value = {
-    1: null,
-    2: null,
-    3: null,
-    4: null,
-    5: null,
-    6: null
-  };
+  selectedTierPlayers.value = emptyTierSelection();
   
   // Populate tier selections from existing players AFTER players are loaded
   if (team.drafted_players && team.drafted_players.length > 0) {
@@ -856,23 +827,8 @@ const openEditDialog = async (team) => {
 const closeEditDialog = () => {
   editDialog.value = false;
   dialogErrorMessage.value = null;
-  editedTeam.value = {
-    id: null,
-    name: '',
-    season_id: null,
-    captain_id: null,
-    drafted_team_id: null,
-    drafted_race: null,
-    player_ids: []
-  };
-  selectedTierPlayers.value = {
-    1: null,
-    2: null,
-    3: null,
-    4: null,
-    5: null,
-    6: null
-  };
+  editedTeam.value = emptyTeam();
+  selectedTierPlayers.value = emptyTierSelection();
 };
 
 const saveTeam = async () => {
@@ -1046,13 +1002,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.v-chip.gold {
-  background-color: #FFD700 !important;
-  color: #000 !important;
-}
-
-.v-chip.silver {
-  background-color: #C0C0C0 !important;
-  color: #000 !important;
-}
 </style>

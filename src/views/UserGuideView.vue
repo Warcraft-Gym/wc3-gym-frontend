@@ -1,9 +1,7 @@
 <script setup>
-import '@/assets/base.css';
 import { ref, onMounted } from 'vue';
 import { marked } from 'marked';
 
-defineOptions({ name: 'UserGuideView' })
 
 const markdownContent = ref('');
 const htmlContent = ref('');
@@ -39,22 +37,8 @@ const fetchMarkdown = async () => {
     
     markdownContent.value = await response.text();
     
-    // Configure marked for GitHub Flavored Markdown
-    marked.setOptions({
-      breaks: true,
-      gfm: true,
-      headerIds: true,
-      mangle: false,
-      headerPrefix: '',
-      pedantic: false
-    });
-    
-    // Use GitHub Flavored Markdown extensions
-    marked.use({
-      gfm: true,
-      breaks: true
-    });
-    
+    marked.use({ breaks: true });
+
     // Convert markdown to HTML
     htmlContent.value = marked.parse(markdownContent.value);
   } catch (error) {

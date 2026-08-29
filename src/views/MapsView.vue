@@ -180,14 +180,10 @@
 </template>
 <script setup>
 import RowActions from '@/components/RowActions.vue';
-import '@/assets/base.css';
 import { useMapStore } from '@/stores';
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 
-defineOptions({
-  name: 'MapsView'
-})
 
 // Store
 const mapStore = useMapStore();

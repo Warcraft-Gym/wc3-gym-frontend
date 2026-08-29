@@ -199,9 +199,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import RaceIcon from '@/components/RaceIcon.vue';
 
-defineOptions({ name: 'RandomStatsView' });
 
 const W3C_MATCH_API = 'https://website-backend.w3champions.com/api/matches/search';
 

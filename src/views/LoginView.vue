@@ -1,19 +1,28 @@
 <script setup>
-import { Form, Field } from 'vee-validate';
-import * as Yup from 'yup';
+import { ref } from 'vue';
 
 import { useAuthStore } from '@/stores';
 
-const schema = Yup.object().shape({
-    password: Yup.string().required('Password is required')
-});
+const password = ref('');
+const passwordField = ref(null);
+const apiError = ref(null);
+const isSubmitting = ref(false);
+const passwordRules = [value => !!value || 'Password is required'];
 
-function onSubmit(values, { setErrors }) {
+async function onSubmit() {
     const authStore = useAuthStore();
-    const { password } = values;
 
-    return authStore.login(password)
-        .catch(error => setErrors({ apiError: error.message }));
+    const errors = await passwordField.value.validate();
+    if (errors.length) return;
+
+    isSubmitting.value = true;
+    try {
+        await authStore.login(password.value);
+    } catch (error) {
+        apiError.value = error.message;
+    } finally {
+        isSubmitting.value = false;
+    }
 }
 </script>
 
@@ -24,20 +33,20 @@ function onSubmit(values, { setErrors }) {
                 <v-icon class="mr-2">mdi-lock</v-icon>
                 Admin Login
             </v-card-title>
-            
+
             <v-card-text class="pt-6">
-                <Form @submit="onSubmit" :validation-schema="schema" v-slot="{ errors, isSubmitting }">
-                    <Field name="password" v-slot="{ field, errors: fieldErrors }">
-                        <v-text-field
-                            v-bind="field"
-                            label="Password"
-                            type="password"
-                            variant="outlined"
-                            prepend-inner-icon="mdi-lock-outline"
-                            :error-messages="fieldErrors"
-                        />
-                    </Field>
-                    
+                <form novalidate @submit.prevent="onSubmit">
+                    <v-text-field
+                        ref="passwordField"
+                        v-model="password"
+                        name="password"
+                        label="Password"
+                        type="password"
+                        variant="outlined"
+                        prepend-inner-icon="mdi-lock-outline"
+                        :rules="passwordRules"
+                    />
+
                     <v-btn
                         type="submit"
                         color="primary"
@@ -51,18 +60,18 @@ function onSubmit(values, { setErrors }) {
                     >
                         Login
                     </v-btn>
-                    
+
                     <v-alert
-                        v-if="errors.apiError"
+                        v-if="apiError"
                         type="error"
                         variant="tonal"
                         border="start"
                         border-color="red"
                         class="mt-4"
                     >
-                        {{ errors.apiError }}
+                        {{ apiError }}
                     </v-alert>
-                </Form>
+                </form>
             </v-card-text>
         </v-card>
     </v-container>

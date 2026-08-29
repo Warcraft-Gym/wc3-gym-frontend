@@ -369,13 +369,10 @@
 </template>
 
 <script setup>
-import '@/assets/base.css';
 import { ref, computed, onMounted } from 'vue';
 import { useKothStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import RaceSelect from '@/components/RaceSelect.vue';
 
-defineOptions({ name: 'KothView' });
 
 const kothStore = useKothStore();
 const { events, signups, kings, isLoading } = storeToRefs(kothStore);

@@ -1,13 +1,9 @@
 <script setup>
-import '@/assets/base.css';
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTeamStore, useSeasonStore, usePlayerStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 
-defineOptions({
-  name: 'HomeView'
-})
 
 // Router
 const router = useRouter();
@@ -164,10 +160,6 @@ const navigateTo = (route) => {
 
 .dashboard-card.on-hover {
   transform: translateY(-5px);
-}
-
-.error-message {
-  margin-top: 1rem;
 }
 
 .text-medium-emphasis {

@@ -16,7 +16,6 @@ import 'vuetify/styles'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { createVuetify } from 'vuetify';
-import { VTimePicker } from 'vuetify/labs/VTimePicker'
 
 
 //Components
@@ -38,7 +37,6 @@ const vuetify = new createVuetify ({
     },
     components :{
         ...components,
-        VTimePicker,
     },
     directives
 });
@@ -48,31 +46,6 @@ import App from './App.vue';
 import { router } from './helpers';
 
 const app = createApp(App);
-
-app
-.mixin({
-    methods: {
-        isArray: function ( array ){
-            if( typeof array !== 'undefined' && array.length > 0 && array !== null ) {
-                return true
-            } else {
-                return false
-            }
-        },
-        isObjectEmpty: function ( object ){
-
-            if( object === null ){
-                return true
-            }
-
-            if( typeof object !== 'object' ){
-                return true
-            }
-
-            return Object.keys( object ).length === 0
-        }
-    },
-})
 
 app
 .component('RaceIcon', RaceIcon )

@@ -43,31 +43,6 @@ export const usePlayerStore = defineStore({
         },
         async searchByDiscordId(discordId) {
             return await fetchWrapper.post(`${backendUrl}/users/search?query=discordId == ${discordId}`);
-        },
-        async searchPlayer( name, race, minMMR, maxMMR ) {
-            let queryString = ''
-            let queryADD = false
-
-            //Name
-            if( name ) {
-                queryString += 'name ilike ' + name
-                queryADD = true
-            }
-            //Race
-            if ( race ) {
-                if( queryADD ) queryString += ' and '
-                queryString += 'race == ' + race                
-                queryADD = true
-            }
-            //MMR
-            if ( minMMR !== null && minMMR !== undefined &&  maxMMR !== null && maxMMR !== undefined) {
-                if( queryADD ) queryString += ' and '
-                queryString += 'mmr >= ' + minMMR + ' and ' + 'mmr <= ' + maxMMR 
-                queryADD = true
-            }
-
-            const resp = await fetchWrapper.post(`${backendUrl}/users/search?query=`+queryString);
-            this.players = resp
         }
     }
 });

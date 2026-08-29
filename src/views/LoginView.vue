@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid class="pa-4 d-flex align-center justify-center" style="min-height: 80vh;">
+    <v-container fluid class="pa-4 d-flex flex-column align-center justify-center" style="min-height: 80vh;">
         <v-card elevation="2" max-width="500" width="100%">
             <v-card-title class="bg-primary">
                 <v-icon class="mr-2">mdi-lock</v-icon>
@@ -60,6 +60,9 @@
                 </form>
             </v-card-text>
         </v-card>
+
+        <!-- a signed-in session with no guild membership is a guest, and reads why here -->
+        <DiscordJoinCard v-if="me?.role === 'guest'" class="mt-4" />
     </v-container>
 </template>
 
@@ -67,9 +70,12 @@
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useClerk } from '@clerk/vue';
+import { storeToRefs } from 'pinia';
 
 import { useAuthStore } from '@/stores';
+import DiscordJoinCard from '@/components/DiscordJoinCard.vue';
 
+const { me } = storeToRefs(useAuthStore());
 const route = useRoute();  // ?legacy=1 shows the admin-token form as a break-glass login
 const clerk = useClerk();
 const password = ref('');

@@ -137,9 +137,24 @@ const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCas
                     <v-list-item v-if="canSee('/koth')" class="nav-link-item">
                         <RouterLink to="/koth" class="nav-link">KOTH</RouterLink>
                     </v-list-item>
-                    <v-list-item v-if="canSee('/config')" class="nav-link-item">
-                        <RouterLink to="/config" class="nav-link">Config</RouterLink>
-                    </v-list-item>
+                    <v-menu v-if="canSee('/config')" offset-y>
+                        <template v-slot:activator="{ props }">
+                            <v-list-item v-bind="props" class="config-menu-activator">
+                                <a class="nav-link">
+                                    Config
+                                    <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
+                                </a>
+                            </v-list-item>
+                        </template>
+                        <v-list class="config-dropdown">
+                            <v-list-item>
+                                <RouterLink to="/config">Settings</RouterLink>
+                            </v-list-item>
+                            <v-list-item>
+                                <RouterLink to="/config/discord-roles">Discord Roles</RouterLink>
+                            </v-list-item>
+                        </v-list>
+                    </v-menu>
                     <v-list-item v-if="canSee('/user-guide')" class="nav-link-item">
                         <RouterLink to="/user-guide" class="nav-link">User Guide</RouterLink>
                     </v-list-item>
@@ -192,26 +207,31 @@ const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCas
     color: #1976d2;
 }
 
-.gnl-menu-activator {
+.gnl-menu-activator,
+.config-menu-activator {
     cursor: pointer;
 }
 
-.gnl-menu-activator .nav-link {
+.gnl-menu-activator .nav-link,
+.config-menu-activator .nav-link {
     display: flex;
     align-items: center;
     text-decoration: none;
     color: #1976d2;
 }
 
-.gnl-dropdown {
+.gnl-dropdown,
+.config-dropdown {
     min-width: 180px;
 }
 
-.gnl-dropdown .v-list-item {
+.gnl-dropdown .v-list-item,
+.config-dropdown .v-list-item {
     padding: 0;
 }
 
-.gnl-dropdown a {
+.gnl-dropdown a,
+.config-dropdown a {
     display: block;
     width: 100%;
     padding: 8px 16px;
@@ -219,7 +239,8 @@ const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCas
     color: inherit;
 }
 
-.gnl-dropdown a:hover {
+.gnl-dropdown a:hover,
+.config-dropdown a:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 

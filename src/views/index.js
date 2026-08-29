@@ -12,6 +12,7 @@ export { default as TeamsView } from './TeamsView.vue';
 export { default as PublicSignupView } from './PublicSignupView.vue';
 export { default as PlayerDashboardView } from './PlayerDashboardView.vue';
 export { default as ConfigView } from './ConfigView.vue';
+export { default as DiscordRolesView } from './DiscordRolesView.vue';
 export { default as FantasyLeaderboardView } from './FantasyLeaderboardView.vue';
 export { default as FantasyBetsView } from './FantasyBetsView.vue';
 export { default as FantasyDashboardView } from './FantasyDashboardView.vue';

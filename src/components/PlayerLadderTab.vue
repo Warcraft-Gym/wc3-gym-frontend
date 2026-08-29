@@ -75,7 +75,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Achievements: what the season paid out, then the rules still open -->
+    <!-- Achievements: what the season paid out in the order it was earned, then the rules still open -->
     <v-card v-if="scoped" variant="outlined" class="mb-4">
       <v-card-title class="text-body-2 d-flex align-center">
         <span>Achievements</span>
@@ -88,6 +88,7 @@
           <span class="text-body-2 font-weight-medium mr-3">{{ badge.name }}</span>
           <span class="text-caption text-medium-emphasis">{{ badge.description }}</span>
           <v-spacer />
+          <span class="text-caption text-medium-emphasis text-no-wrap ml-3">{{ badgeDate(badge.achieved_at) }}</span>
           <span class="text-body-2 text-amber-darken-2 ml-3">+{{ badge.points }}</span>
         </div>
         <div
@@ -215,7 +216,9 @@ const mmrRange = computed(() => {
 });
 
 // The earned rules come with the player, the whole catalogue with the season
-const earned = computed(() => data.value?.achievements ?? []);
+const earned = computed(() =>
+  [...(data.value?.achievements ?? [])].sort((a, b) => a.achieved_at.localeCompare(b.achieved_at))
+);
 const achievedPoints = computed(() => achievementPoints(earned.value));
 
 // The tile total is the two halves added, so the caption names both
@@ -247,6 +250,7 @@ const teamOf = (userId) => {
 };
 
 const matchDate = (iso) => DateTime.fromISO(iso, { zone: 'utc' }).toFormat('yyyy-LL-dd HH:mm');
+const badgeDate = (iso) => DateTime.fromISO(iso, { zone: 'utc' }).toFormat('yyyy-LL-dd');
 const duration = (seconds) => {
   const total = seconds ?? 0;
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;

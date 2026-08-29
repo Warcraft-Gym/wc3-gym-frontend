@@ -4,7 +4,7 @@
     <div class="d-flex align-center flex-wrap" style="gap: 2px">
       <span v-for="badge in badges" :key="badge.id" class="badge-icon">
         <v-icon size="small" color="amber-darken-2">{{ badge.icon }}</v-icon>
-        <v-tooltip activator="parent" location="top">{{ badge.name }} (+{{ badge.points }})</v-tooltip>
+        <v-tooltip activator="parent" location="top">{{ badge.name }} (+{{ badge.points }}) &middot; {{ badge.achieved_at.slice(0, 10) }}</v-tooltip>
       </span>
     </div>
     <div v-if="showPoints" class="text-caption text-medium-emphasis badge-points">{{ points }}</div>

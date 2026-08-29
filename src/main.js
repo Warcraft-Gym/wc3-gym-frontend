@@ -23,6 +23,7 @@ import RaceIcon from '@/components/RaceIcon.vue'
 import RaceSelect from '@/components/RaceSelect.vue'
 import FlagIcon from '@/components/FlagIcon.vue'
 import CountrySelect from '@/components/CountrySelect.vue'
+import PlayerName from '@/components/PlayerName.vue'
 
 const vuetify = new createVuetify ({
     theme: {
@@ -52,6 +53,7 @@ app
 .component('RaceSelect', RaceSelect )
 .component('FlagIcon', FlagIcon )
 .component('CountrySelect', CountrySelect)
+.component('PlayerName', PlayerName)
 
 app.use(pinia)
 app.use(vuetify)

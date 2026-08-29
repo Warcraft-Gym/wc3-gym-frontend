@@ -218,11 +218,8 @@
                     </span>
                     <span v-else class="text-grey">Not scheduled</span>
                   </td>
-                  <td @click.stop="showStats(item.player1)" class="player-cell">
-                    <div class="d-flex align-center ga-2">
-                      <RaceIcon :raceIdentifier="item.player1.race" />
-                      <strong>{{ item.player1.name }}</strong>
-                    </div>
+                  <td>
+                    <PlayerName :player="item.player1" :race="item.player1.race" @click.stop="showStats(item.player1)" />
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
@@ -240,11 +237,8 @@
                       {{ item.player2_score }}
                     </v-chip>
                   </td>
-                  <td @click.stop="showStats(item.player2)" class="player-cell">
-                    <div class="d-flex align-center ga-2">
-                      <RaceIcon :raceIdentifier="item.player2.race" />
-                      <strong>{{ item.player2.name }}</strong>
-                    </div>
+                  <td>
+                    <PlayerName :player="item.player2" :race="item.player2.race" @click.stop="showStats(item.player2)" />
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
@@ -338,11 +332,8 @@
               <template v-slot:item="{ item }">
                 <tr class="series-row draft-series-row">
                   <td>{{ item.id }}</td>
-                  <td @click.stop="showStats(item.player1)" class="player-cell">
-                    <div class="d-flex align-center ga-2">
-                      <RaceIcon :raceIdentifier="item.player1.race" />
-                      <strong>{{ item.player1.name }}</strong>
-                    </div>
+                  <td>
+                    <PlayerName :player="item.player1" :race="item.player1.race" @click.stop="showStats(item.player1)" />
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
@@ -368,11 +359,8 @@
                       {{ getHighestW3CMMR(item.player1) ?? 'N/A' }}
                     </v-chip>
                   </td>
-                  <td @click.stop="showStats(item.player2)" class="player-cell">
-                    <div class="d-flex align-center ga-2">
-                      <RaceIcon :raceIdentifier="item.player2.race" />
-                      <strong>{{ item.player2.name }}</strong>
-                    </div>
+                  <td>
+                    <PlayerName :player="item.player2" :race="item.player2.race" @click.stop="showStats(item.player2)" />
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
@@ -522,8 +510,7 @@
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
-                    <FlagIcon :countryIdentifier="item.country" />
-                    <span @click.stop="showStats(item)">{{ item.name }}</span>
+                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)" />
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
@@ -588,8 +575,7 @@
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
-                    <FlagIcon :countryIdentifier="item.country" />
-                    <span @click.stop="showStats(item)">{{ item.name }}</span>
+                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)" />
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
@@ -795,13 +781,9 @@
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
-                      <div class="d-flex align-center">
-                        <FlagIcon :countryIdentifier="item.country" class="mr-2" />
-                        <span @click.stop="showStats(item)" class="player-name-link">
-                          <strong>{{ item.name }}</strong>
-                          <span class="text-caption text-grey ml-1">({{ item.discordTag }})</span>
-                        </span>
-                      </div>
+                      <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
+                        <span class="text-caption text-grey">({{ item.discordTag }})</span>
+                      </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
@@ -856,13 +838,9 @@
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
-                      <div class="d-flex align-center">
-                        <FlagIcon :countryIdentifier="item.country" class="mr-2" />
-                        <span @click.stop="showStats(item)" class="player-name-link">
-                          <strong>{{ item.name }}</strong>
-                          <span class="text-caption text-grey ml-1">({{ item.discordTag }})</span>
-                        </span>
-                      </div>
+                      <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
+                        <span class="text-caption text-grey">({{ item.discordTag }})</span>
+                      </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
@@ -951,18 +929,10 @@
             </v-toolbar>
           </template>
               <template v-slot:[`item.player1.name`]="{ item }">
-                <div class="d-flex align-center ga-2">
-                  <RaceIcon :raceIdentifier="item.player1.race" />
-                  <FlagIcon :countryIdentifier="item.player1.country" />
-                  <span @click.stop="showStats(item.player1)">{{ item.player1.name }}</span>
-                </div>
+                <PlayerName :player="item.player1" :race="item.player1.race" @click.stop="showStats(item.player1)" />
               </template>
               <template v-slot:[`item.player2.name`]="{ item }">
-                <div class="d-flex align-center ga-2">
-                  <RaceIcon :raceIdentifier="item.player2.race" />
-                  <FlagIcon :countryIdentifier="item.player2.country" />
-                  <span @click.stop="showStats(item.player2)">{{ item.player2.name }}</span>
-                </div>
+                <PlayerName :player="item.player2" :race="item.player2.race" @click.stop="showStats(item.player2)" />
               </template>
               <template v-slot:[`item.p1_matchup_history`]="{ item }">
                 <div class="d-flex align-center ga-1">
@@ -1981,25 +1951,6 @@ onMounted(async () => {
   font-size: 2rem !important;
   font-weight: bold;
   min-width: 80px;
-}
-
-.player-cell {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.player-cell:hover {
-  color: rgb(var(--v-theme-primary));
-}
-
-.player-name-link {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.player-name-link:hover {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: underline;
 }
 
 .series-row {

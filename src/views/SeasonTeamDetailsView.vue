@@ -153,12 +153,7 @@
         <tbody>
           <tr v-for="row in ladderTeam.players" :key="row.id">
             <td><RaceIcon v-if="row.race" :raceIdentifier="row.race" /></td>
-            <td>
-              <div class="d-flex align-center" style="gap: 6px">
-                <FlagIcon v-if="row.country" :countryIdentifier="row.country" />
-                <span class="player-name-link" @click.stop="showStats(row)">{{ row.name }}</span>
-              </div>
-            </td>
+            <td><PlayerName :player="row" @click.stop="showStats(row)" /></td>
             <td class="text-right">{{ row.ladder_points }}</td>
             <td>
               <AchievementChip :badges="row.achievements" />
@@ -218,17 +213,8 @@
             <template v-slot:item="{ item }">
               <tr class="text-no-wrap">
                 <td>{{ item.id }}</td>
-                <td>
-                  <span @click.stop="showStats(item)" style="cursor: pointer; text-decoration: underline;">
-                    {{ item.name }}
-                  </span>
-                </td>
+                <td><PlayerName :player="item" @click.stop="showStats(item)" /></td>
                 <td>{{ item.battleTag }}</td>
-                <td>
-                  <div v-if="item.country">
-                    <FlagIcon :countryIdentifier="item.country" />
-                  </div>
-                </td>
                 <td>{{ item.discordTag }}</td>
                 <td>{{ getW3CMMR(item, currentW3CSeason) }}
                   <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
@@ -309,9 +295,7 @@
           density="comfortable"
         >
           <template v-slot:[`item.name`]="{ item }">
-            <span @click.stop="showStats(item)" style="cursor: pointer; text-decoration: underline; color: var(--v-theme-primary);">
-              {{ item.name }}
-            </span>
+            <PlayerName :player="item" @click.stop="showStats(item)" />
           </template>
         </v-data-table>
       </v-card-text>
@@ -445,7 +429,6 @@ const tableHeader = [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },  
   { title: 'Battletag', value: 'battleTag', sortable: true },    
-  { title: 'Country', value: 'country', sortable: true },
   { title: 'Discord Name', value: 'discordTag', sortable: true }, 
   { title: 'W3C MMR', value: 'mmr', sortable: false }, 
   { title: 'Main Race', value: 'race', sortable: true },  
@@ -456,7 +439,6 @@ const tableHeader = [
 const playerTableHeaders = [
   { title: 'Name', value: 'name' },
   { title: 'BattleTag', value: 'battleTag' },
-  { title: 'Country', value: 'country' },
   { title: 'MMR', value: 'mmr' },
 ];
 
@@ -640,8 +622,4 @@ const filteredAllPlayers = computed(() => {
   background-color: rgba(var(--v-theme-primary), 0.05) !important;
 }
 
-.player-name-link {
-  cursor: pointer;
-  text-decoration: underline;
-}
 </style>

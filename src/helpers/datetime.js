@@ -1,11 +1,10 @@
 import { DateTime } from 'luxon';
 
-// Backend stores datetime in UTC as naive datetime (e.g., "2025-01-15 18:00:00")
-// Parse it as UTC and display in user's local timezone
+// A bare value is UTC; a zoned one carries its own offset
 export const formatDateTime = (dateTimeStr) => {
   if (!dateTimeStr) return 'Not set';
   try {
-    const dt = DateTime.fromISO(dateTimeStr + 'Z', { zone: 'UTC' });
+    const dt = DateTime.fromISO(dateTimeStr, { zone: 'UTC' });
 
     if (!dt.isValid) return dateTimeStr;
 

@@ -1284,7 +1284,7 @@ const formateDate = ( dateToFormat ) => {
     return dateToFormat;
   }
   // Backend stores UTC, convert to ET for display
-  const formatedDate = DateTime.fromISO(dateToFormat + 'Z', { zone: 'UTC' })
+  const formatedDate = DateTime.fromISO(dateToFormat, { zone: 'UTC' })
     .setZone('America/New_York')
     .toLocaleString(DateTime.DATETIME_MED);
   return formatedDate
@@ -1479,7 +1479,7 @@ const editSeries = async (seriesItem) => {
   selectedSeries.value = copy_series;
   if (copy_series.date_time) {
     // Backend stores UTC, convert to ET for display in date picker
-    const initialDateTime = DateTime.fromISO(copy_series.date_time + 'Z', { zone: 'UTC' })
+    const initialDateTime = DateTime.fromISO(copy_series.date_time, { zone: 'UTC' })
       .setZone('America/New_York');
     
     // Create date in local timezone but with ET date/time values (no conversion)

@@ -1,7 +1,7 @@
 <template>
-  <div v-if="auth.isAdmin" class="d-flex justify-end">
+  <div v-if="visible.length" class="d-flex justify-end">
     <v-btn
-      v-for="action in actions"
+      v-for="action in visible"
       :key="action.label"
       icon
       variant="text"
@@ -18,9 +18,12 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+
 import { useAuthStore } from '@/stores';
 
-const auth = useAuthStore();  // every row action writes, so only an admin sees them
-// action: { icon, label, onClick, color?, disabled?, loading? }
-defineProps({ actions: { type: Array, required: true } });
+const auth = useAuthStore();  // an action writes unless marked public, so only an admin sees it
+// action: { icon, label, onClick, color?, disabled?, loading?, public? }
+const props = defineProps({ actions: { type: Array, required: true } });
+const visible = computed(() => props.actions.filter((a) => auth.isAdmin || a.public));
 </script>

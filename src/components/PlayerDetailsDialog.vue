@@ -39,7 +39,7 @@
                 </a>
               </td>
             </tr>
-            <tr v-for="stat in w3cStatsToDisplay" v-if="w3cStatsToDisplay && w3cStatsToDisplay.length > 0" :key="`${stat.race}-${stat.wc3_season}`">
+            <tr v-for="stat in w3cStatsToDisplay" :key="`${stat.race}-${stat.wc3_season}`">
               <td class="text-left text-overline">
                 <RaceIcon :raceIdentifier="stat.race" />
                 <span v-if="stat.wc3_season" class="text-caption ml-2">(Season {{ stat.wc3_season }})</span>

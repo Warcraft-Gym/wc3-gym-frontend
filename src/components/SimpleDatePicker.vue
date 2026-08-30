@@ -109,7 +109,7 @@ const formatDate = (dateStr) => {
   if (!dateStr) return '';
   
   // Remove any non-digit characters except slash
-  let cleaned = dateStr.replace(/[^\d\/]/g, '');
+  let cleaned = dateStr.replace(/[^\d/]/g, '');
   
   // Handle various input formats
   if (cleaned.length === 8 && !cleaned.includes('/')) {

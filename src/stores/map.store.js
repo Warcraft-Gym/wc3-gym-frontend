@@ -23,10 +23,10 @@ export const useMapStore = defineStore({
         },
         async updateMap(map) {
             const mapId = map.id;
-            const updatedMap = await fetchWrapper.put(`${backendUrl}/maps/${mapId}`, map);
+            await fetchWrapper.put(`${backendUrl}/maps/${mapId}`, map);
         },
         async createMap(map) {
-            const createMap = await fetchWrapper.post(`${backendUrl}/maps`, map);
+            await fetchWrapper.post(`${backendUrl}/maps`, map);
         },
         async deleteMap(map_id) {
             await fetchWrapper.delete(`${backendUrl}/maps/${map_id}`);

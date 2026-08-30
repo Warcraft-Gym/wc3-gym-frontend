@@ -453,7 +453,7 @@ const fetchSettings = async () => {
     const settings = await configStore.fetchSettings();
     // Convert settings array to map
     settings.forEach(setting => {
-      if (settingsMap.value.hasOwnProperty(setting.key)) {
+      if (Object.hasOwn(settingsMap.value, setting.key)) {
         // Convert season settings to number for proper v-select matching
         if (setting.key === 'current_gnl_season' && setting.value) {
           settingsMap.value[setting.key] = parseInt(setting.value, 10);

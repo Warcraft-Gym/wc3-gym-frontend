@@ -124,17 +124,11 @@ const localSearchRace = ref(null);
 const localSelectedSeasonFilter = ref(null);
 const localRangeValues = ref([0, 3000]);
 
-// initialize locals from props
-localSearchName.value = props.searchName;
-localSearchRace.value = props.searchRace;
-localSelectedSeasonFilter.value = props.selectedSeasonFilter;
-localRangeValues.value = Array.isArray(props.rangeValues) ? [...props.rangeValues] : [props.rangeValues, props.rangeValues];
-
-// keep parent -> local in sync
-watch(() => props.searchName, v => { localSearchName.value = v; });
-watch(() => props.searchRace, v => { localSearchRace.value = v; });
-watch(() => props.selectedSeasonFilter, v => { localSelectedSeasonFilter.value = v; });
-watch(() => props.rangeValues, v => { localRangeValues.value = Array.isArray(v) ? [...v] : [v, v]; }, { deep: true });
+// keep parent -> local in sync, seeding the locals on setup
+watch(() => props.searchName, v => { localSearchName.value = v; }, { immediate: true });
+watch(() => props.searchRace, v => { localSearchRace.value = v; }, { immediate: true });
+watch(() => props.selectedSeasonFilter, v => { localSelectedSeasonFilter.value = v; }, { immediate: true });
+watch(() => props.rangeValues, v => { localRangeValues.value = Array.isArray(v) ? [...v] : [v, v]; }, { deep: true, immediate: true });
 
 // helper to avoid recursive emit loops by checking equality
 function isEqual(a, b) {

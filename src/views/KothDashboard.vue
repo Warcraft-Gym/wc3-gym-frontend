@@ -178,7 +178,7 @@ const route = useRoute();
 const isCleanMode = computed(() => route.query.mode === 'clean');
 
 const kothStore = useKothStore();
-const { events, signups, kings, isLoading } = storeToRefs(kothStore);
+const { events, signups, kings } = storeToRefs(kothStore);
 
 const event = ref(null);
 const showSignupDialog = ref(false);

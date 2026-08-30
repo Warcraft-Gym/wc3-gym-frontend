@@ -15,10 +15,10 @@ export const useSeriesStore = defineStore({
     actions: {
         async updateSeries(series) {
             const seriesId = series.id;
-            const updatedSeries = await fetchWrapper.put(`${backendUrl}/series/${seriesId}`, series);
+            await fetchWrapper.put(`${backendUrl}/series/${seriesId}`, series);
         },
         async createSeries(series) {
-            const updatedSeries = await fetchWrapper.post(`${backendUrl}/series`, series);
+            await fetchWrapper.post(`${backendUrl}/series`, series);
         },
         async deleteSeries(series_id) {
             await fetchWrapper.delete(`${backendUrl}/series/${series_id}`);

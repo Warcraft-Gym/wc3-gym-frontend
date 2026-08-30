@@ -58,7 +58,10 @@ app
 .component('CountrySelect', CountrySelect)
 .component('PlayerName', PlayerName)
 
-app.use(clerkPlugin, { publishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY })
+app.use(clerkPlugin, {
+    publishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+    proxyUrl: import.meta.env.VITE_CLERK_PROXY_URL,  // set only where the production instance runs
+})
 app.use(pinia)
 app.use(vuetify)
 app.use(router)

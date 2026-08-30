@@ -49,12 +49,9 @@
                 class="king-card mb-3 pa-4"
               >
                 <v-row align="center" no-gutters>
-                  <v-col cols="auto" class="mr-3">
-                    <RaceIcon :raceIdentifier="king.race" :size="32" />
-                  </v-col>
                   <v-col>
-                    <div class="text-h5 font-weight-bold">{{ king.twitch_username || king.battle_tag }}</div>
-                    <div class="text-subtitle-1 text-grey-darken-2">{{ king.race }} · {{ king.mmr }} MMR</div>
+                    <PlayerName class="text-h5 font-weight-bold" :player="{ name: king.twitch_username || king.battle_tag, country: king.country }" :race="king.race" />
+                    <div class="text-subtitle-1 text-grey-darken-2">{{ king.mmr }} MMR</div>
                   </v-col>
                   <v-col cols="auto">
                     <v-icon color="warning" size="56">mdi-crown</v-icon>
@@ -78,11 +75,8 @@
                   class="player-item mb-2 pa-3"
                 >
                   <v-row align="center" no-gutters>
-                    <v-col cols="auto" class="mr-3">
-                      <RaceIcon :raceIdentifier="player.race" :size="28" />
-                    </v-col>
                     <v-col>
-                      <span class="text-h6">{{ player.twitch_username || player.battle_tag }}</span>
+                      <PlayerName class="text-h6" :player="{ name: player.twitch_username || player.battle_tag, country: player.country }" :race="player.race" />
                     </v-col>
                     <v-col cols="auto">
                       <span class="text-body-1 text-grey-darken-2">{{ player.mmr }} MMR</span>

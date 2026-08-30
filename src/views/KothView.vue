@@ -138,8 +138,8 @@
                 <div v-for="king in kings[bracket]" :key="king.id" class="king-item pa-2 mb-2">
                   <div class="d-flex align-center justify-space-between">
                     <div class="flex-grow-1">
-                      <div class="font-weight-bold">{{ king.twitch_username || king.battle_tag }}</div>
-                      <div class="text-caption text-grey">{{ king.mmr }} MMR · {{ king.race }}</div>
+                      <PlayerName class="font-weight-bold" :player="{ name: king.twitch_username || king.battle_tag, country: king.country }" :race="king.race" />
+                      <div class="text-caption text-grey">{{ king.mmr }} MMR</div>
                     </div>
                     <v-btn size="small" variant="tonal" color="error" @click="removeKing(king.id)" title="Remove King">
                       <v-icon>mdi-close-circle</v-icon>
@@ -167,8 +167,8 @@
                 >
                   <div class="d-flex align-center justify-space-between">
                     <div class="flex-grow-1">
-                      <div class="text-body-2 font-weight-medium">{{ signup.twitch_username || signup.battle_tag }}</div>
-                      <div class="text-caption text-grey">{{ signup.mmr }} MMR · {{ signup.race }}</div>
+                      <PlayerName class="text-body-2 font-weight-medium" :player="{ name: signup.twitch_username || signup.battle_tag, country: signup.country }" :race="signup.race" />
+                      <div class="text-caption text-grey">{{ signup.mmr }} MMR</div>
                     </div>
                     <div class="d-flex gap-1">
                       <v-btn icon="mdi-crown" size="x-small" variant="tonal" color="warning" @click="setAsKing(signup.id)" title="Make King"></v-btn>

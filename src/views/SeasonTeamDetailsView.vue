@@ -118,9 +118,9 @@
             </th>
             <th class="text-right">W</th>
             <th class="text-right">L</th>
-            <th class="text-right">MMR</th>
+            <th class="text-right"><W3CMmr /></th>
             <th class="text-right">
-              <ColumnNote title="MMR +/-" :note="MMR_NOTE" />
+              <ColumnNote :note="MMR_NOTE"><W3CMmr suffix=" +/-" /></ColumnNote>
             </th>
           </tr>
         </thead>
@@ -161,6 +161,7 @@
           fixed-header
           hover
         >
+          <template v-slot:[`header.mmr`]><W3CMmr /></template>
           <template v-slot:loading>
             <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
           </template>
@@ -268,6 +269,7 @@
           :item-disabled="isRowDisabled"
           density="comfortable"
         >
+          <template v-slot:[`header.mmr`]><W3CMmr /></template>
           <template v-slot:[`item.name`]="{ item }">
             <PlayerName :player="item" @click.stop="showStats(item)" />
           </template>
@@ -302,6 +304,7 @@ import { useAuthStore, useTeamStore, usePlayerStore, useLadderStore } from '@/st
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { SCORED_NOTE, MMR_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import AchievementChip from '@/components/AchievementChip.vue';

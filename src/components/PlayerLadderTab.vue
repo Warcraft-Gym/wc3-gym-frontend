@@ -47,7 +47,7 @@
           </div>
         </div>
         <div>
-          <ColumnNote title="MMR" :note="MMR_NOTE" class="text-caption text-medium-emphasis" />
+          <ColumnNote :note="MMR_NOTE" class="text-caption text-medium-emphasis"><W3CMmr :height="12" /></ColumnNote>
           <div class="text-h6">
             {{ data?.mmr?.current ?? '—' }}
             <span class="text-caption text-medium-emphasis">{{ mmrRange }}</span>
@@ -129,6 +129,7 @@
         density="compact"
         @update:options="loadPage"
       >
+        <template v-slot:[`header.mmr_diff`]><W3CMmr suffix=" +/-" /></template>
         <template v-slot:[`item.start_time`]="{ item }">{{ matchDate(item.start_time) }}</template>
         <template v-slot:[`item.map_name`]="{ item }">{{ item.map_name || '—' }}</template>
         <template v-slot:[`item.opp_battletag`]="{ item }">
@@ -167,6 +168,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import { achievementPoints, SCORED_NOTE, MMR_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
 import AchievementIcon from '@/components/AchievementIcon.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 
 const props = defineProps({
   player: { type: Object, default: null },

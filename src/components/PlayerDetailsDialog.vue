@@ -13,7 +13,7 @@
           <tbody>
             <tr>
               <th class="text-left"></th>
-              <th class="text-right">MMR</th>
+              <th class="text-right"><W3CMmr /></th>
               <th class="text-right">Wins</th>
               <th class="text-right">Losses</th>
               <th class="text-right">Total</th>
@@ -71,6 +71,7 @@
 import { computed, ref, watch } from 'vue';
 import RaceIcon from '@/components/RaceIcon.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import { usePlayerStore } from '@/stores';
 import { getAllRaceStats, getW3CMMR, getW3CMMRSeason } from '@/helpers/w3c-stats';
 

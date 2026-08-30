@@ -5,6 +5,7 @@ import { onMounted, onUnmounted, computed, watch } from 'vue';
 import { useAuth } from '@clerk/vue';
 import { useAuthStore } from '@/stores';
 import { canSeeRole } from '@/helpers';
+import w3cLogo from '@/assets/media/w3c-logo.png';
 
 const authStore = useAuthStore();
 const { me } = storeToRefs(authStore);
@@ -103,7 +104,7 @@ const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCas
                                 <RouterLink to="/report">Season Report</RouterLink>
                             </v-list-item>
                             <v-list-item>
-                                <RouterLink to="/ladder">W3C Ladder</RouterLink>
+                                <RouterLink to="/ladder" class="d-inline-flex align-center"><img :src="w3cLogo" height="22" alt="W3C" class="mr-1">Ladder</RouterLink>
                             </v-list-item>
                         </v-list>
                     </v-menu>

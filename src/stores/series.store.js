@@ -79,6 +79,7 @@ export const useSeriesStore = defineStore({
             } finally {
                 this.isLoading = false; // Set loading to false once complete
             }
+            return this.series;
         }
     }
 });

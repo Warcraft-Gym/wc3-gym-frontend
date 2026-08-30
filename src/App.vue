@@ -74,9 +74,6 @@ const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCas
                     <v-list-item v-if="canSee('/')" class="nav-link-item">
                         <RouterLink to="/" class="nav-link">Home</RouterLink>
                     </v-list-item>
-                    <v-list-item class="nav-link-item">
-                        <RouterLink to="/profile" class="nav-link">Profile</RouterLink>
-                    </v-list-item>
                     <v-menu offset-y>
                         <template v-slot:activator="{ props }">
                             <v-list-item v-bind="props" class="gnl-menu-activator">
@@ -168,7 +165,7 @@ const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCas
                             </v-list-item>
                         </template>
                         <v-list>
-                            <v-list-item :title="me?.name" :subtitle="roleLabel" />
+                            <v-list-item :title="me?.name" :subtitle="roleLabel" prepend-icon="mdi-account" to="/profile" />
                             <v-divider />
                             <v-list-item prepend-icon="mdi-logout" title="Logout" @click="authStore.logout()" />
                         </v-list>

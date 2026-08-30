@@ -128,8 +128,9 @@
                 variant="outlined"
                 density="comfortable"
                 prepend-inner-icon="mdi-twitch"
-                hint="Optional. Your Twitch username"
+                hint="Required. Your Twitch username"
                 persistent-hint
+                :rules="[v => !!v || 'Twitch username is required']"
               />
             </v-col>
             <v-col cols="12">
@@ -152,7 +153,7 @@
             color="primary" 
             prepend-icon="mdi-check" 
             @click="submitSignup"
-            :disabled="!signupForm.battle_tag"
+            :disabled="!signupForm.battle_tag || !signupForm.twitch_username"
           >
             Sign Up
           </v-btn>

@@ -8,7 +8,7 @@
     <v-row class="mb-4">
       <v-col>
         <h1 class="d-inline-flex align-baseline">
-          <img :src="w3championsLogo" style="height: 1.35em" alt="W3Champions" class="mr-2">Ladder
+          <img :src="w3championsLogo" style="height: 1.35em; transform: translateY(3%)" alt="W3Champions" class="mr-2">Ladder
         </h1>
       </v-col>
     </v-row>
@@ -42,7 +42,7 @@
           v-if="auth.isAdmin"
           @click="syncLadder"
         >
-          <span class="d-inline-flex align-baseline">Sync<img :src="w3cLogoWhite" style="height: 1.4em" alt="W3C" class="ml-1"></span>
+          <span class="d-inline-flex align-baseline">Sync<img :src="w3cLogoWhite" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="ml-1"></span>
           <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
         </v-btn>
       </v-col>
@@ -76,7 +76,7 @@
           v-if="auth.isAdmin"
           @click="syncLadder"
         >
-          <span class="d-inline-flex align-baseline">Sync<img :src="w3cLogoWhite" style="height: 1.4em" alt="W3C" class="ml-1"></span>
+          <span class="d-inline-flex align-baseline">Sync<img :src="w3cLogoWhite" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="ml-1"></span>
           <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
         </v-btn>
         <SyncProgress class="mt-4 mx-auto" style="max-width: 320px" />

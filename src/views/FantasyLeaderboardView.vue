@@ -75,7 +75,9 @@
               </template>
 
               <template v-slot:[`item.captain`]="{ item }">
-                {{ item.captain?.name || 'N/A' }}
+                <!-- no race: the captain bets, they don't play -->
+                <PlayerName v-if="item.captain" :player="item.captain" />
+                <template v-else>N/A</template>
               </template>
 
               <template v-slot:[`item.drafted_team`]="{ item }">
@@ -139,7 +141,10 @@
             <v-list>
               <v-list-item>
                 <v-list-item-title class="font-weight-bold">Captain</v-list-item-title>
-                <v-list-item-subtitle>{{ selectedTeam.captain?.name || 'N/A' }}</v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  <PlayerName v-if="selectedTeam.captain" :player="selectedTeam.captain" />
+                  <span v-else>N/A</span>
+                </v-list-item-subtitle>
               </v-list-item>
               <v-list-item>
                 <v-list-item-title class="font-weight-bold">Season</v-list-item-title>
@@ -209,7 +214,7 @@
             <div class="text-h6 mb-3">Drafted Players</div>
             <v-chip-group>
               <v-chip v-for="player in selectedTeam.drafted_players" :key="player.id" color="primary">
-                {{ player.name }}
+                <PlayerName :player="player" :race="player.race" />
               </v-chip>
             </v-chip-group>
           </v-col>

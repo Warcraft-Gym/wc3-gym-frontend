@@ -67,18 +67,25 @@
               density="comfortable"
             >
               <template v-slot:[`item.captain`]="{ item }">
-                {{ item.user?.name || 'N/A' }}
+                <!-- no race: the captain bets, they don't play -->
+                <PlayerName v-if="item.user" :player="item.user" />
+                <template v-else>N/A</template>
               </template>
 
               <template v-slot:[`item.series`]="{ item }">
                 <div v-if="item.series">
-                  {{ item.series.player1?.name || 'Player 1' }} vs {{ item.series.player2?.name || 'Player 2' }}
+                  <PlayerName v-if="item.series.player1" :player="item.series.player1" :race="item.series.player1.race" />
+                  <template v-else>Player 1</template>
+                  vs
+                  <PlayerName v-if="item.series.player2" :player="item.series.player2" :race="item.series.player2.race" />
+                  <template v-else>Player 2</template>
                 </div>
                 <div v-else>N/A</div>
               </template>
 
               <template v-slot:[`item.bet_on`]="{ item }">
-                <strong>{{ getWinnerName(item) }}</strong>
+                <PlayerName v-if="getWinner(item)" :player="getWinner(item)" :race="getWinner(item).race" />
+                <strong v-else>{{ item.series ? 'Unknown' : 'N/A' }}</strong>
               </template>
 
               <template v-slot:[`item.score`]="{ item }">
@@ -305,7 +312,9 @@
         Are you sure you want to delete this bet?
         <div v-if="deletingBet" class="mt-2">
           <strong>Captain:</strong> {{ deletingBet.user?.name }}<br>
-          <strong>Bet:</strong> {{ getWinnerName(deletingBet) }}
+          <strong>Bet:</strong>
+          <PlayerName v-if="getWinner(deletingBet)" :player="getWinner(deletingBet)" :race="getWinner(deletingBet).race" />
+          <template v-else>N/A</template>
         </div>
       </v-card-text>
       <v-card-actions>
@@ -437,15 +446,11 @@ const isSeriesPlayed = (series) => {
   return p1 > 0 || p2 > 0;
 };
 
-const getWinnerName = (bet) => {
-  if (!bet.series) return 'N/A';
-  
-  if (bet.winner_id === bet.series.player1_id) {
-    return bet.series.player1?.name || 'Player 1';
-  } else if (bet.winner_id === bet.series.player2_id) {
-    return bet.series.player2?.name || 'Player 2';
-  }
-  return 'Unknown';
+const getWinner = (bet) => {
+  if (!bet.series) return null;
+  if (bet.winner_id === bet.series.player1_id) return bet.series.player1;
+  if (bet.winner_id === bet.series.player2_id) return bet.series.player2;
+  return null;
 };
 
 const getBetResultColor = (result) => {

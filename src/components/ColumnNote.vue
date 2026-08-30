@@ -6,7 +6,7 @@
 <template>
   <span class="d-inline-flex align-center">
     <span>
-      {{ title }}
+      <slot>{{ title }}</slot>
       <v-icon v-if="sortIcon" size="x-small" class="ml-1">{{ sortIcon }}</v-icon>
     </span>
     <span class="note-icon ml-1" @click.stop>
@@ -18,7 +18,7 @@
 
 <script setup>
 defineProps({
-  title: { type: String, required: true },
+  title: { type: String, default: '' },
   note: { type: String, required: true },
   sortIcon: { type: String, default: null },
 });

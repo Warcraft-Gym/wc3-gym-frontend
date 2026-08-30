@@ -64,6 +64,9 @@
               return-object
               dense
             >
+              <template v-slot:[`header.w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+              </template>
               <template #item.team="{ item }">
                 <v-select
                   v-model="playerTeamSelection[item.id]"
@@ -371,6 +374,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';

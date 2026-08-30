@@ -195,9 +195,13 @@
               <AchievementChip :badges="item.achievements" />
             </template>
             <template v-slot:[`item.ladder_points`]="{ item }">{{ item.ladder_points }}</template>
+            <template v-slot:[`header.mmr`]="{ column, isSorted, getSortIcon }">
+              <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+            </template>
             <template v-slot:[`header.mmrDiff`]="{ column, isSorted, getSortIcon }">
-              <ColumnNote :title="column.title" :note="MMR_NOTE"
-                :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+              <ColumnNote :note="MMR_NOTE" :sort-icon="isSorted(column) ? getSortIcon(column) : null">
+                <W3CMmr suffix=" +/-" />
+              </ColumnNote>
             </template>
             <template v-slot:[`item.race`]="{ item }">
               <RaceIcon v-if="item.race" :raceIdentifier="item.race" />
@@ -263,6 +267,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { SCORED_NOTE, MMR_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import AchievementChip from '@/components/AchievementChip.vue';

@@ -191,6 +191,12 @@
               hover
               density="comfortable"
             >
+              <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+              </template>
+              <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+              </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
               </template>
@@ -299,6 +305,12 @@
               hover
               density="comfortable"
             >
+              <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+              </template>
+              <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+              </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
               </template>
@@ -488,6 +500,12 @@
                   show-select
                   class="flex-grow-1"
                 >
+                  <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                  </template>
+                  <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                  </template>
                   <template v-slot:loading>
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
@@ -553,6 +571,12 @@
                   show-select
                   class="flex-grow-1"
                 >
+                  <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                  </template>
+                  <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                  </template>
                   <template v-slot:loading>
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
@@ -745,6 +769,12 @@
                     hover
                     show-select
                   >
+                    <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                    </template>
+                    <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                    </template>
                     <template v-slot:loading>
                       <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                     </template>
@@ -802,6 +832,12 @@
                     hover
                     show-select
                   >
+                    <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                    </template>
+                    <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                    </template>
                     <template v-slot:loading>
                       <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                     </template>
@@ -887,6 +923,12 @@
           show-select
           :row-props="getRowClass"
         >
+          <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+            <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+          </template>
+          <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
+            <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+          </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
               </template>
@@ -1033,6 +1075,7 @@ import SimpleDatePicker from '../components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
 import { getW3CMMR, getW3CMMRSeason, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, hideMissingImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';

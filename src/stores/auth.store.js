@@ -20,6 +20,7 @@ export const useAuthStore = defineStore({
     state: () => ({
         user: JSON.parse(localStorage.getItem('user')),  // the legacy admin-token session only
         me: JSON.parse(localStorage.getItem('me')),
+        loginError: null,  // why the last /me failed; the login page shows it
         returnUrl: null
     }),
     getters: {

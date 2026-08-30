@@ -51,6 +51,11 @@ import { router } from './helpers';
 
 const app = createApp(App);
 
+function navigateInPage(to) {
+    history.replaceState(null, '', to);
+    window.dispatchEvent(new PopStateEvent('popstate'));  // the router and the login page re-read the URL
+}
+
 app
 .component('RaceIcon', RaceIcon )
 .component('RaceSelect', RaceSelect )
@@ -61,6 +66,9 @@ app
 app.use(clerkPlugin, {
     publishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
     proxyUrl: import.meta.env.VITE_CLERK_PROXY_URL,  // set only where the production instance runs
+    // Clerk's post-login navigation stays in the page; App.vue routes once the session lands
+    routerPush: navigateInPage,
+    routerReplace: navigateInPage,
 })
 app.use(pinia)
 app.use(vuetify)

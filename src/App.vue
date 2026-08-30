@@ -24,8 +24,12 @@ watch([clerk.isLoaded, clerk.isSignedIn], async ([loaded, signedIn]) => {
         if (route.meta.role !== 'public') router.push('/login');
         return;
     }
-    const session = await authStore.fetchMe().catch(() => null);
-    if (session && route.path === '/login') {
+    const session = await authStore.fetchMe().catch((e) => { authStore.loginError = e.message; return null; });
+    if (!session) {
+        await authStore.logout();
+        return;
+    }
+    if (route.path === '/login') {
         router.push(session.role === 'admin' ? (authStore.returnUrl || '/') : '/profile');
     }
 }, { immediate: true });

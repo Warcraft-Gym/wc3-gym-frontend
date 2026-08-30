@@ -274,7 +274,15 @@ const bindingHeader = [
 const kindLabel = (kind) => KINDS.find(k => k.value === kind)?.title ?? kind;
 const seasonName = (id) => seasons.value.find(s => s.id === id)?.name ?? 'Every season';
 const teamName = (id) => teams.value.find(t => t.id === id)?.name ?? 'Every team';
-const roleName = (id) => roleNames.value[id] ?? id;
+// A role the guild no longer names still has its binding to describe it
+const roleName = (id) => {
+  if (roleNames.value[id]) return roleNames.value[id];
+  const bound = bindings.value.find(b => b.discord_role === id);
+  if (!bound) return id;
+  if (bound.kind === 'team') return teamName(bound.team_id);
+  if (bound.kind === 'champion') return `${teamName(bound.team_id)} Champion`;
+  return kindLabel(bound.kind);
+};
 const roleItems = computed(() => Object.entries(roleNames.value).map(([value, title]) => ({ title, value })));
 
 

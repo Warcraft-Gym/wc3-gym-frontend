@@ -494,10 +494,13 @@ function closeEventDialog() {
 
 async function saveEvent() {
   try {
-    const eventData = {
-      ...eventForm.value,
-      event_date: eventForm.value.event_date ? eventForm.value.event_date + ' 00:00:00' : null
-    };
+    const eventData = { ...eventForm.value };
+    // A blank date is left out; an explicit null is refused, the backend default applies
+    if (eventForm.value.event_date) {
+      eventData.event_date = eventForm.value.event_date + ' 00:00:00';
+    } else {
+      delete eventData.event_date;
+    }
     
     if (!editingEvent.value && eventData.is_active === undefined) {
       eventData.is_active = false;

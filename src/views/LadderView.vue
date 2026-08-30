@@ -8,7 +8,7 @@
     <v-row class="mb-4">
       <v-col>
         <h1 class="d-inline-flex align-baseline">
-          <img :src="w3cLogo" height="40" alt="W3C" class="mr-2">Ladder
+          <img :src="w3cLogo" style="height: 1.4em" alt="W3C" class="mr-2">Ladder
         </h1>
       </v-col>
     </v-row>

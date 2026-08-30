@@ -6,7 +6,18 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1><v-icon class="mr-2">mdi-view-dashboard</v-icon> Player Dashboard</h1>
+        <h1 v-if="playerData" class="d-flex align-center ga-3">
+          <v-avatar size="48" color="primary">
+            <v-img v-if="authStore.me?.avatar" :src="authStore.me.avatar" alt="" />
+            <span v-else>{{ (playerData.player.name || '?').slice(0, 2).toUpperCase() }}</span>
+          </v-avatar>
+          <PlayerName :player="playerData.player" :race="playerData.player.race" @click.stop="showPlayerDetails(playerData.player)">
+            <a :href="w3cPlayerUrl(playerData.player.battleTag)" target="_blank" rel="noopener noreferrer" class="text-body-1 text-decoration-none ml-2">
+              {{ playerData.player.battleTag }} <W3CIcon :size="16" />
+            </a>
+          </PlayerName>
+        </h1>
+        <h1 v-else>Player Dashboard</h1>
       </v-col>
     </v-row>
 
@@ -50,20 +61,7 @@
         <v-chip color="secondary" class="mb-2">
           {{ playerData.discord_tag }}
         </v-chip>
-        <h2 class="text-h5 mb-2">
-          <PlayerName
-            :player="playerData.player"
-            :race="playerData.player.race"
-            @click.stop="showPlayerDetails(playerData.player)"
-          />
-        </h2>
-        <p>
-          <strong>Battle Tag:</strong>
-          <a :href="w3cPlayerUrl(playerData.player.battleTag)" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
-            {{ playerData.player.battleTag }} <W3CIcon :size="16" />
-          </a>
-        </p>
-        <p><strong>MMR:</strong> {{ getW3CMMR(playerData.player, null) }}</p>
+        <p><strong><W3CMmr /></strong> {{ getW3CMMR(playerData.player, null) }}</p>
         <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
           {{ playerData.player.timezone }}
         </v-chip>
@@ -101,7 +99,6 @@
             :race="opponent(item).race"
             @click.stop="showPlayerDetails(opponent(item))"
           />
-          <div class="text-caption text-grey">{{ getW3CMMR(opponent(item), currentW3CSeason) }}</div>
         </template>
 
         <template #item.score="{ item }">
@@ -112,6 +109,10 @@
           >
             {{ item.player1_score || 0 }} - {{ item.player2_score || 0 }}
           </v-chip>
+        </template>
+
+        <template #item.season="{ item }">
+          {{ item.match?.season?.name || '' }}
         </template>
 
         <template #item.date_time="{ item }">
@@ -168,8 +169,7 @@
                     :race="opponent(item).race"
                     @click.stop="showPlayerDetails(opponent(item))"
                   />
-                  <div class="text-caption text-grey">{{ getW3CMMR(opponent(item), currentW3CSeason) }}</div>
-                </div>
+                        </div>
               </div>
               <v-chip
                 :color="getScoreColor(item)"
@@ -180,6 +180,11 @@
             </div>
 
             <v-divider class="my-3"></v-divider>
+
+            <div class="mb-2">
+              <div class="text-caption text-grey">Season</div>
+              <div>{{ item.match?.season?.name || '' }}</div>
+            </div>
 
             <div class="mb-2">
               <div class="text-caption text-grey">Date & Time</div>
@@ -370,6 +375,7 @@ import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import { DateTime } from 'luxon';
 import { formatDateTime } from '@/helpers/datetime';
 import { useDisplay } from 'vuetify';
@@ -463,6 +469,7 @@ const rules = {
 // The server sorts date_time and week; opponent and score are computed per side here
 const headers = [
   { title: 'Opponent', key: 'opponent', sortable: false },
+  { title: 'Season', key: 'season', sortable: false },
   { title: 'Date & Time', key: 'date_time', sortable: true },
   { title: 'Score', key: 'score', sortable: false },
   { title: 'Week', key: 'week', sortable: true },

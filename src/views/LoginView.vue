@@ -7,16 +7,17 @@
             </v-card-title>
 
             <v-card-text class="pt-6">
-                <!-- Clerk's sign-in draws the strategies the dashboard enables; Discord is the only one -->
+                <!-- Discord's consent page comes back to /sso-callback, which Clerk finishes here -->
+                <AuthenticateWithRedirectCallback v-if="isCallback" sign-in-fallback-redirect-url="/#/login" />
                 <v-btn
-                    v-if="route.query.legacy !== '1'"
+                    v-else-if="route.query.legacy !== '1'"
                     color="#5865F2"
                     class="text-white"
                     variant="elevated"
                     block
                     size="large"
                     prepend-icon="mdi-discord"
-                    @click="clerk?.openSignIn()"
+                    @click="loginWithDiscord"
                 >
                     Log in with Discord
                 </v-btn>
@@ -69,7 +70,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useClerk } from '@clerk/vue';
+import { AuthenticateWithRedirectCallback, useSignIn } from '@clerk/vue';
 import { storeToRefs } from 'pinia';
 
 import { useAuthStore } from '@/stores';
@@ -77,7 +78,13 @@ import DiscordJoinCard from '@/components/DiscordJoinCard.vue';
 
 const { me } = storeToRefs(useAuthStore());
 const route = useRoute();  // ?legacy=1 shows the admin-token form as a break-glass login
-const clerk = useClerk();
+const { signIn } = useSignIn();
+const isCallback = window.location.pathname === '/sso-callback';
+const loginWithDiscord = () => signIn.value.authenticateWithRedirect({
+    strategy: 'oauth_discord',
+    redirectUrl: `${window.location.origin}/sso-callback`,
+    redirectUrlComplete: `${window.location.origin}/#/login`,
+});
 const password = ref('');
 const passwordField = ref(null);
 const apiError = ref(null);

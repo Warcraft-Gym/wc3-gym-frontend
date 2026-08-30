@@ -45,7 +45,10 @@
                         <v-row>
                           <v-col cols="12" md="6">
                             <div class="mb-2">
-                              <strong>Captain:</strong> {{ existingTeam.captain?.name || playerData?.discord_tag || 'N/A' }}
+                              <strong>Captain:</strong>
+                              <!-- no race: the captain bets, they don't play -->
+                              <PlayerName v-if="existingTeam.captain" :player="existingTeam.captain" />
+                              <template v-else>{{ playerData?.discord_tag || 'N/A' }}</template>
                             </div>
                             <div class="mb-2">
                               <strong>Season:</strong> {{ existingTeam.season?.name || 'N/A' }}
@@ -427,13 +430,9 @@
                     >
                       <template #item.players="{ item }">
                         <div>
-                          <a href="#" @click.prevent="showPlayerDetails(item.player1)" class="text-decoration-none">
-                            <strong>{{ item.player1?.name }}</strong>
-                          </a>
+                          <PlayerName v-if="item.player1" :player="item.player1" :race="item.player1.race" @click="showPlayerDetails(item.player1)" />
                           vs
-                          <a href="#" @click.prevent="showPlayerDetails(item.player2)" class="text-decoration-none">
-                            <strong>{{ item.player2?.name }}</strong>
-                          </a>
+                          <PlayerName v-if="item.player2" :player="item.player2" :race="item.player2.race" @click="showPlayerDetails(item.player2)" />
                         </div>
                       </template>
 
@@ -501,13 +500,9 @@
       <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
       <v-card-text>
         <div class="mb-4">
-          <a href="#" @click.prevent="showPlayerDetails(betSeries.player1)" class="text-decoration-none">
-            <strong>{{ betSeries.player1?.name }}</strong>
-          </a>
+          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1.race" @click="showPlayerDetails(betSeries.player1)" />
           vs
-          <a href="#" @click.prevent="showPlayerDetails(betSeries.player2)" class="text-decoration-none">
-            <strong>{{ betSeries.player2?.name }}</strong>
-          </a>
+          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2.race" @click="showPlayerDetails(betSeries.player2)" />
         </div>
         <v-radio-group v-model="selectedBetWinnerId">
           <v-radio

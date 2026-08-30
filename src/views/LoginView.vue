@@ -8,7 +8,11 @@
 
             <v-card-text class="pt-6">
                 <!-- Discord's consent page comes back to /sso-callback, which Clerk finishes here -->
-                <AuthenticateWithRedirectCallback v-if="isCallback" sign-in-fallback-redirect-url="/#/login" />
+                <div v-if="isCallback" class="text-center py-4">
+                    <v-progress-circular indeterminate color="primary" class="mb-3" />
+                    <div>Signing you in…</div>
+                    <AuthenticateWithRedirectCallback sign-in-fallback-redirect-url="/#/login" />
+                </div>
                 <v-btn
                     v-else-if="route.query.legacy !== '1'"
                     color="#5865F2"
@@ -17,6 +21,7 @@
                     block
                     size="large"
                     prepend-icon="mdi-discord"
+                    :loading="isRedirecting"
                     @click="loginWithDiscord"
                 >
                     Log in with Discord
@@ -80,11 +85,15 @@ const { me } = storeToRefs(useAuthStore());
 const route = useRoute();  // ?legacy=1 shows the admin-token form as a break-glass login
 const { signIn } = useSignIn();
 const isCallback = window.location.pathname === '/sso-callback';
-const loginWithDiscord = () => signIn.value.authenticateWithRedirect({
-    strategy: 'oauth_discord',
-    redirectUrl: `${window.location.origin}/sso-callback`,
-    redirectUrlComplete: `${window.location.origin}/#/login`,
-});
+const isRedirecting = ref(false);  // stays on until the browser leaves for Discord
+const loginWithDiscord = () => {
+    isRedirecting.value = true;
+    return signIn.value.authenticateWithRedirect({
+        strategy: 'oauth_discord',
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectUrlComplete: `${window.location.origin}/#/login`,
+    }).catch(() => { isRedirecting.value = false; });
+};
 const password = ref('');
 const passwordField = ref(null);
 const apiError = ref(null);

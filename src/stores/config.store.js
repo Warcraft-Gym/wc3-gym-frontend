@@ -98,6 +98,10 @@ export const useConfigStore = defineStore({
             await fetchWrapper.delete(`${backendUrl}/config/admins/${discord_id}`);
         },
 
+        async fetchDiscordGuildRoles() {
+            return await fetchWrapper.get(`${backendUrl}/config/discord-guild-roles`);
+        },
+
         async fetchDiscordRoleBindings() {
             return await fetchWrapper.get(`${backendUrl}/config/discord-role-bindings`);
         },

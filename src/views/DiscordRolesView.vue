@@ -29,7 +29,7 @@
       </v-card-title>
 
       <v-card-text class="pa-0">
-        <v-data-table :headers="reportHeader" :items="report" :loading="isLoading" fixed-header hover>
+        <v-data-table :headers="reportHeader" :items="report" :loading="isLoadingReport" fixed-header hover>
           <template #top>
             <v-toolbar flat height="auto">
               <v-row align="center" class="flex-wrap ma-0 pa-2">
@@ -44,12 +44,12 @@
           </template>
 
           <template #[`item.missing`]="{ item }">
-            <v-chip v-for="role in item.missing" :key="role" color="warning" variant="tonal" size="small" class="mr-1">{{ role }}</v-chip>
+            <v-chip v-for="role in item.missing" :key="role" color="warning" variant="tonal" size="small" class="mr-1" :title="role">{{ roleName(role) }}</v-chip>
             <span v-if="!item.missing.length">&mdash;</span>
           </template>
 
           <template #[`item.extra`]="{ item }">
-            <v-chip v-for="role in item.extra" :key="role" color="error" variant="tonal" size="small" class="mr-1">{{ role }}</v-chip>
+            <v-chip v-for="role in item.extra" :key="role" color="error" variant="tonal" size="small" class="mr-1" :title="role">{{ roleName(role) }}</v-chip>
             <span v-if="!item.extra.length">&mdash;</span>
           </template>
 
@@ -103,6 +103,10 @@
             {{ teamName(item.team_id) }}
           </template>
 
+          <template #[`item.discord_role`]="{ item }">
+            <span :title="item.discord_role">{{ roleName(item.discord_role) }}</span>
+          </template>
+
           <template #[`item.actions`]="{ item }">
             <RowActions :actions="[
               { icon: 'mdi-pencil', label: 'Edit Binding', onClick: () => editBinding(item) },
@@ -145,9 +149,13 @@
               />
             </v-col>
             <v-col cols="12" md="6">
-              <v-text-field
+              <v-combobox
                 v-model="binding.discord_role"
-                label="Discord Role ID"
+                :items="roleItems"
+                item-title="title"
+                item-value="value"
+                :return-object="false"
+                label="Discord Role"
                 variant="outlined"
                 density="comfortable"
                 prepend-inner-icon="mdi-discord"
@@ -229,6 +237,8 @@ const KINDS = [
 
 const report = ref([]);
 const bindings = ref([]);
+const roleNames = ref({});
+const isLoadingReport = ref(false);
 const teams = ref([]);
 const isLoading = ref(false);
 const isSyncingAll = ref(false);
@@ -257,23 +267,38 @@ const bindingHeader = [
   { title: 'Earned By', value: 'kind', sortable: true },
   { title: 'Season', value: 'season_id', sortable: true },
   { title: 'Team', value: 'team_id', sortable: true },
-  { title: 'Discord Role ID', value: 'discord_role', sortable: true },
+  { title: 'Discord Role', value: 'discord_role', sortable: true },
   { title: 'Actions', value: 'actions', align: 'end', sortable: false }
 ];
 
 const kindLabel = (kind) => KINDS.find(k => k.value === kind)?.title ?? kind;
 const seasonName = (id) => seasons.value.find(s => s.id === id)?.name ?? 'Every season';
 const teamName = (id) => teams.value.find(t => t.id === id)?.name ?? 'Every team';
+const roleName = (id) => roleNames.value[id] ?? id;
+const roleItems = computed(() => Object.entries(roleNames.value).map(([value, title]) => ({ title, value })));
 
+
+const fetchReport = async () => {
+  isLoadingReport.value = true;
+  try {
+    report.value = await configStore.fetchDiscordRoleReport();
+  } catch (error) {
+    errorMessage.value = 'Failed to load the out-of-sync accounts: ' + error.message;
+  } finally {
+    isLoadingReport.value = false;
+  }
+};
 
 const fetchAll = async () => {
   isLoading.value = true;
   errorMessage.value = null;
+  // The report reads the guild, so the bindings render before it lands
+  const pending = fetchReport();
   try {
-    [report.value, bindings.value, teams.value] = await Promise.all([
-      configStore.fetchDiscordRoleReport(),
+    [bindings.value, teams.value, roleNames.value] = await Promise.all([
       configStore.fetchDiscordRoleBindings(),
       teamStore.getTeamsBasic(),
+      configStore.fetchDiscordGuildRoles(),
       seasonStore.fetchSeasons()
     ]);
   } catch (error) {
@@ -281,6 +306,7 @@ const fetchAll = async () => {
   } finally {
     isLoading.value = false;
   }
+  await pending;
 };
 
 const syncAll = async () => {

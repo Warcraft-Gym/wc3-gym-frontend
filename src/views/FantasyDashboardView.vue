@@ -574,7 +574,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useFantasyStore, useTeamStore, usePlayerStore, useConfigStore, useSeriesStore } from '@/stores';
+import { useFantasyStore, useTeamStore, usePlayerStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
@@ -584,6 +584,7 @@ import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
 
 const route = useRoute();
+const authStore = useAuthStore();
 const fantasyStore = useFantasyStore();
 const teamStore = useTeamStore();
 const playerStore = usePlayerStore();
@@ -762,9 +763,9 @@ const fetchInitialData = async () => {
       maxBetPoints.value = null;
     }
 
-    // Get token from URL
+    // the session drives the routes when there is no ?token=; the backend reads the id from the bearer
     playerToken.value = route.query.token;
-    if (!playerToken.value) {
+    if (!playerToken.value && !authStore.me) {
       errorMessage.value = 'No access token provided. Please use the link from Discord.';
       return;
     }

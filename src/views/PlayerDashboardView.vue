@@ -45,14 +45,22 @@
           {{ playerData.discord_tag }}
         </v-chip>
         <h2 class="text-h5 mb-2">
-          <a href="#" @click.prevent="showPlayerDetails(playerData.player)" class="text-decoration-none text-primary">
-            {{ playerData.player.name }}
-          </a>
+          <PlayerName
+            :player="playerData.player"
+            :race="playerData.player.race"
+            @click.stop="showPlayerDetails(playerData.player)"
+          />
         </h2>
-        <p><strong>Battle Tag:</strong> {{ playerData.player.battleTag }}</p>
-        <p><strong>Race:</strong> {{ playerData.player.race }}</p>
+        <p>
+          <strong>Battle Tag:</strong>
+          <a :href="w3cPlayerUrl(playerData.player.battleTag)" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+            {{ playerData.player.battleTag }} <W3CIcon :size="16" />
+          </a>
+        </p>
         <p><strong>MMR:</strong> {{ getW3CMMR(playerData.player, null) }}</p>
-        <p v-if="playerData.player.country"><strong>Country:</strong> {{ playerData.player.country }}</p>
+        <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
+          {{ playerData.player.timezone }}
+        </v-chip>
       </v-card-text>
     </v-card>
 
@@ -82,22 +90,12 @@
         item-value="id"
       >
         <template #item.opponent="{ item }">
-          <span v-if="item.player1_id === playerData.player.id">
-            <a href="#" @click.prevent="showPlayerDetails(item.player2)" class="text-decoration-none">
-              {{ item.player2?.name || `Player ${item.player2_id}` }}
-            </a>
-            <div class="text-caption text-grey">
-              {{ item.player2?.race }} · {{ getW3CMMR(item.player2, currentW3CSeason) }}
-            </div>
-          </span>
-          <span v-else>
-            <a href="#" @click.prevent="showPlayerDetails(item.player1)" class="text-decoration-none">
-              {{ item.player1?.name || `Player ${item.player1_id}` }}
-            </a>
-            <div class="text-caption text-grey">
-              {{ item.player1?.race }} · {{ getW3CMMR(item.player1, currentW3CSeason) }}
-            </div>
-          </span>
+          <PlayerName
+            :player="opponent(item)"
+            :race="opponent(item).race"
+            @click.stop="showPlayerDetails(opponent(item))"
+          />
+          <div class="text-caption text-grey">{{ getW3CMMR(opponent(item), currentW3CSeason) }}</div>
         </template>
 
         <template #item.score="{ item }">
@@ -159,22 +157,12 @@
               <div>
                 <div class="text-caption text-grey">Opponent</div>
                 <div class="text-h6">
-                  <span v-if="item.player1_id === playerData.player.id">
-                    <a href="#" @click.prevent="showPlayerDetails(item.player2)" class="text-decoration-none">
-                      {{ item.player2?.name || `Player ${item.player2_id}` }}
-                    </a>
-                    <div class="text-caption text-grey">
-                      {{ item.player2?.race }} · {{ getW3CMMR(item.player2, currentW3CSeason) }}
-                    </div>
-                  </span>
-                  <span v-else>
-                    <a href="#" @click.prevent="showPlayerDetails(item.player1)" class="text-decoration-none">
-                      {{ item.player1?.name || `Player ${item.player1_id}` }}
-                    </a>
-                    <div class="text-caption text-grey">
-                      {{ item.player1?.race }} · {{ getW3CMMR(item.player1, currentW3CSeason) }}
-                    </div>
-                  </span>
+                  <PlayerName
+                    :player="opponent(item)"
+                    :race="opponent(item).race"
+                    @click.stop="showPlayerDetails(opponent(item))"
+                  />
+                  <div class="text-caption text-grey">{{ getW3CMMR(opponent(item), currentW3CSeason) }}</div>
                 </div>
               </div>
               <v-chip
@@ -369,10 +357,13 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
+import { authHeader } from '@/helpers/fetch-wrapper';
+import { useAuthStore } from '@/stores';
 import { getW3CMMR } from '@/helpers/w3c-stats';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import W3CIcon from '@/components/W3CIcon.vue';
 import { DateTime } from 'luxon';
 import { formatDateTime } from '@/helpers/datetime';
 import { useDisplay } from 'vuetify';
@@ -407,6 +398,14 @@ const showPlayerDetails = (player) => {
 const isLoading = ref(true);
 const errorMessage = ref(null);
 const successMessage = ref(null);
+const w3cPlayerUrl = (battleTag) => `https://www.w3champions.com/player/${encodeURIComponent(battleTag)}`;
+
+// the other side of a series; the id is the fallback when the payload carries no player row
+const opponent = (item) => {
+  const mine = item.player1_id === playerData.value?.player?.id;
+  return (mine ? item.player2 : item.player1) || { name: `Player ${mine ? item.player2_id : item.player1_id}` };
+};
+
 const playerData = ref(null);
 const series = ref([]);
 const totalSeries = ref(0);
@@ -414,6 +413,10 @@ const page = ref(1);
 const itemsPerPage = ref(25);
 const sortBy = ref([]);  // Vuetify single sort: [] or [{ key, order }]
 const token = ref(null);
+const authStore = useAuthStore();
+
+// the session drives the routes when there is no ?token=; the backend reads the id from the bearer
+const hasAccess = () => !!token.value || !!authStore.me;
 
 // Schedule / Result dialog state
 const scheduleDialog = ref(false);
@@ -461,20 +464,23 @@ const fetchPlayerData = async () => {
   
   try {
     token.value = route.query.token;
-    
-    if (!token.value) {
+
+    if (!hasAccess()) {
       errorMessage.value = 'No access token provided';
       return;
     }
 
     // Validate token first
-    const tokenResponse = await fetchWrapper.get(`${backendUrl}/public-token/${token.value}`);
-    if (tokenResponse.access_type !== 'dashboard') {
-      errorMessage.value = 'Invalid access token type';
-      return;
+    if (token.value) {
+      const tokenResponse = await fetchWrapper.get(`${backendUrl}/public-token/${token.value}`);
+      if (tokenResponse.access_type !== 'dashboard') {
+        errorMessage.value = 'Invalid access token type';
+        return;
+      }
     }
 
-    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?token=${encodeURIComponent(token.value)}&${pageQuery({
+    const tokenParam = token.value ? `token=${encodeURIComponent(token.value)}&` : '';
+    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?${tokenParam}${pageQuery({
       limit,
       offset,
       sort: sortBy.value[0]?.key,
@@ -532,12 +538,12 @@ const fetchPlayerData = async () => {
 
 // The table controls drive the page state
 watch([page, itemsPerPage], () => {
-  if (token.value) fetchPlayerData();
+  if (hasAccess()) fetchPlayerData();
 });
 
 // A header click reloads from the first page in the new order
 watch(sortBy, () => {
-  if (!token.value) return;
+  if (!hasAccess()) return;
   if (page.value === 1) {
     fetchPlayerData();
   } else {
@@ -632,12 +638,14 @@ const saveSchedule = async () => {
     }
 
     const formData = new FormData();
-    formData.append('token', token.value);
+    if (token.value) formData.append('token', token.value);
     if (utcDateTime) formData.append('date_time', utcDateTime);
     formData.append('action', 'scheduled');
 
-    const response = await fetch(`${backendUrl}/player-series/${scheduleSeries.value.id}`, {
+    const url = `${backendUrl}/player-series/${scheduleSeries.value.id}`;
+    const response = await fetch(url, {
       method: 'PUT',
+      headers: await authHeader('PUT', url),
       body: formData
     });
 
@@ -704,7 +712,7 @@ const saveResult = async () => {
     }
 
     const formData = new FormData();
-    formData.append('token', token.value);
+    if (token.value) formData.append('token', token.value);
     formData.append('player1_score', p1);
     formData.append('player2_score', p2);
     formData.append('action', 'score_updated');
@@ -713,8 +721,10 @@ const saveResult = async () => {
     if (hasGame2File) formData.append('game2', scoreSeries.value.game2File);
     if (hasGame3File) formData.append('game3', scoreSeries.value.game3File);
 
-    const response = await fetch(`${backendUrl}/player-series/${scoreSeries.value.id}`, {
+    const url = `${backendUrl}/player-series/${scoreSeries.value.id}`;
+    const response = await fetch(url, {
       method: 'PUT',
+      headers: await authHeader('PUT', url),
       body: formData
     });
 

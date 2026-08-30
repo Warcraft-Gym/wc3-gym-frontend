@@ -47,66 +47,40 @@
         </v-toolbar>
       </v-card-text>
       <v-card-text>
-        <p class="text-subtitle-2 mb-3">Assign coaches for this season (Coach 1 is the main coach):</p>
-        
-        <v-row>
-          <v-col cols="12" md="4">
-            <v-autocomplete
-              v-model="coach1"
-              :items="allAvailableUsers"
-              item-title="name"
-              item-value="id"
-              label="Coach 1 (Main Coach)"
-              placeholder="Start typing to search..."
-              clearable
-              auto-select-first
-              hint="Primary team coach"
-              persistent-hint
-            >
-              <template v-slot:prepend-inner>
-                <v-icon color="primary">mdi-shield-star</v-icon>
-              </template>
-            </v-autocomplete>
-          </v-col>
-          
-          <v-col cols="12" md="4">
-            <v-autocomplete
-              v-model="coach2"
-              :items="allAvailableUsers"
-              item-title="name"
-              item-value="id"
-              label="Coach 2 (Optional)"
-              placeholder="Start typing to search..."
-              clearable
-              auto-select-first
-              hint="Assistant coach"
-              persistent-hint
-            >
-              <template v-slot:prepend-inner>
-                <v-icon>mdi-shield-star-outline</v-icon>
-              </template>
-            </v-autocomplete>
-          </v-col>
-          
-          <v-col cols="12" md="4">
-            <v-autocomplete
-              v-model="coach3"
-              :items="allAvailableUsers"
-              item-title="name"
-              item-value="id"
-              label="Coach 3 (Optional)"
-              placeholder="Start typing to search..."
-              clearable
-              auto-select-first
-              hint="Assistant coach"
-              persistent-hint
-            >
-              <template v-slot:prepend-inner>
-                <v-icon>mdi-shield-star-outline</v-icon>
-              </template>
-            </v-autocomplete>
-          </v-col>
-        </v-row>
+        <p class="text-subtitle-2 mb-3">Assign the coaches of this season:</p>
+
+        <v-autocomplete
+          v-model="coachIds"
+          :items="allAvailableUsers"
+          item-title="name"
+          item-value="id"
+          label="Coaches"
+          placeholder="Start typing to search..."
+          multiple
+          chips
+          closable-chips
+          clearable
+          auto-select-first
+          hint="Any number of coaches"
+          persistent-hint
+        >
+          <template v-slot:prepend-inner>
+            <v-icon color="primary">mdi-shield-star</v-icon>
+          </template>
+        </v-autocomplete>
+
+        <!-- Save Coaches answers the accounts the guild has not granted the role yet -->
+        <v-chip
+          v-for="coach in missingRoleCoaches"
+          :key="coach.id"
+          color="warning"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-alert"
+          class="mr-2 mt-4"
+        >
+          {{ coach.name }} — role missing in Discord
+        </v-chip>
       </v-card-text>
     </v-card>
 
@@ -374,11 +348,15 @@ const showNewPlayerModal = ref(false);
 const selectedPlayers = ref([]);
 
 // Coach management state
-const coach1 = ref(null);
-const coach2 = ref(null);
-const coach3 = ref(null);
+const coachIds = ref([]);
+const discordRoleMissing = ref([]);
 const isSavingCoaches = ref(false);
 const allAvailableUsers = ref([]);
+
+const missingRoleCoaches = computed(() =>
+  (team.value?.coaches_by_season?.[seasonId.value] || [])
+    .filter(coach => discordRoleMissing.value.includes(coach.discordId))
+);
 
 // Player details state
 const showPlayerDetails = ref(false);
@@ -477,10 +455,7 @@ const fetchTeam = async () => {
     allAvailableUsers.value = playerStore.players || [];
     
     // Initialize coach selections based on current coaches (order is preserved)
-    const currentCoaches = team.value.coaches_by_season?.[seasonId.value] || [];
-    coach1.value = currentCoaches[0]?.id || null;
-    coach2.value = currentCoaches[1]?.id || null;
-    coach3.value = currentCoaches[2]?.id || null;
+    coachIds.value = (team.value.coaches_by_season?.[seasonId.value] || []).map(coach => coach.id);
   } catch (error) {
     console.error(error);
     errorMessage.value = 'Failed to load team. Please try again later.';
@@ -490,14 +465,12 @@ const fetchTeam = async () => {
 };
 
 const saveCoaches = async () => {
-  // Build coach array in order, filtering out null values
-  const coachIds = [coach1.value, coach2.value, coach3.value].filter(id => id !== null);
-  
   isSavingCoaches.value = true;
   try {
-    await teamStore.setCoaches(teamId.value, seasonId.value, coachIds);
+    const saved = await teamStore.setCoaches(teamId.value, seasonId.value, coachIds.value);
     // Refresh team data to show updated coach status
     await fetchTeam();
+    discordRoleMissing.value = saved?.discord_role_missing || [];
   } catch (error) {
     console.error('Failed to save coaches:', error);
     errorMessage.value = 'Failed to save coaches. Please try again.';

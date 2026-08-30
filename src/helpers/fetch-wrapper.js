@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores';
 
 export const fetchWrapper = {
     get: request('GET'),
-    getSecure: request('GET_SECURE'),  // Authenticated GET request
+    getSecure: request('GET_SECURE'),  // GET; a session bearer is attached like any other request
     post: request('POST'),
     postFile: request('FILE_UPLOAD'),
     put: request('PUT'),
@@ -60,7 +60,6 @@ function request(method) {
         let requestMethod = method;
         let fileUpload = false;
         let receiveBinary = false;
-        let requireAuth = false;
 
         if (requestMethod === "FILE_UPLOAD") {
             requestMethod = "POST";
@@ -68,7 +67,6 @@ function request(method) {
         }
         if (requestMethod === "GET_SECURE") {
             requestMethod = "GET";
-            requireAuth = true;  // Force authentication for this GET request
         }
         if (requestMethod === "POST_BINARY") {
             requestMethod = "POST";
@@ -85,7 +83,7 @@ function request(method) {
         }
 
         // **Wait for headers to be resolved before passing them**
-        const headers = await authHeader(requestMethod, url, requireAuth);
+        const headers = await authHeader(requestMethod, url);
         const requestOptions = { method: requestMethod, headers };
 
         if (body) {
@@ -103,33 +101,15 @@ function request(method) {
     };
 }
 
-async function authHeader(method, url, requireAuth = false) {
-    const authstore = useAuthStore();
-    const user = authstore.user;
-    const isRestricted = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) || requireAuth;
-    const isLoggedIn = !!user?.access_token;
-    const isApiUrl = url.startsWith(import.meta.env.VITE_BACKEND_URL);
-    const isRefreshUrl = url.startsWith(import.meta.env.VITE_BACKEND_URL + "/refresh");
-    const isLoginUrl = url.startsWith(import.meta.env.VITE_BACKEND_URL + "/login");
-
-    if (isLoginUrl) {
+// exported so the raw FormData requests can send the same bearer
+export async function authHeader(method, url) {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
+    if (!url.startsWith(backendUrl) || url.startsWith(`${backendUrl}/login`)) {
         return {};
     }
-    if (isRefreshUrl) {
-        return { Authorization: `Bearer ${user.refresh_token}` };
-    } 
-    if (isRestricted && isLoggedIn && isApiUrl) {
-        if (authstore.isTokenExpired(user.access_token)) {
-            if (authstore.isTokenExpired(user.refresh_token)) {
-                authstore.logout();
-                return {};
-            } else {
-                await authstore.refresh(user.refresh_token);
-            }
-        }
-        return { Authorization: `Bearer ${authstore.user.access_token}` };
-    } 
-    return {};
+
+    const token = await useAuthStore().token();
+    return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 // Turn a failed response into an Error, keeping the body fields callers read for a code
@@ -140,9 +120,9 @@ function responseError(body, text, status) {
 
 async function handleResponse(response, receiveBinary, receivePage = false) {
     if (!response.ok) {
-        const { user, logout } = useAuthStore();
+        const { me, logout } = useAuthStore();
 
-        if ([401, 403].includes(response.status) && user) {
+        if ([401, 403].includes(response.status) && me) {
             logout(); // Logout on unauthorized access
         }
 

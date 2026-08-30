@@ -120,15 +120,6 @@
               />
             </v-col>
             <v-col cols="12" md="6">
-              <v-text-field
-                v-model="newTeam.discord_role" 
-                label="Team Discord Role"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-discord"
-              />
-            </v-col>
-            <v-col cols="12" md="6">
               <v-file-input
                 v-model="file"
                 label="Team Icon"
@@ -182,15 +173,6 @@
                 variant="outlined"
                 density="comfortable"
                 prepend-inner-icon="mdi-text"
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedTeam.discord_role" 
-                label="Team Discord Role"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-discord"
               />
             </v-col>
             <v-col cols="12" md="6">
@@ -264,7 +246,6 @@ const tableHeader = [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },  
   { title: 'Long Name', value: 'long_name', sortable: true }, 
-  { title: 'Discord Role', value: 'discord_role', sortable: true }, 
   { title: 'Actions', value: 'actions' }, 
 ]
 // Fetch data when the page is loaded
@@ -298,8 +279,7 @@ onMounted( () => {
 const createTeam = () => {
   newTeam.value = {
     name: '',
-    long_name: '',
-    discord_role:''
+    long_name: ''
   }
   creationError.value = '';
   showNewTeamModal.value = true;
@@ -309,8 +289,7 @@ const editTeam = (team) => {
   selectedTeam.value = { 
     id: team.id,
     name: team.name,
-    long_name: team.long_name,
-    discord_role: team.discord_role
+    long_name: team.long_name
   };
   updateError.value = '';
   showEditTeamModal.value = true;
@@ -338,8 +317,7 @@ const cancelEdit = () => {
   selectedTeam.value = { 
     id: null,
     name: '',
-    long_name: '',
-    discord_role: ''
+    long_name: ''
     };// Clear the selected user
 };
 
@@ -374,8 +352,7 @@ const createNewTeam = async () => {
       selectedTeam.value = {
         id: createdTeam.id,
         name: createdTeam.name,
-        long_name: createdTeam.long_name,
-        discord_role: createdTeam.discord_role
+        long_name: createdTeam.long_name
       };
       updateError.value = 'Team created, but icon upload failed: ' + extractErrorMessage(imgError);
       showEditTeamModal.value = true;
@@ -404,8 +381,7 @@ const cancelAddNewTeam = () => {
   file.value = null;
   newTeam.value = {
     name: '',
-    long_name: '',
-    discord_role: ''
+    long_name: ''
   };
 };
 

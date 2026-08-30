@@ -8,10 +8,10 @@
         "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
     },
     "dependencies": {
+        "@clerk/vue": "2.4.34",
         "@mdi/font": "^7.4.47",
         "country-code-info": "^0.3.0",
         "flagpack": "^1.0.5",
-        "jwt-decode": "^4.0.0",
         "luxon": "^3.6.1",
         "marked": "^17.0.1",
         "pinia": "^2.0.13",

@@ -47,7 +47,7 @@
           </div>
         </div>
         <div>
-          <ColumnNote :note="MMR_NOTE" class="text-caption text-medium-emphasis"><W3CMmr :height="12" /></ColumnNote>
+          <ColumnNote :note="MMR_NOTE" class="text-caption text-medium-emphasis"><W3CMmr /></ColumnNote>
           <div class="text-h6">
             {{ data?.mmr?.current ?? '—' }}
             <span class="text-caption text-medium-emphasis">{{ mmrRange }}</span>

@@ -7,9 +7,8 @@
     <!-- Page Header -->
     <v-row class="mb-4">
       <v-col>
-        <h1>
-          <W3CIcon :size="40" class="mr-2" />
-          W3C Ladder
+        <h1 class="d-inline-flex align-baseline">
+          <img :src="w3cLogo" style="height: 1.4em" alt="W3C" class="mr-2">Ladder
         </h1>
       </v-col>
     </v-row>
@@ -264,6 +263,7 @@ import { useAuthStore, useLadderStore, useSeasonStore } from '@/stores';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
 import W3CIcon from '@/components/W3CIcon.vue';
+import w3cLogo from '@/assets/media/w3c-logo.png';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { SCORED_NOTE, MMR_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';

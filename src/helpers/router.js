@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, LoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView } from '@/views';
+import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -14,6 +14,7 @@ export const router = createRouter({
     routes: [
         { path: '/', component: HomeView, meta: { role: 'admin' } },
         { path: '/login', component: LoginView, meta: { role: 'public' } },
+        { path: '/admin_login', component: AdminLoginView, meta: { role: 'public', nav: false } },
         { path: '/profile', component: ProfileView, meta: { role: 'guest' } },
         { path: '/seasons', component: SeasonsView, meta: { role: 'guest' } },
         { path: '/signup', component: PublicSignupView, meta: { role: 'public', nav: false } },
@@ -28,6 +29,7 @@ export const router = createRouter({
         { path: '/teams', component: TeamsView, meta: { role: 'guest' } },
         { path: '/config', component: ConfigView, meta: { role: 'admin' } },
         { path: '/config/discord-roles', component: DiscordRolesView, meta: { role: 'admin' } },
+        { path: '/config/access', component: AccessView, meta: { role: 'admin' } },
         { path: '/fantasy', component: FantasyLeaderboardView, meta: { role: 'member' } },
         { path: '/fantasy/bets', component: FantasyBetsView, meta: { role: 'admin' } },
         { path: '/fantasy/tiers', component: FantasyTiersView, meta: { role: 'admin' } },
@@ -44,7 +46,7 @@ export const router = createRouter({
 
 router.beforeEach((to) => {
     const auth = useAuthStore();
-    if (to.path === '/login' && auth.me) return auth.me.role === 'admin' ? '/' : '/profile';
+    if ((to.path === '/login' || to.path === '/admin_login') && auth.me) return auth.me.role === 'admin' ? '/' : '/profile';
     if (to.meta.role === 'public') return;
 
     if (!auth.me) {

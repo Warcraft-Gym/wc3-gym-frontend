@@ -219,10 +219,11 @@ const { seasons } = storeToRefs(seasonStore);
 
 // The RoleKind values the backend accepts
 const KINDS = [
-  { title: 'Captain', value: 'captain' },
+  { title: 'Gym Admin', value: 'admin' },
+  { title: 'GNL Captain', value: 'captain' },
   { title: 'Team', value: 'team' },
-  { title: 'Fantasy Captain', value: 'fantasy' },
-  { title: 'GNL Participant', value: 'gnl_participant' },
+  { title: 'GNL Fantasy', value: 'fantasy' },
+  { title: 'GNL Player', value: 'gnl_participant' },
   { title: 'Champion', value: 'champion' }
 ];
 

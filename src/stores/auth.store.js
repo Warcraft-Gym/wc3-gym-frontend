@@ -23,10 +23,10 @@ export const useAuthStore = defineStore({
         useClerkAuth(auth) {
             clerk = auth;
         },
-        // break-glass admin-token login, reached only from /login?legacy=1
+        // the admin-token login at /admin_login; a super admin session with no Discord account
         async login(token) {
             this.user = await fetchWrapper.post(`${backendUrl}/login`, { token });
-            this.me = { role: 'admin' };  // the admin token is an admin session by definition
+            this.me = { role: 'admin', superadmin: true, name: 'Super Admin' };
             localStorage.setItem('user', JSON.stringify(this.user));
             localStorage.setItem('me', JSON.stringify(this.me));
             router.push(this.returnUrl || '/');

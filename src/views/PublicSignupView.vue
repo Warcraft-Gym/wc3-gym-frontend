@@ -126,7 +126,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 // token validation/consumption is handled server-side via backend endpoints
 import { useSeasonStore, useConfigStore, usePlayerStore, useAuthStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
@@ -134,6 +134,7 @@ import { storeToRefs } from 'pinia';
 import CountryCodes from 'country-code-info';
 
 const route = useRoute();
+const router = useRouter();
 const token = ref(route.query.token || '');
 const loading = ref(true);
 const tokenInvalid = ref(false);
@@ -189,7 +190,19 @@ onMounted(async () => {
   if (!token.value && authStore.me) {
     discordId.value = authStore.me.discord_id;
     discordTag.value = authStore.me.name;
+    // the linked users row prefills the form; /me says which season the signup is for
+    const existing = authStore.me.user;
+    if (existing) {
+      name.value = existing.name || '';
+      battleTag.value = existing.battleTag || '';
+      country.value = existing.country || country.value;
+      race.value = existing.race || '';
+      timezone.value = existing.timezone || timezone.value;
+    }
+    selectedSignupSeasonId.value = authStore.me.season_id || null;
+    alreadySignedUp.value = !!authStore.me.signed_up;
     try { await seasonStore.fetchSeasons(); } catch (e) { /* ignore */ }
+    seasonName.value = seasons.value.find(x => x.id === selectedSignupSeasonId.value)?.name || '';
     loading.value = false;
     return;
   }
@@ -311,8 +324,11 @@ async function onSubmit() {
 
     // user created on backend — end-user flow is complete; they can close the page
     success.value = true;
-    // the profile needs the new users row before it can show the dashboard
-    if (!token.value) await authStore.fetchMe();
+    // the profile needs the fresh users row and signup before it can show the dashboard
+    if (!token.value) {
+      await authStore.fetchMe();
+      if (route.path === '/signup') router.push('/profile');
+    }
   } catch (err) {
     console.log('Signup error:', err);
     submitError.value = (err && err.message) || (err && err.error) || String(err);

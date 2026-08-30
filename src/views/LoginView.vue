@@ -14,7 +14,7 @@
                     <AuthenticateWithRedirectCallback sign-in-fallback-redirect-url="/#/login" />
                 </div>
                 <v-btn
-                    v-else-if="route.query.legacy !== '1'"
+                    v-else
                     class="discord-btn text-none"
                     variant="flat"
                     block
@@ -27,44 +27,6 @@
                     </svg>
                     Sign in with Discord
                 </v-btn>
-
-                <form v-else novalidate @submit.prevent="onSubmit">
-                    <v-text-field
-                        ref="passwordField"
-                        v-model="password"
-                        name="password"
-                        label="Password"
-                        type="password"
-                        variant="outlined"
-                        prepend-inner-icon="mdi-lock-outline"
-                        :rules="passwordRules"
-                    />
-
-                    <v-btn
-                        type="submit"
-                        color="primary"
-                        variant="elevated"
-                        block
-                        size="large"
-                        prepend-icon="mdi-login"
-                        :loading="isSubmitting"
-                        :disabled="isSubmitting"
-                        class="mt-4"
-                    >
-                        Login
-                    </v-btn>
-
-                    <v-alert
-                        v-if="apiError"
-                        type="error"
-                        variant="tonal"
-                        border="start"
-                        border-color="red"
-                        class="mt-4"
-                    >
-                        {{ apiError }}
-                    </v-alert>
-                </form>
             </v-card-text>
         </v-card>
 
@@ -75,7 +37,6 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { AuthenticateWithRedirectCallback, useSignIn } from '@clerk/vue';
 import { storeToRefs } from 'pinia';
 
@@ -83,7 +44,6 @@ import { useAuthStore } from '@/stores';
 import DiscordJoinCard from '@/components/DiscordJoinCard.vue';
 
 const { me } = storeToRefs(useAuthStore());
-const route = useRoute();  // ?legacy=1 shows the admin-token form as a break-glass login
 const { signIn } = useSignIn();
 const isCallback = window.location.pathname === '/sso-callback';
 const isRedirecting = ref(false);  // stays on until the browser leaves for Discord
@@ -95,27 +55,6 @@ const loginWithDiscord = () => {
         redirectUrlComplete: `${window.location.origin}/#/login`,
     }).catch(() => { isRedirecting.value = false; });
 };
-const password = ref('');
-const passwordField = ref(null);
-const apiError = ref(null);
-const isSubmitting = ref(false);
-const passwordRules = [value => !!value || 'Password is required'];
-
-async function onSubmit() {
-    const authStore = useAuthStore();
-
-    const errors = await passwordField.value.validate();
-    if (errors.length) return;
-
-    isSubmitting.value = true;
-    try {
-        await authStore.login(password.value);
-    } catch (error) {
-        apiError.value = error.message;
-    } finally {
-        isSubmitting.value = false;
-    }
-}
 </script>
 
 <style scoped>

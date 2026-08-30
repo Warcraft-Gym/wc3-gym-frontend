@@ -41,6 +41,12 @@
         Player Information
       </v-card-title>
       <v-card-text class="pt-4">
+        <v-alert v-if="needsSignup" type="info" variant="tonal" border="start" class="mb-4">
+          <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+            <span>Not signed up for {{ seasonLabel }}</span>
+            <v-btn color="primary" variant="elevated" size="small" @click="router.push('/signup')">Sign up</v-btn>
+          </div>
+        </v-alert>
         <v-chip color="secondary" class="mb-2">
           {{ playerData.discord_tag }}
         </v-chip>
@@ -355,10 +361,10 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
-import { useAuthStore } from '@/stores';
+import { useAuthStore, useSeasonStore } from '@/stores';
 import { getW3CMMR } from '@/helpers/w3c-stats';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
@@ -371,6 +377,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 
 const route = useRoute();
+const router = useRouter();
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const { mobile } = useDisplay();
 
@@ -417,6 +424,13 @@ const authStore = useAuthStore();
 
 // the session drives the routes when there is no ?token=; the backend reads the id from the bearer
 const hasAccess = () => !!token.value || !!authStore.me;
+
+// /me answers whether the session has a signup for the current GNL season
+const seasonStore = useSeasonStore();
+const needsSignup = computed(() => authStore.me?.signed_up === false && !!authStore.me?.season_id);
+const seasonLabel = computed(() =>
+  seasonStore.seasons.find(s => s.id === authStore.me?.season_id)?.name || `GNL Season ${authStore.me?.season_id}`
+);
 
 // Schedule / Result dialog state
 const scheduleDialog = ref(false);
@@ -791,6 +805,7 @@ const isScoreValid = computed(() => {
 
 onMounted(async () => {
   currentW3CSeason.value = await resolveCurrentW3CSeason();
+  if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
   fetchPlayerData();
 });
 </script>

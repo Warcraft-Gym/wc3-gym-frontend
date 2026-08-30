@@ -63,7 +63,7 @@ const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.ro
 
 const avatarUrl = computed(() => me.value?.avatar || null); // /me already answers the CDN URL
 const initials = computed(() => (me.value?.name || '?').slice(0, 2).toUpperCase());
-const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCase()));
+const roleLabel = computed(() => me.value?.superadmin ? 'Super Admin' : me.value?.role?.replace(/^./, c => c.toUpperCase()));
 </script>
 
 <template>
@@ -150,6 +150,9 @@ const roleLabel = computed(() => me.value?.role?.replace(/^./, c => c.toUpperCas
                             </v-list-item>
                             <v-list-item>
                                 <RouterLink to="/config/discord-roles">Discord Roles</RouterLink>
+                            </v-list-item>
+                            <v-list-item>
+                                <RouterLink to="/config/access">Access</RouterLink>
                             </v-list-item>
                         </v-list>
                     </v-menu>

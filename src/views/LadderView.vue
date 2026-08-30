@@ -40,6 +40,7 @@
           prepend-icon="mdi-sync"
           :loading="isSyncing"
           :disabled="isSyncing || !selectedSeasonId"
+          v-if="auth.isAdmin"
           @click="syncLadder"
         >
           Sync W3C
@@ -73,6 +74,7 @@
           prepend-icon="mdi-sync"
           :loading="isSyncing"
           :disabled="isSyncing"
+          v-if="auth.isAdmin"
           @click="syncLadder"
         >
           Sync W3C
@@ -254,7 +256,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useLadderStore, useSeasonStore } from '@/stores';
+import { useAuthStore, useLadderStore, useSeasonStore } from '@/stores';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
 import W3CIcon from '@/components/W3CIcon.vue';
@@ -269,6 +271,7 @@ import SyncProgress from '@/components/SyncProgress.vue';
 
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();
+const auth = useAuthStore();
 
 const { seasons } = storeToRefs(seasonStore);
 

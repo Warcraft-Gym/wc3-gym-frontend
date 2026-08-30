@@ -76,8 +76,8 @@ export const useTeamStore = defineStore({
         async syncPlayersW3C(team_id, season_id) {
             return await fetchWrapper.post(`${backendUrl}/teams/${team_id}/seasons/${season_id}/w3c-sync`);
         },
-        async setCoaches(team_id, season_id, coach_ids) {
-            const updatedTeam = await fetchWrapper.put(`${backendUrl}/teams/${team_id}/seasons/${season_id}/coaches`, {'coach_ids': coach_ids});
+        async setCaptains(team_id, season_id, captain_ids) {
+            const updatedTeam = await fetchWrapper.put(`${backendUrl}/teams/${team_id}/seasons/${season_id}/captains`, {'captain_ids': captain_ids});
             return updatedTeam;
         },
     }

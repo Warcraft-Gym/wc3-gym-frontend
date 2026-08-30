@@ -43,7 +43,7 @@
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-spacer />
                 <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="createTeam()" block>
+                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="createTeam()" block>
                     Add New Team
                   </v-btn>
                 </v-col>
@@ -77,6 +77,7 @@
                 variant="tonal" 
                 class="mt-4"
                 prepend-icon="mdi-plus"
+                v-if="auth.isAdmin"
                 @click="createTeam"
               >
                 Create First Team
@@ -138,7 +139,7 @@
         <v-card-actions class="px-4 py-3">
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="cancelAddNewTeam">Cancel</v-btn>
-          <v-btn color="primary" prepend-icon="mdi-check" @click="createNewTeam">Create Team</v-btn>
+          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="createNewTeam">Create Team</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -194,7 +195,7 @@
         <v-card-actions class="px-4 py-3">
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="cancelEdit">Cancel</v-btn>
-          <v-btn color="primary" prepend-icon="mdi-check" @click="updateTeam">Save Changes</v-btn>
+          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="updateTeam">Save Changes</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -210,7 +211,7 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
-import { useTeamStore } from '@/stores';
+import { useAuthStore, useTeamStore } from '@/stores';
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
@@ -226,6 +227,7 @@ const extractErrorMessage = (error) => {
 
 // Store initialization and refs
 const teamStore = useTeamStore();
+const auth = useAuthStore();
 const { teams } = storeToRefs(teamStore);
 
 // State for editing

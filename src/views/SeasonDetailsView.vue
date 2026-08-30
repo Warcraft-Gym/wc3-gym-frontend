@@ -84,6 +84,7 @@
             </v-col>
             <v-col cols="12" sm="auto">
               <v-btn
+                v-if="auth.isAdmin"
                 @click="openMatchCreationModal"
                 color="primary"
                 prepend-icon="mdi-plus"
@@ -186,6 +187,7 @@
         variant="tonal" 
         class="mt-4"
         prepend-icon="mdi-plus"
+        v-if="auth.isAdmin"
         @click="openMatchCreationModal"
       >
         Schedule First Match
@@ -204,7 +206,7 @@
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <!-- Team Management Actions -->
-          <v-card-actions class="pa-3">
+          <v-card-actions v-if="auth.isAdmin" class="pa-3">
             <v-btn
               @click="openTeamSelectionModal"
               variant="tonal"
@@ -288,7 +290,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="closeTeamSelectionModal">Cancel</v-btn>
-        <v-btn color="primary" @click="addTeamsToSeason" :disabled="!selectedTeams || selectedTeams.length === 0">
+        <v-btn v-if="auth.isAdmin" color="primary" @click="addTeamsToSeason" :disabled="!selectedTeams || selectedTeams.length === 0">
           Add {{ selectedTeams?.length || 0 }} Team(s)
         </v-btn>
       </v-card-actions>
@@ -355,7 +357,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="closeMatchCreationModal">Cancel</v-btn>
-        <v-btn color="primary" @click="confirmSelection">Create Match</v-btn>
+        <v-btn v-if="auth.isAdmin" color="primary" @click="confirmSelection">Create Match</v-btn>
       </v-card-actions>        
     </v-card>
   </v-dialog>
@@ -423,7 +425,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="cancelEdit">Cancel</v-btn>
-        <v-btn color="primary" @click="updateMatch">Save Changes</v-btn>
+        <v-btn v-if="auth.isAdmin" color="primary" @click="updateMatch">Save Changes</v-btn>
       </v-card-actions>        
     </v-card>
   </v-dialog>
@@ -455,7 +457,7 @@ import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted, computed, watch } from 'vue';
-import { useSeasonStore, useMatchStore, useTeamStore, useMapStore } from '@/stores';
+import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import bannerImg from '@/assets/media/GNL_Banner.png';
   import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
@@ -468,6 +470,7 @@ const seasonStore = useSeasonStore();
 const matchStore = useMatchStore();
 const teamStore = useTeamStore();
 const mapStore = useMapStore();
+const auth = useAuthStore();
 
 // Store refs
 const { current_season: season } = storeToRefs(seasonStore);

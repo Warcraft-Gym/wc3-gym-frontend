@@ -219,7 +219,7 @@ const { seasons } = storeToRefs(seasonStore);
 
 // The RoleKind values the backend accepts
 const KINDS = [
-  { title: 'Coach', value: 'coach' },
+  { title: 'Captain', value: 'captain' },
   { title: 'Team', value: 'team' },
   { title: 'Fantasy Captain', value: 'fantasy' },
   { title: 'GNL Participant', value: 'gnl_participant' },
@@ -315,7 +315,7 @@ const syncOne = async (row) => {
 };
 
 const addBinding = () => {
-  binding.value = { kind: 'coach', season_id: null, team_id: null, discord_role: '' };
+  binding.value = { kind: 'captain', season_id: null, team_id: null, discord_role: '' };
   dialogError.value = null;
   bindingDialog.value = true;
 };

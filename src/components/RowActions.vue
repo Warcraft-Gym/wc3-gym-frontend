@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex justify-end">
+  <div v-if="auth.isAdmin" class="d-flex justify-end">
     <v-btn
       v-for="action in actions"
       :key="action.label"
@@ -18,6 +18,9 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '@/stores';
+
+const auth = useAuthStore();  // every row action writes, so only an admin sees them
 // action: { icon, label, onClick, color?, disabled?, loading? }
 defineProps({ actions: { type: Array, required: true } });
 </script>

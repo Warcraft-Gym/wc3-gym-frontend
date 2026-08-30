@@ -51,7 +51,7 @@
                   </v-alert>
                 </v-col>
                 <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" block>
+                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" block>
                     Create Team
                   </v-btn>
                 </v-col>
@@ -337,7 +337,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="closeEditDialog" :disabled="isSaving">Cancel</v-btn>
-        <v-btn color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
+        <v-btn v-if="auth.isAdmin" color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -356,7 +356,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="closeDeleteDialog" :disabled="isDeleting">Cancel</v-btn>
-        <v-btn color="error" variant="elevated" prepend-icon="mdi-delete" @click="confirmDelete" :loading="isDeleting">Delete</v-btn>
+        <v-btn v-if="auth.isAdmin" color="error" variant="elevated" prepend-icon="mdi-delete" @click="confirmDelete" :loading="isDeleting">Delete</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -626,7 +626,7 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import { ref, computed, onMounted } from 'vue';
-import { useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
+import { useAuthStore, useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
@@ -637,6 +637,7 @@ const fantasyStore = useFantasyStore();
 const seasonStore = useSeasonStore();
 const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
+const auth = useAuthStore();
 
 const { teams } = storeToRefs(fantasyStore);
 

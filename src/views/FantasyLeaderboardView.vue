@@ -115,8 +115,8 @@
 
               <template v-slot:[`item.actions`]="{ item }">
                 <RowActions :actions="[
-                  { icon: 'mdi-eye', label: 'View Details', onClick: () => viewTeamDetails(item.id) },
-                  { icon: 'mdi-chart-box', label: 'Score Breakdown', onClick: () => viewScoreBreakdown(item) },
+                  { icon: 'mdi-eye', label: 'View Details', public: true, onClick: () => viewTeamDetails(item.id) },
+                  { icon: 'mdi-chart-box', label: 'Score Breakdown', public: true, onClick: () => viewScoreBreakdown(item) },
                   { icon: 'mdi-pencil', label: 'Edit', onClick: () => openEditDialog(item) },
                   { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item) },
                 ]" />

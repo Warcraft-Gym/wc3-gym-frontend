@@ -220,7 +220,7 @@
                 </td>
                 <td>
                   <RowActions :actions="[
-                    { icon: 'mdi-chart-box', label: 'View Stats', onClick: () => showStats(item) },
+                    { icon: 'mdi-chart-box', label: 'View Stats', public: true, onClick: () => showStats(item) },
                     { icon: 'mdi-account-minus', label: 'Remove from Team', color: 'error', onClick: () => removePlayerFromTeam(item.id) },
                   ]" />
                 </td>

@@ -7,8 +7,8 @@
     <!-- Page Header -->
     <v-row class="mb-4">
       <v-col>
-        <h1 class="d-inline-flex align-baseline">
-          <img :src="w3championsLogo" style="height: 1.35em; transform: translateY(3%)" alt="W3Champions" class="mr-2">Ladder
+        <h1 class="d-inline-flex">
+          <img :src="w3championsLogo" style="height: 1.35em" alt="W3Champions">
         </h1>
       </v-col>
     </v-row>

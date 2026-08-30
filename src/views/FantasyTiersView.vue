@@ -47,6 +47,10 @@
         <v-alert type="info" variant="tonal" density="compact" class="mb-4">
           Define MMR ranges for each tier. Players allocated to teams in the current season will be automatically grouped into these tiers.
         </v-alert>
+
+        <v-btn color="primary" variant="tonal" prepend-icon="mdi-scale-balance" class="mb-4" :disabled="!currentSeasonPlayers.length" @click="distributeEvenly">
+          Even Split by MMR
+        </v-btn>
         
         <v-row>
           <v-col v-for="(tier, index) in tiers" :key="index" cols="12" md="6" lg="4">
@@ -283,6 +287,24 @@ const loadData = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+// Set the tier ranges so each holds about the same number of players:
+// sort the season's players by MMR and cut at the sixths. Ties share a
+// tier, so counts can differ a little; the ranges stay editable after.
+const distributeEvenly = () => {
+  const sorted = currentSeasonPlayers.value
+    .map(player => getW3CMMR(player) || 0)
+    .sort((a, b) => b - a);
+  const count = tiers.value.length;
+  let ceiling = Math.max(3000, sorted[0]);
+  tiers.value.forEach((tier, index) => {
+    const last = Math.ceil(((index + 1) * sorted.length) / count) - 1;
+    tier.max = ceiling;
+    tier.min = index === count - 1 ? 0 : Math.min(sorted[last], ceiling);
+    ceiling = tier.min - 1;
+  });
+  updateTierRanges();
 };
 
 // Apply tier allocation

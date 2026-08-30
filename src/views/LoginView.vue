@@ -12,11 +12,10 @@
                 <div v-if="isCallback || isSignedIn" class="text-center py-4">
                     <v-progress-circular indeterminate color="primary" class="mb-3" />
                     <div>Signing you in…</div>
-                    <v-btn variant="text" size="small" class="mt-2" @click="reset">Start over</v-btn>
                     <AuthenticateWithRedirectCallback v-if="isCallback" sign-in-fallback-redirect-url="/#/login" />
                 </div>
-                <v-alert v-else-if="error" type="error" variant="tonal" border="start" class="mb-4">
-                    {{ error }}
+                <v-alert v-else-if="error || loginError" type="error" variant="tonal" border="start" class="mb-4">
+                    {{ error || loginError }}
                     <template #append>
                         <v-btn variant="text" size="small" @click="reset">Reset and retry</v-btn>
                     </template>
@@ -51,10 +50,13 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores';
 import DiscordJoinCard from '@/components/DiscordJoinCard.vue';
 
-const { me } = storeToRefs(useAuthStore());
+const authStore = useAuthStore();
+const { me, loginError } = storeToRefs(authStore);
 const { signIn } = useSignIn();
 const { isLoaded, isSignedIn } = useAuth();
-const isCallback = window.location.pathname === '/sso-callback';
+const onCallbackPath = () => window.location.pathname === '/sso-callback';
+const isCallback = ref(onCallbackPath());
+window.addEventListener('popstate', () => { isCallback.value = onCallbackPath(); });
 const isRedirecting = ref(false);  // stays on until the browser leaves for Discord
 const error = ref(null);
 const REDIRECT_TIMEOUT = 15000;  // Discord not reached by then is a failure, not a slow network
@@ -78,15 +80,11 @@ const fail = (message) => {
     isRedirecting.value = false;
     error.value = message;
 };
-// Clerk state from another instance or a broken run: drop everything this site stored and start over
+// drop the session Clerk still holds, so the button comes back
 const reset = () => {
-    localStorage.clear();
-    for (const cookie of document.cookie.split(';')) {
-        const name = cookie.split('=')[0].trim();
-        document.cookie = `${name}=; Max-Age=0; path=/`;
-    }
-    window.location.replace(`${window.location.origin}/#/login`);
-    window.location.reload();
+    error.value = null;
+    loginError.value = null;
+    authStore.logout();
 };
 </script>
 

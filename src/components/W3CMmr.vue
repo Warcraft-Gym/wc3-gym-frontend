@@ -20,6 +20,7 @@ defineProps({
 <style scoped>
 .w3c-mmr-logo {
   height: 1.4em;
+  transform: translateY(3%);
   object-fit: contain;
   vertical-align: baseline;
   flex-shrink: 0;

@@ -112,7 +112,7 @@ const roleLabel = computed(() => {
                                 <RouterLink to="/report">Season Report</RouterLink>
                             </v-list-item>
                             <v-list-item>
-                                <RouterLink to="/ladder" class="d-inline-flex align-baseline"><img :src="w3cLogo" style="height: 1.4em" alt="W3C" class="mr-1">Ladder</RouterLink>
+                                <RouterLink to="/ladder" class="d-inline-flex align-baseline"><img :src="w3cLogo" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">Ladder</RouterLink>
                             </v-list-item>
                         </v-list>
                     </v-menu>

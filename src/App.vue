@@ -63,7 +63,11 @@ const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.ro
 
 const avatarUrl = computed(() => me.value?.avatar || null); // /me already answers the CDN URL
 const initials = computed(() => (me.value?.name || '?').slice(0, 2).toUpperCase());
-const roleLabel = computed(() => me.value?.superadmin ? 'Super Admin' : me.value?.role?.replace(/^./, c => c.toUpperCase()));
+const roleLabel = computed(() => {
+    if (me.value?.superadmin) return 'Super Admin';
+    const role = me.value?.role?.replace(/^./, c => c.toUpperCase());
+    return me.value?.team ? `${role} · ${me.value.team.name}` : role;  // a captain is named with the team
+});
 </script>
 
 <template>

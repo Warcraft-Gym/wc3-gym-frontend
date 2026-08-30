@@ -14,7 +14,7 @@
     </v-overlay>
 
     <!-- Import Excel Panel -->
-    <v-card class="mb-4" elevation="2">
+    <v-card v-if="auth.isAdmin" class="mb-4" elevation="2">
       <v-expansion-panels>
         <v-expansion-panel>
           <v-expansion-panel-title class="bg-grey-lighten-4">

@@ -47,10 +47,11 @@
         </v-toolbar>
       </v-card-text>
       <v-card-text>
-        <p class="text-subtitle-2 mb-3">Assign the captains of this season:</p>
+        <p v-if="auth.isAdmin" class="text-subtitle-2 mb-3">Assign the captains of this season:</p>
 
         <v-autocomplete
           v-model="captainIds"
+          :readonly="!auth.isAdmin"
           :items="allAvailableUsers"
           item-title="name"
           item-value="id"
@@ -58,10 +59,10 @@
           placeholder="Start typing to search..."
           multiple
           chips
-          closable-chips
-          clearable
+          :closable-chips="auth.isAdmin"
+          :clearable="auth.isAdmin"
           auto-select-first
-          hint="Any number of captains"
+          :hint="auth.isAdmin ? 'Any number of captains' : ''"
           persistent-hint
         >
           <template v-slot:prepend-inner>

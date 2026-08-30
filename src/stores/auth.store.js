@@ -30,7 +30,7 @@ export const useAuthStore = defineStore({
         useClerkAuth(auth) {
             clerk = auth;
         },
-        // the admin-token login at /admin_login; a super admin session with no Discord account
+        // the admin-token login at /admin-login; a super admin session with no Discord account
         async login(token) {
             this.user = await fetchWrapper.post(`${backendUrl}/login`, { token });
             this.me = { role: 'admin', superadmin: true, name: 'Super Admin' };

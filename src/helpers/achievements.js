@@ -7,7 +7,7 @@ export const LADDER_NOTE =
 
 // MMR is w3champions data, so it does not follow the scoring rule
 export const MMR_NOTE =
-  'MMR comes from w3champions and moves on every game, including the ones too short to score.';
+  'MMR comes from w3champions and moves on every game, including the ones too short to score points.';
 
 export const ACHIEVEMENTS_NOTE =
   'Badges earned this season and what each paid; the total is in Points. They count only games longer than 2 minutes.';

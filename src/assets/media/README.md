@@ -12,5 +12,6 @@ if they publish a newer mark; `W3CIcon.vue` is the only thing that reads it.
 `w3c-logo.png` is their "W3C" wordmark with crown, from
 `public/assets/logos/medium-logo.png` of the same repo, with the white
 letters recoloured dark so it reads on this app's light theme. `W3CMmr.vue`
-labels every MMR column "W3C MMR" with it and the nav's "W3C Ladder" link
-carries it.
+labels every MMR column "W3C MMR" with it; the nav's "W3C Ladder" link and
+the ladder page title carry it too. The letters fill the bottom half, so it is
+always baseline-aligned with the text next to it.

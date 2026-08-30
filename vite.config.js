@@ -12,7 +12,8 @@ export default defineConfig({
         strictPort: true, // Ensures the port is available and does not auto-select another
         proxy: {
             '/api': {
-              target: 'http://localhost:5002',
+              // In the container stack the backend is another container, not localhost
+              target: process.env.VITE_PROXY_TARGET || 'http://localhost:5002',
               changeOrigin: true,
               secure: false,      
               rewrite: path => path.replace(/^\/api/, ''),

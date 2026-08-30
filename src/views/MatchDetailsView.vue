@@ -701,8 +701,8 @@
       </v-card>
     </v-dialog>
 
-    <!-- Team Rosters Expansion Panel -->
-    <v-expansion-panels class="mt-4" v-model="teamRostersPanel">
+    <!-- Team Rosters Expansion Panel; proposing series is an admin write -->
+    <v-expansion-panels v-if="auth.isAdmin" class="mt-4" v-model="teamRostersPanel">
       <v-expansion-panel>
         <v-expansion-panel-title class="text-h6">
           <v-icon class="mr-2">mdi-account-group</v-icon>

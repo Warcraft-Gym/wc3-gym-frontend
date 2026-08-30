@@ -14,7 +14,7 @@ export const router = createRouter({
     routes: [
         { path: '/', component: HomeView, meta: { role: 'admin' } },
         { path: '/login', component: LoginView, meta: { role: 'public' } },
-        { path: '/admin_login', component: AdminLoginView, meta: { role: 'public', nav: false } },
+        { path: '/admin-login', component: AdminLoginView, meta: { role: 'public', nav: false } },
         { path: '/profile', component: ProfileView, meta: { role: 'guest' } },
         { path: '/seasons', component: SeasonsView, meta: { role: 'guest' } },
         { path: '/signup', component: PublicSignupView, meta: { role: 'public', nav: false } },
@@ -46,7 +46,7 @@ export const router = createRouter({
 
 router.beforeEach((to) => {
     const auth = useAuthStore();
-    if ((to.path === '/login' || to.path === '/admin_login') && auth.me) return auth.me.role === 'admin' ? '/' : '/profile';
+    if ((to.path === '/login' || to.path === '/admin-login') && auth.me) return auth.me.role === 'admin' ? '/' : '/profile';
     if (to.meta.role === 'public') return;
 
     if (!auth.me) {

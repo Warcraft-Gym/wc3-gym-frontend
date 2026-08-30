@@ -16,6 +16,9 @@
               {{ playerData.player.battleTag }} <W3CIcon :size="16" />
             </a>
           </PlayerName>
+          <v-chip v-if="authStore.me?.team" color="primary" variant="tonal" size="small" prepend-icon="mdi-shield-star">
+            Captain · {{ authStore.me.team.name }}
+          </v-chip>
         </h1>
         <h1 v-else>Player Dashboard</h1>
       </v-col>

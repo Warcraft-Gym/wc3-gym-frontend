@@ -5,6 +5,13 @@ import { fetchWrapper, router } from '@/helpers';
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
 
 if (!localStorage.getItem('me')) localStorage.removeItem('user');  // a pre-Clerk token has no me; it would shadow the Clerk session
+// a cached me belongs to one Clerk instance; a key change (dev to production) starts clean
+const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+if (localStorage.getItem('clerk_key') !== CLERK_KEY) {
+    localStorage.removeItem('me');
+    localStorage.removeItem('user');
+    localStorage.setItem('clerk_key', CLERK_KEY);
+}
 
 let clerk = null;  // Clerk's useAuth(), handed over by App.vue where composables are legal
 

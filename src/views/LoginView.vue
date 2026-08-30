@@ -7,19 +7,27 @@
             </v-card-title>
 
             <v-card-text class="pt-6">
-                <!-- Discord's consent page comes back to /sso-callback, which Clerk finishes here -->
-                <div v-if="isCallback" class="text-center py-4">
+                <!-- Discord's consent page comes back to /sso-callback, which Clerk finishes here;
+                     a session that /me has not answered yet waits here too, so the button never flashes -->
+                <div v-if="isCallback || isSignedIn" class="text-center py-4">
                     <v-progress-circular indeterminate color="primary" class="mb-3" />
                     <div>Signing you in…</div>
-                    <AuthenticateWithRedirectCallback sign-in-fallback-redirect-url="/#/login" />
+                    <v-btn variant="text" size="small" class="mt-2" @click="reset">Start over</v-btn>
+                    <AuthenticateWithRedirectCallback v-if="isCallback" sign-in-fallback-redirect-url="/#/login" />
                 </div>
+                <v-alert v-else-if="error" type="error" variant="tonal" border="start" class="mb-4">
+                    {{ error }}
+                    <template #append>
+                        <v-btn variant="text" size="small" @click="reset">Reset and retry</v-btn>
+                    </template>
+                </v-alert>
                 <v-btn
-                    v-else
+                    v-if="!isCallback && !isSignedIn"
                     class="discord-btn text-none"
                     variant="flat"
                     block
                     size="large"
-                    :loading="isRedirecting"
+                    :loading="isRedirecting || !isLoaded"
                     @click="loginWithDiscord"
                 >
                     <svg class="discord-mark mr-3" viewBox="0 0 24 24" aria-hidden="true">
@@ -37,7 +45,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { AuthenticateWithRedirectCallback, useSignIn } from '@clerk/vue';
+import { AuthenticateWithRedirectCallback, useAuth, useSignIn } from '@clerk/vue';
 import { storeToRefs } from 'pinia';
 
 import { useAuthStore } from '@/stores';
@@ -45,15 +53,40 @@ import DiscordJoinCard from '@/components/DiscordJoinCard.vue';
 
 const { me } = storeToRefs(useAuthStore());
 const { signIn } = useSignIn();
+const { isLoaded, isSignedIn } = useAuth();
 const isCallback = window.location.pathname === '/sso-callback';
 const isRedirecting = ref(false);  // stays on until the browser leaves for Discord
-const loginWithDiscord = () => {
+const error = ref(null);
+const REDIRECT_TIMEOUT = 15000;  // Discord not reached by then is a failure, not a slow network
+
+const loginWithDiscord = async () => {
     isRedirecting.value = true;
-    return signIn.value.authenticateWithRedirect({
-        strategy: 'oauth_discord',
-        redirectUrl: `${window.location.origin}/sso-callback`,
-        redirectUrlComplete: `${window.location.origin}/#/login`,
-    }).catch(() => { isRedirecting.value = false; });
+    error.value = null;
+    const timer = setTimeout(() => fail('Discord did not answer.'), REDIRECT_TIMEOUT);
+    try {
+        await signIn.value.authenticateWithRedirect({
+            strategy: 'oauth_discord',
+            redirectUrl: `${window.location.origin}/sso-callback`,
+            redirectUrlComplete: `${window.location.origin}/#/login`,
+        });
+    } catch (e) {
+        clearTimeout(timer);
+        fail(e?.errors?.[0]?.longMessage || e?.message || 'Sign-in failed.');
+    }
+};
+const fail = (message) => {
+    isRedirecting.value = false;
+    error.value = message;
+};
+// Clerk state from another instance or a broken run: drop everything this site stored and start over
+const reset = () => {
+    localStorage.clear();
+    for (const cookie of document.cookie.split(';')) {
+        const name = cookie.split('=')[0].trim();
+        document.cookie = `${name}=; Max-Age=0; path=/`;
+    }
+    window.location.replace(`${window.location.origin}/#/login`);
+    window.location.reload();
 };
 </script>
 

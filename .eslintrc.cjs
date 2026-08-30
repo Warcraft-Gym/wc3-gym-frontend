@@ -7,5 +7,11 @@ module.exports = {
     ],
     "env": {
         "vue/setup-compiler-macros": true
+    },
+    "globals": {
+        "defineModel": "readonly"
+    },
+    "rules": {
+        "vue/valid-v-slot": ["error", { "allowModifiers": true }]
     }
 }

@@ -628,11 +628,9 @@ import RowActions from '@/components/RowActions.vue';
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore, useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
 
 
-const router = useRouter();
 const fantasyStore = useFantasyStore();
 const seasonStore = useSeasonStore();
 const playerStore = usePlayerStore();

@@ -179,7 +179,7 @@
                               density="comfortable"
                               clearable
                             >
-                              <template v-slot:item="{ props, item }">
+                              <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
                                   @click="tierSelections.tier1 = item.value"
@@ -212,7 +212,7 @@
                               density="comfortable"
                               clearable
                             >
-                              <template v-slot:item="{ props, item }">
+                              <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
                                   @click="tierSelections.tier2 = item.value"
@@ -245,7 +245,7 @@
                               density="comfortable"
                               clearable
                             >
-                              <template v-slot:item="{ props, item }">
+                              <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
                                   @click="tierSelections.tier3 = item.value"
@@ -278,7 +278,7 @@
                               density="comfortable"
                               clearable
                             >
-                              <template v-slot:item="{ props, item }">
+                              <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
                                   @click="tierSelections.tier4 = item.value"
@@ -311,7 +311,7 @@
                               density="comfortable"
                               clearable
                             >
-                              <template v-slot:item="{ props, item }">
+                              <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
                                   @click="tierSelections.tier5 = item.value"
@@ -344,7 +344,7 @@
                               density="comfortable"
                               clearable
                             >
-                              <template v-slot:item="{ props, item }">
+                              <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
                                   @click="tierSelections.tier6 = item.value"

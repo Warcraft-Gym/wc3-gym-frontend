@@ -27,10 +27,10 @@ export const usePlayerStore = defineStore({
         },
         async updatePlayer(player) {
             const playerId = player.id;
-            const updatedPlayer = await fetchWrapper.put(`${backendUrl}/users/${playerId}`, player);
+            await fetchWrapper.put(`${backendUrl}/users/${playerId}`, player);
         },
         async createPlayer(player) {
-            const createPlayer = await fetchWrapper.post(`${backendUrl}/users`, player);
+            await fetchWrapper.post(`${backendUrl}/users`, player);
         },
         async deletePlayer(player_id) {
             await fetchWrapper.delete(`${backendUrl}/users/${player_id}`);

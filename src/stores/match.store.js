@@ -19,10 +19,10 @@ export const useMatchStore = defineStore({
         },
         async updateMatch(match) {
             const matchId = match.id;
-            const updatedMatch = await fetchWrapper.put(`${backendUrl}/matches/${matchId}`, match);
+            await fetchWrapper.put(`${backendUrl}/matches/${matchId}`, match);
         },
         async createMatch(match) {
-            const updatedMatch = await fetchWrapper.post(`${backendUrl}/matches`, match);
+            await fetchWrapper.post(`${backendUrl}/matches`, match);
         },
         async deleteMatch(match_id) {
             await fetchWrapper.delete(`${backendUrl}/matches/${match_id}`);

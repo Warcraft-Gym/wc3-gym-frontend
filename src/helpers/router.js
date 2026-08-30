@@ -43,9 +43,10 @@ export const router = createRouter({
 });
 
 router.beforeEach((to) => {
+    const auth = useAuthStore();
+    if (to.path === '/login' && auth.me) return auth.me.role === 'admin' ? '/' : '/profile';
     if (to.meta.role === 'public') return;
 
-    const auth = useAuthStore();
     if (!auth.me) {
         auth.returnUrl = to.fullPath;
         return '/login';

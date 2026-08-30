@@ -4,6 +4,8 @@ import { fetchWrapper, router } from '@/helpers';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
 
+if (!localStorage.getItem('me')) localStorage.removeItem('user');  // a pre-Clerk token has no me; it would shadow the Clerk session
+
 let clerk = null;  // Clerk's useAuth(), handed over by App.vue where composables are legal
 
 export const useAuthStore = defineStore({

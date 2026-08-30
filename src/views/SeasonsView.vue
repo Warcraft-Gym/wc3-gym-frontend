@@ -63,6 +63,7 @@
                 <v-col cols="auto">
                   <v-btn
                     :disabled="!canUpload || isLoading"
+                    v-if="auth.isAdmin"
                     @click="uploadFile"
                     color="primary"
                     variant="elevated"
@@ -112,7 +113,7 @@
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-spacer />
                 <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click.stop="addNewSeason" block>
+                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click.stop="addNewSeason" block>
                     Add New Season
                   </v-btn>
                 </v-col>
@@ -146,6 +147,7 @@
                 variant="tonal" 
                 class="mt-4"
                 prepend-icon="mdi-plus"
+                v-if="auth.isAdmin"
                 @click="addNewSeason"
               >
                 Create First Season
@@ -260,7 +262,7 @@
         <v-card-actions class="px-4 py-3">
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="cancelAddNewSeason">Cancel</v-btn>
-          <v-btn color="primary" prepend-icon="mdi-check" @click="createNewSeason">Create Season</v-btn>
+          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="createNewSeason">Create Season</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -369,7 +371,7 @@
         <v-card-actions class="px-4 py-3">
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="cancelEdit">Cancel</v-btn>
-          <v-btn color="primary" prepend-icon="mdi-check" @click="updateSeason">Save Changes</v-btn>
+          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="updateSeason">Save Changes</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -387,11 +389,12 @@
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { ref, computed, onMounted } from 'vue';
-import { useSeasonStore, useMapStore } from '@/stores';
+import { useAuthStore, useSeasonStore, useMapStore } from '@/stores';
 
 
 const seasonStore = useSeasonStore();
 const mapStore = useMapStore();
+const auth = useAuthStore();
 
 const seasons = ref([]);
 const maps = ref([]);

@@ -13,6 +13,10 @@ export const useAuthStore = defineStore({
         me: JSON.parse(localStorage.getItem('me')),
         returnUrl: null
     }),
+    getters: {
+        isAdmin: (s) => s.me?.role === 'admin',
+        isCaptain: (s) => s.me?.role === 'captain' || s.me?.role === 'admin'
+    },
     actions: {
         useClerkAuth(auth) {
             clerk = auth;

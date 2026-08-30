@@ -318,26 +318,15 @@ const applyTierAllocation = async () => {
   successMessage.value = null;
 
   try {
-    // Step 1: Clear all player tiers (set to null for ALL players)
-    const allPlayers = players.value || [];
-    const clearPromises = allPlayers.map(player => 
-      playerStore.updatePlayer({ ...player, fantasy_tier: null })
-    );
-    
-    await Promise.all(clearPromises);
-    
-    // Step 2: Assign new tiers based on current allocation
-    const updatePromises = [];
+    // One request replaces the whole allocation; unlisted players lose their tier
+    const allocation = {};
     tiers.value.forEach((tier, index) => {
-      const tierNumber = index + 1;
       tier.players.forEach(player => {
-        updatePromises.push(
-          playerStore.updatePlayer({ ...player, fantasy_tier: tierNumber })
-        );
+        allocation[player.id] = index + 1;
       });
     });
 
-    await Promise.all(updatePromises);
+    await playerStore.updateFantasyTiers(allocation);
 
     successMessage.value = `Successfully updated tier assignments for ${totalPlayers.value} players!`;
     

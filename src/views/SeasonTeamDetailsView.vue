@@ -158,7 +158,7 @@
           :headers="tableHeader"
           :loading="isLoading"
           :items="players"
-          :row-props="getRowClass"
+          :row-props="playerRowProps"
           fixed-header
           hover
         >
@@ -317,7 +317,7 @@ import AchievementChip from '@/components/AchievementChip.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import { getW3CMMR, syncedAgo, syncedAt, agoFromIso, localFromIso } from '@/helpers/w3c-stats';
-import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers/players';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 
@@ -424,7 +424,7 @@ const tableHeader = [
   { title: 'W3C MMR', value: 'mmr', sortable: false }, 
   { title: 'Main Race', value: 'race', sortable: true },  
   { title: 'Signups', value: 'signups', sortable: false },    
-  { title: 'Actions', key: 'actions', align: 'end', sortable: false }, 
+  { title: '', key: 'actions', align: 'end', sortable: false }, 
 ];
 
 const playerTableHeaders = [
@@ -434,9 +434,6 @@ const playerTableHeaders = [
 ];
 
 // Methods
-const getRowClass = () => ({
-  class: 'player-row'
-});
 
 const fetchAllPlayers = async () => {
   try {

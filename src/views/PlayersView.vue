@@ -54,7 +54,7 @@
           :headers="tableHeader"
           :loading="isLoading"
           :items="filteredPlayers"
-          :row-props="getRowClass"
+          :row-props="playerRowProps"
           fixed-header
           hover
         >
@@ -74,12 +74,16 @@
               </v-row>
             </v-toolbar>
           </template>
+              <template v-slot:header.races>
+                <W3CMmr :suffix="currentW3CSeason ? ` (S${currentW3CSeason})` : ''" />
+              </template>
+
               <template v-slot:item="{ item }">
                 <tr class="text-no-wrap">
                   <td>{{ item.id }}</td>
                   <td>
                     <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
-                      <template v-if="!hasW3CStats(item)">
+                      <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason)">
                         <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
@@ -87,7 +91,7 @@
                           <span>No W3C stats found for {{ item.race }}</span>
                         </v-tooltip>
                       </template>
-                      <template v-else-if="hasLowGames(item)">
+                      <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason)">
                         <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
@@ -100,15 +104,8 @@
                   <td>{{ item.battleTag }}</td>
                   <td>{{ item.discordTag }}</td>
                   <td>
-                    {{ getW3CMMR(item, currentW3CSeason) }}
-                    <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                    <RaceMmrChips :player="item" :w3cSeason="currentW3CSeason" />
                   </td>
-                  <td>
-                    <div v-if="item.race">
-                      <RaceIcon :raceIdentifier="item.race" />                                          
-                    </div>
-                  </td>     
-                  <!-- Have a button with click | opens a pannel | with each race's mmr / WR / Wins + losses AND Link to w3c -->           
                   <td>
                     <div v-if="item.signup_seasons && item.signup_seasons.length > 0">
                       <template v-for="s in item.signup_seasons.slice().sort((a,b) => b.id - a.id).slice(0,2)" :key="s.id">
@@ -415,14 +412,15 @@ import { onMounted, ref, computed } from 'vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { 
-  getW3CMMR,
-  getW3CMMRSeason,
+import {
+  getAllRaceStats,
   getW3CGamesCount,
   hasW3CStatsTwoSeasons,
   hasLowGamesTwoSeasons
 } from '@/helpers/w3c-stats';
-import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
+import RaceMmrChips from '@/components/RaceMmrChips.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
+import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers/players';
 
 
 // State for editing
@@ -472,7 +470,7 @@ const filteredPlayers = computed(() => {
   }
 
   // filter by mmr range — only apply if user changed from defaults
-  list = filterByMmrRange(list, rangeValues.value, p => Number(getW3CMMR(p, currentW3CSeason.value) ?? 0));
+  list = filterByMmrRange(list, rangeValues.value, bestMmr);
 
   // filter by W3C stats
   if (selectedW3CFilter.value && selectedW3CFilter.value.length > 0) {
@@ -480,8 +478,8 @@ const filteredPlayers = computed(() => {
       const includeNoStats = selectedW3CFilter.value.includes('no_stats');
       const includeLowGames = selectedW3CFilter.value.includes('low_games');
       
-      if (includeNoStats && !hasW3CStats(p)) return true;
-      if (includeLowGames && hasLowGames(p)) return true;
+      if (includeNoStats && !hasW3CStatsTwoSeasons(p, currentW3CSeason.value)) return true;
+      if (includeLowGames && hasLowGamesTwoSeasons(p, currentW3CSeason.value)) return true;
       
       return false;
     });
@@ -506,29 +504,15 @@ const w3cFilterOptions = [
   { title: 'Less than 20 games', value: 'low_games' }
 ];
 
-//table header
-/*
-ID
-Name
-BattleTag
-Country
-Discord Tag
-W3C MMR
-Main Race
-W3C Stats
-Fantasy Tier
-Actions
-*/
 // the Actions column carries admin operations (edit, W3C sync, delete)
 const tableHeader = computed(() => [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
   { title: 'Battletag', value: 'battleTag', sortable: true },
   { title: 'Discord Name', value: 'discordTag', sortable: true },
-  { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'mmr', sortable: false },
-  { title: 'Main Race', value: 'race', sortable: true },
+  { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'races', sortable: false },
   { title: 'Signups', value: 'signups', sortable: false },
-  ...(auth.isAdmin ? [{ title: 'Actions', key: 'actions', align: 'end', sortable: false }] : []),
+  ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
 
 // Fetch users when the component is mounted
@@ -598,21 +582,10 @@ const currentSeasonName = computed(() => (seasons.value || []).find(s => s.id ==
 // Current W3C season number (for stats fallback logic)
 const currentW3CSeason = ref(null);
 
-// Names the season an MMR came from when it is not the one in the column header
-const mmrSeasonLabel = (player) => {
-  const season = getW3CMMRSeason(player, currentW3CSeason.value);
-  return season && season !== currentW3CSeason.value ? `S${season}` : '';
-};
-
-const hasW3CStats = (player) => {
-  // Check current season OR previous season for warning display
-  return hasW3CStatsTwoSeasons(player, currentW3CSeason.value);
-};
-
-const hasLowGames = (player) => {
-  // Use combined games count from current + previous season
-  return hasLowGamesTwoSeasons(player, currentW3CSeason.value);
-};
+// The best raced MMR, so the range filter matches a player on any race they play
+const bestMmr = (player) => Math.max(0, ...getAllRaceStats(player, currentW3CSeason.value)
+  .filter((stat) => (stat.games || 0) > 0)
+  .map((stat) => stat.mmr || 0));
 
 const openDeleteDialog = (id, action) => {
   selectedDeleteItemId.value = id;
@@ -657,9 +630,6 @@ const cancelDeleteDialog = () => {
 };
 
 // Methods
-const getRowClass = () => ({
-  class: 'player-row'
-});
 
 
 const editPlayer = async (player) => {

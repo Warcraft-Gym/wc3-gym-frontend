@@ -256,7 +256,7 @@
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
-                  <td class="text-center">
+                  <td v-if="auth.isAdmin" class="text-center">
                     <RowActions :actions="[
                       { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
                       { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
@@ -393,7 +393,7 @@
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
-                  <td class="text-center">
+                  <td v-if="auth.isAdmin" class="text-center">
                     <RowActions :actions="[
                       { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
                       { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
@@ -517,7 +517,7 @@
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
                       {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
-                      <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                      <span v-if="mmrSeasonLabel(item, currentW3CSeason)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason) }}</span>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </td>
                   </template>
@@ -590,7 +590,7 @@
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
                       {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
-                      <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                      <span v-if="mmrSeasonLabel(item, currentW3CSeason)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason) }}</span>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </td>
                   </template>
@@ -1085,7 +1085,7 @@ import { fetchWrapper } from '@/helpers';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
-import { getW3CMMR, getW3CMMRSeason, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
+import { getW3CMMR, mmrSeasonLabel, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
@@ -1106,8 +1106,8 @@ const { series, draftSeries } = storeToRefs(seriesStore);
 // Week navigation state
 const weeklyMatches = ref([]);
 
-const seriesTableHeader = [
-  
+const seriesTableHeader = computed(() => [
+
   { title: 'ID', value: 'id', sortable: true },  
   { title: 'Caster'},  
   { title: 'Date/Time'}, 
@@ -1125,11 +1125,11 @@ const seriesTableHeader = [
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value) || 0;
     return aValue - bValue;
   }},
-  { title: 'Fantasy Match'},  
-  { title: '', value: 'actions', sortable: true }
-];
+  { title: 'Fantasy Match'},
+  ...(auth.isAdmin ? [{ title: '', value: 'actions', sortable: false }] : []),
+]);
 
-const draftSeriesTableHeader = [
+const draftSeriesTableHeader = computed(() => [
   { title: 'ID', value: 'id', sortable: true },  
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { title: 'Matchup History', key: 'p1_matchup_history', sortable: false },
@@ -1155,9 +1155,9 @@ const draftSeriesTableHeader = [
     let bValue = getHighestW3CMMR(b?.player2) || 0;
     return aValue - bValue;
   }},
-  { title: 'Fantasy Match'},  
-  { title: '', value: 'actions', sortable: true }
-];
+  { title: 'Fantasy Match'},
+  ...(auth.isAdmin ? [{ title: '', value: 'actions', sortable: false }] : []),
+]);
 
 const proposedSeriesTableHeader = [
   { title: 'Player 1', value: 'player1.name', width:'300px', sortable: true },
@@ -1298,12 +1298,6 @@ const deleteAction = ref(null);
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
-
-// Names the season an MMR came from when it is not the one in the column header
-const mmrSeasonLabel = (player) => {
-  const season = getW3CMMRSeason(player, currentW3CSeason.value);
-  return season && season !== currentW3CSeason.value ? `S${season}` : '';
-};
 
 // Helper to get highest MMR across all races, preferring current season with fallback to previous
 const getHighestW3CMMR = (player) => {

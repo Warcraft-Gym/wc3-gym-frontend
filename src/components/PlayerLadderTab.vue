@@ -13,6 +13,7 @@
       {{ errorMessage }}
     </v-alert>
 
+    <template v-if="scope != null">
     <v-row align="center" class="my-2">
       <v-spacer />
       <v-col cols="12" sm="4" md="3">
@@ -33,7 +34,7 @@
     <!-- One row of figures rather than four cards; the tab has a lot below it -->
     <v-card variant="outlined" class="mb-4">
       <v-card-text class="d-flex flex-wrap align-center py-2" style="gap: 28px">
-        <div v-if="scoped">
+        <div>
           <ColumnNote title="Total Points" :note="SCORED_NOTE" class="text-caption text-medium-emphasis" />
           <div class="text-h6">{{ data?.points ?? 0 }} <span class="text-caption text-medium-emphasis">{{ ladderPointsLine }}</span></div>
         </div>
@@ -76,7 +77,7 @@
     </v-card>
 
     <!-- Achievements: what the season paid out in the order it was earned, then the rules still open -->
-    <v-card v-if="scoped" variant="outlined" class="mb-4">
+    <v-card variant="outlined" class="mb-4">
       <v-card-title class="text-body-2 d-flex align-center">
         <span>Achievements</span>
         <v-spacer />
@@ -156,6 +157,10 @@
         </template>
       </v-data-table-server>
     </v-card>
+    </template>
+    <div v-else-if="player?.gnl_stats" class="text-medium-emphasis py-4">
+      No GNL ladder seasons for this player.
+    </div>
   </div>
 </template>
 
@@ -166,6 +171,8 @@ import { useLadderStore, useSeasonStore } from '@/stores';
 import RaceIcon from '@/components/RaceIcon.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import { achievementPoints, SCORED_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
+import { raceWrapper } from '@/helpers/races';
+import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import AchievementIcon from '@/components/AchievementIcon.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
@@ -180,7 +187,24 @@ const emit = defineEmits(['open-player']);
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();
 
-const scope = ref(props.seasonId ?? 'all');
+// Only the seasons the player was rostered in; the others have nothing to show
+const playedSeasons = computed(() => {
+  const played = new Set((props.player?.gnl_stats ?? []).map(stat => stat.season_id));
+  return (seasonStore.seasons || []).filter(season => played.has(season.id));
+});
+
+const scopeOptions = computed(() =>
+  playedSeasons.value.map(season => ({ id: season.id, name: season.name }))
+);
+
+// The page's season when he played it, else his latest one
+const defaultScope = () => {
+  const ids = playedSeasons.value.map(season => season.id);
+  if (ids.includes(props.seasonId)) return props.seasonId;
+  return ids.length ? Math.max(...ids) : null;
+};
+
+const scope = ref(defaultScope());
 const data = ref(null);
 const seasonLadder = ref(null);
 const isLoading = ref(false);
@@ -188,13 +212,6 @@ const errorMessage = ref(null);
 const itemsPerPage = ref(10);
 const page = ref(1);
 const showLocked = ref(false);
-
-const scoped = computed(() => scope.value !== 'all');
-
-const scopeOptions = computed(() => [
-  ...(seasonStore.seasons || []).map(season => ({ id: season.id, name: season.name })),
-  { id: 'all', name: 'All time' },
-]);
 
 const matchHeaders = [
   { title: 'Date (UTC)', key: 'start_time', sortable: false },
@@ -205,9 +222,7 @@ const matchHeaders = [
   { title: 'MMR +/-', key: 'mmr_diff', sortable: false },
 ];
 
-const w3cStatsUrl = computed(
-  () => `https://www.w3champions.com/player/${encodeURIComponent(props.player?.battleTag ?? '')}/statistics`
-);
+const w3cStatsUrl = computed(() => `${w3cPlayerUrl(props.player?.battleTag ?? '')}/statistics`);
 
 const winrate = computed(() => {
   const games = data.value?.games ?? 0;
@@ -235,12 +250,11 @@ const locked = computed(() => {
 });
 
 const versusRaces = computed(() => {
-  const names = { HU: 'Human', OC: 'Orc', NE: 'Night Elf', UD: 'Undead', RANDOM: 'Random' };
   const vs = data.value?.vs_race ?? {};
-  return Object.keys(names).map(code => {
+  return ['HU', 'OC', 'NE', 'UD', 'RANDOM'].map(code => {
     const [w, l] = vs[code] ?? [0, 0];
     const total = w + l;
-    return { code, name: names[code], w, l, total, rate: total ? Math.round((w / total) * 100) : 0 };
+    return { code, name: raceWrapper.getRaceObject(code).name, w, l, total, rate: total ? Math.round((w / total) * 100) : 0 };
   });
 });
 
@@ -263,19 +277,21 @@ const mmrDiff = (match) =>
   match.mmr_after != null && match.mmr_before != null ? match.mmr_after - match.mmr_before : null;
 
 const loadPage = async ({ page, itemsPerPage: perPage }) => {
-  if (!props.player?.id) return;
+  if (!props.player?.id || scope.value == null) {
+    data.value = null;
+    return;
+  }
   itemsPerPage.value = perPage;
   isLoading.value = true;
   errorMessage.value = null;
   try {
     data.value = await ladderStore.userLadder(props.player.id, {
-      seasonId: scoped.value ? scope.value : null,
+      seasonId: scope.value,
       limit: perPage,
       offset: (page - 1) * perPage,
     });
-    seasonLadder.value = scoped.value
-      ? ladderStore.ladders[scope.value] ?? (await ladderStore.seasonLadder(scope.value))
-      : null;
+    seasonLadder.value =
+      ladderStore.ladders[scope.value] ?? (await ladderStore.seasonLadder(scope.value));
   } catch (error) {
     data.value = null;
     errorMessage.value = error.message;
@@ -289,9 +305,10 @@ const reload = () => {
   return loadPage({ page: 1, itemsPerPage: itemsPerPage.value });
 };
 
-// A new player, or a new season, reopens the tab on its first page
-watch(() => [props.player?.id, props.seasonId], () => {
-  scope.value = props.seasonId ?? 'all';
+// A new player, or a new season, reopens the tab on its first page; the object
+// itself is the key because the dialog swaps a bare row for the full player
+watch(() => [props.player, props.seasonId], () => {
+  scope.value = defaultScope();
   reload();
 });
 </script>

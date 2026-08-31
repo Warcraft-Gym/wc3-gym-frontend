@@ -299,13 +299,12 @@ import RowActions from '@/components/RowActions.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useAuthStore, useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
+import { useAuthStore, useFantasyStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { loadSeasons, resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 
 const fantasyStore = useFantasyStore();
-const seasonStore = useSeasonStore();
 const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
 const auth = useAuthStore();
@@ -360,7 +359,7 @@ const tierPlayers = ref({
 });
 const selectedTierPlayers = ref(emptyTierSelection());
 
-const headers = [
+const headers = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: '48px' },
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
@@ -371,8 +370,10 @@ const headers = [
   { title: 'Race Pts', value: 'race_points', align: 'end' },
   { title: 'Bet Pts', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
-  { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
-];
+  // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team
+  ...(auth.isAdmin || teams.value.some((t) => t.captain_id === myUserId.value)
+    ? [{ title: '', value: 'actions', sortable: false, align: 'center' }] : []),
+]);
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
 
@@ -451,16 +452,6 @@ const fetchData = async () => {
 
 const onSeasonChange = async () => {
   await fetchData();
-};
-
-const loadSeasons = async () => {
-  try {
-    await seasonStore.fetchSeasons();
-    seasons.value = seasonStore.seasons || [];
-  } catch (error) {
-    console.error('Failed to load seasons:', error);
-    seasons.value = [];
-  }
 };
 
 const openCreateDialog = async () => {
@@ -648,7 +639,7 @@ const confirmDelete = async () => {
 };
 
 onMounted(async () => {
-  loadSeasons();
+  loadSeasons().then(list => { seasons.value = list; });
   fetchData();
   loadPlayersAndTeams();
   currentW3CSeason.value = await resolveCurrentW3CSeason();

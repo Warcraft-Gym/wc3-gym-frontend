@@ -18,9 +18,10 @@
 import { computed } from 'vue'
 import { raceWrapper } from '@/helpers/races.js'
 
+// 1.4em keeps the icon in step with the flag sprite, which also scales with the font
 const props = defineProps({
     raceIdentifier: String,
-    size: { type: [String, Number], default: 'x-small' },
+    size: { type: [String, Number], default: '1.4em' },
 })
 const currentRace = computed(() => raceWrapper.getRaceObject(props.raceIdentifier))
 </script>

@@ -330,16 +330,15 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from '@/stores';
+import { useFantasyStore, useSeriesStore, useConfigStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { loadSeasons, resolveCurrentSeasonId } from '@/helpers/current-season';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 
 
 const fantasyStore = useFantasyStore();
 const seriesStore = useSeriesStore();
 const configStore = useConfigStore();
-const seasonStore = useSeasonStore();
 
 const { bets, totalBets } = storeToRefs(fantasyStore);
 
@@ -386,7 +385,7 @@ const headers = [
   { title: 'Result', value: 'bet_result', sortable: false, align: 'center' },
   { title: 'Points', value: 'bet_points', sortable: true, align: 'end' },
   { title: 'Locked', value: 'is_locked', sortable: false, align: 'center' },
-  { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
+  { title: '', value: 'actions', sortable: false, align: 'center' }
 ];
 
 // Enrich bets with series data
@@ -530,16 +529,6 @@ watch(sortBy, () => {
     page.value = 1;
   }
 });
-
-const loadSeasons = async () => {
-  try {
-    await seasonStore.fetchSeasons();
-    seasons.value = seasonStore.seasons || [];
-  } catch (error) {
-    console.error('Failed to load seasons:', error);
-    seasons.value = [];
-  }
-};
 
 const openAddBetDialog = () => {
   newBet.value = {
@@ -704,7 +693,7 @@ const loadBetPointsSettings = async () => {
 };
 
 onMounted(() => {
-  loadSeasons();
+  loadSeasons().then(list => { seasons.value = list; });
   loadBetPointsSettings();
   fetchData();
 });

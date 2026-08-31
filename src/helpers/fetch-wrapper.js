@@ -2,9 +2,7 @@ import { useAuthStore } from '@/stores';
 
 export const fetchWrapper = {
     get: request('GET'),
-    getSecure: request('GET_SECURE'),  // GET; a session bearer is attached like any other request
     post: request('POST'),
-    postFile: request('FILE_UPLOAD'),
     put: request('PUT'),
     delete: request('DELETE'),
     fileUpload: request('FILE_UPLOAD'),
@@ -64,9 +62,6 @@ function request(method) {
         if (requestMethod === "FILE_UPLOAD") {
             requestMethod = "POST";
             fileUpload = true;
-        }
-        if (requestMethod === "GET_SECURE") {
-            requestMethod = "GET";
         }
         if (requestMethod === "POST_BINARY") {
             requestMethod = "POST";

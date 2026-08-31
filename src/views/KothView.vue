@@ -123,7 +123,7 @@
             </v-card-title>
             
             <v-card-subtitle class="pa-3 text-subtitle-2">
-              {{ getBracketThresholdText(bracket) }}
+              {{ kothStore.getBracketThresholdText(selectedEvent)[bracket] || '' }}
             </v-card-subtitle>
             
             <v-divider></v-divider>
@@ -156,12 +156,12 @@
               
               <!-- Players List -->
               <div class="text-subtitle-2 mb-2 d-flex align-center justify-space-between">
-                <span>Players ({{ getBracketPlayers(bracket).length }})</span>
+                <span>Players ({{ kothStore.getBracketPlayers(bracket).length }})</span>
               </div>
 
-              <div v-if="getBracketPlayers(bracket).length > 0" class="players-list">
+              <div v-if="kothStore.getBracketPlayers(bracket).length > 0" class="players-list">
                 <div
-                  v-for="player in getBracketPlayers(bracket)"
+                  v-for="player in kothStore.getBracketPlayers(bracket)"
                   :key="player.battleTag"
                   class="player-item pa-2 mb-1"
                 >
@@ -676,16 +676,6 @@ function getBracketColor(bracket) {
   return colors[bracket] || 'grey';
 }
 
-function getBracketThresholdText(bracket) {
-  if (!selectedEvent.value) return '';
-  const thresholds = kothStore.getBracketThresholdText(selectedEvent.value);
-  return thresholds[bracket] || '';
-}
-
-function getBracketPlayers(bracket) {
-  return kothStore.getBracketPlayers(bracket);
-}
-
 function formatEventDate(dateString) {
   if (!dateString) return 'Not set';
   return DateTime.fromISO(dateString, { zone: 'UTC' }).toFormat('ccc, LLL d, yyyy');
@@ -728,24 +718,6 @@ function formatEventDate(dateString) {
   max-height: 500px;
   overflow-y: auto;
 }
-
-.signup-btn {
-  font-size: 1.1rem !important;
-  padding: 28px 40px !important;
-  border-radius: 50px !important;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.signup-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
-}
-
 
 .player-item {
   background: rgba(0, 0, 0, 0.02);

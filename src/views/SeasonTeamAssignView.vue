@@ -81,7 +81,7 @@
               </template>
               <template #item.name="{ item }">
                 <PlayerName :player="item" @click.stop="showStats(item)">
-                  <template v-if="!hasW3CStats(item)">
+                  <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason)">
                     <v-tooltip>
                       <template #activator="{ props }">
                         <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
@@ -89,7 +89,7 @@
                       <span>No W3C stats found for {{ item.race }}</span>
                     </v-tooltip>
                   </template>
-                  <template v-else-if="hasLowGames(item)">
+                  <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason)">
                     <v-tooltip>
                       <template #activator="{ props }">
                         <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
@@ -294,7 +294,7 @@
                       <div>
                         <div style="display:flex;align-items:center;gap:8px;">
                           <span style="cursor: pointer; color: var(--v-theme-primary);" @click="showStats(p)"><strong>{{ p.name }}</strong></span>
-                          <template v-if="!hasW3CStats(p)">
+                          <template v-if="!hasW3CStatsTwoSeasons(p, currentW3CSeason)">
                             <v-tooltip>
                               <template #activator="{ props }">
                                 <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
@@ -302,7 +302,7 @@
                               <span>No W3C stats found for {{ p.race }}</span>
                             </v-tooltip>
                           </template>
-                          <template v-else-if="hasLowGames(p)">
+                          <template v-else-if="hasLowGamesTwoSeasons(p, currentW3CSeason)">
                             <v-tooltip>
                               <template #activator="{ props }">
                                 <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
@@ -432,16 +432,6 @@ let originalSignupSeasonIds = [];
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
 
-const hasW3CStats = (player) => {
-  // Check current season OR previous season for warning display
-  return hasW3CStatsTwoSeasons(player, currentW3CSeason.value);
-};
-
-const hasLowGames = (player) => {
-  // Use combined games count from current + previous season
-  return hasLowGamesTwoSeasons(player, currentW3CSeason.value);
-};
-
 const playerTableHeaders = [
   { title: 'ID', value: 'id' },
   { title: 'Name', value: 'name' },
@@ -452,7 +442,7 @@ const playerTableHeaders = [
   }},
   { title: 'Race', value: 'race' },
   { title: 'Team', value: 'team', sortable: false },
-  { title: 'Actions', value: 'actions', sortable: false, align: 'end' },
+  { title: '', value: 'actions', sortable: false, align: 'end' },
 ];
 
 // compute assigned player ids across all teams for this season
@@ -532,7 +522,7 @@ const filteredPlayers = computed(() => {
   
   // filter out players without W3C stats if checkbox is checked
   if (hideNoW3CStats.value) {
-    list = list.filter(p => hasW3CStats(p));
+    list = list.filter(p => hasW3CStatsTwoSeasons(p, currentW3CSeason.value));
   }
   
   return list;

@@ -141,7 +141,7 @@
                     <strong>{{ player.name }}</strong>
                   </v-list-item-title>
                   <v-list-item-subtitle>
-                    {{ player.battleTag }} • W3C MMR: {{ getW3CMMR(player) ?? 'N/A' }}
+                    {{ player.battleTag }} • <W3CMmr /> {{ getW3CMMR(player) ?? 'N/A' }}
                   </v-list-item-subtitle>
                   <template #append>
                     <v-chip 
@@ -196,6 +196,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import W3CMmr from '@/components/W3CMmr.vue';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 

@@ -409,7 +409,7 @@
           <tr>
             <th>Event</th>
             <th>Played for</th>
-            <th>Record</th>
+            <th>Series record</th>
             <th>Finish</th>
           </tr>
         </thead>
@@ -443,14 +443,15 @@
           <tr>
             <th>Opponent</th>
             <th>Played</th>
-            <th>Record</th>
+            <th>Series record</th>
             <th>Last met</th>
           </tr>
         </thead>
         <tbody>
           <template v-for="opp in history.opponents" :key="opp.id">
             <tr class="opponent-row" @click="openOpponent = openOpponent === opp.id ? null : opp.id">
-              <td><PlayerName :player="opp" :race="opp.race" /></td>
+              <!-- no race here: the row spans every season, and a player is not one race -->
+              <td><PlayerName :player="opp" /></td>
               <td>{{ opp.played }} series</td>
               <td>
                 <v-chip :color="recordColor(opp.won, opp.lost)" variant="tonal" size="small">
@@ -474,8 +475,10 @@
                 <v-chip :color="recordColor(meeting.my_score, meeting.their_score)" variant="tonal" size="x-small">
                   {{ meeting.my_score }} to {{ meeting.their_score }}
                 </v-chip>
+                <span class="text-caption text-medium-emphasis ml-1">games</span>
               </td>
               <td colspan="2" class="text-caption text-medium-emphasis">
+                <template v-if="meeting.maps?.length">{{ meeting.maps.join(', ') }} · </template>
                 {{ meeting.date_time ? formatDateTime(meeting.date_time) : '' }}
               </td>
             </tr>

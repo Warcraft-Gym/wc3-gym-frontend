@@ -178,6 +178,11 @@
                   </v-btn>
                 </v-col>
                 <v-col cols="12" sm="auto">
+                  <v-btn v-if="canSetWeeks" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${seasonId}/weeks`" block>
+                    Team Weeks
+                  </v-btn>
+                </v-col>
+                <v-col cols="12" sm="auto">
                   <v-btn v-if="auth.isAdmin" variant="elevated" color="success" prepend-icon="mdi-plus" @click="showNewPlayerModal = true" block>
                     Add Player
                   </v-btn>
@@ -330,6 +335,9 @@ const seasonId = computed(() => {
   const id = router.currentRoute.value.params.season_id;
   return id ? Number(id) : null;
 });
+
+// The weeks grid takes a captain of this team, or any admin
+const canSetWeeks = computed(() => auth.isAdmin || auth.me?.team?.id === Number(teamId.value));
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);

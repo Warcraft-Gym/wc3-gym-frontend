@@ -1,4 +1,5 @@
 export * from './auth.store';
+export * from './availability.store';
 export * from './player.store';
 export * from './season.store';
 export * from './match.store';

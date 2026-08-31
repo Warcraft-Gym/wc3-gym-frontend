@@ -247,7 +247,6 @@
               </tr>
             </template>
           </v-data-table>
-          <div class="text-caption text-medium-emphasis mt-1">{{ BADGES_CREDIT }}</div>
         </v-card-text>
       </v-card>
     </template>
@@ -273,7 +272,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import w3championsLogo from '@/assets/media/w3champions-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
-import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
+import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';

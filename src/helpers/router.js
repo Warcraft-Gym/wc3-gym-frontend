@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, TeamWeeksView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView } from '@/views';
+import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, TeamWeeksView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -43,7 +43,8 @@ export const router = createRouter({
         { path: '/report', component: SeasonReportView, meta: { role: 'public' } },
         { path: '/report/:id', component: SeasonReportView, meta: { role: 'public' } },
         { path: '/ladder', component: LadderView, meta: { role: 'guest' } },
-        { path: '/random-stats', component: RandomStatsView, meta: { role: 'public', nav: false, bar: false } }
+        { path: '/random-stats', component: RandomStatsView, meta: { role: 'public', nav: false, bar: false } },
+        { path: '/credits', component: CreditsView, meta: { role: 'public' } }
     ]
 });
 

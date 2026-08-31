@@ -1,4 +1,4 @@
-<!-- "Take My Money" by Delapouite (game-icons.net), CC BY 3.0. Marks the player a bet is on. -->
+<!-- The game-icons.net "take my money" hand, marking the player a bet is on. Credited on /credits. -->
 <template>
   <svg viewBox="0 0 512 512" :width="size" :height="size" fill="currentColor" class="bet-icon">
     <title>Bet</title>

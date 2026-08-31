@@ -473,6 +473,7 @@ import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore 
 import { storeToRefs } from 'pinia';
 import bannerImg from '@/assets/media/GNL_Banner.png';
   import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
+import { useDeleteDialog } from '@/helpers/delete-dialog';
 
 
 // Store initialization
@@ -522,9 +523,7 @@ const selectedTeam1 = ref(null);
 const selectedTeam2 = ref(null);
 
 // Delete dialog state
-const showDeleteDialog = ref(false);
-const selectedDeleteItemId = ref(null);
-const deleteAction = ref(null);
+const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
 // Feedback snackbar state
 const showFeedback = ref(false);
@@ -632,28 +631,6 @@ const closeTeamSelectionModal = () => {
     };
 
     
-    const openDeleteDialog = (id, action) => {
-      selectedDeleteItemId.value = id;
-      deleteAction.value = action; // Store the function dynamically
-      showDeleteDialog.value = true;
-    };
-
-    const confirmDelete = () => {
-      if (selectedDeleteItemId.value && deleteAction.value) {
-        deleteAction.value(selectedDeleteItemId.value); // Call the dynamically stored function
-        showDeleteDialog.value = false;
-      } else if (deleteAction.value) {
-         deleteAction.value(); // Call the dynamically stored function
-        showDeleteDialog.value = false;
-      }
-    };
-
-    const cancelDeleteDialog = () => {
-      showDeleteDialog.value = false;
-      selectedDeleteItemId.value = null;
-      deleteAction.value = null; // Store the function dynamically
-    };
-
     const confirmSelection = async () => {
       isLoading.value = true;
       try {

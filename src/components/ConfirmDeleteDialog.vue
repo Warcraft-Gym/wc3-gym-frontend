@@ -9,7 +9,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="emit('cancel')">Cancel</v-btn>
-        <v-btn color="error" @click="emit('confirm')">Delete</v-btn>
+        <v-btn v-if="canDelete" color="error" :prepend-icon="deleteIcon" @click="emit('confirm')">Delete</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -19,6 +19,8 @@
 defineProps({
   modelValue: { type: Boolean, default: false },
   message: { type: String, required: true },
+  deleteIcon: { type: String, default: undefined },
+  canDelete: { type: Boolean, default: true },
 });
 
 const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);

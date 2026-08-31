@@ -158,133 +158,24 @@
       </v-card-text>
     </v-card>
 
-    <!-- Add New Season Dialog -->
-    <v-dialog v-model="addNewDialogOpen" max-width="800px" persistent>
-      <v-card v-if="newSeason">
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-plus-circle</v-icon>
-          Add New Season
-        </v-card-title>
-        
-        <v-alert v-if="creationError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="creationError = null">
-          {{ creationError }}
-        </v-alert>
-        
-        <v-card-text class="pt-4">
-          <v-form>
-            <v-row dense>
-              <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="newSeason.name" 
-                  label="Season Name"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-trophy"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="newSeason.number_weeks" 
-                  label="Number of Weeks" 
-                  type="number"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-calendar-range"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="newSeason.pick_ban" 
-                  label="Pick Ban Order"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-format-list-numbered"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="newSeason.series_per_week" 
-                  label="Series per Week" 
-                  type="number"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-trophy-variant"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="newSeason.discordRole" 
-                  label="Discord Role ID"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-discord"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="newSeason.start_date" 
-                  label="Start Date"
-                  type="date"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-calendar-start"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="newSeason.end_date" 
-                  label="End Date"
-                  type="date"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-calendar-end"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-autocomplete
-                  v-model="newSeasonMapIds"
-                  :items="maps"
-                  item-title="name"
-                  item-value="id"
-                  label="Map Pool"
-                  multiple
-                  chips
-                  closable-chips
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-map"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-        
-        <v-card-actions class="px-4 py-3">
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="cancelAddNewSeason">Cancel</v-btn>
-          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="createNewSeason">Create Season</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Edit Season Dialog -->
-    <v-dialog v-model="editDialogOpen" max-width="800px" persistent>
+    <!-- Add / Edit Season Dialog -->
+    <v-dialog v-model="seasonDialogOpen" max-width="800px" persistent>
       <v-card v-if="selectedSeason">
         <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-pencil</v-icon>
-          Edit Season: {{ selectedSeason.name }}
+          <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
+          {{ isEditing ? `Edit Season: ${selectedSeason.name}` : 'Add New Season' }}
         </v-card-title>
-        
-        <v-alert v-if="updateError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="updateError = null">
-          {{ updateError }}
+
+        <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="formError = null">
+          {{ formError }}
         </v-alert>
-        
+
         <v-card-text class="pt-4">
           <v-form>
             <v-row dense>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="selectedSeason.name" 
+                <v-text-field
+                  v-model="selectedSeason.name"
                   label="Season Name"
                   variant="outlined"
                   density="comfortable"
@@ -292,9 +183,9 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="selectedSeason.number_weeks" 
-                  label="Number of Weeks" 
+                <v-text-field
+                  v-model="selectedSeason.number_weeks"
+                  label="Number of Weeks"
                   type="number"
                   variant="outlined"
                   density="comfortable"
@@ -302,8 +193,8 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="selectedSeason.pick_ban" 
+                <v-text-field
+                  v-model="selectedSeason.pick_ban"
                   label="Pick Ban Order"
                   variant="outlined"
                   density="comfortable"
@@ -311,9 +202,9 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="selectedSeason.series_per_week" 
-                  label="Series per Week" 
+                <v-text-field
+                  v-model="selectedSeason.series_per_week"
+                  label="Series per Week"
                   type="number"
                   variant="outlined"
                   density="comfortable"
@@ -321,8 +212,8 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="selectedSeason.discordRole" 
+                <v-text-field
+                  v-model="selectedSeason.discordRole"
                   label="Discord Role ID"
                   variant="outlined"
                   density="comfortable"
@@ -330,8 +221,8 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="selectedSeason.start_date" 
+                <v-text-field
+                  v-model="selectedSeason.start_date"
                   label="Start Date"
                   type="date"
                   variant="outlined"
@@ -340,8 +231,8 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="selectedSeason.end_date" 
+                <v-text-field
+                  v-model="selectedSeason.end_date"
                   label="End Date"
                   type="date"
                   variant="outlined"
@@ -367,11 +258,11 @@
             </v-row>
           </v-form>
         </v-card-text>
-        
+
         <v-card-actions class="px-4 py-3">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="cancelEdit">Cancel</v-btn>
-          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="updateSeason">Save Changes</v-btn>
+          <v-btn variant="text" @click="closeSeasonDialog">Cancel</v-btn>
+          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="isEditing ? updateSeason() : createNewSeason()">{{ isEditing ? 'Save Changes' : 'Create Season' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -390,6 +281,7 @@ import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore, useSeasonStore, useMapStore } from '@/stores';
+import { useDeleteDialog } from '@/helpers/delete-dialog';
 
 
 const seasonStore = useSeasonStore();
@@ -406,18 +298,13 @@ const seasonId = ref(null);
 const file = ref(null);
 const canUpload = computed(() => !!file.value && (!!seasonId.value || !!seasonName.value));
 
-const newSeason = ref(null);
-const newSeasonMapIds = ref([]);
-const addNewDialogOpen = ref(false);
-const editDialogOpen = ref(false);
+const seasonDialogOpen = ref(false);
+const isEditing = ref(false);
 const selectedSeason = ref(null);
 const selectedSeasonMapIds = ref([]);
-const creationError = ref(null);
-const updateError = ref(null);
+const formError = ref(null);
 
-const showDeleteDialog = ref(false);
-const selectedDeleteItemId = ref(null);
-const deleteAction = ref(null);
+const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
 const tableHeader = computed(() => [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
@@ -459,45 +346,41 @@ onMounted(async () => {
 });
 
 const addNewSeason = () => {
-  newSeason.value = { name: '', number_weeks: 0, pick_ban: '', series_per_week: 0, discordRole: '', start_date: null, end_date: null };
-  newSeasonMapIds.value = [];
-  creationError.value = '';
-  addNewDialogOpen.value = true;
+  selectedSeason.value = { name: '', number_weeks: 0, pick_ban: '', series_per_week: 0, discordRole: '', start_date: null, end_date: null };
+  selectedSeasonMapIds.value = [];
+  formError.value = '';
+  isEditing.value = false;
+  seasonDialogOpen.value = true;
 };
 
 const createNewSeason = async () => {
-  creationError.value = '';
+  formError.value = '';
   try {
-    const createdSeason = await seasonStore.createSeason(newSeason.value);
-    
+    const createdSeason = await seasonStore.createSeason(selectedSeason.value);
+
     // Add maps to the season if any were selected
-    if (newSeasonMapIds.value && newSeasonMapIds.value.length > 0) {
-      await seasonStore.addMapsToSeason(createdSeason.id, newSeasonMapIds.value);
+    if (selectedSeasonMapIds.value && selectedSeasonMapIds.value.length > 0) {
+      await seasonStore.addMapsToSeason(createdSeason.id, selectedSeasonMapIds.value);
     }
-    
+
     await fetchSeasons();
-    cancelAddNewSeason();
+    closeSeasonDialog();
   } catch (err) {
     console.error('Error creating season:', err);
-    creationError.value = 'Error creating season: ' + err.message;
+    formError.value = 'Error creating season: ' + err.message;
   }
-};
-
-const cancelAddNewSeason = () => {
-  addNewDialogOpen.value = false;
-  newSeason.value = null;
-  newSeasonMapIds.value = [];
 };
 
 const editSeason = (season) => {
   selectedSeason.value = { ...season };
   selectedSeasonMapIds.value = season.maps ? season.maps.map(m => m.id) : [];
-  updateError.value = '';
-  editDialogOpen.value = true;
+  formError.value = '';
+  isEditing.value = true;
+  seasonDialogOpen.value = true;
 };
 
 const updateSeason = async () => {
-  updateError.value = '';
+  formError.value = '';
   try {
     await seasonStore.updateSeason(selectedSeason.value);
     
@@ -514,15 +397,15 @@ const updateSeason = async () => {
     }
     
     await fetchSeasons();
-    cancelEdit();
+    closeSeasonDialog();
   } catch (err) {
     console.error('Error updating season:', err);
-    updateError.value = 'Error updating season: ' + err.message;
+    formError.value = 'Error updating season: ' + err.message;
   }
 };
 
-const cancelEdit = () => {
-  editDialogOpen.value = false;
+const closeSeasonDialog = () => {
+  seasonDialogOpen.value = false;
   selectedSeason.value = null;
   selectedSeasonMapIds.value = [];
 };
@@ -536,27 +419,6 @@ const removeSeason = async (seasonIdVal) => {
     console.error('Error deleting season:', err);
     errorMessage.value = 'Error deleting season: ' + err.message;
   }
-};
-
-const openDeleteDialog = (id, action) => {
-  selectedDeleteItemId.value = id;
-  deleteAction.value = action;
-  showDeleteDialog.value = true;
-};
-
-const confirmDelete = () => {
-  if (selectedDeleteItemId.value && deleteAction.value) {
-    deleteAction.value(selectedDeleteItemId.value);
-  } else if (deleteAction.value) {
-    deleteAction.value();
-  }
-  showDeleteDialog.value = false;
-};
-
-const cancelDeleteDialog = () => {
-  showDeleteDialog.value = false;
-  selectedDeleteItemId.value = null;
-  deleteAction.value = null;
 };
 
 const uploadFile = async () => {

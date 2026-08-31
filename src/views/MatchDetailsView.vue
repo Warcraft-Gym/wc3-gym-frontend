@@ -1082,6 +1082,7 @@ import { DateTime } from "luxon";
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { fetchWrapper } from '@/helpers';
+import { useDeleteDialog } from '@/helpers/delete-dialog';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
@@ -1292,9 +1293,7 @@ const syncDialog = ref(false);
 const syncEntries = ref([]);
 
 // Delete dialog state
-const showDeleteDialog = ref(false);
-const selectedDeleteItemId = ref(null);
-const deleteAction = ref(null);
+const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
@@ -1840,28 +1839,6 @@ const removeDraftSeries = async (draftSeriesId) => {
   } finally {
     isLoading.value = false;
   }
-};
-
-const openDeleteDialog = (id, action) => {
-  selectedDeleteItemId.value = id;
-  deleteAction.value = action; // Store the function dynamically
-  showDeleteDialog.value = true;
-};
-
-const confirmDelete = () => {
-  if (selectedDeleteItemId.value && deleteAction.value) {
-    deleteAction.value(selectedDeleteItemId.value); // Call the dynamically stored function
-    showDeleteDialog.value = false;
-  } else if (deleteAction.value) {
-      deleteAction.value(); // Call the dynamically stored function
-    showDeleteDialog.value = false;
-  }
-};
-
-const cancelDeleteDialog = () => {
-  showDeleteDialog.value = false;
-  selectedDeleteItemId.value = null;
-  deleteAction.value = null; // Store the function dynamically
 };
 
 const removeAllSeries = async () => {

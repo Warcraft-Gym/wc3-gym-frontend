@@ -85,6 +85,18 @@
             <v-col cols="12" sm="auto">
               <v-btn
                 v-if="auth.isAdmin"
+                :to="`/seasons/${seasonId}/maps`"
+                color="primary"
+                prepend-icon="mdi-map-outline"
+                variant="outlined"
+                block
+              >
+                Series Maps
+              </v-btn>
+            </v-col>
+            <v-col cols="12" sm="auto">
+              <v-btn
+                v-if="auth.isAdmin"
                 @click="openMatchCreationModal"
                 color="primary"
                 prepend-icon="mdi-plus"

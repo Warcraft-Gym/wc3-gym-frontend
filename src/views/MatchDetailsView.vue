@@ -517,7 +517,7 @@
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
                       {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
-                      <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                      <span v-if="mmrSeasonLabel(item, currentW3CSeason)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason) }}</span>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </td>
                   </template>
@@ -590,7 +590,7 @@
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
                       {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
-                      <span v-if="mmrSeasonLabel(item)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item) }}</span>
+                      <span v-if="mmrSeasonLabel(item, currentW3CSeason)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason) }}</span>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </td>
                   </template>
@@ -1085,7 +1085,7 @@ import { fetchWrapper } from '@/helpers';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
-import { getW3CMMR, getW3CMMRSeason, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
+import { getW3CMMR, mmrSeasonLabel, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
@@ -1298,12 +1298,6 @@ const deleteAction = ref(null);
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
-
-// Names the season an MMR came from when it is not the one in the column header
-const mmrSeasonLabel = (player) => {
-  const season = getW3CMMRSeason(player, currentW3CSeason.value);
-  return season && season !== currentW3CSeason.value ? `S${season}` : '';
-};
 
 // Helper to get highest MMR across all races, preferring current season with fallback to previous
 const getHighestW3CMMR = (player) => {

@@ -142,6 +142,21 @@ export function getW3CMMRSeason(player, currentSeason = null) {
   return stats ? (stats.wc3_season ?? null) : null;
 }
 
+// A player's w3champions profile page
+export const w3cPlayerUrl = (battleTag) => `https://www.w3champions.com/player/${encodeURIComponent(battleTag)}`;
+
+/**
+ * Names the season an MMR came from when it is not the requested one
+ *
+ * @param {Object} player - Player object
+ * @param {number} currentSeason - Requested W3C season
+ * @returns {string} - e.g. "S22", or '' when the MMR is from the requested season
+ */
+export function mmrSeasonLabel(player, currentSeason) {
+  const season = getW3CMMRSeason(player, currentSeason);
+  return season && season !== currentSeason ? `S${season}` : '';
+}
+
 /**
  * Check if player has W3C stats for current OR previous season (currentSeason - 1).
  * Used for eligibility warning display.

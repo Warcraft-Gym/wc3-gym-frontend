@@ -620,7 +620,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore } from '@/stores';
-import { syncedAgo } from '@/helpers/w3c-stats';
+import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
@@ -662,8 +662,6 @@ const showPlayerDetails = (player) => {
 const isLoading = ref(true);
 const errorMessage = ref(null);
 const successMessage = ref(null);
-const w3cPlayerUrl = (battleTag) => `https://www.w3champions.com/player/${encodeURIComponent(battleTag)}`;
-
 // the other side of a series; the id is the fallback when the payload carries no player row
 const opponent = (item) => {
   const mine = item.player1_id === playerData.value?.player?.id;

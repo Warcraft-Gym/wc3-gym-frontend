@@ -25,6 +25,19 @@ export async function resolveCurrentSeasonId() {
   }
 }
 
+// The season list a picker offers, empty when the fetch fails.
+export async function loadSeasons() {
+  const seasonStore = useSeasonStore();
+
+  try {
+    await seasonStore.fetchSeasons();
+    return seasonStore.seasons || [];
+  } catch (error) {
+    console.error('Failed to load seasons:', error);
+    return [];
+  }
+}
+
 // Resolve the w3champions season the backend reports as in use.
 // Returns null when nothing is configured and w3champions is unreachable.
 export async function resolveCurrentW3CSeason() {

@@ -323,14 +323,13 @@ import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useAuthStore, useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
+import { useAuthStore, useFantasyStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { getW3CMMR } from '@/helpers/w3c-stats';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { loadSeasons, resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 
 const fantasyStore = useFantasyStore();
-const seasonStore = useSeasonStore();
 const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
 const auth = useAuthStore();
@@ -484,16 +483,6 @@ const fetchData = async () => {
 
 const onSeasonChange = async () => {
   await fetchData();
-};
-
-const loadSeasons = async () => {
-  try {
-    await seasonStore.fetchSeasons();
-    seasons.value = seasonStore.seasons || [];
-  } catch (error) {
-    console.error('Failed to load seasons:', error);
-    seasons.value = [];
-  }
 };
 
 const openCreateDialog = async () => {
@@ -681,7 +670,7 @@ const confirmDelete = async () => {
 };
 
 onMounted(async () => {
-  loadSeasons();
+  loadSeasons().then(list => { seasons.value = list; });
   fetchData();
   loadPlayersAndTeams();
   currentW3CSeason.value = await resolveCurrentW3CSeason();

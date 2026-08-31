@@ -38,7 +38,7 @@ export const usePlayerCareerStatsStore = defineStore({
         async importCsv(file) {
             const formData = new FormData();
             formData.append('file', file);
-            return await fetchWrapper.postFile(`${backendUrl}/stats/career/import-csv`, formData);
+            return await fetchWrapper.fileUpload(`${backendUrl}/stats/career/import-csv`, formData);
         }
     }
 });

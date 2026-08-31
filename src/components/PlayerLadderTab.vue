@@ -171,6 +171,8 @@ import { useLadderStore, useSeasonStore } from '@/stores';
 import RaceIcon from '@/components/RaceIcon.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import { achievementPoints, SCORED_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
+import { raceWrapper } from '@/helpers/races';
+import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import AchievementIcon from '@/components/AchievementIcon.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
@@ -220,9 +222,7 @@ const matchHeaders = [
   { title: 'MMR +/-', key: 'mmr_diff', sortable: false },
 ];
 
-const w3cStatsUrl = computed(
-  () => `https://www.w3champions.com/player/${encodeURIComponent(props.player?.battleTag ?? '')}/statistics`
-);
+const w3cStatsUrl = computed(() => `${w3cPlayerUrl(props.player?.battleTag ?? '')}/statistics`);
 
 const winrate = computed(() => {
   const games = data.value?.games ?? 0;
@@ -250,12 +250,11 @@ const locked = computed(() => {
 });
 
 const versusRaces = computed(() => {
-  const names = { HU: 'Human', OC: 'Orc', NE: 'Night Elf', UD: 'Undead', RANDOM: 'Random' };
   const vs = data.value?.vs_race ?? {};
-  return Object.keys(names).map(code => {
+  return ['HU', 'OC', 'NE', 'UD', 'RANDOM'].map(code => {
     const [w, l] = vs[code] ?? [0, 0];
     const total = w + l;
-    return { code, name: names[code], w, l, total, rate: total ? Math.round((w / total) * 100) : 0 };
+    return { code, name: raceWrapper.getRaceObject(code).name, w, l, total, rate: total ? Math.round((w / total) * 100) : 0 };
   });
 });
 

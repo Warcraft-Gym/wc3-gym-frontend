@@ -15,7 +15,7 @@ export const useLadderStore = defineStore({
     actions: {
         // The ladder GETs carry the session bearer
         async seasonLadder(season_id) {
-            const ladder = await fetchWrapper.getSecure(`${backendUrl}/seasons/${season_id}/ladder`);
+            const ladder = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/ladder`);
             this.ladders[season_id] = ladder;
             return ladder;
         },
@@ -25,7 +25,7 @@ export const useLadderStore = defineStore({
                 if (value !== null && value !== undefined) query.append(key, value);
             }
             const suffix = query.toString() ? `?${query}` : '';
-            return await fetchWrapper.getSecure(`${backendUrl}/users/${user_id}/ladder${suffix}`);
+            return await fetchWrapper.get(`${backendUrl}/users/${user_id}/ladder${suffix}`);
         },
         // The sync route answers one chunk of players and where the next one starts
         async syncSeason(season_id) {

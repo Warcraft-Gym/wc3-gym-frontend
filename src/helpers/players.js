@@ -7,6 +7,9 @@ export const matchesPlayerSearch = (player, query) => {
     || (player.discordTag || '').toLowerCase().includes(q);
 };
 
+// The row-props of a player grid
+export const playerRowProps = () => ({ class: 'player-row' });
+
 // Only applies once the user moved a slider handle off the 0-3000 defaults.
 export const filterByMmrRange = (list, range, getMmr) => {
   if (!Array.isArray(range) || range.length !== 2) return list;

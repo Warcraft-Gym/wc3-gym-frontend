@@ -156,6 +156,3 @@ watch(localRangeValues, v => {
   if (!isEqual(v, props.rangeValues)) emit('update:rangeValues', v);
 }, { deep: true });
 </script>
-
-<style scoped>
-</style>

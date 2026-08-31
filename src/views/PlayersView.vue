@@ -54,7 +54,7 @@
           :headers="tableHeader"
           :loading="isLoading"
           :items="filteredPlayers"
-          :row-props="getRowClass"
+          :row-props="playerRowProps"
           fixed-header
           hover
         >
@@ -83,7 +83,7 @@
                   <td>{{ item.id }}</td>
                   <td>
                     <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
-                      <template v-if="!hasW3CStats(item)">
+                      <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason)">
                         <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
@@ -91,7 +91,7 @@
                           <span>No W3C stats found for {{ item.race }}</span>
                         </v-tooltip>
                       </template>
-                      <template v-else-if="hasLowGames(item)">
+                      <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason)">
                         <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
@@ -420,7 +420,7 @@ import {
 } from '@/helpers/w3c-stats';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers/players';
 
 
 // State for editing
@@ -478,8 +478,8 @@ const filteredPlayers = computed(() => {
       const includeNoStats = selectedW3CFilter.value.includes('no_stats');
       const includeLowGames = selectedW3CFilter.value.includes('low_games');
       
-      if (includeNoStats && !hasW3CStats(p)) return true;
-      if (includeLowGames && hasLowGames(p)) return true;
+      if (includeNoStats && !hasW3CStatsTwoSeasons(p, currentW3CSeason.value)) return true;
+      if (includeLowGames && hasLowGamesTwoSeasons(p, currentW3CSeason.value)) return true;
       
       return false;
     });
@@ -587,16 +587,6 @@ const bestMmr = (player) => Math.max(0, ...getAllRaceStats(player, currentW3CSea
   .filter((stat) => (stat.games || 0) > 0)
   .map((stat) => stat.mmr || 0));
 
-const hasW3CStats = (player) => {
-  // Check current season OR previous season for warning display
-  return hasW3CStatsTwoSeasons(player, currentW3CSeason.value);
-};
-
-const hasLowGames = (player) => {
-  // Use combined games count from current + previous season
-  return hasLowGamesTwoSeasons(player, currentW3CSeason.value);
-};
-
 const openDeleteDialog = (id, action) => {
   selectedDeleteItemId.value = id;
   deleteAction.value = action; // Store the function dynamically
@@ -640,9 +630,6 @@ const cancelDeleteDialog = () => {
 };
 
 // Methods
-const getRowClass = () => ({
-  class: 'player-row'
-});
 
 
 const editPlayer = async (player) => {

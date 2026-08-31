@@ -120,42 +120,19 @@
                   <td :colspan="columns.length" class="pa-0">
                     <!-- sticky: stays in view when the summary row scrolls sideways on a narrow window -->
                     <div class="pa-4 expanded-breakdown">
-                    <v-row>
-                      <v-col cols="12" lg="4">
-                        <div class="text-h6 mb-2">Drafted Players</div>
-                        <v-table density="compact">
-                          <thead>
-                            <tr>
-                              <th class="text-left">Player</th>
-                              <th class="text-right"><W3CMmr /></th>
-                              <th class="text-right">GNL Record</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="player in item.drafted_players" :key="player.id">
-                              <td><PlayerName :player="player" :race="player.race" @click="openPlayer(player)" /></td>
-                              <td class="text-right">{{ getW3CMMR(player, currentW3CSeason) || 'N/A' }}</td>
-                              <td class="text-right">{{ gnlRecord(player) }}</td>
-                            </tr>
-                            <tr v-if="!item.drafted_players?.length">
-                              <td colspan="3" class="text-grey">No drafted players</td>
-                            </tr>
-                          </tbody>
-                        </v-table>
-                      </v-col>
-                      <v-col cols="12" lg="8">
-                        <div class="text-h6 mb-2">Score Breakdown</div>
-                        <div v-if="!breakdowns[item.id]" class="text-center pa-4">
-                          <v-progress-circular indeterminate color="primary" />
-                        </div>
-                        <FantasyScoreBreakdown
-                          v-else
-                          :breakdown="breakdowns[item.id]"
-                          :players="players"
-                          @open-player="openPlayer"
-                        />
-                      </v-col>
-                    </v-row>
+                      <div class="text-h6 mb-2">Score Breakdown</div>
+                      <div v-if="!breakdowns[item.id]" class="text-center pa-4">
+                        <v-progress-circular indeterminate color="primary" />
+                      </div>
+                      <FantasyScoreBreakdown
+                        v-else
+                        :breakdown="breakdowns[item.id]"
+                        :players="players"
+                        :drafted-players="item.drafted_players || []"
+                        :season-id="selectedSeasonId"
+                        :w3c-season="currentW3CSeason"
+                        @open-player="openPlayer"
+                      />
                     </div>
                   </td>
                 </tr>
@@ -321,11 +298,9 @@
 import RowActions from '@/components/RowActions.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
-import W3CMmr from '@/components/W3CMmr.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore, useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { getW3CMMR } from '@/helpers/w3c-stats';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 
@@ -400,12 +375,6 @@ const headers = [
 ];
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
-
-// The GNL record of a drafted player in the shown season
-const gnlRecord = (player) => {
-  const stat = player.gnl_stats?.find(s => s.season_id === selectedSeasonId.value);
-  return stat ? `${stat.wins || 0}W - ${stat.losses || 0}L` : '-';
-};
 
 const openPlayer = (player) => {
   selectedPlayer.value = player;

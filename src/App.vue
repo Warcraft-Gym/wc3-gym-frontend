@@ -230,6 +230,9 @@ const applyCaptain = () => {
                 <RouterView />
             </v-container>
         </v-main>
+        <v-footer v-if="showBar" class="justify-end text-caption py-1" color="transparent">
+            <RouterLink to="/credits" class="text-grey text-decoration-none">Credits</RouterLink>
+        </v-footer>
     </v-app>
 </template>
 

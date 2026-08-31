@@ -14,29 +14,35 @@
             <PlayerName :player="resolve(player.player_name, player.player_id)" :race="resolve(player.player_name, player.player_id).race" @click="openPlayer(player.player_name, player.player_id)" />
             <span class="ml-2">- Total: {{ player.total }} points</span>
           </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col v-for="week in player.weeks" :key="week.week" cols="12" md="6" lg="4">
-                <v-card variant="outlined" class="mb-2">
-                  <v-card-subtitle class="font-weight-bold">Week {{ week.week }}</v-card-subtitle>
-                  <v-card-text>
-                    <div v-if="week.series.length > 0">
-                      <div v-for="(series, idx) in week.series" :key="idx" class="mb-1">
-                        <v-chip size="small" color="success" class="mr-1">+{{ series.points }}</v-chip>
-                        vs <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).race" @click="openPlayer(series.opponent)" /> ({{ series.score }})
-                      </div>
-                      <v-divider class="my-1"></v-divider>
-                      <strong>Week Total: {{ week.points }} pts</strong>
-                    </div>
-                    <div v-else-if="week.bench_points > 0" class="text-amber">
-                      <v-icon size="small">mdi-seat</v-icon> Benched: +{{ week.bench_points }} pts
-                    </div>
-                    <div v-else class="text-grey">No games</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
+          <v-table density="compact">
+            <thead>
+              <tr>
+                <th>Week</th>
+                <th>Series</th>
+                <th class="text-right">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="week in player.weeks" :key="week.week">
+                <td>{{ week.week }}</td>
+                <td>
+                  <div v-for="(series, idx) in week.series" :key="idx" class="d-flex align-center flex-wrap ga-1 py-1">
+                    <v-chip size="small" color="success">+{{ series.points }}</v-chip>
+                    vs <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).race" @click="openPlayer(series.opponent)" /> ({{ series.score }})
+                  </div>
+                  <span v-if="week.series.length === 0 && week.bench_points > 0" class="text-amber">
+                    <v-icon size="small">mdi-seat</v-icon> Benched
+                  </span>
+                  <span v-else-if="week.series.length === 0" class="text-grey">No games</span>
+                </td>
+                <td class="text-right">
+                  <strong v-if="week.series.length > 0">{{ week.points }}</strong>
+                  <span v-else-if="week.bench_points > 0" class="text-amber">+{{ week.bench_points }}</span>
+                  <span v-else class="text-grey">0</span>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
         </v-card>
       </v-expansion-panel-text>
     </v-expansion-panel>

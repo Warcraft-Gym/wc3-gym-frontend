@@ -10,6 +10,9 @@
           <v-icon class="mr-2">mdi-discord</v-icon>
           Discord Roles
         </h1>
+        <div class="text-body-2 text-medium-emphasis">
+          The app grants bound roles from the database; unbound roles are never touched. Sync runs only when pressed.
+        </div>
       </v-col>
     </v-row>
 
@@ -69,58 +72,74 @@
       </v-card-text>
     </v-card>
 
-    <!-- The roles the app owns; sync leaves every other role alone -->
+    <!-- The roles the app owns, grouped by what earns them -->
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-link-variant</v-icon>
         <span>Role Bindings</span>
+        <v-spacer />
+        <v-btn variant="elevated" color="success" prepend-icon="mdi-plus" @click="addBinding">
+          Add Binding
+        </v-btn>
+      </v-card-title>
+
+      <v-card-text v-if="!syncedBindings.length" class="text-center pa-8">
+        <v-icon size="64" color="grey-lighten-1">mdi-link-variant-off</v-icon>
+        <div class="text-h6 mt-4 text-grey">No roles bound yet</div>
+      </v-card-text>
+
+      <v-card-text v-else class="pa-0">
+        <template v-for="group in bindingGroups" :key="group.kind">
+          <div class="px-4 pt-4">
+            <div class="text-subtitle-1 font-weight-bold">{{ group.label }}</div>
+            <div class="text-body-2 text-medium-emphasis">{{ group.description }}</div>
+          </div>
+          <v-list density="compact">
+            <v-list-item v-for="row in group.rows" :key="row.id">
+              <v-list-item-title>
+                <span :class="{ 'text-medium-emphasis font-italic': !roleNames[row.discord_role] }" :title="row.discord_role">
+                  {{ roleName(row.discord_role) }}
+                </span>
+              </v-list-item-title>
+              <v-list-item-subtitle v-if="bindingDetail(row)">{{ bindingDetail(row) }}</v-list-item-subtitle>
+              <template #append>
+                <RowActions :actions="[
+                  { icon: 'mdi-pencil', label: 'Edit Binding', onClick: () => editBinding(row) },
+                  { icon: 'mdi-delete', label: 'Delete Binding', color: 'error', onClick: () => openDeleteDialog(row.id) },
+                ]" />
+              </template>
+            </v-list-item>
+          </v-list>
+          <v-divider />
+        </template>
+      </v-card-text>
+    </v-card>
+
+    <!-- Admin roles come from the API but sync never touches them -->
+    <v-card v-if="adminBindings.length" elevation="2" class="mt-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon class="mr-2">mdi-hand-back-right</v-icon>
+        <span>Not Synced (hand-managed)</span>
       </v-card-title>
 
       <v-card-text class="pa-0">
-        <v-data-table :headers="bindingHeader" :items="bindings" :loading="isLoading" fixed-header hover>
-          <template #top>
-            <v-toolbar flat height="auto">
-              <v-row align="center" class="flex-wrap ma-0 pa-2">
-                <v-spacer />
-                <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="success" prepend-icon="mdi-plus" @click="addBinding" block>
-                    Add Binding
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-toolbar>
-          </template>
-
-          <template #[`item.kind`]="{ item }">
-            {{ kindLabel(item.kind) }}
-          </template>
-
-          <template #[`item.season_id`]="{ item }">
-            {{ seasonName(item.season_id) }}
-          </template>
-
-          <template #[`item.team_id`]="{ item }">
-            {{ teamName(item.team_id) }}
-          </template>
-
-          <template #[`item.discord_role`]="{ item }">
-            <span :title="item.discord_role">{{ roleName(item.discord_role) }}</span>
-          </template>
-
-          <template #[`item.actions`]="{ item }">
-            <RowActions :actions="[
-              { icon: 'mdi-pencil', label: 'Edit Binding', onClick: () => editBinding(item) },
-              { icon: 'mdi-delete', label: 'Delete Binding', color: 'error', onClick: () => openDeleteDialog(item.id) },
-            ]" />
-          </template>
-
-          <template #no-data>
-            <div class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-1">mdi-link-variant-off</v-icon>
-              <div class="text-h6 mt-4 text-grey">No roles bound yet</div>
-            </div>
-          </template>
-        </v-data-table>
+        <div class="px-4">
+          <div class="text-body-2 text-medium-emphasis">{{ KIND_META.admin.description }}</div>
+        </div>
+        <v-list density="compact">
+          <v-list-item v-for="row in adminBindings" :key="row.id">
+            <v-list-item-title>
+              <span :class="{ 'text-medium-emphasis font-italic': !roleNames[row.discord_role] }" :title="row.discord_role">
+                {{ roleName(row.discord_role) }}
+              </span>
+            </v-list-item-title>
+            <template #append>
+              <RowActions :actions="[
+                { icon: 'mdi-delete', label: 'Delete Binding', color: 'error', onClick: () => openDeleteDialog(row.id) },
+              ]" />
+            </template>
+          </v-list-item>
+        </v-list>
       </v-card-text>
     </v-card>
 
@@ -137,18 +156,67 @@
         </v-alert>
 
         <v-card-text class="pt-4">
+          <!-- The kind is picked once; changing it later is delete-and-add -->
+          <v-radio-group v-if="!binding.id" v-model="binding.kind" @update:model-value="binding.season_id = null; binding.team_id = null">
+            <v-radio v-for="kind in addableKinds" :key="kind" :value="kind">
+              <template #label>
+                <div class="py-1">
+                  <div class="font-weight-medium">{{ KIND_META[kind].label }}</div>
+                  <div class="text-body-2 text-medium-emphasis">{{ KIND_META[kind].description }}</div>
+                </div>
+              </template>
+            </v-radio>
+          </v-radio-group>
+
+          <div v-else class="mb-4">
+            <div class="font-weight-medium">{{ KIND_META[binding.kind]?.label ?? binding.kind }}</div>
+            <div class="text-body-2 text-medium-emphasis">{{ KIND_META[binding.kind]?.description }}</div>
+          </div>
+
           <v-row dense>
-            <v-col cols="12" md="6">
+            <v-col v-if="binding.kind === 'team'" cols="12">
               <v-select
-                v-model="binding.kind"
-                :items="KINDS"
-                label="Earned By"
+                v-model="binding.team_id"
+                :items="teams"
+                item-title="name"
+                item-value="id"
+                label="Team (required)"
                 variant="outlined"
                 density="comfortable"
-                prepend-inner-icon="mdi-shape"
+                prepend-inner-icon="mdi-shield-account"
               />
             </v-col>
-            <v-col cols="12" md="6">
+            <v-col v-if="binding.kind === 'champion'" cols="12">
+              <v-select
+                v-model="binding.season_id"
+                :items="seasons"
+                item-title="name"
+                item-value="id"
+                label="Season (required)"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-calendar"
+              />
+              <div v-if="binding.id && binding.team_id" class="text-body-2 text-medium-emphasis mt-1">
+                Winner: {{ teamName(binding.team_id) }} &mdash; derived from standings
+              </div>
+            </v-col>
+            <v-col v-if="binding.kind === 'gnl_participant' || binding.kind === 'fantasy'" cols="12">
+              <v-select
+                v-model="binding.season_id"
+                :items="seasons"
+                item-title="name"
+                item-value="id"
+                label="Season (optional)"
+                hint="Blank always follows the current season; a specific season keeps its holders after it ends"
+                persistent-hint
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-calendar"
+                clearable
+              />
+            </v-col>
+            <v-col cols="12">
               <v-combobox
                 v-model="binding.discord_role"
                 :items="roleItems"
@@ -161,43 +229,13 @@
                 prepend-inner-icon="mdi-discord"
               />
             </v-col>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="binding.season_id"
-                :items="seasons"
-                item-title="name"
-                item-value="id"
-                label="Season (optional)"
-                hint="Blank binds the role in every season"
-                persistent-hint
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-calendar"
-                clearable
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="binding.team_id"
-                :items="teams"
-                item-title="name"
-                item-value="id"
-                label="Team (optional)"
-                hint="Blank binds the role in every team"
-                persistent-hint
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-shield-account"
-                clearable
-              />
-            </v-col>
           </v-row>
         </v-card-text>
 
         <v-card-actions class="px-4 py-3">
           <v-spacer />
           <v-btn variant="text" @click="bindingDialog = false">Cancel</v-btn>
-          <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" @click="saveBinding" :loading="isSavingBinding">
+          <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" @click="saveBinding" :loading="isSavingBinding" :disabled="!canSave">
             {{ binding.id ? 'Save Changes' : 'Add Binding' }}
           </v-btn>
         </v-card-actions>
@@ -225,15 +263,16 @@ const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 const { seasons } = storeToRefs(seasonStore);
 
-// The RoleKind values the backend accepts
-const KINDS = [
-  { title: 'Gym Admin', value: 'admin' },
-  { title: 'GNL Captain', value: 'captain' },
-  { title: 'Team', value: 'team' },
-  { title: 'GNL Fantasy', value: 'fantasy' },
-  { title: 'GNL Player', value: 'gnl_participant' },
-  { title: 'Champion', value: 'champion' }
-];
+// The RoleKind values the backend accepts, in display order; admin is never synced
+const KIND_META = {
+  team: { label: 'Team', description: "The team's current-season roster and captains hold the role." },
+  captain: { label: 'GNL Captain', description: 'Captains of the current season hold the role.' },
+  gnl_participant: { label: 'GNL Player', description: 'Players rostered or signed up in the season hold the role.' },
+  fantasy: { label: 'GNL Fantasy', description: 'Fantasy team captains of the season hold the role.' },
+  champion: { label: 'Champion', description: 'The roster of the team that won the season holds the role; the winner is derived from standings.' },
+  admin: { label: 'Gym Admin', description: 'Hand-managed in Discord; sync never grants or removes these roles.' }
+};
+const addableKinds = Object.keys(KIND_META).filter(kind => kind !== 'admin');
 
 const report = ref([]);
 const bindings = ref([]);
@@ -262,18 +301,17 @@ const reportHeader = [
   { title: 'Actions', value: 'actions', align: 'end', sortable: false }
 ];
 
-const bindingHeader = [
-  { title: 'ID', value: 'id', align: 'start', sortable: true },
-  { title: 'Earned By', value: 'kind', sortable: true },
-  { title: 'Season', value: 'season_id', sortable: true },
-  { title: 'Team', value: 'team_id', sortable: true },
-  { title: 'Discord Role', value: 'discord_role', sortable: true },
-  { title: 'Actions', value: 'actions', align: 'end', sortable: false }
-];
+const syncedBindings = computed(() => bindings.value.filter(b => b.kind !== 'admin'));
+const adminBindings = computed(() => bindings.value.filter(b => b.kind === 'admin'));
+const bindingGroups = computed(() =>
+  addableKinds
+    .map(kind => ({ kind, ...KIND_META[kind], rows: bindings.value.filter(b => b.kind === kind) }))
+    .filter(group => group.rows.length)
+);
 
-const kindLabel = (kind) => KINDS.find(k => k.value === kind)?.title ?? kind;
-const seasonName = (id) => seasons.value.find(s => s.id === id)?.name ?? 'Every season';
-const teamName = (id) => teams.value.find(t => t.id === id)?.name ?? 'Every team';
+const kindLabel = (kind) => KIND_META[kind]?.label ?? kind;
+const seasonName = (id) => seasons.value.find(s => s.id === id)?.name ?? `Season ${id}`;
+const teamName = (id) => teams.value.find(t => t.id === id)?.name ?? `Team ${id}`;
 // A role the guild no longer names still has its binding to describe it
 const roleName = (id) => {
   if (roleNames.value[id]) return roleNames.value[id];
@@ -285,6 +323,26 @@ const roleName = (id) => {
 };
 const roleItems = computed(() => Object.entries(roleNames.value).map(([value, title]) => ({ title, value })));
 
+// The scope line under each binding; champion team_id arrives derived from standings
+const bindingDetail = (row) => {
+  if (row.kind === 'team') return teamName(row.team_id);
+  if (row.kind === 'champion') {
+    const winner = row.team_id ? ` — Winner: ${teamName(row.team_id)} — derived from standings` : '';
+    return seasonName(row.season_id) + winner;
+  }
+  if (row.kind === 'gnl_participant' || row.kind === 'fantasy') {
+    return row.season_id ? `${seasonName(row.season_id)} (kept after the season ends)` : 'Always the current season';
+  }
+  return null;
+};
+
+const canSave = computed(() => {
+  const b = binding.value;
+  if (!b?.kind || !b.discord_role) return false;
+  if (b.kind === 'team') return b.team_id !== null;
+  if (b.kind === 'champion') return b.season_id !== null;
+  return true;
+});
 
 const fetchReport = async () => {
   isLoadingReport.value = true;
@@ -350,7 +408,7 @@ const syncOne = async (row) => {
 };
 
 const addBinding = () => {
-  binding.value = { kind: 'captain', season_id: null, team_id: null, discord_role: '' };
+  binding.value = { kind: 'team', season_id: null, team_id: null, discord_role: '' };
   dialogError.value = null;
   bindingDialog.value = true;
 };
@@ -365,7 +423,14 @@ const saveBinding = async () => {
   dialogError.value = null;
   isSavingBinding.value = true;
   try {
-    const { id, ...body } = binding.value;
+    const { id, kind, season_id, team_id, discord_role } = binding.value;
+    // Only the fields the kind uses go out; champion's team is derived, never stored
+    const body = {
+      kind,
+      discord_role,
+      season_id: ['gnl_participant', 'fantasy', 'champion'].includes(kind) ? season_id : null,
+      team_id: kind === 'team' ? team_id : null
+    };
     if (id) {
       await configStore.updateDiscordRoleBinding(id, body);
     } else {

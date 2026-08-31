@@ -84,15 +84,6 @@
                 <template v-else>N/A</template>
               </template>
 
-              <template v-slot:[`item.drafted_team`]="{ item }">
-                {{ item.drafted_team?.name || 'N/A' }}
-              </template>
-
-              <template v-slot:[`item.drafted_race`]="{ item }">
-                <RaceIcon v-if="item.drafted_race" :raceIdentifier="item.drafted_race" />
-                <span v-else>N/A</span>
-              </template>
-
               <template v-slot:[`item.player_points`]="{ item }">
                 {{ item.player_points || 0 }}
               </template>
@@ -126,7 +117,9 @@
 
               <template v-slot:expanded-row="{ columns, item }">
                 <tr>
-                  <td :colspan="columns.length" class="pa-4">
+                  <td :colspan="columns.length" class="pa-0">
+                    <!-- sticky: stays in view when the summary row scrolls sideways on a narrow window -->
+                    <div class="pa-4 expanded-breakdown">
                     <v-row>
                       <v-col cols="12" lg="4">
                         <div class="text-h6 mb-2">Drafted Players</div>
@@ -163,6 +156,7 @@
                         />
                       </v-col>
                     </v-row>
+                    </div>
                   </td>
                 </tr>
               </template>
@@ -396,8 +390,6 @@ const headers = [
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
   { title: 'Captain', value: 'captain', sortable: false },
-  { title: 'Team', value: 'drafted_team', sortable: false },
-  { title: 'Race', value: 'drafted_race', sortable: false, align: 'center' },
   { title: 'Player Pts', value: 'player_points', align: 'end' },
   { title: 'Bench Pts', value: 'bench_points', align: 'end' },
   { title: 'Team Pts', value: 'team_points', align: 'end' },
@@ -695,4 +687,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.expanded-breakdown {
+  position: sticky;
+  left: 0;
+  max-width: calc(100vw - 48px);
+}
 </style>

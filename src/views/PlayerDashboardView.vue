@@ -11,7 +11,7 @@
             <v-img v-if="authStore.me?.avatar" :src="authStore.me.avatar" alt="" />
             <span v-else>{{ (playerData.player.name || '?').slice(0, 2).toUpperCase() }}</span>
           </v-avatar>
-          <PlayerName :player="playerData.player" :race="playerData.player.race" @click.stop="showPlayerDetails(playerData.player)">
+          <PlayerName :player="playerData.player" @click.stop="showPlayerDetails(playerData.player)">
             <a :href="w3cPlayerUrl(playerData.player.battleTag)" target="_blank" rel="noopener noreferrer" class="text-body-1 text-decoration-none ml-2">
               {{ playerData.player.battleTag }} <W3CIcon :size="16" />
             </a>
@@ -61,13 +61,19 @@
             <v-btn color="primary" variant="elevated" size="small" @click="router.push('/signup')">Sign up</v-btn>
           </div>
         </v-alert>
-        <v-chip color="secondary" class="mb-2">
-          {{ playerData.discord_tag }}
-        </v-chip>
-        <p><strong><W3CMmr /></strong> {{ getW3CMMR(playerData.player, null) }}</p>
-        <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
-          {{ playerData.player.timezone }}
-        </v-chip>
+        <div class="d-flex flex-wrap align-center ga-2 mb-3">
+          <v-chip color="secondary" prepend-icon="mdi-discord">
+            {{ playerData.discord_tag }}
+          </v-chip>
+          <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
+            {{ playerData.player.timezone }}
+          </v-chip>
+        </div>
+        <div class="d-flex flex-wrap align-center ga-2">
+          <strong><W3CMmr /></strong>
+          <RaceMmrChips :player="playerData.player" :w3cSeason="currentW3CSeason" />
+        </div>
+        <div class="text-caption text-medium-emphasis mt-2">{{ syncCaption }}</div>
       </v-card-text>
     </v-card>
 
@@ -541,7 +547,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore } from '@/stores';
-import { getW3CMMR } from '@/helpers/w3c-stats';
+import { syncedAgo } from '@/helpers/w3c-stats';
+import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
@@ -608,6 +615,12 @@ const needsSignup = computed(() => authStore.me?.signed_up === false && !!authSt
 const seasonLabel = computed(() =>
   seasonStore.seasons.find(s => s.id === authStore.me?.season_id)?.name || `GNL Season ${authStore.me?.season_id}`
 );
+
+// e.g. "synced 2 hours ago"; syncedAgo already words the never case
+const syncCaption = computed(() => {
+  const ago = syncedAgo(playerData.value?.player);
+  return ago === 'never synced' ? ago : `synced ${ago}`;
+});
 
 // Schedule / Result dialog state
 const scheduleDialog = ref(false);

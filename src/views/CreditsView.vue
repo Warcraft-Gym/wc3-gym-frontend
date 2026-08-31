@@ -9,7 +9,7 @@
       </li>
       <li>
         Achievement and bet icons: <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>
-        by Lorc, Delapouite and contributors,
+        by Lorc, Delapouite and Caro Asercion,
         <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>
       </li>
       <li>

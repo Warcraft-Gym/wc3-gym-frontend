@@ -11,6 +11,3 @@ export const ACHIEVEMENTS_NOTE =
 export function achievementPoints(earned) {
   return (earned ?? []).reduce((sum, badge) => sum + badge.points, 0);
 }
-
-// The CC BY 3.0 credit for the badge glyphs, shown wherever badges are
-export const BADGES_CREDIT = 'Achievement badges by Lorc, Delapouite and Caro Asercion (game-icons.net, CC BY 3.0).';

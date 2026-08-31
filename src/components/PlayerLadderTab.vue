@@ -108,7 +108,6 @@
             <span class="text-body-2 ml-3">+{{ badge.points }}</span>
           </div>
         </template>
-        <div class="text-caption text-medium-emphasis mt-3">{{ BADGES_CREDIT }}</div>
       </v-card-text>
     </v-card>
 
@@ -170,7 +169,7 @@ import { DateTime } from 'luxon';
 import { useLadderStore, useSeasonStore } from '@/stores';
 import RaceIcon from '@/components/RaceIcon.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
-import { achievementPoints, SCORED_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
+import { achievementPoints, SCORED_NOTE } from '@/helpers/achievements';
 import { raceWrapper } from '@/helpers/races';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import AchievementIcon from '@/components/AchievementIcon.vue';

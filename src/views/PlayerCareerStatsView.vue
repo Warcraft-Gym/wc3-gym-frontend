@@ -333,7 +333,7 @@ onMounted(async () => {
             class="elevation-1"
           >
             <template v-slot:item.display_name="{ item }">
-              <PlayerName v-if="item.user" :player="item.user" :race="item.user.race" @click="openPlayerDetails(item.user)" />
+              <PlayerName v-if="item.user" :player="item.user" @click="openPlayerDetails(item.user)" />
               <template v-else>{{ item.display_name }}</template>
             </template>
 

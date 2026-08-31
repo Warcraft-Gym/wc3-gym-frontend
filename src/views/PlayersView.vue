@@ -127,7 +127,7 @@
                     </div>
                     <div v-else>—</div>
                   </td>
-                  <td>
+                  <td v-if="auth.isAdmin">
                     <RowActions :actions="[
                       { icon: 'mdi-pencil', label: 'Edit', onClick: () => editPlayer(item) },
                       { icon: syncIcon(item.id), label: syncLabel(item.id), color: syncColor(item.id), loading: syncState(item.id) === 'loading', onClick: () => syncW3CPlayer(item.id) },
@@ -519,15 +519,16 @@ W3C Stats
 Fantasy Tier
 Actions
 */
+// the Actions column carries admin operations (edit, W3C sync, delete)
 const tableHeader = computed(() => [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
-  { title: 'Name', value: 'name', sortable: true },  
-  { title: 'Battletag', value: 'battleTag', sortable: true },    
-  { title: 'Discord Name', value: 'discordTag', sortable: true }, 
-  { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'mmr', sortable: false }, 
-  { title: 'Main Race', value: 'race', sortable: true },  
-  { title: 'Signups', value: 'signups', sortable: false },    
-  { title: 'Actions', key: 'actions', align: 'end', sortable: false }, 
+  { title: 'Name', value: 'name', sortable: true },
+  { title: 'Battletag', value: 'battleTag', sortable: true },
+  { title: 'Discord Name', value: 'discordTag', sortable: true },
+  { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'mmr', sortable: false },
+  { title: 'Main Race', value: 'race', sortable: true },
+  { title: 'Signups', value: 'signups', sortable: false },
+  ...(auth.isAdmin ? [{ title: 'Actions', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
 
 // Fetch users when the component is mounted

@@ -39,6 +39,18 @@ export const useSeasonStore = defineStore({
         async removeMapsFromSeason(season_id, map_ids) {
             await fetchWrapper.delete(`${backendUrl}/seasons/${season_id}/maps`, {'map_ids': map_ids});
         },
+        async setSeasonMapOrder(season_id, map_ids) {
+            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/maps/order`, {'map_ids': map_ids});
+        },
+        async setSeasonWeekMap(season_id, playday, map_id) {
+            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/week-maps`, {'playday': playday, 'map_id': map_id});
+        },
+        async fetchLadderMapImport(season_id) {
+            return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/maps/ladder-import`);
+        },
+        async importLadderMaps(season_id, names) {
+            await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/maps/ladder-import`, {'names': names});
+        },
         async addUserSignup(season_id, user_ids) {
             const updated = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids});
             return updated;

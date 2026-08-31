@@ -8,6 +8,7 @@ export { default as SeasonDetailsView } from './SeasonDetailsView.vue';
 export { default as MatchDetailsView } from './MatchDetailsView.vue';
 export { default as SeasonTeamDetailsView } from './SeasonTeamDetailsView.vue';
 export { default as SeasonTeamAssignView } from './SeasonTeamAssignView.vue';
+export { default as SeasonMapsView } from './SeasonMapsView.vue';
 export { default as TeamWeeksView } from './TeamWeeksView.vue';
 export { default as MapsView } from './MapsView.vue';
 export { default as TeamsView } from './TeamsView.vue';

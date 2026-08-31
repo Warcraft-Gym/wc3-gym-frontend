@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, TeamWeeksView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView } from '@/views';
+import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, TeamWeeksView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -24,6 +24,7 @@ export const router = createRouter({
         { path: '/players', component: PlayersView, meta: { role: 'guest' } },
         { path: '/seasons/:id', component: SeasonDetailsView, meta: { role: 'guest' } },
         { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'admin' } },
+        { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false } },
         { path: '/match/:id', component: MatchDetailsView, meta: { role: 'guest' } },
         { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'guest' } },
         { path: '/team/:id/season/:season_id/weeks', component: TeamWeeksView, meta: { role: 'captain', nav: false } },

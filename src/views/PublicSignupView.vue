@@ -225,9 +225,7 @@ onMounted(async () => {
         loading.value = false;
         return;
       }
-    } catch (err) {
-      console.log('Could not check signups_enabled setting, continuing...');
-    }
+    } catch { /* ignore */ }
     
     // Use the public token endpoint (updated API): /public-token/<token>
     const res = await fetch(`${backend}/public-token/${token.value}`);
@@ -261,9 +259,7 @@ onMounted(async () => {
           if (existing.race) race.value = existing.race;
           if (existing.timezone) timezone.value = existing.timezone;
         }
-      } catch (e) {
-        console.log('Could not prefetch existing user data:', e);
-      }
+      } catch { /* ignore */ }
     }
 
     // fetch seasons for signup selection
@@ -285,9 +281,7 @@ onMounted(async () => {
           const signups = await seasonStore.fetchSeasonSignups(selectedSignupSeasonId.value);
           alreadySignedUp.value = Array.isArray(signups) &&
             signups.some(u => String(u.discordId) === String(discordId.value));
-        } catch (e) {
-          console.log('Could not check existing signups:', e);
-        }
+        } catch { /* ignore */ }
       }
     }
   } catch (err) {
@@ -330,7 +324,6 @@ async function onSubmit() {
       if (route.path === '/signup') router.push('/profile');
     }
   } catch (err) {
-    console.log('Signup error:', err);
     submitError.value = (err && err.message) || (err && err.error) || String(err);
   } finally {
     submitting.value = false;

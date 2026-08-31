@@ -31,3 +31,21 @@
 .v-data-table .v-table__wrapper > table tbody > tr > th.v-data-table__th--sorted:hover {
   color: rgb(var(--v-theme-primary));
 }
+
+/* The KOTH sign-up call to action, on the admin view and on the stream dashboard. */
+.signup-btn {
+  font-size: 1.1rem !important;
+  padding: 28px 40px !important;
+  border-radius: 50px !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.signup-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
+}

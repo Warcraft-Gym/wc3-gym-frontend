@@ -330,16 +330,15 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from '@/stores';
+import { useFantasyStore, useSeriesStore, useConfigStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { loadSeasons, resolveCurrentSeasonId } from '@/helpers/current-season';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 
 
 const fantasyStore = useFantasyStore();
 const seriesStore = useSeriesStore();
 const configStore = useConfigStore();
-const seasonStore = useSeasonStore();
 
 const { bets, totalBets } = storeToRefs(fantasyStore);
 
@@ -531,16 +530,6 @@ watch(sortBy, () => {
   }
 });
 
-const loadSeasons = async () => {
-  try {
-    await seasonStore.fetchSeasons();
-    seasons.value = seasonStore.seasons || [];
-  } catch (error) {
-    console.error('Failed to load seasons:', error);
-    seasons.value = [];
-  }
-};
-
 const openAddBetDialog = () => {
   newBet.value = {
     captain_id: null,
@@ -704,7 +693,7 @@ const loadBetPointsSettings = async () => {
 };
 
 onMounted(() => {
-  loadSeasons();
+  loadSeasons().then(list => { seasons.value = list; });
   loadBetPointsSettings();
   fetchData();
 });

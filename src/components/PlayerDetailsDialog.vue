@@ -25,7 +25,7 @@
               <td class="text-left text-overline">{{ seasonName || 'N/A' }} <RaceIcon v-if="fullPlayer" :raceIdentifier="fullPlayer.race" /></td>
               <td class="text-left text-overline">
                 {{ playerW3CMMR }}
-                <span v-if="mmrSeasonLabel" class="text-caption ml-1">{{ mmrSeasonLabel }}</span>
+                <span v-if="mmrSeasonLabel(fullPlayer, w3cSeason)" class="text-caption ml-1">{{ mmrSeasonLabel(fullPlayer, w3cSeason) }}</span>
               </td>
               <td class="text-right text-green">{{ selectedGnl?.wins || 0 }}</td>
               <td class="text-right text-red">{{ selectedGnl?.losses || 0 }}</td>
@@ -73,7 +73,7 @@ import RaceIcon from '@/components/RaceIcon.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { usePlayerStore } from '@/stores';
-import { getAllRaceStats, getW3CMMR, getW3CMMRSeason } from '@/helpers/w3c-stats';
+import { getAllRaceStats, getW3CMMR, mmrSeasonLabel } from '@/helpers/w3c-stats';
 
 const props = defineProps({
   modelValue: {
@@ -157,11 +157,5 @@ const w3cStatsToDisplay = computed(() => {
 const playerW3CMMR = computed(() => {
   if (!fullPlayer.value) return 0;
   return getW3CMMR(fullPlayer.value, props.w3cSeason);
-});
-
-// Names the season the MMR came from when it is not the requested one
-const mmrSeasonLabel = computed(() => {
-  const season = getW3CMMRSeason(fullPlayer.value, props.w3cSeason);
-  return season && season !== props.w3cSeason ? `S${season}` : '';
 });
 </script>

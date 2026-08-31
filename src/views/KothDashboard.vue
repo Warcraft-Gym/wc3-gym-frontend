@@ -35,7 +35,7 @@
           <v-card-title class="bracket-header text-center py-4">
             <div class="d-flex align-center justify-center">
               <img :src="getBracketIcon(bracket)" alt="Bracket Icon" style="width: 60px; height: 60px;" class="mr-3" />
-              <div class="text-h5 font-weight-bold">{{ getBracketThresholdText(bracket) }}</div>
+              <div class="text-h5 font-weight-bold">{{ kothStore.getBracketThresholdText(event)[bracket] || '' }}</div>
             </div>
           </v-card-title>
           
@@ -68,9 +68,9 @@
 
             <!-- Signed Up Players -->
             <div class="players-section">
-              <div v-if="getActivePlayers(bracket).length > 0" class="players-list">
+              <div v-if="kothStore.getBracketPlayers(bracket).length > 0" class="players-list">
                 <div
-                  v-for="player in getActivePlayers(bracket)"
+                  v-for="player in kothStore.getBracketPlayers(bracket)"
                   :key="player.battleTag"
                   class="player-item mb-2 pa-3"
                 >
@@ -253,16 +253,6 @@ function getBracketIcon(bracket) {
   return icons[bracket] || bracketSilverIcon;
 }
 
-function getBracketThresholdText(bracket) {
-  if (!event.value) return '';
-  const thresholds = kothStore.getBracketThresholdText(event.value);
-  return thresholds[bracket] || '';
-}
-
-function getActivePlayers(bracket) {
-  return kothStore.getBracketPlayers(bracket);
-}
-
 function closeSignupDialog() {
   showSignupDialog.value = false;
   signupForm.value = {
@@ -397,20 +387,4 @@ async function submitSignup() {
   padding-left: 26px;
 }
 
-.signup-btn {
-  font-size: 1.1rem !important;
-  padding: 28px 40px !important;
-  border-radius: 50px !important;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.signup-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
-}
 </style>

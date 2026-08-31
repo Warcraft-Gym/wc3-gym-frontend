@@ -574,7 +574,7 @@ import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
-import { getW3CMMR } from '@/helpers/w3c-stats';
+import { getW3CMMR, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
@@ -733,8 +733,7 @@ const fetchInitialData = async () => {
     try {
       const setting = await configStore.fetchSetting('fantasy_team_creation_enabled');
       isCreationEnabled.value = setting && setting.value && setting.value.toLowerCase() === 'true';
-    } catch (err) {
-      console.log('Could not check fantasy_team_creation_enabled setting, defaulting to disabled...');
+    } catch {
       isCreationEnabled.value = false;
     }
 
@@ -751,8 +750,7 @@ const fetchInitialData = async () => {
       
       const maxBetPointsSetting = await configStore.fetchSetting('fantasy_max_bet_points');
       maxBetPoints.value = maxBetPointsSetting && maxBetPointsSetting.value ? parseInt(maxBetPointsSetting.value) : null;
-    } catch (err) {
-      console.log('Could not load bet points settings, using defaults...');
+    } catch {
       useFixedBetPoints.value = false;
       fixedBetPointsValue.value = 0;
       minBetPoints.value = null;
@@ -1079,7 +1077,7 @@ const getScoreColorForBet = (series) => {
 };
 
 const openW3CStats = (battleTag) => {
-  window.open(`https://www.w3champions.com/player/${encodeURIComponent(battleTag)}`, '_blank');
+  window.open(w3cPlayerUrl(battleTag), '_blank');
 };
 
 onMounted(async () => {

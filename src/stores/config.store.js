@@ -67,7 +67,7 @@ export const useConfigStore = defineStore({
             this.isLoading = true;
             this.error = null;
             try {
-                const response = await fetchWrapper.getSecure(`${backendUrl}/config/koth/nightbot-token`);
+                const response = await fetchWrapper.get(`${backendUrl}/config/koth/nightbot-token`);
                 return response;
             } catch (error) {
                 this.error = error;

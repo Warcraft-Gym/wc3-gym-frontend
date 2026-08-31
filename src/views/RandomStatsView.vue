@@ -199,6 +199,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { raceWrapper } from '@/helpers/races';
 
 
 const W3C_MATCH_API = 'https://website-backend.w3champions.com/api/matches/search';
@@ -222,14 +223,8 @@ const W3C_RACE_NAMES = {
   'RANDOM': 'Random',
 };
 
-// Map from display name to RaceIcon identifier (keys in races.js)
-const raceIdMap = {
-  'Human': 'HU',
-  'Orc': 'OC',
-  'Night Elf': 'NE',
-  'Undead': 'UD',
-  'Random': 'RANDOM',
-};
+// Map from display name to RaceIcon identifier
+const raceIdMap = Object.fromEntries(raceWrapper.races.map(race => [race.name, race.id]));
 
 // Seasons to offer — show 1 through 35
 const seasonOptions = Array.from({ length: 35 }, (_, i) => 35 - i);

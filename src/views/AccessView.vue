@@ -146,7 +146,7 @@ const headers = [
   { title: 'Discord ID', value: 'discord_id', sortable: true },
   { title: 'Granted', value: 'granted_at', sortable: true },
   { title: 'Source', value: 'source', sortable: true },
-  { title: 'Actions', value: 'actions', align: 'end', sortable: false }
+  { title: '', value: 'actions', align: 'end', sortable: false }
 ];
 
 // env rows are granted outside the app, and an admin cannot remove themself

@@ -644,7 +644,7 @@ const headers = [
   { title: 'Date & Time', key: 'date_time', sortable: true },
   { title: 'Score', key: 'score', sortable: false },
   { title: 'Week', key: 'week', sortable: true },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: '', key: 'actions', sortable: false }
 ];
 
 const pageCount = computed(() => itemsPerPage.value === -1 ? 1 : Math.max(1, Math.ceil(totalSeries.value / itemsPerPage.value)));

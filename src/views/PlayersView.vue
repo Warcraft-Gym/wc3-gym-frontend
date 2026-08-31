@@ -528,7 +528,7 @@ const tableHeader = computed(() => [
   { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'mmr', sortable: false },
   { title: 'Main Race', value: 'race', sortable: true },
   { title: 'Signups', value: 'signups', sortable: false },
-  ...(auth.isAdmin ? [{ title: 'Actions', key: 'actions', align: 'end', sortable: false }] : []),
+  ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
 
 // Fetch users when the component is mounted

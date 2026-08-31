@@ -645,7 +645,7 @@ const fantasyHeaders = [
   { title: 'My Bet', key: 'my_bet', sortable: false },
   { title: 'Score', key: 'score', sortable: false },
   { title: 'Result', key: 'result', sortable: false },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: '', key: 'actions', sortable: false }
 ];
 
 // Computed: Organize players by tier based on fantasy_tier attribute

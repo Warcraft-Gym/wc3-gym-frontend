@@ -385,7 +385,7 @@ const tierPlayers = ref({
 });
 const selectedTierPlayers = ref(emptyTierSelection());
 
-const headers = [
+const headers = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: '48px' },
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
@@ -396,8 +396,10 @@ const headers = [
   { title: 'Race Pts', value: 'race_points', align: 'end' },
   { title: 'Bet Pts', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
-  { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
-];
+  // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team
+  ...(auth.isAdmin || teams.value.some((t) => t.captain_id === myUserId.value)
+    ? [{ title: '', value: 'actions', sortable: false, align: 'center' }] : []),
+]);
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
 

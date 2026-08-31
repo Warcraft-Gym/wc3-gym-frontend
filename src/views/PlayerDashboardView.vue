@@ -94,7 +94,7 @@
 
           <div v-if="week < currentWeek" class="mt-2">
             <v-chip v-if="seriesOfWeek(week)" :color="getScoreColor(seriesOfWeek(week))" variant="outlined" size="small">
-              {{ seriesOfWeek(week).player1_score || 0 }} - {{ seriesOfWeek(week).player2_score || 0 }}
+              {{ myScore(seriesOfWeek(week)) }} - {{ theirScore(seriesOfWeek(week)) }}
             </v-chip>
             <v-chip v-else variant="tonal" size="small">No series</v-chip>
           </div>
@@ -131,25 +131,22 @@
     <v-card v-if="!isLoading && playerData" elevation="2">
       <v-card-title class="bg-primary d-flex justify-space-between align-center">
         <div class="d-flex align-center">
-          <v-icon class="mr-2">mdi-tournament</v-icon>
-          <span>My Series</span>
+          <v-icon class="mr-2">mdi-calendar-clock</v-icon>
+          <span>Upcoming Series</span>
         </div>
         <v-chip color="white" variant="outlined">
-          {{ totalSeries }} series
+          {{ upcoming.length }} series
         </v-chip>
       </v-card-title>
-      
+
       <!-- Desktop: Data Table -->
       <v-card-text v-if="!isMobile" class="pa-0">
-      <v-data-table-server
-        :headers="headers"
-        :items="series"
-        :items-length="totalSeries"
-        v-model:page="page"
-        v-model:items-per-page="itemsPerPage"
-        :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
-        v-model:sort-by="sortBy"
-        :loading="isLoading"
+      <v-data-table
+        :headers="upcomingHeaders"
+        :items="upcoming"
+        :sort-by="[{ key: 'week', order: 'asc' }]"
+        :items-per-page="-1"
+        hide-default-footer
         class="elevation-1"
         item-value="id"
       >
@@ -161,26 +158,12 @@
           />
         </template>
 
-        <template #item.score="{ item }">
-          <v-chip
-            :color="getScoreColor(item)"
-            variant="outlined"
-            size="small"
-          >
-            {{ item.player1_score || 0 }} - {{ item.player2_score || 0 }}
-          </v-chip>
-        </template>
-
-        <template #item.season="{ item }">
-          {{ item.match?.season?.name || '' }}
-        </template>
-
         <template #item.date_time="{ item }">
           {{ formatDateTime(item.date_time) }}
         </template>
 
         <template #item.week="{ item }">
-          {{ item.match?.playday || 'TBD' }}
+          {{ item.week || 'TBD' }}
         </template>
 
         <template #item.actions="{ item }">
@@ -208,7 +191,6 @@
             Report Result
           </v-btn>
           <v-btn
-            v-if="isUnplayed(item)"
             color="primary"
             variant="outlined"
             size="small"
@@ -219,42 +201,38 @@
             Maps
           </v-btn>
         </template>
-      </v-data-table-server>
+
+        <template #no-data>
+          No upcoming series. Every result is in.
+        </template>
+      </v-data-table>
       </v-card-text>
 
       <!-- Mobile: Card Layout -->
       <v-card-text v-if="isMobile" class="pa-4">
         <v-card
-          v-for="item in series"
+          v-for="item in upcoming"
           :key="item.id"
           elevation="1"
           class="mb-4"
         >
           <v-card-text>
-            <div class="d-flex justify-space-between align-center mb-3">
-              <div>
-                <div class="text-caption text-grey">Opponent</div>
-                <div class="text-h6">
-                  <PlayerName
-                    :player="opponent(item)"
-                    :race="opponent(item).race"
-                    @click.stop="showPlayerDetails(opponent(item))"
-                  />
-                        </div>
+            <div class="mb-3">
+              <div class="text-caption text-grey">Opponent</div>
+              <div class="text-h6">
+                <PlayerName
+                  :player="opponent(item)"
+                  :race="opponent(item).race"
+                  @click.stop="showPlayerDetails(opponent(item))"
+                />
               </div>
-              <v-chip
-                :color="getScoreColor(item)"
-                variant="outlined"
-              >
-                {{ item.player1_score || 0 }} - {{ item.player2_score || 0 }}
-              </v-chip>
             </div>
 
             <v-divider class="my-3"></v-divider>
 
             <div class="mb-2">
               <div class="text-caption text-grey">Season</div>
-              <div>{{ item.match?.season?.name || '' }}</div>
+              <div>{{ item.season_name }}</div>
             </div>
 
             <div class="mb-2">
@@ -264,7 +242,7 @@
 
             <div class="mb-3">
               <div class="text-caption text-grey">Week</div>
-              <div>{{ item.match?.playday || 'TBD' }}</div>
+              <div>{{ item.week || 'TBD' }}</div>
             </div>
 
             <div class="d-flex flex-column gap-2">
@@ -291,7 +269,6 @@
                 Report Result
               </v-btn>
               <v-btn
-                v-if="isUnplayed(item)"
                 color="primary"
                 variant="outlined"
                 block
@@ -304,17 +281,110 @@
           </v-card-text>
         </v-card>
 
-        <v-alert v-if="series.length === 0" type="info" variant="tonal">
-          No series scheduled yet.
+        <v-alert v-if="upcoming.length === 0" type="info" variant="tonal">
+          No upcoming series. Every result is in.
         </v-alert>
+      </v-card-text>
+    </v-card>
 
-        <v-pagination
-          v-if="pageCount > 1"
-          v-model="page"
-          :length="pageCount"
-          density="comfortable"
-          class="mt-2"
-        ></v-pagination>
+    <v-card v-if="!isLoading && completed.length" elevation="2" class="mt-6">
+      <v-card-title class="bg-primary d-flex justify-space-between align-center">
+        <div class="d-flex align-center">
+          <v-icon class="mr-2">mdi-trophy</v-icon>
+          <span>Completed Series</span>
+        </div>
+        <v-chip color="white" variant="outlined">
+          {{ completed.length }} series
+        </v-chip>
+      </v-card-title>
+
+      <!-- Desktop: Data Table -->
+      <v-card-text v-if="!isMobile" class="pa-0">
+      <v-data-table
+        :headers="completedHeaders"
+        :items="completed"
+        :sort-by="[{ key: 'week', order: 'desc' }]"
+        class="elevation-1"
+        item-value="id"
+      >
+        <template #item.opponent="{ item }">
+          <PlayerName
+            :player="opponent(item)"
+            :race="opponent(item).race"
+            @click.stop="showPlayerDetails(opponent(item))"
+          />
+        </template>
+
+        <template #item.score="{ item }">
+          <v-chip
+            :color="getScoreColor(item)"
+            variant="outlined"
+            size="small"
+          >
+            {{ myScore(item) }} - {{ theirScore(item) }}
+          </v-chip>
+        </template>
+
+        <template #item.date_time="{ item }">
+          {{ formatDateTime(item.date_time) }}
+        </template>
+
+        <template #item.actions="{ item }">
+          <v-tooltip text="Fix result" location="top">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon="mdi-pencil"
+                variant="text"
+                size="small"
+                @click="reportResult(item)"
+                :loading="scoreSavingId === item.id"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-data-table>
+      </v-card-text>
+
+      <!-- Mobile: Card Layout -->
+      <v-card-text v-if="isMobile" class="pa-4">
+        <v-card
+          v-for="item in completed"
+          :key="item.id"
+          elevation="1"
+          class="mb-4"
+        >
+          <v-card-text>
+            <div class="d-flex justify-space-between align-center">
+              <PlayerName
+                :player="opponent(item)"
+                :race="opponent(item).race"
+                @click.stop="showPlayerDetails(opponent(item))"
+              />
+              <v-chip
+                :color="getScoreColor(item)"
+                variant="outlined"
+              >
+                {{ myScore(item) }} - {{ theirScore(item) }}
+              </v-chip>
+            </div>
+            <div class="d-flex justify-space-between align-center mt-2">
+              <span class="text-caption text-medium-emphasis">
+                {{ item.season_name }}<template v-if="item.week">, week {{ item.week }}</template>
+                <template v-if="item.date_time"> · {{ formatDateTime(item.date_time) }}</template>
+              </span>
+              <v-btn
+                variant="text"
+                size="x-small"
+                prepend-icon="mdi-pencil"
+                @click="reportResult(item)"
+                :loading="scoreSavingId === item.id"
+              >
+                Fix result
+              </v-btn>
+            </div>
+          </v-card-text>
+        </v-card>
       </v-card-text>
     </v-card>
 
@@ -536,7 +606,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
@@ -592,10 +662,6 @@ const opponent = (item) => {
 
 const playerData = ref(null);
 const series = ref([]);
-const totalSeries = ref(0);
-const page = ref(1);
-const itemsPerPage = ref(25);
-const sortBy = ref([]);  // Vuetify single sort: [] or [{ key, order }]
 const token = ref(null);
 const authStore = useAuthStore();
 
@@ -637,17 +703,27 @@ const rules = {
   }
 };
 
-// The server sorts date_time and week; opponent and score are computed per side here
-const headers = [
+const upcomingHeaders = [
   { title: 'Opponent', key: 'opponent', sortable: false },
-  { title: 'Season', key: 'season', sortable: false },
-  { title: 'Date & Time', key: 'date_time', sortable: true },
-  { title: 'Score', key: 'score', sortable: false },
-  { title: 'Week', key: 'week', sortable: true },
+  { title: 'Season', key: 'season_name' },
+  { title: 'Date & Time', key: 'date_time' },
+  { title: 'Week', key: 'week' },
   { title: 'Actions', key: 'actions', sortable: false }
 ];
 
-const pageCount = computed(() => itemsPerPage.value === -1 ? 1 : Math.max(1, Math.ceil(totalSeries.value / itemsPerPage.value)));
+const completedHeaders = [
+  { title: 'Opponent', key: 'opponent', sortable: false },
+  { title: 'Season', key: 'season_name' },
+  { title: 'Date & Time', key: 'date_time' },
+  { title: 'Score', key: 'score', sortable: false },
+  { title: 'Week', key: 'week' },
+  { title: '', key: 'actions', sortable: false }
+];
+
+// week and season lifted out of the match so the tables sort on them
+const withKeys = (item) => ({ ...item, week: item.match?.playday ?? null, season_name: item.match?.season?.name || '' });
+const upcoming = computed(() => series.value.filter(isUnplayed).map(withKeys));
+const completed = computed(() => series.value.filter((item) => !isUnplayed(item)).map(withKeys));
 
 // Load player dashboard data
 const fetchPlayerData = async () => {
@@ -672,47 +748,26 @@ const fetchPlayerData = async () => {
     }
 
     const tokenParam = token.value ? `token=${encodeURIComponent(token.value)}&` : '';
-    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?${tokenParam}${pageQuery({
-      limit,
-      offset,
-      sort: sortBy.value[0]?.key,
-      order: sortBy.value[0]?.order
-    })}`;
+    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?${tokenParam}${pageQuery({ limit, offset })}`;
 
-    // 'All': read the server pages and keep the player fields of the first one
-    if (itemsPerPage.value === -1) {
-      const collected = [];
-      let firstPage = null;
-      let total = 0;
+    // Read every server page; the split into upcoming and completed happens here
+    const collected = [];
+    let firstPage = null;
+    let total = 0;
 
-      do {
-        const { items: pageData, total: pageTotal } = await fetchWrapper.getPage(seriesUrl(PAGE_LIMIT, collected.length));
-        const rows = pageData?.series || [];
-        firstPage = firstPage ?? pageData;
-        total = pageTotal ?? collected.length + rows.length;
-        collected.push(...rows);
-        if (rows.length === 0) {
-          break;  // stop when the route sends no more rows
-        }
-      } while (collected.length < total);
+    do {
+      const { items: pageData, total: pageTotal } = await fetchWrapper.getPage(seriesUrl(PAGE_LIMIT, collected.length));
+      const rows = pageData?.series || [];
+      firstPage = firstPage ?? pageData;
+      total = pageTotal ?? collected.length + rows.length;
+      collected.push(...rows);
+      if (rows.length === 0) {
+        break;  // stop when the route sends no more rows
+      }
+    } while (collected.length < total);
 
-      playerData.value = firstPage;
-      series.value = collected;
-      totalSeries.value = collected.length;
-      return;
-    }
-
-    // Get one page of the player series data
-    const offset = (page.value - 1) * itemsPerPage.value;
-    const { items: response, total } = await fetchWrapper.getPage(seriesUrl(itemsPerPage.value, offset));
-    playerData.value = response;
-    series.value = response.series || [];
-    totalSeries.value = total ?? series.value.length;
-
-    // A page can fall past the end; step back onto the table
-    if (series.value.length === 0 && page.value > pageCount.value) {
-      page.value = pageCount.value;
-    }
+    playerData.value = firstPage;
+    series.value = collected;
 
   } catch (error) {
     console.error('Error fetching player data:', error);
@@ -728,21 +783,6 @@ const fetchPlayerData = async () => {
   }
 };
 
-// The table controls drive the page state
-watch([page, itemsPerPage], () => {
-  if (hasAccess()) fetchPlayerData();
-});
-
-// A header click reloads from the first page in the new order
-watch(sortBy, () => {
-  if (!hasAccess()) return;
-  if (page.value === 1) {
-    fetchPlayerData();
-  } else {
-    page.value = 1;
-  }
-});
-
 // the map veto is only worth opening before the series is played; the link carries the token
 const isUnplayed = (item) => !item.player1_score && !item.player2_score;
 const vetoRoute = (item) => ({
@@ -750,14 +790,14 @@ const vetoRoute = (item) => ({
   query: token.value ? { token: token.value } : {}
 });
 
+// Scores read from the player's side: mine first, the opponent's second
+const myScore = (item) => (item.player1_id === playerData.value?.player?.id ? item.player1_score : item.player2_score) || 0;
+const theirScore = (item) => (item.player1_id === playerData.value?.player?.id ? item.player2_score : item.player1_score) || 0;
+
 // Get score color based on win/loss
 const getScoreColor = (item) => {
-  const isPlayer1 = item.player1_id === playerData.value?.player?.id;
-  const myScore = isPlayer1 ? (item.player1_score || 0) : (item.player2_score || 0);
-  const oppScore = isPlayer1 ? (item.player2_score || 0) : (item.player1_score || 0);
-  
-  if (myScore > oppScore) return 'success';
-  if (myScore < oppScore) return 'error';
+  if (myScore(item) > theirScore(item)) return 'success';
+  if (myScore(item) < theirScore(item)) return 'error';
   return 'warning';
 };
 

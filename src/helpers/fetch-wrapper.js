@@ -108,8 +108,15 @@ export async function authHeader(method, url) {
         return {};
     }
 
-    const token = await useAuthStore().token();
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    const store = useAuthStore();
+    const token = await store.token();
+    if (!token) return {};
+    const headers = { Authorization: `Bearer ${token}` };
+    if (store.viewAs) {  // the backend lowers an admin's role for this request
+        headers['X-View-As'] = store.viewAs.role;
+        if (store.viewAs.teamId) headers['X-View-Team'] = String(store.viewAs.teamId);
+    }
+    return headers;
 }
 
 // Turn a failed response into an Error, keeping the body fields callers read for a code
@@ -120,9 +127,10 @@ function responseError(body, text, status) {
 
 async function handleResponse(response, receiveBinary, receivePage = false) {
     if (!response.ok) {
-        const { me, logout } = useAuthStore();
+        const { me, viewAs, logout } = useAuthStore();
 
-        if ([401, 403].includes(response.status) && me) {
+        // a refusal met while viewing as a lower role is the point, not a dead session
+        if ([401, 403].includes(response.status) && me && !viewAs) {
             logout(); // Logout on unauthorized access
         }
 

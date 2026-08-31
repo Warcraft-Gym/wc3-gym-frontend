@@ -207,6 +207,17 @@
           >
             Report Result
           </v-btn>
+          <v-btn
+            v-if="isUnplayed(item)"
+            color="primary"
+            variant="outlined"
+            size="small"
+            prepend-icon="mdi-map-outline"
+            class="ml-2"
+            @click="router.push(vetoRoute(item))"
+          >
+            Maps
+          </v-btn>
         </template>
       </v-data-table-server>
       </v-card-text>
@@ -278,6 +289,16 @@
                 :disabled="scoreSavingId === item.id || scheduleSavingId === item.id"
               >
                 Report Result
+              </v-btn>
+              <v-btn
+                v-if="isUnplayed(item)"
+                color="primary"
+                variant="outlined"
+                block
+                prepend-icon="mdi-map-outline"
+                @click="router.push(vetoRoute(item))"
+              >
+                Maps
               </v-btn>
             </div>
           </v-card-text>
@@ -720,6 +741,13 @@ watch(sortBy, () => {
   } else {
     page.value = 1;
   }
+});
+
+// the map veto is only worth opening before the series is played; the link carries the token
+const isUnplayed = (item) => !item.player1_score && !item.player2_score;
+const vetoRoute = (item) => ({
+  path: `/player-series/${item.id}/veto`,
+  query: token.value ? { token: token.value } : {}
 });
 
 // Get score color based on win/loss

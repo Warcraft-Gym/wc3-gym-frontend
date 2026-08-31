@@ -27,3 +27,4 @@ export { default as PlayerCareerStatsView } from './PlayerCareerStatsView.vue';
 export { default as SeasonReportView } from './SeasonReportView.vue';
 export { default as LadderView } from './LadderView.vue';
 export { default as RandomStatsView } from './RandomStatsView.vue';
+export { default as VetoBoardView } from './VetoBoardView.vue';

@@ -13,9 +13,7 @@
       </v-col>
     </v-row>
 
-    <v-alert v-if="errorMessage" type="error" variant="tonal" border="start" border-color="red" class="mb-4" closable @click:close="errorMessage = null">
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <v-alert v-if="successMessage" type="success" variant="tonal" border="start" border-color="success" class="mb-4" closable @click:close="successMessage = null">
       {{ successMessage }}
@@ -170,14 +168,13 @@
                         </v-alert>
 
                         <v-row>
-                          <!-- Tier 1: Diamond -->
-                          <v-col cols="12" md="6">
+                          <v-col cols="12" md="6" v-for="tier in 6" :key="tier">
                             <v-autocomplete
-                              v-model="tierSelections.tier1"
-                              :items="playersByTier.tier1"
+                              v-model="tierSelections[tier]"
+                              :items="playersByTier[tier]"
                               item-title="name"
                               item-value="id"
-                              label="Tier 1 - Diamond"
+                              :label="`Tier ${tier} - ${tierNames[tier - 1]}`"
                               variant="outlined"
                               density="comfortable"
                               clearable
@@ -185,174 +182,9 @@
                               <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
-                                  @click="tierSelections.tier1 = item.value"
+                                  @click="tierSelections[tier] = item.value"
                                 >
-                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
-                                  <template v-slot:append>
-                                    <v-btn
-                                      v-if="item.raw.battleTag"
-                                      icon="mdi-open-in-new"
-                                      size="x-small"
-                                      variant="text"
-                                      @click.stop="openW3CStats(item.raw.battleTag)"
-                                    ></v-btn>
-                                  </template>
-                                </v-list-item>
-                              </template>
-                            </v-autocomplete>
-                          </v-col>
-
-                          <!-- Tier 2: Platinum -->
-                          <v-col cols="12" md="6">
-                            <v-autocomplete
-                              v-model="tierSelections.tier2"
-                              :items="playersByTier.tier2"
-                              item-title="name"
-                              item-value="id"
-                              label="Tier 2 - Platinum"
-                              variant="outlined"
-                              density="comfortable"
-                              clearable
-                            >
-                              <template v-slot:item="{ item }">
-                                <v-list-item
-                                  :value="item.value"
-                                  @click="tierSelections.tier2 = item.value"
-                                >
-                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
-                                  <template v-slot:append>
-                                    <v-btn
-                                      v-if="item.raw.battleTag"
-                                      icon="mdi-open-in-new"
-                                      size="x-small"
-                                      variant="text"
-                                      @click.stop="openW3CStats(item.raw.battleTag)"
-                                    ></v-btn>
-                                  </template>
-                                </v-list-item>
-                              </template>
-                            </v-autocomplete>
-                          </v-col>
-
-                          <!-- Tier 3: Gold -->
-                          <v-col cols="12" md="6">
-                            <v-autocomplete
-                              v-model="tierSelections.tier3"
-                              :items="playersByTier.tier3"
-                              item-title="name"
-                              item-value="id"
-                              label="Tier 3 - Gold"
-                              variant="outlined"
-                              density="comfortable"
-                              clearable
-                            >
-                              <template v-slot:item="{ item }">
-                                <v-list-item
-                                  :value="item.value"
-                                  @click="tierSelections.tier3 = item.value"
-                                >
-                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
-                                  <template v-slot:append>
-                                    <v-btn
-                                      v-if="item.raw.battleTag"
-                                      icon="mdi-open-in-new"
-                                      size="x-small"
-                                      variant="text"
-                                      @click.stop="openW3CStats(item.raw.battleTag)"
-                                    ></v-btn>
-                                  </template>
-                                </v-list-item>
-                              </template>
-                            </v-autocomplete>
-                          </v-col>
-
-                          <!-- Tier 4: Silver -->
-                          <v-col cols="12" md="6">
-                            <v-autocomplete
-                              v-model="tierSelections.tier4"
-                              :items="playersByTier.tier4"
-                              item-title="name"
-                              item-value="id"
-                              label="Tier 4 - Silver"
-                              variant="outlined"
-                              density="comfortable"
-                              clearable
-                            >
-                              <template v-slot:item="{ item }">
-                                <v-list-item
-                                  :value="item.value"
-                                  @click="tierSelections.tier4 = item.value"
-                                >
-                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
-                                  <template v-slot:append>
-                                    <v-btn
-                                      v-if="item.raw.battleTag"
-                                      icon="mdi-open-in-new"
-                                      size="x-small"
-                                      variant="text"
-                                      @click.stop="openW3CStats(item.raw.battleTag)"
-                                    ></v-btn>
-                                  </template>
-                                </v-list-item>
-                              </template>
-                            </v-autocomplete>
-                          </v-col>
-
-                          <!-- Tier 5: Bronze -->
-                          <v-col cols="12" md="6">
-                            <v-autocomplete
-                              v-model="tierSelections.tier5"
-                              :items="playersByTier.tier5"
-                              item-title="name"
-                              item-value="id"
-                              label="Tier 5 - Bronze"
-                              variant="outlined"
-                              density="comfortable"
-                              clearable
-                            >
-                              <template v-slot:item="{ item }">
-                                <v-list-item
-                                  :value="item.value"
-                                  @click="tierSelections.tier5 = item.value"
-                                >
-                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
-                                  <template v-slot:append>
-                                    <v-btn
-                                      v-if="item.raw.battleTag"
-                                      icon="mdi-open-in-new"
-                                      size="x-small"
-                                      variant="text"
-                                      @click.stop="openW3CStats(item.raw.battleTag)"
-                                    ></v-btn>
-                                  </template>
-                                </v-list-item>
-                              </template>
-                            </v-autocomplete>
-                          </v-col>
-
-                          <!-- Tier 6: Grass -->
-                          <v-col cols="12" md="6">
-                            <v-autocomplete
-                              v-model="tierSelections.tier6"
-                              :items="playersByTier.tier6"
-                              item-title="name"
-                              item-value="id"
-                              label="Tier 6 - Grass"
-                              variant="outlined"
-                              density="comfortable"
-                              clearable
-                            >
-                              <template v-slot:item="{ item }">
-                                <v-list-item
-                                  :value="item.value"
-                                  @click="tierSelections.tier6 = item.value"
-                                >
-                                                                    <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
+                                  <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
                                   <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -560,8 +392,7 @@
 
   <!-- Player Details Dialog -->
   <PlayerDetailsDialog
-    v-model="showPlayerDetailsDialog"
-    :player="selectedPlayerForDetails"
+    ref="playerDetailsDialog"
     :seasonId="existingTeam?.season?.id"
   />
 </template>
@@ -577,6 +408,7 @@ import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { getW3CMMR, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const route = useRoute();
@@ -609,14 +441,9 @@ const displayMMR = (player) => {
 };
 
 // Tier selections
-const tierSelections = ref({
-  tier1: null, // Diamond
-  tier2: null, // Platinum
-  tier3: null, // Gold
-  tier4: null, // Silver
-  tier5: null, // Bronze
-  tier6: null  // Grass
-});
+const tierNames = ['Diamond', 'Platinum', 'Gold', 'Silver', 'Bronze', 'Grass'];
+const emptyTierSelections = () => ({ 1: null, 2: null, 3: null, 4: null, 5: null, 6: null });
+const tierSelections = ref(emptyTierSelections());
 
 // Betting state
 const fantasySeries = ref([]);
@@ -651,19 +478,12 @@ const fantasyHeaders = [
 
 // Computed: Organize players by tier based on fantasy_tier attribute
 const playersByTier = computed(() => {
-  const tiers = {
-    tier1: [], // Diamond
-    tier2: [], // Platinum
-    tier3: [], // Gold
-    tier4: [], // Silver
-    tier5: [], // Bronze
-    tier6: []  // Grass
-  };
+  const tiers = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
 
   availablePlayers.value.forEach(player => {
     // Only include players that have an explicit fantasy_tier set
     if (player.fantasy_tier >= 1 && player.fantasy_tier <= 6) {
-      tiers[`tier${player.fantasy_tier}`].push(player);
+      tiers[player.fantasy_tier].push(player);
     }
   });
 
@@ -701,14 +521,7 @@ watch(tierSelections, () => {
 // Helper function to populate tier selections from player IDs
 const populateTierSelectionsFromPlayerIds = (playerIds) => {
   // Reset all tiers
-  tierSelections.value = {
-    tier1: null,
-    tier2: null,
-    tier3: null,
-    tier4: null,
-    tier5: null,
-    tier6: null
-  };
+  tierSelections.value = emptyTierSelections();
 
   if (!playerIds || playerIds.length === 0) return;
 
@@ -718,7 +531,7 @@ const populateTierSelectionsFromPlayerIds = (playerIds) => {
     if (player) {
       const tier = player.fantasy_tier || 6; // Default to tier 6 if not set
       if (tier >= 1 && tier <= 6) {
-        tierSelections.value[`tier${tier}`] = playerId;
+        tierSelections.value[tier] = playerId;
       }
     }
   });
@@ -875,13 +688,9 @@ const submitTeam = async () => {
   }
 
   // Validate all 6 tiers have a player selected
-  const missingTiers = [];
-  if (!tierSelections.value.tier1) missingTiers.push('Tier 1 - Diamond');
-  if (!tierSelections.value.tier2) missingTiers.push('Tier 2 - Platinum');
-  if (!tierSelections.value.tier3) missingTiers.push('Tier 3 - Gold');
-  if (!tierSelections.value.tier4) missingTiers.push('Tier 4 - Silver');
-  if (!tierSelections.value.tier5) missingTiers.push('Tier 5 - Bronze');
-  if (!tierSelections.value.tier6) missingTiers.push('Tier 6 - Grass');
+  const missingTiers = tierNames
+    .map((name, i) => (tierSelections.value[i + 1] ? null : `Tier ${i + 1} - ${name}`))
+    .filter(Boolean);
 
   if (missingTiers.length > 0) {
     errorMessage.value = `Please select a player for all tiers. Missing: ${missingTiers.join(', ')}`;
@@ -1086,13 +895,11 @@ onMounted(async () => {
 });
 
 // Player Details Dialog
-const showPlayerDetailsDialog = ref(false);
-const selectedPlayerForDetails = ref(null);
+const playerDetailsDialog = ref(null);
 
 const showPlayerDetails = (player) => {
   if (!player) return;
-  selectedPlayerForDetails.value = player;
-  showPlayerDetailsDialog.value = true;
+  playerDetailsDialog.value.open(player);
 };
 </script>
 

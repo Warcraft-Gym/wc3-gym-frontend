@@ -1,17 +1,6 @@
 <template>
   <div>
-    <v-alert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      border="start"
-      border-color="red"
-      class="mb-4"
-      closable
-      @click:close="errorMessage = null"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <template v-if="scope != null">
     <v-row align="center" class="my-2">
@@ -176,6 +165,7 @@ import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import AchievementIcon from '@/components/AchievementIcon.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 const props = defineProps({
   player: { type: Object, default: null },

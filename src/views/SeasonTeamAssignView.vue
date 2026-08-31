@@ -160,8 +160,7 @@
 
     <!-- Player details dialog (open when clicking a player's name) -->
     <PlayerDetailsDialog
-      v-model="showPlayerDetails"
-      :player="playerDetails"
+      ref="playerDetailsDialog"
       :seasonId="seasonId"
     />
 
@@ -430,12 +429,10 @@ const onResetFilters = async () => {
 };
 
 // player details dialog state (open by clicking a player's name)
-const showPlayerDetails = ref(false);
-const playerDetails = ref(null);
+const playerDetailsDialog = ref(null);
 
 const showStats = async (player) => {
-  playerDetails.value = player;
-  showPlayerDetails.value = true;
+  playerDetailsDialog.value.open(player);
 };
 
 // Get W3C MMR for player's signed up race (with fallback)

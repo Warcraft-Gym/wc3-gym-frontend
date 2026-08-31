@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTeamStore, useSeasonStore, usePlayerStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 // Router
@@ -97,18 +98,7 @@ const navigateTo = (route) => {
       </v-row>
 
       <!-- Error Message -->
-      <v-alert
-        v-if="errorMessage"
-        type="error"
-        variant="tonal"
-        border="start"
-        border-color="red"
-        class="mb-4"
-        closable
-        @click:close="errorMessage = null"
-      >
-        {{ errorMessage }}
-      </v-alert>
+      <StatusAlert v-model="errorMessage" />
 
       <!-- Dashboard Cards -->
       <v-row class="mt-4">

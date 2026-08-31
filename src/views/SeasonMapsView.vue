@@ -22,9 +22,7 @@
       </v-col>
     </v-row>
 
-    <v-alert v-if="errorMessage" type="error" variant="tonal" border="start" border-color="red" class="mb-4" closable @click:close="errorMessage = null">
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <v-row>
       <!-- Map pool -->
@@ -273,6 +271,7 @@ import { useRoute } from 'vue-router';
 
 import { useMapStore, useSeasonStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 const RULES = [

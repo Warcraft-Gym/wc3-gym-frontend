@@ -14,9 +14,7 @@
       </v-col>
     </v-row>
 
-    <v-alert v-if="errorMessage" type="error" variant="tonal" border="start" border-color="red" class="mb-4" closable @click:close="errorMessage = null">
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
@@ -334,6 +332,7 @@ import { useFantasyStore, useSeriesStore, useConfigStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { loadSeasons, resolveCurrentSeasonId } from '@/helpers/current-season';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const fantasyStore = useFantasyStore();

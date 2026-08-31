@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { marked } from 'marked';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const markdownContent = ref('');
@@ -66,18 +67,7 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <v-alert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      border="start"
-      border-color="red"
-      class="mb-4"
-      closable
-      @click:close="errorMessage = null"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex justify-space-between align-center">

@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="internalShow" max-width="65vw">
+  <v-dialog v-model="show" max-width="65vw">
     <v-card>
       <v-card-title>Player Details</v-card-title>
       <v-tabs v-model="tab" bg-color="surface" class="flex-0-0">
@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import RaceIcon from '@/components/RaceIcon.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
@@ -76,14 +76,6 @@ import { usePlayerStore } from '@/stores';
 import { getAllRaceStats, getW3CMMR, mmrSeasonLabel } from '@/helpers/w3c-stats';
 
 const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true
-  },
-  player: {
-    type: Object,
-    default: null
-  },
   seasonId: {
     type: Number,
     default: null
@@ -102,15 +94,15 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
-
 const playerStore = usePlayerStore();
 
+const show = ref(false);
 const tab = ref(props.openTab);
+const selectedPlayer = ref(null);
 
 // The player list has no gnl_stats, so the open dialog reads the full player
 const loadedPlayer = ref(null);
-const fullPlayer = computed(() => loadedPlayer.value || props.player);
+const fullPlayer = computed(() => loadedPlayer.value || selectedPlayer.value);
 
 // A GNL opponent of the Ladder tab replaces the player the dialog shows
 const openPlayer = async (userId) => {
@@ -121,21 +113,20 @@ const openPlayer = async (userId) => {
   }
 };
 
-watch(() => [props.modelValue, props.player?.id], async ([open, playerId]) => {
+const open = async (player) => {
   loadedPlayer.value = null;
-  if (open) tab.value = props.openTab;
-  if (!open || !playerId || props.player?.gnl_stats) return;
+  selectedPlayer.value = player;
+  tab.value = props.openTab;
+  show.value = true;
+  if (!player?.id || player.gnl_stats) return;
   try {
-    loadedPlayer.value = await playerStore.getPlayer(playerId);
+    loadedPlayer.value = await playerStore.getPlayer(player.id);
   } catch (error) {
     console.error('Failed to load the player details:', error);
   }
-}, { immediate: true });
+};
 
-const internalShow = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
+defineExpose({ open });
 
 const selectedGnl = computed(() => {
   const stats = fullPlayer.value?.gnl_stats;

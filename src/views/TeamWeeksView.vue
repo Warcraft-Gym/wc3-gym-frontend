@@ -13,18 +13,7 @@
       </v-col>
     </v-row>
 
-    <v-alert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      border="start"
-      border-color="red"
-      class="mb-4"
-      closable
-      @click:close="errorMessage = null"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
@@ -94,6 +83,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 
 import { useAuthStore, useAvailabilityStore, useSeasonStore, useTeamStore } from '@/stores';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 const router = useRouter();
 const auth = useAuthStore();

@@ -48,18 +48,7 @@
       </v-col>
     </v-row>
 
-    <v-alert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      border="start"
-      border-color="red"
-      class="mb-4"
-      closable
-      @click:close="errorMessage = null"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <!-- Empty State -->
     <v-card v-if="ladder && !ladder.total_games" elevation="2">
@@ -264,8 +253,7 @@
     </template>
 
     <PlayerDetailsDialog
-      v-model="showPlayerDetails"
-      :player="playerDetails"
+      ref="playerDetailsDialog"
       :seasonId="selectedSeasonId"
       :seasonName="seasonName"
       :w3cSeason="currentW3CSeason"
@@ -294,6 +282,7 @@ import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import AchievementChip from '@/components/AchievementChip.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();
@@ -315,8 +304,7 @@ const searchTeam = ref(null);
 
 const syncDialog = ref(false);
 const syncEntries = ref([]);
-const showPlayerDetails = ref(false);
-const playerDetails = ref(null);
+const playerDetailsDialog = ref(null);
 const expanded = ref([]);
 const fullPlayers = ref({});
 
@@ -445,14 +433,12 @@ const syncLadder = async () => {
 };
 
 const openPlayerDetails = (player) => {
-  playerDetails.value = { id: player.id, name: player.name, battleTag: player.battleTag, race: player.race };
-  showPlayerDetails.value = true;
+  playerDetailsDialog.value.open({ id: player.id, name: player.name, battleTag: player.battleTag, race: player.race });
 };
 
 // An opponent clicked inside an expanded panel; the dialog fetches the rest itself
 const openOpponent = (userId) => {
-  playerDetails.value = { id: userId };
-  showPlayerDetails.value = true;
+  playerDetailsDialog.value.open({ id: userId });
 };
 
 onMounted(async () => {

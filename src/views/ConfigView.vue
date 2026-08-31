@@ -16,32 +16,10 @@
     </v-row>
     
     <!-- Error Message -->
-    <v-alert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      border="start"
-      border-color="red"
-      class="mb-4"
-      closable
-      @click:close="errorMessage = null"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <!-- Success Message -->
-    <v-alert
-      v-if="successMessage"
-      type="success"
-      variant="tonal"
-      border="start"
-      border-color="green"
-      class="mb-4"
-      closable
-      @click:close="successMessage = null"
-    >
-      {{ successMessage }}
-    </v-alert>
+    <StatusAlert v-model="successMessage" type="success" />
 
     <!-- Application Settings Section -->
     <v-row>
@@ -402,6 +380,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const configStore = useConfigStore();

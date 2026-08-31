@@ -7,6 +7,7 @@ import { useAuthStore, useSeasonStore } from '@/stores';
 import PlayerName from '@/components/PlayerName.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const store = usePlayerCareerStatsStore();
@@ -213,15 +214,13 @@ const handleFileUpload = async () => {
 };
 
 // Player details dialog, opened by clicking a mapped name
-const showPlayerDetails = ref(false);
-const playerDetails = ref(null);
+const playerDetailsDialog = ref(null);
 const currentSeasonId = ref(null);
 const currentW3CSeason = ref(null);
 const currentSeasonName = computed(() => (seasons.value || []).find(s => s.id === currentSeasonId.value)?.name || '');
 
 const openPlayerDetails = async (user) => {
-  playerDetails.value = user;
-  showPlayerDetails.value = true;
+  playerDetailsDialog.value.open(user);
   // season context loads on the first open, not on every page view
   if (!currentSeasonId.value) {
     try {
@@ -248,32 +247,10 @@ onMounted(async () => {
         <h1 class="text-h4 mb-4">Player Career Statistics</h1>
         
         <!-- Success Message -->
-        <v-alert
-          v-if="successMessage"
-          type="success"
-          variant="tonal"
-          border="start"
-          border-color="green"
-          class="mb-4"
-          closable
-          @click:close="successMessage = null"
-        >
-          {{ successMessage }}
-        </v-alert>
+        <StatusAlert v-model="successMessage" type="success" />
 
         <!-- Error Message -->
-        <v-alert
-          v-if="errorMessage"
-          type="error"
-          variant="tonal"
-          border="start"
-          border-color="red"
-          class="mb-4"
-          closable
-          @click:close="errorMessage = null"
-        >
-          {{ errorMessage }}
-        </v-alert>
+        <StatusAlert v-model="errorMessage" />
 
         <!-- Actions Bar -->
         <v-card class="mb-4">
@@ -380,8 +357,7 @@ onMounted(async () => {
 
     <!-- Player Details Dialog -->
     <PlayerDetailsDialog
-      v-model="showPlayerDetails"
-      :player="playerDetails"
+      ref="playerDetailsDialog"
       :seasonId="currentSeasonId"
       :seasonName="currentSeasonName"
       :w3cSeason="currentW3CSeason"

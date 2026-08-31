@@ -3,14 +3,19 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePlayerCareerStatsStore } from '@/stores/player_career_stats.store';
 import { usePlayerStore } from '@/stores/player.store';
-import { useAuthStore } from '@/stores';
+import { useAuthStore, useSeasonStore } from '@/stores';
+import PlayerName from '@/components/PlayerName.vue';
+import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 
 const store = usePlayerCareerStatsStore();
 const { stats, totalStats } = storeToRefs(store);
 const playerStore = usePlayerStore();
+const seasonStore = useSeasonStore();
 const auth = useAuthStore();
 const { players } = storeToRefs(playerStore);
+const { seasons } = storeToRefs(seasonStore);
 
 const isLoading = ref(true);
 const errorMessage = ref(null);
@@ -25,7 +30,8 @@ const page = ref(1);
 const itemsPerPage = ref(25);
 const sortBy = ref([{ key: 'rating', order: 'desc' }]);  // the order the server pages by
 
-const headers = [
+// Status and Actions are admin bookkeeping columns
+const headers = computed(() => [
   { title: 'Display Name', key: 'display_name', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Rating', key: 'rating', sortable: true },
@@ -35,7 +41,7 @@ const headers = [
   { title: 'Games %', key: 'games_winrate', sortable: true },
   { title: 'Seasons', key: 'seasons_played', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false }
-];
+].filter(h => auth.isAdmin || (h.key !== 'status' && h.key !== 'actions')));
 
 // Header keys the server names differently
 const sortNames = {
@@ -206,8 +212,31 @@ const handleFileUpload = async () => {
   }
 };
 
+// Player details dialog, opened by clicking a mapped name
+const showPlayerDetails = ref(false);
+const playerDetails = ref(null);
+const currentSeasonId = ref(null);
+const currentW3CSeason = ref(null);
+const currentSeasonName = computed(() => (seasons.value || []).find(s => s.id === currentSeasonId.value)?.name || '');
+
+const openPlayerDetails = async (user) => {
+  playerDetails.value = user;
+  showPlayerDetails.value = true;
+  // season context loads on the first open, not on every page view
+  if (!currentSeasonId.value) {
+    try {
+      await seasonStore.fetchSeasons();
+      currentSeasonId.value = await resolveCurrentSeasonId();
+      currentW3CSeason.value = await resolveCurrentW3CSeason();
+    } catch (error) {
+      console.error('Failed to resolve the current season:', error);
+    }
+  }
+};
+
 onMounted(async () => {
-  await playerStore.fetchPlayers();
+  // the full player list only feeds the admin "Link to User" autocomplete
+  if (auth.isAdmin) await playerStore.fetchPlayers();
   await fetchStats();
 });
 </script>
@@ -303,6 +332,11 @@ onMounted(async () => {
             item-value="id"
             class="elevation-1"
           >
+            <template v-slot:item.display_name="{ item }">
+              <PlayerName v-if="item.user" :player="item.user" :race="item.user.race" @click="openPlayerDetails(item.user)" />
+              <template v-else>{{ item.display_name }}</template>
+            </template>
+
             <template v-slot:item.status="{ item }">
               <v-chip
                 :color="item.user ? 'success' : 'warning'"
@@ -343,6 +377,15 @@ onMounted(async () => {
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Player Details Dialog -->
+    <PlayerDetailsDialog
+      v-model="showPlayerDetails"
+      :player="playerDetails"
+      :seasonId="currentSeasonId"
+      :seasonName="currentSeasonName"
+      :w3cSeason="currentW3CSeason"
+    />
 
     <!-- Edit Dialog -->
     <v-dialog v-model="editDialog" max-width="800px">

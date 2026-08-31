@@ -1,9 +1,9 @@
 <script setup>
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { onMounted, onUnmounted, computed, watch } from 'vue';
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
 import { useAuth } from '@clerk/vue';
-import { useAuthStore } from '@/stores';
+import { useAuthStore, useTeamStore } from '@/stores';
 import { canSeeRole } from '@/helpers';
 import w3cLogo from '@/assets/media/w3c-logo.png';
 
@@ -72,6 +72,20 @@ const roleLabel = computed(() => {
     const role = me.value?.role?.replace(/^./, c => c.toUpperCase());
     return me.value?.team ? `${role} · ${me.value.team.name}` : role;  // a captain is named with the team
 });
+
+// view-as: an admin sees the app as a lower role; the legacy token session cannot
+const canViewAs = computed(() => me.value?.actual_role === 'admin' && !authStore.user);
+const teamDialog = ref(false);
+const teams = ref([]);
+const chosenTeam = ref(null);
+const pickCaptain = async () => {
+    teams.value = await useTeamStore().getTeamsBasic();
+    teamDialog.value = true;
+};
+const applyCaptain = () => {
+    teamDialog.value = false;
+    authStore.setViewAs({ role: 'captain', teamId: chosenTeam.value });
+};
 </script>
 
 <template>
@@ -178,6 +192,13 @@ const roleLabel = computed(() => {
                         </template>
                         <v-list>
                             <v-list-item :title="me?.name" :subtitle="roleLabel" prepend-icon="mdi-account" to="/profile" />
+                            <template v-if="canViewAs">
+                                <v-divider />
+                                <v-list-subheader>View as</v-list-subheader>
+                                <v-list-item prepend-icon="mdi-eye-outline" title="Captain…" @click="pickCaptain" />
+                                <v-list-item prepend-icon="mdi-eye-outline" title="Member" @click="authStore.setViewAs({ role: 'member' })" />
+                                <v-list-item prepend-icon="mdi-eye-outline" title="Guest" @click="authStore.setViewAs({ role: 'guest' })" />
+                            </template>
                             <v-divider />
                             <v-list-item prepend-icon="mdi-logout" title="Logout" @click="authStore.logout()" />
                         </v-list>
@@ -186,11 +207,29 @@ const roleLabel = computed(() => {
             </template>
         </v-app-bar>  
 
-        <v-main>                  
-            <v-container>              
+        <v-main>
+            <v-alert v-if="authStore.viewAs" type="warning" density="compact" class="ma-2">
+                Viewing as {{ roleLabel }}
+                <template v-slot:append>
+                    <v-btn size="small" variant="outlined" @click="authStore.setViewAs(null)">Exit</v-btn>
+                </template>
+            </v-alert>
+            <v-dialog v-model="teamDialog" max-width="400">
+                <v-card title="View as captain">
+                    <v-card-text>
+                        <v-select v-model="chosenTeam" :items="teams" item-title="name" item-value="id" label="Team" />
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-spacer />
+                        <v-btn @click="teamDialog = false">Cancel</v-btn>
+                        <v-btn color="primary" :disabled="!chosenTeam" @click="applyCaptain">Apply</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+            <v-container>
                 <RouterView />
-            </v-container>  
-        </v-main>   
+            </v-container>
+        </v-main>
     </v-app>
 </template>
 

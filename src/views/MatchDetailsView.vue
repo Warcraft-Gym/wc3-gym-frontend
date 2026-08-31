@@ -510,7 +510,9 @@
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
-                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)" />
+                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
+                      <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                    </PlayerName>
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
@@ -581,7 +583,9 @@
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
-                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)" />
+                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
+                      <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                    </PlayerName>
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
@@ -790,11 +794,15 @@
                           single-line
                           clearable
                         ></v-text-field>
+                        <v-btn class="ml-2" size="small" variant="text" prepend-icon="mdi-account-check" @click="selectAvailableTeam1">
+                          Select available
+                        </v-btn>
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
                         <span class="text-caption text-grey">({{ item.discordTag }})</span>
+                        <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -853,11 +861,15 @@
                           single-line
                           clearable
                         ></v-text-field>
+                        <v-btn class="ml-2" size="small" variant="text" prepend-icon="mdi-account-check" @click="selectAvailableTeam2">
+                          Select available
+                        </v-btn>
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
                         <span class="text-caption text-grey">({{ item.discordTag }})</span>
+                        <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -1067,7 +1079,7 @@ import bannerImg from '@/assets/media/match-banner.jpg'
 import { useRouter } from 'vue-router';
 import { ref, onMounted, computed } from 'vue';
 import { DateTime } from "luxon";
-import { useAuthStore, useMatchStore, useSeriesStore, useTeamStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useMatchStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { fetchWrapper } from '@/helpers';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
@@ -1086,6 +1098,7 @@ const router = useRouter();
 const matchStore = useMatchStore();
 const seriesStore = useSeriesStore();
 const teamStore = useTeamStore();
+const availabilityStore = useAvailabilityStore();
 const auth = useAuthStore();
 const { match } = storeToRefs(matchStore);
 const { series, draftSeries } = storeToRefs(seriesStore);
@@ -1312,6 +1325,32 @@ const roster1 = computed(() => team1.value?.player_by_season?.[matchStore.match?
 const roster2 = computed(() => team2.value?.player_by_season?.[matchStore.match?.season_id] || []);
 // The tables hold ids, so a roster reload never leaves a selection pointing at a stale row
 const playersById = (roster, ids) => roster.filter(p => ids.includes(p.id));
+
+// Who said they cannot play this week; no answer counts as available and nothing is ever blocked
+const availability1 = ref([]);
+const availability2 = ref([]);
+
+const isOut = (rows, playerId) => rows.some(
+  row => row.user_id === playerId && row.playday === match.value?.playday && row.available === false
+);
+const outTeam1 = (player) => isOut(availability1.value, player.id);
+const outTeam2 = (player) => isOut(availability2.value, player.id);
+
+const selectAvailableTeam1 = () => {
+  proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p)).map(p => p.id);
+};
+const selectAvailableTeam2 = () => {
+  proposePlayersTeam_2.value = roster2.value.filter(p => !outTeam2(p)).map(p => p.id);
+};
+
+// A captain reads their own team only, so the team they cannot read stays empty
+const fetchAvailability = async () => {
+  const { team1_id, team2_id, season_id } = matchStore.match;
+  const read = (teamId) => (teamId && (auth.isAdmin || auth.me?.team?.id === teamId)
+    ? availabilityStore.fetchTeamAvailability(teamId, season_id).catch(() => [])
+    : Promise.resolve([]));
+  [availability1.value, availability2.value] = await Promise.all([read(team1_id), read(team2_id)]);
+};
 const newSeriesPlayer1 = computed(() => playersById(roster1.value, newSeries_Player_1.value)[0]);
 const newSeriesPlayer2 = computed(() => playersById(roster2.value, newSeries_Player_2.value)[0]);
 const selectedProposed = computed(() => proposedSeries.value.filter(ps => selectedProposedSeries.value.includes(ps.key)));
@@ -1449,6 +1488,7 @@ const fetchMatchDetails = async () => {
       matchStore.match.team1_id && matchStore.match.team2_id ? fetchTeamDetails() : null,
       fetchSeriesRows(),
       fetchSeasonMatches(),
+      fetchAvailability(),
     ]);
     await loadMissingSeriesPlayers();
   } catch (error) {

@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 import { useAuthStore } from '@/stores';
-import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView } from '@/views';
+import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, TeamWeeksView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -19,12 +19,15 @@ export const router = createRouter({
         { path: '/seasons', component: SeasonsView, meta: { role: 'guest' } },
         { path: '/signup', component: PublicSignupView, meta: { role: 'public', nav: false } },
         { path: '/player-dashboard', component: PlayerDashboardView, meta: { role: 'public', nav: false } },
+        { path: '/player-series/:id/veto', component: VetoBoardView, meta: { role: 'public', nav: false } },
         { path: '/fantasy-registration', component: FantasyDashboardView, meta: { role: 'public' } },
         { path: '/players', component: PlayersView, meta: { role: 'guest' } },
         { path: '/seasons/:id', component: SeasonDetailsView, meta: { role: 'guest' } },
         { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'admin' } },
+        { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false } },
         { path: '/match/:id', component: MatchDetailsView, meta: { role: 'guest' } },
         { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'guest' } },
+        { path: '/team/:id/season/:season_id/weeks', component: TeamWeeksView, meta: { role: 'captain', nav: false } },
         { path: '/maps', component: MapsView, meta: { role: 'admin' } },
         { path: '/teams', component: TeamsView, meta: { role: 'guest' } },
         { path: '/config', component: ConfigView, meta: { role: 'admin' } },

@@ -26,7 +26,12 @@ export const useMapStore = defineStore({
             await fetchWrapper.put(`${backendUrl}/maps/${mapId}`, map);
         },
         async createMap(map) {
-            await fetchWrapper.post(`${backendUrl}/maps`, map);
+            return await fetchWrapper.post(`${backendUrl}/maps`, map);
+        },
+        async uploadMapImage(map_id, file) {
+            const formData = new FormData();
+            formData.append("image", file);
+            await fetchWrapper.fileUpload(`${backendUrl}/maps/${map_id}/image`, formData);
         },
         async deleteMap(map_id) {
             await fetchWrapper.delete(`${backendUrl}/maps/${map_id}`);

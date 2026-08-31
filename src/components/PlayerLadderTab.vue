@@ -47,7 +47,7 @@
           </div>
         </div>
         <div>
-          <ColumnNote :note="MMR_NOTE" class="text-caption text-medium-emphasis"><W3CMmr /></ColumnNote>
+          <div class="text-caption text-medium-emphasis"><W3CMmr /></div>
           <div class="text-h6">
             {{ data?.mmr?.current ?? '—' }}
             <span class="text-caption text-medium-emphasis">{{ mmrRange }}</span>
@@ -165,7 +165,7 @@ import { DateTime } from 'luxon';
 import { useLadderStore, useSeasonStore } from '@/stores';
 import RaceIcon from '@/components/RaceIcon.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
-import { achievementPoints, SCORED_NOTE, MMR_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
+import { achievementPoints, SCORED_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
 import AchievementIcon from '@/components/AchievementIcon.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';

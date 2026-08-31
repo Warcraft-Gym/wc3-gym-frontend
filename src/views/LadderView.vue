@@ -198,9 +198,7 @@
               <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
             </template>
             <template v-slot:[`header.mmrDiff`]="{ column, isSorted, getSortIcon }">
-              <ColumnNote :note="MMR_NOTE" :sort-icon="isSorted(column) ? getSortIcon(column) : null">
-                <W3CMmr suffix=" +/-" />
-              </ColumnNote>
+              <W3CMmr suffix=" +/-" :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
             </template>
             <template v-slot:[`item.race`]="{ item }">
               <RaceIcon v-if="item.race" :raceIdentifier="item.race" />
@@ -266,7 +264,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import w3championsLogo from '@/assets/media/w3champions-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
-import { SCORED_NOTE, MMR_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
+import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, BADGES_CREDIT } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';

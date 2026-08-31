@@ -71,6 +71,63 @@
       </v-card-text>
     </v-card>
 
+    <v-card v-if="!isLoading && weeks.length" elevation="2" class="mb-6">
+      <v-card-title class="bg-primary d-flex justify-space-between align-center">
+        <div class="d-flex align-center">
+          <v-icon class="mr-2">mdi-calendar-check</v-icon>
+          <span>My Weeks</span>
+        </div>
+        <v-chip color="white" variant="outlined">
+          {{ answeredWeeks }} of {{ weeksAhead.length }} answered
+        </v-chip>
+      </v-card-title>
+      <v-card-text class="d-flex flex-wrap ga-3 pt-4">
+        <v-sheet
+          v-for="week in weeks"
+          :key="week"
+          border
+          rounded
+          class="pa-3 flex-grow-1"
+          style="min-width: 210px"
+        >
+          <div class="text-subtitle-2">Week {{ week }}</div>
+
+          <div v-if="week < currentWeek" class="mt-2">
+            <v-chip v-if="seriesOfWeek(week)" :color="getScoreColor(seriesOfWeek(week))" variant="outlined" size="small">
+              {{ seriesOfWeek(week).player1_score || 0 }} - {{ seriesOfWeek(week).player2_score || 0 }}
+            </v-chip>
+            <v-chip v-else variant="tonal" size="small">No series</v-chip>
+          </div>
+
+          <template v-else>
+            <div class="d-flex ga-2 mt-2">
+              <v-btn
+                size="small"
+                color="success"
+                :variant="answerFor(week) === true ? 'flat' : 'outlined'"
+                :loading="savingWeek === week"
+                :disabled="savingWeek !== null"
+                @click="setWeek(week, true)"
+              >
+                Can play
+              </v-btn>
+              <v-btn
+                size="small"
+                color="error"
+                :variant="answerFor(week) === false ? 'flat' : 'outlined'"
+                :loading="savingWeek === week"
+                :disabled="savingWeek !== null"
+                @click="setWeek(week, false)"
+              >
+                Cannot play
+              </v-btn>
+            </div>
+            <div class="text-caption text-medium-emphasis mt-2">{{ setByLine(week) }}</div>
+          </template>
+        </v-sheet>
+      </v-card-text>
+    </v-card>
+
     <v-card v-if="!isLoading && playerData" elevation="2">
       <v-card-title class="bg-primary d-flex justify-space-between align-center">
         <div class="d-flex align-center">
@@ -372,7 +429,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
-import { useAuthStore, useSeasonStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useSeasonStore } from '@/stores';
 import { getW3CMMR } from '@/helpers/w3c-stats';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
@@ -584,6 +641,51 @@ const getScoreColor = (item) => {
   if (myScore > oppScore) return 'success';
   if (myScore < oppScore) return 'error';
   return 'warning';
+};
+
+// My weeks: /player-series carries the answers and the length of the season
+const availabilityStore = useAvailabilityStore();
+const savingWeek = ref(null);
+
+const weeks = computed(() => Array.from({ length: playerData.value?.number_weeks || 0 }, (_, i) => i + 1));
+
+// the earliest week whose series has no score; a season with none left starts again at week 1
+const currentWeek = computed(() => {
+  const open = series.value
+    .filter(item => !item.player1_score && !item.player2_score)
+    .map(item => item.match?.playday)
+    .filter(Boolean);
+  return open.length ? Math.min(...open) : 1;
+});
+
+const weeksAhead = computed(() => weeks.value.filter(week => week >= currentWeek.value));
+const answeredWeeks = computed(() => weeksAhead.value.filter(week => answerFor(week) !== null).length);
+
+const seriesOfWeek = (week) => series.value.find(item => item.match?.playday === week);
+const rowOfWeek = (week) => playerData.value?.availability?.find(row => row.playday === week);
+const answerFor = (week) => rowOfWeek(week)?.available ?? null;
+
+const setByLine = (week) => {
+  const row = rowOfWeek(week);
+  if (!row) return 'No answer';
+  return `Set by ${row.set_by_user_id === playerData.value?.player?.id ? 'You' : row.set_by_name}`;
+};
+
+// a second click on the state already set clears the week back to no answer
+const setWeek = async (week, want) => {
+  savingWeek.value = week;
+  errorMessage.value = null;
+  try {
+    const answer = { playday: week, available: answerFor(week) === want ? null : want };
+    if (token.value) answer.token = token.value;
+    if (playerData.value?.season_id) answer.season_id = Number(playerData.value.season_id);
+    playerData.value.availability = await availabilityStore.setPlayerAvailability(answer);
+  } catch (error) {
+    console.error('Error saving availability:', error);
+    errorMessage.value = error.message || 'Error saving availability.';
+  } finally {
+    savingWeek.value = null;
+  }
 };
 
 // Edit schedule handlers

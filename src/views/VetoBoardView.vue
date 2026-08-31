@@ -27,18 +27,7 @@
       </v-col>
     </v-row>
 
-    <v-alert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      border="start"
-      border-color="red"
-      class="mb-4"
-      closable
-      @click:close="errorMessage = null"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
     <div v-if="!board && !errorMessage" class="d-flex justify-center pa-8">
       <v-progress-circular color="primary" indeterminate size="64" />
@@ -173,6 +162,7 @@ import { fetchWrapper } from '@/helpers';
 import { hideMissingImage } from '@/helpers/team-image';
 import { useMapStore } from '@/stores';
 import PlayerName from '@/components/PlayerName.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 const route = useRoute();
 const backendUrl = import.meta.env.VITE_BACKEND_URL;

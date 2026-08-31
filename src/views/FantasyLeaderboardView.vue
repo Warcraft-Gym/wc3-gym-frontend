@@ -146,8 +146,7 @@
 
   <!-- Player Details Dialog -->
   <PlayerDetailsDialog
-    v-model="playerDialog"
-    :player="selectedPlayer"
+    ref="playerDetailsDialog"
     :seasonId="selectedSeasonId"
     :w3cSeason="currentW3CSeason"
   />
@@ -160,18 +159,7 @@
         {{ isEditing ? 'Edit Fantasy Team' : 'Create Fantasy Team' }}
       </v-card-title>
       <v-card-text class="pt-4">
-        <v-alert
-          v-if="dialogErrorMessage"
-          type="error"
-          variant="tonal"
-          border="start"
-          border-color="red"
-          class="mb-4"
-          closable
-          @click:close="dialogErrorMessage = null"
-        >
-          {{ dialogErrorMessage }}
-        </v-alert>
+        <StatusAlert v-model="dialogErrorMessage" />
         <v-form ref="teamForm">
           <v-row>
             <v-col cols="12" md="6">
@@ -302,6 +290,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore, useFantasyStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { loadSeasons, resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const fantasyStore = useFantasyStore();
@@ -324,8 +313,7 @@ const teamToDelete = ref(null);
 const isEditing = ref(false);
 const expanded = ref([]);
 const breakdowns = ref({});  // by team id, filled when a row expands
-const playerDialog = ref(false);
-const selectedPlayer = ref(null);
+const playerDetailsDialog = ref(null);
 const players = ref([]);
 const gnlTeams = ref([]);
 const races = ref([
@@ -378,8 +366,7 @@ const headers = computed(() => [
 const myUserId = computed(() => auth.me?.user?.id ?? null);
 
 const openPlayer = (player) => {
-  selectedPlayer.value = player;
-  playerDialog.value = true;
+  playerDetailsDialog.value.open(player);
 };
 
 // An expanded row shows the breakdown, fetched once per team and season

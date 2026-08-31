@@ -13,13 +13,9 @@
       </v-col>
     </v-row>
 
-    <v-alert v-if="errorMessage" type="error" variant="tonal" border="start" border-color="red" class="mb-4" closable @click:close="errorMessage = null">
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
-    <v-alert v-if="successMessage" type="success" variant="tonal" border="start" border-color="green" class="mb-4" closable @click:close="successMessage = null">
-      {{ successMessage }}
-    </v-alert>
+    <StatusAlert v-model="successMessage" type="success" />
 
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
@@ -124,6 +120,7 @@ import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { useAuthStore, useConfigStore, usePlayerStore } from '@/stores';
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 const authStore = useAuthStore();
 const configStore = useConfigStore();

@@ -293,8 +293,7 @@
 
   <!-- Player Details Modal -->
   <PlayerDetailsDialog 
-    v-model="showPlayerDetails" 
-    :player="playerDetails" 
+    ref="playerDetailsDialog"
     :seasonId="seasonId"
     :w3cSeason="currentW3CSeason"
   />
@@ -372,8 +371,7 @@ const missingRoleCaptains = computed(() =>
 );
 
 // Player details state
-const showPlayerDetails = ref(false);
-const playerDetails = ref(null);
+const playerDetailsDialog = ref(null);
 
 // Ladder card state
 const seasonLadder = ref(null);
@@ -560,8 +558,7 @@ const isRowDisabled = (item) => {
 };
 
 const showStats = async (player) => {
-  showPlayerDetails.value = true;
-  playerDetails.value = player;
+  playerDetailsDialog.value.open(player);
 };
 
 

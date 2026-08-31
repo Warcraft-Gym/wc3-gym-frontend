@@ -24,31 +24,9 @@
       </v-col>
     </v-row>
 
-    <v-alert
-      v-if="errorMessage"
-      type="error"
-      variant="tonal"
-      border="start"
-      border-color="red"
-      class="mb-4"
-      closable
-      @click:close="errorMessage = null"
-    >
-      {{ errorMessage }}
-    </v-alert>
+    <StatusAlert v-model="errorMessage" />
 
-    <v-alert
-      v-if="successMessage"
-      type="success"
-      variant="tonal"
-      border="start"
-      border-color="green"
-      class="mb-4"
-      closable
-      @click:close="successMessage = null"
-    >
-      {{ successMessage }}
-    </v-alert>
+    <StatusAlert v-model="successMessage" type="success" />
     <v-card v-if="!isLoading && playerData" elevation="2" class="mb-6">
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-account-circle</v-icon>
@@ -607,8 +585,7 @@
 
   <!-- Player Details Dialog -->
   <PlayerDetailsDialog
-    v-model="showPlayerDetailsDialog"
-    :player="selectedPlayerForDetails"
+    ref="playerDetailsDialog"
     :seasonId="playerData?.season_id ? Number(playerData.season_id) : null"
     :w3cSeason="currentW3CSeason"
   />
@@ -631,6 +608,7 @@ import { DateTime } from 'luxon';
 import { formatDateTime } from '@/helpers/datetime';
 import { useDisplay } from 'vuetify';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const route = useRoute();
@@ -649,13 +627,11 @@ const isMobile = computed(() => {
 });
 
 // Player Details Dialog
-const showPlayerDetailsDialog = ref(false);
-const selectedPlayerForDetails = ref(null);
+const playerDetailsDialog = ref(null);
 
 const showPlayerDetails = (player) => {
   if (!player) return;
-  selectedPlayerForDetails.value = player;
-  showPlayerDetailsDialog.value = true;
+  playerDetailsDialog.value.open(player);
 };
 
 // State

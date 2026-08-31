@@ -283,8 +283,7 @@
     
     <!-- Player Details Dialog -->
     <PlayerDetailsDialog 
-      v-model="showPlayerDetails"
-      :player="playerDetails"
+      ref="playerDetailsDialog"
       :seasonId="currentSeasonId"
       :seasonName="currentSeasonName"
       :w3cSeason="currentW3CSeason"
@@ -448,16 +447,14 @@ const openPlayerDetails = async (player) => {
   if (!currentSeasonId.value) currentSeasonId.value = await resolveCurrentSeasonId();
 
   // if player object doesn't include stats, we rely on the players list
-  playerDetails.value = player;
-  showPlayerDetails.value = true;
+  playerDetailsDialog.value.open(player);
 };
 
 // per-player sync status map: { [playerId]: { state: 'loading'|'success'|'error', message?: string } }
 const perPlayerSyncStatus = ref({});
 
 // Player details dialog state
-const showPlayerDetails = ref(false);
-const playerDetails = ref(null);
+const playerDetailsDialog = ref(null);
 
 // current season id preference (resolved from settings or fallback)
 const currentSeasonId = ref(null);

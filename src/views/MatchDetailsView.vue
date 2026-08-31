@@ -467,17 +467,18 @@
 
         <v-card-text class="pa-4 flex-grow-1" style="overflow-y: auto;">
           <v-row class="justify-space-between h-100" dense>
+            <template v-for="(s, i) in sideTeams" :key="i">
             <v-col cols="12" md="5" class="d-flex flex-column">
               <v-card elevation="2" class="d-flex flex-column flex-grow-1">
                 <v-toolbar color="primary" density="compact" class="flex-shrink-0">
                   <v-icon class="ml-3">mdi-shield</v-icon>
-                  <v-toolbar-title>{{ team1.name }}</v-toolbar-title>
+                  <v-toolbar-title>{{ s.team.name }}</v-toolbar-title>
                   <v-spacer></v-spacer>
                   <v-text-field
-                    v-model="searchQueryT1"
+                    v-model="searchQueryTeam[i]"
                     density="compact"
                     hide-details
-                    label="Search Team 1"
+                    :label="`Search Team ${i + 1}`"
                     prepend-inner-icon="mdi-magnify"
                     single-line
                     variant="underlined"
@@ -488,9 +489,9 @@
                 <v-data-table
                   :headers="tablePlayerHeader"
                   :custom-filter="customFilter"
-                  :search="searchQueryT1"
-                  v-model="newSeries_Player_1"
-                  :items="roster1"
+                  :search="searchQueryTeam[i]"
+                  v-model="newSeriesPlayers[i]"
+                  :items="s.roster"
                   item-value="id"
                   select-strategy="single"
                   density="compact"
@@ -511,7 +512,7 @@
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
                     <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
-                      <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                      <v-chip v-if="s.isOut(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                     </PlayerName>
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -522,10 +523,10 @@
                     </td>
                   </template>
                 </v-data-table>
-              </v-card>                    
+              </v-card>
             </v-col>
 
-            <v-col cols="12" md="2" class="d-flex flex-column align-center justify-center">
+            <v-col v-if="i === 0" cols="12" md="2" class="d-flex flex-column align-center justify-center">
               <v-icon size="80" color="primary" class="mb-4">mdi-sword-cross</v-icon>
               <v-btn 
                 color="success" 
@@ -539,64 +540,7 @@
                 <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
               </v-btn>
             </v-col> 
-
-            <v-col cols="12" md="5" class="d-flex flex-column">
-              <v-card elevation="2" class="d-flex flex-column flex-grow-1">
-                <v-toolbar color="primary" density="compact" class="flex-shrink-0">
-                  <v-icon class="ml-3">mdi-shield</v-icon>
-                  <v-toolbar-title>{{ team2.name }}</v-toolbar-title>
-                  <v-spacer></v-spacer>
-                  <v-text-field
-                    v-model="searchQueryT2"
-                    density="compact"
-                    hide-details
-                    label="Search Team 2"
-                    prepend-inner-icon="mdi-magnify"
-                    single-line
-                    variant="underlined"
-                    clearable
-                    style="max-width: 300px;"
-                  ></v-text-field>
-                </v-toolbar>
-                <v-data-table
-                  :headers="tablePlayerHeader"
-                  :custom-filter="customFilter"
-                  :search="searchQueryT2"
-                  v-model="newSeries_Player_2"
-                  :items="roster2"
-                  item-value="id"
-                  select-strategy="single"
-                  density="compact"
-                  multi-sort
-                  fixed-header
-                  hover
-                  show-select
-                  class="flex-grow-1"
-                >
-                  <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
-                  </template>
-                  <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
-                  </template>
-                  <template v-slot:loading>
-                    <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
-                  </template>
-                  <template v-slot:[`item.name`]="{ item }">
-                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
-                      <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
-                    </PlayerName>
-                  </template>
-                  <template v-slot:[`item.w3c_mmr`]="{ item }">
-                    <td>
-                      {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
-                      <span v-if="mmrSeasonLabel(item, currentW3CSeason)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason) }}</span>
-                      <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
-                    </td>
-                  </template>
-                </v-data-table>
-              </v-card> 
-            </v-col>
+            </template>
           </v-row>     
         </v-card-text>
                       
@@ -764,7 +708,7 @@
                     :items="roster1"
                     item-value="id"
                     :custom-filter="customFilter"
-                    :search="searchQueryT1"
+                    :search="searchQueryTeam[0]"
                     v-model="proposePlayersTeam_1"
                     select-strategy="all"
                     density="comfortable"
@@ -785,7 +729,7 @@
                     <template v-slot:top>
                       <v-toolbar flat density="compact">
                         <v-text-field
-                          v-model="searchQueryT1"
+                          v-model="searchQueryTeam[0]"
                           placeholder="Search players..."
                           prepend-inner-icon="mdi-magnify"
                           variant="outlined"
@@ -831,7 +775,7 @@
                     :items="roster2"
                     item-value="id"
                     :custom-filter="customFilter"
-                    :search="searchQueryT2"
+                    :search="searchQueryTeam[1]"
                     v-model="proposePlayersTeam_2"
                     select-strategy="all"
                     density="comfortable"
@@ -852,7 +796,7 @@
                     <template v-slot:top>
                       <v-toolbar flat density="compact">
                         <v-text-field
-                          v-model="searchQueryT2"
+                          v-model="searchQueryTeam[1]"
                           placeholder="Search players..."
                           prepend-inner-icon="mdi-magnify"
                           variant="outlined"
@@ -1053,8 +997,7 @@
 
   <!-- Player Details Dialog -->
   <PlayerDetailsDialog 
-    v-model="showPlayerDetails" 
-    :player="playerDetails" 
+    ref="playerDetailsDialog"
     :seasonId="match?.season_id"
     :seasonName="match?.season?.name"
     :w3cSeason="currentW3CSeason"
@@ -1256,8 +1199,7 @@ const loadMissingSeriesPlayers = async () => {
 
 // Series state
 const createNewSeriesDialogOpen = ref(false);
-const newSeries_Player_1 = ref([]);
-const newSeries_Player_2 = ref([]);
+const newSeriesPlayers = ref([[], []]);
 const newSeries_IsDraft = ref(false);
 const editSeriesDialogOpen = ref(false);
 const selectedSeries = ref(null);
@@ -1280,13 +1222,11 @@ const proposedSeries = ref([]);
 const selectedProposedSeries = ref([]);
 
 // Search state
-const searchQueryT1 = ref('');
-const searchQueryT2 = ref('');
+const searchQueryTeam = ref(['', '']);
 const searchQuerySeries = ref('');
 
 // Player details state
-const showPlayerDetails = ref(false);
-const playerDetails = ref(null);
+const playerDetailsDialog = ref(null);
 
 // Sync state
 const syncDialog = ref(false);
@@ -1328,6 +1268,10 @@ const isOut = (rows, playerId) => rows.some(
 );
 const outTeam1 = (player) => isOut(availability1.value, player.id);
 const outTeam2 = (player) => isOut(availability2.value, player.id);
+const sideTeams = computed(() => [
+  { team: team1.value, roster: roster1.value, isOut: outTeam1 },
+  { team: team2.value, roster: roster2.value, isOut: outTeam2 },
+]);
 
 const selectAvailableTeam1 = () => {
   proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p)).map(p => p.id);
@@ -1344,8 +1288,8 @@ const fetchAvailability = async () => {
     : Promise.resolve([]));
   [availability1.value, availability2.value] = await Promise.all([read(team1_id), read(team2_id)]);
 };
-const newSeriesPlayer1 = computed(() => playersById(roster1.value, newSeries_Player_1.value)[0]);
-const newSeriesPlayer2 = computed(() => playersById(roster2.value, newSeries_Player_2.value)[0]);
+const newSeriesPlayer1 = computed(() => playersById(roster1.value, newSeriesPlayers.value[0])[0]);
+const newSeriesPlayer2 = computed(() => playersById(roster2.value, newSeriesPlayers.value[1])[0]);
 const selectedProposed = computed(() => proposedSeries.value.filter(ps => selectedProposedSeries.value.includes(ps.key)));
 const proposedKey = (p1, p2) => `${p1.id}-${p2.id}`;
 
@@ -1415,16 +1359,14 @@ const customFilterSeries = (value, search, item) => {
 
 const openCreateNewSeries = () => {
   createNewSeriesDialogOpen.value = true;
-  newSeries_Player_1.value = [];
-  newSeries_Player_2.value = [];
+  newSeriesPlayers.value = [[], []];
   newSeries_IsDraft.value = false;
   creationSeriesError.value = null;
 };
 
 const openCreateNewDraftSeries = () => {
   createNewSeriesDialogOpen.value = true;
-  newSeries_Player_1.value = [];
-  newSeries_Player_2.value = [];
+  newSeriesPlayers.value = [[], []];
   newSeries_IsDraft.value = true; // Force draft mode
   creationSeriesError.value = null;
 };
@@ -1527,8 +1469,7 @@ const syncW3CTeams = async () => {
 };
 
 const showStats = async(player) => {
-  showPlayerDetails.value = true;
-  playerDetails.value = player;
+  playerDetailsDialog.value.open(player);
 }
 
 const fetchSeriesRows = () => Promise.all([

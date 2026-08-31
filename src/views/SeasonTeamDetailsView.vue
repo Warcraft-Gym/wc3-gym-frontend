@@ -121,7 +121,7 @@
             <th class="text-right">L</th>
             <th class="text-right"><W3CMmr /></th>
             <th class="text-right">
-              <ColumnNote :note="MMR_NOTE"><W3CMmr suffix=" +/-" /></ColumnNote>
+              <W3CMmr suffix=" +/-" />
             </th>
           </tr>
         </thead>
@@ -308,7 +308,7 @@ import RowActions from '@/components/RowActions.vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore, useTeamStore, usePlayerStore, useLadderStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { SCORED_NOTE, MMR_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers/achievements';
+import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { computed, onMounted, ref, watch } from 'vue';

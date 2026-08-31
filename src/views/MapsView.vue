@@ -39,7 +39,7 @@
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-spacer />
                 <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewMapModal = true" block>
+                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap" block>
                     Add New Map
                   </v-btn>
                 </v-col>
@@ -61,67 +61,22 @@
         <v-icon size="64" color="grey-lighten-1">mdi-map-outline</v-icon>
         <div class="text-h6 text-grey mt-4 mb-2">No maps found</div>
         <p class="text-grey-darken-1 mb-4">Get started by adding your first map</p>
-        <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewMapModal = true">
+        <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">
           Add First Map
         </v-btn>
       </v-card-text>
     </v-card>
 
-    <!-- Add New Map Dialog -->
-    <v-dialog v-model="showNewMapModal" max-width="600">
-      <v-card>
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-map-plus</v-icon>
-          Add New Map
-        </v-card-title>
-
-        <v-alert v-if="creationError" type="error" variant="tonal" border="start" border-color="red" class="mx-4 my-2" closable @click:close="creationError = null">
-          {{ creationError }}
-        </v-alert>
-
-        <v-card-text class="pt-4">
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="newMap.name"
-                label="Map Name"
-                variant="outlined"
-                prepend-inner-icon="mdi-map"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="newMap.shortname"
-                label="Short Name"
-                variant="outlined"
-                prepend-inner-icon="mdi-text-short"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="cancelAddNewMap">Cancel</v-btn>
-          <v-btn @click="createNewMap" color="primary" variant="elevated" prepend-icon="mdi-plus">
-            Add Map
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Edit Map Dialog -->
-    <v-dialog v-model="editDialogOpen" max-width="600">
+    <!-- Add / Edit Map Dialog -->
+    <v-dialog v-model="mapDialogOpen" max-width="600">
       <v-card v-if="selectedMap">
         <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-pencil</v-icon>
-          Edit Map: {{ selectedMap.name }}
+          <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-map-plus' }}</v-icon>
+          {{ isEditing ? `Edit Map: ${selectedMap.name}` : 'Add New Map' }}
         </v-card-title>
 
-        <v-alert v-if="updateError" type="error" variant="tonal" border="start" border-color="red" class="mx-4 my-2" closable @click:close="updateError = null">
-          {{ updateError }}
+        <v-alert v-if="formError" type="error" variant="tonal" border="start" border-color="red" class="mx-4 my-2" closable @click:close="formError = null">
+          {{ formError }}
         </v-alert>
 
         <v-card-text class="pt-4">
@@ -149,40 +104,30 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn @click="cancelEdit">Cancel</v-btn>
-          <v-btn @click="updateMap" color="primary" variant="elevated" prepend-icon="mdi-content-save">
-            Save Changes
+          <v-btn @click="closeMapDialog">Cancel</v-btn>
+          <v-btn @click="isEditing ? updateMap() : createNewMap()" color="primary" variant="elevated" :prepend-icon="isEditing ? 'mdi-content-save' : 'mdi-plus'">
+            {{ isEditing ? 'Save Changes' : 'Add Map' }}
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="showDeleteDialog" max-width="400">
-      <v-card>
-        <v-card-title class="bg-error text-white">
-          <v-icon class="mr-2">mdi-alert</v-icon>
-          Confirm Deletion
-        </v-card-title>
-        <v-card-text class="pt-4">
-          Are you sure you want to delete this map? This action cannot be undone.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="cancelDeleteDialog" variant="text">Cancel</v-btn>
-          <v-btn @click="confirmDelete" color="error" variant="elevated" prepend-icon="mdi-delete">
-            Delete
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <ConfirmDeleteDialog
+      v-model="showDeleteDialog"
+      message="Are you sure you want to delete this map? This action cannot be undone."
+      delete-icon="mdi-delete"
+      @confirm="confirmDelete"
+      @cancel="cancelDeleteDialog"
+    />
   </v-container>
 </template>
 <script setup>
 import RowActions from '@/components/RowActions.vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { useMapStore } from '@/stores';
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useDeleteDialog } from '@/helpers/delete-dialog';
 
 
 // Store
@@ -193,21 +138,12 @@ const { maps } = storeToRefs(mapStore);
 const selectedMap = ref(null);
 const isLoading = ref(false);
 const errorMessage = ref(null);
-const showNewMapModal = ref(false);
-const editDialogOpen = ref(false);
-const creationError = ref(null);
-const updateError = ref(null);
-
-// Form state
-const newMap = ref({
-  name: '',
-  shortname: ''
-});
+const mapDialogOpen = ref(false);
+const isEditing = ref(false);
+const formError = ref(null);
 
 // Delete dialog state
-const showDeleteDialog = ref(false);
-const selectedDeleteItemId = ref(null);
-const deleteAction = ref(null);
+const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
 // Table configuration
 const tableHeader = [
@@ -237,39 +173,44 @@ const fetchMaps = async () => {
   }
 };
 
+const openCreateMap = () => {
+  selectedMap.value = {
+    name: '',
+    shortname: ''
+  };
+  formError.value = null;
+  isEditing.value = false;
+  mapDialogOpen.value = true;
+};
+
 const editMap = (map) => {
   selectedMap.value = { ...map };
-  updateError.value = null;
-  editDialogOpen.value = true;
+  formError.value = null;
+  isEditing.value = true;
+  mapDialogOpen.value = true;
 };
 
 const updateMap = async () => {
-  updateError.value = null;
+  formError.value = null;
   try {
     await mapStore.updateMap(selectedMap.value);
     await fetchMaps();
-    cancelEdit();
+    closeMapDialog();
   } catch (error) {
     console.error('Error updating map:', error);
-    updateError.value = 'Failed to update map. Please try again.';
+    formError.value = 'Failed to update map. Please try again.';
   }
 };
 
-const cancelEdit = () => {
-  selectedMap.value = null;
-  updateError.value = null;
-  editDialogOpen.value = false;
-};
-
 const createNewMap = async () => {
-  creationError.value = null;
+  formError.value = null;
   try {
-    await mapStore.createMap(newMap.value);
+    await mapStore.createMap(selectedMap.value);
     await fetchMaps();
-    cancelAddNewMap();
+    closeMapDialog();
   } catch (error) {
     console.error('Error creating map:', error);
-    creationError.value = 'Failed to create map. Please try again.';
+    formError.value = 'Failed to create map. Please try again.';
   }
 };
 
@@ -282,34 +223,10 @@ const removeMap = async (mapId) => {
   }
 };
 
-const cancelAddNewMap = () => {
-  showNewMapModal.value = false;
-  creationError.value = null;
-  newMap.value = {
-    name: '',
-    shortname: ''
-  };
-};
-
-const openDeleteDialog = (id, action) => {
-  selectedDeleteItemId.value = id;
-  deleteAction.value = action;
-  showDeleteDialog.value = true;
-};
-
-const confirmDelete = () => {
-  if (selectedDeleteItemId.value && deleteAction.value) {
-    deleteAction.value(selectedDeleteItemId.value);
-  } else if (deleteAction.value) {
-    deleteAction.value();
-  }
-  showDeleteDialog.value = false;
-};
-
-const cancelDeleteDialog = () => {
-  showDeleteDialog.value = false;
-  selectedDeleteItemId.value = null;
-  deleteAction.value = null;
+const closeMapDialog = () => {
+  mapDialogOpen.value = false;
+  formError.value = null;
+  selectedMap.value = null;
 };
 
 // Lifecycle hooks

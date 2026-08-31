@@ -265,134 +265,21 @@
       </v-card>
     </v-dialog>
 
-    <!-- Edit Player Dialog -->
-    <v-dialog v-model="showEditPlayerModal" max-width="800">
-      <v-card v-if="selectedPlayer">
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-pencil</v-icon>
-          Edit Player: {{ selectedPlayer.name }}
-        </v-card-title>
+    <EditPlayerDialog
+      ref="editPlayerDialog"
+      :seasons="seasons"
+      :can-save="auth.isAdmin"
+      :refresh="fetchPlayers"
+    />
 
-        <v-alert
-          v-if="updateError"
-          type="error"
-          variant="tonal"
-          border="start"
-          border-color="red"
-          class="mx-4 my-2"
-          closable
-          @click:close="updateError = null"
-        >
-          {{ updateError }}
-        </v-alert>
-
-        <v-card-text class="pt-4">
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.name"
-                label="Player Name"
-                variant="outlined"
-                prepend-inner-icon="mdi-account"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.battleTag"
-                label="BattleTag"
-                variant="outlined"
-                prepend-inner-icon="mdi-shield-account"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <CountrySelect v-model="selectedPlayer.country" />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.discordTag"
-                label="Discord Tag"
-                variant="outlined"
-                prepend-inner-icon="mdi-discord"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.discordId"
-                label="Discord ID"
-                hint="Numeric Discord user ID (required)"
-                variant="outlined"
-                prepend-inner-icon="mdi-identifier"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <RaceSelect v-model="selectedPlayer.race" />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.fantasy_tier"
-                label="Fantasy Tier"
-                variant="outlined"
-                prepend-inner-icon="mdi-trophy"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <v-select
-                v-model="selectedSignupSeasonIds"
-                :items="seasons"
-                item-title="name"
-                item-value="id"
-                multiple
-                chips
-                label="Signed-up Seasons"
-                variant="outlined"
-                prepend-inner-icon="mdi-calendar-check"
-                density="comfortable"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="cancelEdit">Cancel</v-btn>
-          <v-btn v-if="auth.isAdmin" @click="updatePlayer" color="primary" variant="elevated" prepend-icon="mdi-content-save">
-            Save Changes
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="showDeleteDialog" max-width="400">
-      <v-card>
-        <v-card-title class="bg-error text-white">
-          <v-icon class="mr-2">mdi-alert</v-icon>
-          Confirm Deletion
-        </v-card-title>
-        <v-card-text class="pt-4">
-          Are you sure you want to delete this player? This action cannot be undone.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="cancelDeleteDialog" variant="text">Cancel</v-btn>
-          <v-btn v-if="auth.isAdmin" @click="confirmDelete" color="error" variant="elevated" prepend-icon="mdi-delete">
-            Delete
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <ConfirmDeleteDialog
+      v-model="showDeleteDialog"
+      message="Are you sure you want to delete this player? This action cannot be undone."
+      delete-icon="mdi-delete"
+      :can-delete="auth.isAdmin"
+      @confirm="confirmDelete"
+      @cancel="cancelDeleteDialog"
+    />
     
     <!-- Player Details Dialog -->
     <PlayerDetailsDialog 
@@ -410,7 +297,10 @@ import { useAuthStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref, computed } from 'vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
+import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import {
   getAllRaceStats,
@@ -424,14 +314,12 @@ import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers
 
 
 // State for editing
-const selectedPlayer = ref(null);
+const editPlayerDialog = ref(null);
 const isLoading  = ref(false); // State for selected user
 const isCreating = ref(false); // State for creating new player
 const errorMessage = ref(null);
 const creationError = ref(null);
-const updateError = ref(null);
 const showNewPlayerModal = ref(false);
-const showEditPlayerModal = ref(false);
 const newPlayer = ref({
   name: '',
   battleTag: '',
@@ -487,13 +375,8 @@ const filteredPlayers = computed(() => {
 
   return list;
 });
-// seasons for signup selection
-const selectedSignupSeasonIds = ref([]);
-let originalSignupSeasonIds = [];
 // Fetch data when the page is loaded
-const showDeleteDialog = ref(false);
-const selectedDeleteItemId = ref(null);
-const deleteAction = ref(null);
+const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 //research models
 const searchRace = ref(null);
 const searchName = ref(null);
@@ -587,12 +470,6 @@ const bestMmr = (player) => Math.max(0, ...getAllRaceStats(player, currentW3CSea
   .filter((stat) => (stat.games || 0) > 0)
   .map((stat) => stat.mmr || 0));
 
-const openDeleteDialog = (id, action) => {
-  selectedDeleteItemId.value = id;
-  deleteAction.value = action; // Store the function dynamically
-  showDeleteDialog.value = true;
-};
-
 const openCreateNew = async () => {
   try {
     if (seasonStore && seasonStore.fetchSeasons) await seasonStore.fetchSeasons();
@@ -613,74 +490,10 @@ const openCreateNew = async () => {
   showNewPlayerModal.value = true;
 };
 
-const confirmDelete = () => {
-  if (selectedDeleteItemId.value && deleteAction.value) {
-    deleteAction.value(selectedDeleteItemId.value); // Call the dynamically stored function
-    showDeleteDialog.value = false;
-  } else if (deleteAction.value) {
-    deleteAction.value(); // Call the dynamically stored function
-    showDeleteDialog.value = false;
-  }
-};
-
-const cancelDeleteDialog = () => {
-  showDeleteDialog.value = false;
-  selectedDeleteItemId.value = null;
-  deleteAction.value = null; // Store the function dynamically
-};
-
 // Methods
 
 
-const editPlayer = async (player) => {
-  try {
-    if (seasonStore && seasonStore.fetchSeasons) await seasonStore.fetchSeasons();
-  } catch (err) {
-    console.error('Failed to fetch seasons before opening edit player dialog:', err);
-  }
-  selectedPlayer.value = { ...player }; // Clone the user object to avoid modifying the original object directly
-  updateError.value = '';
-  // prepare signup seasons selection
-  const signup = selectedPlayer.value.signup_seasons || [];
-  originalSignupSeasonIds = signup.map(s => s.id);
-  selectedSignupSeasonIds.value = [...originalSignupSeasonIds];
-  showEditPlayerModal.value = true;
-};
-
-const updatePlayer = async () => {
-  updateError.value = '';
-  try {
-    // send selectedPlayer directly — fields match backend schema
-    await playerStore.updatePlayer(selectedPlayer.value);
-    // Update the local state after a successful PUT request
-    const playerId = selectedPlayer.value.id;
-    const newSignupIds = selectedSignupSeasonIds.value || [];
-    const toAdd = newSignupIds.filter(id => !originalSignupSeasonIds.includes(id));
-    const toRemove = originalSignupSeasonIds.filter(id => !newSignupIds.includes(id));
-
-    // perform API calls per season via season store actions
-    try {
-      // additions
-      await Promise.all(toAdd.map(sid => seasonStore.addUserSignup(sid, [playerId])));
-      // removals
-      await Promise.all(toRemove.map(sid => seasonStore.removeUserSignup(sid, [playerId])));
-    } catch (err) {
-      console.error('Failed to sync signup seasons:', err);
-    }
-
-    await fetchPlayers(); // Re-fetch the users
-    cancelEdit(); // Reset the form
-  } catch (error) {
-    console.error('Error updating user:', error);
-    updateError.value = 'Error updating user: ' + error.message;
-  }
-};
-
-const cancelEdit = () => {
-  showEditPlayerModal.value = false;
-  selectedPlayer.value = {}; // Clear the selected user
-  
-};
+const editPlayer = (player) => editPlayerDialog.value.open(player);
 
 const createNewPlayer = async () => {
   creationError.value = '';

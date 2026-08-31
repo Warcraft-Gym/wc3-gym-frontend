@@ -88,79 +88,23 @@
       </v-card-text>
     </v-card>
 
-    <!-- Add New Team Dialog -->
-    <v-dialog v-model="showNewTeamModal" max-width="600px" persistent>
+    <!-- Add / Edit Team Dialog -->
+    <v-dialog v-model="showTeamModal" max-width="600px" persistent>
       <v-card>
         <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-plus-circle</v-icon>
-          Add Team
+          <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
+          {{ isEditing ? `Edit Team: ${selectedTeam?.name ?? ''}` : 'Add Team' }}
         </v-card-title>
-        
-        <v-alert v-if="creationError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="creationError = ''">
-          {{ creationError }}
-        </v-alert>
-        
-        <v-card-text class="pt-4">
-          <v-row dense>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="newTeam.name" 
-                label="Team Name"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-shield"
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="newTeam.long_name" 
-                label="Team Long Name"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-text"
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-file-input
-                v-model="file"
-                label="Team Icon"
-                accept=".png,.jpg"
-                variant="outlined"
-                density="comfortable"
-                prepend-icon=""
-                prepend-inner-icon="mdi-image"
-                hint="Max 64 KB · PNG or JPG (MySQL BLOB limit)"
-                persistent-hint
-              />
-            </v-col>
-          </v-row>
-        </v-card-text>
-        
-        <v-card-actions class="px-4 py-3">
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="cancelAddNewTeam">Cancel</v-btn>
-          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="createNewTeam">Create Team</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
-    <!-- Edit Team Dialog -->
-    <v-dialog v-model="showEditTeamModal" max-width="600px" persistent>
-      <v-card>
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-pencil</v-icon>
-          Edit Team: {{ selectedTeam?.name }}
-        </v-card-title>
-        
-        <v-alert v-if="updateError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="updateError = ''">
-          {{ updateError }}
+        <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="formError = ''">
+          {{ formError }}
         </v-alert>
-        
+
         <v-card-text class="pt-4">
           <v-row dense>
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="selectedTeam.name" 
+                v-model="selectedTeam.name"
                 label="Team Name"
                 variant="outlined"
                 density="comfortable"
@@ -169,7 +113,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
-                v-model="selectedTeam.long_name" 
+                v-model="selectedTeam.long_name"
                 label="Team Long Name"
                 variant="outlined"
                 density="comfortable"
@@ -191,11 +135,11 @@
             </v-col>
           </v-row>
         </v-card-text>
-        
+
         <v-card-actions class="px-4 py-3">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="cancelEdit">Cancel</v-btn>
-          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="updateTeam">Save Changes</v-btn>
+          <v-btn variant="text" @click="closeTeamDialog">Cancel</v-btn>
+          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="isEditing ? updateTeam() : createNewTeam()">{{ isEditing ? 'Save Changes' : 'Create Team' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -215,6 +159,7 @@ import { useAuthStore, useTeamStore } from '@/stores';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
+import { useDeleteDialog } from '@/helpers/delete-dialog';
 
 const extractErrorMessage = (error) => {
   if (!error) return 'Unknown error';
@@ -234,14 +179,12 @@ const { teams } = storeToRefs(teamStore);
 const selectedTeam = ref(null);
 const isLoading  = ref(false); // State for selected user
 const errorMessage = ref(null);
-const showNewTeamModal = ref(false);
-const showEditTeamModal = ref(false);
-const creationError = ref('');
-const updateError = ref('');
+const showTeamModal = ref(false);
+const isEditing = ref(false);
+const formError = ref('');
 
 
 const file = ref(null);
-const newTeam = ref(null);
 
 const tableHeader = computed(() => [
   { title:'', value: 'icon'},
@@ -251,9 +194,7 @@ const tableHeader = computed(() => [
   ...(auth.isAdmin ? [{ title: '', value: 'actions', align: 'end', sortable: false }] : []),
 ])
 // Fetch data when the page is loaded
-const showDeleteDialog = ref(false);
-const selectedDeleteItemId = ref(null);
-const deleteAction = ref(null);
+const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
 // Fetch users when the component is mounted
 const fetchTeams = async () => {
@@ -279,26 +220,28 @@ onMounted( () => {
 });
 
 const createTeam = () => {
-  newTeam.value = {
+  selectedTeam.value = {
     name: '',
     long_name: ''
   }
-  creationError.value = '';
-  showNewTeamModal.value = true;
+  formError.value = '';
+  isEditing.value = false;
+  showTeamModal.value = true;
 };
 
 const editTeam = (team) => {
-  selectedTeam.value = { 
+  selectedTeam.value = {
     id: team.id,
     name: team.name,
     long_name: team.long_name
   };
-  updateError.value = '';
-  showEditTeamModal.value = true;
+  formError.value = '';
+  isEditing.value = true;
+  showTeamModal.value = true;
 };
 
 const updateTeam = async () => {
-  updateError.value = '';
+  formError.value = '';
   try {
     await teamStore.updateTeam(selectedTeam.value);
     if(file.value){
@@ -306,39 +249,29 @@ const updateTeam = async () => {
     }
     // Update the local state after a successful PUT request
     await fetchTeams(); // Re-fetch the Teams
-    cancelEdit(); // Reset the form
+    closeTeamDialog(); // Reset the form
   } catch (error) {
     console.error('Error updating Team:', error);
-    updateError.value = 'Error updating Team: ' + extractErrorMessage(error);
+    formError.value = 'Error updating Team: ' + extractErrorMessage(error);
   }
 };
 
-const cancelEdit = () => {
-  showEditTeamModal.value = false;
-  file.value = null;
-  selectedTeam.value = { 
-    id: null,
-    name: '',
-    long_name: ''
-    };// Clear the selected user
-};
-
 const createNewTeam = async () => {
-  creationError.value = ''; // Reset error
+  formError.value = ''; // Reset error
   let createdTeam = null;
   try {
     const nameExists = teamStore.teams.some(
-      team => team.name.toLowerCase() === newTeam.value.name.toLowerCase()
+      team => team.name.toLowerCase() === selectedTeam.value.name.toLowerCase()
     );
 
     if (nameExists) {
-      throw Error(`Team with name ${newTeam.value.name} already exists`);
+      throw Error(`Team with name ${selectedTeam.value.name} already exists`);
     }
 
-    createdTeam = await teamStore.createTeam(newTeam.value);
+    createdTeam = await teamStore.createTeam(selectedTeam.value);
   } catch (error) {
     console.error('Error creating Team:', error);
-    creationError.value = 'Error creating Team: ' + extractErrorMessage(error);
+    formError.value = 'Error creating Team: ' + extractErrorMessage(error);
     return;
   }
 
@@ -348,22 +281,22 @@ const createNewTeam = async () => {
       await teamStore.uploadTeamImage(createdTeam.id, file.value);
     } catch (imgError) {
       console.error('Error uploading team icon:', imgError);
-      // Switch to edit dialog so retrying the icon doesn't create a duplicate team
+      // Switch to edit mode so retrying the icon doesn't create a duplicate team
       await fetchTeams();
-      cancelAddNewTeam();
+      file.value = null;
       selectedTeam.value = {
         id: createdTeam.id,
         name: createdTeam.name,
         long_name: createdTeam.long_name
       };
-      updateError.value = 'Team created, but icon upload failed: ' + extractErrorMessage(imgError);
-      showEditTeamModal.value = true;
+      formError.value = 'Team created, but icon upload failed: ' + extractErrorMessage(imgError);
+      isEditing.value = true;
       return;
     }
   }
 
   await fetchTeams();
-  cancelAddNewTeam();
+  closeTeamDialog();
 };
 
 const removeTeam = async (teamId) => {
@@ -378,35 +311,13 @@ const removeTeam = async (teamId) => {
 };
 
 
-const cancelAddNewTeam = () => {
-  showNewTeamModal.value = false;
+const closeTeamDialog = () => {
+  showTeamModal.value = false;
   file.value = null;
-  newTeam.value = {
+  selectedTeam.value = {
     name: '',
     long_name: ''
   };
-};
-
-const openDeleteDialog = (id, action) => {
-  selectedDeleteItemId.value = id;
-  deleteAction.value = action; // Store the function dynamically
-  showDeleteDialog.value = true;
-};
-
-const confirmDelete = () => {
-  if (selectedDeleteItemId.value && deleteAction.value) {
-    deleteAction.value(selectedDeleteItemId.value); // Call the dynamically stored function
-    showDeleteDialog.value = false;
-  } else if (deleteAction.value) {
-    deleteAction.value(); // Call the dynamically stored function
-    showDeleteDialog.value = false;
-  }
-};
-
-const cancelDeleteDialog = () => {
-  showDeleteDialog.value = false;
-  selectedDeleteItemId.value = null;
-  deleteAction.value = null; // Store the function dynamically
 };
 
 </script>

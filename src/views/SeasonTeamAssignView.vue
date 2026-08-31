@@ -156,115 +156,7 @@
       </v-card-actions>
     </v-card>
 
-    <!-- Edit Player Dialog -->
-    <v-dialog v-model="showEditPlayerModal" max-width="800">
-      <v-card v-if="selectedPlayer">
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-pencil</v-icon>
-          Edit Player: {{ selectedPlayer.name }}
-        </v-card-title>
-
-        <v-alert
-          v-if="updateError"
-          type="error"
-          variant="tonal"
-          border="start"
-          border-color="red"
-          class="mx-4 my-2"
-          closable
-          @click:close="updateError = null"
-        >
-          {{ updateError }}
-        </v-alert>
-
-        <v-card-text class="pt-4">
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.name"
-                label="Player Name"
-                variant="outlined"
-                prepend-inner-icon="mdi-account"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.battleTag"
-                label="BattleTag"
-                variant="outlined"
-                prepend-inner-icon="mdi-shield-account"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <CountrySelect v-model="selectedPlayer.country" />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.discordTag"
-                label="Discord Tag"
-                variant="outlined"
-                prepend-inner-icon="mdi-discord"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.discordId"
-                label="Discord ID"
-                hint="Numeric Discord user ID (required)"
-                variant="outlined"
-                prepend-inner-icon="mdi-identifier"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" md="6">
-              <RaceSelect v-model="selectedPlayer.race" />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="selectedPlayer.fantasy_tier"
-                label="Fantasy Tier"
-                variant="outlined"
-                prepend-inner-icon="mdi-trophy"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <v-select
-                v-model="selectedSignupSeasonIds"
-                :items="seasons"
-                item-title="name"
-                item-value="id"
-                multiple
-                chips
-                label="Signed-up Seasons"
-                variant="outlined"
-                prepend-inner-icon="mdi-calendar-check"
-                density="comfortable"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="cancelEdit">Cancel</v-btn>
-          <v-btn @click="updatePlayer" color="primary" variant="elevated" prepend-icon="mdi-content-save">
-            Save Changes
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <EditPlayerDialog ref="editPlayerDialog" :refresh="fetchData" />
 
     <!-- Player details dialog (open when clicking a player's name) -->
     <PlayerDetailsDialog
@@ -369,11 +261,12 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useLadderStore, usePlayerStore, useTeamStore, useSeasonStore } from '@/stores';
+import { useLadderStore, useTeamStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
@@ -398,7 +291,6 @@ const seasonId = computed(() => {
 });
 
 const ladderStore = useLadderStore();
-const playerStore = usePlayerStore();
 const teamStore = useTeamStore();
 const seasonStore = useSeasonStore();
 
@@ -423,11 +315,7 @@ const syncDialog = ref(false);
 const syncEntries = ref([]);
 
 // Edit player state
-const showEditPlayerModal = ref(false);
-const selectedPlayer = ref(null);
-const updateError = ref(null);
-const selectedSignupSeasonIds = ref([]);
-let originalSignupSeasonIds = [];
+const editPlayerDialog = ref(null);
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
@@ -641,50 +529,7 @@ const syncAllDraftPlayers = async () => {
   }
 };
 
-const editPlayer = async (player) => {
-  try {
-    if (seasonStore && seasonStore.fetchSeasons) await seasonStore.fetchSeasons();
-  } catch (err) {
-    console.error('Failed to fetch seasons before opening edit player dialog:', err);
-  }
-  selectedPlayer.value = { ...player };
-  updateError.value = '';
-  // prepare signup seasons selection
-  const signup = selectedPlayer.value.signup_seasons || [];
-  originalSignupSeasonIds = signup.map(s => s.id);
-  selectedSignupSeasonIds.value = [...originalSignupSeasonIds];
-  showEditPlayerModal.value = true;
-};
-
-const updatePlayer = async () => {
-  updateError.value = '';
-  try {
-    await playerStore.updatePlayer(selectedPlayer.value);
-    const playerId = selectedPlayer.value.id;
-    const newSignupIds = selectedSignupSeasonIds.value || [];
-    const toAdd = newSignupIds.filter(id => !originalSignupSeasonIds.includes(id));
-    const toRemove = originalSignupSeasonIds.filter(id => !newSignupIds.includes(id));
-
-    try {
-      await Promise.all(toAdd.map(sid => seasonStore.addUserSignup(sid, [playerId])));
-      await Promise.all(toRemove.map(sid => seasonStore.removeUserSignup(sid, [playerId])));
-    } catch (err) {
-      console.error('Failed to sync signup seasons:', err);
-    }
-
-    await fetchData();
-    cancelEdit();
-  } catch (error) {
-    console.error('Error updating user:', error);
-    updateError.value = 'Error updating user: ' + error.message;
-  }
-};
-
-const cancelEdit = () => {
-  showEditPlayerModal.value = false;
-  selectedPlayer.value = null;
-  updateError.value = null;
-};
+const editPlayer = (player) => editPlayerDialog.value.open(player);
 </script>
 
 <style scoped>

@@ -296,6 +296,96 @@
         ></v-pagination>
       </v-card-text>
     </v-card>
+
+    <v-card v-if="!isLoading && history.events.length" elevation="2" class="mt-6">
+      <v-card-title class="bg-primary d-flex justify-space-between align-center">
+        <div class="d-flex align-center">
+          <v-icon class="mr-2">mdi-history</v-icon>
+          <span>My Events</span>
+        </div>
+        <v-chip color="white" variant="outlined">
+          {{ history.events.length }} events, {{ eventTotals.won }} to {{ eventTotals.lost }}
+        </v-chip>
+      </v-card-title>
+      <v-table density="comfortable">
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Played for</th>
+            <th>Record</th>
+            <th>Finish</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="event in history.events" :key="event.season_id">
+            <td>{{ event.season_name }}</td>
+            <td :class="{ 'text-medium-emphasis': !event.team_name }">{{ event.team_name || 'Solo' }}</td>
+            <td>
+              <v-chip :color="recordColor(event.won, event.lost)" variant="tonal" size="small">
+                {{ event.won }} to {{ event.lost }}
+              </v-chip>
+            </td>
+            <td>{{ finishText(event) }}</td>
+          </tr>
+        </tbody>
+      </v-table>
+    </v-card>
+
+    <v-card v-if="!isLoading && history.opponents.length" elevation="2" class="mt-6">
+      <v-card-title class="bg-primary d-flex justify-space-between align-center">
+        <div class="d-flex align-center">
+          <v-icon class="mr-2">mdi-sword-cross</v-icon>
+          <span>Head to Head, Lifetime</span>
+        </div>
+        <v-chip color="white" variant="outlined">
+          {{ history.opponents.length }} players faced
+        </v-chip>
+      </v-card-title>
+      <v-table density="comfortable">
+        <thead>
+          <tr>
+            <th>Opponent</th>
+            <th>Played</th>
+            <th>Record</th>
+            <th>Last met</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="opp in history.opponents" :key="opp.id">
+            <tr class="opponent-row" @click="openOpponent = openOpponent === opp.id ? null : opp.id">
+              <td><PlayerName :player="opp" :race="opp.race" /></td>
+              <td>{{ opp.played }} series</td>
+              <td>
+                <v-chip :color="recordColor(opp.won, opp.lost)" variant="tonal" size="small">
+                  {{ opp.won }} to {{ opp.lost }}
+                </v-chip>
+              </td>
+              <td class="d-flex align-center justify-space-between ga-2">
+                <span class="text-medium-emphasis">{{ lastMet(opp) }}</span>
+                <v-icon size="small">{{ openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+              </td>
+            </tr>
+            <tr
+              v-for="meeting in (openOpponent === opp.id ? opp.meetings : [])"
+              :key="meeting.series_id"
+              class="bg-grey-lighten-4"
+            >
+              <td class="text-caption">
+                {{ meeting.season_name }}<template v-if="meeting.playday">, week {{ meeting.playday }}</template>
+              </td>
+              <td>
+                <v-chip :color="recordColor(meeting.my_score, meeting.their_score)" variant="tonal" size="x-small">
+                  {{ meeting.my_score }} to {{ meeting.their_score }}
+                </v-chip>
+              </td>
+              <td colspan="2" class="text-caption text-medium-emphasis">
+                {{ meeting.date_time ? formatDateTime(meeting.date_time) : '' }}
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </v-table>
+    </v-card>
   </v-container>
 
   <!-- Schedule Dialog -->
@@ -688,6 +778,38 @@ const setWeek = async (week, want) => {
   }
 };
 
+// My history: every event the player took part in and their lifetime head to head
+const history = ref({ events: [], opponents: [] });
+const openOpponent = ref(null);
+
+const eventTotals = computed(() => history.value.events.reduce(
+  (total, event) => ({ won: total.won + event.won, lost: total.lost + event.lost }),
+  { won: 0, lost: 0 }
+));
+
+const recordColor = (won, lost) => (won > lost ? 'success' : won < lost ? 'error' : undefined);
+
+const ordinal = (n) => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th'}`;
+
+const finishText = (event) => {
+  if (event.running) return 'Running';
+  if (!event.place) return '';
+  return event.team_count ? `${ordinal(event.place)} of ${event.team_count}` : ordinal(event.place);
+};
+
+const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `week ${opp.last_playday}` : null].filter(Boolean).join(', ');
+
+// read once; the history does not change with the series table controls
+const fetchHistory = async () => {
+  if (!hasAccess()) return;
+  const query = route.query.token ? `?token=${encodeURIComponent(route.query.token)}` : '';
+  try {
+    history.value = await fetchWrapper.get(`${backendUrl}/player-history${query}`);
+  } catch (error) {
+    console.error('Error fetching player history:', error);  // the dashboard stands without it
+  }
+};
+
 // Edit schedule handlers
 const editSchedule = (item) => {
   let date = '';
@@ -918,13 +1040,18 @@ const isScoreValid = computed(() => {
 onMounted(async () => {
   currentW3CSeason.value = await resolveCurrentW3CSeason();
   if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
-  fetchPlayerData();
+  await fetchPlayerData();
+  fetchHistory();
 });
 </script>
 
 <style scoped>
 .v-chip {
   margin: 2px;
+}
+
+.opponent-row {
+  cursor: pointer;
 }
 
 .text-primary {

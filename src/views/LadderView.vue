@@ -173,9 +173,13 @@
         </v-card-title>
         <v-card-text class="pa-0">
           <v-data-table
+            v-model:expanded="expanded"
             :headers="tableHeader"
             :items="filteredPlayers"
             :sort-by="[{ key: 'points', order: 'desc' }]"
+            item-value="id"
+            show-expand
+            expand-on-click
             fixed-header
             hover
           >
@@ -235,6 +239,24 @@
                 {{ item.mmrDiff > 0 ? `+${item.mmrDiff}` : item.mmrDiff }}
               </span>
             </template>
+            <template v-slot:expanded-row="{ columns, item }">
+              <tr>
+                <td :colspan="columns.length" class="pa-0">
+                  <!-- sticky: stays in view when the summary row scrolls sideways on a narrow window -->
+                  <div class="pa-4 expanded-details">
+                    <div v-if="!fullPlayers[item.id]" class="text-center pa-4">
+                      <v-progress-circular indeterminate color="primary" />
+                    </div>
+                    <PlayerLadderTab
+                      v-else
+                      :player="fullPlayers[item.id]"
+                      :seasonId="selectedSeasonId"
+                      @open-player="openOpponent"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </template>
           </v-data-table>
           <div class="text-caption text-medium-emphasis mt-1">{{ BADGES_CREDIT }}</div>
         </v-card-text>
@@ -247,7 +269,6 @@
       :seasonId="selectedSeasonId"
       :seasonName="seasonName"
       :w3cSeason="currentW3CSeason"
-      openTab="ladder"
     />
 
     <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
@@ -255,9 +276,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useAuthStore, useLadderStore, useSeasonStore } from '@/stores';
+import { useAuthStore, useLadderStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
 import W3CIcon from '@/components/W3CIcon.vue';
@@ -269,12 +290,14 @@ import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import AchievementChip from '@/components/AchievementChip.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
 
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();
+const playerStore = usePlayerStore();
 const auth = useAuthStore();
 
 const { seasons } = storeToRefs(seasonStore);
@@ -294,9 +317,24 @@ const syncDialog = ref(false);
 const syncEntries = ref([]);
 const showPlayerDetails = ref(false);
 const playerDetails = ref(null);
+const expanded = ref([]);
+const fullPlayers = ref({});
+
+// The ladder row carries no gnl_stats, so an expanding row reads the full player once
+watch(expanded, async (ids) => {
+  for (const id of ids) {
+    if (fullPlayers.value[id]) continue;
+    try {
+      fullPlayers.value[id] = await playerStore.getPlayer(id);
+    } catch (error) {
+      errorMessage.value = error.message;
+    }
+  }
+});
 
 // Points and Achievements sit together because the first is the sum of the second and the ladder
 const tableHeader = computed(() => [
+  { title: '', key: 'data-table-expand', sortable: false, width: 48 },
   { title: 'Race', key: 'race', sortable: true, width: 64 },
   { title: 'Name', key: 'name', sortable: true },
   { title: 'Team', key: 'teamName', sortable: true },
@@ -378,6 +416,7 @@ const resetFilters = () => {
 
 const loadLadder = async () => {
   if (!selectedSeasonId.value) return;
+  expanded.value = [];
   isLoading.value = true;
   errorMessage.value = null;
   try {
@@ -407,6 +446,12 @@ const syncLadder = async () => {
 
 const openPlayerDetails = (player) => {
   playerDetails.value = { id: player.id, name: player.name, battleTag: player.battleTag, race: player.race };
+  showPlayerDetails.value = true;
+};
+
+// An opponent clicked inside an expanded panel; the dialog fetches the rest itself
+const openOpponent = (userId) => {
+  playerDetails.value = { id: userId };
   showPlayerDetails.value = true;
 };
 
@@ -443,5 +488,10 @@ onMounted(async () => {
 }
 .standings-first {
   background: rgba(var(--v-theme-primary), 0.06);
+}
+.expanded-details {
+  position: sticky;
+  left: 0;
+  max-width: calc(100vw - 48px);
 }
 </style>

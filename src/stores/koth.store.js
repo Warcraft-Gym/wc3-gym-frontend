@@ -70,9 +70,16 @@ export const useKothStore = defineStore({
 
         async createSignup(signupData) {
             // Admin endpoint - requires JWT authentication
-            const newSignup = await fetchWrapper.post(`${backendUrl}/koth/signups/admin`, signupData);
-            this.signups.push(newSignup);
-            return newSignup;
+            const newSignups = await fetchWrapper.post(`${backendUrl}/koth/signups/admin`, signupData);
+            this.signups.push(...newSignups);
+            return newSignups;
+        },
+
+        // The logged-in player: the backend reads his battle tag from his profile
+        async signupMe(races) {
+            const newSignups = await fetchWrapper.post(`${backendUrl}/koth/signups/me`, { races });
+            this.signups.push(...newSignups);
+            return newSignups;
         },
 
         async createPublicSignup(signupData) {
@@ -138,6 +145,28 @@ export const useKothStore = defineStore({
             return this.signups
                 .filter(s => s.bracket === bracket && s.is_active === 1)
                 .sort((a, b) => b.mmr - a.mmr);
+        },
+
+        // One entry per player in a bracket, kings excluded. A player who signed up with
+        // several races carries one signup per race, his best MMR first.
+        getBracketPlayers(bracket) {
+            const players = new Map();
+            for (const signup of this.getSignupsByBracket(bracket)) {
+                if (signup.is_king === 1) continue;
+                const battleTag = signup.battle_tag.trim().toLowerCase();
+                const player = players.get(battleTag);
+                if (player) {
+                    player.signups.push(signup);
+                } else {
+                    players.set(battleTag, {
+                        battleTag,
+                        name: signup.twitch_username || signup.battle_tag,
+                        country: signup.country,
+                        signups: [signup],
+                    });
+                }
+            }
+            return [...players.values()];
         },
 
         getBracketThresholdText(event) {

@@ -69,19 +69,16 @@
             <!-- Signed Up Players -->
             <div class="players-section">
               <div v-if="getActivePlayers(bracket).length > 0" class="players-list">
-                <div 
-                  v-for="player in getActivePlayers(bracket)" 
-                  :key="player.id"
+                <div
+                  v-for="player in getActivePlayers(bracket)"
+                  :key="player.battleTag"
                   class="player-item mb-2 pa-3"
                 >
-                  <v-row align="center" no-gutters>
-                    <v-col>
-                      <PlayerName class="text-h6" :player="{ name: player.twitch_username || player.battle_tag, country: player.country }" :race="player.race" />
-                    </v-col>
-                    <v-col cols="auto">
-                      <span class="text-body-1 text-grey-darken-2">{{ player.mmr }} MMR</span>
-                    </v-col>
-                  </v-row>
+                  <PlayerName class="text-h6" :player="player" />
+                  <div v-for="signup in player.signups" :key="signup.id" class="race-row d-flex align-center ga-2">
+                    <RaceIcon v-if="signup.race" :raceIdentifier="signup.race" />
+                    <span class="text-body-1 text-grey-darken-2">{{ signup.mmr }} MMR</span>
+                  </div>
                 </div>
               </div>
               <div v-else class="text-center py-4 text-grey-lighten-1 text-body-1">
@@ -103,33 +100,50 @@
         
         <v-card-text class="pt-4">
           <v-row dense>
-            <v-col cols="12">
-              <v-text-field
-                v-model="signupForm.battle_tag"
-                label="BattleTag"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-shield-account"
-                hint="Required. Format: Name#1234"
-                persistent-hint
-                :rules="[v => !!v || 'BattleTag is required']"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                v-model="signupForm.twitch_username"
-                label="Twitch Username"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-twitch"
-                hint="Required. Your Twitch username"
-                persistent-hint
-                :rules="[v => !!v || 'Twitch username is required']"
-              />
-            </v-col>
-            <v-col cols="12">
-              <RaceSelect v-model="signupForm.race" />
-            </v-col>
+            <template v-if="!profileBattleTag">
+              <v-col cols="12">
+                <v-text-field
+                  v-model="signupForm.battle_tag"
+                  label="BattleTag"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-shield-account"
+                  hint="Required. Format: Name#1234"
+                  persistent-hint
+                  :rules="[v => !!v || 'BattleTag is required']"
+                />
+              </v-col>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="signupForm.twitch_username"
+                  label="Twitch Username"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-twitch"
+                  hint="Required. Your Twitch username"
+                  persistent-hint
+                  :rules="[v => !!v || 'Twitch username is required']"
+                />
+              </v-col>
+              <v-col cols="12">
+                <RaceSelect v-model="signupForm.race" />
+              </v-col>
+            </template>
+            <template v-else>
+              <v-col cols="12" class="text-body-1 mb-2">
+                Signing up as <strong>{{ profileBattleTag }}</strong>
+              </v-col>
+              <v-col cols="12">
+                <RaceSelect
+                  v-model="signupForm.races"
+                  multiple
+                  chips
+                  label="Races"
+                  hint="One signup per race, each in the bracket its MMR cuts into"
+                  persistent-hint
+                />
+              </v-col>
+            </template>
           </v-row>
           
           <v-alert v-if="signupError" type="error" variant="tonal" class="mt-4" closable @click:close="signupError = null">
@@ -147,7 +161,7 @@
             color="primary" 
             prepend-icon="mdi-check" 
             @click="submitSignup"
-            :disabled="!signupForm.battle_tag || !signupForm.twitch_username"
+            :disabled="!profileBattleTag && (!signupForm.battle_tag || !signupForm.twitch_username)"
           >
             Sign Up
           </v-btn>
@@ -161,6 +175,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useKothStore } from '@/stores';
+import { useAuthStore } from '@/stores';
 import { useConfigStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
@@ -173,7 +188,11 @@ const route = useRoute();
 const isCleanMode = computed(() => route.query.mode === 'clean');
 
 const kothStore = useKothStore();
-const { events, signups, kings } = storeToRefs(kothStore);
+const authStore = useAuthStore();
+const { events, kings } = storeToRefs(kothStore);
+
+// A logged-in player whose row carries a battle tag signs up from his profile
+const profileBattleTag = computed(() => authStore.me?.user?.battleTag || null);
 
 const event = ref(null);
 const showSignupDialog = ref(false);
@@ -182,7 +201,8 @@ const signupSuccess = ref(null);
 const signupForm = ref({
   battle_tag: '',
   twitch_username: '',
-  race: null
+  race: null,
+  races: []
 });
 let refreshInterval = null;
 const initialLoad = ref(true);
@@ -240,7 +260,7 @@ function getBracketThresholdText(bracket) {
 }
 
 function getActivePlayers(bracket) {
-  return signups.value.filter(s => s.bracket === bracket && s.is_active === 1 && s.is_king !== 1);
+  return kothStore.getBracketPlayers(bracket);
 }
 
 function closeSignupDialog() {
@@ -260,7 +280,15 @@ async function submitSignup() {
   try {
     signupError.value = null;
     signupSuccess.value = null;
-    
+
+    if (profileBattleTag.value) {
+      const newSignups = await kothStore.signupMe(signupForm.value.races);
+      signupSuccess.value = `Successfully signed up! ${newSignups.length} bracket entr${newSignups.length === 1 ? 'y' : 'ies'} added.`;
+      await loadDashboardData();
+      setTimeout(closeSignupDialog, 2000);
+      return;
+    }
+
     // Fetch the KOTH_NIGHTBOT_TOKEN from backend
     const configStore = useConfigStore();
     const tokenSetting = await configStore.fetchSetting('KOTH_NIGHTBOT_TOKEN');
@@ -363,6 +391,10 @@ async function submitSignup() {
   padding: 4px 8px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.6);
+}
+
+.race-row {
+  padding-left: 26px;
 }
 
 .signup-btn {

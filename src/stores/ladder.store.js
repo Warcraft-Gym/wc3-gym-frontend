@@ -13,7 +13,7 @@ export const useLadderStore = defineStore({
         syncProgress: null,
     }),
     actions: {
-        // The ladder routes are admin gated, so their GETs carry the access token
+        // The ladder GETs carry the session bearer
         async seasonLadder(season_id) {
             const ladder = await fetchWrapper.getSecure(`${backendUrl}/seasons/${season_id}/ladder`);
             this.ladders[season_id] = ladder;

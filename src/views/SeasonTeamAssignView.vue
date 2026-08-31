@@ -452,7 +452,7 @@ const playerTableHeaders = [
   }},
   { title: 'Race', value: 'race' },
   { title: 'Team', value: 'team', sortable: false },
-  { title: 'Actions', value: 'actions', sortable: false, align: 'end' },
+  { title: '', value: 'actions', sortable: false, align: 'end' },
 ];
 
 // compute assigned player ids across all teams for this season

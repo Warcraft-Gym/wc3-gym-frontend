@@ -512,7 +512,7 @@ const tableHeader = computed(() => [
   { title: 'Discord Name', value: 'discordTag', sortable: true },
   { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'races', sortable: false },
   { title: 'Signups', value: 'signups', sortable: false },
-  ...(auth.isAdmin ? [{ title: 'Actions', key: 'actions', align: 'end', sortable: false }] : []),
+  ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
 
 // Fetch users when the component is mounted

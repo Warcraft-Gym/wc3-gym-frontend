@@ -40,7 +40,7 @@ const headers = computed(() => [
   { title: 'Games W-L', key: 'games_record', sortable: true },
   { title: 'Games %', key: 'games_winrate', sortable: true },
   { title: 'Seasons', key: 'seasons_played', sortable: true },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: '', key: 'actions', sortable: false }
 ].filter(h => auth.isAdmin || (h.key !== 'status' && h.key !== 'actions')));
 
 // Header keys the server names differently

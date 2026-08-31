@@ -1,19 +1,41 @@
 <template>
-  <div v-if="visible.length" class="d-flex justify-end">
-    <v-btn
-      v-for="action in visible"
-      :key="action.label"
-      icon
-      variant="text"
-      size="small"
-      :color="action.color"
-      :disabled="action.disabled"
-      :loading="action.loading"
-      @click.stop="action.onClick()"
-    >
-      <v-icon>{{ action.icon }}</v-icon>
-      <v-tooltip activator="parent" location="top">{{ action.label }}</v-tooltip>
-    </v-btn>
+  <div v-if="visible.length" class="d-flex justify-end" @click.stop>
+    <v-menu v-if="visible.length >= 3">
+      <template #activator="{ props: menu }">
+        <v-btn v-bind="menu" icon variant="text" size="small">
+          <v-icon>mdi-dots-vertical</v-icon>
+        </v-btn>
+      </template>
+      <v-list density="compact">
+        <v-list-item
+          v-for="action in visible"
+          :key="action.label"
+          :disabled="action.disabled"
+          @click="action.onClick()"
+        >
+          <template #prepend>
+            <v-icon :color="action.color">{{ action.icon }}</v-icon>
+          </template>
+          <v-list-item-title>{{ action.label }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+    <template v-else>
+      <v-btn
+        v-for="action in visible"
+        :key="action.label"
+        icon
+        variant="text"
+        size="small"
+        :color="action.color"
+        :disabled="action.disabled"
+        :loading="action.loading"
+        @click="action.onClick()"
+      >
+        <v-icon>{{ action.icon }}</v-icon>
+        <v-tooltip activator="parent" location="top">{{ action.label }}</v-tooltip>
+      </v-btn>
+    </template>
   </div>
 </template>
 

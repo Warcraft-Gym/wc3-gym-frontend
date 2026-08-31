@@ -128,7 +128,7 @@
               <td>{{ item.number_weeks }}</td>
               <td>{{ item.pick_ban }}</td>
               <td>{{ item.series_per_week }}</td>
-              <td class="text-end">
+              <td v-if="auth.isAdmin" class="text-end">
                 <RowActions :actions="[
                   { icon: 'mdi-pencil', label: 'Edit Season', onClick: () => editSeason(item) },
                   { icon: 'mdi-download', label: 'Export Season', onClick: () => exportSeason(item.id, item.name) },
@@ -419,14 +419,14 @@ const showDeleteDialog = ref(false);
 const selectedDeleteItemId = ref(null);
 const deleteAction = ref(null);
 
-const tableHeader = [
+const tableHeader = computed(() => [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
   { title: 'Weeks', value: 'number_weeks', sortable: true },
   { title: 'Pick Ban', value: 'pick_ban', sortable: false },
   { title: 'Series/Week', value: 'series_per_week', sortable: true },
-  { title: 'Actions', key: 'actions', align: 'end', sortable: false },
-];
+  ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
+]);
 
 const fetchSeasons = async () => {
   isLoading.value = true;

@@ -214,7 +214,7 @@ const tableHeader = [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },  
   { title: 'Short Name', value: 'shortname', sortable: true }, 
-  { title: 'Actions', value: 'actions', align: 'end', sortable: false }
+  { title: '', value: 'actions', align: 'end', sortable: false }
 ];
 
 // Methods

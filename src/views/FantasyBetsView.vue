@@ -386,7 +386,7 @@ const headers = [
   { title: 'Result', value: 'bet_result', sortable: false, align: 'center' },
   { title: 'Points', value: 'bet_points', sortable: true, align: 'end' },
   { title: 'Locked', value: 'is_locked', sortable: false, align: 'center' },
-  { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
+  { title: '', value: 'actions', sortable: false, align: 'center' }
 ];
 
 // Enrich bets with series data

@@ -212,7 +212,7 @@
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { useAuthStore, useTeamStore } from '@/stores';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
@@ -243,13 +243,13 @@ const updateError = ref('');
 const file = ref(null);
 const newTeam = ref(null);
 
-const tableHeader = [
+const tableHeader = computed(() => [
   { title:'', value: 'icon'},
   { title: 'ID', value: 'id', align: 'start', sortable: true },
-  { title: 'Name', value: 'name', sortable: true },  
-  { title: 'Long Name', value: 'long_name', sortable: true }, 
-  { title: 'Actions', value: 'actions' }, 
-]
+  { title: 'Name', value: 'name', sortable: true },
+  { title: 'Long Name', value: 'long_name', sortable: true },
+  ...(auth.isAdmin ? [{ title: '', value: 'actions', align: 'end', sortable: false }] : []),
+])
 // Fetch data when the page is loaded
 const showDeleteDialog = ref(false);
 const selectedDeleteItemId = ref(null);

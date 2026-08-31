@@ -724,7 +724,7 @@ const upcomingHeaders = [
   { title: 'Season', key: 'season_name' },
   { title: 'Date & Time', key: 'date_time' },
   { title: 'Week', key: 'week' },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: '', key: 'actions', sortable: false }
 ];
 
 const completedHeaders = [

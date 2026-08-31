@@ -298,7 +298,7 @@ const reportHeader = [
   { title: 'Discord ID', value: 'discord_id', sortable: true },
   { title: 'Missing', value: 'missing', sortable: false },
   { title: 'Extra', value: 'extra', sortable: false },
-  { title: 'Actions', value: 'actions', align: 'end', sortable: false }
+  { title: '', value: 'actions', align: 'end', sortable: false }
 ];
 
 const syncedBindings = computed(() => bindings.value.filter(b => b.kind !== 'admin'));

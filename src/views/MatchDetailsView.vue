@@ -256,7 +256,7 @@
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
-                  <td class="text-center">
+                  <td v-if="auth.isAdmin" class="text-center">
                     <RowActions :actions="[
                       { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
                       { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
@@ -393,7 +393,7 @@
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
-                  <td class="text-center">
+                  <td v-if="auth.isAdmin" class="text-center">
                     <RowActions :actions="[
                       { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
                       { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
@@ -1106,8 +1106,8 @@ const { series, draftSeries } = storeToRefs(seriesStore);
 // Week navigation state
 const weeklyMatches = ref([]);
 
-const seriesTableHeader = [
-  
+const seriesTableHeader = computed(() => [
+
   { title: 'ID', value: 'id', sortable: true },  
   { title: 'Caster'},  
   { title: 'Date/Time'}, 
@@ -1125,11 +1125,11 @@ const seriesTableHeader = [
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value) || 0;
     return aValue - bValue;
   }},
-  { title: 'Fantasy Match'},  
-  { title: '', value: 'actions', sortable: true }
-];
+  { title: 'Fantasy Match'},
+  ...(auth.isAdmin ? [{ title: '', value: 'actions', sortable: false }] : []),
+]);
 
-const draftSeriesTableHeader = [
+const draftSeriesTableHeader = computed(() => [
   { title: 'ID', value: 'id', sortable: true },  
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { title: 'Matchup History', key: 'p1_matchup_history', sortable: false },
@@ -1155,9 +1155,9 @@ const draftSeriesTableHeader = [
     let bValue = getHighestW3CMMR(b?.player2) || 0;
     return aValue - bValue;
   }},
-  { title: 'Fantasy Match'},  
-  { title: '', value: 'actions', sortable: true }
-];
+  { title: 'Fantasy Match'},
+  ...(auth.isAdmin ? [{ title: '', value: 'actions', sortable: false }] : []),
+]);
 
 const proposedSeriesTableHeader = [
   { title: 'Player 1', value: 'player1.name', width:'300px', sortable: true },

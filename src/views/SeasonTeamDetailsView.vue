@@ -424,7 +424,7 @@ const tableHeader = [
   { title: 'W3C MMR', value: 'mmr', sortable: false }, 
   { title: 'Main Race', value: 'race', sortable: true },  
   { title: 'Signups', value: 'signups', sortable: false },    
-  { title: 'Actions', key: 'actions', align: 'end', sortable: false }, 
+  { title: '', key: 'actions', align: 'end', sortable: false }, 
 ];
 
 const playerTableHeaders = [

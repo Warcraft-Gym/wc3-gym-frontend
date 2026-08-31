@@ -156,20 +156,25 @@
               
               <!-- Players List -->
               <div class="text-subtitle-2 mb-2 d-flex align-center justify-space-between">
-                <span>Players ({{ getBracketSignups(bracket).filter(s => !s.is_king).length }})</span>
+                <span>Players ({{ getBracketPlayers(bracket).length }})</span>
               </div>
-              
-              <div v-if="getBracketSignups(bracket).filter(s => !s.is_king).length > 0" class="players-list">
+
+              <div v-if="getBracketPlayers(bracket).length > 0" class="players-list">
                 <div
-                  v-for="signup in getBracketSignups(bracket).filter(s => !s.is_king)"
-                  :key="signup.id"
+                  v-for="player in getBracketPlayers(bracket)"
+                  :key="player.battleTag"
                   class="player-item pa-2 mb-1"
                 >
-                  <div class="d-flex align-center justify-space-between">
-                    <div class="flex-grow-1">
-                      <PlayerName class="text-body-2 font-weight-medium" :player="{ name: signup.twitch_username || signup.battle_tag, country: signup.country }" :race="signup.race" />
-                      <div class="text-caption text-grey">{{ signup.mmr }} MMR</div>
-                    </div>
+                  <PlayerName class="text-body-2 font-weight-medium" :player="player" />
+                  <div
+                    v-for="signup in player.signups"
+                    :key="signup.id"
+                    class="d-flex align-center justify-space-between race-row"
+                  >
+                    <span class="text-caption text-grey d-flex align-center ga-1">
+                      <RaceIcon v-if="signup.race" :raceIdentifier="signup.race" />
+                      {{ signup.mmr }} MMR
+                    </span>
                     <div class="d-flex gap-1">
                       <v-btn icon="mdi-crown" size="x-small" variant="tonal" color="warning" @click="setAsKing(signup.id)" title="Make King"></v-btn>
                       <v-btn icon="mdi-delete" size="x-small" variant="tonal" color="error" @click="deleteSignup(signup.id)" title="Remove from bracket"></v-btn>
@@ -306,7 +311,7 @@
               />
             </v-col>
             <v-col cols="12">
-              <RaceSelect v-model="signupForm.race" />
+              <RaceSelect v-model="signupForm.races" multiple chips label="Races" hint="Optional. One signup per race, each in its own bracket" persistent-hint />
             </v-col>
           </v-row>
           
@@ -398,7 +403,7 @@ const showAddSignupDialog = ref(false);
 const signupForm = ref({
   battle_tag: '',
   twitch_username: '',
-  race: null,
+  races: [],
 });
 const signupError = ref(null);
 
@@ -628,7 +633,7 @@ function openAddSignupDialog() {
   signupForm.value = {
     battle_tag: '',
     twitch_username: '',
-    race: null,
+    races: [],
   };
   signupError.value = null;
   showAddSignupDialog.value = true;
@@ -639,7 +644,7 @@ function closeAddSignupDialog() {
   signupForm.value = {
     battle_tag: '',
     twitch_username: '',
-    race: null,
+    races: [],
   };
   signupError.value = null;
 }
@@ -652,20 +657,11 @@ async function saveSignup() {
   
   try {
     signupError.value = null;
-    
-    const raceMap = {
-      'HU': 'human',
-      'OC': 'orc',
-      'UD': 'undead',
-      'NE': 'nightelf',
-      'RANDOM': 'random'
-    };
-    
     await kothStore.createSignup({
       event_id: selectedEventId.value,
       battle_tag: signupForm.value.battle_tag,
       twitch_username: signupForm.value.twitch_username || null,
-      race: signupForm.value.race ? raceMap[signupForm.value.race] : null,
+      races: signupForm.value.races,
     });
     closeAddSignupDialog();
     successMessage.value = 'Player signup added successfully!';
@@ -686,8 +682,8 @@ function getBracketThresholdText(bracket) {
   return thresholds[bracket] || '';
 }
 
-function getBracketSignups(bracket) {
-  return kothStore.getSignupsByBracket(bracket);
+function getBracketPlayers(bracket) {
+  return kothStore.getBracketPlayers(bracket);
 }
 
 function formatEventDate(dateString) {
@@ -760,5 +756,9 @@ function formatEventDate(dateString) {
 .player-item:hover {
   background: rgba(0, 0, 0, 0.04);
   transform: translateX(2px);
+}
+
+.race-row {
+  padding-left: 22px;
 }
 </style>

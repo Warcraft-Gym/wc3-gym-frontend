@@ -12,7 +12,7 @@
                 <div v-if="isCallback || isSignedIn" class="text-center py-4">
                     <v-progress-circular indeterminate color="primary" class="mb-3" />
                     <div>Signing you in…</div>
-                    <AuthenticateWithRedirectCallback v-if="isCallback" sign-in-fallback-redirect-url="/#/login" />
+                    <AuthenticateWithRedirectCallback v-if="isCallback" sign-in-fallback-redirect-url="/#/login" sign-up-fallback-redirect-url="/#/login" />
                 </div>
                 <v-alert v-else-if="error || loginError" type="error" variant="tonal" border="start" class="mb-4">
                     {{ error || loginError }}

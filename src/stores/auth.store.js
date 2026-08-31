@@ -20,6 +20,7 @@ export const useAuthStore = defineStore({
     state: () => ({
         user: JSON.parse(localStorage.getItem('user')),  // the legacy admin-token session only
         me: JSON.parse(localStorage.getItem('me')),
+        viewAs: JSON.parse(localStorage.getItem('viewAs')),  // { role, teamId? }; an admin seeing the app as a lower role
         loginError: null,  // why the last /me failed; the login page shows it
         returnUrl: null
     }),
@@ -48,11 +49,21 @@ export const useAuthStore = defineStore({
             localStorage.setItem('me', JSON.stringify(this.me));
             return this.me;
         },
+        // see the app as a lower role for debugging; null restores the admin
+        async setViewAs(viewAs) {
+            this.viewAs = viewAs;
+            if (viewAs) localStorage.setItem('viewAs', JSON.stringify(viewAs));
+            else localStorage.removeItem('viewAs');
+            await this.fetchMe();
+            router.push(viewAs ? '/profile' : '/');
+        },
         clear() {
             this.user = null;
             this.me = null;
+            this.viewAs = null;
             localStorage.removeItem('user');
             localStorage.removeItem('me');
+            localStorage.removeItem('viewAs');
         },
         async logout() {
             if (!this.user) await clerk?.signOut.value();  // the legacy token has no Clerk session

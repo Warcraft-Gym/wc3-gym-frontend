@@ -58,9 +58,13 @@
               </v-row>
             </v-toolbar>
             <v-data-table
+              v-model:expanded="expanded"
               :headers="headers"
               :items="sortedTeams"
               :items-per-page="25"
+              item-value="id"
+              show-expand
+              expand-on-click
               class="elevation-1"
               density="comfortable"
             >
@@ -76,7 +80,7 @@
 
               <template v-slot:[`item.captain`]="{ item }">
                 <!-- no race: the captain bets, they don't play -->
-                <PlayerName v-if="item.captain" :player="item.captain" />
+                <PlayerName v-if="item.captain" :player="item.captain" @click.stop="openPlayer(item.captain)" />
                 <template v-else>N/A</template>
               </template>
 
@@ -115,11 +119,52 @@
 
               <template v-slot:[`item.actions`]="{ item }">
                 <RowActions :actions="[
-                  { icon: 'mdi-eye', label: 'View Details', public: true, onClick: () => viewTeamDetails(item.id) },
-                  { icon: 'mdi-chart-box', label: 'Score Breakdown', public: true, onClick: () => viewScoreBreakdown(item) },
-                  { icon: 'mdi-pencil', label: 'Edit', onClick: () => openEditDialog(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', public: !!myUserId && item.captain_id === myUserId, onClick: () => openEditDialog(item) },
                   { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item) },
                 ]" />
+              </template>
+
+              <template v-slot:expanded-row="{ columns, item }">
+                <tr>
+                  <td :colspan="columns.length" class="pa-4">
+                    <v-row>
+                      <v-col cols="12" lg="4">
+                        <div class="text-h6 mb-2">Drafted Players</div>
+                        <v-table density="compact">
+                          <thead>
+                            <tr>
+                              <th class="text-left">Player</th>
+                              <th class="text-right"><W3CMmr /></th>
+                              <th class="text-right">GNL Record</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="player in item.drafted_players" :key="player.id">
+                              <td><PlayerName :player="player" :race="player.race" @click="openPlayer(player)" /></td>
+                              <td class="text-right">{{ getW3CMMR(player, currentW3CSeason) || 'N/A' }}</td>
+                              <td class="text-right">{{ gnlRecord(player) }}</td>
+                            </tr>
+                            <tr v-if="!item.drafted_players?.length">
+                              <td colspan="3" class="text-grey">No drafted players</td>
+                            </tr>
+                          </tbody>
+                        </v-table>
+                      </v-col>
+                      <v-col cols="12" lg="8">
+                        <div class="text-h6 mb-2">Score Breakdown</div>
+                        <div v-if="!breakdowns[item.id]" class="text-center pa-4">
+                          <v-progress-circular indeterminate color="primary" />
+                        </div>
+                        <FantasyScoreBreakdown
+                          v-else
+                          :breakdown="breakdowns[item.id]"
+                          :players="players"
+                          @open-player="openPlayer"
+                        />
+                      </v-col>
+                    </v-row>
+                  </td>
+                </tr>
               </template>
             </v-data-table>
           </v-card-text>
@@ -128,104 +173,13 @@
     </v-row>
   </v-container>
 
-  <!-- Team Details Dialog -->
-  <v-dialog v-model="teamDialog" max-width="800px">
-    <v-card>
-      <v-card-title class="bg-primary">
-        <v-icon class="mr-2">mdi-trophy-variant</v-icon>
-        Team Details
-      </v-card-title>
-      <v-card-text v-if="selectedTeam" class="pt-4">
-        <v-row>
-          <v-col cols="12" md="6">
-            <v-list>
-              <v-list-item>
-                <v-list-item-title class="font-weight-bold">Captain</v-list-item-title>
-                <v-list-item-subtitle>
-                  <PlayerName v-if="selectedTeam.captain" :player="selectedTeam.captain" />
-                  <span v-else>N/A</span>
-                </v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <v-list-item-title class="font-weight-bold">Season</v-list-item-title>
-                <v-list-item-subtitle>{{ selectedTeam.season?.name || 'N/A' }}</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <v-list-item-title class="font-weight-bold">Drafted Team</v-list-item-title>
-                <v-list-item-subtitle>{{ selectedTeam.drafted_team?.name || 'N/A' }}</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <v-list-item-title class="font-weight-bold">Drafted Race</v-list-item-title>
-                <v-list-item-subtitle>
-                  <RaceIcon v-if="selectedTeam.drafted_race" :raceIdentifier="selectedTeam.drafted_race" />
-                  <span v-else>N/A</span>
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-          </v-col>
-          <v-col cols="12" md="6">
-            <v-card variant="outlined" class="pa-4">
-              <div class="text-h6 mb-3">Points Breakdown</div>
-              <v-list density="compact">
-                <v-list-item>
-                  <v-list-item-title>Player Points</v-list-item-title>
-                  <template v-slot:append>
-                    <span class="text-h6">{{ selectedTeam.player_points || 0 }}</span>
-                  </template>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-title>Bench Points</v-list-item-title>
-                  <template v-slot:append>
-                    <span class="text-h6">{{ selectedTeam.bench_points || 0 }}</span>
-                  </template>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-title>Team Points</v-list-item-title>
-                  <template v-slot:append>
-                    <span class="text-h6">{{ selectedTeam.team_points || 0 }}</span>
-                  </template>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-title>Race Points</v-list-item-title>
-                  <template v-slot:append>
-                    <span class="text-h6">{{ selectedTeam.race_points || 0 }}</span>
-                  </template>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-title>Bet Points</v-list-item-title>
-                  <template v-slot:append>
-                    <span class="text-h6">{{ selectedTeam.bet_points || 0 }}</span>
-                  </template>
-                </v-list-item>
-                <v-divider class="my-2" />
-                <v-list-item>
-                  <v-list-item-title class="font-weight-bold">Total Points</v-list-item-title>
-                  <template v-slot:append>
-                    <span class="text-h5 primary--text">{{ selectedTeam.total_points || 0 }}</span>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-col>
-        </v-row>
-        <v-row v-if="selectedTeam.drafted_players && selectedTeam.drafted_players.length > 0">
-          <v-col cols="12">
-            <v-divider class="my-4" />
-            <div class="text-h6 mb-3">Drafted Players</div>
-            <v-chip-group>
-              <v-chip v-for="player in selectedTeam.drafted_players" :key="player.id" color="primary">
-                <PlayerName :player="player" :race="player.race" />
-              </v-chip>
-            </v-chip-group>
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="closeTeamDialog">Close</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+  <!-- Player Details Dialog -->
+  <PlayerDetailsDialog
+    v-model="playerDialog"
+    :player="selectedPlayer"
+    :seasonId="selectedSeasonId"
+    :w3cSeason="currentW3CSeason"
+  />
 
   <!-- Create/Edit Team Dialog -->
   <v-dialog v-model="editDialog" max-width="900px" persistent>
@@ -269,6 +223,7 @@
                 variant="outlined"
                 prepend-inner-icon="mdi-calendar"
                 density="comfortable"
+                :disabled="!auth.isAdmin"
                 :rules="[v => !!v || 'Season is required']"
               ></v-select>
             </v-col>
@@ -282,6 +237,7 @@
                 variant="outlined"
                 prepend-inner-icon="mdi-account-star"
                 density="comfortable"
+                :disabled="!auth.isAdmin"
                 :rules="[v => !!v || 'Captain is required']"
               ></v-autocomplete>
             </v-col>
@@ -342,7 +298,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="closeEditDialog" :disabled="isSaving">Cancel</v-btn>
-        <v-btn v-if="auth.isAdmin" color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
+        <v-btn v-if="auth.isAdmin || (isEditing && editedTeam.captain_id === myUserId)" color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -365,275 +321,18 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
-
-  <!-- Score Breakdown Dialog -->
-  <v-dialog v-model="breakdownDialog" max-width="1200px" scrollable>
-    <v-card>
-      <v-card-title class="bg-primary">
-        <v-icon class="mr-2">mdi-chart-box</v-icon>
-        Score Breakdown
-      </v-card-title>
-      <v-card-subtitle v-if="breakdownData" class="bg-primary pb-3 text-white">
-        {{ breakdownData.display_name }}
-      </v-card-subtitle>
-      
-      <v-overlay v-model="isLoadingBreakdown" contained persistent>
-        <v-progress-circular indeterminate size="64" width="8" color="primary"></v-progress-circular>
-      </v-overlay>
-
-      <v-card-text v-if="breakdownData && !isLoadingBreakdown" class="pa-4">
-        <!-- Score Summary Cards -->
-        <v-row class="mb-4">
-          <v-col cols="12" sm="6" md="2">
-            <v-card color="blue-lighten-4" elevation="2">
-              <v-card-text class="text-center">
-                <div class="text-h4 font-weight-bold">{{ breakdownData.totals.player_points }}</div>
-                <div class="text-caption">Player Points</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12" sm="6" md="2">
-            <v-card color="amber-lighten-4" elevation="2">
-              <v-card-text class="text-center">
-                <div class="text-h4 font-weight-bold">{{ breakdownData.totals.bench_points }}</div>
-                <div class="text-caption">Bench Points</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12" sm="6" md="2">
-            <v-card color="green-lighten-4" elevation="2">
-              <v-card-text class="text-center">
-                <div class="text-h4 font-weight-bold">{{ breakdownData.totals.team_points }}</div>
-                <div class="text-caption">Team Points</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12" sm="6" md="2">
-            <v-card color="purple-lighten-4" elevation="2">
-              <v-card-text class="text-center">
-                <div class="text-h4 font-weight-bold">{{ breakdownData.totals.race_points }}</div>
-                <div class="text-caption">Race Points</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12" sm="6" md="2">
-            <v-card :color="breakdownData.totals.bet_points >= 0 ? 'teal-lighten-4' : 'red-lighten-4'" elevation="2">
-              <v-card-text class="text-center">
-                <div class="text-h4 font-weight-bold">{{ breakdownData.totals.bet_points }}</div>
-                <div class="text-caption">Bet Points</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="12" sm="6" md="2">
-            <v-card color="primary" elevation="4">
-              <v-card-text class="text-center">
-                <div class="text-h4 font-weight-bold text-white">{{ breakdownData.totals.total_points }}</div>
-                <div class="text-caption text-white">Total Points</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- Expansion Panels for Details -->
-        <v-expansion-panels multiple>
-          <!-- Player Points Breakdown -->
-          <v-expansion-panel>
-            <v-expansion-panel-title>
-              <v-icon class="mr-2" color="blue">mdi-account-multiple</v-icon>
-              <strong>Player Points Details</strong>
-              <v-spacer></v-spacer>
-              <v-chip color="blue" size="small">{{ breakdownData.totals.player_points }} pts</v-chip>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <v-card v-for="player in breakdownData.player_breakdown" :key="player.player_id" class="mb-3" elevation="1">
-                <v-card-title class="bg-blue-lighten-5 py-2">
-                  {{ player.player_name }} - Total: {{ player.total }} points
-                </v-card-title>
-                <v-card-text>
-                  <v-row>
-                    <v-col v-for="week in player.weeks" :key="week.week" cols="12" md="6" lg="4">
-                      <v-card variant="outlined" class="mb-2">
-                        <v-card-subtitle class="font-weight-bold">Week {{ week.week }}</v-card-subtitle>
-                        <v-card-text>
-                          <div v-if="week.series.length > 0">
-                            <div v-for="(series, idx) in week.series" :key="idx" class="mb-1">
-                              <v-chip size="small" color="success" class="mr-1">+{{ series.points }}</v-chip>
-                              vs {{ series.opponent }} ({{ series.score }})
-                            </div>
-                            <v-divider class="my-1"></v-divider>
-                            <strong>Week Total: {{ week.points }} pts</strong>
-                          </div>
-                          <div v-else-if="week.bench_points > 0" class="text-amber">
-                            <v-icon size="small">mdi-seat</v-icon> Benched: +{{ week.bench_points }} pts
-                          </div>
-                          <div v-else class="text-grey">No games</div>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-
-          <!-- Bench Points Breakdown -->
-          <v-expansion-panel v-if="breakdownData.bench_breakdown.length > 0">
-            <v-expansion-panel-title>
-              <v-icon class="mr-2" color="amber">mdi-seat</v-icon>
-              <strong>Bench Points Details</strong>
-              <v-spacer></v-spacer>
-              <v-chip color="amber" size="small">{{ breakdownData.totals.bench_points }} pts</v-chip>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <v-list>
-                <v-list-item v-for="(bench, idx) in breakdownData.bench_breakdown" :key="idx">
-                  <v-list-item-title>
-                    <v-chip size="small" color="amber" class="mr-2">+{{ bench.points }}</v-chip>
-                    {{ bench.player_name }} - Week {{ bench.week }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>{{ bench.reason }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-
-          <!-- Team Points Breakdown -->
-          <v-expansion-panel v-if="breakdownData.team_breakdown.team_name">
-            <v-expansion-panel-title>
-              <v-icon class="mr-2" color="green">mdi-shield-account</v-icon>
-              <strong>Team Points Details</strong>
-              <v-spacer></v-spacer>
-              <v-chip color="green" size="small">{{ breakdownData.totals.team_points }} pts</v-chip>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <v-list>
-                <v-list-item>
-                  <v-list-item-title class="font-weight-bold">{{ breakdownData.team_breakdown.team_name }}</v-list-item-title>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-title>Final Score: {{ breakdownData.team_breakdown.final_score }}</v-list-item-title>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-subtitle>Points Against: {{ breakdownData.team_breakdown.points_against }}</v-list-item-subtitle>
-                </v-list-item>
-                <v-list-item>
-                  <v-list-item-subtitle>Points Available: {{ breakdownData.team_breakdown.points_available }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-
-          <!-- Race Points Breakdown -->
-          <v-expansion-panel>
-            <v-expansion-panel-title>
-              <v-icon class="mr-2" color="purple">mdi-trophy-variant</v-icon>
-              <strong>Race Points Details</strong>
-              <v-spacer></v-spacer>
-              <v-chip color="purple" size="small">{{ breakdownData.totals.race_points }} pts</v-chip>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <v-list>
-                <v-list-item>
-                  <v-list-item-title class="font-weight-bold">
-                    <RaceIcon :raceIdentifier="breakdownData.race_breakdown.race" />
-                    {{ breakdownData.race_breakdown.race }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    Season Stats: {{ breakdownData.race_breakdown.season_stats.wins }}W - {{ breakdownData.race_breakdown.season_stats.losses }}L
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-              <v-divider class="my-2"></v-divider>
-              <div class="text-subtitle-2 mb-2">Weekly Performance:</div>
-              <v-table density="compact">
-                <thead>
-                  <tr>
-                    <th>Week</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                    <th>Ratio</th>
-                    <th>Rank</th>
-                    <th>Points</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="week in breakdownData.race_breakdown.weekly_breakdown" :key="week.week">
-                    <td>{{ week.week }}</td>
-                    <td>{{ week.wins }}</td>
-                    <td>{{ week.losses }}</td>
-                    <td>{{ week.ratio.toFixed(2) }}</td>
-                    <td>
-                      <v-chip v-if="week.rank" :color="week.rank === 1 ? 'success' : week.rank === 2 ? 'info' : 'warning'" size="x-small">
-                        #{{ week.rank }}
-                      </v-chip>
-                      <span v-else class="text-grey">-</span>
-                    </td>
-                    <td>
-                      <v-chip v-if="week.points_awarded > 0" color="purple" size="small">+{{ week.points_awarded }}</v-chip>
-                      <span v-else class="text-grey">0</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-              <v-divider class="my-2"></v-divider>
-              <div class="text-subtitle-2 mb-2">All Race Rankings:</div>
-              <v-chip-group column>
-                <v-chip v-for="(points, race) in breakdownData.race_breakdown.all_race_points" :key="race" 
-                  :color="race === breakdownData.race_breakdown.race ? 'purple' : 'grey'"
-                  size="small">
-                  <RaceIcon :raceIdentifier="race" class="mr-1" />
-                  {{ race }}: {{ points }} pts
-                </v-chip>
-              </v-chip-group>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-
-          <!-- Bet Points Breakdown -->
-          <v-expansion-panel v-if="breakdownData.bet_breakdown.length > 0">
-            <v-expansion-panel-title>
-              <v-icon class="mr-2" :color="breakdownData.totals.bet_points >= 0 ? 'teal' : 'red'">mdi-casino</v-icon>
-              <strong>Bet Points Details</strong>
-              <v-spacer></v-spacer>
-              <v-chip :color="breakdownData.totals.bet_points >= 0 ? 'teal' : 'red'" size="small">{{ breakdownData.totals.bet_points }} pts</v-chip>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <v-list>
-                <v-list-item v-for="(bet, idx) in breakdownData.bet_breakdown" :key="idx">
-                  <template v-slot:prepend>
-                    <v-icon :color="bet.won ? 'success' : 'error'">
-                      {{ bet.won ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title>
-                    Week {{ bet.week }}: {{ bet.series }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    Bet on: {{ bet.bet_on }} | Winner: {{ bet.actual_winner }} | 
-                    <span :class="bet.won ? 'text-success' : 'text-error'">
-                      {{ bet.result > 0 ? '+' : '' }}{{ bet.result }} pts
-                    </span>
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </v-card-text>
-
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="closeBreakdownDialog">Close</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
 </template>
 
 <script setup>
 import RowActions from '@/components/RowActions.vue';
-import { ref, computed, onMounted } from 'vue';
+import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore, useFantasyStore, useSeasonStore, usePlayerStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { getW3CMMR } from '@/helpers/w3c-stats';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 
 
 const fantasyStore = useFantasyStore();
@@ -650,15 +349,15 @@ const isDeleting = ref(false);
 const errorMessage = ref(null);
 const seasons = ref([]);
 const selectedSeasonId = ref(null);
-const teamDialog = ref(false);
-const selectedTeam = ref(null);
+const currentW3CSeason = ref(null);
 const editDialog = ref(false);
 const deleteDialog = ref(false);
 const teamToDelete = ref(null);
 const isEditing = ref(false);
-const breakdownDialog = ref(false);
-const breakdownData = ref(null);
-const isLoadingBreakdown = ref(false);
+const expanded = ref([]);
+const breakdowns = ref({});  // by team id, filled when a row expands
+const playerDialog = ref(false);
+const selectedPlayer = ref(null);
 const players = ref([]);
 const gnlTeams = ref([]);
 const races = ref([
@@ -693,6 +392,7 @@ const tierPlayers = ref({
 const selectedTierPlayers = ref(emptyTierSelection());
 
 const headers = [
+  { title: '', key: 'data-table-expand', sortable: false, width: '48px' },
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
   { title: 'Captain', value: 'captain', sortable: false },
@@ -706,6 +406,32 @@ const headers = [
   { title: 'Total', value: 'total_points', align: 'end' },
   { title: 'Actions', value: 'actions', sortable: false, align: 'center' }
 ];
+
+const myUserId = computed(() => auth.me?.user?.id ?? null);
+
+// The GNL record of a drafted player in the shown season
+const gnlRecord = (player) => {
+  const stat = player.gnl_stats?.find(s => s.season_id === selectedSeasonId.value);
+  return stat ? `${stat.wins || 0}W - ${stat.losses || 0}L` : '-';
+};
+
+const openPlayer = (player) => {
+  selectedPlayer.value = player;
+  playerDialog.value = true;
+};
+
+// An expanded row shows the breakdown, fetched once per team and season
+watch(expanded, async (ids) => {
+  for (const id of ids) {
+    if (breakdowns.value[id] || !selectedSeasonId.value) continue;
+    try {
+      breakdowns.value[id] = await fantasyStore.getTeamScoreBreakdown(id, selectedSeasonId.value);
+    } catch (error) {
+      console.error('Failed to fetch score breakdown:', error);
+      errorMessage.value = `Failed to fetch score breakdown: ${error.message || 'Unknown error'}`;
+    }
+  }
+});
 
 const sortedTeams = computed(() => {
   return [...teams.value].sort((a, b) => {
@@ -750,6 +476,8 @@ const fetchData = async () => {
     }
     
     // Fetch teams for selected season
+    expanded.value = [];
+    breakdowns.value = {};
     const teamsQuery = `season_id == ${selectedSeasonId.value}`;
     await fantasyStore.searchTeams(teamsQuery);
   } catch (error) {
@@ -772,16 +500,6 @@ const loadSeasons = async () => {
     console.error('Failed to load seasons:', error);
     seasons.value = [];
   }
-};
-
-const viewTeamDetails = (teamId) => {
-  selectedTeam.value = teams.value.find(t => t.id === teamId);
-  teamDialog.value = true;
-};
-
-const closeTeamDialog = () => {
-  teamDialog.value = false;
-  selectedTeam.value = null;
 };
 
 const openCreateDialog = async () => {
@@ -968,40 +686,11 @@ const confirmDelete = async () => {
   }
 };
 
-const viewScoreBreakdown = async (team) => {
-  if (!selectedSeasonId.value) {
-    errorMessage.value = 'Please select a season first';
-    return;
-  }
-
-  breakdownDialog.value = true;
-  isLoadingBreakdown.value = true;
-  errorMessage.value = null;
-  
-  try {
-    const data = await fantasyStore.getTeamScoreBreakdown(team.id, selectedSeasonId.value);
-    breakdownData.value = {
-      ...data,
-      display_name: `${data.team_name} (${team.captain?.name || team.captain})`
-    };
-  } catch (error) {
-    console.error('Failed to fetch score breakdown:', error);
-    errorMessage.value = `Failed to fetch score breakdown: ${error.message || 'Unknown error'}`;
-    closeBreakdownDialog();
-  } finally {
-    isLoadingBreakdown.value = false;
-  }
-};
-
-const closeBreakdownDialog = () => {
-  breakdownDialog.value = false;
-  breakdownData.value = null;
-};
-
-onMounted(() => {
+onMounted(async () => {
   loadSeasons();
   fetchData();
   loadPlayersAndTeams();
+  currentW3CSeason.value = await resolveCurrentW3CSeason();
 });
 </script>
 

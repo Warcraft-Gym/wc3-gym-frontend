@@ -188,7 +188,7 @@
                                   @click="tierSelections.tier1 = item.value"
                                 >
                                                                     <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
+                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
                                       v-if="item.raw.battleTag"
@@ -221,7 +221,7 @@
                                   @click="tierSelections.tier2 = item.value"
                                 >
                                                                     <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
+                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
                                       v-if="item.raw.battleTag"
@@ -254,7 +254,7 @@
                                   @click="tierSelections.tier3 = item.value"
                                 >
                                                                     <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
+                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
                                       v-if="item.raw.battleTag"
@@ -287,7 +287,7 @@
                                   @click="tierSelections.tier4 = item.value"
                                 >
                                                                     <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
+                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
                                       v-if="item.raw.battleTag"
@@ -320,7 +320,7 @@
                                   @click="tierSelections.tier5 = item.value"
                                 >
                                                                     <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
+                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
                                       v-if="item.raw.battleTag"
@@ -353,7 +353,7 @@
                                   @click="tierSelections.tier6 = item.value"
                                 >
                                                                     <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
-                                  <v-list-item-subtitle>MMR: {{ displayMMR(item.raw) }}</v-list-item-subtitle>
+                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
                                       v-if="item.raw.battleTag"
@@ -571,6 +571,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useFantasyStore, useTeamStore, usePlayerStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { getW3CMMR } from '@/helpers/w3c-stats';

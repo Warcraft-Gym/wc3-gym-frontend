@@ -72,17 +72,17 @@
 
               <template v-slot:[`item.series`]="{ item }">
                 <div v-if="item.series">
-                  <PlayerName v-if="item.series.player1" :player="item.series.player1" :race="item.series.player1.race" />
+                  <PlayerName v-if="item.series.player1" :player="item.series.player1" :race="item.series.player1.signup_race" />
                   <template v-else>Player 1</template>
                   vs
-                  <PlayerName v-if="item.series.player2" :player="item.series.player2" :race="item.series.player2.race" />
+                  <PlayerName v-if="item.series.player2" :player="item.series.player2" :race="item.series.player2.signup_race" />
                   <template v-else>Player 2</template>
                 </div>
                 <div v-else>N/A</div>
               </template>
 
               <template v-slot:[`item.bet_on`]="{ item }">
-                <PlayerName v-if="getWinner(item)" :player="getWinner(item)" :race="getWinner(item).race" />
+                <PlayerName v-if="getWinner(item)" :player="getWinner(item)" :race="getWinner(item).signup_race" />
                 <strong v-else>{{ item.series ? 'Unknown' : 'N/A' }}</strong>
               </template>
 
@@ -311,7 +311,7 @@
         <div v-if="deletingBet" class="mt-2">
           <strong>Captain:</strong> {{ deletingBet.user?.name }}<br>
           <strong>Bet:</strong>
-          <PlayerName v-if="getWinner(deletingBet)" :player="getWinner(deletingBet)" :race="getWinner(deletingBet).race" />
+          <PlayerName v-if="getWinner(deletingBet)" :player="getWinner(deletingBet)" :race="getWinner(deletingBet).signup_race" />
           <template v-else>N/A</template>
         </div>
       </v-card-text>

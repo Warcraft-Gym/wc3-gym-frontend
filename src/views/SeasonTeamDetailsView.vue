@@ -201,8 +201,8 @@
                   <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                 </td>
                 <td>
-                  <div v-if="item.race">
-                    <RaceIcon :raceIdentifier="item.race" />                                          
+                  <div v-if="item.signup_race">
+                    <RaceIcon :raceIdentifier="item.signup_race" />
                   </div>
                 </td>     
                 <td>
@@ -305,7 +305,7 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore, useTeamStore, usePlayerStore, useLadderStore } from '@/stores';
+import { useAuthStore, useTeamStore, usePlayerStore, useSeasonStore, useLadderStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';
@@ -325,6 +325,7 @@ import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 const router = useRouter();
 const teamStore = useTeamStore();
 const playerStore = usePlayerStore();
+const seasonStore = useSeasonStore();
 const ladderStore = useLadderStore();
 const auth = useAuthStore();
 
@@ -343,7 +344,6 @@ const currentW3CSeason = ref(null);
 
 // Store refs
 const { team } = storeToRefs(teamStore);
-const { players: allPlayers } = storeToRefs(playerStore);
 
 // Season info for the currently viewed season
 const currentSeasonInfo = computed(() => {
@@ -356,6 +356,8 @@ const currentSeasonInfo = computed(() => {
 const isLoading = ref(false);
 const errorMessage = ref(null);
 const players = ref([]);
+// The Add Player dialog pool: season signups, carrying signup_race and MMR stats
+const seasonSignups = ref([]);
 const showNewPlayerModal = ref(false);
 const selectedPlayers = ref([]);
 
@@ -435,7 +437,7 @@ const playerTableHeaders = [
 
 const fetchAllPlayers = async () => {
   try {
-    await playerStore.fetchPlayers();
+    seasonSignups.value = await seasonStore.fetchSeasonSignups(seasonId.value) || [];
   } catch (error) {
     console.error('Failed to fetch players:', error);
   } finally {
@@ -457,7 +459,6 @@ const fetchTeam = async () => {
     players.value = team.value.player_by_season[seasonId.value] || [];
     
     // Load ALL users for captain selection (captains can be anyone, not just season players)
-    // Fetch all players first to populate allPlayers (for player modal)
     await playerStore.fetchPlayers();
     // For captains, use ALL users directly from store (not filtered by season)
     allAvailableUsers.value = playerStore.players || [];
@@ -565,23 +566,14 @@ const showStats = async (player) => {
 
 
 const filteredAllPlayers = computed(() => {
-  let list = allPlayers.value || [];
-
-  // Only include players who signed up for the current season
-  if (seasonId.value) {
-    const sid = String(seasonId.value);
-    list = list.filter(p => {
-      if (!p.signup_seasons) return false;
-      return p.signup_seasons.some(s => String(s.id) === sid);
-    });
-  }
+  let list = seasonSignups.value || [];
 
   if (searchName.value && searchName.value.trim().length > 0) {
     list = list.filter(p => matchesPlayerSearch(p, searchName.value));
   }
 
   if (searchRace.value) {
-    list = list.filter(p => p.race === searchRace.value);
+    list = list.filter(p => p.signup_race === searchRace.value);
   }
 
   // filter by mmr range — only apply if user changed from defaults

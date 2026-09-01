@@ -15,6 +15,8 @@ defineProps({
 <style scoped>
 .bet-icon {
   vertical-align: middle;
+  position: relative;
+  top: 0.1em;
   flex-shrink: 0;
 }
 </style>

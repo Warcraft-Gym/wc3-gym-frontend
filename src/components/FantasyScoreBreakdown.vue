@@ -175,7 +175,7 @@
                     <span :class="{ loser: bet.actual_winner && side !== bet.actual_winner }">
                       <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" @click="openPlayer(side)" />
                     </span>
-                    <BetIcon v-if="side === bet.bet_on" class="text-teal" />
+                    <BetIcon v-if="side === bet.bet_on" class="text-amber-darken-2" />
                   </template>
                 </div>
                 <span v-else>{{ bet.series }}</span>

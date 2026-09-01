@@ -265,7 +265,7 @@ const KIND_META = {
   team: { label: 'Team', description: "The team's current-season roster and captains hold the role." },
   captain: { label: 'GNL Captain', description: 'Captains of the current season hold the role.' },
   gnl_participant: { label: 'GNL Player', description: 'Players rostered or signed up in the season hold the role.' },
-  fantasy: { label: 'GNL Fantasy', description: 'Fantasy team captains of the season hold the role.' },
+  fantasy: { label: 'GNL Fantasy', description: 'Bettors — the members who own a fantasy team in the season — hold the role.' },
   champion: { label: 'Champion', description: 'The roster of the team that won the season holds the role; the winner is derived from standings.' },
   admin: { label: 'Gym Admin', description: 'Hand-managed in Discord; sync never grants or removes these roles.' }
 };

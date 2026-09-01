@@ -118,7 +118,7 @@
                     v-model="settingsMap.fantasy_team_creation_enabled"
                     color="primary"
                     label="Fantasy Team Creation Enabled"
-                    hint="Allow captains to create fantasy teams"
+                    hint="Allow members to create their own fantasy team and place bets"
                     hide-details="auto"
                     true-value="true"
                     false-value="false"

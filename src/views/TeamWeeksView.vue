@@ -159,6 +159,11 @@ const outToLastWeek = async (userId) => {
 };
 
 onMounted(async () => {
+  // same gate as the link that leads here: admins, or the captain of this team
+  if (!auth.isAdmin && auth.me?.team?.id !== teamId.value) {
+    router.replace('/profile');
+    return;
+  }
   isLoading.value = true;
   try {
     const [answered] = await Promise.all([

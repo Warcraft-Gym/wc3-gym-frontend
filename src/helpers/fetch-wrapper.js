@@ -124,9 +124,9 @@ async function handleResponse(response, receiveBinary, receivePage = false) {
     if (!response.ok) {
         const { me, viewAs, logout } = useAuthStore();
 
-        // a refusal met while viewing as a lower role is the point, not a dead session
-        if ([401, 403].includes(response.status) && me && !viewAs) {
-            logout(); // Logout on unauthorized access
+        // only a dead session (401) ends the session; a 403 is a permission refusal to show
+        if (response.status === 401 && me && !viewAs) {
+            logout();
         }
 
         // **Properly await the response before rejecting**

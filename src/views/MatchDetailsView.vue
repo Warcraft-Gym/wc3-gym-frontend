@@ -320,11 +320,11 @@
                   <v-row align="center" class="flex-wrap ma-0 pa-2">
                     <v-alert type="info" variant="tonal" density="compact" class="ma-2" border="start">
                       <v-icon start>mdi-information</v-icon>
-                      Draft series are only visible in the admin UI and won't appear on the website or affect calculations.
+                      Draft series won't appear on the website or affect calculations until an admin publishes them.
                     </v-alert>
                     <v-spacer />
                     <v-col cols="12" sm="auto">
-                      <v-btn variant="elevated" color="warning" prepend-icon="mdi-plus" v-if="auth.isAdmin" @click="openCreateNewDraftSeries" block>
+                      <v-btn variant="elevated" color="warning" prepend-icon="mdi-plus" v-if="canDraft" @click="openCreateNewDraftSeries" block>
                         Add Draft Series
                       </v-btn>
                     </v-col>
@@ -350,13 +350,13 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player1) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="purple">
-                      {{ getHighestW3CMMR(item.player1) ?? 'N/A' }}
+                      {{ getHighestW3CMMR(item.player1) || '—' }}
                     </v-chip>
                   </td>
                   <td>
@@ -374,24 +374,24 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player2) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="purple">
-                      {{ getHighestW3CMMR(item.player2) ?? 'N/A' }}
+                      {{ getHighestW3CMMR(item.player2) || '—' }}
                     </v-chip>
                   </td>
-                  <td class="text-center">
-                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
+                  <td v-if="auth.isAdmin" class="text-center">
+                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Marked to count for fantasy when published"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
-                  <td v-if="auth.isAdmin" class="text-center">
+                  <td v-if="canDraft" class="text-center">
                     <RowActions :actions="[
                       { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
                       { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
-                      { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
+                      { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
                     ]" />
                   </td>
                 </tr>
@@ -409,7 +409,7 @@
               variant="tonal" 
               class="mt-4"
               prepend-icon="mdi-plus"
-              v-if="auth.isAdmin" @click="openCreateNewDraftSeries"
+              v-if="canDraft" @click="openCreateNewDraftSeries"
             >
               Create Draft Series
             </v-btn>
@@ -541,11 +541,12 @@
         <v-card-actions class="px-4 py-3 flex-shrink-0" style="border-top: 1px solid rgba(0,0,0,0.12);">
           <v-checkbox
             v-model="newSeries_IsDraft"
-            label="Create as Draft (Admin Only)"
+            label="Create as Draft"
             hint="Draft series won't appear on website or in calculations"
             persistent-hint
             color="warning"
             class="ml-4"
+            :disabled="!auth.isAdmin"
           ></v-checkbox>
           <v-spacer></v-spacer>
           <v-btn 
@@ -1064,7 +1065,7 @@ const seriesTableHeader = computed(() => [
 const draftSeriesTableHeader = computed(() => [
   { title: 'ID', value: 'id', sortable: true },  
   { title: 'Player 1', value: 'player1.name', sortable: true },
-  { title: 'Matchup History', key: 'p1_matchup_history', sortable: false },
+  { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1, currentW3CSeason.value) || 0;
     let bValue = getW3CMMR(b?.player1, currentW3CSeason.value) || 0;
@@ -1076,7 +1077,7 @@ const draftSeriesTableHeader = computed(() => [
     return aValue - bValue;
   }},
   { title: 'Player 2', value: 'player2.name', sortable: true },
-  { title: 'Matchup History', key: 'p2_matchup_history', sortable: false },
+  { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2, currentW3CSeason.value) || 0;
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value) || 0;
@@ -1087,14 +1088,14 @@ const draftSeriesTableHeader = computed(() => [
     let bValue = getHighestW3CMMR(b?.player2) || 0;
     return aValue - bValue;
   }},
-  { title: 'Fantasy Match'},
-  ...(auth.isAdmin ? [{ title: '', value: 'actions', sortable: false }] : []),
+  ...(auth.isAdmin ? [{ title: 'Fantasy on publish' }] : []),
+  ...(canDraft.value ? [{ title: '', value: 'actions', sortable: false }] : []),
 ]);
 
 const proposedSeriesTableHeader = [
   { title: 'Player 1', value: 'player1.name', width:'300px', sortable: true },
   { title: 'GNL Games', value: 'player1.gnl_stats[0].games', sortable: true, align: 'end' },
-  { title: 'Matchup History', key: 'p1_matchup_history', sortable: false },
+  { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'Current MMR', key: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1) || 0;
     let bValue = getW3CMMR(b?.player1) || 0;
@@ -1107,7 +1108,7 @@ const proposedSeriesTableHeader = [
   }},
   { title: 'Player 2', value: 'player2.name', width:'300px', sortable: true },
   { title: 'GNL Games', value: 'player2.gnl_stats[0].games', sortable: true, align: 'end' },
-  { title: 'Matchup History', key: 'p2_matchup_history', sortable: false }, 
+  { title: 'Faced Races', key: 'p2_matchup_history', sortable: false }, 
   { title: 'Current MMR', key: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2) || 0;
     let bValue = getW3CMMR(b?.player2) || 0;
@@ -1135,6 +1136,10 @@ const tablePlayerHeader = computed(() => [
 
 // Route params - use computed to get the current route param
 const matchId = computed(() => router.currentRoute.value.params.id);
+
+// a captain writes the draft of the matches their own team plays; an admin any
+const canDraft = computed(() => auth.isAdmin || (auth.me?.team?.id != null
+  && [matchStore.match?.team1_id, matchStore.match?.team2_id].includes(auth.me.team.id)));
 
 // Component state
 const isLoading = ref(false);

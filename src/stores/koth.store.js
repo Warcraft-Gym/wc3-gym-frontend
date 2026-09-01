@@ -81,6 +81,11 @@ export const useKothStore = defineStore({
             this.signups.push(...newSignups);
             return newSignups;
         },
+        async withdrawMe(race = null) {
+            // the caller refetches the signups; this list has no reliable own-row key
+            const url = race ? `${backendUrl}/koth/signups/me?race=${encodeURIComponent(race)}` : `${backendUrl}/koth/signups/me`;
+            await fetchWrapper.delete(url);
+        },
 
         async createPublicSignup(signupData) {
             // Public endpoint - uses GET with query parameters and KOTH_NIGHTBOT_TOKEN

@@ -188,7 +188,7 @@
                 <td class="text-center text-caption text-medium-emphasis">{{ idx + 1 }}</td>
                 <td><PlayerName :player="player" /></td>
                 <td class="text-center">
-                  <RaceIcon v-if="player.race" :raceIdentifier="player.race" />
+                  <RaceIcon v-if="player.signup_race" :raceIdentifier="player.signup_race" />
                   <span v-else class="text-caption">–</span>
                 </td>
                 <td class="text-center">
@@ -560,7 +560,8 @@ const raceBreakdown = computed(() => {
     const raceMap = {};
 
     for (const player of allPlayers.value) {
-        const race = player.race || 'Rnd';
+        if (!player.signup_race) continue; // unsigned players have no race to tally, same as the points loop below
+        const race = player.signup_race;
         if (!raceMap[race]) raceMap[race] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
         raceMap[race].players++;
         if (player.seasonStats) {
@@ -572,13 +573,13 @@ const raceBreakdown = computed(() => {
 
     // Accumulate points from series
     for (const s of series.value) {
-        if (s.player1?.race && s.player1_points != null) {
-            const r = s.player1.race;
+        if (s.player1?.signup_race && s.player1_points != null) {
+            const r = s.player1.signup_race;
             if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
             raceMap[r].points += s.player1_points;
         }
-        if (s.player2?.race && s.player2_points != null) {
-            const r = s.player2.race;
+        if (s.player2?.signup_race && s.player2_points != null) {
+            const r = s.player2.signup_race;
             if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
             raceMap[r].points += s.player2_points;
         }

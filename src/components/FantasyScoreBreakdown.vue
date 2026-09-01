@@ -43,7 +43,7 @@
         <GroupedTable :columns="playerColumns" :groups="roster" empty="No drafted players">
           <template #head.mmr><W3CMmr /></template>
           <template #group="{ group: row }">
-            <td><PlayerName :player="row.player" :race="row.player.race" @click.stop="openPlayer(row.player_name, row.player_id)" /></td>
+            <td><PlayerName :player="row.player" :race="row.player.signup_race" @click.stop="openPlayer(row.player_name, row.player_id)" /></td>
             <td class="text-right">{{ row.mmr || 'N/A' }}</td>
             <td class="text-right">{{ row.record }}</td>
             <td class="text-right">{{ row.total }}</td>
@@ -57,7 +57,7 @@
                 <td colspan="5">
                   <div class="d-flex align-center ga-1 flex-wrap">
                     <span class="week-label text-medium-emphasis">Week {{ week.week }}</span>
-                    vs <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).race" @click="openPlayer(series.opponent)" />
+                    vs <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" @click="openPlayer(series.opponent)" />
                     <span>({{ series.score }})</span>
                   </div>
                 </td>
@@ -173,7 +173,7 @@
                   <template v-for="(side, i) in sides(bet)" :key="i">
                     <span v-if="i" class="text-grey">vs</span>
                     <span :class="{ loser: bet.actual_winner && side !== bet.actual_winner }">
-                      <PlayerName :player="resolve(side)" :race="resolve(side).race" @click="openPlayer(side)" />
+                      <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" @click="openPlayer(side)" />
                     </span>
                     <BetIcon v-if="side === bet.bet_on" class="text-teal" />
                   </template>
@@ -253,7 +253,7 @@ const roster = computed(() => {
       ...b,
       key: b.player_id ?? b.player_name,
       player,
-      mmr: getW3CMMR(player, props.w3cSeason),
+      mmr: player.signup_race ? getW3CMMR(player, props.w3cSeason, player.signup_race) : null,
       record: gnlRecord(player),
       bench: bench[b.player_name] || 0,
     };

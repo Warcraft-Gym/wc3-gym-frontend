@@ -340,14 +340,11 @@
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
-                      <v-avatar
-                        v-for="(race, idx) in getOpponentRaceHistory(item.player1)"
-                        :key="`p1-${idx}`"
-                        size="24"
-                        class="race-avatar"
-                      >
-                        <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
-                      </v-avatar>
+                      <template v-for="(race, idx) in getOpponentRaceHistory(item.player1)" :key="`p1-${idx}`">
+                        <v-avatar v-if="race" size="24" class="race-avatar">
+                          <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
+                        </v-avatar>
+                      </template>
                       <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
@@ -367,14 +364,11 @@
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
-                      <v-avatar
-                        v-for="(race, idx) in getOpponentRaceHistory(item.player2)"
-                        :key="`p2-${idx}`"
-                        size="24"
-                        class="race-avatar"
-                      >
-                        <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
-                      </v-avatar>
+                      <template v-for="(race, idx) in getOpponentRaceHistory(item.player2)" :key="`p2-${idx}`">
+                        <v-avatar v-if="race" size="24" class="race-avatar">
+                          <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
+                        </v-avatar>
+                      </template>
                       <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
@@ -511,7 +505,7 @@
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
-                    <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
+                    <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                       <v-chip v-if="s.isOut(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                     </PlayerName>
                   </template>
@@ -744,7 +738,7 @@
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
-                      <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
+                      <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                         <span class="text-caption text-grey">({{ item.discordTag }})</span>
                         <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
@@ -811,7 +805,7 @@
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
-                      <PlayerName :player="item" :race="item.race" @click.stop="showStats(item)">
+                      <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                         <span class="text-caption text-grey">({{ item.discordTag }})</span>
                         <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
@@ -916,27 +910,21 @@
               </template>
               <template v-slot:[`item.p1_matchup_history`]="{ item }">
                 <div class="d-flex align-center ga-1">
-                  <v-avatar
-                    v-for="(race, idx) in getOpponentRaceHistory(item.player1)"
-                    :key="`p1-${idx}`"
-                    size="24"
-                    class="race-avatar"
-                  >
-                    <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
-                  </v-avatar>
+                  <template v-for="(race, idx) in getOpponentRaceHistory(item.player1)" :key="`p1-${idx}`">
+                    <v-avatar v-if="race" size="24" class="race-avatar">
+                      <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
+                    </v-avatar>
+                  </template>
                   <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-grey text-caption">—</span>
                 </div>
               </template>
               <template v-slot:[`item.p2_matchup_history`]="{ item }">
                 <div class="d-flex align-center ga-1">
-                  <v-avatar
-                    v-for="(race, idx) in getOpponentRaceHistory(item.player2)"
-                    :key="`p2-${idx}`"
-                    size="24"
-                    class="race-avatar"
-                  >
-                    <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
-                  </v-avatar>
+                  <template v-for="(race, idx) in getOpponentRaceHistory(item.player2)" :key="`p2-${idx}`">
+                    <v-avatar v-if="race" size="24" class="race-avatar">
+                      <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
+                    </v-avatar>
+                  </template>
                   <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
                 </div>
               </template>

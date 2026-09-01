@@ -31,7 +31,7 @@
         </thead>
         <tbody>
           <tr v-for="player in players" :key="player.id">
-            <td><PlayerName :player="player" :race="player.race" /></td>
+            <td><PlayerName :player="player" :race="player.signup_race" /></td>
             <td v-for="week in weeks" :key="week" class="text-center">
               <div class="d-flex ga-1 justify-center">
                 <v-btn

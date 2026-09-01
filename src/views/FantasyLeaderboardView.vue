@@ -127,7 +127,7 @@
                       <FantasyScoreBreakdown
                         v-else
                         :breakdown="breakdowns[item.id]"
-                        :players="players"
+                        :players="seasonSignups"
                         :drafted-players="item.drafted_players || []"
                         :season-id="selectedSeasonId"
                         :w3c-season="currentW3CSeason"
@@ -287,7 +287,7 @@ import RowActions from '@/components/RowActions.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useAuthStore, useFantasyStore, usePlayerStore, useTeamStore } from '@/stores';
+import { useAuthStore, useFantasyStore, usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { loadSeasons, resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
@@ -295,6 +295,7 @@ import StatusAlert from '@/components/StatusAlert.vue';
 
 const fantasyStore = useFantasyStore();
 const playerStore = usePlayerStore();
+const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 const auth = useAuthStore();
 
@@ -315,6 +316,8 @@ const expanded = ref([]);
 const breakdowns = ref({});  // by team id, filled when a row expands
 const playerDetailsDialog = ref(null);
 const players = ref([]);
+// The breakdown's opponent/bet resolve() pool: season signups, carrying signup_race
+const seasonSignups = ref([]);
 const gnlTeams = ref([]);
 const races = ref([
   { title: 'Human', value: 'HU' },
@@ -429,6 +432,7 @@ const fetchData = async () => {
     breakdowns.value = {};
     const teamsQuery = `season_id == ${selectedSeasonId.value}`;
     await fantasyStore.searchTeams(teamsQuery);
+    seasonSignups.value = await seasonStore.fetchSeasonSignups(selectedSeasonId.value) || [];
   } catch (error) {
     console.error('Failed to fetch fantasy teams:', error);
     errorMessage.value = 'Failed to load fantasy teams. Please try again later.';

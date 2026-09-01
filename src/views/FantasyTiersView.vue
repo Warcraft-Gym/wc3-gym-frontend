@@ -172,7 +172,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { usePlayerStore, useTeamStore } from '@/stores';
+import { usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
@@ -181,8 +181,10 @@ import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const playerStore = usePlayerStore();
+const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
-const { players } = storeToRefs(playerStore);
+// The season's signups: carries signup_race, w3c_stats and fantasy_tier
+const players = ref([]);
 const { teams } = storeToRefs(teamStore);
 
 const isLoading = ref(true);
@@ -208,7 +210,8 @@ const totalPlayers = computed(() => {
 
 // Get W3C MMR for player's race (with fallback)
 const getW3CMMR = (player) => {
-  const stats = getW3CStatsWithFallback(player, null, currentW3CSeason.value);
+  if (!player.signup_race) return null;
+  const stats = getW3CStatsWithFallback(player, player.signup_race, currentW3CSeason.value);
   return stats?.mmr ?? null;
 };
 
@@ -253,8 +256,8 @@ const loadData = async () => {
   try {
     currentSeasonId.value = await resolveCurrentSeasonId();
     currentW3CSeason.value = await resolveCurrentW3CSeason();
-    await playerStore.fetchPlayers();
-    
+    players.value = currentSeasonId.value ? await seasonStore.fetchSeasonSignups(currentSeasonId.value) : [];
+
     // Fetch teams for the current season
     if (currentSeasonId.value) {
       await teamStore.fetchTeamsBySeason(currentSeasonId.value);
@@ -311,7 +314,7 @@ const applyTierAllocation = async () => {
     successMessage.value = `Successfully updated tier assignments for ${totalPlayers.value} players!`;
     
     // Refresh player data
-    await playerStore.fetchPlayers();
+    players.value = await seasonStore.fetchSeasonSignups(currentSeasonId.value) || [];
     updateTierRanges();
     
   } catch (error) {

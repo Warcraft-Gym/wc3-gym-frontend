@@ -184,7 +184,7 @@
                                   :value="item.value"
                                   @click="tierSelections[tier] = item.value"
                                 >
-                                  <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.race" /></v-list-item-title>
+                                  <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.signup_race" /></v-list-item-title>
                                   <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
                                   <template v-slot:append>
                                     <v-btn
@@ -205,7 +205,7 @@
                           <strong>Selected Players ({{ selectedPlayers.length }}):</strong>
                           <v-chip-group class="mt-2">
                             <v-chip v-for="player in selectedPlayers" :key="player.id" size="small" color="primary" @click="showPlayerDetails(player)" style="cursor: pointer;">
-                              <PlayerName :player="player" :race="player.race" />
+                              <PlayerName :player="player" :race="player.signup_race" />
                             </v-chip>
                           </v-chip-group>
                         </div>
@@ -400,7 +400,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useFantasyStore, useTeamStore, usePlayerStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
+import { useFantasyStore, useTeamStore, useSeasonStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
@@ -415,7 +415,7 @@ const route = useRoute();
 const authStore = useAuthStore();
 const fantasyStore = useFantasyStore();
 const teamStore = useTeamStore();
-const playerStore = usePlayerStore();
+const seasonStore = useSeasonStore();
 const configStore = useConfigStore();
 const seriesStore = useSeriesStore();
 
@@ -436,7 +436,8 @@ const availablePlayers = ref([]);
 const currentW3CSeason = ref(null);
 
 const displayMMR = (player) => {
-  const mmr = getW3CMMR(player, currentW3CSeason.value);
+  if (!player.signup_race) return 'N/A';
+  const mmr = getW3CMMR(player, currentW3CSeason.value, player.signup_race);
   return mmr > 0 ? mmr : 'N/A';
 };
 
@@ -603,9 +604,8 @@ const fetchInitialData = async () => {
     await teamStore.fetchTeamsBySeasonBasic(teamForm.value.season_id);
     teams.value = teamStore.teams || [];
 
-    // Fetch players
-    await playerStore.fetchPlayers();
-    availablePlayers.value = playerStore.players || [];
+    // Fetch season signups: the draft pool, carrying signup_race and w3c_stats
+    availablePlayers.value = await seasonStore.fetchSeasonSignups(currentSeasonId) || [];
 
     // Check if player already has a fantasy team for current season
     if (teamForm.value.season_id) {
@@ -640,10 +640,15 @@ const checkExistingTeam = async () => {
           drafted_race: existingTeam.value.drafted_race,
           player_ids: existingTeam.value.drafted_players?.map(p => p.id) || []
         };
-        
+
+        // A drafted player removed from signups since the draft still keeps his roster spot
+        const knownIds = new Set(availablePlayers.value.map(p => p.id));
+        const missingDrafted = (existingTeam.value.drafted_players || []).filter(p => p && !knownIds.has(p.id));
+        if (missingDrafted.length > 0) availablePlayers.value = [...availablePlayers.value, ...missingDrafted];
+
         // Populate tier selections from player IDs
         populateTierSelectionsFromPlayerIds(teamForm.value.player_ids);
-        
+
         // Fetch fantasy betting data
         await fetchFantasyData();
       } else {

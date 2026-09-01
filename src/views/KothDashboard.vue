@@ -26,6 +26,18 @@
           <v-icon start>mdi-account-plus</v-icon>
           Sign Up to Compete
         </v-btn>
+        <v-btn
+          v-if="mySignups.length"
+          color="error"
+          variant="tonal"
+          size="large"
+          class="ml-3"
+          :loading="isWithdrawing"
+          @click="showWithdrawConfirm = true"
+        >
+          <v-icon start>mdi-account-minus</v-icon>
+          Withdraw
+        </v-btn>
       </div>
 
     <!-- Brackets Grid -->
@@ -91,6 +103,13 @@
     </v-row>
 
     <!-- Signup Dialog -->
+    <ConfirmDeleteDialog
+      v-model="showWithdrawConfirm"
+      message="Withdraw all your signups from this event?"
+      @confirm="withdraw"
+      @cancel="showWithdrawConfirm = false"
+    />
+
     <v-dialog v-model="showSignupDialog" max-width="500px" persistent>
       <v-card>
         <v-card-title class="bg-primary">
@@ -179,6 +198,7 @@ import { useAuthStore } from '@/stores';
 import { useConfigStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bracketSilverIcon from '@/assets/media/bracket-silver.png';
 import bracketGoldIcon from '@/assets/media/bracket-gold.png';
 import bracketDiamondIcon from '@/assets/media/bracket-diamond.png';
@@ -193,6 +213,27 @@ const { events, kings } = storeToRefs(kothStore);
 
 // A logged-in player whose row carries a battle tag signs up from his profile
 const profileBattleTag = computed(() => authStore.me?.user?.battleTag || null);
+
+// the caller's own active signups on this event, by folded battle tag
+const fold = (tag) => String(tag || '').trim().toLowerCase();
+const mySignups = computed(() => (kothStore.signups || []).filter(
+  (s) => s.is_active && profileBattleTag.value && fold(s.battle_tag) === fold(profileBattleTag.value)
+));
+const isWithdrawing = ref(false);
+const showWithdrawConfirm = ref(false);
+
+async function withdraw() {
+  showWithdrawConfirm.value = false;
+  isWithdrawing.value = true;
+  try {
+    await kothStore.withdrawMe();
+    await loadDashboardData();
+  } catch (error) {
+    console.error('Failed to withdraw:', error);
+  } finally {
+    isWithdrawing.value = false;
+  }
+}
 
 const event = ref(null);
 const showSignupDialog = ref(false);

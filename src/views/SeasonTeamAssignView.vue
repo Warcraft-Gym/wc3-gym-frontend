@@ -23,7 +23,7 @@
             <v-col cols="12" sm="auto" style="min-width: 240px">
               <SyncProgress />
             </v-col>
-            <v-col cols="12" sm="auto">
+            <v-col v-if="auth.isAdmin" cols="12" sm="auto">
               <v-btn variant="elevated" color="primary" @click="syncAllDraftPlayers" :loading="syncAllLoading" prepend-icon="mdi-sync" block>
                 Sync W3C
                 <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
@@ -77,6 +77,7 @@
                   clearable
                   hide-details
                   style="min-width: 150px;"
+                  :disabled="!auth.isAdmin"
                 ></v-select>
               </template>
               <template #item.name="{ item }">
@@ -130,6 +131,7 @@
               </template>
               <template #item.actions="{ item }">
                 <v-btn
+                  v-if="auth.isAdmin"
                   icon
                   size="small"
                   variant="text"
@@ -142,7 +144,7 @@
                 <div>No available signed-up players for this season.</div>
               </template>
             </v-data-table>
-      <v-card-actions class="px-4 pb-4">
+      <v-card-actions v-if="auth.isAdmin" class="px-4 pb-4">
         <v-btn
           color="primary"
           variant="elevated"
@@ -229,6 +231,7 @@
                       </div>
                       <div style="display:flex;align-items:center;gap:6px;">
                           <v-btn
+                            v-if="auth.isAdmin"
                             class="table-action ma-0 pa-0"
                             icon
                             density="compact"
@@ -260,7 +263,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useLadderStore, useTeamStore, useSeasonStore } from '@/stores';
+import { useAuthStore, useLadderStore, useTeamStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -282,6 +285,7 @@ import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
 
 
 const router = useRouter();
+const auth = useAuthStore();
 
 const seasonId = computed(() => {
   const params = router.currentRoute.value.params || {};

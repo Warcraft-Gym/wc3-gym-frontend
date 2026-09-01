@@ -23,7 +23,7 @@ export const router = createRouter({
         { path: '/fantasy-registration', component: FantasyDashboardView, meta: { role: 'public' } },
         { path: '/players', component: PlayersView, meta: { role: 'guest' } },
         { path: '/seasons/:id', component: SeasonDetailsView, meta: { role: 'guest' } },
-        { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'admin' } },
+        { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'captain' } },  // captains read it; the view gates every write to admins
         { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false } },
         { path: '/match/:id', component: MatchDetailsView, meta: { role: 'guest' } },
         { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'guest' } },

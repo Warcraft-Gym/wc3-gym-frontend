@@ -218,8 +218,9 @@
         </v-expansion-panel-title>
         <v-expansion-panel-text>
           <!-- Team Management Actions -->
-          <v-card-actions v-if="auth.isAdmin" class="pa-3">
+          <v-card-actions v-if="auth.isCaptain" class="pa-3">
             <v-btn
+              v-if="auth.isAdmin"
               @click="openTeamSelectionModal"
               variant="tonal"
               color="primary"

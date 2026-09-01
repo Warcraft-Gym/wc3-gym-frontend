@@ -350,13 +350,13 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player1) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="purple">
-                      {{ getHighestW3CMMR(item.player1) ?? 'N/A' }}
+                      {{ getHighestW3CMMR(item.player1) || '—' }}
                     </v-chip>
                   </td>
                   <td>
@@ -374,17 +374,17 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player2) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="purple">
-                      {{ getHighestW3CMMR(item.player2) ?? 'N/A' }}
+                      {{ getHighestW3CMMR(item.player2) || '—' }}
                     </v-chip>
                   </td>
-                  <td class="text-center">
-                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
+                  <td v-if="auth.isAdmin" class="text-center">
+                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Marked to count for fantasy when published"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
                   <td v-if="canDraft" class="text-center">
@@ -1065,7 +1065,7 @@ const seriesTableHeader = computed(() => [
 const draftSeriesTableHeader = computed(() => [
   { title: 'ID', value: 'id', sortable: true },  
   { title: 'Player 1', value: 'player1.name', sortable: true },
-  { title: 'Matchup History', key: 'p1_matchup_history', sortable: false },
+  { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1, currentW3CSeason.value) || 0;
     let bValue = getW3CMMR(b?.player1, currentW3CSeason.value) || 0;
@@ -1077,7 +1077,7 @@ const draftSeriesTableHeader = computed(() => [
     return aValue - bValue;
   }},
   { title: 'Player 2', value: 'player2.name', sortable: true },
-  { title: 'Matchup History', key: 'p2_matchup_history', sortable: false },
+  { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2, currentW3CSeason.value) || 0;
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value) || 0;
@@ -1088,14 +1088,14 @@ const draftSeriesTableHeader = computed(() => [
     let bValue = getHighestW3CMMR(b?.player2) || 0;
     return aValue - bValue;
   }},
-  { title: 'Fantasy Match'},
+  ...(auth.isAdmin ? [{ title: 'Fantasy on publish' }] : []),
   ...(canDraft.value ? [{ title: '', value: 'actions', sortable: false }] : []),
 ]);
 
 const proposedSeriesTableHeader = [
   { title: 'Player 1', value: 'player1.name', width:'300px', sortable: true },
   { title: 'GNL Games', value: 'player1.gnl_stats[0].games', sortable: true, align: 'end' },
-  { title: 'Matchup History', key: 'p1_matchup_history', sortable: false },
+  { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'Current MMR', key: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1) || 0;
     let bValue = getW3CMMR(b?.player1) || 0;
@@ -1108,7 +1108,7 @@ const proposedSeriesTableHeader = [
   }},
   { title: 'Player 2', value: 'player2.name', width:'300px', sortable: true },
   { title: 'GNL Games', value: 'player2.gnl_stats[0].games', sortable: true, align: 'end' },
-  { title: 'Matchup History', key: 'p2_matchup_history', sortable: false }, 
+  { title: 'Faced Races', key: 'p2_matchup_history', sortable: false }, 
   { title: 'Current MMR', key: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2) || 0;
     let bValue = getW3CMMR(b?.player2) || 0;

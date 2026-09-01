@@ -65,14 +65,15 @@ export function getW3CStatsWithFallback(player, race = null, currentSeason = nul
  * 
  * @param {Object} player - Player object
  * @param {number} currentSeason - Current W3C season (required)
+ * @param {string} race - Race to count for (defaults to player.race)
  * @returns {number} - Combined games count across both seasons
  */
-export function getW3CGamesCount(player, currentSeason) {
+export function getW3CGamesCount(player, currentSeason, race = null) {
   if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
     return 0;
   }
 
-  const targetRace = player.race;
+  const targetRace = race || player.race;
   if (!targetRace) {
     return 0;
   }
@@ -123,10 +124,11 @@ export function getAllRaceStats(player, currentSeason = null) {
  * 
  * @param {Object} player - Player object
  * @param {number} currentSeason - Current W3C season (optional, null = use fallback)
+ * @param {string} race - Race to read (defaults to player.race)
  * @returns {number} - MMR value (0 if not found)
  */
-export function getW3CMMR(player, currentSeason = null) {
-  const stats = getW3CStatsWithFallback(player, null, currentSeason);
+export function getW3CMMR(player, currentSeason = null, race = null) {
+  const stats = getW3CStatsWithFallback(player, race, currentSeason);
   return stats ? (stats.mmr || 0) : 0;
 }
 
@@ -163,14 +165,15 @@ export function mmrSeasonLabel(player, currentSeason) {
  *
  * @param {Object} player - Player object
  * @param {number} currentSeason - Current W3C season (required)
+ * @param {string} race - Race to check (defaults to player.race)
  * @returns {boolean} - True if stats exist for either season
  */
-export function hasW3CStatsTwoSeasons(player, currentSeason) {
+export function hasW3CStatsTwoSeasons(player, currentSeason, race = null) {
   if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
     return false;
   }
 
-  const targetRace = player.race;
+  const targetRace = race || player.race;
   if (!targetRace) {
     return false;
   }
@@ -187,15 +190,16 @@ export function hasW3CStatsTwoSeasons(player, currentSeason) {
  *
  * @param {Object} player - Player object
  * @param {number} currentSeason - Current W3C season (required)
+ * @param {string} race - Race to check (defaults to player.race)
  * @param {number} threshold - Minimum games threshold (default: 20)
  * @returns {boolean} - True if combined games are below threshold (and player has some stats)
  */
-export function hasLowGamesTwoSeasons(player, currentSeason, threshold = 20) {
-  if (!hasW3CStatsTwoSeasons(player, currentSeason)) {
+export function hasLowGamesTwoSeasons(player, currentSeason, race = null, threshold = 20) {
+  if (!hasW3CStatsTwoSeasons(player, currentSeason, race)) {
     return false;
   }
 
-  const games = getW3CGamesCount(player, currentSeason);
+  const games = getW3CGamesCount(player, currentSeason, race);
   return games > 0 && games < threshold;
 }
 

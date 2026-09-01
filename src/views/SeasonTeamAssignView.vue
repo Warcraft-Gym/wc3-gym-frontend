@@ -81,20 +81,20 @@
               </template>
               <template #item.name="{ item }">
                 <PlayerName :player="item" @click.stop="showStats(item)">
-                  <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason)">
+                  <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.signup_race)">
                     <v-tooltip>
                       <template #activator="{ props }">
                         <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
                       </template>
-                      <span>No W3C stats found for {{ item.race }}</span>
+                      <span>No W3C stats found for {{ item.signup_race }}</span>
                     </v-tooltip>
                   </template>
-                  <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason)">
+                  <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason, item.signup_race)">
                     <v-tooltip>
                       <template #activator="{ props }">
                         <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
                       </template>
-                      <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason) }} games) for {{ item.race }}</span>
+                      <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason, item.signup_race) }} games) for {{ item.signup_race }}</span>
                     </v-tooltip>
                   </template>
                   <template v-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'loading'">
@@ -122,11 +122,11 @@
                 </PlayerName>
               </template>
               <template #item.w3c_mmr="{ item }">
-                <div>{{ getW3CMMR(item, currentW3CSeason) ?? 'N/A' }}</div>
+                <div>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}</div>
                 <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
               </template>
               <template #item.race="{ item }">
-                <RaceIcon :raceIdentifier="item.race" />
+                <RaceIcon v-if="item.signup_race" :raceIdentifier="item.signup_race" />
               </template>
               <template #item.actions="{ item }">
                 <v-btn
@@ -185,20 +185,20 @@
                       <div>
                         <div style="display:flex;align-items:center;gap:8px;">
                           <span style="cursor: pointer; color: var(--v-theme-primary);" @click="showStats(p)"><strong>{{ p.name }}</strong></span>
-                          <template v-if="!hasW3CStatsTwoSeasons(p, currentW3CSeason)">
+                          <template v-if="!hasW3CStatsTwoSeasons(p, currentW3CSeason, p.signup_race)">
                             <v-tooltip>
                               <template #activator="{ props }">
                                 <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
                               </template>
-                              <span>No W3C stats found for {{ p.race }}</span>
+                              <span>No W3C stats found for {{ p.signup_race }}</span>
                             </v-tooltip>
                           </template>
-                          <template v-else-if="hasLowGamesTwoSeasons(p, currentW3CSeason)">
+                          <template v-else-if="hasLowGamesTwoSeasons(p, currentW3CSeason, p.signup_race)">
                             <v-tooltip>
                               <template #activator="{ props }">
                                 <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
                               </template>
-                              <span>Less than 20 games ({{ getW3CGamesCount(p, currentW3CSeason) }} games) for {{ p.race }}</span>
+                              <span>Less than 20 games ({{ getW3CGamesCount(p, currentW3CSeason, p.signup_race) }} games) for {{ p.signup_race }}</span>
                             </v-tooltip>
                           </template>
                           <template v-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'loading'">
@@ -224,7 +224,7 @@
                             </v-tooltip>
                           </template>
                         </div>
-                        <div class="text--secondary">{{ getW3CMMR(p, currentW3CSeason) ?? 'N/A' }} — <RaceIcon :raceIdentifier="p.race" /></div>
+                        <div class="text--secondary">{{ getW3CMMR(p, currentW3CSeason, p.signup_race) ?? 'N/A' }} — <RaceIcon v-if="p.signup_race" :raceIdentifier="p.signup_race" /></div>
                         <div class="text-caption text-medium-emphasis">{{ syncedAgo(p) }}<v-tooltip activator="parent" location="top">{{ syncedAt(p) }}</v-tooltip></div>
                       </div>
                       <div style="display:flex;align-items:center;gap:6px;">
@@ -323,8 +323,8 @@ const playerTableHeaders = [
   { title: 'ID', value: 'id' },
   { title: 'Name', value: 'name' },
   { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a, currentW3CSeason.value) || 0;
-    let bValue = getW3CMMR(b, currentW3CSeason.value) || 0;
+    let aValue = getW3CMMR(a, currentW3CSeason.value, a.signup_race) || 0;
+    let bValue = getW3CMMR(b, currentW3CSeason.value, b.signup_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Race', value: 'race' },
@@ -402,10 +402,10 @@ const filteredPlayers = computed(() => {
   if (searchName.value && searchName.value.trim().length > 0) {
     list = list.filter(p => matchesPlayerSearch(p, searchName.value));
   }
-  if (searchRace.value) list = list.filter(p => p.race === searchRace.value);
+  if (searchRace.value) list = list.filter(p => p.signup_race === searchRace.value);
   
   // filter by mmr range — only apply if user changed from defaults
-  list = filterByMmrRange(list, rangeValues.value, p => getW3CMMR(p) ?? 0);
+  list = filterByMmrRange(list, rangeValues.value, p => getW3CMMR(p, null, p.signup_race) ?? 0);
   
   // filter out players without W3C stats if checkbox is checked
   if (hideNoW3CStats.value) {
@@ -446,7 +446,7 @@ function getTeamPlayersForSeason(team) {
   else if (typeof v === 'object') players = Object.values(v);
   
   // Sort by W3C MMR descending
-  return players.sort((a, b) => (getW3CMMR(b, currentW3CSeason.value) || 0) - (getW3CMMR(a, currentW3CSeason.value) || 0));
+  return players.sort((a, b) => (getW3CMMR(b, currentW3CSeason.value, b.signup_race) || 0) - (getW3CMMR(a, currentW3CSeason.value, a.signup_race) || 0));
 }
 
 // per-team loading state to avoid double-clicks

@@ -225,7 +225,7 @@
                     <span v-else class="text-grey">Not scheduled</span>
                   </td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
+                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
@@ -244,7 +244,7 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
+                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
@@ -336,7 +336,7 @@
                 <tr class="series-row draft-series-row">
                   <td>{{ item.id }}</td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
+                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
@@ -363,7 +363,7 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
+                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
                   </td>
                   <td>
                     <div class="d-flex align-center ga-1">
@@ -909,10 +909,10 @@
             </v-toolbar>
           </template>
               <template v-slot:[`item.player1.name`]="{ item }">
-                <PlayerName :player="item.player1" :race="item.player1.race" @click.stop="showStats(item.player1)" />
+                <PlayerName :player="item.player1" :race="item.player1.signup_race" @click.stop="showStats(item.player1)" />
               </template>
               <template v-slot:[`item.player2.name`]="{ item }">
-                <PlayerName :player="item.player2" :race="item.player2.race" @click.stop="showStats(item.player2)" />
+                <PlayerName :player="item.player2" :race="item.player2.signup_race" @click.stop="showStats(item.player2)" />
               </template>
               <template v-slot:[`item.p1_matchup_history`]="{ item }">
                 <div class="d-flex align-center ga-1">

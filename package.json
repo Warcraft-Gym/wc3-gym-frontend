@@ -5,6 +5,7 @@
         "dev": "vite --force",
         "build": "vite build",
         "preview": "vite preview --port 5050",
+        "test": "node --test \"src/**/*.test.mjs\"",
         "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
     },
     "dependencies": {

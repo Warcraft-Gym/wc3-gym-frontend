@@ -4,188 +4,80 @@
   </v-overlay>
 
   <v-container fluid class="pa-4">
-    <v-row class="mb-4">
+    <v-row class="mb-2" align="center">
       <v-col>
         <h1><v-icon class="mr-2">mdi-trophy-variant</v-icon> Fantasy Player Tiers</h1>
-        <p class="text-grey">Allocate players to fantasy tiers based on MMR ranges</p>
+        <p class="text-grey">Cut the season's roster into six tiers by <W3CMmr /></p>
+      </v-col>
+      <v-col cols="auto" class="d-flex ga-2">
+        <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :disabled="!rows.length" @click="evenSplit">Even split</v-btn>
+        <v-btn color="primary" prepend-icon="mdi-content-save" :loading="isSaving" :disabled="isSaving || !rows.length" @click="applyTiers">Apply tiers</v-btn>
       </v-col>
     </v-row>
 
     <StatusAlert v-model="errorMessage" />
-
     <StatusAlert v-model="successMessage" type="success" />
 
-    <!-- MMR Range Configuration -->
-    <v-card elevation="2" class="mb-6">
-      <v-card-title class="bg-primary">
-        <v-icon class="mr-2">mdi-tune</v-icon>
-        Configure Tier MMR Ranges
-      </v-card-title>
-      <v-card-text class="pt-4">
-        <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-          Define MMR ranges for each tier. Players allocated to teams in the current season will be automatically grouped into these tiers.
-        </v-alert>
-
-        <v-btn color="primary" variant="tonal" prepend-icon="mdi-scale-balance" class="mb-4" :disabled="!currentSeasonPlayers.length" @click="distributeEvenly">
-          Even Split by MMR
-        </v-btn>
-        
-        <v-row>
-          <v-col v-for="(tier, index) in tiers" :key="index" cols="12" md="6" lg="4">
-            <v-card variant="outlined">
-              <v-card-title class="text-h6 bg-grey-lighten-4">
-                <v-icon class="mr-2">mdi-numeric-{{ index + 1 }}-circle</v-icon>
-                Tier {{ index + 1 }}
-              </v-card-title>
-              <v-card-text>
-                <v-row dense>
-                  <v-col cols="6">
-                    <v-text-field
-                      v-model.number="tier.min"
-                      label="Min MMR"
-                      type="number"
-                      variant="outlined"
-                      density="compact"
-                      hide-details
-                      @input="updateTierRanges"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-text-field
-                      v-model.number="tier.max"
-                      label="Max MMR"
-                      type="number"
-                      variant="outlined"
-                      density="compact"
-                      hide-details
-                      @input="updateTierRanges"
-                    ></v-text-field>
-                  </v-col>
-                </v-row>
-                <v-chip 
-                  class="mt-2" 
-                  color="primary" 
-                  variant="outlined"
-                  size="small"
-                >
-                  {{ tier.players.length }} players
-                </v-chip>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
+    <v-card elevation="2" class="mb-4 pa-4">
+      <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="NAMES" :colors="COLORS" :domain="domain" />
     </v-card>
 
-    <!-- Players Preview by Tier -->
-    <v-card elevation="2" class="mb-6">
-      <v-card-title class="bg-primary d-flex justify-space-between align-center">
-        <div>
-          <v-icon class="mr-2">mdi-account-group</v-icon>
-          Players by Tier (On Teams)
-        </div>
-        <v-chip color="white" variant="outlined">
-          {{ totalPlayers }} total players
-        </v-chip>
-      </v-card-title>
-      <v-card-text class="pa-0">
-        <v-expansion-panels>
-          <v-expansion-panel v-for="(tier, index) in tiers" :key="index">
-            <v-expansion-panel-title>
-              <div class="d-flex align-center justify-space-between w-100 pr-4">
-                <div>
-                  <v-icon class="mr-2">mdi-numeric-{{ index + 1 }}-circle</v-icon>
-                  <strong>Tier {{ index + 1 }}</strong>
-                  <span class="ml-2 text-grey">({{ tier.min }} - {{ tier.max }} MMR)</span>
-                </div>
-                <v-chip color="primary" size="small">
-                  {{ tier.players.length }} players
-                </v-chip>
-              </div>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <v-list v-if="tier.players.length > 0" density="compact">
-                <v-list-item
-                  v-for="player in tier.players"
-                  :key="player.id"
-                  class="border-b"
-                >
-                  <template #prepend>
-                    <v-avatar color="primary" size="32">
-                      {{ player.name.charAt(0).toUpperCase() }}
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title>
-                    <strong>{{ player.name }}</strong>
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{ player.battleTag }} • <W3CMmr /> {{ getW3CMMR(player) ?? 'N/A' }}
-                  </v-list-item-subtitle>
-                  <template #append>
-                    <v-chip 
-                      v-if="player.fantasy_tier" 
-                      color="grey" 
-                      size="small"
-                      variant="outlined"
-                    >
-                      Current: Tier {{ player.fantasy_tier }}
-                    </v-chip>
-                  </template>
-                </v-list-item>
-              </v-list>
-              <v-alert v-else type="info" variant="tonal" class="ma-2">
-                No players in this tier range
-              </v-alert>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </v-card-text>
-    </v-card>
-
-    <!-- Submit Button -->
     <v-card elevation="2">
-      <v-card-text class="text-center pa-6">
-        <v-alert type="warning" variant="tonal" class="mb-4">
-          <strong>Warning:</strong> Clicking "Apply Tier Allocation" will:
-          <ul class="mt-2">
-            <li>Clear all existing tier assignments for ALL players</li>
-            <li>Assign new tier values (1-6) to players allocated to teams in the current season</li>
-            <li>This action cannot be undone</li>
-          </ul>
-        </v-alert>
-        
-        <v-btn
-          color="primary"
-          size="large"
-          variant="elevated"
-          prepend-icon="mdi-content-save"
-          :loading="isSaving"
-          :disabled="isSaving || totalPlayers === 0"
-          @click="applyTierAllocation"
-        >
-          Apply Tier Allocation
-        </v-btn>
-      </v-card-text>
+      <GroupedTable :columns="columns" :groups="groups" empty="No players on a team this season">
+        <template #group="{ group }">
+          <td :colspan="columns.length">
+            <v-chip size="small" :color="group.color" variant="flat" class="mr-2">{{ group.title }}</v-chip>
+            <span class="text-medium-emphasis mr-2">{{ group.rows.length }} {{ group.rows.length === 1 ? 'player' : 'players' }}</span>
+            <span class="text-disabled">{{ group.range }}</span>
+          </td>
+        </template>
+        <template #rows="{ group }">
+          <tr v-for="row in group.rows" :key="row.id" class="detail-row">
+            <td></td>
+            <td><PlayerName :player="row.player" :race="row.race" /></td>
+            <td class="text-right">{{ row.mmr || '—' }}</td>
+            <td>{{ row.team }}</td>
+            <td>
+              <v-chip v-if="row.player.fantasy_tier" size="x-small" variant="outlined">T{{ row.player.fantasy_tier }}</v-chip>
+            </td>
+            <td>
+              <v-select
+                :model-value="moves[row.id] ?? null"
+                :items="moveItems"
+                density="compact"
+                variant="outlined"
+                hide-details
+                class="move-select"
+                @update:model-value="move(row.id, $event)"
+              />
+            </td>
+          </tr>
+        </template>
+      </GroupedTable>
     </v-card>
   </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
-import { storeToRefs } from 'pinia';
-import W3CMmr from '@/components/W3CMmr.vue';
-import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import DivisionBracketing from '@/components/DivisionBracketing.vue';
+import GroupedTable from '@/components/GroupedTable.vue';
+import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
+import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 
+// Bands ascend by MMR; tier numbers descend, so band 0 is tier 6
+const NAMES = ['Grass', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+const COLORS = ['#9E9E9E', '#795548', '#FF9800', '#4CAF50', '#2196F3', '#9C27B0'];
+const tierOf = (band) => NAMES.length - band;
 
 const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
-// The season's signups: carries signup_race, w3c_stats and fantasy_tier
-const players = ref([]);
-const { teams } = storeToRefs(teamStore);
 
 const isLoading = ref(true);
 const isSaving = ref(false);
@@ -193,76 +85,73 @@ const errorMessage = ref(null);
 const successMessage = ref(null);
 const currentSeasonId = ref(null);
 const currentW3CSeason = ref(null);
+const signups = ref([]);
+const cuts = ref([]);
+const moves = ref({}); // player id -> band pinned by hand
 
-// Default tier ranges
-const tiers = ref([
-  { min: 1600, max: 3000, players: [] }, // Tier 1
-  { min: 1400, max: 1599, players: [] }, // Tier 2
-  { min: 1200, max: 1399, players: [] }, // Tier 3
-  { min: 1000, max: 1199, players: [] }, // Tier 4
-  { min: 800, max: 999, players: [] },   // Tier 5
-  { min: 0, max: 799, players: [] },     // Tier 6
-]);
+const columns = [
+  { key: 'name', title: 'Player' },
+  { key: 'mmr', title: 'W3C MMR', align: 'right' },
+  { key: 'team', title: 'Team' },
+  { key: 'stored', title: 'Stored tier' },
+  { key: 'move', title: 'Move to' },
+];
+const moveItems = [{ title: 'By MMR', value: null }, ...NAMES.map((n, i) => ({ title: `Tier ${tierOf(i)} · ${n}`, value: i })).reverse()];
 
-const totalPlayers = computed(() => {
-  return tiers.value.reduce((sum, tier) => sum + tier.players.length, 0);
+// The pool: every signup on a team this season, with its team name
+const rows = computed(() => {
+  const teamOf = new Map();
+  for (const team of teamStore.teams || []) {
+    for (const p of team.player_by_season?.[currentSeasonId.value] || []) teamOf.set(p.id, team.name);
+  }
+  return signups.value
+    .filter((p) => teamOf.has(p.id))
+    .map((p) => ({
+      id: p.id,
+      player: p,
+      race: p.signup_race,
+      mmr: getW3CStatsWithFallback(p, p.signup_race, currentW3CSeason.value)?.mmr ?? 0,
+      team: teamOf.get(p.id),
+    }));
+});
+const domain = computed(() => domainOf(rows.value.map((r) => r.mmr)));
+const bandFor = (row) => moves.value[row.id] ?? (row.mmr > 0 ? bandOf(row.mmr, cuts.value) : null);
+const stripPlayers = computed(() =>
+  rows.value.map((r) => ({ id: r.id, label: r.player.name, mmr: r.mmr, band: bandFor(r), pinned: r.id in moves.value })),
+);
+const groups = computed(() => {
+  const banded = NAMES.map((name, i) => ({
+    key: i,
+    title: `Tier ${tierOf(i)} · ${name}`,
+    color: COLORS[i],
+    range: rangeText(i, cuts.value),
+    rows: rows.value.filter((r) => bandFor(r) === i).sort((a, b) => b.mmr - a.mmr),
+  })).reverse();
+  const none = rows.value.filter((r) => bandFor(r) === null);
+  return none.length ? [...banded, { key: 'none', title: 'No W3C MMR', color: 'grey', range: 'not applied, move by hand', rows: none }] : banded;
 });
 
-// Get W3C MMR for player's race (with fallback)
-const getW3CMMR = (player) => {
-  const stats = getW3CStatsWithFallback(player, player.signup_race, currentW3CSeason.value);
-  return stats?.mmr ?? null;
+const evenSplit = () => {
+  cuts.value = quantileCuts(rows.value.map((r) => r.mmr), NAMES.length);
+};
+const move = (id, band) => {
+  const next = { ...moves.value };
+  if (band === null) delete next[id];
+  else next[id] = band;
+  moves.value = next;
 };
 
-// Get current season players (only those allocated to teams)
-const currentSeasonPlayers = computed(() => {
-  if (!currentSeasonId.value || !players.value || !teams.value) return [];
-  
-  // Build a set of player IDs that are on teams for the current season
-  const playerIdsOnTeams = new Set();
-  const sid = String(currentSeasonId.value);
-  
-  teams.value.forEach(team => {
-    const teamPlayers = team.player_by_season?.[sid] || team.player_by_season?.[Number(sid)];
-    if (teamPlayers) {
-      if (Array.isArray(teamPlayers)) {
-        teamPlayers.forEach(p => p && p.id && playerIdsOnTeams.add(p.id));
-      } else if (typeof teamPlayers === 'object') {
-        Object.values(teamPlayers).forEach(p => p && p.id && playerIdsOnTeams.add(p.id));
-      }
-    }
-  });
-  
-  // Filter players to only include those on teams
-  return players.value.filter(player => playerIdsOnTeams.has(player.id));
-});
-
-// Update tier player allocations based on MMR ranges
-const updateTierRanges = () => {
-  tiers.value.forEach(tier => {
-    tier.players = currentSeasonPlayers.value.filter(player => {
-      const mmr = getW3CMMR(player) || 0;
-      return mmr >= tier.min && mmr <= tier.max;
-    });
-  });
-};
-
-// Load initial data
 const loadData = async () => {
   isLoading.value = true;
   errorMessage.value = null;
-  
   try {
     currentSeasonId.value = await resolveCurrentSeasonId();
     currentW3CSeason.value = await resolveCurrentW3CSeason();
-    players.value = currentSeasonId.value ? await seasonStore.fetchSeasonSignups(currentSeasonId.value) : [];
-
-    // Fetch teams for the current season
     if (currentSeasonId.value) {
+      signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
       await teamStore.fetchTeamsBySeason(currentSeasonId.value);
     }
-    
-    updateTierRanges();
+    evenSplit();
   } catch (error) {
     console.error('Error loading data:', error);
     errorMessage.value = 'Failed to load player data. Please try again.';
@@ -271,51 +160,23 @@ const loadData = async () => {
   }
 };
 
-// Set the tier ranges so each holds about the same number of players:
-// sort the season's players by MMR and cut at the sixths. Ties share a
-// tier, so counts can differ a little; the ranges stay editable after.
-const distributeEvenly = () => {
-  const sorted = currentSeasonPlayers.value
-    .map(player => getW3CMMR(player) || 0)
-    .sort((a, b) => b - a);
-  const count = tiers.value.length;
-  let ceiling = Math.max(3000, sorted[0]);
-  tiers.value.forEach((tier, index) => {
-    const last = Math.ceil(((index + 1) * sorted.length) / count) - 1;
-    tier.max = ceiling;
-    tier.min = index === count - 1 ? 0 : Math.min(sorted[last], ceiling);
-    ceiling = tier.min - 1;
-  });
-  updateTierRanges();
-};
-
-// Apply tier allocation
-const applyTierAllocation = async () => {
-  if (!confirm('Are you sure you want to apply this tier allocation? This will clear all existing tier assignments.')) {
-    return;
+const applyTiers = async () => {
+  const allocation = {};
+  for (const row of rows.value) {
+    const band = bandFor(row);
+    if (band !== null) allocation[row.id] = tierOf(band);
   }
+  const skipped = rows.value.length - Object.keys(allocation).length;
+  const note = skipped ? ` ${skipped} without a W3C MMR keep no tier.` : '';
+  if (!confirm(`Write tiers for ${Object.keys(allocation).length} players? Every other player loses their tier.${note}`)) return;
 
   isSaving.value = true;
   errorMessage.value = null;
   successMessage.value = null;
-
   try {
-    // One request replaces the whole allocation; unlisted players lose their tier
-    const allocation = {};
-    tiers.value.forEach((tier, index) => {
-      tier.players.forEach(player => {
-        allocation[player.id] = index + 1;
-      });
-    });
-
-    await playerStore.updateFantasyTiers(allocation);
-
-    successMessage.value = `Successfully updated tier assignments for ${totalPlayers.value} players!`;
-    
-    // Refresh player data
-    players.value = await seasonStore.fetchSeasonSignups(currentSeasonId.value) || [];
-    updateTierRanges();
-    
+    await playerStore.updateFantasyTiers(allocation); // one request replaces the whole allocation
+    successMessage.value = `Tiers written for ${Object.keys(allocation).length} players.`;
+    signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
   } catch (error) {
     console.error('Error applying tier allocation:', error);
     errorMessage.value = 'Failed to apply tier allocation. Please try again.';
@@ -324,17 +185,11 @@ const applyTierAllocation = async () => {
   }
 };
 
-onMounted(() => {
-  loadData();
-});
+onMounted(loadData);
 </script>
 
 <style scoped>
-.border-b {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.v-expansion-panel-text :deep(.v-expansion-panel-text__wrapper) {
-  padding: 0;
+.move-select {
+  max-width: 200px;
 }
 </style>

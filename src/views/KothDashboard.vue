@@ -195,7 +195,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useKothStore } from '@/stores';
 import { useAuthStore } from '@/stores';
-import { useConfigStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
@@ -320,17 +319,7 @@ async function submitSignup() {
       return;
     }
 
-    // Fetch the KOTH_NIGHTBOT_TOKEN from backend
-    const configStore = useConfigStore();
-    const tokenSetting = await configStore.fetchSetting('KOTH_NIGHTBOT_TOKEN');
-    
-    if (!tokenSetting || !tokenSetting.value) {
-      signupError.value = 'Signup is currently unavailable. Please contact an administrator.';
-      return;
-    }
-    
     await kothStore.createPublicSignup({
-      token: tokenSetting.value,
       twitch_username: signupForm.value.twitch_username || null,
       battle_tag: signupForm.value.battle_tag,
       race: signupForm.value.race || null,

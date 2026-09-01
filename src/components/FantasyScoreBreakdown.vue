@@ -253,7 +253,7 @@ const roster = computed(() => {
       ...b,
       key: b.player_id ?? b.player_name,
       player,
-      mmr: player.signup_race ? getW3CMMR(player, props.w3cSeason, player.signup_race) : null,
+      mmr: getW3CMMR(player, props.w3cSeason, player.signup_race),
       record: gnlRecord(player),
       bench: bench[b.player_name] || 0,
     };

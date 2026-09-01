@@ -413,7 +413,7 @@ const filteredPlayers = computed(() => {
   
   // filter out players without W3C stats if checkbox is checked
   if (hideNoW3CStats.value) {
-    list = list.filter(p => hasW3CStatsTwoSeasons(p, currentW3CSeason.value));
+    list = list.filter(p => hasW3CStatsTwoSeasons(p, currentW3CSeason.value, p.signup_race));
   }
   
   return list;

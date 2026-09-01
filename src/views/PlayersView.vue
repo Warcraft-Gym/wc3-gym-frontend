@@ -83,7 +83,7 @@
                   <td>{{ item.id }}</td>
                   <td>
                     <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
-                      <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason)">
+                      <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
                         <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
@@ -91,12 +91,12 @@
                           <span>No W3C stats found for {{ item.race }}</span>
                         </v-tooltip>
                       </template>
-                      <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason)">
+                      <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason, item.race)">
                         <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
                           </template>
-                          <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason) }} games) for {{ item.race }}</span>
+                          <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason, item.race) }} games) for {{ item.race }}</span>
                         </v-tooltip>
                       </template>
                     </PlayerName>
@@ -365,8 +365,8 @@ const filteredPlayers = computed(() => {
       const includeNoStats = selectedW3CFilter.value.includes('no_stats');
       const includeLowGames = selectedW3CFilter.value.includes('low_games');
       
-      if (includeNoStats && !hasW3CStatsTwoSeasons(p, currentW3CSeason.value)) return true;
-      if (includeLowGames && hasLowGamesTwoSeasons(p, currentW3CSeason.value)) return true;
+      if (includeNoStats && !hasW3CStatsTwoSeasons(p, currentW3CSeason.value, p.race)) return true;
+      if (includeLowGames && hasLowGamesTwoSeasons(p, currentW3CSeason.value, p.race)) return true;
       
       return false;
     });

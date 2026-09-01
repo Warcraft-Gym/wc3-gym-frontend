@@ -24,8 +24,8 @@
             <tr>
               <td class="text-left text-overline">{{ seasonName || 'N/A' }} <RaceIcon v-if="fullPlayer" :raceIdentifier="fullPlayer.race" /></td>
               <td class="text-left text-overline">
-                {{ playerW3CMMR }}
-                <span v-if="mmrSeasonLabel(fullPlayer, w3cSeason)" class="text-caption ml-1">{{ mmrSeasonLabel(fullPlayer, w3cSeason) }}</span>
+                {{ playerW3CMMR ?? 'N/A' }}
+                <span v-if="mmrSeasonLabel(fullPlayer, w3cSeason, fullPlayer?.race)" class="text-caption ml-1">{{ mmrSeasonLabel(fullPlayer, w3cSeason, fullPlayer?.race) }}</span>
               </td>
               <td class="text-right text-green">{{ selectedGnl?.wins || 0 }}</td>
               <td class="text-right text-red">{{ selectedGnl?.losses || 0 }}</td>
@@ -146,7 +146,7 @@ const w3cStatsToDisplay = computed(() => {
 
 // Get W3C MMR with fallback for display
 const playerW3CMMR = computed(() => {
-  if (!fullPlayer.value) return 0;
-  return getW3CMMR(fullPlayer.value, props.w3cSeason);
+  if (!fullPlayer.value) return null;
+  return getW3CMMR(fullPlayer.value, props.w3cSeason, fullPlayer.value.race);
 });
 </script>

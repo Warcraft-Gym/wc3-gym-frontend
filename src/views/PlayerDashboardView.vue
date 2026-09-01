@@ -28,9 +28,11 @@
 
     <StatusAlert v-model="successMessage" type="success" />
     <v-card v-if="!isLoading && playerData" elevation="2" class="mb-6">
-      <v-card-title class="bg-primary">
+      <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-account-circle</v-icon>
         Player Information
+        <v-spacer />
+        <v-btn v-if="!token" icon="mdi-pencil" size="small" variant="text" title="Edit profile" @click="openEditProfile" />
       </v-card-title>
       <v-card-text class="pt-4">
         <v-alert v-if="needsSignup" type="info" variant="tonal" border="start" class="mb-4">
@@ -589,6 +591,31 @@
     :seasonId="playerData?.season_id ? Number(playerData.season_id) : null"
     :w3cSeason="currentW3CSeason"
   />
+
+  <!-- Edit Profile Dialog -->
+  <v-dialog v-model="editProfileOpen" max-width="480" persistent>
+    <v-card>
+      <v-card-title class="bg-primary">
+        <v-icon class="mr-2">mdi-pencil</v-icon>
+        Edit Profile
+      </v-card-title>
+      <v-alert v-if="editProfileError" type="error" variant="tonal" border="start" class="mx-4 mt-4" closable @click:close="editProfileError = null">
+        {{ editProfileError }}
+      </v-alert>
+      <v-card-text class="pt-4">
+        <v-text-field v-model="profileForm.name" label="Player name" variant="outlined" density="comfortable" />
+        <v-text-field v-model="profileForm.battleTag" label="BattleTag" hint="Checked against W3Champions" persistent-hint variant="outlined" density="comfortable" class="mb-2" />
+        <RaceSelect v-model="profileForm.race" label="Main race" />
+        <CountrySelect v-model="profileForm.country" />
+        <v-autocomplete v-model="profileForm.timezone" :items="timezones" label="Timezone" variant="outlined" density="comfortable" />
+      </v-card-text>
+      <v-card-actions class="px-4 py-3">
+        <v-spacer />
+        <v-btn variant="text" @click="editProfileOpen = false">Cancel</v-btn>
+        <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" :loading="isSavingProfile" @click="saveProfile">Save</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -602,6 +629,8 @@ import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import RaceSelect from '@/components/RaceSelect.vue';
+import CountrySelect from '@/components/CountrySelect.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { DateTime } from 'luxon';
@@ -638,6 +667,37 @@ const showPlayerDetails = (player) => {
 const isLoading = ref(true);
 const errorMessage = ref(null);
 const successMessage = ref(null);
+
+// the member's own profile edit
+const editProfileOpen = ref(false);
+const editProfileError = ref(null);
+const isSavingProfile = ref(false);
+const profileForm = ref({});
+const timezones = Intl.supportedValuesOf('timeZone');
+
+const openEditProfile = () => {
+  const p = playerData.value?.player || {};
+  profileForm.value = {
+    name: p.name, battleTag: p.battleTag, race: p.race, country: p.country, timezone: p.timezone,
+  };
+  editProfileError.value = null;
+  editProfileOpen.value = true;
+};
+
+const saveProfile = async () => {
+  isSavingProfile.value = true;
+  editProfileError.value = null;
+  try {
+    const { user } = await fetchWrapper.put(`${backendUrl}/user-info`, profileForm.value);
+    playerData.value = { ...playerData.value, player: { ...playerData.value.player, ...user } };
+    editProfileOpen.value = false;
+    successMessage.value = 'Profile saved.';
+  } catch (error) {
+    editProfileError.value = error.message || 'Failed to save the profile.';
+  } finally {
+    isSavingProfile.value = false;
+  }
+};
 // the other side of a series; the id is the fallback when the payload carries no player row
 const opponent = (item) => {
   const mine = item.player1_id === playerData.value?.player?.id;

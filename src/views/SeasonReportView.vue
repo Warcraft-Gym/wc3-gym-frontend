@@ -398,10 +398,10 @@
                 <th class="text-center">Captain</th>
                 <th class="text-center">Drafted Team</th>
                 <th class="text-center">Drafted Race</th>
-                <th class="text-center">Player Pts</th>
-                <th class="text-center">Team Pts</th>
-                <th class="text-center">Race Pts</th>
-                <th class="text-center">Bet Pts</th>
+                <th class="text-center">Player Points</th>
+                <th class="text-center">Team Points</th>
+                <th class="text-center">Race Points</th>
+                <th class="text-center">Bet Points</th>
                 <th class="text-center">Total</th>
               </tr>
             </thead>

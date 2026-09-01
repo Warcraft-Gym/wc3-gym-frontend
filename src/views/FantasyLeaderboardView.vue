@@ -355,11 +355,11 @@ const headers = computed(() => [
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
   { title: 'Bettor', value: 'captain', sortable: false },
-  { title: 'Player Pts', value: 'player_points', align: 'end' },
-  { title: 'Bench Pts', value: 'bench_points', align: 'end' },
-  { title: 'Team Pts', value: 'team_points', align: 'end' },
-  { title: 'Race Pts', value: 'race_points', align: 'end' },
-  { title: 'Bet Pts', value: 'bet_points', align: 'end' },
+  { title: 'Player Points', value: 'player_points', align: 'end' },
+  { title: 'Bench Points', value: 'bench_points', align: 'end' },
+  { title: 'Team Points', value: 'team_points', align: 'end' },
+  { title: 'Race Points', value: 'race_points', align: 'end' },
+  { title: 'Bet Points', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
   // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team
   ...(auth.isAdmin || teams.value.some((t) => t.captain_id === myUserId.value)

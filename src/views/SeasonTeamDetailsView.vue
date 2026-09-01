@@ -197,7 +197,7 @@
                 <td><PlayerName :player="item" @click.stop="showStats(item)" /></td>
                 <td>{{ item.battleTag }}</td>
                 <td>{{ item.discordTag }}</td>
-                <td>{{ getW3CMMR(item, currentW3CSeason) }}
+                <td>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}
                   <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                 </td>
                 <td>
@@ -577,7 +577,7 @@ const filteredAllPlayers = computed(() => {
   }
 
   // filter by mmr range — only apply if user changed from defaults
-  list = filterByMmrRange(list, rangeValues.value, p => Number(getW3CMMR(p, currentW3CSeason.value) ?? 0));
+  list = filterByMmrRange(list, rangeValues.value, p => Number(getW3CMMR(p, currentW3CSeason.value, p.signup_race) ?? 0));
 
   return list;
 });

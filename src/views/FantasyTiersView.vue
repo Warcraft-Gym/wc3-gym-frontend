@@ -210,7 +210,6 @@ const totalPlayers = computed(() => {
 
 // Get W3C MMR for player's race (with fallback)
 const getW3CMMR = (player) => {
-  if (!player.signup_race) return null;
   const stats = getW3CStatsWithFallback(player, player.signup_race, currentW3CSeason.value);
   return stats?.mmr ?? null;
 };

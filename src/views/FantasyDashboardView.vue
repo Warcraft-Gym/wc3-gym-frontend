@@ -436,7 +436,6 @@ const availablePlayers = ref([]);
 const currentW3CSeason = ref(null);
 
 const displayMMR = (player) => {
-  if (!player.signup_race) return 'N/A';
   const mmr = getW3CMMR(player, currentW3CSeason.value, player.signup_race);
   return mmr > 0 ? mmr : 'N/A';
 };

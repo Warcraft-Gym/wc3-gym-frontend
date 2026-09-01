@@ -229,7 +229,7 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player1, null, item.player1.signup_race) ?? 'N/A' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
@@ -248,7 +248,7 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player2, null, item.player2.signup_race) ?? 'N/A' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
@@ -350,7 +350,7 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1) || '—' }}
+                      {{ getW3CMMR(item.player1, null, item.player1.signup_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
@@ -374,7 +374,7 @@
                   </td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2) || '—' }}
+                      {{ getW3CMMR(item.player2, null, item.player2.signup_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
@@ -511,8 +511,8 @@
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
-                      {{ getW3CMMR(item, currentW3CSeason) || 'N/A' }}
-                      <span v-if="mmrSeasonLabel(item, currentW3CSeason)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason) }}</span>
+                      {{ getW3CMMR(item, currentW3CSeason, item.signup_race) || 'N/A' }}
+                      <span v-if="mmrSeasonLabel(item, currentW3CSeason, item.signup_race)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason, item.signup_race) }}</span>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </td>
                   </template>
@@ -746,7 +746,7 @@
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
-                        {{ getW3CMMR(item) ?? 'N/A' }}
+                        {{ getW3CMMR(item, null, item.signup_race) ?? 'N/A' }}
                       </v-chip>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </template>
@@ -813,7 +813,7 @@
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
-                        {{ getW3CMMR(item) ?? 'N/A' }}
+                        {{ getW3CMMR(item, null, item.signup_race) ?? 'N/A' }}
                       </v-chip>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </template>
@@ -930,7 +930,7 @@
                 </div>
               </template>
               <template v-slot:[`item.p1_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player1) ?? 'N/A' }}
+                  <td>{{ getW3CMMR(item.player1, null, item.player1.signup_race) ?? 'N/A' }}
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
               </template>
@@ -938,7 +938,7 @@
                   <td>{{ getHighestW3CMMR(item.player1) ?? 'N/A' }}</td>
               </template>
               <template v-slot:[`item.p2_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player2) ?? 'N/A' }}
+                  <td>{{ getW3CMMR(item.player2, null, item.player2.signup_race) ?? 'N/A' }}
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
               </template>
@@ -1046,16 +1046,16 @@ const seriesTableHeader = computed(() => [
   { title: 'Date/Time'}, 
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { title: 'MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value) || 0;
-    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value) || 0;
+    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1?.signup_race) || 0;
+    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1?.signup_race) || 0;
     return aValue - bValue;
   } },
   { title: 'P1 Score' },
   { title: 'P2 Score' },
   { title: 'Player 2', value: 'player2.name', sortable: true },
   { title: 'MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value) || 0;
-    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value) || 0;
+    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2?.signup_race) || 0;
+    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2?.signup_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Fantasy Match'},
@@ -1067,8 +1067,8 @@ const draftSeriesTableHeader = computed(() => [
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value) || 0;
-    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value) || 0;
+    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1?.signup_race) || 0;
+    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1?.signup_race) || 0;
     return aValue - bValue;
   } },
   { title: 'Highest MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1079,8 +1079,8 @@ const draftSeriesTableHeader = computed(() => [
   { title: 'Player 2', value: 'player2.name', sortable: true },
   { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value) || 0;
-    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value) || 0;
+    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2?.signup_race) || 0;
+    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2?.signup_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Highest MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1097,8 +1097,8 @@ const proposedSeriesTableHeader = [
   { title: 'GNL Games', value: 'player1.gnl_stats[0].games', sortable: true, align: 'end' },
   { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'Current MMR', key: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1) || 0;
-    let bValue = getW3CMMR(b?.player1) || 0;
+    let aValue = getW3CMMR(a?.player1, null, a?.player1?.signup_race) || 0;
+    let bValue = getW3CMMR(b?.player1, null, b?.player1?.signup_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Highest Race MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1110,8 +1110,8 @@ const proposedSeriesTableHeader = [
   { title: 'GNL Games', value: 'player2.gnl_stats[0].games', sortable: true, align: 'end' },
   { title: 'Faced Races', key: 'p2_matchup_history', sortable: false }, 
   { title: 'Current MMR', key: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2) || 0;
-    let bValue = getW3CMMR(b?.player2) || 0;
+    let aValue = getW3CMMR(a?.player2, null, a?.player2?.signup_race) || 0;
+    let bValue = getW3CMMR(b?.player2, null, b?.player2?.signup_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Highest Race MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1127,8 +1127,8 @@ const tablePlayerHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
   { title: 'GNL Games', key: 'gnl_stats[0].games', sortable: true },
   { title: currentW3CSeason.value ? `MMR (S${currentW3CSeason.value})` : 'MMR', key: 'w3c_mmr', value: 'item', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a, currentW3CSeason.value) || 0;
-    let bValue = getW3CMMR(b, currentW3CSeason.value) || 0;
+    let aValue = getW3CMMR(a, currentW3CSeason.value, a?.signup_race) || 0;
+    let bValue = getW3CMMR(b, currentW3CSeason.value, b?.signup_race) || 0;
     return aValue - bValue;
   }
 },
@@ -1601,7 +1601,7 @@ const proposeSeries = async () => {
 
     for(let i = 0; i< t1_player.length; i++) {
       let p1 = t1_player[i];
-      let p1_mmr = getW3CMMR(p1) || 0;
+      let p1_mmr = getW3CMMR(p1, null, p1.signup_race) || 0;
       
       for(let k=0;k< t2_player.length; k++) {
         let p2_mmr = 0;
@@ -1641,7 +1641,7 @@ const proposeSeries = async () => {
           continue;
         }
 
-        p2_mmr = getW3CMMR(p2) || 0;
+        p2_mmr = getW3CMMR(p2, null, p2.signup_race) || 0;
         
         let mmr_diff = p1_mmr - p2_mmr;
         if (mmr_diff<0){

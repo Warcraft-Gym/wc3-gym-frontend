@@ -262,9 +262,9 @@
                     >
                       <template #item.players="{ item }">
                         <div>
-                          <PlayerName v-if="item.player1" :player="item.player1" :race="item.player1.race" @click="showPlayerDetails(item.player1)" />
+                          <PlayerName v-if="item.player1" :player="item.player1" :race="item.player1.signup_race" @click="showPlayerDetails(item.player1)" />
                           vs
-                          <PlayerName v-if="item.player2" :player="item.player2" :race="item.player2.race" @click="showPlayerDetails(item.player2)" />
+                          <PlayerName v-if="item.player2" :player="item.player2" :race="item.player2.signup_race" @click="showPlayerDetails(item.player2)" />
                         </div>
                       </template>
 
@@ -332,9 +332,9 @@
       <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
       <v-card-text>
         <div class="mb-4">
-          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1.race" @click="showPlayerDetails(betSeries.player1)" />
+          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1.signup_race" @click="showPlayerDetails(betSeries.player1)" />
           vs
-          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2.race" @click="showPlayerDetails(betSeries.player2)" />
+          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2.signup_race" @click="showPlayerDetails(betSeries.player2)" />
         </div>
         <v-radio-group v-model="selectedBetWinnerId">
           <v-radio

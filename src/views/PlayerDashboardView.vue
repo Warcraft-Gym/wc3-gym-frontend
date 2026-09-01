@@ -137,7 +137,7 @@
         <template #item.opponent="{ item }">
           <PlayerName
             :player="opponent(item)"
-            :race="opponent(item).race"
+            :race="opponent(item).signup_race"
             @click.stop="showPlayerDetails(opponent(item))"
           />
         </template>
@@ -206,7 +206,7 @@
               <div class="text-h6">
                 <PlayerName
                   :player="opponent(item)"
-                  :race="opponent(item).race"
+                  :race="opponent(item).signup_race"
                   @click.stop="showPlayerDetails(opponent(item))"
                 />
               </div>
@@ -294,7 +294,7 @@
         <template #item.opponent="{ item }">
           <PlayerName
             :player="opponent(item)"
-            :race="opponent(item).race"
+            :race="opponent(item).signup_race"
             @click.stop="showPlayerDetails(opponent(item))"
           />
         </template>
@@ -342,7 +342,7 @@
             <div class="d-flex justify-space-between align-center">
               <PlayerName
                 :player="opponent(item)"
-                :race="opponent(item).race"
+                :race="opponent(item).signup_race"
                 @click.stop="showPlayerDetails(opponent(item))"
               />
               <v-chip

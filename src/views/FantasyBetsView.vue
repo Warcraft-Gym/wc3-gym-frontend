@@ -49,7 +49,7 @@
       </v-card-text>
           <v-card-text>
             <v-alert v-if="enrichedBets.length === 0 && !isLoading" type="info" variant="tonal" class="mb-4">
-              No fantasy bets found. Bets will appear here once team captains place them.
+              No fantasy bets found. Bets will appear here once bettors place them.
             </v-alert>
             <v-data-table-server
               :headers="headers"
@@ -65,7 +65,7 @@
               density="comfortable"
             >
               <template v-slot:[`item.captain`]="{ item }">
-                <!-- no race: the captain bets, they don't play -->
+                <!-- no race: the bettor bets, they don't play -->
                 <PlayerName v-if="item.user" :player="item.user" />
                 <template v-else>N/A</template>
               </template>
@@ -135,7 +135,7 @@
             v-model="newBet.captain_id"
             :items="fantasyTeams"
             item-value="captain_id"
-            label="Select Team Captain"
+            label="Select Bettor"
             variant="outlined"
             density="comfortable"
             class="mb-4"
@@ -165,7 +165,7 @@
             class="mb-4"
             required
             :disabled="!newBet.captain_id"
-            :hint="!newBet.captain_id ? 'Please select a captain first' : ''"
+            :hint="!newBet.captain_id ? 'Please select a bettor first' : ''"
             persistent-hint
             @update:modelValue="onSeriesSelected"
           >

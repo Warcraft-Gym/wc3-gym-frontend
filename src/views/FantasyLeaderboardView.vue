@@ -192,12 +192,12 @@
                 :items="players"
                 item-title="name"
                 item-value="id"
-                label="Captain *"
+                label="Bettor *"
                 variant="outlined"
                 prepend-inner-icon="mdi-account-star"
                 density="comfortable"
                 :disabled="!auth.isAdmin"
-                :rules="[v => !!v || 'Captain is required']"
+                :rules="[v => !!v || 'Bettor is required']"
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" md="6">
@@ -354,7 +354,7 @@ const headers = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: '48px' },
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
-  { title: 'Captain', value: 'captain', sortable: false },
+  { title: 'Bettor', value: 'captain', sortable: false },
   { title: 'Player Pts', value: 'player_points', align: 'end' },
   { title: 'Bench Pts', value: 'bench_points', align: 'end' },
   { title: 'Team Pts', value: 'team_points', align: 'end' },

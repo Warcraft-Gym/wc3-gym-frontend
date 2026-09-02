@@ -16,17 +16,7 @@
     <!-- Season picker and the sync of that season -->
     <v-row align="center" class="mb-2 flex-wrap">
       <v-col cols="12" sm="4" md="3">
-        <v-select
-          v-model="selectedSeasonId"
-          :items="seasons"
-          item-title="name"
-          item-value="id"
-          label="Select Season"
-          variant="outlined"
-          density="compact"
-          hide-details
-          @update:modelValue="loadLadder"
-        />
+        <SeasonSelect />
       </v-col>
       <v-spacer />
       <v-col cols="auto" class="text-right" style="min-width: 240px">
@@ -266,7 +256,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore, useLadderStore, usePlayerStore, useSeasonStore } from '@/stores';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
 import W3CIcon from '@/components/W3CIcon.vue';
 import w3championsLogo from '@/assets/media/w3champions-logo.png';
@@ -281,6 +271,7 @@ import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import AchievementChip from '@/components/AchievementChip.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
+import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 const ladderStore = useLadderStore();
@@ -288,9 +279,8 @@ const seasonStore = useSeasonStore();
 const playerStore = usePlayerStore();
 const auth = useAuthStore();
 
-const { seasons } = storeToRefs(seasonStore);
+const { seasons, selectedSeasonId } = storeToRefs(seasonStore);
 
-const selectedSeasonId = ref(null);
 const ladder = ref(null);
 const currentW3CSeason = ref(null);
 const isLoading = ref(false);
@@ -440,18 +430,10 @@ const openOpponent = (userId) => {
   playerDetailsDialog.value.open({ id: userId });
 };
 
+watch(selectedSeasonId, loadLadder, { immediate: true });
+
 onMounted(async () => {
-  isLoading.value = true;
-  try {
-    await seasonStore.fetchSeasons();
-    currentW3CSeason.value = await resolveCurrentW3CSeason();
-    selectedSeasonId.value = await resolveCurrentSeasonId();
-  } catch (error) {
-    errorMessage.value = error.message;
-  } finally {
-    isLoading.value = false;
-  }
-  await loadLadder();
+  currentW3CSeason.value = await resolveCurrentW3CSeason();
 });
 </script>
 

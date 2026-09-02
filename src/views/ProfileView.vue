@@ -14,6 +14,6 @@ const { me } = storeToRefs(useAuthStore());
         <DiscordJoinCard />
     </v-container>
     <!-- a member with no linked users row signs up before the dashboard has anything to show -->
-    <PublicSignupView v-else-if="!me?.user" />
-    <PlayerDashboardView v-else />
+    <PublicSignupView v-else-if="me && !me.user" />
+    <PlayerDashboardView v-else-if="me" />
 </template>

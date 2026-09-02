@@ -105,7 +105,7 @@
               <td>
                 <div class="d-flex align-center">
                   <v-avatar size="24" rounded="sm" class="mr-2" style="flex-shrink:0">
-                    <img class="team-icon" :src="teamImageUrl(team.id)" @error="showDefaultTeamImage">
+                    <img class="team-icon" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <RouterLink :to="`/team/${team.id}/season/${selectedSeasonId}`">{{ team.long_name || team.name }}</RouterLink>
                 </div>

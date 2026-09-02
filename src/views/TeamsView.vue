@@ -53,7 +53,7 @@
 
           <template #[`item.icon`]="{ item }">
             <v-avatar size="40">
-              <img class="team-icon" :src="teamImageUrl(item.id)" @error="showDefaultTeamImage">
+              <img class="team-icon" :src="teamImageUrl(item)" @error="showDefaultTeamImage">
             </v-avatar>
           </template>
 

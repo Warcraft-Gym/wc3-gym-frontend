@@ -2,9 +2,13 @@ import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
-// The backend serves team icons as a public GET with Cache-Control and ETag
-export function teamImageUrl(teamId) {
-  return `${backendUrl}/teams/${teamId}/image`;
+// A team object carries icon_url, which is the logo in the blob store: using it goes straight to
+// the store. An id alone falls back to the backend, which answers a redirect to the same place.
+export function teamImageUrl(team) {
+  if (team && typeof team === 'object') {
+    return team.icon_url ?? `${backendUrl}/teams/${team.id}/image`;
+  }
+  return `${backendUrl}/teams/${team}/image`;
 }
 
 const MAX_ICON_PX = 150;  // the largest avatar draws a team icon at 80 px

@@ -47,6 +47,10 @@
             </v-toolbar>
           </template>
 
+          <template v-slot:[`item.image`]="{ item }">
+            <span class="map-thumb"><img v-if="item.image" :src="item.image" :alt="item.name" @error="hideMissingImage"></span>
+          </template>
+
           <template v-slot:[`item.actions`]="{ item }">
             <RowActions :actions="[
               { icon: 'mdi-pencil', label: 'Edit', onClick: () => editMap(item) },
@@ -99,6 +103,20 @@
                 density="comfortable"
               ></v-text-field>
             </v-col>
+            <v-col cols="12" class="d-flex align-center ga-4">
+              <span class="map-thumb thumb-lg"><img v-if="picturePreview" :src="picturePreview" :alt="selectedMap.name" @error="hideMissingImage"></span>
+              <v-file-input
+                v-model="pictureFile"
+                label="Picture"
+                accept="image/png,image/jpeg"
+                variant="outlined"
+                density="comfortable"
+                prepend-icon=""
+                prepend-inner-icon="mdi-image"
+                hide-details
+                clearable
+              />
+            </v-col>
           </v-row>
         </v-card-text>
 
@@ -125,7 +143,8 @@
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { useMapStore } from '@/stores';
-import { onMounted, ref } from 'vue';
+import { hideMissingImage } from '@/helpers/team-image';
+import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 
@@ -141,6 +160,9 @@ const errorMessage = ref(null);
 const mapDialogOpen = ref(false);
 const isEditing = ref(false);
 const formError = ref(null);
+const pictureFile = ref(null);
+// the picked file while one is picked, else the picture the map already has
+const picturePreview = computed(() => (pictureFile.value ? URL.createObjectURL(pictureFile.value) : selectedMap.value?.image));
 
 // Delete dialog state
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
@@ -148,8 +170,9 @@ const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } 
 // Table configuration
 const tableHeader = [
   { title: 'ID', value: 'id', align: 'start', sortable: true },
-  { title: 'Name', value: 'name', sortable: true },  
-  { title: 'Short Name', value: 'shortname', sortable: true }, 
+  { title: '', value: 'image', sortable: false },
+  { title: 'Name', value: 'name', sortable: true },
+  { title: 'Short Name', value: 'shortname', sortable: true },
   { title: '', value: 'actions', align: 'end', sortable: false }
 ];
 
@@ -178,6 +201,7 @@ const openCreateMap = () => {
     name: '',
     shortname: ''
   };
+  pictureFile.value = null;
   formError.value = null;
   isEditing.value = false;
   mapDialogOpen.value = true;
@@ -185,6 +209,7 @@ const openCreateMap = () => {
 
 const editMap = (map) => {
   selectedMap.value = { ...map };
+  pictureFile.value = null;
   formError.value = null;
   isEditing.value = true;
   mapDialogOpen.value = true;
@@ -194,6 +219,7 @@ const updateMap = async () => {
   formError.value = null;
   try {
     await mapStore.updateMap(selectedMap.value);
+    await uploadPicture(selectedMap.value.id);
     await fetchMaps();
     closeMapDialog();
   } catch (error) {
@@ -205,13 +231,18 @@ const updateMap = async () => {
 const createNewMap = async () => {
   formError.value = null;
   try {
-    await mapStore.createMap(selectedMap.value);
+    const created = await mapStore.createMap(selectedMap.value);
+    await uploadPicture(created.id);
     await fetchMaps();
     closeMapDialog();
   } catch (error) {
     console.error('Error creating map:', error);
     formError.value = 'Failed to create map. Please try again.';
   }
+};
+
+const uploadPicture = async (mapId) => {
+  if (pictureFile.value) await mapStore.uploadMapImage(mapId, pictureFile.value);
 };
 
 const removeMap = async (mapId) => {
@@ -227,6 +258,7 @@ const closeMapDialog = () => {
   mapDialogOpen.value = false;
   formError.value = null;
   selectedMap.value = null;
+  pictureFile.value = null;
 };
 
 // Lifecycle hooks
@@ -236,6 +268,27 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.map-thumb {
+  display: block;
+  width: 40px;
+  height: 27px;
+  background: #263238;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.map-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-lg {
+  width: 100px;
+  height: 64px;
+}
+
 .map-row {
   cursor: pointer;
   transition: all 0.2s ease;

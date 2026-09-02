@@ -72,7 +72,7 @@
               :class="{ 'bg-grey-lighten-4': tile.banned, 'week-map': tile.week }"
             >
               <div class="thumb rounded bg-grey-darken-4">
-                <img :src="mapImageUrl(tile.id)" :alt="tile.name" :class="{ dim: tile.banned }" @error="hideMissingImage">
+                <img v-if="mapImage(tile.id)" :src="mapImage(tile.id)" :alt="tile.name" :class="{ dim: tile.banned }" @error="hideMissingImage">
                 <v-chip class="shortname" size="x-small" label>{{ tile.shortname }}</v-chip>
               </div>
               <div
@@ -143,9 +143,9 @@
               <template #prepend>
                 <span class="text-caption text-medium-emphasis mr-3 game-label">{{ game.label }}</span>
                 <img
-                  v-if="game.mapId"
+                  v-if="mapImage(game.mapId)"
                   class="mini rounded mr-3"
-                  :src="mapImageUrl(game.mapId)"
+                  :src="mapImage(game.mapId)"
                   :alt="game.name"
                   @error="hideMissingImage"
                 >
@@ -197,11 +197,10 @@ const recording = ref(!!route.query.report);  // the Report Result dialog sends 
 // the dashboard link carries its token; a session reads the board without one
 const token = route.query.token;
 const vetoUrl = `${backendUrl}/player-series/${route.params.id}/veto`;
-const mapImageUrl = (id) => `${backendUrl}/maps/${id}/image`;
-
 // the board payload names maps only on the steps taken, so the pool is labelled from /maps
 const mapsById = computed(() => new Map(mapStore.maps.map(map => [map.id, map])));
 const mapName = (id) => mapsById.value.get(id)?.name || `Map ${id}`;
+const mapImage = (id) => mapsById.value.get(id)?.image;
 
 const order = computed(() => board.value?.order || []);
 const taken = computed(() => board.value?.steps || []);

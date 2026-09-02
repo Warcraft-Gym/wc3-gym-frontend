@@ -10,6 +10,7 @@
         <p class="text-grey">Cut the {{ seasonName }} roster into {{ tierCount }} tiers by <W3CMmr /></p>
       </v-col>
       <v-col cols="auto" class="d-flex ga-2 align-center">
+        <SeasonSelect />
         <v-select
           v-model="tierCount"
           :items="TIER_COUNTS"
@@ -25,11 +26,14 @@
       </v-col>
     </v-row>
 
-    <v-alert v-if="startedOn" type="info" variant="tonal" density="compact" class="mb-4">
+    <v-alert v-if="phase !== 'upcoming'" type="info" variant="tonal" density="compact" class="mb-4">
       <div class="d-flex align-center justify-space-between ga-4">
-        <span>{{ seasonName }} started on {{ startedOn }}. Its tiers are {{ locked ? 'locked' : 'unlocked' }}.</span>
+        <span>{{ seasonName }} {{ phase === 'ended' ? 'ended' : 'started' }} on {{ phaseDate }}. Its tiers are {{ locked ? 'locked' : 'unlocked' }}.</span>
         <v-btn size="small" variant="text" :prepend-icon="locked ? 'mdi-lock-open-variant' : 'mdi-lock'" @click="locked = !locked">{{ locked ? 'Unlock' : 'Lock' }}</v-btn>
       </div>
+    </v-alert>
+    <v-alert v-if="currentSeason && !currentSeason.fantasy_tier_cuts.length" type="warning" variant="tonal" density="compact" class="mb-4">
+      No tiers are stored for {{ seasonName }}. The chart proposes an even split of today's W3C MMR.
     </v-alert>
     <StatusAlert v-model="errorMessage" />
     <StatusAlert v-model="successMessage" type="success" />
@@ -76,16 +80,19 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { DateTime } from 'luxon';
+import { storeToRefs } from 'pinia';
 import { useLadderStore, usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
 import DivisionBracketing from '@/components/DivisionBracketing.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
+import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
-import { resolveCurrentSeason, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { seasonPhase } from '@/helpers/season-phase.mjs';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 
 // Bands ascend by MMR; tier numbers descend, so the top band is always tier 1.
@@ -100,18 +107,20 @@ const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 
+const { selectedSeasonId: currentSeasonId } = storeToRefs(seasonStore);
+
 const isLoading = ref(true);
 const isSaving = ref(false);
 const errorMessage = ref(null);
 const successMessage = ref(null);
-const currentSeasonId = ref(null);
 const currentSeason = ref(null);
 // A started season's tiers are locked until the admin unlocks them: moving a cut moves drafted players
 const locked = ref(false);
 const seasonName = computed(() => currentSeason.value?.name ?? 'season');
-const startedOn = computed(() => {
-  const start = currentSeason.value?.start_date;
-  return start && start <= DateTime.now().toISODate() ? DateTime.fromISO(start).toLocaleString(DateTime.DATE_MED) : null;
+const phase = computed(() => seasonPhase(currentSeason.value, DateTime.now().toISODate()));
+const phaseDate = computed(() => {
+  const date = phase.value === 'ended' ? currentSeason.value.end_date : currentSeason.value?.start_date;
+  return date ? DateTime.fromISO(date).toLocaleString(DateTime.DATE_MED) : '';
 });
 const currentW3CSeason = ref(null);
 const tierCount = ref(ALL_NAMES.length);
@@ -186,20 +195,20 @@ const move = (id, band) => {
 };
 
 const loadData = async () => {
+  if (!currentSeasonId.value) return;  // the picker resolves one
   isLoading.value = true;
   errorMessage.value = null;
+  successMessage.value = null;
+  moves.value = {};
   try {
-    const season = await resolveCurrentSeason();
+    const season = await seasonStore.fetchSeason(currentSeasonId.value);
     currentSeason.value = season;
-    currentSeasonId.value = season?.id ?? null;
-    locked.value = Boolean(startedOn.value);
+    locked.value = phase.value !== 'upcoming';
     currentW3CSeason.value = await resolveCurrentW3CSeason();
-    if (currentSeasonId.value) {
-      signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
-      await teamStore.fetchTeamsBySeason(currentSeasonId.value);
-    }
+    signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
+    await teamStore.fetchTeamsBySeason(currentSeasonId.value);
     // The page reopens on the cuts the last Apply wrote, once there are any
-    if (season?.fantasy_tier_cuts.length) {
+    if (season.fantasy_tier_cuts.length) {
       tierCount.value = season.fantasy_tier_cuts.length + 1;
       cuts.value = season.fantasy_tier_cuts;
       // A tier set by hand comes back as its pin; the rest follow the MMR
@@ -241,7 +250,7 @@ const applyTiers = async () => {
   }
 };
 
-onMounted(loadData);
+watch(currentSeasonId, loadData, { immediate: true });
 </script>
 
 <style scoped>

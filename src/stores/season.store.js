@@ -9,7 +9,8 @@ export const useSeasonStore = defineStore({
     state: () => ({
         // initialize state from local storage to enable user to stay logged in
         seasons: [], // Store user data
-        current_season: {}
+        current_season: {},
+        selectedSeasonId: null  // the season every Fantasy page shows; SeasonSelect sets it
     }),
     actions: {
         async fetchSeasons() {

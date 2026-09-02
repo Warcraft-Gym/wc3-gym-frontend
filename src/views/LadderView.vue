@@ -97,7 +97,7 @@
                   <v-avatar size="24" rounded="sm" class="mr-2" style="flex-shrink:0">
                     <img class="team-icon" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
                   </v-avatar>
-                  <RouterLink :to="`/team/${team.id}/season/${selectedSeasonId}`">{{ team.long_name || team.name }}</RouterLink>
+                  <RouterLink :to="`/team/${team.id}/season/${seasonStore.slugOf(selectedSeasonId)}`">{{ team.long_name || team.name }}</RouterLink>
                 </div>
               </td>
               <td class="text-center font-weight-bold">{{ team.points }}</td>

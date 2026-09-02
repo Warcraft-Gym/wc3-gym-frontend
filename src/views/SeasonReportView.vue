@@ -637,14 +637,14 @@ onMounted(async () => {
     try {
         await seasonStore.fetchSeasons();
         // The path names the season; without one, the season picked on another page, then the first season
-        const paramId = route.params.id ? parseInt(route.params.id) : null;
+        const paramId = route.params.id ? seasonStore.seasonIdOf(route.params.id) : null;
         if (paramId) {
             selectedSeasonId.value = paramId;
         } else if (seasons.value.length > 0) {
             const picked = seasons.value.find((season) => season.id === selectedSeasonId.value);
             selectedSeasonId.value = picked ? picked.id : seasons.value[0].id;
             // Reflect the resolved id in the URL without adding a history entry
-            router.replace({ path: `/report/${selectedSeasonId.value}`, query: route.query });
+            router.replace({ path: `/report/${seasonStore.slugOf(selectedSeasonId.value)}`, query: route.query });
         }
         if (selectedSeasonId.value) await loadReport();
     } catch (e) {
@@ -656,8 +656,9 @@ onMounted(async () => {
 
 // A season typed into the path while the page is open
 watch(() => route.params.id, (id) => {
-    if (id && parseInt(id) !== selectedSeasonId.value) {
-        selectedSeasonId.value = parseInt(id);
+    const seasonId = id ? seasonStore.seasonIdOf(id) : null;
+    if (seasonId && seasonId !== selectedSeasonId.value) {
+        selectedSeasonId.value = seasonId;
         loadReport();
     }
 });
@@ -665,7 +666,7 @@ watch(() => route.params.id, (id) => {
 const loadReport = async () => {
     if (!selectedSeasonId.value) return;
     // Keep the season id in the URL
-    router.replace({ path: `/report/${selectedSeasonId.value}`, query: route.query });
+    router.replace({ path: `/report/${seasonStore.slugOf(selectedSeasonId.value)}`, query: route.query });
     isLoading.value = true;
     errorMessage.value = null;
     try {

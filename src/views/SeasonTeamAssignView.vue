@@ -290,7 +290,7 @@ const auth = useAuthStore();
 const seasonId = computed(() => {
   const params = router.currentRoute.value.params || {};
   const id = params.season_id || params.id || router.currentRoute.value.query.season_id;
-  return id ? Number(id) : null;
+  return id ? useSeasonStore().seasonIdOf(id) : null;
 });
 
 const ladderStore = useLadderStore();

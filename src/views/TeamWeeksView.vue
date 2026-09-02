@@ -95,7 +95,7 @@ const { team } = storeToRefs(teamStore);
 const { current_season: season } = storeToRefs(seasonStore);
 
 const teamId = computed(() => Number(router.currentRoute.value.params.id));
-const seasonId = computed(() => Number(router.currentRoute.value.params.season_id));
+const seasonId = computed(() => seasonStore.seasonIdOf(router.currentRoute.value.params.season_id));
 
 const isLoading = ref(false);
 const errorMessage = ref(null);

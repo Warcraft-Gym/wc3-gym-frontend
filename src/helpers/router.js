@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
-import { useAuthStore } from '@/stores';
+import { useAuthStore, useSeasonStore } from '@/stores';
 import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, TeamWeeksView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
@@ -22,12 +22,12 @@ export const router = createRouter({
         { path: '/player-series/:id/veto', component: VetoBoardView, meta: { role: 'public', nav: false } },
         { path: '/fantasy-registration', component: FantasyDashboardView, meta: { role: 'public' } },
         { path: '/players', component: PlayersView, meta: { role: 'member' } },
-        { path: '/seasons/:id', component: SeasonDetailsView, meta: { role: 'member' } },
-        { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'captain' } },  // captains read it; the view gates every write to admins
-        { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false } },
+        { path: '/seasons/:id', component: SeasonDetailsView, meta: { role: 'member', season: true } },
+        { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'captain', season: true } },  // captains read it; the view gates every write to admins
+        { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false, season: true } },
         { path: '/match/:id', component: MatchDetailsView, meta: { role: 'member' } },
-        { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'member' } },
-        { path: '/team/:id/season/:season_id/weeks', component: TeamWeeksView, meta: { role: 'captain', nav: false } },
+        { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'member', season: true } },
+        { path: '/team/:id/season/:season_id/weeks', component: TeamWeeksView, meta: { role: 'captain', nav: false, season: true } },
         { path: '/maps', component: MapsView, meta: { role: 'admin' } },
         { path: '/teams', component: TeamsView, meta: { role: 'member' } },
         { path: '/config', component: ConfigView, meta: { role: 'admin' } },
@@ -41,15 +41,17 @@ export const router = createRouter({
         { path: '/user-guide', component: UserGuideView, meta: { role: 'admin' } },
         { path: '/player-stats', component: PlayerCareerStatsView, meta: { role: 'member' } },
         { path: '/report', component: SeasonReportView, meta: { role: 'public' } },
-        { path: '/report/:id', component: SeasonReportView, meta: { role: 'public' } },
+        { path: '/report/:id', component: SeasonReportView, meta: { role: 'public', season: true } },
         { path: '/ladder', component: LadderView, meta: { role: 'member' } },
         { path: '/random-stats', component: RandomStatsView, meta: { role: 'public', nav: false, bar: false } },
         { path: '/credits', component: CreditsView, meta: { role: 'public' } }
     ]
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
     const auth = useAuthStore();
+    // A season in the path is a slug; the page reads its id off the loaded list
+    if (to.meta.season) await useSeasonStore().ensureSeasons();
     if ((to.path === '/login' || to.path === '/admin-login') && auth.me) return auth.me.role === 'admin' ? '/' : '/profile';
     if (to.meta.role === 'public') return;
 

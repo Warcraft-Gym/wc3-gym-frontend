@@ -122,7 +122,7 @@
           </template>
 
           <template #item="{ item }">
-            <tr @click="$router.push(`/seasons/${item.id}`)" class="season-row">
+            <tr @click="$router.push(`/seasons/${seasonSlug(item)}`)" class="season-row">
               <td>{{ item.id }}</td>
               <td><strong>{{ item.name }}</strong></td>
               <td>{{ item.number_weeks }}</td>
@@ -281,6 +281,7 @@ import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore, useSeasonStore, useMapStore } from '@/stores';
+import { seasonSlug } from '@/helpers/season-slug.mjs';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 
 

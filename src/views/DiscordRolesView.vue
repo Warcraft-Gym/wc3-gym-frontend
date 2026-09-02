@@ -71,8 +71,8 @@
 
                 <div v-if="card.binding" class="d-flex align-center text-body-2 text-medium-emphasis mt-1">
                   <v-icon v-if="card.handManaged" size="small" class="mr-1">mdi-lock</v-icon>
-                  <v-avatar v-if="card.groupTeam" size="20" class="mr-1">
-                    <img :src="teamImageUrl(card.groupTeam)" @error="showDefaultTeamImage">
+                  <v-avatar v-if="card.groupTeam" size="20" rounded="sm" class="mr-1" style="flex-shrink:0">
+                    <img class="team-icon" :src="teamImageUrl(card.groupTeam)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <span>{{ card.groupLabel }}</span>
                 </div>
@@ -187,11 +187,11 @@
               @click="selectGroup(group)"
             >
               <template #prepend>
-                <v-avatar size="24">
-                  <img :src="teamImageUrl(teamById(group.team_id) ?? group.team_id)" @error="showDefaultTeamImage">
+                <v-avatar size="24" rounded="sm" style="flex-shrink:0">
+                  <img class="team-icon" :src="teamImageUrl(teamById(group.team_id) ?? group.team_id)" @error="showDefaultTeamImage">
                 </v-avatar>
               </template>
-              <v-list-item-title class="ml-2">{{ group.label }}</v-list-item-title>
+              <v-list-item-title class="ml-2">{{ teamName(group.team_id) }}</v-list-item-title>
               <template #append>
                 <v-chip size="x-small" variant="tonal">{{ group.count }}</v-chip>
               </template>
@@ -289,7 +289,10 @@ const reportHeader = [
 
 const seasonName = (id) => seasons.value.find(s => s.id === id)?.name ?? `Season ${id}`;
 const teamById = (id) => teams.value.find(t => t.id === id);
-const teamName = (id) => teamById(id)?.name ?? `Team ${id}`;
+const teamName = (id) => {
+  const team = teamById(id);
+  return team ? team.long_name || team.name : `Team ${id}`;
+};
 const guildRole = (id) => guildRoles.value.find(r => r.id === id);
 const bindingFor = (id) => bindings.value.find(b => b.discord_role === id);
 const roleName = (id) => guildRole(id)?.name ?? id;
@@ -568,6 +571,11 @@ onMounted(fetchAll);
 .role-locked {
   cursor: not-allowed;
   opacity: 0.5;
+}
+.team-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .colour-dot {
   width: 12px;

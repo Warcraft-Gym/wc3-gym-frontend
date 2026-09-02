@@ -7,7 +7,7 @@
     <v-row class="mb-2" align="center">
       <v-col>
         <h1><v-icon class="mr-2">mdi-trophy-variant</v-icon> Fantasy Player Tiers</h1>
-        <p class="text-grey">Cut the season's roster into {{ tierCount }} tiers by <W3CMmr /></p>
+        <p class="text-grey">Cut the {{ seasonName }} roster into {{ tierCount }} tiers by <W3CMmr /></p>
       </v-col>
       <v-col cols="auto" class="d-flex ga-2 align-center">
         <v-select
@@ -18,18 +18,24 @@
           variant="outlined"
           hide-details
           class="tier-count"
+          :disabled="locked"
         />
-        <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :disabled="!rows.length" @click="evenSplit">Even split</v-btn>
-        <v-btn color="primary" prepend-icon="mdi-content-save" :loading="isSaving" :disabled="isSaving || !rows.length" @click="applyTiers">Apply tiers</v-btn>
+        <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :disabled="locked || !rows.length" @click="evenSplit">Even split</v-btn>
+        <v-btn color="primary" prepend-icon="mdi-content-save" :loading="isSaving" :disabled="locked || isSaving || !rows.length" @click="applyTiers">Apply tiers</v-btn>
       </v-col>
     </v-row>
 
+    <v-alert v-if="startedOn" type="info" variant="tonal" density="compact" class="mb-4">
+      <div class="d-flex align-center justify-space-between ga-4">
+        <span>{{ seasonName }} started on {{ startedOn }}. Its tiers are {{ locked ? 'locked' : 'unlocked' }}.</span>
+        <v-btn size="small" variant="text" :prepend-icon="locked ? 'mdi-lock-open-variant' : 'mdi-lock'" @click="locked = !locked">{{ locked ? 'Unlock' : 'Lock' }}</v-btn>
+      </div>
+    </v-alert>
     <StatusAlert v-model="errorMessage" />
     <StatusAlert v-model="successMessage" type="success" />
-    <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
 
     <v-card elevation="2" class="mb-4 pa-4">
-      <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="names" :colors="colors" :domain="domain" />
+      <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="names" :colors="colors" :domain="domain" :disabled="locked" />
     </v-card>
 
     <v-card elevation="2">
@@ -58,6 +64,7 @@
                 variant="outlined"
                 hide-details
                 class="move-select"
+                :disabled="locked"
                 @update:model-value="move(row.id, $event)"
               />
             </td>
@@ -70,12 +77,12 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
+import { DateTime } from 'luxon';
 import { useLadderStore, usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
 import DivisionBracketing from '@/components/DivisionBracketing.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
 import { resolveCurrentSeason, resolveCurrentW3CSeason } from '@/helpers/current-season';
@@ -84,7 +91,8 @@ import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 // Bands ascend by MMR; tier numbers descend, so the top band is always tier 1.
 // A season cutting fewer tiers drops the lowest names, so tier 1 stays Diamond.
 const ALL_NAMES = ['Grass', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-const ALL_COLORS = ['#9E9E9E', '#795548', '#FF9800', '#4CAF50', '#2196F3', '#9C27B0'];
+// Each colour names its metal: grass green, bronze brown, silver grey, gold orange, platinum blue, diamond purple
+const ALL_COLORS = ['#4CAF50', '#795548', '#9E9E9E', '#FF9800', '#2196F3', '#9C27B0'];
 const TIER_COUNTS = [2, 3, 4, 5, 6];
 
 const ladderStore = useLadderStore();
@@ -96,9 +104,15 @@ const isLoading = ref(true);
 const isSaving = ref(false);
 const errorMessage = ref(null);
 const successMessage = ref(null);
-const syncDialog = ref(false);
-const syncEntries = ref([]);
 const currentSeasonId = ref(null);
+const currentSeason = ref(null);
+// A started season's tiers are locked until the admin unlocks them: moving a cut moves drafted players
+const locked = ref(false);
+const seasonName = computed(() => currentSeason.value?.name ?? 'season');
+const startedOn = computed(() => {
+  const start = currentSeason.value?.start_date;
+  return start && start <= DateTime.now().toISODate() ? DateTime.fromISO(start).toLocaleString(DateTime.DATE_MED) : null;
+});
 const currentW3CSeason = ref(null);
 const tierCount = ref(ALL_NAMES.length);
 const signups = ref([]);
@@ -176,7 +190,9 @@ const loadData = async () => {
   errorMessage.value = null;
   try {
     const season = await resolveCurrentSeason();
+    currentSeason.value = season;
     currentSeasonId.value = season?.id ?? null;
+    locked.value = Boolean(startedOn.value);
     currentW3CSeason.value = await resolveCurrentW3CSeason();
     if (currentSeasonId.value) {
       signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
@@ -213,10 +229,9 @@ const applyTiers = async () => {
     // The cuts carry the count, so one request replaces the whole allocation
     await playerStore.updateFantasyTiers(currentSeasonId.value, cuts.value, allocation);
     // The tiers read from the stored ladder matches, so the pool is synced up to today
-    const result = await ladderStore.syncSeason(currentSeasonId.value);
-    syncEntries.value = [{ title: 'Ladder sync', result }];
-    syncDialog.value = true;
-    successMessage.value = `${tierCount.value} tiers written, ${pinned} set by hand.`;
+    const sync = await ladderStore.syncSeason(currentSeasonId.value);
+    const synced = `${sync.synced.length} of ${sync.synced.length + sync.skipped.length + sync.failed.length} players synced`;
+    successMessage.value = `${tierCount.value} tiers written, ${pinned} set by hand. ${synced}.`;
     signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
   } catch (error) {
     console.error('Error applying tier allocation:', error);

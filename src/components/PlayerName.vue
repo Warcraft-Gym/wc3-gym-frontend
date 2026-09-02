@@ -2,7 +2,7 @@
   <span class="player-name" :class="{ link: !!$attrs.onClick }">
     <RaceIcon v-if="race" :raceIdentifier="race" />
     <FlagIcon v-if="player.country" :countryIdentifier="player.country" />
-    <strong>{{ player.name }}</strong>
+    {{ player.name }}
     <v-chip v-if="host" size="x-small" variant="tonal" color="primary">Host</v-chip>
     <slot />
   </span>

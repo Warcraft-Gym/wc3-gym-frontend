@@ -70,15 +70,6 @@
           <v-col cols="12" md="6">
             <RaceSelect v-model="selectedPlayer.race" />
           </v-col>
-          <v-col cols="12" md="6">
-            <v-text-field
-              v-model="selectedPlayer.fantasy_tier"
-              label="Fantasy Tier"
-              variant="outlined"
-              prepend-inner-icon="mdi-trophy"
-              density="comfortable"
-            ></v-text-field>
-          </v-col>
         </v-row>
         <v-row>
           <v-col cols="12">

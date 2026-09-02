@@ -218,15 +218,6 @@
             <v-col cols="12" md="6">
               <RaceSelect v-model="newPlayer.race" />
             </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="newPlayer.fantasy_tier"
-                label="Fantasy Tier"
-                variant="outlined"
-                prepend-inner-icon="mdi-trophy"
-                density="comfortable"
-              ></v-text-field>
-            </v-col>
           </v-row>
           <v-row>
             <v-col cols="12">
@@ -326,7 +317,6 @@ const newPlayer = ref({
   discordTag: '',
   discordId: '',
   race: '',
-  fantasy_tier: null,
 });
 // seasons selected when creating a new player
 const selectedSignupSeasonIdsNew = ref([]);
@@ -481,7 +471,6 @@ const openCreateNew = async () => {
     discordId: '',
     mmr: 0,
     race: '',
-    fantasy_tier: null,
   };
   creationError.value = '';
   showNewPlayerModal.value = true;
@@ -568,7 +557,6 @@ const cancelAddNewPlayer = () => {
     discordTag: '',
     discordId: '',
     race: '',
-    fantasy_tier: null,
   };
   selectedSignupSeasonIdsNew.value = [];
 };

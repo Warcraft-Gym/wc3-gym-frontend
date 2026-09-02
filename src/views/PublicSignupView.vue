@@ -141,7 +141,7 @@ const tokenInvalid = ref(false);
 const tokenInvalidReason = ref('');
 const tokenEntry = ref({ discordId: '', discordTag: '' });
 
-// Form fields (match create player dialog except fantasy_tier)
+// Form fields (match the create player dialog)
 const discordId = ref('');
 const discordTag = ref('');
 const name = ref('');

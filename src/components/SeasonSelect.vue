@@ -18,6 +18,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSeasonStore } from '@/stores';
 import { loadSeasons, resolveCurrentSeasonId } from '@/helpers/current-season';
+import { findSeason } from '@/helpers/season-slug.mjs';
 
 // One pick for every page that shows a season: the store carries it between routes, ?season= across a reload
 const route = useRoute();
@@ -26,15 +27,16 @@ const seasonStore = useSeasonStore();
 const { selectedSeasonId } = storeToRefs(seasonStore);
 
 const syncUrl = (id) => {
-  if (id && Number(route.query.season) !== id) router.replace({ query: { ...route.query, season: id } });
+  if (!id) return;
+  const slug = seasonStore.slugOf(id);
+  if (route.query.season !== slug) router.replace({ query: { ...route.query, season: slug } });
 };
 
 onMounted(async () => {
   const seasons = await loadSeasons();
-  const known = (id) => seasons.some((season) => season.id === id);
-  const fromUrl = Number(route.query.season);
-  if (known(fromUrl)) selectedSeasonId.value = fromUrl;
-  else if (!known(selectedSeasonId.value)) selectedSeasonId.value = await resolveCurrentSeasonId();
+  const fromUrl = findSeason(seasons, route.query.season);
+  if (fromUrl) selectedSeasonId.value = fromUrl.id;
+  else if (!seasons.some((season) => season.id === selectedSeasonId.value)) selectedSeasonId.value = await resolveCurrentSeasonId();
   syncUrl(selectedSeasonId.value);
 });
 

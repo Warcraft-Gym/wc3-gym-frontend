@@ -414,7 +414,6 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { DateTime } from 'luxon';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useFantasyStore, useTeamStore, useSeasonStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
@@ -425,7 +424,7 @@ import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { getW3CMMR, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { seasonPhase } from '@/helpers/season-phase.mjs';
+import { seasonEnded } from '@/helpers/season-phase.mjs';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -453,10 +452,11 @@ const existingTeam = ref(null);
 const teams = ref([]);
 const availablePlayers = ref([]);
 
-// The picked season; an ended one is read-only, a season without tiers takes no draft yet
+// The picked season; one whose series have all started is read-only, one without tiers takes no draft yet
 const season = ref(null);
+const seasonSeries = ref([]);
 const seasonName = computed(() => season.value?.name ?? 'this season');
-const ended = computed(() => seasonPhase(season.value, DateTime.now().toISODate()) === 'ended');
+const ended = computed(() => seasonEnded(seasonSeries.value));
 const canDraft = computed(() => isCreationEnabled.value && !ended.value && tierCount.value > 0);
 
 // Current W3C season for MMR display
@@ -643,6 +643,7 @@ const loadSeason = async () => {
   fantasyBets.value = [];
   try {
     season.value = await seasonStore.fetchSeason(seasonId);
+    seasonSeries.value = (await seriesStore.searchSeriesBySeason(seasonId, null)) || [];
     tierCount.value = season.value.fantasy_tiers;
     teamForm.value = { name: '', season_id: seasonId, drafted_team_id: null, drafted_race: null, player_ids: [] };
     tierSelections.value = emptyTierSelections();

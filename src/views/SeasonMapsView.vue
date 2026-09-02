@@ -15,7 +15,7 @@
       </v-col>
       <v-col cols="auto" class="d-flex align-center ga-2">
         <v-chip size="small" variant="tonal">{{ rules.length }} games</v-chip>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${seasonId}`">Back to season</v-btn>
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${route.params.id}`">Back to season</v-btn>
         <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isDirty" @click="saveSettings">
           Save
         </v-btn>
@@ -294,7 +294,7 @@ const mapStore = useMapStore();
 const { current_season: season } = storeToRefs(seasonStore);
 const { maps } = storeToRefs(mapStore);
 
-const seasonId = computed(() => Number(route.params.id));
+const seasonId = computed(() => seasonStore.seasonIdOf(route.params.id));
 const isLoading = ref(false);
 const errorMessage = ref(null);
 const addOpen = ref(false);

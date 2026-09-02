@@ -67,7 +67,7 @@
               variant="elevated"
               color="primary"
               prepend-icon="mdi-calendar-multiple"
-              @click="$router.push(`/seasons/${match.season_id}`)"
+              @click="$router.push(`/seasons/${match.season ? seasonSlug(match.season) : match.season_id}`)"
               block
             >
               Back to Season
@@ -1009,6 +1009,7 @@ import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
 import { useRouter } from 'vue-router';
+import { seasonSlug } from '@/helpers/season-slug.mjs';
 import { ref, onMounted, computed } from 'vue';
 import { DateTime } from "luxon";
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeriesStore, useTeamStore } from '@/stores';

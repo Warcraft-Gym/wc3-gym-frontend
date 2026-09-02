@@ -177,7 +177,9 @@ const loadData = async () => {
       signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
       await teamStore.fetchTeamsBySeason(currentSeasonId.value);
     }
-    evenSplit();
+    // The page reopens on the cuts the last Apply wrote, once there are any
+    if (season?.fantasy_tier_cuts?.length === tierCount.value - 1) cuts.value = season.fantasy_tier_cuts;
+    else evenSplit();
   } catch (error) {
     console.error('Error loading data:', error);
     errorMessage.value = 'Failed to load player data. Please try again.';
@@ -202,7 +204,7 @@ const applyTiers = async () => {
   try {
     // The season owns the count, so it is written before the allocation it bounds
     await seasonStore.updateSeason({ id: currentSeasonId.value, fantasy_tiers: tierCount.value });
-    await playerStore.updateFantasyTiers(currentSeasonId.value, allocation); // one request replaces the whole allocation
+    await playerStore.updateFantasyTiers(currentSeasonId.value, cuts.value, allocation); // one request replaces the whole allocation
     successMessage.value = `Tiers written for ${Object.keys(allocation).length} players.`;
     signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
   } catch (error) {

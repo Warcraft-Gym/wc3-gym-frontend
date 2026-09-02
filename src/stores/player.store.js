@@ -29,9 +29,9 @@ export const usePlayerStore = defineStore({
             const playerId = player.id;
             await fetchWrapper.put(`${backendUrl}/users/${playerId}`, player);
         },
-        // One request for the whole allocation: {player_id: tier}, unlisted players lose theirs
-        async updateFantasyTiers(seasonId, tiers) {
-            await fetchWrapper.put(`${backendUrl}/fantasy/tiers?season_id=${seasonId}`, tiers);
+        // One request for the whole allocation: the cuts and {player_id: tier}, unlisted players lose theirs
+        async updateFantasyTiers(seasonId, cuts, tiers) {
+            await fetchWrapper.put(`${backendUrl}/fantasy/tiers?season_id=${seasonId}`, { cuts, tiers });
         },
         async createPlayer(player) {
             await fetchWrapper.post(`${backendUrl}/users`, player);

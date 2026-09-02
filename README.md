@@ -5,15 +5,11 @@ Vue.js-based dashboard for managing GNL esports leagues, including team manageme
 ## Prerequisites
 
 - **Node.js** (LTS version) - [Download](https://nodejs.org/en)
-- **Docker Desktop** (optional, for containerized deployment) - [Install Docker](https://www.docker.com/products/docker-desktop)
 - **Visual Studio Code** (recommended) - [Download](https://code.visualstudio.com/)
 - **VS Code Extensions** (optional):
   - Volar (Vue Language Features)
-  - Docker (Microsoft)
 
 ## Quick Start - Local Development
-
-> **⚠️ Recommended for Development:** Use `npm run dev` locally instead of Docker during development. The Vite dev server provides automatic proxy configuration to the backend, hot-reload, and faster iteration. Docker is primarily for production builds and deployment testing.
 
 ### 1. Clone Repository
 
@@ -40,68 +36,6 @@ The application will be available at:
 
 **Note:** The dev server is configured to proxy API requests to `http://localhost:5002`. Ensure the GNL backend is running before accessing the frontend.
 
-## Docker Development Setup
-
-> **Note:** Docker setup is primarily for production builds and deployment testing. For active development, use `npm run dev` locally instead (see Quick Start above) for better performance and automatic backend proxy handling.
-
-### Using VS Code Docker Tasks
-
-The project includes VS Code tasks for Docker-based development.
-
-#### 1. Configure tasks.json
-
-Tasks are configured in `.vscode/tasks.json`. The Docker debug task is already set up:
-
-```json
-{
-  "type": "docker-run",
-  "label": "docker-run: debug",
-  "dependsOn": ["docker-build"],
-  "dockerRun": {
-    "command": "npm run dev",
-    "ports": [{ "hostPort": 5003, "containerPort": 5003 }]
-  },
-  "node": {
-    "enableDebugging": true
-  }
-}
-```
-
-**Key Configuration Points:**
-- `command`: Runs `npm run dev` inside the container for hot-reload development
-- `ports`: Maps container port 5003 to host port 5003
-- `enableDebugging`: Enables Node.js debugging in VS Code
-
-#### 2. Run with Docker
-
-1. Open **Run and Debug** panel (Ctrl+Shift+D)
-2. Select **"docker-run: debug"** from the dropdown
-3. Press F5 or click the green play button
-
-This will:
-- Build the Docker image (`eashibby/gnl_admin_ui:latest`)
-- Start the container with Vite dev server
-- Enable hot-reload for development
-- Attach debugger for breakpoint support
-
-### Manual Docker Commands
-
-```bash
-# Build image
-docker build -t eashibby/gnl_admin_ui:latest .
-
-# Run container for production (serves static build)
-docker run -d -p 5003:5003 eashibby/gnl_admin_ui:latest
-
-# Run container for development (with volume mounting for hot-reload)
-docker run -d \
-  -p 5003:5003 \
-  -v $(pwd):/app \
-  -v /app/node_modules \
-  eashibby/gnl_admin_ui:latest \
-  npm run dev
-```
-
 ## Backend API Configuration
 
 ### Development Mode (Vite Dev Server)
@@ -125,8 +59,7 @@ proxy: {
 - No CORS issues during development
 
 **Backend URL Options:**
-- **Local backend in Docker:** Use `http://host.docker.internal:5002` (if frontend is also in Docker)
-- **Local backend not in Docker:** Use `http://localhost:5002` (default)
+- **Local backend:** Use `http://localhost:5002` (default)
 - **Remote backend:** Update target to backend URL (e.g., `https://backend.warcraft-gym.com`)
 
 ### Production Mode (Static Build)
@@ -190,9 +123,6 @@ admin_frontend/
 │       ├── UsersView.vue
 │       ├── TeamsView.vue
 │       └── ...
-├── .vscode/
-│   └── tasks.json         # VS Code Docker tasks
-├── Dockerfile             # Docker image definition
 ├── vite.config.js         # Vite configuration
 ├── package.json           # Dependencies and scripts
 └── index.html             # HTML entry point
@@ -240,8 +170,7 @@ npm run preview
 
 The `dist/` folder can be:
 - Served by any static file server (nginx, Apache, http-server)
-- Deployed to hosting platforms (Netlify, Vercel, AWS S3)
-- Containerized with Docker (using the provided Dockerfile)
+- Deployed to Vercel (`vercel.json` rewrites every path to `index.html`)
 
 ## Troubleshooting
 
@@ -253,7 +182,6 @@ The `dist/` folder can be:
 1. Verify backend is running at `http://localhost:5002`
 2. Check Swagger docs accessible: `http://localhost:5002/apidocs/`
 3. Verify proxy configuration in `vite.config.js` matches backend URL
-4. For Docker: Ensure backend URL uses `host.docker.internal` if both services are in Docker
 
 ### Port 5003 Already in Use
 

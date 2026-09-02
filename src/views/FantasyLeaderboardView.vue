@@ -476,7 +476,8 @@ const openEditDialog = async (team) => {
       // Try different possible property names
       const playerId = dp.user_id || dp.id || dp.player_id;
       const player = players.value.find(p => p.id === playerId);
-      if (player && player.fantasy_tier) {
+      // A tier above the season's count has no picker, so it lands in no slot
+      if (player && player.fantasy_tier >= 1 && player.fantasy_tier <= tierCount.value) {
         selectedTierPlayers.value[player.fantasy_tier] = player.id;
       }
     });

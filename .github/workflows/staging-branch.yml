@@ -1,0 +1,18 @@
+name: Staging branch
+
+# Vercel builds a preview of the `staging` branch at a fixed alias; it mirrors main on every push.
+# The preview stack (dev Clerk instance, staging backend) is the review environment.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  staging-branch:
+    if: github.repository == 'Warcraft-Gym/wc3-gym-frontend'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: git push --force origin HEAD:staging

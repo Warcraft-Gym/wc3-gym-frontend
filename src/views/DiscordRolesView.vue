@@ -13,6 +13,9 @@
         <div class="text-body-2 text-medium-emphasis">
           Managed roles are granted and removed by Sync. Ignored roles are bound but left alone. Not bound roles are never touched.
         </div>
+        <div class="text-body-2 text-medium-emphasis">
+          Drag a card to a column, or double-click it to move it: Not bound to Managed, Managed to Ignored, Ignored to Managed.
+        </div>
       </v-col>
     </v-row>
 
@@ -27,7 +30,7 @@
     <!-- One card per Discord role, in the column its binding puts it in -->
     <v-row>
       <v-col v-for="column in COLUMNS" :key="column.key" cols="12" md="4">
-        <v-card elevation="2" class="h-100">
+        <v-card elevation="2" class="role-column d-flex flex-column">
           <v-card-title class="d-flex align-center">
             <v-icon class="mr-2">{{ column.icon }}</v-icon>
             <span>{{ column.label }}</span>
@@ -40,7 +43,7 @@
             :class="{ 'drop-over': dragOverColumn === column.key }"
             @dragover.prevent
             @dragenter.prevent="dragOverColumn = column.key"
-            @dragleave="dragOverColumn = null"
+            @dragleave="clearDragOver"
             @drop.prevent="dropOn(column.key)"
           >
             <div v-if="!cards[column.key].length" class="text-body-2 text-medium-emphasis text-center pa-4">
@@ -56,6 +59,7 @@
               :draggable="card.manageable && !card.handManaged"
               @dragstart="dragRoleId = card.id"
               @dragend="dragRoleId = null; dragOverColumn = null"
+              @dblclick="moveOnDoubleClick(card)"
             >
               <v-tooltip v-if="!card.manageable" activator="parent" location="top">
                 Above the bot in Discord; it cannot be bound
@@ -541,6 +545,18 @@ const confirmDelete = async () => {
   }
 };
 
+// dragleave also fires when the pointer crosses a card inside the zone, so the highlight clears only when it leaves the zone itself
+const clearDragOver = (event) => {
+  if (!event.currentTarget.contains(event.relatedTarget)) dragOverColumn.value = null;
+};
+
+// Double-click moves a card one column: a bound role swaps between Managed and Ignored, an unbound one opens the picker for Managed
+const moveOnDoubleClick = (card) => {
+  if (!card.manageable || card.handManaged) return;
+  if (!card.binding) return openPicker(card, 'managed');
+  return setSynced(card.binding, !card.binding.synced);
+};
+
 // A drop does what the matching button does: bind, move between columns, or unbind
 const dropOn = (column) => {
   const card = allCards.value.find(c => c.id === dragRoleId.value);
@@ -556,8 +572,15 @@ onMounted(fetchAll);
 </script>
 
 <style scoped>
+/* The three columns share one viewport-tied height, so their headers stay aligned and each list scrolls on its own */
+.role-column {
+  height: calc(100vh - 320px);
+  min-height: 360px;
+}
+/* The zone fills the rest of the column card, so a drop below the last card still lands */
 .drop-zone {
-  min-height: 120px;
+  flex: 1 1 auto;
+  overflow-y: auto;
   border: 2px dashed transparent;
   border-radius: 4px;
 }
@@ -565,8 +588,13 @@ onMounted(fetchAll);
   border-color: rgb(var(--v-theme-primary));
   background: rgba(var(--v-theme-primary), 0.08);
 }
+/* The card is the only drag source: selecting its text or grabbing its team icon would start something else */
 .role-card {
   cursor: grab;
+  user-select: none;
+}
+.role-card img {
+  pointer-events: none;
 }
 .role-locked {
   cursor: not-allowed;

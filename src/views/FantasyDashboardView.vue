@@ -137,7 +137,7 @@
                                 <v-list-item v-bind="props">
                                   <template v-slot:prepend>
                                     <v-avatar size="32" class="mr-2">
-                                      <img class="team-icon" :src="teamImageUrl(item.raw.id)" @error="showDefaultTeamImage">
+                                      <img class="team-icon" :src="teamImageUrl(item.raw)" @error="showDefaultTeamImage">
                                     </v-avatar>
                                   </template>
                                 </v-list-item>

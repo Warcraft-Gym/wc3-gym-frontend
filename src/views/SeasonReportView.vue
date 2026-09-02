@@ -115,7 +115,7 @@
                 <td>
                   <div class="d-flex align-center">
                     <v-avatar size="24" rounded="sm" class="mr-2" style="flex-shrink:0">
-                      <img class="team-icon" :src="teamImageUrl(team.id)" @error="showDefaultTeamImage">
+                      <img class="team-icon" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
                     </v-avatar>
                     <span class="font-weight-medium">{{ team.name }}</span>
                   </div>
@@ -192,10 +192,10 @@
                   <span v-else class="text-caption">–</span>
                 </td>
                 <td class="text-center">
-                  <v-tooltip v-if="player.teamId" :text="player.teamName" location="top">
+                  <v-tooltip v-if="player.team" :text="player.teamName" location="top">
                     <template #activator="{ props }">
                       <v-avatar v-bind="props" size="24" rounded="sm">
-                        <img class="team-icon" :src="teamImageUrl(player.teamId)" @error="showDefaultTeamImage">
+                        <img class="team-icon" :src="teamImageUrl(player.team)" @error="showDefaultTeamImage">
                       </v-avatar>
                     </template>
                   </v-tooltip>
@@ -517,7 +517,7 @@ const allPlayers = computed(() => {
             if (!seen.has(player.id)) {
                 seen.add(player.id);
                 const seasonStats = player.gnl_stats?.find(s => s.season_id === season.value.id) || null;
-                result.push({ ...player, seasonStats, teamName: team.name, teamId: team.id });
+                result.push({ ...player, seasonStats, teamName: team.name, team });
             }
         }
     }
@@ -543,6 +543,7 @@ const teamStandings = computed(() => {
             }, 0);
             return {
                 id: team.id,
+                icon_url: team.icon_url,
                 name: team.long_name || team.name,
                 finalScore: info.final_score || 0,
                 pointsAvailable: info.points_available || 0,

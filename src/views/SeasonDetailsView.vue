@@ -120,7 +120,7 @@
               <v-col cols="5" class="text-center">
                 <div class="team-section">
                   <v-avatar size="80" class="mb-3 team-avatar">
-                    <img class="team-icon" :src="teamImageUrl(match.team1.id)" @error="showDefaultTeamImage">
+                    <img class="team-icon" :src="teamImageUrl(match.team1)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <div class="team-name-enhanced">{{ match.team1.name }}</div>
                   <v-chip 
@@ -145,7 +145,7 @@
               <v-col cols="5" class="text-center">
                 <div class="team-section">
                   <v-avatar size="80" class="mb-3 team-avatar">
-                    <img class="team-icon" :src="teamImageUrl(match.team2.id)" @error="showDefaultTeamImage">
+                    <img class="team-icon" :src="teamImageUrl(match.team2)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <div class="team-name-enhanced">{{ match.team2.name }}</div>
                   <v-chip 
@@ -236,7 +236,7 @@
               >
                 <v-card-text class="text-center pa-4">
                   <v-avatar size="64" class="mb-3">
-                    <img class="team-icon" :src="teamImageUrl(team.id)" @error="showDefaultTeamImage">
+                    <img class="team-icon" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <div class="text-h6 mb-2">{{ team.name }}</div>
                   <v-divider class="my-2"></v-divider>

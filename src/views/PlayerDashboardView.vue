@@ -508,6 +508,18 @@
         Report Result
       </v-card-title>
       <v-card-text class="pt-4">
+        <v-alert
+          v-if="scoreVeto"
+          :type="scoreVeto.complete ? 'success' : 'warning'"
+          variant="tonal"
+          density="compact"
+          class="mb-2"
+        >
+          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it first.' }}
+          <template v-if="!scoreVeto.complete" #append>
+            <v-btn size="small" variant="outlined" prepend-icon="mdi-map-outline" @click="goToVeto">Map veto</v-btn>
+          </template>
+        </v-alert>
         <v-form ref="scoreForm" v-model="scoreFormValid">
           <v-container>
             <v-row>
@@ -580,7 +592,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="closeScore" :disabled="scoreSavingId === scoreSeries.id">Cancel</v-btn>
-        <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isScoreValid || scoreSavingId === scoreSeries.id" :loading="scoreSavingId === scoreSeries.id" @click="saveResult">Save Result</v-btn>
+        <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isScoreValid || vetoMissing || scoreSavingId === scoreSeries.id" :loading="scoreSavingId === scoreSeries.id" @click="saveResult">Save Result</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -734,6 +746,9 @@ const scheduleForm = ref(null);
 const scoreForm = ref(null);
 const scheduleSeries = ref({});
 const scoreSeries = ref({});
+// a result carries its veto, so the dialog reads the board before the scores
+const scoreVeto = ref(null);
+const vetoMissing = computed(() => !!scoreVeto.value && !scoreVeto.value.complete);
 // Per-series saving state (store id of series currently being saved)
 const scheduleSavingId = ref(null);
 const scoreSavingId = ref(null);
@@ -835,9 +850,9 @@ const fetchPlayerData = async () => {
 
 // the map veto is only worth opening before the series is played; the link carries the token
 const isUnplayed = (item) => !item.player1_score && !item.player2_score;
-const vetoRoute = (item) => ({
+const vetoRoute = (item, query = {}) => ({
   path: `/player-series/${item.id}/veto`,
-  query: token.value ? { token: token.value } : {}
+  query: token.value ? { token: token.value, ...query } : query
 });
 
 // Scores read from the player's side: mine first, the opponent's second
@@ -1048,7 +1063,18 @@ const reportResult = (item) => {
     game3File: null
   };
 
+  scoreVeto.value = null;
+  const vetoUrl = `${backendUrl}/player-series/${item.id}/veto`;
+  fetchWrapper.get(token.value ? `${vetoUrl}?token=${encodeURIComponent(token.value)}` : vetoUrl)
+    .then(board => { scoreVeto.value = board; })
+    .catch(() => {});  // the backend refuses the report anyway
   scoreDialog.value = true;
+};
+
+const goToVeto = () => {
+  const id = scoreSeries.value.id;
+  closeScore();
+  router.push(vetoRoute({ id }, { report: 1 }));  // the board opens in record mode and leads back here
 };
 
 const closeScore = () => {
@@ -1160,6 +1186,9 @@ onMounted(async () => {
   if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
   await fetchPlayerData();
   fetchHistory();
+  // the veto board sends the reporter back with ?report=<series id>
+  const back = series.value.find(item => String(item.id) === route.query.report);
+  if (back) reportResult(back);
 });
 </script>
 

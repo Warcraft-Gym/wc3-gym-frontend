@@ -344,10 +344,11 @@ const headers = computed(() => [
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
   { title: 'Bettor', value: 'captain', sortable: false },
-  { title: 'Player Points', value: 'player_points', align: 'end' },
-  { title: 'Bench Points', value: 'bench_points', align: 'end' },
+  // the order the breakdown panels open in, so a column and its panel line up
   { title: 'Team Points', value: 'team_points', align: 'end' },
   { title: 'Race Points', value: 'race_points', align: 'end' },
+  { title: 'Player Points', value: 'player_points', align: 'end' },
+  { title: 'Bench Points', value: 'bench_points', align: 'end' },
   { title: 'Bet Points', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
   // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team

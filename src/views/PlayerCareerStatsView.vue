@@ -278,19 +278,6 @@ onMounted(async () => {
                 </v-btn>
               </v-col>
             </v-row>
-            <v-row>
-              <v-col cols="12">
-                <v-alert
-                  type="info"
-                  variant="tonal"
-                  density="compact"
-                  icon="mdi-information-outline"
-                  class="text-caption mb-0"
-                >
-                  All statistics are computed automatically and don't need to be recalculated manually.
-                </v-alert>
-              </v-col>
-            </v-row>
           </v-card-text>
         </v-card>
 

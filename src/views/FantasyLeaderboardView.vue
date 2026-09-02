@@ -40,17 +40,6 @@
                 </v-col>
                 <v-spacer />
                 <v-col cols="12" sm="auto">
-                  <v-alert
-                    type="info"
-                    variant="tonal"
-                    density="compact"
-                    icon="mdi-information-outline"
-                    class="text-caption mb-0"
-                  >
-                    All scores are computed automatically and don't need to be recalculated manually.
-                  </v-alert>
-                </v-col>
-                <v-col cols="12" sm="auto">
                   <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" block>
                     Create Team
                   </v-btn>

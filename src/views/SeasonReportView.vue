@@ -465,7 +465,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import { useSeasonStore } from '@/stores/season.store';
@@ -486,11 +486,10 @@ const seriesStore = useSeriesStore();
 const fantasyStore = useFantasyStore();
 const ladderStore = useLadderStore();
 
-const { seasons, current_season } = storeToRefs(seasonStore);
+const { seasons, current_season, selectedSeasonId } = storeToRefs(seasonStore);
 const { teams } = storeToRefs(teamStore);
 const { series } = storeToRefs(seriesStore);
 
-const selectedSeasonId = ref(null);
 const ladder = ref(null);
 const isLoading = ref(false);
 const errorMessage = ref(null);
@@ -637,12 +636,13 @@ onMounted(async () => {
     isLoading.value = true;
     try {
         await seasonStore.fetchSeasons();
-        // Use season id from the route path param, fall back to first season
+        // The path names the season; without one, the season picked on another page, then the first season
         const paramId = route.params.id ? parseInt(route.params.id) : null;
         if (paramId) {
             selectedSeasonId.value = paramId;
         } else if (seasons.value.length > 0) {
-            selectedSeasonId.value = seasons.value[0].id;
+            const picked = seasons.value.find((season) => season.id === selectedSeasonId.value);
+            selectedSeasonId.value = picked ? picked.id : seasons.value[0].id;
             // Reflect the resolved id in the URL without adding a history entry
             router.replace({ path: `/report/${selectedSeasonId.value}`, query: route.query });
         }
@@ -651,6 +651,14 @@ onMounted(async () => {
         errorMessage.value = 'Failed to load seasons.';
     } finally {
         isLoading.value = false;
+    }
+});
+
+// A season typed into the path while the page is open
+watch(() => route.params.id, (id) => {
+    if (id && parseInt(id) !== selectedSeasonId.value) {
+        selectedSeasonId.value = parseInt(id);
+        loadReport();
     }
 });
 

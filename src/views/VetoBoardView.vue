@@ -14,6 +14,16 @@
         <v-spacer />
         <v-chip v-if="board" :color="statusColor" variant="tonal">{{ statusLine }}</v-chip>
         <v-btn
+          v-if="canRecord"
+          :variant="recording ? 'flat' : 'outlined'"
+          color="warning"
+          size="small"
+          prepend-icon="mdi-chat-processing-outline"
+          @click="recording = !recording"
+        >
+          {{ recording ? 'Entering a veto done elsewhere' : 'Enter a veto done elsewhere' }}
+        </v-btn>
+        <v-btn
           v-if="canUndo"
           variant="outlined"
           size="small"
@@ -74,7 +84,7 @@
                   :color="nextAction === 'Pick' ? 'success' : 'error'"
                   :loading="saving"
                   :disabled="saving"
-                  @click="send({ action: 'step', map_id: tile.id })"
+                  @click="send({ action: recording ? 'record' : 'step', map_id: tile.id })"
                 >
                   {{ nextAction }}
                 </v-btn>
@@ -109,6 +119,7 @@
                 <v-spacer />
                 <span class="text-caption" :class="{ 'text-medium-emphasis': !row.done }">{{ row.map }}</span>
               </v-list-item-title>
+              <v-list-item-subtitle v-if="row.enteredBy">Entered by {{ row.enteredBy }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
         </v-card>
@@ -171,6 +182,8 @@ const mapStore = useMapStore();
 const board = ref(null);
 const errorMessage = ref(null);
 const saving = ref(false);
+// a veto done in a chat is typed in by one player for both sides, in the season's order
+const recording = ref(false);
 
 // the dashboard link carries its token; a session reads the board without one
 const token = route.query.token;
@@ -190,15 +203,23 @@ const entrySide = (entry) => (entry || '').split('_').pop().toUpperCase();
 const sideName = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.name || `Player ${side}`;
 const nextAction = computed(() => (order.value[taken.value.length] || '').split('_')[0]);
 
+const viewerId = computed(() => (board.value?.viewer_side === 'A' ? board.value?.player1 : board.value?.player2)?.id);
+const playerId = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.id;
+const canRecord = computed(() => !!board.value?.viewer_side && !board.value?.complete);
+
 const statusLine = computed(() => {
   if (board.value?.complete) return 'Veto complete';
+  if (recording.value) return `${nextAction.value} for ${sideName(entrySide(order.value[taken.value.length]))}`;
   if (board.value?.on_turn) return `Your turn: ${nextAction.value} a map`;
   return `Waiting for ${sideName(entrySide(order.value[taken.value.length]))}`;
 });
-const statusColor = computed(() => (board.value?.complete ? 'success' : board.value?.on_turn ? 'primary' : undefined));
+const statusColor = computed(() => (board.value?.complete ? 'success' : recording.value ? 'warning' : board.value?.on_turn ? 'primary' : undefined));
 
-// only the viewer's own last step can be taken back
-const canUndo = computed(() => !!taken.value.length && taken.value[taken.value.length - 1].side === board.value?.viewer_side);
+// the last step can be taken back by the side it belongs to or by whoever entered it
+const canUndo = computed(() => {
+  const last = taken.value[taken.value.length - 1];
+  return !!last && (last.side === board.value?.viewer_side || last.entered_by === viewerId.value);
+});
 
 const poolChip = computed(() => {
   const inVeto = (board.value?.pool || []).length - (board.value?.week_map_id ? 1 : 0);
@@ -224,7 +245,7 @@ const tiles = computed(() => (board.value?.pool || []).map((id) => {
         : picked ? 'Picked'
           : board.value?.complete ? 'Unused' : 'Available',
     tag: week ? 'Game 1' : picked ? sideName(step.side) : null,
-    canAct: !week && !step && !!board.value?.on_turn
+    canAct: !week && !step && (recording.value ? canRecord.value : !!board.value?.on_turn)
   };
 }));
 
@@ -238,7 +259,9 @@ const orderRows = computed(() => order.value.map((entry, index) => {
     done: !!step,
     current,
     who: sideName(entrySide(entry)),
-    map: step ? mapName(step.map_id) : current ? `To ${action.toLowerCase()}` : ''
+    map: step ? mapName(step.map_id) : current ? `To ${action.toLowerCase()}` : '',
+    // a step typed in for the other side names who entered it
+    enteredBy: step?.entered_by && step.entered_by !== playerId(step.side) ? sideName(step.entered_by === board.value?.player1?.id ? 'A' : 'B') : null
   };
 }));
 
@@ -306,7 +329,7 @@ const send = async (body) => {
 // the other player's steps arrive by poll; a step of the viewer's own comes back on the PUT
 let timer = null;
 const poll = () => {
-  if (document.hidden || saving.value || !board.value || board.value.complete || board.value.on_turn) return;
+  if (document.hidden || saving.value || recording.value || !board.value || board.value.complete || board.value.on_turn) return;
   load();
 };
 

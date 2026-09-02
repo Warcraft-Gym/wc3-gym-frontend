@@ -8,7 +8,7 @@
     <v-row class="mb-4">
       <v-col>
         <h1>
-          <v-icon class="mr-2">mdi-casino</v-icon>
+          <BetIcon size="24" class="mr-2" />
           Fantasy Bets
         </h1>
       </v-col>
@@ -18,7 +18,7 @@
 
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-casino</v-icon>
+        <BetIcon size="24" class="mr-2" />
         <span>Bets Management</span>
       </v-card-title>
       <v-card-text class="pa-0">
@@ -326,6 +326,7 @@
 </template>
 
 <script setup>
+import BetIcon from '@/components/BetIcon.vue';
 import RowActions from '@/components/RowActions.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useFantasyStore, useSeriesStore, useConfigStore } from '@/stores';

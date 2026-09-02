@@ -3,10 +3,10 @@
     <!-- Team Points Breakdown -->
     <v-expansion-panel v-if="breakdown.team_breakdown.team_name">
       <v-expansion-panel-title>
-        <v-icon class="mr-2" color="green">mdi-shield-account</v-icon>
+        <v-icon class="mr-2" color="red">mdi-shield</v-icon>
         <strong>Team Points Details</strong>
         <v-spacer></v-spacer>
-        <v-chip color="green" size="small">{{ breakdown.totals.team_points }} pts</v-chip>
+        <v-chip color="red" size="small">{{ breakdown.totals.team_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <v-table density="compact">
@@ -36,8 +36,8 @@
         <v-icon class="mr-2" color="blue">mdi-account-multiple</v-icon>
         <strong>Player Points Details</strong>
         <v-spacer></v-spacer>
-        <v-chip color="blue" size="small">{{ breakdown.totals.player_points }} pts</v-chip>
-        <v-chip color="orange-darken-2" size="small" class="ml-1">{{ breakdown.totals.bench_points }} bench pts</v-chip>
+        <v-chip color="blue" size="small">{{ breakdown.totals.player_points }} points</v-chip>
+        <v-chip color="orange-darken-2" size="small" class="ml-1">{{ breakdown.totals.bench_points }} bench points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <GroupedTable :columns="playerColumns" :groups="roster" empty="No drafted players">
@@ -52,11 +52,11 @@
           </template>
           <template #rows="{ group: row }">
             <template v-for="week in row.weeks" :key="week.week">
-              <tr v-for="(series, idx) in week.series" :key="`${week.week}-${idx}`" class="detail-row">
+              <tr v-for="(series, idx) in week.series" :key="`${week.week}-${idx}`" class="detail-row" :class="{ 'same-week': idx }">
                 <td></td>
                 <td colspan="5">
                   <div class="d-flex align-center ga-1 flex-wrap">
-                    <span class="week-label text-medium-emphasis">Week {{ week.week }}</span>
+                    <span class="week-label text-medium-emphasis">{{ idx ? '' : `Week ${week.week}` }}</span>
                     vs <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" @click="openPlayer(series.opponent)" />
                     <span>({{ series.score }})</span>
                   </div>
@@ -86,10 +86,10 @@
     <!-- Race Points Breakdown -->
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon class="mr-2" color="purple">mdi-trophy-variant</v-icon>
+        <span class="mr-2 d-inline-flex"><RaceIcon :raceIdentifier="breakdown.race_breakdown.race" size="24" /></span>
         <strong>Race Points Details</strong>
         <v-spacer></v-spacer>
-        <v-chip color="purple" size="small">{{ breakdown.totals.race_points }} pts</v-chip>
+        <v-chip color="purple" size="small">{{ breakdown.totals.race_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <div class="text-subtitle-2 mb-2">Weekly Performance of {{ breakdown.race_breakdown.race }} ({{ breakdown.race_breakdown.season_stats.wins }}W - {{ breakdown.race_breakdown.season_stats.losses }}L):</div>
@@ -150,10 +150,10 @@
     <!-- Bet Points Breakdown -->
     <v-expansion-panel v-if="breakdown.bet_breakdown.length > 0">
       <v-expansion-panel-title>
-        <v-icon class="mr-2" :color="breakdown.totals.bet_points >= 0 ? 'teal' : 'red'">mdi-casino</v-icon>
+        <BetIcon size="24" class="mr-2 text-green" />
         <strong>Bet Points Details</strong>
         <v-spacer></v-spacer>
-        <v-chip :color="breakdown.totals.bet_points >= 0 ? 'teal' : 'red'" size="small">{{ breakdown.totals.bet_points }} pts</v-chip>
+        <v-chip :color="breakdown.totals.bet_points >= 0 ? 'green' : 'red'" size="small">{{ breakdown.totals.bet_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <GroupedTable :columns="betColumns" :groups="betWeeks" empty="No bets">
@@ -175,7 +175,7 @@
                     <span :class="{ loser: bet.actual_winner && side !== bet.actual_winner }">
                       <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" @click="openPlayer(side)" />
                     </span>
-                    <BetIcon v-if="side === bet.bet_on" class="text-amber-darken-2" />
+                    <BetIcon v-if="side === bet.bet_on" class="text-green" />
                   </template>
                 </div>
                 <span v-else>{{ bet.series }}</span>
@@ -204,8 +204,8 @@ const playerColumns = [
   { key: 'player', title: 'Player' },
   { key: 'mmr', title: 'W3C MMR', align: 'right' },
   { key: 'record', title: 'GNL Record', align: 'right' },
-  { key: 'player_pts', title: 'Player Pts', align: 'right' },
-  { key: 'bench_pts', title: 'Bench Pts', align: 'right' },
+  { key: 'player_pts', title: 'Player Points', align: 'right' },
+  { key: 'bench_pts', title: 'Bench Points', align: 'right' },
   { key: 'total', title: 'Total', align: 'right' },
 ];
 
@@ -290,6 +290,9 @@ const sides = (bet) => bet.series?.split(' vs ') ?? [];
 .week-label {
   display: inline-block;
   min-width: 64px;
+}
+.detail-row:has(+ .same-week) > td {
+  border-bottom: none !important;
 }
 .loser :deep(strong) {
   font-weight: 400;

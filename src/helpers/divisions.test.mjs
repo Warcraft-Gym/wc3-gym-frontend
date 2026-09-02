@@ -18,6 +18,11 @@ test('ties share a band and no-MMR players are left out of the cuts', () => {
   assert.equal(bandOf(0, cuts), 0);
 });
 
+test('quantile cuts never repeat, so a tied pool still names every band', () => {
+  const cuts = quantileCuts([1500, 1500, 1500, 1500], 4);
+  assert.deepEqual(cuts, [1500, 1501, 1502]);
+});
+
 test('a cut cannot cross its neighbours or leave the domain', () => {
   const cuts = [1300, 1500, 1700];
   assert.deepEqual(moveCut(cuts, 1, 1800, [1000, 2000]), [1300, 1699, 1700]);

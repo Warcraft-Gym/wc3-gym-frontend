@@ -25,18 +25,7 @@
             <v-toolbar flat height="auto">
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-col cols="12" sm="auto">
-                  <v-select
-                    v-model="selectedSeasonId"
-                    :items="seasons"
-                    item-title="name"
-                    item-value="id"
-                    label="Season"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    style="min-width: 200px;"
-                    @update:modelValue="onSeasonChange"
-                  ></v-select>
+                  <SeasonSelect />
                 </v-col>
                 <v-spacer />
                 <v-col cols="12" sm="auto">
@@ -164,7 +153,7 @@
             <v-col cols="12" md="6">
               <v-select
                 v-model="editedTeam.season_id"
-                :items="seasons"
+                :items="seasonStore.seasons"
                 item-title="name"
                 item-value="id"
                 label="Season *"
@@ -278,7 +267,8 @@ import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore, useFantasyStore, useSeasonStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { loadSeasons, resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 
@@ -288,18 +278,17 @@ const teamStore = useTeamStore();
 const auth = useAuthStore();
 
 const { teams } = storeToRefs(fantasyStore);
+const { selectedSeasonId } = storeToRefs(seasonStore);
 
 const isLoading = ref(false);
 const isSaving = ref(false);
 const isDeleting = ref(false);
 const errorMessage = ref(null);
-const seasons = ref([]);
 // The season the picker is on says how many tiers it cuts; tier 1 is always Diamond
 const tierCount = computed(
-  () => seasons.value.find((season) => season.id === selectedSeasonId.value)?.fantasy_tiers,
+  () => seasonStore.seasons.find((season) => season.id === selectedSeasonId.value)?.fantasy_tiers,
 );
 const tiers = computed(() => Array.from({ length: tierCount.value || 0 }, (_, i) => i + 1));
-const selectedSeasonId = ref(null);
 const currentW3CSeason = ref(null);
 const editDialog = ref(false);
 const deleteDialog = ref(false);
@@ -409,20 +398,10 @@ const getTierColor = (tier) => {
 };
 
 const fetchData = async () => {
+  if (!selectedSeasonId.value) return;  // the picker resolves one
   isLoading.value = true;
   errorMessage.value = null;
   try {
-    // If no season selected, get current season
-    if (!selectedSeasonId.value) {
-      selectedSeasonId.value = await resolveCurrentSeasonId();
-    }
-
-    if (!selectedSeasonId.value) {
-      errorMessage.value = 'No season is available. Please contact an administrator.';
-      isLoading.value = false;
-      return;
-    }
-    
     // Fetch teams for selected season
     expanded.value = [];
     breakdowns.value = {};
@@ -435,10 +414,6 @@ const fetchData = async () => {
   } finally {
     isLoading.value = false;
   }
-};
-
-const onSeasonChange = async () => {
-  await fetchData();
 };
 
 const openCreateDialog = async () => {
@@ -602,9 +577,9 @@ const confirmDelete = async () => {
   }
 };
 
+watch(selectedSeasonId, fetchData, { immediate: true });
+
 onMounted(async () => {
-  loadSeasons().then(list => { seasons.value = list; });
-  fetchData();
   loadTeams();
   currentW3CSeason.value = await resolveCurrentW3CSeason();
 });

@@ -25,18 +25,7 @@
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2">
             <v-col cols="12" sm="auto">
-              <v-select
-                v-model="selectedSeasonId"
-                :items="seasons"
-                item-title="name"
-                item-value="id"
-                label="Season"
-                variant="outlined"
-                density="compact"
-                hide-details
-                style="min-width: 200px;"
-                @update:modelValue="onSeasonChange"
-              ></v-select>
+              <SeasonSelect />
             </v-col>
             <v-spacer />
             <v-col cols="12" sm="auto">
@@ -329,9 +318,9 @@
 import BetIcon from '@/components/BetIcon.vue';
 import RowActions from '@/components/RowActions.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useFantasyStore, useSeriesStore, useConfigStore } from '@/stores';
+import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import { loadSeasons, resolveCurrentSeasonId } from '@/helpers/current-season';
+import SeasonSelect from '@/components/SeasonSelect.vue';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -339,8 +328,10 @@ import StatusAlert from '@/components/StatusAlert.vue';
 const fantasyStore = useFantasyStore();
 const seriesStore = useSeriesStore();
 const configStore = useConfigStore();
+const seasonStore = useSeasonStore();
 
 const { bets, totalBets } = storeToRefs(fantasyStore);
+const { selectedSeasonId } = storeToRefs(seasonStore);
 
 const isLoading = ref(false);
 const isBetSaving = ref(false);
@@ -355,8 +346,6 @@ const selectedWinnerId = ref(null);
 const selectedBetPoints = ref(null);
 const allSeries = ref([]);
 const fantasyTeams = ref([]);
-const seasons = ref([]);
-const selectedSeasonId = ref(null);
 const page = ref(1);
 const itemsPerPage = ref(25);
 const sortBy = ref([{ key: 'id', order: 'asc' }]);  // the order the server pages by
@@ -460,21 +449,11 @@ const getBetResultColor = (result) => {
 };
 
 const fetchData = async () => {
+  if (!selectedSeasonId.value) return;  // the picker resolves one
   isLoading.value = true;
   errorMessage.value = null;
   
   try {
-    // If no season selected, get current season
-    if (!selectedSeasonId.value) {
-      selectedSeasonId.value = await resolveCurrentSeasonId();
-    }
-
-    if (!selectedSeasonId.value) {
-      errorMessage.value = 'No season is available. Please contact an administrator.';
-      isLoading.value = false;
-      return;
-    }
-    
     // Fetch one page of bets for the selected season
     const betsQuery = `season_id == ${selectedSeasonId.value}`;
     const sort = sortBy.value[0];
@@ -508,13 +487,14 @@ const fetchData = async () => {
   }
 };
 
-const onSeasonChange = async () => {
+// A new season reads from its first page
+watch(selectedSeasonId, () => {
   if (page.value !== 1) {
     page.value = 1; // The watcher fetches
     return;
   }
-  await fetchData();
-};
+  fetchData();
+}, { immediate: true });
 
 // The table controls drive the page state
 watch([page, itemsPerPage], () => {
@@ -692,11 +672,7 @@ const loadBetPointsSettings = async () => {
   }
 };
 
-onMounted(() => {
-  loadSeasons().then(list => { seasons.value = list; });
-  loadBetPointsSettings();
-  fetchData();
-});
+onMounted(loadBetPointsSettings);
 </script>
 
 <style scoped>

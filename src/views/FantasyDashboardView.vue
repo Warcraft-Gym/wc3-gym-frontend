@@ -11,6 +11,9 @@
           Fantasy Dashboard
         </h1>
       </v-col>
+      <v-col cols="12" sm="auto">
+        <SeasonSelect />
+      </v-col>
     </v-row>
 
     <StatusAlert v-model="errorMessage" />
@@ -27,13 +30,22 @@
         <v-chip v-if="existingTeam" class="ml-3" size="small" color="white" variant="outlined">
           Registered
         </v-chip>
+        <v-chip v-if="ended" class="ml-3" size="small" color="white" variant="outlined">
+          {{ seasonName }} has ended
+        </v-chip>
       </v-card-title>
       <v-card-text class="pt-4">
                   
-                  <!-- Team Creation Disabled Message -->
-                  <v-alert v-if="!isCreationEnabled && !existingTeam" type="warning" variant="tonal" class="mb-4">
+                  <!-- No team, and why the form is not here -->
+                  <v-alert v-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
+                    You had no fantasy team in {{ seasonName }}.
+                  </v-alert>
+                  <v-alert v-else-if="!isCreationEnabled && !existingTeam" type="warning" variant="tonal" class="mb-4">
                     <v-alert-title>Team Creation Currently Closed</v-alert-title>
                     Fantasy team creation is not currently enabled. Please check back later or contact an administrator.
+                  </v-alert>
+                  <v-alert v-else-if="!tierCount && !existingTeam" type="info" variant="tonal" class="mb-4">
+                    The player tiers for {{ seasonName }} are not cut yet. Registration opens once they are.
                   </v-alert>
 
                   <!-- Existing Team Display -->
@@ -87,14 +99,14 @@
                           </v-chip-group>
                         </div>
                       </v-card-text>
-                      <v-card-actions v-if="isCreationEnabled">
+                      <v-card-actions v-if="canDraft">
                         <v-spacer></v-spacer>
                         <v-btn color="primary" @click="startEditing">
                           <v-icon start>mdi-pencil</v-icon>
                           Edit Team
                         </v-btn>
                       </v-card-actions>
-                      <v-card-actions v-else>
+                      <v-card-actions v-else-if="!ended">
                         <v-spacer></v-spacer>
                         <v-chip size="small" color="grey" variant="outlined">
                           Team editing is currently disabled
@@ -104,7 +116,7 @@
                   </div>
 
                   <!-- Registration/Edit Form -->
-                  <v-form v-if="isCreationEnabled && (!existingTeam || isEditing)" ref="registrationForm" @submit.prevent="submitTeam">
+                  <v-form v-if="canDraft && (!existingTeam || isEditing)" ref="registrationForm" @submit.prevent="submitTeam">
                     <v-card variant="outlined" class="mb-4">
                       <v-card-title class="bg-primary text-white">
                         <v-icon start>mdi-account-group</v-icon>
@@ -239,7 +251,10 @@
         </v-chip>
       </v-card-title>
       <v-card-text class="pt-4">                  <!-- No Team Message -->
-                  <v-alert v-if="!existingTeam" type="info" variant="tonal">
+                  <v-alert v-if="!existingTeam && ended" type="info" variant="tonal">
+                    No team in {{ seasonName }}, so no bets.
+                  </v-alert>
+                  <v-alert v-else-if="!existingTeam" type="info" variant="tonal">
                     <v-alert-title>Register a Team First</v-alert-title>
                     You need to register a fantasy team before you can place bets on matches.
                   </v-alert>
@@ -309,7 +324,7 @@
 
                       <template #item.actions="{ item }">
                         <v-btn
-                          v-if="!isSeriesPlayed(item)"
+                          v-if="!isSeriesPlayed(item) && !ended"
                           color="purple"
                           variant="outlined"
                           size="small"
@@ -399,14 +414,18 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { DateTime } from 'luxon';
+import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useFantasyStore, useTeamStore, useSeasonStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import SeasonSelect from '@/components/SeasonSelect.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { getW3CMMR, w3cPlayerUrl } from '@/helpers/w3c-stats';
-import { resolveCurrentSeason, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { seasonPhase } from '@/helpers/season-phase.mjs';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -418,6 +437,8 @@ const teamStore = useTeamStore();
 const seasonStore = useSeasonStore();
 const configStore = useConfigStore();
 const seriesStore = useSeriesStore();
+
+const { selectedSeasonId } = storeToRefs(seasonStore);
 
 const isLoading = ref(false);
 const isSaving = ref(false);
@@ -431,6 +452,12 @@ const playerData = ref(null);
 const existingTeam = ref(null);
 const teams = ref([]);
 const availablePlayers = ref([]);
+
+// The picked season; an ended one is read-only, a season without tiers takes no draft yet
+const season = ref(null);
+const seasonName = computed(() => season.value?.name ?? 'this season');
+const ended = computed(() => seasonPhase(season.value, DateTime.now().toISODate()) === 'ended');
+const canDraft = computed(() => isCreationEnabled.value && !ended.value && tierCount.value > 0);
 
 // Current W3C season for MMR display
 const currentW3CSeason = ref(null);
@@ -593,29 +620,10 @@ const fetchInitialData = async () => {
       return;
     }
 
-    // Get current season from config
-    const season = await resolveCurrentSeason();
-    const currentSeasonId = season?.id ?? null;
-    if (season) tierCount.value = season.fantasy_tiers;
-    if (!currentSeasonId) {
-      errorMessage.value = 'No season is available. Please contact an administrator.';
-      isLoading.value = false;
-      return;
-    }
-    teamForm.value.season_id = currentSeasonId;
-
-    // Fetch teams for the current season
-    await teamStore.fetchTeamsBySeasonBasic(teamForm.value.season_id);
-    teams.value = teamStore.teams || [];
-
-    // Fetch season signups: the draft pool, carrying signup_race and w3c_stats
-    availablePlayers.value = await seasonStore.fetchSeasonSignups(currentSeasonId) || [];
-
-    // Check if player already has a fantasy team for current season
-    if (teamForm.value.season_id) {
-      await checkExistingTeam();
-    }
-
+    // A Discord link opens on the season it was made for; the watcher loads a changed pick
+    const tokenSeason = playerData.value.season_id;
+    if (tokenSeason && tokenSeason !== selectedSeasonId.value) selectedSeasonId.value = tokenSeason;
+    else await loadSeason();
   } catch (error) {
     console.error('Failed to load data:', error);
     errorMessage.value = 'Failed to load registration data. Please try again later.';
@@ -623,6 +631,37 @@ const fetchInitialData = async () => {
     isLoading.value = false;
   }
 };
+
+// The picked season's team, pool and bets; nothing before the member is known
+const loadSeason = async () => {
+  const seasonId = selectedSeasonId.value;
+  if (!seasonId || !playerData.value) return;
+  isLoading.value = true;
+  existingTeam.value = null;
+  isEditing.value = false;
+  fantasySeries.value = [];
+  fantasyBets.value = [];
+  try {
+    season.value = await seasonStore.fetchSeason(seasonId);
+    tierCount.value = season.value.fantasy_tiers;
+    teamForm.value = { name: '', season_id: seasonId, drafted_team_id: null, drafted_race: null, player_ids: [] };
+    tierSelections.value = emptyTierSelections();
+
+    await teamStore.fetchTeamsBySeasonBasic(seasonId);
+    teams.value = teamStore.teams || [];
+
+    // The draft pool: the season's signups, carrying signup_race and w3c_stats
+    availablePlayers.value = await seasonStore.fetchSeasonSignups(seasonId) || [];
+    await checkExistingTeam();
+  } catch (error) {
+    console.error('Failed to load the season:', error);
+    errorMessage.value = 'Failed to load registration data. Please try again later.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+watch(selectedSeasonId, loadSeason);
 
 const checkExistingTeam = async () => {
   if (!teamForm.value.season_id) return;

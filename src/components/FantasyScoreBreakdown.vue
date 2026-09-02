@@ -43,7 +43,7 @@
         <GroupedTable :columns="playerColumns" :groups="roster" empty="No drafted players">
           <template #head.mmr><W3CMmr /></template>
           <template #group="{ group: row }">
-            <td><PlayerName :player="row.player" :race="row.player.signup_race" @click.stop="openPlayer(row.player_name, row.player_id)" /></td>
+            <td class="font-weight-bold"><PlayerName :player="row.player" :race="row.player.signup_race" @click.stop="openPlayer(row.player_name, row.player_id)" /></td>
             <td class="text-right">{{ row.mmr || 'N/A' }}</td>
             <td class="text-right">{{ row.record }}</td>
             <td class="text-right">{{ row.total }}</td>
@@ -172,7 +172,7 @@
                 <div v-if="sides(bet).length === 2" class="d-flex align-center ga-1 flex-wrap">
                   <template v-for="(side, i) in sides(bet)" :key="i">
                     <span v-if="i" class="text-grey">vs</span>
-                    <span :class="{ loser: bet.actual_winner && side !== bet.actual_winner }">
+                    <span :class="{ winner: side === bet.actual_winner }">
                       <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" @click="openPlayer(side)" />
                     </span>
                     <BetIcon v-if="side === bet.bet_on" class="text-green" />
@@ -294,7 +294,7 @@ const sides = (bet) => bet.series?.split(' vs ') ?? [];
 .detail-row:has(+ .same-week) > td {
   border-bottom: none !important;
 }
-.loser :deep(strong) {
-  font-weight: 400;
+.winner {
+  font-weight: 700;
 }
 </style>

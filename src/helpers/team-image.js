@@ -1,8 +1,10 @@
 import teamDefaultImg from '@/assets/media/GNL_Team_Default.png';
 
-// One PNG per team id in public/team-logos; a team without a file falls back through the img @error
+const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
+
+// The backend serves team icons as a public GET with Cache-Control and ETag
 export function teamImageUrl(teamId) {
-  return `${import.meta.env.BASE_URL}team-logos/${teamId}.png`;
+  return `${backendUrl}/teams/${teamId}/image`;
 }
 
 const MAX_ICON_PX = 150;  // the largest avatar draws a team icon at 80 px

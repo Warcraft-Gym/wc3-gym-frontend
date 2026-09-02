@@ -8,7 +8,7 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig({
     plugins: [vue()],
     server: {
-        host: true,
+        host: true, // the dev container from `just containers up` publishes 5003
         port: 5003,
         strictPort: true, // Ensures the port is available and does not auto-select another
         proxy: {

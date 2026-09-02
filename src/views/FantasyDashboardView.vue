@@ -168,7 +168,7 @@
                         </v-alert>
 
                         <v-row>
-                          <v-col cols="12" md="6" v-for="tier in 6" :key="tier">
+                          <v-col cols="12" md="6" v-for="tier in tiers" :key="tier">
                             <v-autocomplete
                               v-model="tierSelections[tier]"
                               :items="playersByTier[tier]"
@@ -406,7 +406,7 @@ import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { getW3CMMR, w3cPlayerUrl } from '@/helpers/w3c-stats';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentSeason, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -440,9 +440,12 @@ const displayMMR = (player) => {
   return mmr > 0 ? mmr : 'N/A';
 };
 
-// Tier selections
+// Tier selections. The season says how many tiers it cuts; tier 1 is always Diamond,
+// so a shorter season drops the names off the bottom.
 const tierNames = ['Diamond', 'Platinum', 'Gold', 'Silver', 'Bronze', 'Grass'];
-const emptyTierSelections = () => ({ 1: null, 2: null, 3: null, 4: null, 5: null, 6: null });
+const tierCount = ref(tierNames.length);
+const tiers = computed(() => Array.from({ length: tierCount.value }, (_, i) => i + 1));
+const emptyTierSelections = () => Object.fromEntries(tiers.value.map((tier) => [tier, null]));
 const tierSelections = ref(emptyTierSelections());
 
 // Betting state
@@ -478,16 +481,16 @@ const fantasyHeaders = [
 
 // Computed: Organize players by tier based on fantasy_tier attribute
 const playersByTier = computed(() => {
-  const tiers = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+  const byTier = Object.fromEntries(tiers.value.map((tier) => [tier, []]));
 
   availablePlayers.value.forEach(player => {
     // Only include players that have an explicit fantasy_tier set
-    if (player.fantasy_tier >= 1 && player.fantasy_tier <= 6) {
-      tiers[player.fantasy_tier].push(player);
+    if (player.fantasy_tier >= 1 && player.fantasy_tier <= tierCount.value) {
+      byTier[player.fantasy_tier].push(player);
     }
   });
 
-  return tiers;
+  return byTier;
 });
 
 // Computed: Get all selected players
@@ -529,8 +532,8 @@ const populateTierSelectionsFromPlayerIds = (playerIds) => {
   playerIds.forEach(playerId => {
     const player = availablePlayers.value.find(p => p.id === playerId);
     if (player) {
-      const tier = player.fantasy_tier || 6; // Default to tier 6 if not set
-      if (tier >= 1 && tier <= 6) {
+      const tier = player.fantasy_tier;
+      if (tier >= 1 && tier <= tierCount.value) {
         tierSelections.value[tier] = playerId;
       }
     }
@@ -591,7 +594,9 @@ const fetchInitialData = async () => {
     }
 
     // Get current season from config
-    const currentSeasonId = await resolveCurrentSeasonId();
+    const season = await resolveCurrentSeason();
+    const currentSeasonId = season?.id ?? null;
+    if (season) tierCount.value = season.fantasy_tiers;
     if (!currentSeasonId) {
       errorMessage.value = 'No season is available. Please contact an administrator.';
       isLoading.value = false;
@@ -691,8 +696,9 @@ const submitTeam = async () => {
     return;
   }
 
-  // Validate all 6 tiers have a player selected
+  // Validate every tier the season cuts has a player selected
   const missingTiers = tierNames
+    .slice(0, tierCount.value)
     .map((name, i) => (tierSelections.value[i + 1] ? null : `Tier ${i + 1} - ${name}`))
     .filter(Boolean);
 
@@ -701,9 +707,9 @@ const submitTeam = async () => {
     return;
   }
 
-  // Validate we have exactly 6 players
-  if (teamForm.value.player_ids.length !== 6) {
-    errorMessage.value = 'You must select exactly 6 players (one for each tier).';
+  // Validate we have one player per tier
+  if (teamForm.value.player_ids.length !== tierCount.value) {
+    errorMessage.value = `You must select exactly ${tierCount.value} players (one for each tier).`;
     return;
   }
 

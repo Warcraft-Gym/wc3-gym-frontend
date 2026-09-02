@@ -220,10 +220,10 @@
               <v-divider class="my-2"></v-divider>
               <h3 class="text-h6 mb-3">Drafted Players (Select 1 per Tier) *</h3>
               <v-alert type="info" variant="tonal" density="compact" class="mb-3">
-                You must select exactly one player from each tier (1-6)
+                You must select exactly one player from each tier (1-{{ tierCount }})
               </v-alert>
             </v-col>
-            <v-col cols="12" md="6" v-for="tier in [1, 2, 3, 4, 5, 6]" :key="tier">
+            <v-col cols="12" md="6" v-for="tier in tiers" :key="tier">
               <v-autocomplete
                 v-model="selectedTierPlayers[tier]"
                 :items="tierPlayers[tier]"
@@ -276,14 +276,13 @@ import RowActions from '@/components/RowActions.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useAuthStore, useFantasyStore, usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
+import { useAuthStore, useFantasyStore, useSeasonStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { loadSeasons, resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 
 const fantasyStore = useFantasyStore();
-const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 const auth = useAuthStore();
@@ -295,6 +294,11 @@ const isSaving = ref(false);
 const isDeleting = ref(false);
 const errorMessage = ref(null);
 const seasons = ref([]);
+// The season the picker is on says how many tiers it cuts; tier 1 is always Diamond
+const tierCount = computed(
+  () => seasons.value.find((season) => season.id === selectedSeasonId.value)?.fantasy_tiers,
+);
+const tiers = computed(() => Array.from({ length: tierCount.value || 0 }, (_, i) => i + 1));
 const selectedSeasonId = ref(null);
 const currentW3CSeason = ref(null);
 const editDialog = ref(false);
@@ -304,7 +308,7 @@ const isEditing = ref(false);
 const expanded = ref([]);
 const breakdowns = ref({});  // by team id, filled when a row expands
 const playerDetailsDialog = ref(null);
-const players = ref([]);
+const players = computed(() => seasonSignups.value);
 // The breakdown's opponent/bet resolve() pool: season signups, carrying signup_race
 const seasonSignups = ref([]);
 const gnlTeams = ref([]);
@@ -329,13 +333,15 @@ const emptyTierSelection = () => ({ 1: null, 2: null, 3: null, 4: null, 5: null,
 const editedTeam = ref(emptyTeam());
 const teamForm = ref(null);
 const dialogErrorMessage = ref(null);
-const tierPlayers = ref({
-  1: [],
-  2: [],
-  3: [],
-  4: [],
-  5: [],
-  6: []
+// The tier is a season fact now, so the buckets follow the season's signups
+const tierPlayers = computed(() => {
+  const byTier = Object.fromEntries(tiers.value.map((tier) => [tier, []]));
+  for (const player of players.value) {
+    if (player.fantasy_tier >= 1 && player.fantasy_tier <= tierCount.value) {
+      byTier[player.fantasy_tier].push(player);
+    }
+  }
+  return byTier;
 });
 const selectedTierPlayers = ref(emptyTierSelection());
 
@@ -440,7 +446,7 @@ const openCreateDialog = async () => {
   dialogErrorMessage.value = null;
   editedTeam.value = emptyTeam(selectedSeasonId.value);
   selectedTierPlayers.value = emptyTierSelection();
-  await loadPlayersAndTeams();
+  await loadTeams();
   editDialog.value = true;
 };
 
@@ -458,8 +464,8 @@ const openEditDialog = async (team) => {
     player_ids: team.drafted_players?.map(p => p.user_id) || []
   };
   
-  // Load players and teams first to ensure tier dropdowns are populated
-  await loadPlayersAndTeams();
+  // Load the teams first so the drafted-team picker is populated
+  await loadTeams();
   
   // Reset tier selections
   selectedTierPlayers.value = emptyTierSelection();
@@ -491,13 +497,8 @@ const saveTeam = async () => {
   const { valid } = await teamForm.value.validate();
   if (!valid) return;
 
-  // Validate all 6 tiers are selected
-  const missingTiers = [];
-  for (let tier = 1; tier <= 6; tier++) {
-    if (!selectedTierPlayers.value[tier]) {
-      missingTiers.push(tier);
-    }
-  }
+  // Validate every tier the season cuts is selected
+  const missingTiers = tiers.value.filter((tier) => !selectedTierPlayers.value[tier]);
   
   if (missingTiers.length > 0) {
     dialogErrorMessage.value = `Please select players for tier(s): ${missingTiers.join(', ')}`;
@@ -507,8 +508,8 @@ const saveTeam = async () => {
   // Build player_ids array from tier selections
   const playerIds = Object.values(selectedTierPlayers.value).filter(id => id !== null);
   
-  if (playerIds.length !== 6) {
-    dialogErrorMessage.value = 'You must select exactly 6 players (one from each tier)';
+  if (playerIds.length !== tierCount.value) {
+    dialogErrorMessage.value = `You must select exactly ${tierCount.value} players (one from each tier)`;
     return;
   }
 
@@ -561,33 +562,14 @@ const saveTeam = async () => {
   }
 };
 
-const loadPlayersAndTeams = async () => {
+const loadTeams = async () => {
   try {
-    await playerStore.fetchPlayers();
-    players.value = playerStore.players || [];
-    
-    // Organize players by tier
-    tierPlayers.value = {
-      1: [],
-      2: [],
-      3: [],
-      4: [],
-      5: [],
-      6: []
-    };
-    
-    players.value.forEach(player => {
-      if (player.fantasy_tier >= 1 && player.fantasy_tier <= 6) {
-        tierPlayers.value[player.fantasy_tier].push(player);
-      }
-    });
-    
     if (selectedSeasonId.value) {
       await teamStore.fetchTeamsBySeasonBasic(selectedSeasonId.value);
       gnlTeams.value = teamStore.teams || [];
     }
   } catch (error) {
-    console.error('Failed to load players and teams:', error);
+    console.error('Failed to load teams:', error);
   }
 };
 
@@ -622,7 +604,7 @@ const confirmDelete = async () => {
 onMounted(async () => {
   loadSeasons().then(list => { seasons.value = list; });
   fetchData();
-  loadPlayersAndTeams();
+  loadTeams();
   currentW3CSeason.value = await resolveCurrentW3CSeason();
 });
 </script>

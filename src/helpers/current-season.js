@@ -25,6 +25,21 @@ export async function resolveCurrentSeasonId() {
   }
 }
 
+// The season row a page opens on, so a page can read the season's own settings
+// (fantasy_tiers and the rest). Returns null when the backend serves no seasons.
+export async function resolveCurrentSeason() {
+  const seasonStore = useSeasonStore();
+  const seasonId = await resolveCurrentSeasonId();
+  if (!seasonId) return null;
+
+  try {
+    return await seasonStore.fetchSeason(seasonId);
+  } catch (error) {
+    console.error('Failed to fetch the current season:', error);
+    return null;
+  }
+}
+
 // The season list a picker offers, empty when the fetch fails.
 export async function loadSeasons() {
   const seasonStore = useSeasonStore();

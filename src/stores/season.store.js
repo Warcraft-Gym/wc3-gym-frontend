@@ -18,6 +18,7 @@ export const useSeasonStore = defineStore({
         },
         async fetchSeason(season_id){
             this.current_season = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}`);
+            return this.current_season;
         },
         async updateSeason(season) {
             const seasonId = season.id;

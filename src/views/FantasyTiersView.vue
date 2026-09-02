@@ -7,9 +7,18 @@
     <v-row class="mb-2" align="center">
       <v-col>
         <h1><v-icon class="mr-2">mdi-trophy-variant</v-icon> Fantasy Player Tiers</h1>
-        <p class="text-grey">Cut the season's roster into six tiers by <W3CMmr /></p>
+        <p class="text-grey">Cut the season's roster into {{ tierCount }} tiers by <W3CMmr /></p>
       </v-col>
-      <v-col cols="auto" class="d-flex ga-2">
+      <v-col cols="auto" class="d-flex ga-2 align-center">
+        <v-select
+          v-model="tierCount"
+          :items="TIER_COUNTS"
+          label="Tiers"
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="tier-count"
+        />
         <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :disabled="!rows.length" @click="evenSplit">Even split</v-btn>
         <v-btn color="primary" prepend-icon="mdi-content-save" :loading="isSaving" :disabled="isSaving || !rows.length" @click="applyTiers">Apply tiers</v-btn>
       </v-col>
@@ -19,7 +28,7 @@
     <StatusAlert v-model="successMessage" type="success" />
 
     <v-card elevation="2" class="mb-4 pa-4">
-      <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="NAMES" :colors="COLORS" :domain="domain" />
+      <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="names" :colors="colors" :domain="domain" />
     </v-card>
 
     <v-card elevation="2">
@@ -59,7 +68,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
 import DivisionBracketing from '@/components/DivisionBracketing.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
@@ -67,13 +76,14 @@ import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentSeason, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 
-// Bands ascend by MMR; tier numbers descend, so band 0 is tier 6
-const NAMES = ['Grass', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-const COLORS = ['#9E9E9E', '#795548', '#FF9800', '#4CAF50', '#2196F3', '#9C27B0'];
-const tierOf = (band) => NAMES.length - band;
+// Bands ascend by MMR; tier numbers descend, so the top band is always tier 1.
+// A season cutting fewer tiers drops the lowest names, so tier 1 stays Diamond.
+const ALL_NAMES = ['Grass', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
+const ALL_COLORS = ['#9E9E9E', '#795548', '#FF9800', '#4CAF50', '#2196F3', '#9C27B0'];
+const TIER_COUNTS = [2, 3, 4, 5, 6];
 
 const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
@@ -85,9 +95,14 @@ const errorMessage = ref(null);
 const successMessage = ref(null);
 const currentSeasonId = ref(null);
 const currentW3CSeason = ref(null);
+const tierCount = ref(ALL_NAMES.length);
 const signups = ref([]);
 const cuts = ref([]);
 const moves = ref({}); // player id -> band pinned by hand
+
+const names = computed(() => ALL_NAMES.slice(-tierCount.value));
+const colors = computed(() => ALL_COLORS.slice(-tierCount.value));
+const tierOf = (band) => tierCount.value - band;
 
 const columns = [
   { key: 'name', title: 'Player' },
@@ -96,7 +111,10 @@ const columns = [
   { key: 'stored', title: 'Stored tier' },
   { key: 'move', title: 'Move to' },
 ];
-const moveItems = [{ title: 'By MMR', value: null }, ...NAMES.map((n, i) => ({ title: `Tier ${tierOf(i)} · ${n}`, value: i })).reverse()];
+const moveItems = computed(() => [
+  { title: 'By MMR', value: null },
+  ...names.value.map((n, i) => ({ title: `Tier ${tierOf(i)} · ${n}`, value: i })).reverse(),
+]);
 
 // The pool: every signup on a team this season, with its team name
 const rows = computed(() => {
@@ -120,10 +138,10 @@ const stripPlayers = computed(() =>
   rows.value.map((r) => ({ id: r.id, label: r.player.name, mmr: r.mmr, band: bandFor(r), pinned: r.id in moves.value })),
 );
 const groups = computed(() => {
-  const banded = NAMES.map((name, i) => ({
+  const banded = names.value.map((name, i) => ({
     key: i,
     title: `Tier ${tierOf(i)} · ${name}`,
-    color: COLORS[i],
+    color: colors.value[i],
     range: rangeText(i, cuts.value),
     rows: rows.value.filter((r) => bandFor(r) === i).sort((a, b) => b.mmr - a.mmr),
   })).reverse();
@@ -132,8 +150,14 @@ const groups = computed(() => {
 });
 
 const evenSplit = () => {
-  cuts.value = quantileCuts(rows.value.map((r) => r.mmr), NAMES.length);
+  cuts.value = quantileCuts(rows.value.map((r) => r.mmr), tierCount.value);
 };
+
+// A pin is a band index, so it means something else after the count changes
+watch(tierCount, () => {
+  moves.value = {};
+  evenSplit();
+});
 const move = (id, band) => {
   const next = { ...moves.value };
   if (band === null) delete next[id];
@@ -145,7 +169,9 @@ const loadData = async () => {
   isLoading.value = true;
   errorMessage.value = null;
   try {
-    currentSeasonId.value = await resolveCurrentSeasonId();
+    const season = await resolveCurrentSeason();
+    currentSeasonId.value = season?.id ?? null;
+    if (season) tierCount.value = season.fantasy_tiers;
     currentW3CSeason.value = await resolveCurrentW3CSeason();
     if (currentSeasonId.value) {
       signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
@@ -168,13 +194,15 @@ const applyTiers = async () => {
   }
   const skipped = rows.value.length - Object.keys(allocation).length;
   const note = skipped ? ` ${skipped} without a W3C MMR keep no tier.` : '';
-  if (!confirm(`Write tiers for ${Object.keys(allocation).length} players? Every other player loses their tier.${note}`)) return;
+  if (!confirm(`Write ${tierCount.value} tiers for ${Object.keys(allocation).length} players? Every other player loses their tier.${note}`)) return;
 
   isSaving.value = true;
   errorMessage.value = null;
   successMessage.value = null;
   try {
-    await playerStore.updateFantasyTiers(allocation); // one request replaces the whole allocation
+    // The season owns the count, so it is written before the allocation it bounds
+    await seasonStore.updateSeason({ id: currentSeasonId.value, fantasy_tiers: tierCount.value });
+    await playerStore.updateFantasyTiers(currentSeasonId.value, allocation); // one request replaces the whole allocation
     successMessage.value = `Tiers written for ${Object.keys(allocation).length} players.`;
     signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
   } catch (error) {
@@ -191,5 +219,8 @@ onMounted(loadData);
 <style scoped>
 .move-select {
   max-width: 200px;
+}
+.tier-count {
+  max-width: 110px;
 }
 </style>

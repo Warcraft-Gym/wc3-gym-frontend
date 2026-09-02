@@ -97,7 +97,7 @@ const applyCaptain = () => {
                     <v-list-item v-if="canSee('/')" class="nav-link-item">
                         <RouterLink to="/" class="nav-link">Home</RouterLink>
                     </v-list-item>
-                    <v-menu offset-y>
+                    <v-menu v-if="canSee('/seasons')" offset-y>
                         <template v-slot:activator="{ props }">
                             <v-list-item v-bind="props" class="gnl-menu-activator">
                                 <a class="nav-link">

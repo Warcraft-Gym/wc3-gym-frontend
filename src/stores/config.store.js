@@ -81,9 +81,9 @@ export const useConfigStore = defineStore({
             return await fetchWrapper.get(`${backendUrl}/config/discord-roles`);
         },
 
-        // Without user_ids the backend syncs every account the report flags
-        async syncDiscordRoles(user_ids) {
-            return await fetchWrapper.post(`${backendUrl}/config/discord-roles/sync`, user_ids ? { user_ids } : {});
+        // An empty body syncs every account the report flags; user_ids or role_ids narrow it
+        async syncDiscordRoles(body = {}) {
+            return await fetchWrapper.post(`${backendUrl}/config/discord-roles/sync`, body);
         },
 
         async fetchAdmins() {
@@ -100,6 +100,12 @@ export const useConfigStore = defineStore({
 
         async fetchDiscordGuildRoles() {
             return await fetchWrapper.get(`${backendUrl}/config/discord-guild-roles`);
+        },
+
+        // The groups of people a binding can point at; without a season the backend uses the current one
+        async fetchDiscordRoleGroups(season_id) {
+            const query = season_id ? `?season_id=${season_id}` : '';
+            return await fetchWrapper.get(`${backendUrl}/config/discord-role-groups${query}`);
         },
 
         async fetchDiscordRoleBindings() {

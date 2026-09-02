@@ -8,8 +8,8 @@
       :viewBox="`0 0 ${W} ${height}`"
       class="division-strip"
       @pointermove="drag"
-      @pointerup="dragging = null"
-      @pointerleave="dragging = null"
+      @pointerup="stopDrag"
+      @pointercancel="stopDrag"
     >
       <text
         v-for="(name, i) in cuts.length ? names : []"
@@ -37,7 +37,7 @@
       >
         <title>{{ p.label }} · {{ p.mmr }}</title>
       </circle>
-      <g v-for="(c, i) in cuts" :key="i" class="cut" @pointerdown.prevent="dragging = i">
+      <g v-for="(c, i) in cuts" :key="i" class="cut" @pointerdown.prevent="startDrag(i, $event)">
         <rect :x="x(c) - 24" y="24" width="48" height="16" rx="3" class="cut-box" />
         <text :x="x(c)" y="36" text-anchor="middle" class="cut-label">{{ c }}</text>
         <line :x1="x(c)" :x2="x(c)" y1="40" :y2="axisY + 10" class="cut-line" />
@@ -50,6 +50,7 @@
         <input
           type="number"
           :value="c"
+          :aria-label="`${names[i]} to ${names[i + 1]} cut`"
           class="cut-input"
           @change="set(i, Number($event.target.value))"
         >
@@ -60,7 +61,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { dodge, moveCut } from '@/helpers/divisions.mjs';
 
 const props = defineProps({
@@ -72,14 +73,22 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:cuts']);
 
-const W = 1000;
 const PAD = 12;
 const R = 4;
 const TOP = 48; // room above the swarm for the band names and the cut boxes
 const svg = ref(null);
 const dragging = ref(null);
+// One viewBox unit is one CSS pixel, so the labels and dots keep their size on a narrow card
+// and a crowded MMR simply stacks higher instead of the text shrinking away.
+const W = ref(1000);
+let observer = null;
+onMounted(() => {
+  observer = new ResizeObserver(([entry]) => { W.value = Math.max(320, Math.round(entry.contentRect.width)); });
+  observer.observe(svg.value);
+});
+onBeforeUnmount(() => observer?.disconnect());
 
-const x = (mmr) => PAD + ((mmr - props.domain[0]) / (props.domain[1] - props.domain[0])) * (W - 2 * PAD);
+const x = (mmr) => PAD + ((mmr - props.domain[0]) / (props.domain[1] - props.domain[0])) * (W.value - 2 * PAD);
 const edges = computed(() => [props.domain[0], ...props.cuts, props.domain[1]]);
 const counts = computed(() => props.names.map((_, i) => props.players.filter((p) => p.band === i).length));
 
@@ -101,11 +110,20 @@ const ticks = computed(() => {
 });
 
 const set = (i, value) => emit('update:cuts', moveCut(props.cuts, i, value, props.domain));
+const startDrag = (i, event) => {
+  dragging.value = i;
+  svg.value.setPointerCapture(event.pointerId);
+};
+const stopDrag = (event) => {
+  if (dragging.value === null) return;
+  if (svg.value.hasPointerCapture(event.pointerId)) svg.value.releasePointerCapture(event.pointerId);
+  dragging.value = null;
+};
 const drag = (event) => {
   if (dragging.value === null) return;
   const box = svg.value.getBoundingClientRect();
-  const px = ((event.clientX - box.left) / box.width) * W;
-  const mmr = props.domain[0] + ((px - PAD) / (W - 2 * PAD)) * (props.domain[1] - props.domain[0]);
+  const px = ((event.clientX - box.left) / box.width) * W.value;
+  const mmr = props.domain[0] + ((px - PAD) / (W.value - 2 * PAD)) * (props.domain[1] - props.domain[0]);
   set(dragging.value, mmr);
 };
 </script>

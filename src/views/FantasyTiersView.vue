@@ -26,6 +26,7 @@
 
     <StatusAlert v-model="errorMessage" />
     <StatusAlert v-model="successMessage" type="success" />
+    <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
 
     <v-card elevation="2" class="mb-4 pa-4">
       <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="names" :colors="colors" :domain="domain" />
@@ -47,7 +48,7 @@
             <td class="text-right">{{ row.mmr || '—' }}</td>
             <td>{{ row.team }}</td>
             <td>
-              <v-chip v-if="row.player.fantasy_tier" size="x-small" variant="outlined">T{{ row.player.fantasy_tier }}</v-chip>
+              <v-chip v-if="row.player.fantasy_tier" size="x-small" :variant="row.player.fantasy_tier_pinned ? 'flat' : 'outlined'" :prepend-icon="row.player.fantasy_tier_pinned ? 'mdi-pin' : undefined">T{{ row.player.fantasy_tier }}</v-chip>
             </td>
             <td>
               <v-select
@@ -69,11 +70,12 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
+import { useLadderStore, usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
 import DivisionBracketing from '@/components/DivisionBracketing.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
+import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
 import { resolveCurrentSeason, resolveCurrentW3CSeason } from '@/helpers/current-season';
@@ -85,6 +87,7 @@ const ALL_NAMES = ['Grass', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 const ALL_COLORS = ['#9E9E9E', '#795548', '#FF9800', '#4CAF50', '#2196F3', '#9C27B0'];
 const TIER_COUNTS = [2, 3, 4, 5, 6];
 
+const ladderStore = useLadderStore();
 const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
@@ -93,6 +96,8 @@ const isLoading = ref(true);
 const isSaving = ref(false);
 const errorMessage = ref(null);
 const successMessage = ref(null);
+const syncDialog = ref(false);
+const syncEntries = ref([]);
 const currentSeasonId = ref(null);
 const currentW3CSeason = ref(null);
 const tierCount = ref(ALL_NAMES.length);
@@ -108,7 +113,7 @@ const columns = [
   { key: 'name', title: 'Player' },
   { key: 'mmr', title: 'W3C MMR', align: 'right' },
   { key: 'team', title: 'Team' },
-  { key: 'stored', title: 'Stored tier' },
+  { key: 'tier', title: 'Tier' },
   { key: 'move', title: 'Move to' },
 ];
 const moveItems = computed(() => [
@@ -181,6 +186,10 @@ const loadData = async () => {
     if (season?.fantasy_tier_cuts.length) {
       tierCount.value = season.fantasy_tier_cuts.length + 1;
       cuts.value = season.fantasy_tier_cuts;
+      // A tier set by hand comes back as its pin; the rest follow the MMR
+      moves.value = Object.fromEntries(
+        signups.value.filter((p) => p.fantasy_tier_pinned).map((p) => [p.id, tierCount.value - p.fantasy_tier]),
+      );
     } else evenSplit();
   } catch (error) {
     console.error('Error loading data:', error);
@@ -191,14 +200,11 @@ const loadData = async () => {
 };
 
 const applyTiers = async () => {
+  // Only a pin is written; every other tier is read from the MMR on today's date
   const allocation = {};
-  for (const row of rows.value) {
-    const band = bandFor(row);
-    if (band !== null) allocation[row.id] = tierOf(band);
-  }
-  const skipped = rows.value.length - Object.keys(allocation).length;
-  const note = skipped ? ` ${skipped} without a W3C MMR keep no tier.` : '';
-  if (!confirm(`Write ${tierCount.value} tiers for ${Object.keys(allocation).length} players? Every other player loses their tier.${note}`)) return;
+  for (const row of rows.value) if (row.id in moves.value) allocation[row.id] = tierOf(moves.value[row.id]);
+  const pinned = Object.keys(allocation).length;
+  if (!confirm(`Write ${tierCount.value} tiers, ${pinned} set by hand? Every other player follows their W3C MMR as of today.`)) return;
 
   isSaving.value = true;
   errorMessage.value = null;
@@ -206,7 +212,11 @@ const applyTiers = async () => {
   try {
     // The cuts carry the count, so one request replaces the whole allocation
     await playerStore.updateFantasyTiers(currentSeasonId.value, cuts.value, allocation);
-    successMessage.value = `Tiers written for ${Object.keys(allocation).length} players.`;
+    // The tiers read from the stored ladder matches, so the pool is synced up to today
+    const result = await ladderStore.syncSeason(currentSeasonId.value);
+    syncEntries.value = [{ title: 'Ladder sync', result }];
+    syncDialog.value = true;
+    successMessage.value = `${tierCount.value} tiers written, ${pinned} set by hand.`;
     signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
   } catch (error) {
     console.error('Error applying tier allocation:', error);

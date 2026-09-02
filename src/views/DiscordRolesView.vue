@@ -293,8 +293,8 @@ const teamName = (id) => teamById(id)?.name ?? `Team ${id}`;
 const guildRole = (id) => guildRoles.value.find(r => r.id === id);
 const bindingFor = (id) => bindings.value.find(b => b.discord_role === id);
 const roleName = (id) => guildRole(id)?.name ?? id;
-// A season group is one row per (kind, season_id, team_id)
-const groupKey = (group) => `${group.kind}:${group.season_id ?? ''}:${group.team_id ?? ''}`;
+// Within one season a group is unique by kind and team, so a binding that follows the current season still matches
+const groupKey = (group) => `${group.kind}:${group.team_id ?? ''}`;
 
 const seasonGroups = computed(() => groups.value.filter(g => g.kind !== 'team'));
 const teamGroups = computed(() => groups.value.filter(g => g.kind === 'team'));

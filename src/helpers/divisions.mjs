@@ -41,3 +41,17 @@ export function rangeText(index, cuts) {
   if (index === cuts.length) return `${cuts[index - 1]} and above`;
   return `${cuts[index - 1]} to ${cuts[index] - 1}`;
 }
+
+// Beeswarm rows: every dot keeps its exact x and takes the lowest row with no dot
+// within `diameter` of it, so a column of dots is the local density at that MMR.
+export function dodge(xs, diameter) {
+  const rows = []; // rows[r] = the rightmost x placed in row r so far
+  const out = new Array(xs.length);
+  for (const i of xs.map((_, k) => k).sort((a, b) => xs[a] - xs[b])) {
+    let r = 0;
+    while (rows[r] !== undefined && xs[i] - rows[r] < diameter) r++;
+    rows[r] = xs[i];
+    out[i] = r;
+  }
+  return out;
+}

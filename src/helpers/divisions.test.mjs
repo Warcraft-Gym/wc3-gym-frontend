@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandOf, domainOf, moveCut, quantileCuts, rangeText } from './divisions.mjs';
+import { bandOf, dodge, domainOf, moveCut, quantileCuts, rangeText } from './divisions.mjs';
 
 test('quantile cuts split twelve players into six bands of two', () => {
   const mmrs = [1200, 100, 700, 300, 1100, 500, 900, 200, 800, 400, 1000, 600];
@@ -30,4 +30,11 @@ test('the domain pads to whole hundreds and the ranges read from the cuts', () =
   assert.equal(rangeText(0, [1300, 1500]), 'below 1300');
   assert.equal(rangeText(1, [1300, 1500]), '1300 to 1499');
   assert.equal(rangeText(2, [1300, 1500]), '1500 and above');
+});
+
+test('the beeswarm stacks only dots that would overlap, and keeps ties in a column', () => {
+  assert.deepEqual(dodge([0, 100, 200], 10), [0, 0, 0]); // far apart: one row
+  assert.deepEqual(dodge([0, 5, 9, 20], 10), [0, 1, 2, 0]); // three overlap, the fourth clears
+  assert.deepEqual(dodge([7, 7, 7], 10), [0, 1, 2]); // a tie stacks straight up
+  assert.deepEqual(dodge([20, 0, 5], 10), [0, 0, 1]); // input order does not matter
 });

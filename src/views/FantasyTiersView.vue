@@ -153,11 +153,12 @@ const evenSplit = () => {
   cuts.value = quantileCuts(rows.value.map((r) => r.mmr), tierCount.value);
 };
 
-// A pin is a band index, so it means something else after the count changes
+// A pin is a band index, so it means something else after the count changes.
+// Sync, so a load that sets the count and then the stored cuts keeps the cuts.
 watch(tierCount, () => {
   moves.value = {};
   evenSplit();
-});
+}, { flush: 'sync' });
 const move = (id, band) => {
   const next = { ...moves.value };
   if (band === null) delete next[id];
@@ -171,13 +172,16 @@ const loadData = async () => {
   try {
     const season = await resolveCurrentSeason();
     currentSeasonId.value = season?.id ?? null;
-    if (season) tierCount.value = season.fantasy_tiers;
     currentW3CSeason.value = await resolveCurrentW3CSeason();
     if (currentSeasonId.value) {
       signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
       await teamStore.fetchTeamsBySeason(currentSeasonId.value);
     }
-    evenSplit();
+    // The page reopens on the cuts the last Apply wrote, once there are any
+    if (season?.fantasy_tier_cuts.length) {
+      tierCount.value = season.fantasy_tier_cuts.length + 1;
+      cuts.value = season.fantasy_tier_cuts;
+    } else evenSplit();
   } catch (error) {
     console.error('Error loading data:', error);
     errorMessage.value = 'Failed to load player data. Please try again.';
@@ -200,9 +204,8 @@ const applyTiers = async () => {
   errorMessage.value = null;
   successMessage.value = null;
   try {
-    // The season owns the count, so it is written before the allocation it bounds
-    await seasonStore.updateSeason({ id: currentSeasonId.value, fantasy_tiers: tierCount.value });
-    await playerStore.updateFantasyTiers(currentSeasonId.value, allocation); // one request replaces the whole allocation
+    // The cuts carry the count, so one request replaces the whole allocation
+    await playerStore.updateFantasyTiers(currentSeasonId.value, cuts.value, allocation);
     successMessage.value = `Tiers written for ${Object.keys(allocation).length} players.`;
     signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
   } catch (error) {

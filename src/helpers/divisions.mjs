@@ -3,11 +3,15 @@
 
 // The cuts that give `count` bands about the same number of players: the pool's quantiles.
 // Ties share a band, so counts can differ a little. Players with no MMR are left out.
+// Cuts strictly rise, so a pool with fewer distinct MMRs than bands still names every band.
 export function quantileCuts(mmrs, count) {
   const asc = mmrs.filter((m) => m > 0).sort((a, b) => a - b);
   if (!asc.length) return Array.from({ length: count - 1 }, (_, k) => (k + 1) * 100);
   const cuts = [];
-  for (let k = 1; k < count; k++) cuts.push(asc[Math.min(asc.length - 1, Math.round((asc.length * k) / count))]);
+  for (let k = 1; k < count; k++) {
+    const at = asc[Math.min(asc.length - 1, Math.round((asc.length * k) / count))];
+    cuts.push(cuts.length ? Math.max(at, cuts[cuts.length - 1] + 1) : at);
+  }
   return cuts;
 }
 

@@ -3,13 +3,14 @@
     <!-- Team Points Breakdown -->
     <v-expansion-panel v-if="breakdown.team_breakdown.team_name">
       <v-expansion-panel-title>
-        <v-icon class="mr-2" color="red">mdi-shield</v-icon>
+        <img class="tab-icon mr-2" :src="teamImageUrl(breakdown.team_breakdown.team_id)" @error="showDefaultTeamImage" alt="" />
         <strong>Team Points Details</strong>
+        <span class="ml-2 text-medium-emphasis">{{ breakdown.team_breakdown.team_name }}</span>
         <v-spacer></v-spacer>
         <v-chip color="red" size="small">{{ breakdown.totals.team_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <v-table density="compact">
+        <v-table density="compact" class="narrow">
           <thead>
             <tr>
               <th>Team</th>
@@ -20,10 +21,59 @@
           </thead>
           <tbody>
             <tr>
-              <td class="font-weight-bold">{{ breakdown.team_breakdown.team_name }}</td>
+              <td class="font-weight-bold">
+                <span class="d-inline-flex align-center ga-2">
+                  <img class="row-icon" :src="teamImageUrl(breakdown.team_breakdown.team_id)" @error="showDefaultTeamImage" alt="" />
+                  {{ breakdown.team_breakdown.team_name }}
+                </span>
+              </td>
               <td>{{ breakdown.team_breakdown.final_score }}</td>
               <td>{{ breakdown.team_breakdown.points_against }}</td>
               <td>{{ breakdown.team_breakdown.points_available }}</td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <!-- Race Points Breakdown -->
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <span class="mr-2 d-inline-flex"><RaceIcon :raceIdentifier="breakdown.race_breakdown.race" size="24" /></span>
+        <strong>Race Points Details</strong>
+        <span class="ml-2 text-medium-emphasis">{{ raceName }} · {{ breakdown.race_breakdown.season_stats.wins }}W - {{ breakdown.race_breakdown.season_stats.losses }}L</span>
+        <v-chip class="ml-2" size="x-small" variant="tonal" color="purple">#{{ raceRank }} of {{ raceRanking.length }}</v-chip>
+        <v-spacer></v-spacer>
+        <v-chip color="purple" size="small">{{ breakdown.totals.race_points }} points</v-chip>
+      </v-expansion-panel-title>
+      <v-expansion-panel-text>
+        <v-table density="compact" class="narrow">
+          <thead>
+            <tr>
+              <th style="width: 80px">Week</th>
+              <th class="text-right">Wins</th>
+              <th class="text-right">Losses</th>
+              <th class="text-right">Ratio</th>
+              <th class="text-right">Rank</th>
+              <th class="text-right">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="week in breakdown.race_breakdown.weekly_breakdown" :key="week.week">
+              <td>{{ week.week }}</td>
+              <td class="text-right">{{ week.wins }}</td>
+              <td class="text-right">{{ week.losses }}</td>
+              <td class="text-right">{{ week.ratio.toFixed(2) }}</td>
+              <td class="text-right">
+                <v-chip v-if="week.rank" :color="week.rank === 1 ? 'success' : week.rank === 2 ? 'info' : 'warning'" size="x-small">
+                  #{{ week.rank }}
+                </v-chip>
+                <span v-else class="text-grey">-</span>
+              </td>
+              <td class="text-right">
+                <strong v-if="week.points_awarded > 0">+{{ week.points_awarded }}</strong>
+                <span v-else class="text-grey">0</span>
+              </td>
             </tr>
           </tbody>
         </v-table>
@@ -54,96 +104,40 @@
             <template v-for="week in row.weeks" :key="week.week">
               <tr v-for="(series, idx) in week.series" :key="`${week.week}-${idx}`" class="detail-row" :class="{ 'same-week': idx }">
                 <td></td>
-                <td colspan="5">
+                <td>
                   <div class="d-flex align-center ga-1 flex-wrap">
                     <span class="week-label text-medium-emphasis">{{ idx ? '' : `Week ${week.week}` }}</span>
-                    vs <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" @click="openPlayer(series.opponent)" />
-                    <span>({{ series.score }})</span>
+                    <span class="text-medium-emphasis">vs</span>
+                    <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" @click="openPlayer(series.opponent)" />
                   </div>
                 </td>
+                <td class="text-right">{{ opponentMmr(series) || 'N/A' }}</td>
+                <td class="text-right">{{ series.score }}</td>
                 <td class="text-right">{{ series.points }}</td>
+                <td></td>
+                <td></td>
               </tr>
               <tr v-if="week.series.length === 0" class="detail-row">
                 <td></td>
-                <td colspan="5">
+                <td>
                   <span class="week-label text-medium-emphasis">Week {{ week.week }}</span>
                   <span v-if="week.bench_points > 0" class="text-orange-darken-2">
                     <v-icon size="small">mdi-seat</v-icon> Benched
                   </span>
                   <span v-else class="text-grey">No games</span>
                 </td>
+                <td></td>
+                <td></td>
+                <td></td>
                 <td class="text-right">
                   <span v-if="week.bench_points > 0" class="text-orange-darken-2">+{{ week.bench_points }}</span>
                   <span v-else class="text-grey">0</span>
                 </td>
+                <td></td>
               </tr>
             </template>
           </template>
         </GroupedTable>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <!-- Race Points Breakdown -->
-    <v-expansion-panel>
-      <v-expansion-panel-title>
-        <span class="mr-2 d-inline-flex"><RaceIcon :raceIdentifier="breakdown.race_breakdown.race" size="24" /></span>
-        <strong>Race Points Details</strong>
-        <v-spacer></v-spacer>
-        <v-chip color="purple" size="small">{{ breakdown.totals.race_points }} points</v-chip>
-      </v-expansion-panel-title>
-      <v-expansion-panel-text>
-        <div class="text-subtitle-2 mb-2">Weekly Performance of {{ breakdown.race_breakdown.race }} ({{ breakdown.race_breakdown.season_stats.wins }}W - {{ breakdown.race_breakdown.season_stats.losses }}L):</div>
-        <v-table density="compact">
-          <thead>
-            <tr>
-              <th style="width: 80px">Week</th>
-              <th class="text-right">Wins</th>
-              <th class="text-right">Losses</th>
-              <th class="text-right">Ratio</th>
-              <th class="text-right">Rank</th>
-              <th class="text-right">Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="week in breakdown.race_breakdown.weekly_breakdown" :key="week.week">
-              <td>{{ week.week }}</td>
-              <td class="text-right">{{ week.wins }}</td>
-              <td class="text-right">{{ week.losses }}</td>
-              <td class="text-right">{{ week.ratio.toFixed(2) }}</td>
-              <td class="text-right">
-                <v-chip v-if="week.rank" :color="week.rank === 1 ? 'success' : week.rank === 2 ? 'info' : 'warning'" size="x-small">
-                  #{{ week.rank }}
-                </v-chip>
-                <span v-else class="text-grey">-</span>
-              </td>
-              <td class="text-right">
-                <strong v-if="week.points_awarded > 0">+{{ week.points_awarded }}</strong>
-                <span v-else class="text-grey">0</span>
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
-        <div class="text-subtitle-2 mt-4 mb-2">Season Race Ranking:</div>
-        <v-table density="compact">
-          <thead>
-            <tr>
-              <th style="width: 80px">#</th>
-              <th>Race</th>
-              <th class="text-right">Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(entry, idx) in raceRanking" :key="entry.race" :class="{ 'bg-purple-lighten-5': entry.race === breakdown.race_breakdown.race }">
-              <td>{{ idx + 1 }}</td>
-              <td>
-                <RaceIcon :raceIdentifier="entry.race" />
-                {{ entry.race }}
-                <v-chip v-if="entry.race === breakdown.race_breakdown.race" size="x-small" variant="tonal" color="purple" class="ml-1">Drafted</v-chip>
-              </td>
-              <td class="text-right"><strong>{{ entry.points }}</strong></td>
-            </tr>
-          </tbody>
-        </v-table>
       </v-expansion-panel-text>
     </v-expansion-panel>
 
@@ -156,7 +150,7 @@
         <v-chip :color="breakdown.totals.bet_points >= 0 ? 'green' : 'red'" size="small">{{ breakdown.totals.bet_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <GroupedTable :columns="betColumns" :groups="betWeeks" empty="No bets">
+        <GroupedTable :columns="betColumns" :groups="betWeeks" empty="No bets" class="narrow">
           <template #group="{ group: week }">
             <td>Week {{ week.week }}</td>
             <td class="text-medium-emphasis">{{ week.summary }}</td>
@@ -169,9 +163,9 @@
               <td></td>
               <td></td>
               <td>
-                <div v-if="sides(bet).length === 2" class="d-flex align-center ga-1 flex-wrap">
-                  <template v-for="(side, i) in sides(bet)" :key="i">
-                    <span v-if="i" class="text-grey">vs</span>
+                <div v-if="bet.player1 && bet.player2" class="d-flex align-center ga-1 flex-wrap">
+                  <template v-for="side in [bet.player1, bet.player2]" :key="side">
+                    <span v-if="side === bet.player2" class="text-medium-emphasis">{{ bet.score }}</span>
                     <span :class="{ winner: side === bet.actual_winner }">
                       <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" @click="openPlayer(side)" />
                     </span>
@@ -197,6 +191,8 @@ import BetIcon from '@/components/BetIcon.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
+import { raceWrapper } from '@/helpers/races';
+import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { getW3CMMR } from '@/helpers/w3c-stats';
 
@@ -235,6 +231,12 @@ const resolve = (name, id = null) => byId.value.get(id) || byName.value.get(name
 const openPlayer = (name, id = null) => {
   const player = resolve(name, id);
   if (player.id) emit('open-player', player);
+};
+
+// the opponent's MMR comes from the same signup pool the roster rows read
+const opponentMmr = (series) => {
+  const player = resolve(series.opponent);
+  return player.signup_race ? getW3CMMR(player, props.w3cSeason, player.signup_race) : null;
 };
 
 const gnlRecord = (player) => {
@@ -283,7 +285,14 @@ const betWeeks = computed(() => {
   });
 });
 
-const sides = (bet) => bet.series?.split(' vs ') ?? [];
+const raceName = computed(() => {
+  const race = props.breakdown.race_breakdown.race;
+  return raceWrapper.getRaceObject(race)?.name ?? race;
+});
+
+const raceRank = computed(
+  () => raceRanking.value.findIndex(e => e.race === props.breakdown.race_breakdown.race) + 1
+);
 </script>
 
 <style scoped>
@@ -296,5 +305,16 @@ const sides = (bet) => bet.series?.split(' vs ') ?? [];
 }
 .winner {
   font-weight: 700;
+}
+/* Team, Race and Bets hold a handful of numbers; stretching them to the panel
+   pushes the points column an eye-travel away from the row it belongs to. */
+.narrow :deep(table) {
+  width: auto;
+}
+.tab-icon,
+.row-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 </style>

@@ -24,6 +24,15 @@
           {{ recording ? 'Entering a veto done elsewhere' : 'Enter a veto done elsewhere' }}
         </v-btn>
         <v-btn
+          v-if="board?.complete && route.query.report"
+          color="primary"
+          size="small"
+          prepend-icon="mdi-scoreboard-outline"
+          :to="{ path: '/player-dashboard', query: token ? { token, report: route.params.id } : { report: route.params.id } }"
+        >
+          Report result
+        </v-btn>
+        <v-btn
           v-if="canUndo"
           variant="outlined"
           size="small"
@@ -183,7 +192,7 @@ const board = ref(null);
 const errorMessage = ref(null);
 const saving = ref(false);
 // a veto done in a chat is typed in by one player for both sides, in the season's order
-const recording = ref(false);
+const recording = ref(!!route.query.report);  // the Report Result dialog sends the player here to enter it
 
 // the dashboard link carries its token; a session reads the board without one
 const token = route.query.token;

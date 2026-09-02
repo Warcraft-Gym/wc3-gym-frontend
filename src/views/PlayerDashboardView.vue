@@ -850,9 +850,9 @@ const fetchPlayerData = async () => {
 
 // the map veto is only worth opening before the series is played; the link carries the token
 const isUnplayed = (item) => !item.player1_score && !item.player2_score;
-const vetoRoute = (item) => ({
+const vetoRoute = (item, query = {}) => ({
   path: `/player-series/${item.id}/veto`,
-  query: token.value ? { token: token.value } : {}
+  query: token.value ? { token: token.value, ...query } : query
 });
 
 // Scores read from the player's side: mine first, the opponent's second
@@ -1074,7 +1074,7 @@ const reportResult = (item) => {
 const goToVeto = () => {
   const id = scoreSeries.value.id;
   closeScore();
-  router.push(vetoRoute({ id }));
+  router.push(vetoRoute({ id }, { report: 1 }));  // the board opens in record mode and leads back here
 };
 
 const closeScore = () => {
@@ -1186,6 +1186,9 @@ onMounted(async () => {
   if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
   await fetchPlayerData();
   fetchHistory();
+  // the veto board sends the reporter back with ?report=<series id>
+  const back = series.value.find(item => String(item.id) === route.query.report);
+  if (back) reportResult(back);
 });
 </script>
 

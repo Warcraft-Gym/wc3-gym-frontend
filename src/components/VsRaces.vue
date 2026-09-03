@@ -1,13 +1,10 @@
-<!-- A player's ladder record against one race, or against every race when no race is given -->
+<!-- A player's ladder record against one race; hover shows every race -->
 <template>
-  <span v-if="race" class="d-inline-flex align-center ga-1 text-no-wrap">
-    <RaceIcon :raceIdentifier="race" size="1.1em" /> {{ rec(race) }}
+  <span class="d-inline-flex align-center ga-1 text-no-wrap">
+    <RaceIcon v-if="race" :raceIdentifier="race" size="1.1em" /> {{ race ? rec(race) : '—' }}
     <v-tooltip activator="parent" location="top">
       <div v-for="r in RACES" :key="r" class="d-flex align-center ga-1"><RaceIcon :raceIdentifier="r" size="1.1em" /> {{ rec(r) }}</div>
     </v-tooltip>
-  </span>
-  <span v-else class="d-inline-flex align-center ga-3 text-no-wrap">
-    <span v-for="r in RACES" :key="r" class="d-inline-flex align-center ga-1"><RaceIcon :raceIdentifier="r" size="1.1em" /> {{ rec(r) }}</span>
   </span>
 </template>
 
@@ -17,7 +14,7 @@ import { RACES, winRate } from '@/helpers/ladder-days.mjs';
 
 const props = defineProps({
   player: Object, // a SeasonPlayer row, undefined when the season ladder has none
-  race: String,
+  race: String, // the opponent's race, undefined when the opponent has no signup race
 });
 
 const rec = (race) => {

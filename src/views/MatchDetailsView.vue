@@ -512,9 +512,6 @@
                       <v-chip v-if="s.isOut(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                     </PlayerName>
                   </template>
-                  <template v-slot:[`item.vs_race`]="{ item }">
-                    <VsRaces :player="ladderById.get(item.id)" />
-                  </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
                       {{ getW3CMMR(item, currentW3CSeason, item.signup_race) || 'N/A' }}
@@ -750,9 +747,6 @@
                         <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
                     </template>
-                    <template v-slot:[`item.vs_race`]="{ item }">
-                      <VsRaces :player="ladderById.get(item.id)" />
-                    </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
                         {{ getW3CMMR(item, null, item.signup_race) ?? 'N/A' }}
@@ -819,9 +813,6 @@
                         <span class="text-caption text-grey">({{ item.discordTag }})</span>
                         <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
-                    </template>
-                    <template v-slot:[`item.vs_race`]="{ item }">
-                      <VsRaces :player="ladderById.get(item.id)" />
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
@@ -1151,7 +1142,6 @@ const proposedSeriesTableHeader = [
 const tablePlayerHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
   { title: 'GNL Games', key: 'gnl_stats[0].games', sortable: true },
-  { title: 'vs race', key: 'vs_race', sortable: false },
   { title: currentW3CSeason.value ? `MMR (S${currentW3CSeason.value})` : 'MMR', key: 'w3c_mmr', value: 'item', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a, currentW3CSeason.value, a?.signup_race) || 0;
     let bValue = getW3CMMR(b, currentW3CSeason.value, b?.signup_race) || 0;

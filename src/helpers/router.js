@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore, useSeasonStore } from '@/stores';
 import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, TeamWeeksView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView } from '@/views';
@@ -9,11 +9,12 @@ const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
 // a session with no role claim is a member, which is what the admin-token login mints
 export const canSeeRole = (role, need) => RANK[role || 'member'] >= RANK[need || 'public'];
 export const router = createRouter({
-    history: createWebHashHistory(),
+    history: createWebHistory(),
     linkActiveClass: 'active',
     routes: [
         { path: '/', component: HomeView, meta: { role: 'admin' } },
         { path: '/login', component: LoginView, meta: { role: 'public' } },
+        { path: '/sso-callback', component: LoginView, meta: { role: 'public', nav: false } },  // where Discord sends the browser back; the login page finishes the Clerk handshake
         { path: '/admin-login', component: AdminLoginView, meta: { role: 'public', nav: false } },
         { path: '/profile', component: ProfileView, meta: { role: 'guest' } },  // the only guest route, and the fallback below lands there: it shows the join-the-Discord card
         { path: '/seasons', component: SeasonsView, meta: { role: 'member' } },
@@ -49,6 +50,8 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+    const legacy = to.fullPath.indexOf('#/');  // links sent before history mode: /#/x?y opens /x?y
+    if (legacy > -1) return to.fullPath.slice(legacy + 1);
     const auth = useAuthStore();
     // A season in the path is a slug; the page reads its id off the loaded list
     if (to.meta.season) await useSeasonStore().ensureSeasons();

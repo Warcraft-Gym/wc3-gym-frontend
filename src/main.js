@@ -69,10 +69,10 @@ app.use(clerkPlugin, {
     // Clerk's post-login navigation stays in the page; App.vue routes once the session lands
     routerPush: navigateInPage,
     routerReplace: navigateInPage,
-    // the Account Portal does not exist on a vercel.app production domain; every flow stays on /#/login
-    signInUrl: '/#/login',
-    signUpUrl: '/#/login',
-    afterSignOutUrl: '/#/login',
+    // the Account Portal does not exist on a vercel.app production domain; every flow stays on /login
+    signInUrl: '/login',
+    signUpUrl: '/login',
+    afterSignOutUrl: '/login',
 })
 app.use(pinia)
 app.use(vuetify)

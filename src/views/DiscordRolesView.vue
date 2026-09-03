@@ -14,7 +14,7 @@
           Managed roles are granted and removed by Sync. Ignored roles are bound but left alone. Not bound roles are never touched.
         </div>
         <div class="text-body-2 text-medium-emphasis">
-          Drag a card to a column, or double-click it to move it: Not bound to Managed, Managed to Ignored, Ignored to Managed. Hide a Not bound role the app must never touch.
+          Drag a card to a column, or double-click it to move it: Not bound to Managed, Managed to Ignored, Ignored to Managed. Ignore a role the app knows the holders of but a person applies by hand. Hide a role with nothing in the app to bind it to.
         </div>
       </v-col>
     </v-row>
@@ -265,7 +265,15 @@
           </template>
         </v-card-text>
 
-        <v-card-actions class="px-4 py-3">
+        <v-card-actions class="px-4 py-3 flex-wrap ga-2">
+          <!-- A new binding lands where the admin opened the picker from; the toggle lets them change that here -->
+          <template v-if="!picker.bindingId">
+            <v-btn-toggle v-model="picker.column" mandatory density="compact" variant="outlined" divided>
+              <v-btn value="ignored" prepend-icon="mdi-hand-back-right">Ignored</v-btn>
+              <v-btn value="managed" prepend-icon="mdi-sync">Managed</v-btn>
+            </v-btn-toggle>
+            <v-btn variant="text" size="small" prepend-icon="mdi-eye-off" @click="hideFromPicker">Nothing fits: hide this role</v-btn>
+          </template>
           <v-spacer />
           <v-btn variant="text" @click="pickerDialog = false">Cancel</v-btn>
           <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" @click="saveBinding" :loading="isSavingBinding" :disabled="!picker.kind">
@@ -301,7 +309,7 @@ const { seasons } = storeToRefs(seasonStore);
 
 const COLUMNS = [
   { key: 'managed', label: 'Managed', icon: 'mdi-sync', empty: 'Drag a role here to have Sync grant and remove it.' },
-  { key: 'ignored', label: 'Ignored', icon: 'mdi-hand-back-right', empty: 'Bound roles Sync leaves alone.' },
+  { key: 'ignored', label: 'Ignored', icon: 'mdi-hand-back-right', empty: 'Bound roles Sync leaves alone: the app knows the holders, a person applies them by hand.' },
   { key: 'notBound', label: 'Not bound', icon: 'mdi-link-variant-off', empty: 'Every server role is bound.' }
 ];
 // The scopes each kind offers, the first one the default for a new binding
@@ -615,6 +623,13 @@ const openPicker = async (card, column) => {
   openedSeasons.value = row?.kind === 'team' ? [currentSeasonId.value] : [];
   pickerDialog.value = true;
   await loadGroups();
+};
+
+// The role in the picker has no group in the app, so it is hidden instead of bound
+const hideFromPicker = async () => {
+  const role = guildRole(picker.value.discord_role);
+  pickerDialog.value = false;
+  if (role) await setHidden(role, true);
 };
 
 const saveBinding = async () => {

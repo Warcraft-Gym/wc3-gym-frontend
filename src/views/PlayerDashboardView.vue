@@ -77,6 +77,8 @@
           style="min-width: 210px"
         >
           <div class="text-subtitle-2">Week {{ week }}</div>
+          <div v-if="opponentOfWeek(week)" class="text-caption text-medium-emphasis">vs {{ opponentOfWeek(week).name }}</div>
+          <div v-if="matchOfWeek(week)?.date_frame" class="text-caption text-medium-emphasis">{{ matchOfWeek(week).date_frame }}</div>
 
           <div v-if="week < currentWeek" class="mt-2">
             <v-chip v-if="seriesOfWeek(week)" :color="getScoreColor(seriesOfWeek(week))" variant="outlined" size="small">
@@ -635,7 +637,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
-import { useAuthStore, useAvailabilityStore, useSeasonStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useSeasonStore, useMatchStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
@@ -833,6 +835,7 @@ const fetchPlayerData = async () => {
 
     playerData.value = firstPage;
     series.value = collected;
+    await fetchTeamMatches();
 
   } catch (error) {
     console.error('Error fetching player data:', error);
@@ -868,9 +871,28 @@ const getScoreColor = (item) => {
 
 // My weeks: /player-series carries the answers and the length of the season
 const availabilityStore = useAvailabilityStore();
+const matchStore = useMatchStore();
+const playerStore = usePlayerStore();
 const savingWeek = ref(null);
 
 const weeks = computed(() => Array.from({ length: playerData.value?.number_weeks || 0 }, (_, i) => i + 1));
+
+// The week labels: the team's match of each week names the opponent and the dates (#33)
+const teamMatches = ref([]);
+const myTeamId = ref(null);
+const fetchTeamMatches = async () => {
+  const seasonId = Number(playerData.value?.season_id);
+  if (!seasonId) return;
+  // the dashboard player is the reduced one; the full player names the team of each season
+  const [full, seasonMatches] = await Promise.all([
+    playerStore.getPlayer(playerData.value.player.id).catch(() => null),
+    matchStore.searchMatchesBySeason(seasonId).catch(() => []),
+  ]);
+  myTeamId.value = full?.gnl_stats?.find(stat => stat.season_id === seasonId)?.team_id ?? null;
+  teamMatches.value = seasonMatches;
+};
+const matchOfWeek = (week) => teamMatches.value.find(m => m.playday === week && [m.team1_id, m.team2_id].includes(myTeamId.value));
+const opponentOfWeek = (week) => { const m = matchOfWeek(week); return m && (m.team1_id === myTeamId.value ? m.team2 : m.team1); };
 
 // the earliest week whose series has no score; a season with none left starts again at week 1
 const currentWeek = computed(() => {

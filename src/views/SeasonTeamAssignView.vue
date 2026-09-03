@@ -132,24 +132,30 @@
                 </PlayerName>
               </template>
               <template #item.w3c_mmr="{ item }">
-                <v-text-field
-                  v-if="auth.isAdmin"
-                  type="number"
-                  density="compact"
-                  variant="underlined"
-                  hide-details
-                  style="width: 90px"
-                  :model-value="item.mmr_override"
-                  :placeholder="String(getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A')"
-                  @change="setMmrOverride(item, $event.target.value)"
-                >
-                  <v-tooltip activator="parent" location="top">Type an MMR to draft this player at; empty keeps the W3C MMR</v-tooltip>
-                </v-text-field>
-                <div v-else>{{ mmrOf(item) ?? 'N/A' }}</div>
+                <div>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}</div>
                 <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
               </template>
               <template #item.race="{ item }">
                 <RaceIcon v-if="item.signup_race" :raceIdentifier="item.signup_race" />
+              </template>
+              <template #item.round="{ item }">
+                <div class="d-flex align-center ga-1">
+                  <v-select
+                    v-if="auth.isAdmin"
+                    :model-value="roundOf(item)"
+                    :items="rounds"
+                    density="compact"
+                    variant="underlined"
+                    hide-details
+                    style="width: 64px"
+                    @update:model-value="moveToRound(item, $event)"
+                  ></v-select>
+                  <span v-else>{{ roundOf(item) }}</span>
+                  <v-btn v-if="auth.isAdmin && item.draft_position != null" icon="mdi-pin-off" size="x-small" variant="text" @click="setDraftPosition(item, null)">
+                    <v-tooltip activator="parent" location="top">Moved by hand. Click to sort by MMR again</v-tooltip>
+                  </v-btn>
+                  <v-icon v-else-if="item.draft_position != null" size="small">mdi-pin<v-tooltip activator="parent" location="top">Moved by hand</v-tooltip></v-icon>
+                </div>
               </template>
               <template #item.actions="{ item }">
                 <v-btn
@@ -346,24 +352,40 @@ const editPlayerDialog = ref(null);
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
 
-// The MMR a player drafts at: the admin's override, else the W3C MMR of the signup race
-const mmrOf = (p) => p.mmr_override ?? getW3CMMR(p, currentW3CSeason.value, p.signup_race);
+const mmrOf = (p) => getW3CMMR(p, currentW3CSeason.value, p.signup_race) || 0;
 
-const setMmrOverride = async (player, value) => {
-  const mmr_override = value === '' ? null : Number(value);
+// The draft order over every signup: MMR ascending, each moved player at his slot
+const orderedPlayers = computed(() => {
+  const all = signedUpPlayersData.value || [];
+  const order = all.filter(p => p.draft_position == null).sort((a, b) => mmrOf(a) - mmrOf(b));
+  for (const p of all.filter(p => p.draft_position != null).sort((a, b) => a.draft_position - b.draft_position)) {
+    order.splice(Math.min(p.draft_position, order.length), 0, p);
+  }
+  return order;
+});
+const positionOf = computed(() => new Map(orderedPlayers.value.map((p, i) => [p.id, i])));
+// One round = one pick per team
+const roundSize = computed(() => teams.value?.length || 10);
+const rounds = computed(() => Array.from({ length: Math.ceil(orderedPlayers.value.length / roundSize.value) }, (_, i) => i + 1));
+const roundOf = (p) => Math.floor(positionOf.value.get(p.id) / roundSize.value) + 1;
+
+const setDraftPosition = async (player, draft_position) => {
   try {
-    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { mmr_override });
-    player.mmr_override = mmr_override;
+    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { draft_position });
+    player.draft_position = draft_position;
   } catch (error) {
-    console.error('Failed to set the MMR override:', error);
+    console.error('Failed to move the player:', error);
   }
 };
+const moveToRound = (player, round) => setDraftPosition(player, (round - 1) * roundSize.value);
 
 const playerTableHeaders = [
   { title: 'ID', value: 'id' },
   { title: 'Name', value: 'name' },
-  { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => (mmrOf(a) || 0) - (mmrOf(b) || 0) },
+  // The draft order, so a reversed sort keeps the moved players in place
+  { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => positionOf.value.get(a.id) - positionOf.value.get(b.id) },
   { title: 'Race', value: 'race' },
+  { title: 'Round', value: 'round', sortable: false },
   { title: 'Team', value: 'team', sortable: false },
   { title: '', value: 'actions', sortable: false, align: 'end' },
 ];
@@ -428,10 +450,8 @@ const seasonName = computed(() => {
   return current_season.name;
 });
 
-// players signed up for this season - from local data fetched separately
-const signedUpPlayers = computed(() => {
-  return signedUpPlayersData.value || [];
-});
+// players signed up for this season, in draft order
+const signedUpPlayers = orderedPlayers;
 
 const filteredPlayers = computed(() => {
   let list = signedUpPlayers.value || [];
@@ -441,7 +461,7 @@ const filteredPlayers = computed(() => {
   if (searchRace.value) list = list.filter(p => p.signup_race === searchRace.value);
   
   // filter by mmr range — only apply if user changed from defaults
-  list = filterByMmrRange(list, rangeValues.value, p => mmrOf(p) ?? 0);
+  list = filterByMmrRange(list, rangeValues.value, mmrOf);
   
   // filter out players without W3C stats if checkbox is checked
   if (hideNoW3CStats.value) {

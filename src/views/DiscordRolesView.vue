@@ -536,6 +536,15 @@ const applyRole = async (card) => {
   }
 };
 
+// After a failed write the list is read again, so a card for a binding the backend no longer has goes away
+const refetchBindings = async () => {
+  try {
+    bindings.value = await configStore.fetchDiscordRoleBindings();
+  } catch (error) {
+    errorMessage.value = 'Failed to reload the bindings: ' + error.message;
+  }
+};
+
 // The card moves at once; the report, which reads the guild, refreshes behind it
 const setSynced = async (row, synced) => {
   errorMessage.value = null;
@@ -549,6 +558,7 @@ const setSynced = async (row, synced) => {
   } catch (error) {
     row.synced = before;
     errorMessage.value = 'Failed to move the role: ' + error.message;
+    refetchBindings();
   }
 };
 
@@ -650,6 +660,7 @@ const saveBinding = async () => {
     fetchReport();
   } catch (error) {
     dialogError.value = 'Failed to save the binding: ' + error.message;
+    refetchBindings();
   } finally {
     isSavingBinding.value = false;
   }
@@ -671,6 +682,7 @@ const confirmDelete = async () => {
     fetchReport();
   } catch (error) {
     errorMessage.value = 'Failed to unbind the role: ' + error.message;
+    refetchBindings();
   }
 };
 

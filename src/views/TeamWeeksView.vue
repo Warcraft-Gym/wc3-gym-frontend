@@ -25,7 +25,11 @@
         <thead>
           <tr>
             <th>Player</th>
-            <th v-for="week in weeks" :key="week" class="text-center">Week {{ week }}</th>
+            <th v-for="week in weeks" :key="week" class="text-center">
+              Week {{ week }}
+              <div v-if="opponentOfWeek(week)" class="text-caption text-medium-emphasis font-weight-regular">vs {{ opponentOfWeek(week).name }}</div>
+              <div v-if="matchOfWeek(week)?.date_frame" class="text-caption text-medium-emphasis font-weight-regular">{{ matchOfWeek(week).date_frame }}</div>
+            </th>
             <th></th>
           </tr>
         </thead>
@@ -82,7 +86,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 
-import { useAuthStore, useAvailabilityStore, useSeasonStore, useTeamStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useTeamStore } from '@/stores';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 const router = useRouter();
@@ -90,6 +94,7 @@ const auth = useAuthStore();
 const teamStore = useTeamStore();
 const seasonStore = useSeasonStore();
 const availabilityStore = useAvailabilityStore();
+const matchStore = useMatchStore();
 
 const { team } = storeToRefs(teamStore);
 const { current_season: season } = storeToRefs(seasonStore);
@@ -100,6 +105,10 @@ const seasonId = computed(() => seasonStore.seasonIdOf(router.currentRoute.value
 const isLoading = ref(false);
 const errorMessage = ref(null);
 const rows = ref([]);
+// The week labels: the team's match of each week names the opponent and the dates (#33)
+const matches = ref([]);
+const matchOfWeek = (week) => matches.value.find(m => m.playday === week && [m.team1_id, m.team2_id].includes(teamId.value));
+const opponentOfWeek = (week) => { const m = matchOfWeek(week); return m && (m.team1_id === teamId.value ? m.team2 : m.team1); };
 const saving = ref(null);
 
 const players = computed(() => team.value?.player_by_season?.[seasonId.value] || []);
@@ -166,12 +175,14 @@ onMounted(async () => {
   }
   isLoading.value = true;
   try {
-    const [answered] = await Promise.all([
+    const [answered, seasonMatches] = await Promise.all([
       availabilityStore.fetchTeamAvailability(teamId.value, seasonId.value),
+      matchStore.searchMatchesBySeason(seasonId.value).catch(() => []),
       teamStore.fetchTeamBySeason(teamId.value, seasonId.value),
       seasonStore.fetchSeason(seasonId.value),
     ]);
     rows.value = answered;
+    matches.value = seasonMatches;
   } catch (error) {
     console.error(error);
     errorMessage.value = error.message || 'Failed to load the team weeks.';

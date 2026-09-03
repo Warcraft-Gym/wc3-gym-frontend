@@ -82,7 +82,7 @@
                 <tr class="text-no-wrap">
                   <td class="d-none d-md-table-cell">{{ item.id }}</td>
                   <td>
-                    <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
+                    <PlayerName :player="item">
                       <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
                         <v-tooltip>
                           <template #activator="{ props }">
@@ -271,14 +271,6 @@
       @confirm="confirmDelete"
       @cancel="cancelDeleteDialog"
     />
-    
-    <!-- Player Details Dialog -->
-    <PlayerDetailsDialog 
-      ref="playerDetailsDialog"
-      :seasonId="currentSeasonId"
-      :seasonName="currentSeasonName"
-      :w3cSeason="currentW3CSeason"
-    />
   </v-container>
 </template>
 <script setup>
@@ -286,12 +278,11 @@ import RowActions from '@/components/RowActions.vue';
 import { useAuthStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref, computed } from 'vue';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import {
   getAllRaceStats,
   getW3CGamesCount,
@@ -428,29 +419,12 @@ onMounted( async () => {
   }
   
   await fetchPlayers();
-  // ensure seasons are loaded and resolve the current season id
-  currentSeasonId.value = await resolveCurrentSeasonId();
   currentW3CSeason.value = await resolveCurrentW3CSeason();
 });
-
-// Open player details dialog and ensure we have the player's data
-const openPlayerDetails = async (player) => {
-  // ensure currentSeasonId is resolved
-  if (!currentSeasonId.value) currentSeasonId.value = await resolveCurrentSeasonId();
-
-  // if player object doesn't include stats, we rely on the players list
-  playerDetailsDialog.value.open(player);
-};
 
 // per-player sync status map: { [playerId]: { state: 'loading'|'success'|'error', message?: string } }
 const perPlayerSyncStatus = ref({});
 
-// Player details dialog state
-const playerDetailsDialog = ref(null);
-
-// current season id preference (resolved from settings or fallback)
-const currentSeasonId = ref(null);
-const currentSeasonName = computed(() => (seasons.value || []).find(s => s.id === currentSeasonId.value)?.name || '');
 // Current W3C season number (for stats fallback logic)
 const currentW3CSeason = ref(null);
 

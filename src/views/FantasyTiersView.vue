@@ -44,6 +44,7 @@
 
     <v-card elevation="2">
       <GroupedTable :columns="columns" :groups="groups" empty="No players on a team this season">
+        <template #head.mmr><W3CMmr /></template>
         <template #group="{ group }">
           <td :colspan="columns.length">
             <v-chip size="small" :color="group.color" variant="flat" class="mr-2">{{ group.title }}</v-chip>

@@ -141,7 +141,7 @@
                             <v-autocomplete
                               v-model="teamForm.drafted_team_id"
                               :items="teams"
-                              item-title="name"
+                              :item-title="teamTitle"
                               item-value="id"
                               label="Draft a Team *"
                               variant="outlined"
@@ -194,6 +194,9 @@
                               density="comfortable"
                               clearable
                             >
+                              <template v-slot:selection="{ item }">
+                                <PlayerName :player="item.raw" :race="item.raw.signup_race" />
+                              </template>
                               <template v-slot:item="{ item }">
                                 <v-list-item
                                   :value="item.value"
@@ -216,14 +219,6 @@
                           </v-col>
                         </v-row>
 
-                        <div v-if="selectedPlayers.length > 0" class="mt-4">
-                          <strong>Selected Players ({{ selectedPlayers.length }}):</strong>
-                          <v-chip-group class="mt-2">
-                            <v-chip v-for="player in selectedPlayers" :key="player.id" size="small" color="primary" @click="showPlayerDetails(player)" style="cursor: pointer;">
-                              <PlayerName :player="player" :race="player.signup_race" />
-                            </v-chip>
-                          </v-chip-group>
-                        </div>
                       </v-card-text>
                     </v-card>
 
@@ -452,6 +447,8 @@ const playerToken = ref(null);
 const playerData = ref(null);
 const existingTeam = ref(null);
 const teams = ref([]);
+// "Saul's Angels (SA)"; a team without a long name shows its tag alone
+const teamTitle = (team) => (team.long_name ? `${team.long_name} (${team.name})` : team.name);
 const availablePlayers = ref([]);
 
 // The picked season; a team is drafted while it is open, a complete one is read-only

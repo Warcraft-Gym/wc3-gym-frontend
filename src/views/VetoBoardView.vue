@@ -14,7 +14,7 @@
         <v-spacer />
         <v-chip v-if="board" :color="statusColor" variant="tonal">{{ statusLine }}</v-chip>
         <v-btn
-          v-if="canRecord"
+          v-if="canRecord && !admin"
           :variant="recording ? 'flat' : 'outlined'"
           color="warning"
           size="small"
@@ -180,22 +180,25 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchWrapper } from '@/helpers';
 import { hideMissingImage } from '@/helpers/team-image';
-import { useMapStore } from '@/stores';
+import { useAuthStore, useMapStore } from '@/stores';
 import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 const route = useRoute();
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const mapStore = useMapStore();
+const auth = useAuthStore();
 
 const board = ref(null);
 const errorMessage = ref(null);
 const saving = ref(false);
-// a veto done in a chat is typed in by one player for both sides, in the season's order
-const recording = ref(!!route.query.report);  // the Report Result dialog sends the player here to enter it
-
 // the dashboard link carries its token; a session reads the board without one
 const token = route.query.token;
+// an admin session edits either side from the match page
+const admin = !token && auth.isAdmin;
+// a veto done in a chat is typed in by one player for both sides, in the season's order
+const recording = ref(!!route.query.report || admin);  // the Report Result dialog sends the player here to enter it
+
 const vetoUrl = `${backendUrl}/player-series/${route.params.id}/veto`;
 // the board payload names maps only on the steps taken, so the pool is labelled from /maps
 const mapsById = computed(() => new Map(mapStore.maps.map(map => [map.id, map])));
@@ -213,7 +216,7 @@ const nextAction = computed(() => (order.value[taken.value.length] || '').split(
 
 const viewerId = computed(() => (board.value?.viewer_side === 'A' ? board.value?.player1 : board.value?.player2)?.id);
 const playerId = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.id;
-const canRecord = computed(() => !!board.value?.viewer_side && !board.value?.complete);
+const canRecord = computed(() => (admin || !!board.value?.viewer_side) && !board.value?.complete);
 
 const statusLine = computed(() => {
   if (board.value?.complete) return 'Veto complete';
@@ -226,7 +229,7 @@ const statusColor = computed(() => (board.value?.complete ? 'success' : recordin
 // the last step can be taken back by the side it belongs to or by whoever entered it
 const canUndo = computed(() => {
   const last = taken.value[taken.value.length - 1];
-  return !!last && (last.side === board.value?.viewer_side || last.entered_by === viewerId.value);
+  return !!last && (admin || last.side === board.value?.viewer_side || last.entered_by === viewerId.value);
 });
 
 const poolChip = computed(() => {

@@ -130,9 +130,17 @@
               <td class="d-none d-md-table-cell">{{ item.series_per_week }}</td>
               <td>
                 {{ PHASE_LABEL[item.phase] ?? '' }}
-                <v-tooltip v-if="item.phase === 'overdue'" :text="`Past its end date with ${item.unscored_series} series still unscored`" location="top">
+                <v-tooltip v-if="item.phase === 'overdue'" text="Past its end date" location="top">
                   <template #activator="{ props }"><v-icon v-bind="props" color="warning" size="small">mdi-alert</v-icon></template>
                 </v-tooltip>
+                <v-chip
+                  v-if="item.unscored_series"
+                  size="x-small"
+                  variant="tonal"
+                  class="ml-1"
+                  :to="{ path: `/seasons/${seasonSlug(item)}`, query: { unscored: '1' } }"
+                  @click.stop
+                >{{ item.unscored_series }} unscored</v-chip>
               </td>
               <td v-if="auth.isAdmin" class="text-end">
                 <RowActions :actions="[

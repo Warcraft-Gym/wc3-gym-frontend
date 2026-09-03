@@ -41,6 +41,34 @@
   </div>
 
   <v-container fluid class="pa-4">
+    <!-- Series with no result, reached from the unscored count on the Seasons page -->
+    <v-card v-if="unscoredOnly" class="mb-4" elevation="2">
+      <v-card-title class="bg-primary d-flex align-center">
+        <v-icon class="mr-2">mdi-clipboard-alert</v-icon>
+        Series
+        <v-chip class="ml-3" size="small" color="white" variant="outlined" closable @click:close="unscoredOnly = false">No result</v-chip>
+      </v-card-title>
+      <v-card-text class="pa-0">
+        <GroupedTable :columns="unscoredColumns" :groups="unscoredGroups" default-open empty="Every series of this season has a result">
+          <template #group="{ group }">
+            <td :colspan="unscoredColumns.length">
+              <strong>Week {{ group.key }}</strong>
+              <span class="text-medium-emphasis ml-2">{{ group.rows.length }} with no result</span>
+            </td>
+          </template>
+          <template #rows="{ group }">
+            <tr v-for="row in group.rows" :key="row.id" class="detail-row unscored-row" @click="router.push(`/match/${row.match_id}`)">
+              <td></td>
+              <td class="text-no-wrap">{{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}</td>
+              <td><PlayerName :player="row.player1" /></td>
+              <td><PlayerName :player="row.player2" /></td>
+              <td class="text-no-wrap">{{ row.date_time ? formatDateTime(row.date_time) : 'Not scheduled' }}</td>
+            </tr>
+          </template>
+        </GroupedTable>
+      </v-card-text>
+    </v-card>
+
     <!-- Week Navigation Tabs -->
     <v-card class="mb-4" elevation="2">
       <v-tabs
@@ -457,13 +485,17 @@
   <script setup>
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
+import GroupedTable from '@/components/GroupedTable.vue';
+import PlayerName from '@/components/PlayerName.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted, computed, watch } from 'vue';
-import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore } from '@/stores';
+import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore, useSeriesStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import bannerImg from '@/assets/media/GNL_Banner.png';
   import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
+import { isUnscored } from '@/helpers/season-phase.mjs';
+import { formatDateTime } from '@/helpers/datetime';
 
 
 // Store initialization
@@ -483,6 +515,35 @@ const { maps } = storeToRefs(mapStore);
 
 // Route params
 const seasonId = seasonStore.seasonIdOf(route.params.id);
+
+// Series with no result: on from ?unscored=1, held here because the week hash push drops the query
+const seriesStore = useSeriesStore();
+const unscoredOnly = ref(route.query.unscored === '1');
+const unscoredSeries = ref([]);
+const unscoredColumns = [
+  { key: 'match', title: 'Match' },
+  { key: 'player1', title: 'Player 1' },
+  { key: 'player2', title: 'Player 2' },
+  { key: 'date_time', title: 'Scheduled' },
+];
+const unscoredGroups = computed(() => {
+  const weeks = new Map();
+  for (const series of unscoredSeries.value) {
+    const week = series.match?.playday ?? 0;
+    if (!weeks.has(week)) weeks.set(week, { key: week, rows: [] });
+    weeks.get(week).rows.push(series);
+  }
+  return [...weeks.values()].sort((a, b) => a.key - b.key);
+});
+
+const fetchUnscoredSeries = async () => {
+  try {
+    const all = await seriesStore.searchSeriesBySeason(seasonId, null);
+    unscoredSeries.value = (all || []).filter(isUnscored);
+  } catch (error) {
+    console.error('Failed to fetch the series of the season:', error);
+  }
+};
 
 // Table configuration
 const addTeamsTableHeader = [
@@ -713,7 +774,8 @@ onMounted(async () => {
       fetchSeasonDetails(),
       fetchTeams(),
       fetchMatches(weekFromHash),
-      fetchMaps()
+      fetchMaps(),
+      unscoredOnly.value && fetchUnscoredSeries()
     ]);
   } finally {
     isLoading.value = false;
@@ -724,6 +786,10 @@ onMounted(async () => {
   </script>
 
   <style scoped>
+
+  .unscored-row {
+    cursor: pointer;
+  }
 
   .team-icon {
     width: 100%;

@@ -1,5 +1,4 @@
-<!-- One player, opened from his name anywhere in the app: who he is, the seasons
-     he signed up for and the race he registered on, then his W3C ladder record. -->
+<!-- One player: identity, the seasons they signed up for with the signup race, and the ladder record -->
 <template>
   <v-container fluid class="pa-4">
     <StatusAlert v-model="errorMessage" />

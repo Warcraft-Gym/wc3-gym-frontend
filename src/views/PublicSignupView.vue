@@ -28,6 +28,10 @@
             <strong>You are already signed up for this season.</strong>
             You can update your details below and resubmit if you need to make changes.
           </v-alert>
+          <v-alert v-if="seasonClosed" type="warning" variant="tonal" border="start" class="mb-4" prominent>
+            <strong>Signups for {{ seasonName }} are closed.</strong>
+            You can still save your profile. Adding you to the season is at the admins' discretion and is not guaranteed.
+          </v-alert>
 
           <v-alert type="info" variant="tonal" border="start" class="mb-4">
             <div><strong>Name:</strong> The player name — choose freely (this is how players are shown in the UI).</div>
@@ -116,7 +120,7 @@
               </v-col>
             </v-row>
           </v-form>
-          <v-alert type="success" v-if="success" class="mt-4">Signup completed — thank you.</v-alert>
+          <v-alert :type="closedMessage ? 'warning' : 'success'" v-if="success" class="mt-4">{{ closedMessage || 'Signup completed — thank you.' }}</v-alert>
           <v-alert type="error" v-if="submitError" class="mt-4">Error: {{ submitError }}</v-alert>
         </div>
       </v-card-text>
@@ -155,8 +159,14 @@ const selectedSignupSeasonId = ref(null);
 
 const submitting = ref(false);
 const success = ref(false);
+// The backend's answer when the season was not open: the profile is saved, the signup is not
+const closedMessage = ref('');
 const submitError = ref('');
 const seasonName = ref('');
+const seasonClosed = computed(() => {
+  const season = seasons.value.find(x => String(x.id) === String(selectedSignupSeasonId.value));
+  return !!season && season.phase !== 'open';
+});
 const alreadySignedUp = ref(false);
 
 const isFormValid = computed(() => {
@@ -314,12 +324,13 @@ async function onSubmit() {
       season_id: selectedSignupSeasonId.value ? selectedSignupSeasonId.value : undefined
     };
     const backend = import.meta.env.VITE_BACKEND_URL || '';
-    await fetchWrapper.post(`${backend}/signup`, payload);
+    const created = await fetchWrapper.post(`${backend}/signup`, payload);
 
     // user created on backend — end-user flow is complete; they can close the page
     success.value = true;
+    closedMessage.value = created?.signup === 'closed' ? created.message : '';
     // the profile needs the fresh users row and signup before it can show the dashboard
-    if (!token.value) {
+    if (!token.value && !closedMessage.value) {
       await authStore.fetchMe();
       if (route.path === '/signup') router.push('/profile');
     }

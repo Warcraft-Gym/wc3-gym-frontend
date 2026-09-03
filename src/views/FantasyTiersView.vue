@@ -26,9 +26,9 @@
       </v-col>
     </v-row>
 
-    <v-alert v-if="phase !== 'upcoming'" type="info" variant="tonal" density="compact" class="mb-4">
+    <v-alert v-if="phase !== 'open'" type="info" variant="tonal" density="compact" class="mb-4">
       <div class="d-flex align-center justify-space-between ga-4">
-        <span>{{ seasonName }} {{ phase === 'ended' ? 'ended' : 'started' }} on {{ phaseDate }}. Its tiers are {{ locked ? 'locked' : 'unlocked' }}.</span>
+        <span>{{ seasonName }} has {{ phase === 'complete' ? 'ended' : 'commenced' }}. Its tiers are {{ locked ? 'locked' : 'unlocked' }}.</span>
         <v-btn size="small" variant="text" :prepend-icon="locked ? 'mdi-lock-open-variant' : 'mdi-lock'" @click="locked = !locked">{{ locked ? 'Unlock' : 'Lock' }}</v-btn>
       </div>
     </v-alert>
@@ -81,7 +81,6 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { DateTime } from 'luxon';
 import { storeToRefs } from 'pinia';
 import { useLadderStore, usePlayerStore, useSeasonStore, useTeamStore } from '@/stores';
 import DivisionBracketing from '@/components/DivisionBracketing.vue';
@@ -92,7 +91,6 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { seasonPhase } from '@/helpers/season-phase.mjs';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 
 // Bands ascend by MMR; tier numbers descend, so the top band is always tier 1.
@@ -114,14 +112,10 @@ const isSaving = ref(false);
 const errorMessage = ref(null);
 const successMessage = ref(null);
 const currentSeason = ref(null);
-// A started season's tiers are locked until the admin unlocks them: moving a cut moves drafted players
+// A commenced season's tiers are locked until the admin unlocks them: moving a cut moves drafted players
 const locked = ref(false);
 const seasonName = computed(() => currentSeason.value?.name ?? 'season');
-const phase = computed(() => seasonPhase(currentSeason.value, DateTime.now().toISODate()));
-const phaseDate = computed(() => {
-  const date = phase.value === 'ended' ? currentSeason.value.end_date : currentSeason.value?.start_date;
-  return date ? DateTime.fromISO(date).toLocaleString(DateTime.DATE_MED) : '';
-});
+const phase = computed(() => currentSeason.value?.phase ?? 'open');
 const currentW3CSeason = ref(null);
 const tierCount = ref(ALL_NAMES.length);
 const signups = ref([]);
@@ -203,7 +197,7 @@ const loadData = async () => {
   try {
     const season = await seasonStore.fetchSeason(currentSeasonId.value);
     currentSeason.value = season;
-    locked.value = phase.value !== 'upcoming';
+    locked.value = phase.value !== 'open';
     currentW3CSeason.value = await resolveCurrentW3CSeason();
     signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
     await teamStore.fetchTeamsBySeason(currentSeasonId.value);

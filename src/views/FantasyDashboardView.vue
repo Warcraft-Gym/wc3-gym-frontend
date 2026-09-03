@@ -30,8 +30,8 @@
         <v-chip v-if="existingTeam" class="ml-3" size="small" color="white" variant="outlined">
           Registered
         </v-chip>
-        <v-chip v-if="ended" class="ml-3" size="small" color="white" variant="outlined">
-          {{ seasonName }} has ended
+        <v-chip v-if="phase !== 'open'" class="ml-3" size="small" color="white" variant="outlined">
+          {{ seasonName }} has {{ ended ? 'ended' : 'commenced' }}
         </v-chip>
       </v-card-title>
       <v-card-text class="pt-4">
@@ -39,6 +39,9 @@
                   <!-- No team, and why the form is not here -->
                   <v-alert v-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
                     You had no fantasy team in {{ seasonName }}.
+                  </v-alert>
+                  <v-alert v-else-if="phase === 'commenced' && !existingTeam" type="info" variant="tonal" class="mb-4">
+                    {{ seasonName }} has commenced. Fantasy team creation closed when its first series started.
                   </v-alert>
                   <v-alert v-else-if="!isCreationEnabled && !existingTeam" type="warning" variant="tonal" class="mb-4">
                     <v-alert-title>Team Creation Currently Closed</v-alert-title>
@@ -424,7 +427,6 @@ import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { getW3CMMR, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { seasonEnded } from '@/helpers/season-phase.mjs';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -452,12 +454,12 @@ const existingTeam = ref(null);
 const teams = ref([]);
 const availablePlayers = ref([]);
 
-// The picked season; one whose series have all started is read-only, one without tiers takes no draft yet
+// The picked season; a team is drafted while it is open, a complete one is read-only
 const season = ref(null);
-const seasonSeries = ref([]);
 const seasonName = computed(() => season.value?.name ?? 'this season');
-const ended = computed(() => seasonEnded(seasonSeries.value));
-const canDraft = computed(() => isCreationEnabled.value && !ended.value && tierCount.value > 0);
+const phase = computed(() => season.value?.phase ?? 'open');
+const ended = computed(() => phase.value === 'complete');
+const canDraft = computed(() => isCreationEnabled.value && phase.value === 'open' && tierCount.value > 0);
 
 // Current W3C season for MMR display
 const currentW3CSeason = ref(null);
@@ -643,7 +645,6 @@ const loadSeason = async () => {
   fantasyBets.value = [];
   try {
     season.value = await seasonStore.fetchSeason(seasonId);
-    seasonSeries.value = (await seriesStore.searchSeriesBySeason(seasonId, null)) || [];
     tierCount.value = season.value.fantasy_tiers;
     teamForm.value = { name: '', season_id: seasonId, drafted_team_id: null, drafted_race: null, player_ids: [] };
     tierSelections.value = emptyTierSelections();

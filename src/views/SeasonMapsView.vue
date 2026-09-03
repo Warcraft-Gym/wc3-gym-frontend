@@ -56,7 +56,7 @@
                 <v-list-item v-if="!notInPool.length" class="text-caption text-grey">Every map is already in this season</v-list-item>
               </v-list>
               <div class="d-flex justify-end ga-2 px-4 py-2">
-                <v-btn size="small" variant="outlined" color="primary" @click="openImport">Import ladder pool</v-btn>
+                <v-btn size="small" variant="outlined" color="primary" @click="openImport">Import W3C map pool</v-btn>
                 <v-btn size="small" variant="outlined" color="primary" @click="newMapOpen = true">New map</v-btn>
               </div>
             </div>

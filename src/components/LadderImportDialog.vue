@@ -3,9 +3,9 @@
     <v-card>
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-download</v-icon>
-        <span>Import ladder pool</span>
+        <span>Import W3C map pool</span>
         <v-spacer />
-        <v-chip size="small" variant="outlined">{{ rows.length }} maps on the 1v1 ladder</v-chip>
+        <v-chip size="small" variant="outlined">{{ rows.length }} maps in the W3C 1v1 pool</v-chip>
       </v-card-title>
       <v-card-text class="pa-0">
         <v-progress-linear v-if="loading" indeterminate color="primary" />

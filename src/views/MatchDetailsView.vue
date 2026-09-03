@@ -259,6 +259,7 @@
                   <td v-if="auth.isAdmin" class="text-center">
                     <RowActions :actions="[
                       { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
+                      { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
                       { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
                     ]" />
                   </td>

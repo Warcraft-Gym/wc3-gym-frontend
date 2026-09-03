@@ -130,7 +130,7 @@
               <td>{{ item.series_per_week }}</td>
               <td>
                 {{ PHASE_LABEL[item.phase] ?? '' }}
-                <v-tooltip v-if="item.phase === 'overdue'" text="Past its end date with series still unscored" location="top">
+                <v-tooltip v-if="item.phase === 'overdue'" :text="`Past its end date with ${item.unscored_series} series still unscored`" location="top">
                   <template #activator="{ props }"><v-icon v-bind="props" color="warning" size="small">mdi-alert</v-icon></template>
                 </v-tooltip>
               </td>

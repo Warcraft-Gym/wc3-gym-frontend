@@ -157,7 +157,7 @@
 
         <v-card-text class="pt-4">
           <v-list density="compact" :disabled="isLoadingGroups">
-            <v-list-subheader>{{ seasonName(listSeasonId) }}</v-list-subheader>
+            <v-list-subheader>{{ listScopeLabel }}</v-list-subheader>
             <v-list-item
               v-for="group in seasonGroups"
               :key="groupKey(group)"
@@ -189,12 +189,11 @@
             </v-list-item>
           </v-list>
 
-          <!-- One season control under the list, in the shape the picked group's kind needs -->
+          <!-- One scope control under the list, in the shape the picked group's kind needs -->
           <template v-if="picker.kind">
-            <template v-if="FOLLOWS_SEASON.includes(picker.kind)">
-              <v-radio-group v-model="picker.mode" density="compact" hide-details @update:model-value="loadGroups">
-                <v-radio value="current" color="primary" :label="`Current season (${seasonName(currentSeasonId)})`"></v-radio>
-                <div class="d-flex align-center ga-3">
+            <v-radio-group v-if="scopeOptions.length > 1" v-model="picker.scope" density="compact" hide-details @update:model-value="loadGroups">
+              <template v-for="option in scopeOptions" :key="option">
+                <div v-if="option === 'season'" class="d-flex align-center ga-3">
                   <v-radio value="season" color="primary" label="One season"></v-radio>
                   <v-select
                     v-model="picker.seasonId"
@@ -205,17 +204,19 @@
                     density="compact"
                     hide-details
                     style="max-width:220px"
-                    :disabled="picker.mode !== 'season'"
+                    :disabled="picker.scope !== 'season'"
                     :loading="isLoadingGroups"
                     @update:model-value="loadGroups"
                   />
                 </div>
-              </v-radio-group>
-              <div class="text-caption text-medium-emphasis mt-2">
-                <div>The role moves to the new holders when the current season changes.</div>
-                <div>Holders keep the role after {{ seasonName(picker.seasonId) }} ends.</div>
-              </div>
-            </template>
+                <v-radio
+                  v-else
+                  :value="option"
+                  color="primary"
+                  :label="option === 'all' ? 'All seasons' : `Current season (${seasonName(currentSeasonId)})`"
+                ></v-radio>
+              </template>
+            </v-radio-group>
             <div v-else-if="picker.kind === 'champion'" class="d-flex align-center ga-3 mt-2">
               <span class="text-body-2">One season</span>
               <v-select
@@ -231,7 +232,7 @@
                 @update:model-value="loadGroups"
               />
             </div>
-            <div v-else class="text-caption text-medium-emphasis mt-2">Follows the current season.</div>
+            <div class="text-caption text-medium-emphasis mt-2">{{ scopeCaption }}</div>
           </template>
         </v-card-text>
 
@@ -274,8 +275,15 @@ const COLUMNS = [
   { key: 'ignored', label: 'Ignored', icon: 'mdi-hand-back-right', empty: 'Bound roles Sync leaves alone.' },
   { key: 'notBound', label: 'Not bound', icon: 'mdi-link-variant-off', empty: 'Every server role is bound.' }
 ];
-// The two kinds that can either follow the current season or be pinned to one
-const FOLLOWS_SEASON = ['gnl_participant', 'fantasy'];
+// The scopes each kind offers, the first one the default for a new binding
+const SCOPES = {
+  team: ['all', 'current'],
+  captain: ['all', 'current'],
+  gnl_participant: ['current', 'season', 'all'],
+  fantasy: ['current', 'season', 'all'],
+  champion: ['season'],
+  admin: ['current']
+};
 const KIND_LABEL = { team: 'Team', captain: 'Captains', gnl_participant: 'Players', fantasy: 'Bettors', champion: 'Champions', admin: 'Gym Admin' };
 
 const guildRoles = ref([]);
@@ -323,25 +331,33 @@ const roleName = (id) => guildRole(id)?.name ?? id;
 // Within one season a group is unique by kind and team, so a binding that follows the current season still matches
 const groupKey = (group) => `${group.kind}:${group.team_id ?? ''}`;
 
-// Champions always name one season; Players and Bettors do when the mode says so
-const pinsSeason = (kind) => kind === 'champion' || (FOLLOWS_SEASON.includes(kind) && picker.value?.mode === 'season');
-// The season the group counts follow: the one the control under the list names
-const listSeasonId = computed(() => (pinsSeason(picker.value?.kind) ? picker.value.seasonId : currentSeasonId.value));
+const scopeOptions = computed(() => SCOPES[picker.value?.kind] ?? []);
+// The scope and season the group counts follow: what the control under the list names, the current season before a kind is picked
+const listScope = computed(() => picker.value?.scope ?? 'current');
+const listSeasonId = computed(() => picker.value?.seasonId ?? currentSeasonId.value);
+const listScopeLabel = computed(() => (listScope.value === 'season' ? seasonName(listSeasonId.value) : listScope.value === 'all' ? 'All seasons' : `Current season (${seasonName(currentSeasonId.value)})`));
+// One sentence for the picked scope; an admin binding is hand-managed and names no season
+const scopeCaption = computed(() => {
+  if (picker.value?.kind === 'admin') return 'Follows the current season.';
+  if (listScope.value === 'season') return `Holders keep the role after ${seasonName(listSeasonId.value)} ends.`;
+  if (listScope.value === 'all') return 'Anyone who ever earned it keeps the role.';
+  return 'The role moves to the new holders when the current season changes.';
+});
 
 const seasonGroups = computed(() => groups.value.filter(g => g.kind !== 'team'));
 const teamGroups = computed(() => groups.value.filter(g => g.kind === 'team'));
 
+const scopeWords = (row) => (row.scope === 'season' ? seasonName(row.season_id) : row.scope === 'all' ? 'all seasons' : 'current season');
+
 // The line naming the people a binding covers
 const groupLabel = (row) => {
   if (row.kind === 'admin') return 'Hand-managed in Discord';
-  if (row.kind === 'team') return teamName(row.team_id);
-  if (row.kind === 'captain') return 'Captains';
+  if (row.kind === 'team') return `${teamName(row.team_id)} · ${scopeWords(row)}`;
   if (row.kind === 'champion') {
     const winner = row.team_id ? ` (winner: ${teamName(row.team_id)})` : '';
-    return `Champions · ${seasonName(row.season_id)}${winner}`;
+    return `Champions · ${scopeWords(row)}${winner}`;
   }
-  const scope = row.season_id ? seasonName(row.season_id) : 'current season';
-  return `${KIND_LABEL[row.kind] ?? row.kind} · ${scope}`;
+  return `${KIND_LABEL[row.kind] ?? row.kind} · ${scopeWords(row)}`;
 };
 
 // One card per Discord role, plus a card for a binding whose role the guild no longer names
@@ -492,7 +508,7 @@ const loadGroups = async () => {
   isLoadingGroups.value = true;
   dialogError.value = null;
   try {
-    groups.value = await configStore.fetchDiscordRoleGroups(listSeasonId.value);
+    groups.value = await configStore.fetchDiscordRoleGroups({ season_id: listSeasonId.value, scope: listScope.value });
   } catch (error) {
     dialogError.value = 'Failed to load the groups: ' + error.message;
   } finally {
@@ -501,10 +517,11 @@ const loadGroups = async () => {
 };
 
 const selectGroup = async (group) => {
-  const before = listSeasonId.value;
+  const before = `${listScope.value}:${listSeasonId.value}`;
   picker.value.kind = group.kind;
   picker.value.team_id = group.team_id ?? null;
-  if (listSeasonId.value !== before) await loadGroups();
+  if (!scopeOptions.value.includes(picker.value.scope)) picker.value.scope = scopeOptions.value[0];
+  if (`${listScope.value}:${listSeasonId.value}` !== before) await loadGroups();
 };
 
 // column is where the role lands: managed posts synced true, ignored posts synced false
@@ -520,7 +537,7 @@ const openPicker = async (card, column) => {
     kind: row?.kind ?? null,
     team_id: row?.team_id ?? null,
     seasonId: row?.season_id ?? currentSeasonId.value,
-    mode: row?.season_id ? 'season' : 'current'
+    scope: row?.scope ?? null
   };
   pickerDialog.value = true;
   await loadGroups();
@@ -530,8 +547,8 @@ const saveBinding = async () => {
   dialogError.value = null;
   isSavingBinding.value = true;
   try {
-    const { kind, team_id, seasonId, discord_role, bindingId, column } = picker.value;
-    const body = { kind, team_id, season_id: pinsSeason(kind) ? seasonId : null, discord_role };
+    const { kind, team_id, scope, seasonId, discord_role, bindingId, column } = picker.value;
+    const body = { kind, team_id, scope, season_id: scope === 'season' ? seasonId : null, discord_role };
     if (bindingId) {
       await configStore.updateDiscordRoleBinding(bindingId, body);
     } else {

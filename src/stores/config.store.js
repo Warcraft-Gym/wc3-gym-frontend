@@ -102,10 +102,9 @@ export const useConfigStore = defineStore({
             return await fetchWrapper.get(`${backendUrl}/config/discord-guild-roles`);
         },
 
-        // The groups of people a binding can point at; without a season the backend uses the current one
-        async fetchDiscordRoleGroups(season_id) {
-            const query = season_id ? `?season_id=${season_id}` : '';
-            return await fetchWrapper.get(`${backendUrl}/config/discord-role-groups${query}`);
+        // The groups of people a binding can point at, counted over the scope: the current season, one season, or every season
+        async fetchDiscordRoleGroups({ season_id, scope }) {
+            return await fetchWrapper.get(`${backendUrl}/config/discord-role-groups?season_id=${season_id}&scope=${scope}`);
         },
 
         async fetchDiscordRoleBindings() {

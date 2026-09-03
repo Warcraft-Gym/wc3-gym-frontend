@@ -1309,12 +1309,14 @@ const sideTeams = computed(() => [
   { team: team2.value, roster: roster2.value, isOut: outTeam2 },
 ]);
 
+// The default selection: everyone who did not say they cannot play this week (#33)
 const selectAvailableTeam1 = () => {
-  proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p) && !hasSeries(p.id)).map(p => p.id);
+  proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p)).map(p => p.id);
 };
 const selectAvailableTeam2 = () => {
-  proposePlayersTeam_2.value = roster2.value.filter(p => !outTeam2(p) && !hasSeries(p.id)).map(p => p.id);
+  proposePlayersTeam_2.value = roster2.value.filter(p => !outTeam2(p)).map(p => p.id);
 };
+const selectAvailable = () => { selectAvailableTeam1(); selectAvailableTeam2(); };
 
 // A captain reads their own team only, so the team they cannot read stays empty
 const fetchAvailability = async () => {
@@ -1424,7 +1426,9 @@ const navigateToMatch = async (newMatchId) => {
     await Promise.all([
       matchStore.match.team1_id && matchStore.match.team2_id ? fetchTeamDetails() : null,
       fetchSeriesRows(),
+      fetchAvailability(),
     ]);
+    selectAvailable();
     await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match details:', error);
@@ -1462,6 +1466,7 @@ const fetchMatchDetails = async () => {
       fetchAvailability(),
       fetchLadderPlayers(),
     ]);
+    selectAvailable();
     await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match details:', error);

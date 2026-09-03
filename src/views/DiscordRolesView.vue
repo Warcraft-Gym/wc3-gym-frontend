@@ -419,12 +419,6 @@ const fetchReport = async () => {
   }
 };
 
-// Every write reloads both, so the cards and the chips describe what the backend now holds
-const reload = async () => {
-  bindings.value = await configStore.fetchDiscordRoleBindings();
-  await fetchReport();
-};
-
 const fetchAll = async () => {
   isLoading.value = true;
   errorMessage.value = null;
@@ -452,7 +446,7 @@ const syncAll = async () => {
   try {
     // The answer is the difference sync just applied, so the table is read again
     const applied = await configStore.syncDiscordRoles();
-    await reload();
+    await fetchReport();
     successMessage.value = `Synced ${applied.length} account(s). ${report.value.length} still differ.`;
   } catch (error) {
     errorMessage.value = 'Failed to sync the roles: ' + error.message;
@@ -467,7 +461,7 @@ const syncOne = async (row) => {
   successMessage.value = null;
   try {
     await configStore.syncDiscordRoles({ user_ids: [row.user_id] });
-    await reload();
+    await fetchReport();
     successMessage.value = `Synced ${row.name}.`;
   } catch (error) {
     errorMessage.value = `Failed to sync ${row.name}: ` + error.message;
@@ -483,7 +477,7 @@ const applyRole = async (card) => {
   successMessage.value = null;
   try {
     const applied = await configStore.syncDiscordRoles({ role_ids: [card.id] });
-    await reload();
+    await fetchReport();
     successMessage.value = `Applied ${card.name} to ${applied.length} account(s).`;
   } catch (error) {
     errorMessage.value = `Failed to apply ${card.name}: ` + error.message;
@@ -492,14 +486,18 @@ const applyRole = async (card) => {
   }
 };
 
+// The card moves at once; the report, which reads the guild, refreshes behind it
 const setSynced = async (row, synced) => {
   errorMessage.value = null;
   successMessage.value = null;
+  const before = row.synced;
+  row.synced = synced;
   try {
     await configStore.updateDiscordRoleBinding(row.id, { synced });
-    await reload();
     successMessage.value = synced ? 'Sync now manages this role.' : 'Sync now leaves this role alone.';
+    fetchReport();
   } catch (error) {
+    row.synced = before;
     errorMessage.value = 'Failed to move the role: ' + error.message;
   }
 };
@@ -550,13 +548,14 @@ const saveBinding = async () => {
     const { kind, team_id, scope, seasonId, discord_role, bindingId, column } = picker.value;
     const body = { kind, team_id, scope, season_id: scope === 'season' ? seasonId : null, discord_role };
     if (bindingId) {
-      await configStore.updateDiscordRoleBinding(bindingId, body);
+      const saved = await configStore.updateDiscordRoleBinding(bindingId, body);
+      bindings.value = bindings.value.map(b => (b.id === bindingId ? saved : b));
     } else {
-      await configStore.createDiscordRoleBinding({ ...body, synced: column === 'managed' });
+      bindings.value = [...bindings.value, await configStore.createDiscordRoleBinding({ ...body, synced: column === 'managed' })];
     }
-    await reload();
     pickerDialog.value = false;
     successMessage.value = 'Binding saved.';
+    fetchReport();
   } catch (error) {
     dialogError.value = 'Failed to save the binding: ' + error.message;
   } finally {
@@ -575,8 +574,9 @@ const confirmDelete = async () => {
   successMessage.value = null;
   try {
     await configStore.deleteDiscordRoleBinding(deleteBinding.value.id);
-    await reload();
+    bindings.value = bindings.value.filter(b => b.id !== deleteBinding.value.id);
     successMessage.value = 'Role unbound.';
+    fetchReport();
   } catch (error) {
     errorMessage.value = 'Failed to unbind the role: ' + error.message;
   }

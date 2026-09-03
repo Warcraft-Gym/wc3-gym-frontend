@@ -172,7 +172,8 @@
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-spacer />
                 <v-col cols="12" sm="auto">
-                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" @click="syncW3CTeam" :loading="isLoading" :disabled="isLoading" prepend-icon="mdi-sync" block>
+                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" @click="syncW3CTeam" :loading="isLoading" :disabled="isLoading" block>
+                    <template #prepend><W3CIcon :size="18" /></template>
                     Sync W3C
                     <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
                   </v-btn>

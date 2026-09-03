@@ -29,7 +29,7 @@
 
             <!-- Teams Matchup -->
             <v-row align="center" justify="center" class="teams-matchup">
-              <v-col cols="12" md="5" class="text-center">
+              <v-col cols="5" class="text-center">
                 <div class="team-section-header">
                   <h2 class="text-h4 font-weight-bold team-name-header text-white">{{ team1.name }}</h2>
                   <v-chip color="success" size="large" class="mt-2 score-chip-large">
@@ -38,11 +38,11 @@
                 </div>
               </v-col>
               
-              <v-col cols="12" md="2" class="text-center">
+              <v-col cols="2" class="text-center">
                 <v-icon size="48" color="white">mdi-sword-cross</v-icon>
               </v-col>
               
-              <v-col cols="12" md="5" class="text-center">
+              <v-col cols="5" class="text-center">
                 <div class="team-section-header">
                   <h2 class="text-h4 font-weight-bold team-name-header text-white">{{ team2.name }}</h2>
                   <v-chip color="error" size="large" class="mt-2 score-chip-large">
@@ -131,12 +131,12 @@
           <v-col cols="12" md="2">
             <v-btn
               variant="elevated"
-              color="success"
-              prepend-icon="mdi-sync"
+              color="primary"
               v-if="auth.isAdmin" @click="syncW3CTeams"
               :loading="isLoading"
               block
             >
+              <template #prepend><W3CIcon :size="18" /></template>
               Sync W3C
               <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
             </v-btn>
@@ -184,7 +184,18 @@
       <v-window v-model="seriesViewTab">
         <v-window-item value="published">
           <v-card-text v-if="series && series.length > 0" class="pa-0">
+            <v-toolbar flat height="auto">
+              <v-row align="center" class="flex-wrap ma-0 pa-2">
+                <v-spacer />
+                <v-col cols="12" sm="auto">
+                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" v-if="auth.isAdmin" @click="openCreateNewSeries" block>
+                    Add Series
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-toolbar>
             <v-data-table
+              v-if="!smAndDown"
               :headers="seriesTableHeader"
               :items="enrichedSeries"
               fixed-header
@@ -199,19 +210,6 @@
               </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
-              </template>
-
-              <template #top>
-                <v-toolbar flat height="auto">
-                  <v-row align="center" class="flex-wrap ma-0 pa-2">
-                    <v-spacer />
-                    <v-col cols="12" sm="auto">
-                      <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" v-if="auth.isAdmin" @click="openCreateNewSeries" block>
-                        Add Series
-                      </v-btn>
-                    </v-col>
-                  </v-row>
-                </v-toolbar>
               </template>
 
               <template v-slot:item="{ item }">
@@ -257,15 +255,23 @@
                     <span v-else class="text-grey">—</span>
                   </td>
                   <td v-if="auth.isAdmin" class="text-center">
-                    <RowActions :actions="[
-                      { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
-                      { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
-                      { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
-                    ]" />
+                    <RowActions :actions="seriesActions(item)" />
                   </td>
                 </tr>
               </template>
             </v-data-table>
+            <div v-else>
+              <SeriesCard v-for="item in enrichedSeries" :key="item.id" :series="item" @player="showStats">
+                <template #title>
+                  <span v-if="item.date_time">{{ formateDate(item.date_time) }}</span>
+                  <span v-else>Not scheduled</span>
+                </template>
+                <template #actions><RowActions :actions="seriesActions(item)" /></template>
+                <template #side="{ n, won }">
+                  <v-chip size="small" :color="won ? 'success' : 'default'">{{ n ? item.player2_score : item.player1_score }}</v-chip>
+                </template>
+              </SeriesCard>
+            </div>
           </v-card-text>
 
           <!-- Empty State for Published -->
@@ -299,7 +305,22 @@
         <!-- Draft Series Table -->
         <v-window-item v-if="auth.isCaptain" value="draft">
           <v-card-text v-if="draftSeries && draftSeries.length > 0" class="pa-0">
+            <v-toolbar flat height="auto">
+              <v-row align="center" class="flex-wrap ma-0 pa-2">
+                <v-alert type="info" variant="tonal" density="compact" class="ma-2" border="start">
+                  <v-icon start>mdi-information</v-icon>
+                  Draft series won't appear on the website or affect calculations until an admin publishes them.
+                </v-alert>
+                <v-spacer />
+                <v-col cols="12" sm="auto">
+                  <v-btn variant="elevated" color="warning" prepend-icon="mdi-plus" v-if="canDraft" @click="openCreateNewDraftSeries" block>
+                    Add Draft Series
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-toolbar>
             <v-data-table
+              v-if="!smAndDown"
               :headers="draftSeriesTableHeader"
               :items="enrichedDraftSeries"
               fixed-header
@@ -314,23 +335,6 @@
               </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
-              </template>
-
-              <template #top>
-                <v-toolbar flat height="auto">
-                  <v-row align="center" class="flex-wrap ma-0 pa-2">
-                    <v-alert type="info" variant="tonal" density="compact" class="ma-2" border="start">
-                      <v-icon start>mdi-information</v-icon>
-                      Draft series won't appear on the website or affect calculations until an admin publishes them.
-                    </v-alert>
-                    <v-spacer />
-                    <v-col cols="12" sm="auto">
-                      <v-btn variant="elevated" color="warning" prepend-icon="mdi-plus" v-if="canDraft" @click="openCreateNewDraftSeries" block>
-                        Add Draft Series
-                      </v-btn>
-                    </v-col>
-                  </v-row>
-                </v-toolbar>
               </template>
 
               <template v-slot:item="{ item }">
@@ -391,15 +395,22 @@
                     <span v-else class="text-grey">—</span>
                   </td>
                   <td v-if="canDraft" class="text-center">
-                    <RowActions :actions="[
-                      { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
-                      { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
-                      { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
-                    ]" />
+                    <RowActions :actions="draftActions(item)" />
                   </td>
                 </tr>
               </template>
             </v-data-table>
+            <div v-else>
+              <SeriesCard v-for="item in enrichedDraftSeries" :key="item.id" :series="item" @player="showStats">
+                <template #title>
+                  <v-icon v-if="item.is_fantasy_match" size="small" color="purple" title="Marked to count for fantasy when published">mdi-star</v-icon>
+                </template>
+                <template #actions><RowActions v-if="canDraft" :actions="draftActions(item)" /></template>
+                <template #side="{ player }">
+                  <v-chip size="small" color="info">{{ getW3CMMR(player, null, player.signup_race) || '—' }}</v-chip>
+                </template>
+              </SeriesCard>
+            </div>
           </v-card-text>
 
           <!-- Empty State for Drafts -->
@@ -442,8 +453,8 @@
     </v-card>
 
     <!-- Create New Series Dialog -->
-    <v-dialog v-model="createNewSeriesDialogOpen" max-width="95vw" max-height="95vh" persistent>
-      <v-card class="d-flex flex-column" style="height: 90vh;">
+    <v-dialog v-model="createNewSeriesDialogOpen" max-width="95vw" max-height="95vh" :fullscreen="smAndDown" persistent>
+      <v-card class="d-flex flex-column h-100" :style="smAndDown ? null : 'height: 90vh'">
         <v-card-title class="bg-primary flex-shrink-0">
           <v-icon class="mr-2">mdi-plus-circle</v-icon>
           Add New Series
@@ -468,7 +479,7 @@
             <v-col cols="12" md="5" class="d-flex flex-column">
               <v-card elevation="2" class="d-flex flex-column flex-grow-1">
                 <v-toolbar color="primary" density="compact" class="flex-shrink-0">
-                  <v-icon class="ml-3">mdi-shield</v-icon>
+                  <v-avatar size="28" class="ml-3"><img v-if="s.team.id" class="team-icon" :src="teamImageUrl(s.team)" @error="showDefaultTeamImage"></v-avatar>
                   <v-toolbar-title>{{ s.team.name }}</v-toolbar-title>
                   <v-spacer></v-spacer>
                   <v-text-field
@@ -480,6 +491,7 @@
                     single-line
                     variant="underlined"
                     clearable
+                    class="mr-3"
                     style="max-width: 300px;"
                   ></v-text-field>
                 </v-toolbar>
@@ -523,16 +535,16 @@
               </v-card>
             </v-col>
 
-            <v-col v-if="i === 0" cols="12" md="2" class="d-flex flex-column align-center justify-center">
+            <v-col v-if="i === 0" md="2" class="d-none d-md-flex flex-column align-center justify-center">
               <v-icon size="80" color="primary" class="mb-4">mdi-sword-cross</v-icon>
               <v-btn 
-                color="success" 
+                color="primary"
                 variant="elevated"
-                prepend-icon="mdi-sync"
-                v-if="auth.isAdmin" @click="syncW3CTeams" 
-                :loading="isLoading" 
+                v-if="auth.isAdmin" @click="syncW3CTeams"
+                :loading="isLoading"
                 :disabled="isLoading"
               >
+                <template #prepend><W3CIcon :size="18" /></template>
                 Sync W3C
                 <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
               </v-btn>
@@ -541,14 +553,13 @@
           </v-row>     
         </v-card-text>
                       
-        <v-card-actions class="px-4 py-3 flex-shrink-0" style="border-top: 1px solid rgba(0,0,0,0.12);">
+        <v-card-actions class="px-4 py-3 flex-shrink-0 flex-wrap" style="border-top: 1px solid rgba(0,0,0,0.12);">
           <v-checkbox
             v-model="newSeries_IsDraft"
             label="Create as Draft"
-            hint="Draft series won't appear on website or in calculations"
-            persistent-hint
+            hide-details
             color="warning"
-            class="ml-4"
+            :class="smAndDown ? 'w-100' : 'ml-4'"
             :disabled="!auth.isAdmin"
           ></v-checkbox>
           <v-spacer></v-spacer>
@@ -571,7 +582,7 @@
     </v-dialog>
 
     <!-- Edit Series Modal -->
-        <v-dialog v-model="editSeriesDialogOpen" max-width="65vw" persistent>
+    <v-dialog v-model="editSeriesDialogOpen" max-width="65vw" :fullscreen="smAndDown" persistent>
       <v-card style="display: flex; flex-direction: column; height: 95vh;">
         <v-alert
           v-if="updateSeriesError"
@@ -587,37 +598,37 @@
         <v-card-text>
           <v-form>
             <v-row dense>
-              <v-col cols="6">
+              <v-col cols="12" sm="6">
                 <SimpleDatePicker
                   v-model="selectedDate"
                   label="Scheduled Date"
                 />
               </v-col>
-              <v-col cols="6">
+              <v-col cols="12" sm="6">
                 <SimpleTimePicker
                   v-model="selectedTime"
                   label="Scheduled Time"
                 />
               </v-col>
-              <v-col cols="6">
+              <v-col cols="12" sm="6">
                 <v-text-field
                   v-model="selectedSeries.caster"
                   label="Caster:"
                 ></v-text-field>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="12" sm="6">
                 <v-number-input
                   v-model="selectedSeries.player1_score"
                   :label="`${selectedSeries.player1.name} Score`"
                 ></v-number-input>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="12" sm="6">
                 <v-number-input
                   v-model="selectedSeries.player2_score"
                   :label="`${selectedSeries.player2.name} Score`"
                 ></v-number-input>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="12" sm="6">
                 <v-select
                   :items="hostPlayers"
                   label="Choose a Host"
@@ -627,7 +638,7 @@
                   outlined
                 ></v-select>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="12" sm="6">
                 <v-checkbox
                   v-model="selectedSeries.is_fantasy_match"
                   label="Is Fantasy Match"
@@ -693,8 +704,8 @@
           <v-row>
             <v-col cols="12" md="6">
               <v-card elevation="2">
-                <v-card-title class="bg-success">
-                  <v-icon class="mr-2">mdi-shield</v-icon>
+                <v-card-title class="bg-success d-flex align-center">
+                  <v-avatar size="28" class="mr-2"><img v-if="team1.id" class="team-icon" :src="teamImageUrl(team1)" @error="showDefaultTeamImage"></v-avatar>
                   {{ team1.name }}
                   <v-chip size="small" class="ml-2" color="white">
                     {{ proposePlayersTeam_1.length }} selected
@@ -743,7 +754,6 @@
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
-                        <span class="text-caption text-grey">({{ item.discordTag }})</span>
                         <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
                     </template>
@@ -760,8 +770,8 @@
 
             <v-col cols="12" md="6">
               <v-card elevation="2">
-                <v-card-title class="bg-error">
-                  <v-icon class="mr-2">mdi-shield</v-icon>
+                <v-card-title class="bg-error d-flex align-center">
+                  <v-avatar size="28" class="mr-2"><img v-if="team2.id" class="team-icon" :src="teamImageUrl(team2)" @error="showDefaultTeamImage"></v-avatar>
                   {{ team2.name }}
                   <v-chip size="small" class="ml-2" color="white">
                     {{ proposePlayersTeam_2.length }} selected
@@ -810,7 +820,6 @@
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
-                        <span class="text-caption text-grey">({{ item.discordTag }})</span>
                         <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
                     </template>
@@ -835,7 +844,7 @@
     id="proposeSeriesModal"
     v-if="showProposeSeriesModal"
     v-model="showProposeSeriesModal"
-    max-width="1400px">
+    max-width="1400px" :fullscreen="smAndDown">
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-lightbulb-on</v-icon>
@@ -845,7 +854,7 @@
         <v-row align="center" justify="center">
           <v-col cols="5" class="text-center">
             <v-chip color="success" size="large">
-              <v-icon start>mdi-shield</v-icon>
+              <v-avatar start><img class="team-icon" :src="teamImageUrl(team1)" @error="showDefaultTeamImage"></v-avatar>
               {{ team1.name }}
             </v-chip>
           </v-col>        
@@ -854,7 +863,7 @@
           </v-col>        
           <v-col cols="5" class="text-center">
             <v-chip color="error" size="large">
-              <v-icon start>mdi-shield</v-icon>
+              <v-avatar start><img class="team-icon" :src="teamImageUrl(team2)" @error="showDefaultTeamImage"></v-avatar>
               {{ team2.name }}
             </v-chip>
           </v-col>
@@ -1015,6 +1024,7 @@
 
 <script setup>
 import RowActions from '@/components/RowActions.vue';
+import SeriesCard from '@/components/SeriesCard.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
 import { useRouter } from 'vue-router';
@@ -1023,6 +1033,7 @@ import { ref, onMounted, computed } from 'vue';
 import { DateTime } from "luxon";
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import { useDisplay } from 'vuetify';
 import { fetchWrapper } from '@/helpers';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
@@ -1031,15 +1042,17 @@ import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
 import { getW3CMMR, mmrSeasonLabel, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
+import W3CIcon from '@/components/W3CIcon.vue';
 import VsRaces from '@/components/VsRaces.vue';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { teamImageUrl, hideMissingImage } from '@/helpers/team-image';
+import { teamImageUrl, hideMissingImage, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { useColumns } from '@/helpers/columns';
 
 
 // Stores initialization
 const router = useRouter();
+const { smAndDown } = useDisplay();
 const matchStore = useMatchStore();
 const seriesStore = useSeriesStore();
 const teamStore = useTeamStore();
@@ -1111,7 +1124,6 @@ const draftSeriesTableHeader = useColumns(allDraftSeriesTableHeader);
 
 const proposedSeriesTableHeader = [
   { title: 'Player 1', value: 'player1.name', width:'300px', sortable: true },
-  { title: 'GNL Games', value: 'player1.gnl_stats[0].games', sortable: true, align: 'end' },
   { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'vs race', key: 'p1_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1125,7 +1137,6 @@ const proposedSeriesTableHeader = [
     return aValue - bValue;
   }},
   { title: 'Player 2', value: 'player2.name', width:'300px', sortable: true },
-  { title: 'GNL Games', value: 'player2.gnl_stats[0].games', sortable: true, align: 'end' },
   { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { title: 'vs race', key: 'p2_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1144,7 +1155,6 @@ const proposedSeriesTableHeader = [
 
 const tablePlayerHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
-  { title: 'GNL Games', key: 'gnl_stats[0].games', sortable: true },
   { title: currentW3CSeason.value ? `MMR (S${currentW3CSeason.value})` : 'MMR', key: 'w3c_mmr', value: 'item', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a, currentW3CSeason.value, a?.signup_race) || 0;
     let bValue = getW3CMMR(b, currentW3CSeason.value, b?.signup_race) || 0;
@@ -1512,6 +1522,17 @@ const fetchMatchSeries = async () => {
     isLoading.value = false;
   }
 };
+
+const seriesActions = (item) => [
+  { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
+  { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
+  { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
+];
+const draftActions = (item) => [
+  { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
+  { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
+  { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', public: canDraft.value, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
+];
 
 const editSeries = async (seriesItem) => {
   const copy_series =  { ...seriesItem };

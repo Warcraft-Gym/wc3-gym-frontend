@@ -24,7 +24,8 @@
               <SyncProgress />
             </v-col>
             <v-col v-if="auth.isAdmin" cols="12" sm="auto">
-              <v-btn variant="elevated" color="primary" @click="syncAllDraftPlayers" :loading="syncAllLoading" prepend-icon="mdi-sync" block>
+              <v-btn variant="elevated" color="primary" @click="syncAllDraftPlayers" :loading="syncAllLoading" block>
+                <template #prepend><W3CIcon :size="18" /></template>
                 Sync W3C
                 <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
               </v-btn>
@@ -302,6 +303,7 @@ import { useRouter } from 'vue-router';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
+import W3CIcon from '@/components/W3CIcon.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';

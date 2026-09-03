@@ -1,6 +1,6 @@
 <template>
   <div v-if="visible.length" class="d-flex justify-end" @click.stop>
-    <v-menu v-if="visible.length >= 3">
+    <v-menu v-if="!inline && visible.length >= 3">
       <template #activator="{ props: menu }">
         <v-btn v-bind="menu" icon variant="text" size="small">
           <v-icon>mdi-dots-vertical</v-icon>
@@ -46,6 +46,10 @@ import { useAuthStore } from '@/stores';
 
 const auth = useAuthStore();  // an action writes unless marked public, so only an admin sees it
 // action: { icon, label, onClick, color?, disabled?, loading?, public? }
-const props = defineProps({ actions: { type: Array, required: true } });
+const props = defineProps({
+  actions: { type: Array, required: true },
+  // inline renders the icon buttons whatever the count, instead of folding three or more into a menu
+  inline: { type: Boolean, default: false }
+});
 const visible = computed(() => props.actions.filter((a) => auth.isAdmin || a.public));
 </script>

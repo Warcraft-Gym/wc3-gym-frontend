@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { findSeason, seasonSlug } from '@/helpers/season-slug.mjs';
 
 import { fetchWrapper } from '@/helpers';
 
@@ -12,7 +13,18 @@ export const useSeasonStore = defineStore({
         current_season: {},
         selectedSeasonId: null  // the season every Fantasy page shows; SeasonSelect sets it
     }),
+    getters: {
+        // A URL key (slug or bare id) to the season id, once the list is loaded
+        seasonIdOf: (state) => (key) => findSeason(state.seasons, key)?.id ?? null,
+        slugOf: (state) => (id) => {
+            const season = state.seasons.find((s) => s.id === Number(id));
+            return season ? seasonSlug(season) : String(id);
+        }
+    },
     actions: {
+        async ensureSeasons() {
+            if (!this.seasons.length) await this.fetchSeasons();
+        },
         async fetchSeasons() {
             const resp = await fetchWrapper.get(`${backendUrl}/seasons`);
             this.seasons =  resp

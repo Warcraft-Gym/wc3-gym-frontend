@@ -178,7 +178,7 @@
                   </v-btn>
                 </v-col>
                 <v-col cols="12" sm="auto">
-                  <v-btn v-if="canSetWeeks" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${seasonId}/weeks`" block>
+                  <v-btn v-if="canSetWeeks" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${$route.params.season_id}/weeks`" block>
                     Team Weeks
                   </v-btn>
                 </v-col>
@@ -333,7 +333,7 @@ const auth = useAuthStore();
 const teamId = computed(() => router.currentRoute.value.params.id);
 const seasonId = computed(() => {
   const id = router.currentRoute.value.params.season_id;
-  return id ? Number(id) : null;
+  return id ? useSeasonStore().seasonIdOf(id) : null;
 });
 
 // The weeks grid takes a captain of this team, or any admin

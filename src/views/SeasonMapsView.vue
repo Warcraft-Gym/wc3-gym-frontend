@@ -15,7 +15,7 @@
       </v-col>
       <v-col cols="auto" class="d-flex align-center ga-2">
         <v-chip size="small" variant="tonal">{{ rules.length }} games</v-chip>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${seasonId}`">Back to season</v-btn>
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${route.params.id}`">Back to season</v-btn>
         <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isDirty" @click="saveSettings">
           Save
         </v-btn>
@@ -46,7 +46,7 @@
               <v-list density="compact" bg-color="transparent" max-height="220" class="overflow-y-auto">
                 <v-list-item v-for="m in notInPool" :key="m.id" @click="addMap(m.id)">
                   <template #prepend>
-                    <span class="map-thumb thumb-sm mr-3"><img :src="mapImageUrl(m.id)" :alt="m.name" @error="hideMissingImage"></span>
+                    <span class="map-thumb thumb-sm mr-3"><img v-if="m.image" :src="m.image" :alt="m.name" @error="hideMissingImage"></span>
                   </template>
                   <v-list-item-title class="text-body-2">{{ m.name }}</v-list-item-title>
                   <template #append>
@@ -65,7 +65,7 @@
           <v-list max-height="560" class="overflow-y-auto">
             <v-list-item v-for="(m, i) in pool" :key="m.id" class="py-2">
               <template #prepend>
-                <span class="map-thumb thumb-lg mr-4"><img :src="mapImageUrl(m.id)" :alt="m.name" @error="hideMissingImage"></span>
+                <span class="map-thumb thumb-lg mr-4"><img v-if="m.image" :src="m.image" :alt="m.name" @error="hideMissingImage"></span>
               </template>
               <v-list-item-title class="font-weight-medium">{{ m.name }}</v-list-item-title>
               <template #append>
@@ -129,7 +129,7 @@
               <template #item="{ props: itemProps, item }">
                 <v-list-item v-bind="itemProps">
                   <template #prepend>
-                    <span class="map-thumb thumb-sm mr-3"><img :src="mapImageUrl(item.raw.id)" :alt="item.raw.name" @error="hideMissingImage"></span>
+                    <span class="map-thumb thumb-sm mr-3"><img v-if="item.raw.image" :src="item.raw.image" :alt="item.raw.name" @error="hideMissingImage"></span>
                   </template>
                   <template #append>
                     <v-chip size="x-small" label>{{ item.raw.shortname }}</v-chip>
@@ -237,7 +237,7 @@
             <v-list-item
               v-for="row in importRows"
               :key="row.w3c_name"
-              :class="{ 'row-in-pool': row.status === 'in_pool' }"
+              :class="{ 'row-skipped': isSkipped(row) }"
               @click="toggleSkip(row)"
             >
               <template #prepend>
@@ -256,7 +256,7 @@
           <v-spacer />
           <v-btn @click="importOpen = false">Cancel</v-btn>
           <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" :disabled="!importNames.length" @click="confirmImport">
-            Add {{ importNames.length }} new maps
+            Import {{ importNames.length }} maps
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -273,7 +273,6 @@ import { useMapStore, useSeasonStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
 
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 const RULES = [
   { value: 'veto', label: 'Veto' },
   { value: 'loser', label: 'Loser picks' },
@@ -294,7 +293,7 @@ const mapStore = useMapStore();
 const { current_season: season } = storeToRefs(seasonStore);
 const { maps } = storeToRefs(mapStore);
 
-const seasonId = computed(() => Number(route.params.id));
+const seasonId = computed(() => seasonStore.seasonIdOf(route.params.id));
 const isLoading = ref(false);
 const errorMessage = ref(null);
 const addOpen = ref(false);
@@ -314,8 +313,6 @@ const importOpen = ref(false);
 const importLoading = ref(false);
 const importRows = ref([]);
 const importSkipped = ref([]);
-
-const mapImageUrl = (mapId) => `${backendUrl}/maps/${mapId}/image`;
 
 const pool = computed(() => season.value.maps || []);
 const notInPool = computed(() => maps.value.filter((m) => !pool.value.some((p) => p.id === m.id)));
@@ -417,11 +414,12 @@ const createNewMap = () => apply(async () => {
 
 const isSkipped = (row) => importSkipped.value.includes(row.w3c_name);
 const statusLabel = (row) => (row.status === 'in_pool' ? 'In pool' : isSkipped(row) ? 'Skipped' : row.status === 'no_match' ? 'No match' : 'New');
-const statusColor = (row) => (row.status === 'in_pool' || isSkipped(row) ? 'grey' : 'primary');
-const importNames = computed(() => importRows.value.filter((r) => r.status !== 'in_pool' && !isSkipped(r)).map((r) => r.w3c_name));
+const statusColor = (row) => (isSkipped(row) ? 'grey' : 'primary');
+// a map already in the pool is imported too: that is what renames a drifted map to the ladder
+// name and fills a picture it never had. Click a row to leave it out.
+const importNames = computed(() => importRows.value.filter((r) => !isSkipped(r)).map((r) => r.w3c_name));
 
 const toggleSkip = (row) => {
-  if (row.status === 'in_pool') return;
   const at = importSkipped.value.indexOf(row.w3c_name);
   if (at === -1) importSkipped.value.push(row.w3c_name);
   else importSkipped.value.splice(at, 1);
@@ -511,7 +509,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.row-in-pool {
+.row-skipped {
   opacity: 0.55;
 }
 </style>

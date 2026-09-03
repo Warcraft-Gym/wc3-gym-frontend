@@ -74,7 +74,7 @@
             <v-col cols="12" sm="auto">
               <v-btn
                 v-if="auth.isAdmin"
-                :to="`/seasons/${seasonId}/maps`"
+                :to="`/seasons/${route.params.id}/maps`"
                 color="primary"
                 prepend-icon="mdi-map-outline"
                 variant="outlined"
@@ -217,7 +217,7 @@
               Add Teams
             </v-btn>
             <v-btn
-              @click="router.push(`/seasons/${season.id}/assign`)"
+              @click="router.push(`/seasons/${route.params.id}/assign`)"
               variant="tonal"
               color="secondary"
               prepend-icon="mdi-account-multiple-plus">
@@ -232,7 +232,7 @@
                 class="team-card-enhanced" 
                 elevation="2"
                 hover
-                @click="$router.push(`/team/${team.id}/season/${season.id}`)"
+                @click="$router.push(`/team/${team.id}/season/${route.params.id}`)"
               >
                 <v-card-text class="text-center pa-4">
                   <v-avatar size="64" class="mb-3">
@@ -482,7 +482,7 @@ const { teams } = storeToRefs(teamStore);
 const { maps } = storeToRefs(mapStore);
 
 // Route params
-const seasonId = router.currentRoute.value.params.id;
+const seasonId = seasonStore.seasonIdOf(route.params.id);
 
 // Table configuration
 const addTeamsTableHeader = [

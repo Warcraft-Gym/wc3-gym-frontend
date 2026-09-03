@@ -28,7 +28,7 @@
         <title>{{ p.label }} · {{ p.mmr }}</title>
       </circle>
       <g v-for="(c, i) in cuts" :key="i" class="cut">
-        <foreignObject :x="x(c) - BOX / 2" :y="boxY(i)" :width="BOX" height="26">
+        <foreignObject :x="x(c) - BOX / 2" :y="boxY(i)" :width="BOX" height="28">
           <input
             type="number"
             :value="c"
@@ -64,7 +64,7 @@ const emit = defineEmits(['update:cuts']);
 
 const PAD = 28; // keeps the first and last axis label inside the svg
 const R = 4.4;
-const BOX = 58; // the width of a cut's input box
+const BOX = 64; // the width of a cut's input box
 const GRAB = 14; // how near the pointer must be to a cut line to drag it
 const svg = ref(null);
 const axisEl = ref(null);
@@ -143,10 +143,10 @@ const cutDrag = drag()
   touch-action: none;
   cursor: default;
 }
-.band-name { font-size: 16px; font-weight: 500; }
+.band-name { font-size: 18px; font-weight: 500; }
 .axis :deep(path),
 .axis :deep(line) { stroke: rgba(var(--v-theme-on-surface), 0.3); }
-.axis :deep(text) { font-size: 12px; fill: rgba(var(--v-theme-on-surface), 0.6); }
+.axis :deep(text) { font-size: 13px; fill: rgba(var(--v-theme-on-surface), 0.6); }
 circle { stroke: rgb(var(--v-theme-surface)); stroke-width: 1.5; }
 circle.pinned { stroke: rgb(var(--v-theme-on-surface)); }
 .cut { cursor: ew-resize; }
@@ -154,8 +154,8 @@ circle.pinned { stroke: rgb(var(--v-theme-on-surface)); }
 .cut-handle {
   box-sizing: border-box;
   width: 100%;
-  height: 24px;
-  font-size: 13px;
+  height: 26px;
+  font-size: 14px;
   text-align: center;
   border: 1px solid rgba(var(--v-theme-on-surface), 0.3);
   border-radius: 4px;

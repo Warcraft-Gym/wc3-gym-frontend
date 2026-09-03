@@ -270,10 +270,10 @@
           <!-- A new binding lands where the admin opened the picker from; the toggle lets them change that here -->
           <template v-if="!picker.bindingId">
             <v-btn-toggle v-model="picker.column" mandatory density="compact" variant="outlined" divided>
-              <v-btn value="ignored" prepend-icon="mdi-hand-back-right">Ignored</v-btn>
               <v-btn value="managed" prepend-icon="mdi-sync">Managed</v-btn>
+              <v-btn value="ignored" prepend-icon="mdi-hand-back-right">Ignored</v-btn>
             </v-btn-toggle>
-            <v-btn variant="text" size="small" prepend-icon="mdi-eye-off" @click="hideFromPicker">Nothing fits: hide this role</v-btn>
+            <v-btn variant="text" size="small" prepend-icon="mdi-eye-off" @click="hideFromPicker">Hide instead<v-tooltip activator="parent" location="top">Nothing in the app fits this role</v-tooltip></v-btn>
           </template>
           <v-spacer />
           <v-btn variant="text" @click="pickerDialog = false">Cancel</v-btn>

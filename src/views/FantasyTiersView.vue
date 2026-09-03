@@ -94,13 +94,11 @@ import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { seasonPhase } from '@/helpers/season-phase.mjs';
+import { ALL_COLORS, ALL_NAMES } from '@/helpers/tiers.mjs';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 
 // Bands ascend by MMR; tier numbers descend, so the top band is always tier 1.
 // A season cutting fewer tiers drops the lowest names, so tier 1 stays Diamond.
-const ALL_NAMES = ['Grass', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-// Each colour names its metal: grass green, bronze brown, silver grey, gold orange, platinum blue, diamond purple
-const ALL_COLORS = ['#4CAF50', '#795548', '#9E9E9E', '#FF9800', '#2196F3', '#9C27B0'];
 const TIER_COUNTS = [2, 3, 4, 5, 6];
 
 const ladderStore = useLadderStore();

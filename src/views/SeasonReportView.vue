@@ -90,9 +90,9 @@
                 <th class="text-center" style="width:56px">#</th>
                 <th>Team</th>
                 <th class="text-center">Points</th>
-                <th class="text-center">Points Available</th>
-                <th class="text-center">Points Against</th>
-                <th class="text-center">Players</th>
+                <th class="text-center d-none d-md-table-cell">Points Available</th>
+                <th class="text-center d-none d-md-table-cell">Points Against</th>
+                <th class="text-center d-none d-md-table-cell">Players</th>
                 <th class="text-center">Win Rate</th>
               </tr>
             </thead>
@@ -125,9 +125,9 @@
                     {{ team.finalScore }}
                   </v-chip>
                 </td>
-                <td class="text-center">{{ team.pointsAvailable }}</td>
-                <td class="text-center">{{ team.pointsAgainst }}</td>
-                <td class="text-center">{{ team.playerCount }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ team.pointsAvailable }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ team.pointsAgainst }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ team.playerCount }}</td>
                 <td class="text-center">
                   <div class="win-rate-cell">
                     <v-progress-linear
@@ -159,11 +159,11 @@
                 <th class="text-center" style="width:44px">#</th>
                 <th>Player</th>
                 <th class="text-center">Race</th>
-                <th class="text-center">Team</th>
+                <th class="text-center d-none d-md-table-cell">Team</th>
                 <th class="text-center">W</th>
                 <th class="text-center">L</th>
-                <th class="text-center">Played</th>
-                <th class="text-center">Win %</th>
+                <th class="text-center d-none d-md-table-cell">Played</th>
+                <th class="text-center d-none d-md-table-cell">Win %</th>
                 <th class="text-center">Points</th>
               </tr>
             </thead>
@@ -191,7 +191,7 @@
                   <RaceIcon v-if="player.signup_race" :raceIdentifier="player.signup_race" />
                   <span v-else class="text-caption">–</span>
                 </td>
-                <td class="text-center">
+                <td class="text-center d-none d-md-table-cell">
                   <v-tooltip v-if="player.team" :text="player.teamName" location="top">
                     <template #activator="{ props }">
                       <v-avatar v-bind="props" size="24" rounded="sm">
@@ -203,8 +203,8 @@
                 </td>
                 <td class="text-center text-success font-weight-medium">{{ player.wins }}</td>
                 <td class="text-center text-error">{{ player.losses }}</td>
-                <td class="text-center">{{ player.games }}</td>
-                <td class="text-center">
+                <td class="text-center d-none d-md-table-cell">{{ player.games }}</td>
+                <td class="text-center d-none d-md-table-cell">
                   <span :class="player.winRate >= 60 ? 'text-success' : player.winRate >= 40 ? 'text-warning' : 'text-error'">
                     {{ player.winRate }}%
                   </span>
@@ -396,12 +396,12 @@
                 <th class="text-center" style="width:56px">#</th>
                 <th>Fantasy Team</th>
                 <th class="text-center">Captain</th>
-                <th class="text-center">Drafted Team</th>
-                <th class="text-center">Drafted Race</th>
-                <th class="text-center">Player Points</th>
-                <th class="text-center">Team Points</th>
-                <th class="text-center">Race Points</th>
-                <th class="text-center">Bet Points</th>
+                <th class="text-center d-none d-md-table-cell">Drafted Team</th>
+                <th class="text-center d-none d-md-table-cell">Drafted Race</th>
+                <th class="text-center d-none d-md-table-cell">Player Points</th>
+                <th class="text-center d-none d-md-table-cell">Team Points</th>
+                <th class="text-center d-none d-md-table-cell">Race Points</th>
+                <th class="text-center d-none d-md-table-cell">Bet Points</th>
                 <th class="text-center">Total</th>
               </tr>
             </thead>
@@ -423,15 +423,15 @@
                 </td>
                 <td class="font-weight-medium">{{ ft.name }}</td>
                 <td class="text-center text-caption">{{ ft.captain?.name || '–' }}</td>
-                <td class="text-center text-caption">{{ ft.drafted_team?.name || '–' }}</td>
-                <td class="text-center">
+                <td class="text-center text-caption d-none d-md-table-cell">{{ ft.drafted_team?.name || '–' }}</td>
+                <td class="text-center d-none d-md-table-cell">
                   <RaceIcon v-if="ft.drafted_race" :raceIdentifier="ft.drafted_race" />
                   <span v-else class="text-caption">–</span>
                 </td>
-                <td class="text-center">{{ ft.player_points ?? '–' }}</td>
-                <td class="text-center">{{ ft.team_points ?? '–' }}</td>
-                <td class="text-center">{{ ft.race_points ?? '–' }}</td>
-                <td class="text-center">{{ ft.bet_points ?? '–' }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ ft.player_points ?? '–' }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ ft.team_points ?? '–' }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ ft.race_points ?? '–' }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ ft.bet_points ?? '–' }}</td>
                 <td class="text-center">
                   <v-chip color="amber-darken-2" size="small" class="font-weight-bold">
                     {{ ft.total_points ?? 0 }}

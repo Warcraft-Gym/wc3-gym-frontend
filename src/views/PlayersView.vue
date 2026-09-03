@@ -80,7 +80,7 @@
 
               <template v-slot:item="{ item }">
                 <tr class="text-no-wrap">
-                  <td>{{ item.id }}</td>
+                  <td class="d-none d-md-table-cell">{{ item.id }}</td>
                   <td>
                     <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
                       <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
@@ -101,8 +101,8 @@
                       </template>
                     </PlayerName>
                   </td>
-                  <td>{{ item.battleTag }}</td>
-                  <td>{{ item.discordTag }}</td>
+                  <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
+                  <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
                   <td>
                     <RaceMmrChips :player="item" :w3cSeason="currentW3CSeason" />
                   </td>
@@ -301,6 +301,7 @@ import {
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers/players';
+import { useColumns } from '@/helpers/columns';
 
 
 // State for editing
@@ -377,15 +378,16 @@ const w3cFilterOptions = [
 ];
 
 // the Actions column carries admin operations (edit, W3C sync, delete)
-const tableHeader = computed(() => [
-  { title: 'ID', value: 'id', align: 'start', sortable: true },
+const allTableHeader = computed(() => [
+  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
-  { title: 'Battletag', value: 'battleTag', sortable: true },
-  { title: 'Discord Name', value: 'discordTag', sortable: true },
+  { mobile: false, title: 'Battletag', value: 'battleTag', sortable: true },
+  { mobile: false, title: 'Discord Name', value: 'discordTag', sortable: true },
   { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'races', sortable: false },
   { title: 'Signups', value: 'signups', sortable: false },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
+const tableHeader = useColumns(allTableHeader);
 
 // Fetch users when the component is mounted
 const fetchPlayers = async () => {

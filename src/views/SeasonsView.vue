@@ -123,11 +123,11 @@
 
           <template #item="{ item }">
             <tr @click="$router.push(`/seasons/${seasonSlug(item)}`)" class="season-row">
-              <td>{{ item.id }}</td>
+              <td class="d-none d-md-table-cell">{{ item.id }}</td>
               <td><strong>{{ item.name }}</strong></td>
-              <td>{{ item.number_weeks }}</td>
-              <td>{{ item.pick_ban }}</td>
-              <td>{{ item.series_per_week }}</td>
+              <td class="d-none d-md-table-cell">{{ item.number_weeks }}</td>
+              <td class="d-none d-md-table-cell">{{ item.pick_ban }}</td>
+              <td class="d-none d-md-table-cell">{{ item.series_per_week }}</td>
               <td>
                 {{ PHASE_LABEL[item.phase] ?? '' }}
                 <v-tooltip v-if="item.phase === 'overdue'" :text="`Past its end date with ${item.unscored_series} series still unscored`" location="top">
@@ -290,6 +290,7 @@ import { useAuthStore, useSeasonStore, useMapStore } from '@/stores';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
 import { PHASE_LABEL } from '@/helpers/season-phase.mjs';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
+import { useColumns } from '@/helpers/columns';
 
 
 const seasonStore = useSeasonStore();
@@ -314,15 +315,16 @@ const formError = ref(null);
 
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
-const tableHeader = computed(() => [
-  { title: 'ID', value: 'id', align: 'start', sortable: true },
+const allTableHeader = computed(() => [
+  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
-  { title: 'Weeks', value: 'number_weeks', sortable: true },
-  { title: 'Pick Ban', value: 'pick_ban', sortable: false },
-  { title: 'Series/Week', value: 'series_per_week', sortable: true },
+  { mobile: false, title: 'Weeks', value: 'number_weeks', sortable: true },
+  { mobile: false, title: 'Pick Ban', value: 'pick_ban', sortable: false },
+  { mobile: false, title: 'Series/Week', value: 'series_per_week', sortable: true },
   { title: 'Phase', value: 'phase', sortable: true },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
+const tableHeader = useColumns(allTableHeader);
 
 const fetchSeasons = async () => {
   isLoading.value = true;

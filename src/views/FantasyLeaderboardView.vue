@@ -270,6 +270,7 @@ import { storeToRefs } from 'pinia';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useColumns } from '@/helpers/columns';
 
 
 const fantasyStore = useFantasyStore();
@@ -334,22 +335,23 @@ const tierPlayers = computed(() => {
 });
 const selectedTierPlayers = ref(emptyTierSelection());
 
-const headers = computed(() => [
+const allHeaders = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: '48px' },
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy Team', value: 'name', sortable: false },
-  { title: 'Bettor', value: 'captain', sortable: false },
+  { mobile: false, title: 'Bettor', value: 'captain', sortable: false },
   // the order the breakdown panels open in, so a column and its panel line up
-  { title: 'Team Points', value: 'team_points', align: 'end' },
-  { title: 'Race Points', value: 'race_points', align: 'end' },
-  { title: 'Player Points', value: 'player_points', align: 'end' },
-  { title: 'Bench Points', value: 'bench_points', align: 'end' },
-  { title: 'Bet Points', value: 'bet_points', align: 'end' },
+  { mobile: false, title: 'Team Points', value: 'team_points', align: 'end' },
+  { mobile: false, title: 'Race Points', value: 'race_points', align: 'end' },
+  { mobile: false, title: 'Player Points', value: 'player_points', align: 'end' },
+  { mobile: false, title: 'Bench Points', value: 'bench_points', align: 'end' },
+  { mobile: false, title: 'Bet Points', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
   // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team
   ...(auth.isAdmin || teams.value.some((t) => t.captain_id === myUserId.value)
     ? [{ title: '', value: 'actions', sortable: false, align: 'center' }] : []),
 ]);
+const headers = useColumns(allHeaders);
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
 

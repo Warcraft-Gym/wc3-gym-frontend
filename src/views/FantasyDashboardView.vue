@@ -195,11 +195,11 @@
                               <tr class="detail-row" :class="{ picked: tierSelections[group.tier] === row.id }">
                                 <td><input v-model="tierSelections[group.tier]" type="radio" class="pick" :name="`tier-${group.tier}`" :value="row.id" :disabled="!canDraft"></td>
                                 <td><PlayerName :player="row" :race="row.signup_race" /></td>
-                                <td class="text-medium-emphasis">{{ row.ladder?.team ?? '' }}</td>
+                                <td class="d-none d-md-table-cell text-medium-emphasis">{{ row.ladder?.team ?? '' }}</td>
                                 <td class="text-right">{{ row.ladder?.mmr?.current ?? '—' }}</td>
-                                <td class="text-right">{{ row.ladder ? `${row.ladder.wins}–${row.ladder.losses}` : '—' }}</td>
+                                <td class="d-none d-md-table-cell text-right">{{ row.ladder ? `${row.ladder.wins}–${row.ladder.losses}` : '—' }}</td>
                                 <td class="text-right">{{ row.rate == null ? '—' : `${row.rate}%` }}</td>
-                                <td><LadderDayBars v-if="row.days" :days="row.days" :ymax="ymax" /><span v-else class="text-disabled">—</span></td>
+                                <td class="d-none d-md-table-cell"><LadderDayBars v-if="row.days" :days="row.days" :ymax="ymax" /><span v-else class="text-disabled">—</span></td>
                                 <td class="text-right"><v-btn v-if="row.ladder" :icon="openRows.has(row.id) ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="small" variant="text" @click="toggleRow(row.id)"></v-btn></td>
                               </tr>
                               <tr v-if="openRows.has(row.id) && row.ladder" class="detail-row">
@@ -423,6 +423,7 @@ import { fillDays, maxGamesPerDay, winRate } from '@/helpers/ladder-days.mjs';
 import { DateTime } from 'luxon';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useColumns } from '@/helpers/columns';
 
 
 const route = useRoute();
@@ -486,15 +487,16 @@ const toggleRow = (id) => {
   openRows.value = new Set(openRows.value);
 };
 
-const draftColumns = computed(() => [
+const allDraftColumns = computed(() => [
   { key: 'name', title: 'Player' },
-  { key: 'team', title: 'Team' },
+  { mobile: false, key: 'team', title: 'Team' },
   { key: 'mmr', title: 'W3C MMR', align: 'right' },
-  { key: 'record', title: 'Record', align: 'right' },
+  { mobile: false, key: 'record', title: 'Record', align: 'right' },
   { key: 'rate', title: 'Win %', align: 'right' },
-  { key: 'ladder', title: `Ladder · ${windowLabel.value}` },
+  { mobile: false, key: 'ladder', title: `Ladder · ${windowLabel.value}` },
   { key: 'open', title: '' },
 ]);
+const draftColumns = useColumns(allDraftColumns);
 const draftGroups = computed(() =>
   tiers.value.map((tier) => ({
     key: tier,
@@ -530,14 +532,15 @@ const teamForm = ref({
 });
 
 // Table headers for betting
-const fantasyHeaders = [
+const allFantasyHeaders = [
   { title: 'Match', key: 'players', sortable: false },
   { title: 'Date & Time', key: 'date_time', sortable: true },
   { title: 'My Bet', key: 'my_bet', sortable: false },
-  { title: 'Score', key: 'score', sortable: false },
+  { mobile: false, title: 'Score', key: 'score', sortable: false },
   { title: 'Result', key: 'result', sortable: false },
   { title: '', key: 'actions', sortable: false }
 ];
+const fantasyHeaders = useColumns(allFantasyHeaders);
 
 // Computed: Organize players by tier based on fantasy_tier attribute
 const playersByTier = computed(() => {

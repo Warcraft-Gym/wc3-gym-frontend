@@ -81,9 +81,9 @@ export const useConfigStore = defineStore({
             return await fetchWrapper.get(`${backendUrl}/config/discord-roles`);
         },
 
-        // Without user_ids the backend syncs every account the report flags
-        async syncDiscordRoles(user_ids) {
-            return await fetchWrapper.post(`${backendUrl}/config/discord-roles/sync`, user_ids ? { user_ids } : {});
+        // An empty body syncs every account the report flags; user_ids or role_ids narrow it
+        async syncDiscordRoles(body = {}) {
+            return await fetchWrapper.post(`${backendUrl}/config/discord-roles/sync`, body);
         },
 
         async fetchAdmins() {
@@ -100,6 +100,20 @@ export const useConfigStore = defineStore({
 
         async fetchDiscordGuildRoles() {
             return await fetchWrapper.get(`${backendUrl}/config/discord-guild-roles`);
+        },
+
+        // A hidden role stays out of the Not bound column; the app never touches it
+        async hideDiscordRole(discord_role) {
+            return await fetchWrapper.post(`${backendUrl}/config/discord-hidden-roles`, { discord_role });
+        },
+
+        async unhideDiscordRole(discord_role) {
+            await fetchWrapper.delete(`${backendUrl}/config/discord-hidden-roles/${discord_role}`);
+        },
+
+        // The groups of people a binding can point at, counted over the scope: the current season, one season, or every season
+        async fetchDiscordRoleGroups({ season_id, scope }) {
+            return await fetchWrapper.get(`${backendUrl}/config/discord-role-groups?season_id=${season_id}&scope=${scope}`);
         },
 
         async fetchDiscordRoleBindings() {

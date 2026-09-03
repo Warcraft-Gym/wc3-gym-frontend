@@ -11,7 +11,10 @@
           Discord Roles
         </h1>
         <div class="text-body-2 text-medium-emphasis">
-          The app grants bound roles from the database; unbound roles are never touched. Sync runs only when pressed.
+          Managed roles are granted and removed by Sync. Ignored roles are bound but left alone. Not bound roles are never touched.
+        </div>
+        <div class="text-body-2 text-medium-emphasis">
+          Drag a card to a column, or double-click it to move it: Not bound to Managed, Managed to Ignored, Ignored to Managed. Ignore a role the app knows the holders of but a person applies by hand. Hide a role with nothing in the app to bind it to.
         </div>
       </v-col>
     </v-row>
@@ -20,8 +23,99 @@
 
     <StatusAlert v-model="successMessage" type="success" />
 
+    <v-alert v-if="!guildRoles.length" type="warning" variant="tonal" border="start" class="mb-4">
+      The bot could not read the server's roles. Bindings are shown by id.
+    </v-alert>
+
+    <!-- One card per Discord role, in the column its binding puts it in -->
+    <v-row>
+      <v-col v-for="column in COLUMNS" :key="column.key" cols="12" md="4">
+        <v-card elevation="2" class="role-column d-flex flex-column">
+          <v-card-title class="d-flex align-center">
+            <v-icon class="mr-2">{{ column.icon }}</v-icon>
+            <span>{{ column.label }}</span>
+            <v-spacer />
+            <v-chip size="small" variant="tonal">{{ cards[column.key].length }}</v-chip>
+          </v-card-title>
+          <v-card-subtitle class="pb-2">{{ column.subtitle }}</v-card-subtitle>
+          <v-divider />
+
+          <v-card-text
+            class="drop-zone pa-2"
+            :class="{ 'drop-over': dragOverColumn === column.key }"
+            @dragover.prevent
+            @dragenter.prevent="dragOverColumn = column.key"
+            @dragleave="clearDragOver"
+            @drop.prevent="dropOn(column.key)"
+          >
+            <div v-if="!cards[column.key].length" class="text-body-2 text-medium-emphasis text-center pa-4">
+              {{ column.empty }}
+            </div>
+
+            <v-card
+              v-for="card in cards[column.key]"
+              :key="card.id"
+              variant="outlined"
+              class="mb-2 role-card"
+              :class="{ 'role-locked': !card.manageable }"
+              :draggable="card.manageable && !card.handManaged"
+              @dragstart="dragRoleId = card.id"
+              @dragend="dragRoleId = null; dragOverColumn = null"
+              @dblclick="moveOnDoubleClick(card)"
+            >
+              <v-tooltip v-if="!card.manageable" activator="parent" location="top">
+                {{ ABOVE_BOT }}
+              </v-tooltip>
+
+              <v-card-text class="pa-3">
+                <div class="d-flex align-center">
+                  <span class="colour-dot mr-2" :style="{ backgroundColor: card.dot }"></span>
+                  <span :class="{ 'text-medium-emphasis font-italic': !card.named }" :title="card.id">{{ card.name }}</span>
+                  <v-spacer />
+                  <v-chip v-if="card.named" size="x-small" variant="tonal">{{ card.members }} in Discord</v-chip>
+                </div>
+
+                <div v-if="card.binding" class="d-flex align-center text-body-2 text-medium-emphasis mt-1">
+                  <v-icon v-if="card.handManaged" size="small" class="mr-1">mdi-lock</v-icon>
+                  <v-avatar v-if="card.groupTeam" size="20" rounded="sm" class="mr-1" style="flex-shrink:0">
+                    <img class="team-icon" :src="teamImageUrl(card.groupTeam)" @error="showDefaultTeamImage">
+                  </v-avatar>
+                  <span>{{ card.groupLabel }}</span>
+                </div>
+
+                <div v-if="card.binding && (card.grants || card.removes)" class="d-flex align-center mt-1">
+                  <v-chip v-if="card.grants" size="x-small" color="success" variant="tonal" class="mr-1">+{{ card.grants }}</v-chip>
+                  <v-chip v-if="card.removes" size="x-small" color="error" variant="tonal" class="mr-1">&minus;{{ card.removes }}</v-chip>
+                  <span class="text-caption text-medium-emphasis">grant / remove on sync</span>
+                </div>
+
+                <RowActions :actions="cardActions(card)" inline />
+              </v-card-text>
+            </v-card>
+          </v-card-text>
+
+          <!-- The roles an admin hid, folded away under the Not bound column -->
+          <v-divider v-if="column.key === 'notBound' && hiddenRoles.length" />
+          <v-expansion-panels v-if="column.key === 'notBound' && hiddenRoles.length" variant="accordion" flat>
+            <v-expansion-panel :title="`Hidden roles (${hiddenRoles.length})`">
+              <v-expansion-panel-text>
+                <div v-for="role in hiddenRoles" :key="role.id" class="d-flex align-center mb-2" :class="{ 'role-locked': !role.manageable }">
+                  <v-tooltip v-if="!role.manageable" activator="parent" location="top">{{ ABOVE_BOT }}</v-tooltip>
+                  <span class="colour-dot mr-2" :style="{ backgroundColor: roleDot(role) }"></span>
+                  <span :title="role.id">{{ role.name }}</span>
+                  <v-spacer />
+                  <v-chip size="x-small" variant="tonal" class="mr-1">{{ role.members }} in Discord</v-chip>
+                  <RowActions v-if="role.hidden" :actions="[{ icon: 'mdi-eye', label: 'Unhide', onClick: () => setHidden(role, false) }]" inline />
+                </div>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- What the guild has and the database says it should have -->
-    <v-card elevation="2" class="mb-4">
+    <v-card elevation="2" class="mt-4">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-account-sync</v-icon>
         <span>Accounts Out of Sync</span>
@@ -68,83 +162,12 @@
       </v-card-text>
     </v-card>
 
-    <!-- The roles the app owns, grouped by what earns them -->
-    <v-card elevation="2">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-link-variant</v-icon>
-        <span>Role Bindings</span>
-        <v-spacer />
-        <v-btn variant="elevated" color="success" prepend-icon="mdi-plus" @click="addBinding">
-          Add Binding
-        </v-btn>
-      </v-card-title>
-
-      <v-card-text v-if="!syncedBindings.length" class="text-center pa-8">
-        <v-icon size="64" color="grey-lighten-1">mdi-link-variant-off</v-icon>
-        <div class="text-h6 mt-4 text-grey">No roles bound yet</div>
-      </v-card-text>
-
-      <v-card-text v-else class="pa-0">
-        <template v-for="group in bindingGroups" :key="group.kind">
-          <div class="px-4 pt-4">
-            <div class="text-subtitle-1 font-weight-bold">{{ group.label }}</div>
-            <div class="text-body-2 text-medium-emphasis">{{ group.description }}</div>
-          </div>
-          <v-list density="compact">
-            <v-list-item v-for="row in group.rows" :key="row.id">
-              <v-list-item-title>
-                <span :class="{ 'text-medium-emphasis font-italic': !roleNames[row.discord_role] }" :title="row.discord_role">
-                  {{ roleName(row.discord_role) }}
-                </span>
-              </v-list-item-title>
-              <v-list-item-subtitle v-if="bindingDetail(row)">{{ bindingDetail(row) }}</v-list-item-subtitle>
-              <template #append>
-                <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit Binding', onClick: () => editBinding(row) },
-                  { icon: 'mdi-delete', label: 'Delete Binding', color: 'error', onClick: () => openDeleteDialog(row.id) },
-                ]" />
-              </template>
-            </v-list-item>
-          </v-list>
-          <v-divider />
-        </template>
-      </v-card-text>
-    </v-card>
-
-    <!-- Admin roles come from the API but sync never touches them -->
-    <v-card v-if="adminBindings.length" elevation="2" class="mt-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon class="mr-2">mdi-hand-back-right</v-icon>
-        <span>Not Synced (hand-managed)</span>
-      </v-card-title>
-
-      <v-card-text class="pa-0">
-        <div class="px-4">
-          <div class="text-body-2 text-medium-emphasis">{{ KIND_META.admin.description }}</div>
-        </div>
-        <v-list density="compact">
-          <v-list-item v-for="row in adminBindings" :key="row.id">
-            <v-list-item-title>
-              <span :class="{ 'text-medium-emphasis font-italic': !roleNames[row.discord_role] }" :title="row.discord_role">
-                {{ roleName(row.discord_role) }}
-              </span>
-            </v-list-item-title>
-            <template #append>
-              <RowActions :actions="[
-                { icon: 'mdi-delete', label: 'Delete Binding', color: 'error', onClick: () => openDeleteDialog(row.id) },
-              ]" />
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card-text>
-    </v-card>
-
-    <!-- Add / Edit Binding Dialog -->
-    <v-dialog v-model="bindingDialog" max-width="600" persistent>
-      <v-card v-if="binding">
+    <!-- The group picker: which people in the database hold this role -->
+    <v-dialog v-model="pickerDialog" max-width="640" persistent>
+      <v-card v-if="picker">
         <v-card-title class="bg-primary">
-          <v-icon class="mr-2">{{ binding.id ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
-          {{ binding.id ? 'Edit Binding' : 'Add Binding' }}
+          <v-icon class="mr-2">mdi-account-group</v-icon>
+          Who holds {{ picker.roleName }}?
         </v-card-title>
 
         <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="red" class="mx-4 my-2" closable @click:close="dialogError = null">
@@ -152,87 +175,113 @@
         </v-alert>
 
         <v-card-text class="pt-4">
-          <!-- The kind is picked once; changing it later is delete-and-add -->
-          <v-radio-group v-if="!binding.id" v-model="binding.kind" @update:model-value="binding.season_id = null; binding.team_id = null">
-            <v-radio v-for="kind in addableKinds" :key="kind" :value="kind">
-              <template #label>
-                <div class="py-1">
-                  <div class="font-weight-medium">{{ KIND_META[kind].label }}</div>
-                  <div class="text-body-2 text-medium-emphasis">{{ KIND_META[kind].description }}</div>
-                </div>
+          <v-list density="compact" :disabled="isLoadingGroups" v-model:opened="openedSeasons">
+            <v-list-subheader>{{ listScopeLabel }}</v-list-subheader>
+            <v-list-item
+              v-for="group in seasonGroups"
+              :key="groupKey(group)"
+              :active="groupKey(group) === groupKey(picker)"
+              @click="selectGroup(group)"
+            >
+              <v-list-item-title>{{ group.label }}</v-list-item-title>
+              <template #append>
+                <v-chip size="x-small" variant="tonal">{{ group.count }}</v-chip>
               </template>
-            </v-radio>
-          </v-radio-group>
+            </v-list-item>
 
-          <div v-else class="mb-4">
-            <div class="font-weight-medium">{{ KIND_META[binding.kind]?.label ?? binding.kind }}</div>
-            <div class="text-body-2 text-medium-emphasis">{{ KIND_META[binding.kind]?.description }}</div>
-          </div>
+            <!-- One collapsed group per season, newest first; opening it loads that season's teams -->
+            <v-list-subheader>Teams</v-list-subheader>
+            <v-list-group v-for="season in seasonsNewestFirst" :key="season.id" :value="season.id">
+              <template #activator="{ props }">
+                <v-list-item v-bind="props" :title="season.name" />
+              </template>
 
-          <v-row dense>
-            <v-col v-if="binding.kind === 'team'" cols="12">
+              <v-list-item v-if="seasonTeams[season.id] === null" title="Loading teams…">
+                <template #append>
+                  <v-progress-circular indeterminate size="16" width="2" />
+                </template>
+              </v-list-item>
+              <v-list-item v-else-if="!seasonTeams[season.id]?.length" title="No teams in this season" />
+
+              <v-list-item
+                v-for="team in seasonTeams[season.id] ?? []"
+                :key="team.id"
+                :active="`team:${team.id}` === groupKey(picker)"
+                @click="selectGroup({ kind: 'team', team_id: team.id })"
+              >
+                <template #prepend>
+                  <v-avatar size="24" rounded="sm" style="flex-shrink:0">
+                    <img class="team-icon" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="ml-2">{{ team.long_name || team.name }}</v-list-item-title>
+                <template #append>
+                  <v-chip size="x-small" variant="tonal">{{ teamCounts[team.id] ?? 0 }}</v-chip>
+                </template>
+              </v-list-item>
+            </v-list-group>
+          </v-list>
+
+          <!-- One scope control under the list, in the shape the picked group's kind needs -->
+          <template v-if="picker.kind">
+            <v-radio-group v-if="scopeOptions.length > 1" v-model="picker.scope" density="compact" hide-details @update:model-value="loadGroups">
+              <template v-for="option in scopeOptions" :key="option">
+                <div v-if="option === 'season'" class="d-flex align-center ga-3">
+                  <v-radio value="season" color="primary" label="One season"></v-radio>
+                  <v-select
+                    v-model="picker.seasonId"
+                    :items="seasons"
+                    item-title="name"
+                    item-value="id"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    style="max-width:220px"
+                    :disabled="picker.scope !== 'season'"
+                    :loading="isLoadingGroups"
+                    @update:model-value="loadGroups"
+                  />
+                </div>
+                <v-radio
+                  v-else
+                  :value="option"
+                  color="primary"
+                  :label="option === 'all' ? 'All seasons' : `Current season (${seasonName(currentSeasonId)})`"
+                ></v-radio>
+              </template>
+            </v-radio-group>
+            <div v-else-if="picker.kind === 'champion'" class="d-flex align-center ga-3 mt-2">
+              <span class="text-body-2">One season</span>
               <v-select
-                v-model="binding.team_id"
-                :items="teams"
-                item-title="name"
-                item-value="id"
-                label="Team (required)"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-shield-account"
-              />
-            </v-col>
-            <v-col v-if="binding.kind === 'champion'" cols="12">
-              <v-select
-                v-model="binding.season_id"
+                v-model="picker.seasonId"
                 :items="seasons"
                 item-title="name"
                 item-value="id"
-                label="Season (required)"
                 variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-calendar"
+                density="compact"
+                hide-details
+                style="max-width:220px"
+                :loading="isLoadingGroups"
+                @update:model-value="loadGroups"
               />
-              <div v-if="binding.id && binding.team_id" class="text-body-2 text-medium-emphasis mt-1">
-                Winner: {{ teamName(binding.team_id) }} &mdash; derived from standings
-              </div>
-            </v-col>
-            <v-col v-if="binding.kind === 'gnl_participant' || binding.kind === 'fantasy'" cols="12">
-              <v-select
-                v-model="binding.season_id"
-                :items="seasons"
-                item-title="name"
-                item-value="id"
-                label="Season (optional)"
-                hint="Blank always follows the current season; a specific season keeps its holders after it ends"
-                persistent-hint
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-calendar"
-                clearable
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-combobox
-                v-model="binding.discord_role"
-                :items="roleItems"
-                item-title="title"
-                item-value="value"
-                :return-object="false"
-                label="Discord Role"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-discord"
-              />
-            </v-col>
-          </v-row>
+            </div>
+            <div class="text-caption text-medium-emphasis mt-2">{{ scopeCaption }}</div>
+          </template>
         </v-card-text>
 
-        <v-card-actions class="px-4 py-3">
+        <v-card-actions class="px-4 py-3 flex-wrap ga-2">
+          <!-- A new binding lands where the admin opened the picker from; the toggle lets them change that here -->
+          <template v-if="!picker.bindingId">
+            <v-btn-toggle v-model="picker.column" mandatory density="compact" variant="outlined" divided>
+              <v-btn value="managed" prepend-icon="mdi-sync">Managed</v-btn>
+              <v-btn value="ignored" prepend-icon="mdi-hand-back-right">Ignored</v-btn>
+            </v-btn-toggle>
+            <v-btn variant="text" size="small" prepend-icon="mdi-eye-off" @click="hideFromPicker">Hide instead<v-tooltip activator="parent" location="top">Nothing in the app fits this role</v-tooltip></v-btn>
+          </template>
           <v-spacer />
-          <v-btn variant="text" @click="bindingDialog = false">Cancel</v-btn>
-          <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" @click="saveBinding" :loading="isSavingBinding" :disabled="!canSave">
-            {{ binding.id ? 'Save Changes' : 'Add Binding' }}
+          <v-btn variant="text" @click="pickerDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" @click="saveBinding" :loading="isSavingBinding" :disabled="!picker.kind">
+            {{ picker.bindingId ? 'Save' : 'Bind' }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -240,7 +289,7 @@
 
     <ConfirmDeleteDialog
       v-model="showDeleteDialog"
-      message="Unbind this role? The guild keeps it; sync stops touching it."
+      message="Unbind this role? Members keep it; the app stops managing it."
       @confirm="confirmDelete"
       @cancel="showDeleteDialog = false"
     />
@@ -250,43 +299,61 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
-import { useConfigStore, useSeasonStore, useTeamStore } from '@/stores';
-import { computed, onMounted, ref } from 'vue';
-import { storeToRefs } from 'pinia';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useConfigStore, useSeasonStore, useTeamStore } from '@/stores';
+import { computed, onMounted, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
+import { resolveCurrentSeasonId } from '@/helpers/current-season';
 
 const configStore = useConfigStore();
 const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 const { seasons } = storeToRefs(seasonStore);
 
-// The RoleKind values the backend accepts, in display order; admin is never synced
-const KIND_META = {
-  team: { label: 'Team', description: "The team's current-season roster and captains hold the role." },
-  captain: { label: 'GNL Captain', description: 'Captains of the current season hold the role.' },
-  gnl_participant: { label: 'GNL Player', description: 'Players rostered or signed up in the season hold the role.' },
-  fantasy: { label: 'GNL Fantasy', description: 'Bettors — the members who own a fantasy team in the season — hold the role.' },
-  champion: { label: 'Champion', description: 'The roster of the team that won the season holds the role; the winner is derived from standings.' },
-  admin: { label: 'Gym Admin', description: 'Hand-managed in Discord; sync never grants or removes these roles.' }
+// Discord lets a bot change only the roles listed below its own role
+const ABOVE_BOT = 'Listed above the bot\'s role in Discord, so the bot cannot grant or remove it.';
+const COLUMNS = [
+  { key: 'managed', label: 'Managed', icon: 'mdi-sync', subtitle: 'Sync grants and removes these roles.', empty: 'Drag a role here to have Sync grant and remove it.' },
+  { key: 'ignored', label: 'Ignored', icon: 'mdi-hand-back-right', subtitle: 'Bound, but a person applies them in Discord by hand.', empty: 'Bound roles Sync leaves alone.' },
+  { key: 'notBound', label: 'Not bound', icon: 'mdi-link-variant-off', subtitle: 'Never touched. Bind one, or hide it.', empty: 'Every server role is bound.' }
+];
+// The scopes each kind offers, the first one the default for a new binding
+const SCOPES = {
+  team: ['all', 'current', 'season'],
+  captain: ['all', 'current', 'season'],
+  gnl_participant: ['current', 'season', 'all'],
+  fantasy: ['current', 'season', 'all'],
+  champion: ['season'],
+  admin: ['current']
 };
-const addableKinds = Object.keys(KIND_META).filter(kind => kind !== 'admin');
+const KIND_LABEL = { team: 'Team', captain: 'Captains', gnl_participant: 'Players', fantasy: 'Bettors', champion: 'Champions', admin: 'Gym Admin' };
 
-const report = ref([]);
+const guildRoles = ref([]);
 const bindings = ref([]);
-const roleNames = ref({});
-const isLoadingReport = ref(false);
+const groups = ref([]);
+const report = ref([]);
 const teams = ref([]);
 const isLoading = ref(false);
+const isLoadingReport = ref(false);
+const isLoadingGroups = ref(false);
 const isSyncingAll = ref(false);
 const syncingUserId = ref(null);
+const applyingRoleId = ref(null);
 const isSavingBinding = ref(false);
 const errorMessage = ref(null);
 const successMessage = ref(null);
 const dialogError = ref(null);
-const bindingDialog = ref(false);
-const binding = ref(null);
+const pickerDialog = ref(false);
+const picker = ref(null);
+const currentSeasonId = ref(null);
+// The season groups the picker has open, and the teams of each opened season: null while loading, kept for the dialog's life
+const openedSeasons = ref([]);
+const seasonTeams = ref({});
 const showDeleteDialog = ref(false);
-const deleteId = ref(null);
+const deleteBinding = ref(null);
+const dragRoleId = ref(null);
+const dragOverColumn = ref(null);
 
 const isSyncing = computed(() => isSyncingAll.value || syncingUserId.value !== null);
 
@@ -298,48 +365,103 @@ const reportHeader = [
   { title: '', value: 'actions', align: 'end', sortable: false }
 ];
 
-const syncedBindings = computed(() => bindings.value.filter(b => b.kind !== 'admin'));
-const adminBindings = computed(() => bindings.value.filter(b => b.kind === 'admin'));
-const bindingGroups = computed(() =>
-  addableKinds
-    .map(kind => ({ kind, ...KIND_META[kind], rows: bindings.value.filter(b => b.kind === kind) }))
-    .filter(group => group.rows.length)
-);
-
-const kindLabel = (kind) => KIND_META[kind]?.label ?? kind;
 const seasonName = (id) => seasons.value.find(s => s.id === id)?.name ?? `Season ${id}`;
-const teamName = (id) => teams.value.find(t => t.id === id)?.name ?? `Team ${id}`;
-// A role the guild no longer names still has its binding to describe it
-const roleName = (id) => {
-  if (roleNames.value[id]) return roleNames.value[id];
-  const bound = bindings.value.find(b => b.discord_role === id);
-  if (!bound) return id;
-  if (bound.kind === 'team') return teamName(bound.team_id);
-  if (bound.kind === 'champion') return `${teamName(bound.team_id)} Champion`;
-  return kindLabel(bound.kind);
+const teamById = (id) => teams.value.find(t => t.id === id);
+const teamName = (id) => {
+  const team = teamById(id);
+  return team ? team.long_name || team.name : `Team ${id}`;
 };
-const roleItems = computed(() => Object.entries(roleNames.value).map(([value, title]) => ({ title, value })));
+const guildRole = (id) => guildRoles.value.find(r => r.id === id);
+const bindingFor = (id) => bindings.value.find(b => b.discord_role === id);
+const roleName = (id) => guildRole(id)?.name ?? id;
+const roleDot = (role) => (role.color ? (role.color.startsWith('#') ? role.color : `#${role.color}`) : '#9e9e9e');
+// Within one season a group is unique by kind and team, so a binding that follows the current season still matches
+const groupKey = (group) => `${group.kind}:${group.team_id ?? ''}`;
 
-// The scope line under each binding; champion team_id arrives derived from standings
-const bindingDetail = (row) => {
-  if (row.kind === 'team') return teamName(row.team_id);
-  if (row.kind === 'champion') {
-    const winner = row.team_id ? ` — Winner: ${teamName(row.team_id)} — derived from standings` : '';
-    return seasonName(row.season_id) + winner;
-  }
-  if (row.kind === 'gnl_participant' || row.kind === 'fantasy') {
-    return row.season_id ? `${seasonName(row.season_id)} (kept after the season ends)` : 'Always the current season';
-  }
-  return null;
-};
-
-const canSave = computed(() => {
-  const b = binding.value;
-  if (!b?.kind || !b.discord_role) return false;
-  if (b.kind === 'team') return b.team_id !== null;
-  if (b.kind === 'champion') return b.season_id !== null;
-  return true;
+const scopeOptions = computed(() => SCOPES[picker.value?.kind] ?? []);
+// The scope and season the group counts follow: what the control under the list names, the current season before a kind is picked
+const listScope = computed(() => picker.value?.scope ?? 'current');
+const listSeasonId = computed(() => picker.value?.seasonId ?? currentSeasonId.value);
+const listScopeLabel = computed(() => (listScope.value === 'season' ? seasonName(listSeasonId.value) : listScope.value === 'all' ? 'All seasons' : `Current season (${seasonName(currentSeasonId.value)})`));
+// One sentence for the picked scope; an admin binding is hand-managed and names no season
+const scopeCaption = computed(() => {
+  if (picker.value?.kind === 'admin') return 'Follows the current season.';
+  if (listScope.value === 'season') return `Holders keep the role after ${seasonName(listSeasonId.value)} ends.`;
+  if (listScope.value === 'all') return 'Anyone who ever earned it keeps the role.';
+  return 'When the next season becomes current, Apply or Sync All grants it to the new holders and removes it from last season\'s.';
 });
+
+const seasonGroups = computed(() => groups.value.filter(g => g.kind !== 'team'));
+const seasonsNewestFirst = computed(() => [...seasons.value].sort((a, b) => b.id - a.id));
+// The holder count of each team group, so a team with no group row shows 0
+const teamCounts = computed(() => Object.fromEntries(groups.value.filter(g => g.kind === 'team').map(g => [g.team_id, g.count])));
+
+const scopeWords = (row) => (row.scope === 'season' ? seasonName(row.season_id) : row.scope === 'all' ? 'all seasons' : 'current season');
+
+// The line naming the people a binding covers
+const groupLabel = (row) => {
+  if (row.kind === 'admin') return 'Hand-managed in Discord';
+  if (row.kind === 'team') return `${teamName(row.team_id)} · ${scopeWords(row)}`;
+  if (row.kind === 'champion') {
+    const winner = row.team_id ? ` (winner: ${teamName(row.team_id)})` : '';
+    return `Champions · ${scopeWords(row)}${winner}`;
+  }
+  return `${KIND_LABEL[row.kind] ?? row.kind} · ${scopeWords(row)}`;
+};
+
+// One card per Discord role, plus a card for a binding whose role the guild no longer names
+const allCards = computed(() => {
+  const known = guildRoles.value.map(role => ({ ...role, named: true }));
+  const unnamed = bindings.value
+    .filter(b => !guildRole(b.discord_role))
+    .map(b => ({ id: b.discord_role, name: b.discord_role, color: null, members: 0, manageable: true, named: false }));
+  return [...known, ...unnamed].map(role => {
+    const binding = bindingFor(role.id);
+    return {
+      ...role,
+      binding,
+      handManaged: binding?.kind === 'admin',
+      dot: roleDot(role),
+      groupLabel: binding ? groupLabel(binding) : null,
+      groupTeam: binding?.kind === 'team' ? (teamById(binding.team_id) ?? binding.team_id) : null,
+      grants: report.value.filter(r => r.missing.includes(role.id)).length,
+      removes: report.value.filter(r => r.extra.includes(role.id)).length
+    };
+  });
+});
+
+const columnOf = (card) => (card.binding ? (card.binding.synced ? 'managed' : 'ignored') : 'notBound');
+
+const cards = computed(() => ({
+  managed: allCards.value.filter(c => columnOf(c) === 'managed'),
+  ignored: allCards.value.filter(c => columnOf(c) === 'ignored'),
+  notBound: allCards.value.filter(c => columnOf(c) === 'notBound' && !c.hidden && c.manageable)
+}));
+
+// The roles an admin hid, and the unbound ones above the bot that it could never manage, listed under Not bound
+const hiddenRoles = computed(() => guildRoles.value.filter(r => r.hidden || (!r.manageable && !bindingFor(r.id))));
+
+const cardActions = (card) => {
+  if (!card.manageable) return [];
+  // An admin binding never moves; sync does not read it
+  if (card.handManaged) return [{ icon: 'mdi-link-off', label: 'Unbind', color: 'error', onClick: () => openDeleteDialog(card.binding) }];
+  if (!card.binding) return [
+    { icon: 'mdi-link-variant', label: 'Bind', onClick: () => openPicker(card, 'ignored') },
+    { icon: 'mdi-eye-off', label: 'Hide: the app never shows or touches this role', onClick: () => setHidden(card, true) }
+  ];
+
+  const edit = { icon: 'mdi-pencil', label: 'Edit', onClick: () => openPicker(card, columnOf(card)) };
+  const unbind = { icon: 'mdi-link-off', label: 'Unbind', color: 'error', onClick: () => openDeleteDialog(card.binding) };
+  if (card.binding.synced) {
+    return [
+      { icon: 'mdi-sync', label: 'Apply', loading: applyingRoleId.value === card.id, onClick: () => applyRole(card) },
+      { icon: 'mdi-hand-back-right', label: 'Ignore', onClick: () => setSynced(card.binding, false) },
+      edit,
+      unbind
+    ];
+  }
+  return [{ icon: 'mdi-check-decagram', label: 'Manage', onClick: () => setSynced(card.binding, true) }, edit, unbind];
+};
 
 const fetchReport = async () => {
   isLoadingReport.value = true;
@@ -355,10 +477,10 @@ const fetchReport = async () => {
 const fetchAll = async () => {
   isLoading.value = true;
   errorMessage.value = null;
-  // The report reads the guild, so the bindings render before it lands
+  // The report reads the guild, so the cards render before it lands
   const pending = fetchReport();
   try {
-    [bindings.value, teams.value, roleNames.value] = await Promise.all([
+    [bindings.value, teams.value, guildRoles.value] = await Promise.all([
       configStore.fetchDiscordRoleBindings(),
       teamStore.getTeamsBasic(),
       configStore.fetchDiscordGuildRoles(),
@@ -379,7 +501,7 @@ const syncAll = async () => {
   try {
     // The answer is the difference sync just applied, so the table is read again
     const applied = await configStore.syncDiscordRoles();
-    report.value = await configStore.fetchDiscordRoleReport();
+    await fetchReport();
     successMessage.value = `Synced ${applied.length} account(s). ${report.value.length} still differ.`;
   } catch (error) {
     errorMessage.value = 'Failed to sync the roles: ' + error.message;
@@ -393,9 +515,8 @@ const syncOne = async (row) => {
   errorMessage.value = null;
   successMessage.value = null;
   try {
-    // The answer is the difference sync just applied, so the table is read again
-    await configStore.syncDiscordRoles([row.user_id]);
-    report.value = await configStore.fetchDiscordRoleReport();
+    await configStore.syncDiscordRoles({ user_ids: [row.user_id] });
+    await fetchReport();
     successMessage.value = `Synced ${row.name}.`;
   } catch (error) {
     errorMessage.value = `Failed to sync ${row.name}: ` + error.message;
@@ -404,61 +525,237 @@ const syncOne = async (row) => {
   }
 };
 
-const addBinding = () => {
-  binding.value = { kind: 'team', season_id: null, team_id: null, discord_role: '' };
-  dialogError.value = null;
-  bindingDialog.value = true;
+// Apply grants and removes one role at a time
+const applyRole = async (card) => {
+  applyingRoleId.value = card.id;
+  errorMessage.value = null;
+  successMessage.value = null;
+  try {
+    const applied = await configStore.syncDiscordRoles({ role_ids: [card.id] });
+    await fetchReport();
+    successMessage.value = `Applied ${card.name} to ${applied.length} account(s).`;
+  } catch (error) {
+    errorMessage.value = `Failed to apply ${card.name}: ` + error.message;
+  } finally {
+    applyingRoleId.value = null;
+  }
 };
 
-const editBinding = (row) => {
-  binding.value = { ...row };
+// After a failed write the list is read again, so a card for a binding the backend no longer has goes away
+const refetchBindings = async () => {
+  try {
+    bindings.value = await configStore.fetchDiscordRoleBindings();
+  } catch (error) {
+    errorMessage.value = 'Failed to reload the bindings: ' + error.message;
+  }
+};
+
+// The card moves at once; the report, which reads the guild, refreshes behind it
+const setSynced = async (row, synced) => {
+  errorMessage.value = null;
+  successMessage.value = null;
+  const before = row.synced;
+  row.synced = synced;
+  try {
+    await configStore.updateDiscordRoleBinding(row.id, { synced });
+    successMessage.value = synced ? 'Sync now manages this role.' : 'Sync now leaves this role alone.';
+    fetchReport();
+  } catch (error) {
+    row.synced = before;
+    errorMessage.value = 'Failed to move the role: ' + error.message;
+    refetchBindings();
+  }
+};
+
+// The role leaves or rejoins the Not bound column at once; the call follows it
+const setHidden = async (role, hidden) => {
+  const row = guildRole(role.id);
+  if (!row) return;
+  errorMessage.value = null;
+  successMessage.value = null;
+  row.hidden = hidden;
+  try {
+    if (hidden) await configStore.hideDiscordRole(row.id);
+    else await configStore.unhideDiscordRole(row.id);
+    successMessage.value = hidden ? 'The app now leaves this role alone.' : 'Role unhidden.';
+  } catch (error) {
+    row.hidden = !hidden;
+    errorMessage.value = `Failed to ${hidden ? 'hide' : 'unhide'} the role: ` + error.message;
+  }
+};
+
+const loadGroups = async () => {
+  isLoadingGroups.value = true;
   dialogError.value = null;
-  bindingDialog.value = true;
+  try {
+    groups.value = await configStore.fetchDiscordRoleGroups({ season_id: listSeasonId.value, scope: listScope.value });
+  } catch (error) {
+    dialogError.value = 'Failed to load the groups: ' + error.message;
+  } finally {
+    isLoadingGroups.value = false;
+  }
+};
+
+// The teams of a season are read once, when its group first opens
+const loadSeasonTeams = async (id) => {
+  if (!id || seasonTeams.value[id] !== undefined) return;
+  seasonTeams.value[id] = null;
+  try {
+    await teamStore.fetchTeamsBySeasonBasic(id);
+    seasonTeams.value[id] = teamStore.teams;
+  } catch (error) {
+    delete seasonTeams.value[id];
+    dialogError.value = `Failed to load the teams of ${seasonName(id)}: ` + error.message;
+  }
+};
+
+watch(openedSeasons, (ids) => ids.forEach(loadSeasonTeams));
+
+const selectGroup = async (group) => {
+  const before = `${listScope.value}:${listSeasonId.value}`;
+  picker.value.kind = group.kind;
+  picker.value.team_id = group.team_id ?? null;
+  if (!scopeOptions.value.includes(picker.value.scope)) picker.value.scope = scopeOptions.value[0];
+  if (`${listScope.value}:${listSeasonId.value}` !== before) await loadGroups();
+};
+
+// column is where the role lands: managed posts synced true, ignored posts synced false
+const openPicker = async (card, column) => {
+  const row = card.binding;
+  dialogError.value = null;
+  if (!currentSeasonId.value) currentSeasonId.value = await resolveCurrentSeasonId();
+  picker.value = {
+    roleName: card.name,
+    discord_role: card.id,
+    bindingId: row?.id ?? null,
+    column,
+    kind: row?.kind ?? null,
+    team_id: row?.team_id ?? null,
+    seasonId: row?.season_id ?? currentSeasonId.value,
+    scope: row?.scope ?? null
+  };
+  // A fresh dialog starts with no teams cached; editing a team binding opens the current season's group
+  seasonTeams.value = {};
+  openedSeasons.value = row?.kind === 'team' ? [currentSeasonId.value] : [];
+  pickerDialog.value = true;
+  await loadGroups();
+};
+
+// The role in the picker has no group in the app, so it is hidden instead of bound
+const hideFromPicker = async () => {
+  const role = guildRole(picker.value.discord_role);
+  pickerDialog.value = false;
+  if (role) await setHidden(role, true);
 };
 
 const saveBinding = async () => {
   dialogError.value = null;
   isSavingBinding.value = true;
   try {
-    const { id, kind, season_id, team_id, discord_role } = binding.value;
-    // Only the fields the kind uses go out; champion's team is derived, never stored
-    const body = {
-      kind,
-      discord_role,
-      season_id: ['gnl_participant', 'fantasy', 'champion'].includes(kind) ? season_id : null,
-      team_id: kind === 'team' ? team_id : null
-    };
-    if (id) {
-      await configStore.updateDiscordRoleBinding(id, body);
+    const { kind, team_id, scope, seasonId, discord_role, bindingId, column } = picker.value;
+    const body = { kind, team_id, scope, season_id: scope === 'season' ? seasonId : null, discord_role };
+    if (bindingId) {
+      const saved = await configStore.updateDiscordRoleBinding(bindingId, body);
+      bindings.value = bindings.value.map(b => (b.id === bindingId ? saved : b));
     } else {
-      await configStore.createDiscordRoleBinding(body);
+      bindings.value = [...bindings.value, await configStore.createDiscordRoleBinding({ ...body, synced: column === 'managed' })];
     }
-    bindings.value = await configStore.fetchDiscordRoleBindings();
-    bindingDialog.value = false;
+    pickerDialog.value = false;
     successMessage.value = 'Binding saved.';
+    fetchReport();
   } catch (error) {
     dialogError.value = 'Failed to save the binding: ' + error.message;
+    refetchBindings();
   } finally {
     isSavingBinding.value = false;
   }
 };
 
-const openDeleteDialog = (id) => {
-  deleteId.value = id;
+const openDeleteDialog = (row) => {
+  deleteBinding.value = row;
   showDeleteDialog.value = true;
 };
 
 const confirmDelete = async () => {
   showDeleteDialog.value = false;
   errorMessage.value = null;
+  successMessage.value = null;
   try {
-    await configStore.deleteDiscordRoleBinding(deleteId.value);
-    bindings.value = await configStore.fetchDiscordRoleBindings();
-    successMessage.value = 'Binding removed.';
+    await configStore.deleteDiscordRoleBinding(deleteBinding.value.id);
+    bindings.value = bindings.value.filter(b => b.id !== deleteBinding.value.id);
+    successMessage.value = 'Role unbound.';
+    fetchReport();
   } catch (error) {
-    errorMessage.value = 'Failed to remove the binding: ' + error.message;
+    errorMessage.value = 'Failed to unbind the role: ' + error.message;
+    refetchBindings();
   }
+};
+
+// dragleave also fires when the pointer crosses a card inside the zone, so the highlight clears only when it leaves the zone itself
+const clearDragOver = (event) => {
+  if (!event.currentTarget.contains(event.relatedTarget)) dragOverColumn.value = null;
+};
+
+// Double-click moves a card one column: a bound role swaps between Managed and Ignored, an unbound one opens the picker for Managed
+const moveOnDoubleClick = (card) => {
+  if (!card.manageable || card.handManaged) return;
+  if (!card.binding) return openPicker(card, 'managed');
+  return setSynced(card.binding, !card.binding.synced);
+};
+
+// A drop does what the matching button does: bind, move between columns, or unbind
+const dropOn = (column) => {
+  const card = allCards.value.find(c => c.id === dragRoleId.value);
+  dragOverColumn.value = null;
+  dragRoleId.value = null;
+  if (!card || !card.manageable || card.handManaged || columnOf(card) === column) return;
+  if (column === 'notBound') return openDeleteDialog(card.binding);
+  if (!card.binding) return openPicker(card, column);
+  return setSynced(card.binding, column === 'managed');
 };
 
 onMounted(fetchAll);
 </script>
+
+<style scoped>
+/* The three columns share one viewport-tied height, so their headers stay aligned and each list scrolls on its own */
+.role-column {
+  height: calc(100vh - 320px);
+  min-height: 360px;
+}
+/* The zone fills the rest of the column card, so a drop below the last card still lands */
+.drop-zone {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  border: 2px dashed transparent;
+  border-radius: 4px;
+}
+.drop-over {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.08);
+}
+/* The card is the only drag source: selecting its text or grabbing its team icon would start something else */
+.role-card {
+  cursor: grab;
+  user-select: none;
+}
+.role-card img {
+  pointer-events: none;
+}
+.role-locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.team-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.colour-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+}
+</style>

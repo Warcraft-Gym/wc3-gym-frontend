@@ -37,6 +37,8 @@
             <v-spacer />
             <v-chip size="small" variant="tonal">{{ cards[column.key].length }}</v-chip>
           </v-card-title>
+          <v-card-subtitle class="pb-2">{{ column.subtitle }}</v-card-subtitle>
+          <v-divider />
 
           <v-card-text
             class="drop-zone pa-2"
@@ -62,7 +64,7 @@
               @dblclick="moveOnDoubleClick(card)"
             >
               <v-tooltip v-if="!card.manageable" activator="parent" location="top">
-                Above the bot in Discord; it cannot be bound
+                {{ ABOVE_BOT }}
               </v-tooltip>
 
               <v-card-text class="pa-3">
@@ -93,15 +95,16 @@
           </v-card-text>
 
           <!-- The roles an admin hid, folded away under the Not bound column -->
+          <v-divider v-if="column.key === 'notBound' && hiddenRoles.length" />
           <v-expansion-panels v-if="column.key === 'notBound' && hiddenRoles.length" variant="accordion" flat>
             <v-expansion-panel :title="`Hidden roles (${hiddenRoles.length})`">
               <v-expansion-panel-text>
-                <div v-for="role in hiddenRoles" :key="role.id" class="d-flex align-center mb-2">
+                <div v-for="role in hiddenRoles" :key="role.id" class="d-flex align-center mb-2" :class="{ 'role-locked': !role.manageable }">
+                  <v-tooltip v-if="!role.manageable" activator="parent" location="top">{{ ABOVE_BOT }}</v-tooltip>
                   <span class="colour-dot mr-2" :style="{ backgroundColor: roleDot(role) }"></span>
                   <span :title="role.id">{{ role.name }}</span>
                   <v-spacer />
                   <v-chip size="x-small" variant="tonal" class="mr-1">{{ role.members }} in Discord</v-chip>
-                  <v-chip v-if="!role.manageable" size="x-small" variant="tonal" class="mr-1">above the bot</v-chip>
                   <RowActions v-if="role.hidden" :actions="[{ icon: 'mdi-eye', label: 'Unhide', onClick: () => setHidden(role, false) }]" inline />
                 </div>
               </v-expansion-panel-text>
@@ -308,10 +311,12 @@ const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 const { seasons } = storeToRefs(seasonStore);
 
+// Discord lets a bot change only the roles listed below its own role
+const ABOVE_BOT = 'Listed above the bot\'s role in Discord, so the bot cannot grant or remove it.';
 const COLUMNS = [
-  { key: 'managed', label: 'Managed', icon: 'mdi-sync', empty: 'Drag a role here to have Sync grant and remove it.' },
-  { key: 'ignored', label: 'Ignored', icon: 'mdi-hand-back-right', empty: 'Bound roles Sync leaves alone: the app knows the holders, a person applies them by hand.' },
-  { key: 'notBound', label: 'Not bound', icon: 'mdi-link-variant-off', empty: 'Every server role is bound.' }
+  { key: 'managed', label: 'Managed', icon: 'mdi-sync', subtitle: 'Sync grants and removes these roles.', empty: 'Drag a role here to have Sync grant and remove it.' },
+  { key: 'ignored', label: 'Ignored', icon: 'mdi-hand-back-right', subtitle: 'Bound, but a person applies them in Discord by hand.', empty: 'Bound roles Sync leaves alone.' },
+  { key: 'notBound', label: 'Not bound', icon: 'mdi-link-variant-off', subtitle: 'Never touched. Bind one, or hide it.', empty: 'Every server role is bound.' }
 ];
 // The scopes each kind offers, the first one the default for a new binding
 const SCOPES = {

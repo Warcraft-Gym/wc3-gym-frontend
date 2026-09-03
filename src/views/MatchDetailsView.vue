@@ -349,6 +349,7 @@
                       <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
+                  <td><VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2.signup_race" /></td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player1, null, item.player1.signup_race) || '—' }}
@@ -373,6 +374,7 @@
                       <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
+                  <td><VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1.signup_race" /></td>
                   <td class="text-end">
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player2, null, item.player2.signup_race) || '—' }}
@@ -509,6 +511,9 @@
                     <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                       <v-chip v-if="s.isOut(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                     </PlayerName>
+                  </template>
+                  <template v-slot:[`item.vs_race`]="{ item }">
+                    <VsRaces :player="ladderById.get(item.id)" />
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
                     <td>
@@ -745,6 +750,9 @@
                         <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
                     </template>
+                    <template v-slot:[`item.vs_race`]="{ item }">
+                      <VsRaces :player="ladderById.get(item.id)" />
+                    </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
                         {{ getW3CMMR(item, null, item.signup_race) ?? 'N/A' }}
@@ -811,6 +819,9 @@
                         <span class="text-caption text-grey">({{ item.discordTag }})</span>
                         <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                       </PlayerName>
+                    </template>
+                    <template v-slot:[`item.vs_race`]="{ item }">
+                      <VsRaces :player="ladderById.get(item.id)" />
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
@@ -930,6 +941,12 @@
                   <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
                 </div>
               </template>
+              <template v-slot:[`item.p1_vs_race`]="{ item }">
+                <VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2.signup_race" />
+              </template>
+              <template v-slot:[`item.p2_vs_race`]="{ item }">
+                <VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1.signup_race" />
+              </template>
               <template v-slot:[`item.p1_w3c_mmr`]="{ item }">
                   <td>{{ getW3CMMR(item.player1, null, item.player1.signup_race) ?? 'N/A' }}
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
@@ -1013,7 +1030,7 @@ import { useRouter } from 'vue-router';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
 import { ref, onMounted, computed } from 'vue';
 import { DateTime } from "luxon";
-import { useAuthStore, useAvailabilityStore, useMatchStore, useSeriesStore, useTeamStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { fetchWrapper } from '@/helpers';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
@@ -1023,6 +1040,7 @@ import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
 import { getW3CMMR, mmrSeasonLabel, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
+import VsRaces from '@/components/VsRaces.vue';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, hideMissingImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
@@ -1033,6 +1051,7 @@ const router = useRouter();
 const matchStore = useMatchStore();
 const seriesStore = useSeriesStore();
 const teamStore = useTeamStore();
+const seasonStore = useSeasonStore();
 const availabilityStore = useAvailabilityStore();
 const auth = useAuthStore();
 const { match } = storeToRefs(matchStore);
@@ -1068,6 +1087,7 @@ const draftSeriesTableHeader = computed(() => [
   { title: 'ID', value: 'id', sortable: true },  
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
+  { title: 'vs race', key: 'p1_vs_race', sortable: false },
   { title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1?.signup_race) || 0;
@@ -1080,6 +1100,7 @@ const draftSeriesTableHeader = computed(() => [
   }},
   { title: 'Player 2', value: 'player2.name', sortable: true },
   { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
+  { title: 'vs race', key: 'p2_vs_race', sortable: false },
   { title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2?.signup_race) || 0;
@@ -1098,6 +1119,7 @@ const proposedSeriesTableHeader = [
   { title: 'Player 1', value: 'player1.name', width:'300px', sortable: true },
   { title: 'GNL Games', value: 'player1.gnl_stats[0].games', sortable: true, align: 'end' },
   { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
+  { title: 'vs race', key: 'p1_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1, null, a?.player1?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player1, null, b?.player1?.signup_race) || 0;
@@ -1110,7 +1132,8 @@ const proposedSeriesTableHeader = [
   }},
   { title: 'Player 2', value: 'player2.name', width:'300px', sortable: true },
   { title: 'GNL Games', value: 'player2.gnl_stats[0].games', sortable: true, align: 'end' },
-  { title: 'Faced Races', key: 'p2_matchup_history', sortable: false }, 
+  { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
+  { title: 'vs race', key: 'p2_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2, null, a?.player2?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player2, null, b?.player2?.signup_race) || 0;
@@ -1128,6 +1151,7 @@ const proposedSeriesTableHeader = [
 const tablePlayerHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
   { title: 'GNL Games', key: 'gnl_stats[0].games', sortable: true },
+  { title: 'vs race', key: 'vs_race', sortable: false },
   { title: currentW3CSeason.value ? `MMR (S${currentW3CSeason.value})` : 'MMR', key: 'w3c_mmr', value: 'item', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a, currentW3CSeason.value, a?.signup_race) || 0;
     let bValue = getW3CMMR(b, currentW3CSeason.value, b?.signup_race) || 0;
@@ -1151,6 +1175,8 @@ const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
 const team1 = ref({});
 const team2 = ref({});
+// The season ladder record of every signup, by user id, for the record against each race
+const ladderById = ref(new Map());
 const extraPlayersById = ref({});
 
 // Full players for the series tables: rosters first, fetched extras second.
@@ -1419,12 +1445,22 @@ const fetchMatchDetails = async () => {
       fetchSeriesRows(),
       fetchSeasonMatches(),
       fetchAvailability(),
+      fetchLadderPlayers(),
     ]);
     await loadMissingSeriesPlayers();
   } catch (error) {
     console.error('Failed to fetch match details:', error);
   } finally {
     isLoading.value = false;
+  }
+};
+
+const fetchLadderPlayers = async () => {
+  try {
+    const rows = await seasonStore.fetchSeasonLadderPlayers(matchStore.match.season_id);
+    ladderById.value = new Map(rows.map(p => [p.id, p]));
+  } catch (error) {
+    console.error('Failed to fetch ladder players:', error);
   }
 };
 

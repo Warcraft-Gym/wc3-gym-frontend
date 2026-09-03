@@ -277,8 +277,8 @@ const COLUMNS = [
 ];
 // The scopes each kind offers, the first one the default for a new binding
 const SCOPES = {
-  team: ['all', 'current'],
-  captain: ['all', 'current'],
+  team: ['all', 'current', 'season'],
+  captain: ['all', 'current', 'season'],
   gnl_participant: ['current', 'season', 'all'],
   fantasy: ['current', 'season', 'all'],
   champion: ['season'],

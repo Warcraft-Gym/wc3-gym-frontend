@@ -23,7 +23,10 @@
 
       <v-card-text v-if="!errorMessage">
         <div class="d-flex justify-end flex-wrap ga-2 mb-4">
-          <v-btn variant="outlined" color="primary" prepend-icon="mdi-download" @click="openImport">Import W3C map pool</v-btn>
+          <v-btn variant="outlined" color="primary" @click="openImport">
+            <template #prepend><W3CIcon :size="20" /></template>
+            Import W3C map pool
+          </v-btn>
           <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">Add New Map</v-btn>
         </div>
         <v-row>
@@ -131,6 +134,7 @@
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import LadderImportDialog from '@/components/LadderImportDialog.vue';
+import W3CIcon from '@/components/W3CIcon.vue';
 import { useMapStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
 import { computed, onMounted, ref } from 'vue';

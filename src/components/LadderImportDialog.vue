@@ -5,14 +5,14 @@
         <v-icon class="mr-2">mdi-download</v-icon>
         <span>Import W3C map pool</span>
         <v-spacer />
-        <v-chip size="small" variant="outlined">{{ rows.length }} maps in the W3C 1v1 pool</v-chip>
+        <v-chip size="small" variant="outlined">{{ poolRows.length }} maps in the W3C 1v1 pool</v-chip>
       </v-card-title>
       <v-card-text class="pa-0">
         <v-progress-linear v-if="loading" indeterminate color="primary" />
         <v-list max-height="500" class="overflow-y-auto">
+          <template v-for="row in rows" :key="row.w3c_name">
+          <v-list-subheader v-if="row === offLadderRows[0]">Not in the W3C pool, picture found</v-list-subheader>
           <v-list-item
-            v-for="row in rows"
-            :key="row.w3c_name"
             :class="{ 'row-skipped': isSkipped(row) }"
             @click="toggleSkip(row)"
           >
@@ -26,6 +26,7 @@
               <v-chip size="x-small" :color="isSkipped(row) ? 'grey' : 'primary'" variant="tonal">{{ statusLabel(row) }}</v-chip>
             </template>
           </v-list-item>
+          </template>
         </v-list>
       </v-card-text>
       <v-card-actions>
@@ -51,10 +52,12 @@ const props = defineProps({
 });
 defineEmits(['update:modelValue', 'confirm']);
 
-const STATUS = { in_pool: 'In pool', known: 'Known', no_match: 'No match', new: 'New' };
+const STATUS = { in_pool: 'In pool', known: 'Known', no_match: 'No match', new: 'New', off_ladder: 'Not in pool' };
 
 // a known map is imported too: that is what renames a drifted map to the ladder name and fills a
 // picture it never had. Click a row to leave it out.
+const offLadderRows = computed(() => props.rows.filter((row) => row.status === 'off_ladder'));
+const poolRows = computed(() => props.rows.filter((row) => row.status !== 'off_ladder'));
 const skipped = ref([]);
 watch(() => props.rows, () => { skipped.value = []; });
 const isSkipped = (row) => skipped.value.includes(row.w3c_name);

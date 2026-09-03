@@ -1699,8 +1699,6 @@ const proposeSeries = async () => {
           newSeries.match_id = matchStore.match.id
           newSeries.season_id = matchStore.match.season_id
           newSeries.host_player_id = p1.id
-          newSeries.player1_score = 0
-          newSeries.player2_score = 0
           newSeries.player1_id = p1.id
           newSeries.player1 = p1
           newSeries.player2_id = p2.id
@@ -1765,8 +1763,6 @@ const createSeries = async () => {
 
   newSeries.match_id = matchStore.match.id
   newSeries.season_id = matchStore.match.season_id
-  newSeries.player1_score = 0
-  newSeries.player2_score = 0
   newSeries.player1_id = newSeriesPlayer1.value.id
   newSeries.player2_id = newSeriesPlayer2.value.id
 

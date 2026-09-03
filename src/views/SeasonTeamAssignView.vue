@@ -54,6 +54,13 @@
                 density="comfortable"
                 hide-details
               ></v-checkbox>
+              <v-checkbox
+                v-model="hideLowGames"
+                label="Hide players with fewer than 20 games"
+                color="primary"
+                density="comfortable"
+                hide-details
+              ></v-checkbox>
             </v-col>
           </template>
         </FilterPanel>
@@ -61,6 +68,8 @@
       <v-data-table
               :headers="playerTableHeaders"
               :items="availablePlayers"
+              :items-per-page="teams.length || 10"
+              :sort-by="[{ key: 'w3c_mmr', order: 'asc' }]"
               return-object
               dense
             >
@@ -123,7 +132,20 @@
                 </PlayerName>
               </template>
               <template #item.w3c_mmr="{ item }">
-                <div>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}</div>
+                <v-text-field
+                  v-if="auth.isAdmin"
+                  type="number"
+                  density="compact"
+                  variant="underlined"
+                  hide-details
+                  style="width: 90px"
+                  :model-value="item.mmr_override"
+                  :placeholder="String(getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A')"
+                  @change="setMmrOverride(item, $event.target.value)"
+                >
+                  <v-tooltip activator="parent" location="top">Type an MMR to draft this player at; empty keeps the W3C MMR</v-tooltip>
+                </v-text-field>
+                <div v-else>{{ mmrOf(item) ?? 'N/A' }}</div>
                 <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
               </template>
               <template #item.race="{ item }">
@@ -307,6 +329,7 @@ const searchName = ref('');
 const searchRace = ref(null);
 const rangeValues = ref([0, 3000]);
 const hideNoW3CStats = ref(false);
+const hideLowGames = ref(false);
 
 // Track team selection per player
 const playerTeamSelection = ref({});
@@ -323,14 +346,23 @@ const editPlayerDialog = ref(null);
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
 
+// The MMR a player drafts at: the admin's override, else the W3C MMR of the signup race
+const mmrOf = (p) => p.mmr_override ?? getW3CMMR(p, currentW3CSeason.value, p.signup_race);
+
+const setMmrOverride = async (player, value) => {
+  const mmr_override = value === '' ? null : Number(value);
+  try {
+    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { mmr_override });
+    player.mmr_override = mmr_override;
+  } catch (error) {
+    console.error('Failed to set the MMR override:', error);
+  }
+};
+
 const playerTableHeaders = [
   { title: 'ID', value: 'id' },
   { title: 'Name', value: 'name' },
-  { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a, currentW3CSeason.value, a.signup_race) || 0;
-    let bValue = getW3CMMR(b, currentW3CSeason.value, b.signup_race) || 0;
-    return aValue - bValue;
-  }},
+  { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => (mmrOf(a) || 0) - (mmrOf(b) || 0) },
   { title: 'Race', value: 'race' },
   { title: 'Team', value: 'team', sortable: false },
   { title: '', value: 'actions', sortable: false, align: 'end' },
@@ -409,11 +441,14 @@ const filteredPlayers = computed(() => {
   if (searchRace.value) list = list.filter(p => p.signup_race === searchRace.value);
   
   // filter by mmr range — only apply if user changed from defaults
-  list = filterByMmrRange(list, rangeValues.value, p => getW3CMMR(p, null, p.signup_race) ?? 0);
+  list = filterByMmrRange(list, rangeValues.value, p => mmrOf(p) ?? 0);
   
   // filter out players without W3C stats if checkbox is checked
   if (hideNoW3CStats.value) {
     list = list.filter(p => hasW3CStatsTwoSeasons(p, currentW3CSeason.value, p.signup_race));
+  }
+  if (hideLowGames.value) {
+    list = list.filter(p => !hasLowGamesTwoSeasons(p, currentW3CSeason.value, p.signup_race));
   }
   
   return list;
@@ -424,6 +459,7 @@ const clearFilters = () => {
   searchRace.value = null;
   rangeValues.value = [0, 3000];
   hideNoW3CStats.value = false;
+  hideLowGames.value = false;
 };
 
 const onResetFilters = async () => {

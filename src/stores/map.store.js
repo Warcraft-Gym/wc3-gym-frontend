@@ -36,5 +36,11 @@ export const useMapStore = defineStore({
         async deleteMap(map_id) {
             await fetchWrapper.delete(`${backendUrl}/maps/${map_id}`);
         },
+        async fetchLadderMapImport() {
+            return await fetchWrapper.get(`${backendUrl}/maps/ladder-import`);
+        },
+        async importLadderMaps(names) {
+            await fetchWrapper.post(`${backendUrl}/maps/ladder-import`, { names });
+        },
     }
 });

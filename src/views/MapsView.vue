@@ -39,6 +39,11 @@
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-spacer />
                 <v-col cols="12" sm="auto">
+                  <v-btn variant="outlined" color="primary" prepend-icon="mdi-download" @click="openImport" block>
+                    Import ladder pool
+                  </v-btn>
+                </v-col>
+                <v-col cols="12" sm="auto">
                   <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap" block>
                     Add New Map
                   </v-btn>
@@ -130,6 +135,8 @@
       </v-card>
     </v-dialog>
 
+    <LadderImportDialog v-model="importOpen" :rows="importRows" :loading="importLoading" @confirm="confirmImport" />
+
     <ConfirmDeleteDialog
       v-model="showDeleteDialog"
       message="Are you sure you want to delete this map? This action cannot be undone."
@@ -142,6 +149,7 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
+import LadderImportDialog from '@/components/LadderImportDialog.vue';
 import { useMapStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
 import { computed, onMounted, ref } from 'vue';
@@ -161,6 +169,9 @@ const mapDialogOpen = ref(false);
 const isEditing = ref(false);
 const formError = ref(null);
 const pictureFile = ref(null);
+const importOpen = ref(false);
+const importLoading = ref(false);
+const importRows = ref([]);
 // the picked file while one is picked, else the picture the map already has
 const picturePreview = computed(() => (pictureFile.value ? URL.createObjectURL(pictureFile.value) : selectedMap.value?.image));
 
@@ -251,6 +262,33 @@ const removeMap = async (mapId) => {
     await fetchMaps();
   } catch (error) {
     console.error('Error deleting map:', error);
+  }
+};
+
+const openImport = async () => {
+  importOpen.value = true;
+  importLoading.value = true;
+  importRows.value = [];
+  try {
+    importRows.value = await mapStore.fetchLadderMapImport();
+  } catch (error) {
+    console.error('Failed to read the ladder pool', error);
+    errorMessage.value = error.message;
+    importOpen.value = false;
+  } finally {
+    importLoading.value = false;
+  }
+};
+
+// a known map is renamed to the ladder name and gets its picture; no season pool changes
+const confirmImport = async (names) => {
+  try {
+    await mapStore.importLadderMaps(names);
+    importOpen.value = false;
+    await fetchMaps();
+  } catch (error) {
+    console.error('Failed to import the ladder pool', error);
+    errorMessage.value = error.message;
   }
 };
 

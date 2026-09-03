@@ -222,45 +222,7 @@
       </v-card>
     </v-dialog>
 
-    <!-- Ladder Import Dialog -->
-    <v-dialog v-model="importOpen" max-width="760">
-      <v-card>
-        <v-card-title class="bg-primary d-flex align-center">
-          <v-icon class="mr-2">mdi-download</v-icon>
-          <span>Import ladder pool</span>
-          <v-spacer />
-          <v-chip size="small" variant="outlined">{{ importRows.length }} maps on the 1v1 ladder</v-chip>
-        </v-card-title>
-        <v-card-text class="pa-0">
-          <v-progress-linear v-if="importLoading" indeterminate color="primary" />
-          <v-list max-height="500" class="overflow-y-auto">
-            <v-list-item
-              v-for="row in importRows"
-              :key="row.w3c_name"
-              :class="{ 'row-skipped': isSkipped(row) }"
-              @click="toggleSkip(row)"
-            >
-              <template #prepend>
-                <span class="import-name text-body-2 font-weight-medium mr-3">{{ row.w3c_name }}</span>
-                <span class="map-thumb thumb-sm mr-3"><img v-if="row.image_url" :src="row.image_url" :alt="row.matched_name" @error="hideMissingImage"></span>
-              </template>
-              <v-list-item-title class="text-body-2">{{ row.matched_name || '—' }}</v-list-item-title>
-              <template #append>
-                <v-chip v-if="row.shortname" size="x-small" label class="mr-3">{{ row.shortname }}</v-chip>
-                <v-chip size="x-small" :color="statusColor(row)" variant="tonal">{{ statusLabel(row) }}</v-chip>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="importOpen = false">Cancel</v-btn>
-          <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" :disabled="!importNames.length" @click="confirmImport">
-            Import {{ importNames.length }} maps
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <LadderImportDialog v-model="importOpen" :rows="importRows" :loading="importLoading" @confirm="confirmImport" />
   </v-container>
 </template>
 
@@ -272,6 +234,7 @@ import { useRoute } from 'vue-router';
 import { useMapStore, useSeasonStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
+import LadderImportDialog from '@/components/LadderImportDialog.vue';
 
 const RULES = [
   { value: 'veto', label: 'Veto' },
@@ -312,7 +275,6 @@ const newMapPreview = computed(() => (newMapFile.value ? URL.createObjectURL(new
 const importOpen = ref(false);
 const importLoading = ref(false);
 const importRows = ref([]);
-const importSkipped = ref([]);
 
 const pool = computed(() => season.value.maps || []);
 const notInPool = computed(() => maps.value.filter((m) => !pool.value.some((p) => p.id === m.id)));
@@ -412,24 +374,10 @@ const createNewMap = () => apply(async () => {
   closeNewMap();
 });
 
-const isSkipped = (row) => importSkipped.value.includes(row.w3c_name);
-const statusLabel = (row) => (row.status === 'in_pool' ? 'In pool' : isSkipped(row) ? 'Skipped' : row.status === 'no_match' ? 'No match' : 'New');
-const statusColor = (row) => (isSkipped(row) ? 'grey' : 'primary');
-// a map already in the pool is imported too: that is what renames a drifted map to the ladder
-// name and fills a picture it never had. Click a row to leave it out.
-const importNames = computed(() => importRows.value.filter((r) => !isSkipped(r)).map((r) => r.w3c_name));
-
-const toggleSkip = (row) => {
-  const at = importSkipped.value.indexOf(row.w3c_name);
-  if (at === -1) importSkipped.value.push(row.w3c_name);
-  else importSkipped.value.splice(at, 1);
-};
-
 const openImport = async () => {
   importOpen.value = true;
   importLoading.value = true;
   importRows.value = [];
-  importSkipped.value = [];
   try {
     importRows.value = await seasonStore.fetchLadderMapImport(seasonId.value);
   } catch (err) {
@@ -441,8 +389,8 @@ const openImport = async () => {
   }
 };
 
-const confirmImport = () => apply(async () => {
-  await seasonStore.importLadderMaps(seasonId.value, importNames.value);
+const confirmImport = (names) => apply(async () => {
+  await seasonStore.importLadderMaps(seasonId.value, names);
   importOpen.value = false;
 });
 
@@ -502,14 +450,5 @@ onMounted(async () => {
   font-size: 0.75rem;
   line-height: 1.6;
   word-break: break-word;
-}
-
-.import-name {
-  width: 170px;
-  flex-shrink: 0;
-}
-
-.row-skipped {
-  opacity: 0.55;
 }
 </style>

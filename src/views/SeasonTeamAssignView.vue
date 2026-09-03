@@ -282,6 +282,7 @@ import {
   syncedAt
 } from '@/helpers/w3c-stats';
 import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
+import { useDisplay } from 'vuetify';
 
 
 const router = useRouter();
@@ -361,7 +362,10 @@ const playersWithTeamSelected = computed(() => {
 
 // columns for teams grid: if exactly 8 teams -> show 4 columns (will wrap to two rows);
 // otherwise show all teams side-by-side (one column per team)
+const { xs, smAndDown } = useDisplay();
 const colsCount = computed(() => {
+  if (xs.value) return 1;
+  if (smAndDown.value) return 2;
   const n = (teams.value || []).length;
   if (n === 8) return 4; // two rows of 4
   return Math.max(1, n); // side-by-side for fewer than 8 teams

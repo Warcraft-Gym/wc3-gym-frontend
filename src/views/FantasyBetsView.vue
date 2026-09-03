@@ -323,6 +323,7 @@ import { storeToRefs } from 'pinia';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useColumns } from '@/helpers/columns';
 
 
 const fantasyStore = useFantasyStore();
@@ -365,17 +366,18 @@ const newBet = ref({
 const selectedSeriesForNew = ref(null);
 
 // The server sorts the columns it stores; the columns joined in the browser stay unsorted
-const headers = [
-  { title: 'ID', value: 'id', width: '70px', sortable: true },
+const allHeaders = [
+  { mobile: false, title: 'ID', value: 'id', width: '70px', sortable: true },
   { title: 'Captain', value: 'captain', sortable: true },
   { title: 'Series', value: 'series', sortable: false },
   { title: 'Bet On', value: 'bet_on', sortable: false },
-  { title: 'Score', value: 'score', sortable: false, align: 'center' },
+  { mobile: false, title: 'Score', value: 'score', sortable: false, align: 'center' },
   { title: 'Result', value: 'bet_result', sortable: false, align: 'center' },
   { title: 'Points', value: 'bet_points', sortable: true, align: 'end' },
-  { title: 'Locked', value: 'is_locked', sortable: false, align: 'center' },
+  { mobile: false, title: 'Locked', value: 'is_locked', sortable: false, align: 'center' },
   { title: '', value: 'actions', sortable: false, align: 'center' }
 ];
+const headers = useColumns(allHeaders);
 
 // Enrich bets with series data
 const enrichedBets = computed(() => {

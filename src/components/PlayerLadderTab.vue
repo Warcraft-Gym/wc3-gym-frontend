@@ -165,6 +165,7 @@ import AchievementIcon from '@/components/AchievementIcon.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useColumns } from '@/helpers/columns';
 
 const props = defineProps({
   player: { type: Object, default: null },
@@ -202,14 +203,15 @@ const itemsPerPage = ref(10);
 const page = ref(1);
 const showLocked = ref(false);
 
-const matchHeaders = [
+const allMatchHeaders = [
   { title: 'Date (UTC)', key: 'start_time', sortable: false },
-  { title: 'Map', key: 'map_name', sortable: false },
+  { mobile: false, title: 'Map', key: 'map_name', sortable: false },
   { title: 'Opponent', key: 'opp_battletag', sortable: false },
   { title: 'Result', key: 'won', sortable: false },
-  { title: 'Duration', key: 'duration_s', sortable: false },
+  { mobile: false, title: 'Duration', key: 'duration_s', sortable: false },
   { title: 'MMR +/-', key: 'mmr_diff', sortable: false },
 ];
+const matchHeaders = useColumns(allMatchHeaders);
 
 const w3cStatsUrl = computed(() => `${w3cPlayerUrl(props.player?.battleTag ?? '')}/statistics`);
 

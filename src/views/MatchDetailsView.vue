@@ -216,9 +216,9 @@
 
               <template v-slot:item="{ item }">
                 <tr class="series-row">
-                  <td>{{ item.id }}</td>
-                  <td>{{ item.caster || '—' }}</td>
-                  <td>
+                  <td class="d-none d-md-table-cell">{{ item.id }}</td>
+                  <td class="d-none d-md-table-cell">{{ item.caster || '—' }}</td>
+                  <td class="text-no-wrap">
                     <span v-if="item.date_time">
                       {{ formateDate(item.date_time) }}
                     </span>
@@ -227,7 +227,7 @@
                   <td>
                     <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
                   </td>
-                  <td class="text-end">
+                  <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player1, null, item.player1.signup_race) ?? 'N/A' }}
                     </v-chip>
@@ -246,13 +246,13 @@
                   <td>
                     <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
                   </td>
-                  <td class="text-end">
+                  <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player2, null, item.player2.signup_race) ?? 'N/A' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
-                  <td class="text-center">
+                  <td class="d-none d-md-table-cell text-center">
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
@@ -335,11 +335,11 @@
 
               <template v-slot:item="{ item }">
                 <tr class="series-row draft-series-row">
-                  <td>{{ item.id }}</td>
+                  <td class="d-none d-md-table-cell">{{ item.id }}</td>
                   <td>
                     <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
                   </td>
-                  <td>
+                  <td class="d-none d-md-table-cell">
                     <div class="d-flex align-center ga-1">
                       <template v-for="(race, idx) in getOpponentRaceHistory(item.player1)" :key="`p1-${idx}`">
                         <v-avatar v-if="race" size="24" class="race-avatar">
@@ -349,13 +349,13 @@
                       <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
-                  <td class="text-end">
+                  <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player1, null, item.player1.signup_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
-                  <td class="text-end">
+                  <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="purple">
                       {{ getHighestW3CMMR(item.player1) || '—' }}
                     </v-chip>
@@ -363,7 +363,7 @@
                   <td>
                     <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
                   </td>
-                  <td>
+                  <td class="d-none d-md-table-cell">
                     <div class="d-flex align-center ga-1">
                       <template v-for="(race, idx) in getOpponentRaceHistory(item.player2)" :key="`p2-${idx}`">
                         <v-avatar v-if="race" size="24" class="race-avatar">
@@ -373,13 +373,13 @@
                       <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
-                  <td class="text-end">
+                  <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
                       {{ getW3CMMR(item.player2, null, item.player2.signup_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
-                  <td class="text-end">
+                  <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="purple">
                       {{ getHighestW3CMMR(item.player2) || '—' }}
                     </v-chip>
@@ -1026,6 +1026,7 @@ import W3CMmr from '@/components/W3CMmr.vue';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, hideMissingImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
+import { useColumns } from '@/helpers/columns';
 
 
 // Stores initialization
@@ -1041,13 +1042,13 @@ const { series, draftSeries } = storeToRefs(seriesStore);
 // Week navigation state
 const weeklyMatches = ref([]);
 
-const seriesTableHeader = computed(() => [
+const allSeriesTableHeader = computed(() => [
 
-  { title: 'ID', value: 'id', sortable: true },  
-  { title: 'Caster'},  
+  { mobile: false, title: 'ID', value: 'id', sortable: true },  
+  { mobile: false, title: 'Caster'},  
   { title: 'Date/Time'}, 
   { title: 'Player 1', value: 'player1.name', sortable: true },
-  { title: 'MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
+  { mobile: false, title: 'MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1?.signup_race) || 0;
     return aValue - bValue;
@@ -1055,37 +1056,38 @@ const seriesTableHeader = computed(() => [
   { title: 'P1 Score' },
   { title: 'P2 Score' },
   { title: 'Player 2', value: 'player2.name', sortable: true },
-  { title: 'MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
+  { mobile: false, title: 'MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2?.signup_race) || 0;
     return aValue - bValue;
   }},
-  { title: 'Fantasy Match'},
+  { mobile: false, title: 'Fantasy Match'},
   ...(auth.isAdmin ? [{ title: '', value: 'actions', sortable: false }] : []),
 ]);
+const seriesTableHeader = useColumns(allSeriesTableHeader);
 
-const draftSeriesTableHeader = computed(() => [
-  { title: 'ID', value: 'id', sortable: true },  
+const allDraftSeriesTableHeader = computed(() => [
+  { mobile: false, title: 'ID', value: 'id', sortable: true },  
   { title: 'Player 1', value: 'player1.name', sortable: true },
-  { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
-  { title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
+  { mobile: false, title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
+  { mobile: false, title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1?.signup_race) || 0;
     return aValue - bValue;
   } },
-  { title: 'Highest MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
+  { mobile: false, title: 'Highest MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getHighestW3CMMR(a?.player1) || 0;
     let bValue = getHighestW3CMMR(b?.player1) || 0;
     return aValue - bValue;
   }},
   { title: 'Player 2', value: 'player2.name', sortable: true },
-  { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
-  { title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
+  { mobile: false, title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
+  { mobile: false, title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2?.signup_race) || 0;
     let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2?.signup_race) || 0;
     return aValue - bValue;
   }},
-  { title: 'Highest MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
+  { mobile: false, title: 'Highest MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
     let aValue = getHighestW3CMMR(a?.player2) || 0;
     let bValue = getHighestW3CMMR(b?.player2) || 0;
     return aValue - bValue;
@@ -1093,6 +1095,7 @@ const draftSeriesTableHeader = computed(() => [
   ...(auth.isAdmin ? [{ title: 'Fantasy on publish' }] : []),
   ...(canDraft.value ? [{ title: '', value: 'actions', sortable: false }] : []),
 ]);
+const draftSeriesTableHeader = useColumns(allDraftSeriesTableHeader);
 
 const proposedSeriesTableHeader = [
   { title: 'Player 1', value: 'player1.name', width:'300px', sortable: true },
@@ -1301,7 +1304,7 @@ const formateDate = ( dateToFormat ) => {
   // Backend stores UTC, convert to ET for display
   const formatedDate = DateTime.fromISO(dateToFormat, { zone: 'UTC' })
     .setZone('America/New_York')
-    .toLocaleString(DateTime.DATETIME_MED);
+    .toLocaleString({ month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });  // the season page carries the year
   return formatedDate
 }
 

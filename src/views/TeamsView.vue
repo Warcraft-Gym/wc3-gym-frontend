@@ -160,6 +160,7 @@ import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
+import { useColumns } from '@/helpers/columns';
 
 const extractErrorMessage = (error) => {
   if (!error) return 'Unknown error';
@@ -186,13 +187,14 @@ const formError = ref('');
 
 const file = ref(null);
 
-const tableHeader = computed(() => [
+const allTableHeader = computed(() => [
   { title:'', value: 'icon'},
-  { title: 'ID', value: 'id', align: 'start', sortable: true },
+  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
-  { title: 'Long Name', value: 'long_name', sortable: true },
+  { mobile: false, title: 'Long Name', value: 'long_name', sortable: true },
   ...(auth.isAdmin ? [{ title: '', value: 'actions', align: 'end', sortable: false }] : []),
 ])
+const tableHeader = useColumns(allTableHeader);
 // Fetch data when the page is loaded
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 

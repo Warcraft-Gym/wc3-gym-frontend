@@ -8,6 +8,7 @@ import PlayerName from '@/components/PlayerName.vue';
 import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useColumns } from '@/helpers/columns';
 
 
 const store = usePlayerCareerStatsStore();
@@ -32,17 +33,18 @@ const itemsPerPage = ref(25);
 const sortBy = ref([{ key: 'rating', order: 'desc' }]);  // the order the server pages by
 
 // Status and Actions are admin bookkeeping columns
-const headers = computed(() => [
+const allHeaders = computed(() => [
   { title: 'Display Name', key: 'display_name', sortable: true },
-  { title: 'Status', key: 'status', sortable: true },
+  { mobile: false, title: 'Status', key: 'status', sortable: true },
   { title: 'Rating', key: 'rating', sortable: true },
   { title: 'Series W-L', key: 'series_record', sortable: true },
-  { title: 'Series %', key: 'series_winrate', sortable: true },
+  { mobile: false, title: 'Series %', key: 'series_winrate', sortable: true },
   { title: 'Games W-L', key: 'games_record', sortable: true },
-  { title: 'Games %', key: 'games_winrate', sortable: true },
-  { title: 'Seasons', key: 'seasons_played', sortable: true },
+  { mobile: false, title: 'Games %', key: 'games_winrate', sortable: true },
+  { mobile: false, title: 'Seasons', key: 'seasons_played', sortable: true },
   { title: '', key: 'actions', sortable: false }
 ].filter(h => auth.isAdmin || (h.key !== 'status' && h.key !== 'actions')));
+const headers = useColumns(allHeaders);
 
 // Header keys the server names differently
 const sortNames = {

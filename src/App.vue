@@ -3,6 +3,7 @@ import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
 import { useAuth } from '@clerk/vue';
+import { useDisplay } from 'vuetify';
 import { useAuthStore, useTeamStore } from '@/stores';
 import { canSeeRole } from '@/helpers';
 import w3cLogo from '@/assets/media/w3c-logo.png';
@@ -65,6 +66,37 @@ const showBar = computed(() => route.meta.bar !== false && !isReadonly.value);
 // a link is drawn only when the session role reaches the target route's meta.role
 const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.role);
 
+// one link tree drawn as the bar's menus on desktop and as the drawer on phones
+const NAV = [
+    { title: 'Home', to: '/' },
+    { title: 'GNL', to: '/seasons', items: [
+        { title: 'Seasons', to: '/seasons' },
+        { title: 'Players', to: '/players' },
+        { title: 'Teams', to: '/teams' },
+        { title: '1v1 Maps', to: '/maps' },
+        { title: 'Player Stats', to: '/player-stats' },
+        { title: 'Season Report', to: '/report' },
+        { title: 'Ladder', to: '/ladder', icon: w3cLogo },
+    ] },
+    { title: 'Fantasy', to: '/fantasy', items: [
+        { title: 'Leaderboard', to: '/fantasy' },
+        { title: 'My Fantasy Team', to: '/fantasy-registration' },
+        { title: 'Manage Bets', to: '/fantasy/bets' },
+        { title: 'Player Tiers', to: '/fantasy/tiers' },
+    ] },
+    { title: 'KOTH', to: '/koth' },
+    { title: 'Config', to: '/config', items: [
+        { title: 'Settings', to: '/config' },
+        { title: 'Discord Roles', to: '/config/discord-roles' },
+        { title: 'Access', to: '/config/access' },
+    ] },
+    { title: 'User Guide', to: '/user-guide' },
+];
+const nav = computed(() => NAV.filter(g => canSee(g.to)).map(g => (g.items ? { ...g, items: g.items.filter(i => canSee(i.to)) } : g)));
+const { smAndDown } = useDisplay();
+const drawer = ref(false);
+watch(() => route.path, () => { drawer.value = false; });
+
 const avatarUrl = computed(() => me.value?.avatar || null); // /me already answers the CDN URL
 const initials = computed(() => (me.value?.name || '?').slice(0, 2).toUpperCase());
 const roleLabel = computed(() => {
@@ -91,96 +123,32 @@ const applyCaptain = () => {
 <template>
     <v-app> 
     <v-app-bar v-if="showBar">
+            <v-app-bar-nav-icon v-if="showNavLinks && smAndDown" @click="drawer = !drawer" />
             <v-app-bar-title>GNL APP</v-app-bar-title>
             <template v-slot:append>
                 <v-list v-show="showNavLinks" class="inline-nav" nav>
-                    <v-list-item v-if="canSee('/')" class="nav-link-item">
-                        <RouterLink to="/" class="nav-link">Home</RouterLink>
-                    </v-list-item>
-                    <v-menu v-if="canSee('/seasons')" offset-y>
-                        <template v-slot:activator="{ props }">
-                            <v-list-item v-bind="props" class="gnl-menu-activator">
-                                <a class="nav-link">
-                                    GNL
-                                    <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
-                                </a>
+                    <template v-if="!smAndDown">
+                        <template v-for="group in nav" :key="group.to">
+                            <v-menu v-if="group.items" offset-y>
+                                <template v-slot:activator="{ props }">
+                                    <v-list-item v-bind="props" class="nav-link-item">
+                                        <a class="nav-link">
+                                            {{ group.title }}
+                                            <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
+                                        </a>
+                                    </v-list-item>
+                                </template>
+                                <v-list class="nav-dropdown">
+                                    <v-list-item v-for="item in group.items" :key="item.to">
+                                        <RouterLink :to="item.to" :class="{ 'd-inline-flex align-baseline': item.icon }"><img v-if="item.icon" :src="item.icon" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">{{ item.title }}</RouterLink>
+                                    </v-list-item>
+                                </v-list>
+                            </v-menu>
+                            <v-list-item v-else class="nav-link-item">
+                                <RouterLink :to="group.to" class="nav-link">{{ group.title }}</RouterLink>
                             </v-list-item>
                         </template>
-                        <v-list class="gnl-dropdown">
-                            <v-list-item>
-                                <RouterLink to="/seasons">Seasons</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/players">Players</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/teams">Teams</RouterLink>
-                            </v-list-item>
-                            <v-list-item v-if="canSee('/maps')">
-                                <RouterLink to="/maps">1v1 Maps</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/player-stats">Player Stats</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/report">Season Report</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/ladder" class="d-inline-flex align-baseline"><img :src="w3cLogo" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">Ladder</RouterLink>
-                            </v-list-item>
-                        </v-list>
-                    </v-menu>
-                    <v-menu v-if="canSee('/fantasy')" offset-y>
-                        <template v-slot:activator="{ props }">
-                            <v-list-item v-bind="props" class="fantasy-menu-activator">
-                                <a class="nav-link">
-                                    Fantasy
-                                    <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
-                                </a>
-                            </v-list-item>
-                        </template>
-                        <v-list class="fantasy-dropdown">
-                            <v-list-item>
-                                <RouterLink to="/fantasy">Leaderboard</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/fantasy-registration">My Fantasy Team</RouterLink>
-                            </v-list-item>
-                            <v-list-item v-if="canSee('/fantasy/bets')">
-                                <RouterLink to="/fantasy/bets">Manage Bets</RouterLink>
-                            </v-list-item>
-                            <v-list-item v-if="canSee('/fantasy/tiers')">
-                                <RouterLink to="/fantasy/tiers">Player Tiers</RouterLink>
-                            </v-list-item>
-                        </v-list>
-                    </v-menu>
-                    <v-list-item v-if="canSee('/koth')" class="nav-link-item">
-                        <RouterLink to="/koth" class="nav-link">KOTH</RouterLink>
-                    </v-list-item>
-                    <v-menu v-if="canSee('/config')" offset-y>
-                        <template v-slot:activator="{ props }">
-                            <v-list-item v-bind="props" class="config-menu-activator">
-                                <a class="nav-link">
-                                    Config
-                                    <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
-                                </a>
-                            </v-list-item>
-                        </template>
-                        <v-list class="config-dropdown">
-                            <v-list-item>
-                                <RouterLink to="/config">Settings</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/config/discord-roles">Discord Roles</RouterLink>
-                            </v-list-item>
-                            <v-list-item>
-                                <RouterLink to="/config/access">Access</RouterLink>
-                            </v-list-item>
-                        </v-list>
-                    </v-menu>
-                    <v-list-item v-if="canSee('/user-guide')" class="nav-link-item">
-                        <RouterLink to="/user-guide" class="nav-link">User Guide</RouterLink>
-                    </v-list-item>
+                    </template>
                     <v-menu offset-y>
                         <template v-slot:activator="{ props }">
                             <v-list-item v-bind="props" class="nav-link-item">
@@ -203,9 +171,22 @@ const applyCaptain = () => {
                             <v-list-item prepend-icon="mdi-logout" title="Logout" @click="authStore.logout()" />
                         </v-list>
                     </v-menu>
-                </v-list>               
+                </v-list>
             </template>
-        </v-app-bar>  
+        </v-app-bar>
+        <v-navigation-drawer v-if="showNavLinks && smAndDown" v-model="drawer" temporary>
+            <v-list nav>
+                <template v-for="group in nav" :key="group.to">
+                    <v-list-group v-if="group.items" :value="group.to">
+                        <template v-slot:activator="{ props }">
+                            <v-list-item v-bind="props" :title="group.title" />
+                        </template>
+                        <v-list-item v-for="item in group.items" :key="item.to" :title="item.title" :to="item.to" />
+                    </v-list-group>
+                    <v-list-item v-else :title="group.title" :to="group.to" />
+                </template>
+            </v-list>
+        </v-navigation-drawer>
 
         <v-main>
             <v-alert v-if="authStore.viewAs" type="warning" density="compact" class="ma-2">
@@ -258,31 +239,15 @@ const applyCaptain = () => {
     color: #1976d2;
 }
 
-.gnl-menu-activator,
-.config-menu-activator {
-    cursor: pointer;
-}
-
-.gnl-menu-activator .nav-link,
-.config-menu-activator .nav-link {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    color: #1976d2;
-}
-
-.gnl-dropdown,
-.config-dropdown {
+.nav-dropdown {
     min-width: 180px;
 }
 
-.gnl-dropdown .v-list-item,
-.config-dropdown .v-list-item {
+.nav-dropdown .v-list-item {
     padding: 0;
 }
 
-.gnl-dropdown a,
-.config-dropdown a {
+.nav-dropdown a {
     display: block;
     width: 100%;
     padding: 8px 16px;
@@ -290,43 +255,11 @@ const applyCaptain = () => {
     color: inherit;
 }
 
-.gnl-dropdown a:hover,
-.config-dropdown a:hover {
+.nav-dropdown a:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-.fantasy-menu-activator {
-    cursor: pointer;
-}
-
-.fantasy-menu-activator .nav-link {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    color: #1976d2;
-}
-
-.fantasy-dropdown {
-    min-width: 180px;
-}
-
-.fantasy-dropdown .v-list-item {
-    padding: 0;
-}
-
-.fantasy-dropdown a {
-    display: block;
-    width: 100%;
-    padding: 8px 16px;
-    text-decoration: none;
-    color: inherit;
-}
-
-.fantasy-dropdown a:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-}
-
-.fantasy-dropdown a.active {
+.nav-dropdown a.active {
     background-color: rgba(var(--v-theme-primary), 0.12);
     color: rgb(var(--v-theme-primary));
 }

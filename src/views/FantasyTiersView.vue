@@ -9,7 +9,7 @@
         <h1><v-icon class="mr-2">mdi-trophy-variant</v-icon> Fantasy Player Tiers</h1>
         <p class="text-grey">Cut the {{ seasonName }} roster into {{ tierCount }} tiers by <W3CMmr /></p>
       </v-col>
-      <v-col cols="auto" class="d-flex ga-2 align-center">
+      <v-col cols="12" md="auto" class="d-flex flex-wrap ga-2 align-center">
         <SeasonSelect />
         <v-select
           v-model="tierCount"

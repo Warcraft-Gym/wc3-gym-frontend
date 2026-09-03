@@ -151,10 +151,14 @@
                     @update:model-value="moveToRound(item, $event)"
                   ></v-select>
                   <span v-else>{{ roundOf(item) }}</span>
-                  <v-btn v-if="auth.isAdmin && item.draft_position != null" icon="mdi-pin-off" size="x-small" variant="text" @click="setDraftPosition(item, null)">
+                  <v-btn v-if="auth.isAdmin && item.draft_position != null" icon size="x-small" variant="text" @click="setDraftPosition(item, null)">
+                    <v-icon>mdi-pin-off</v-icon>
                     <v-tooltip activator="parent" location="top">Moved by hand. Click to sort by MMR again</v-tooltip>
                   </v-btn>
-                  <v-icon v-else-if="item.draft_position != null" size="small">mdi-pin<v-tooltip activator="parent" location="top">Moved by hand</v-tooltip></v-icon>
+                  <span v-else-if="item.draft_position != null">
+                    <v-icon size="small">mdi-pin</v-icon>
+                    <v-tooltip activator="parent" location="top">Moved by hand</v-tooltip>
+                  </span>
                 </div>
               </template>
               <template #item.actions="{ item }">

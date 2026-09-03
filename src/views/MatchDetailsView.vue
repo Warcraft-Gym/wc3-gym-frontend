@@ -233,12 +233,12 @@
                   </td>
                   <td class="text-center">
                     <v-chip :color="item.player1_score > item.player2_score ? 'success' : 'default'" size="small">
-                      {{ item.player1_score }}
+                      {{ item.player1_score ?? '–' }}
                     </v-chip>
                   </td>
                   <td class="text-center">
                     <v-chip :color="item.player2_score > item.player1_score ? 'success' : 'default'" size="small">
-                      {{ item.player2_score }}
+                      {{ item.player2_score ?? '–' }}
                     </v-chip>
                   </td>
                   <td>
@@ -268,7 +268,7 @@
                 </template>
                 <template #actions><RowActions :actions="seriesActions(item)" /></template>
                 <template #side="{ n, won }">
-                  <v-chip size="small" :color="won ? 'success' : 'default'">{{ n ? item.player2_score : item.player1_score }}</v-chip>
+                  <v-chip size="small" :color="won ? 'success' : 'default'">{{ (n ? item.player2_score : item.player1_score) ?? '–' }}</v-chip>
                 </template>
               </SeriesCard>
             </div>
@@ -681,7 +681,8 @@
                     variant="outlined"
                     density="comfortable"
                     prepend-inner-icon="mdi-target"
-                    hint="Maximum MMR difference for matchmaking"
+                    hint="Pairs every selected player across both rosters within this gap; a pair that already has a series is skipped"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="8" class="text-right">
@@ -974,7 +975,9 @@
           </template>
         </v-data-table>
         <v-alert v-else type="info" variant="tonal" class="ma-4">
-          No matchups found with current MMR criteria. Try adjusting the MMR difference.
+          <template v-if="proposeExisting === proposePairs">Every selected pair already has a series on this match.</template>
+          <template v-else-if="proposeExisting">{{ proposeExisting }} of {{ proposePairs }} selected pairs already have a series; the rest are outside the MMR difference.</template>
+          <template v-else>No matchups found with current MMR criteria. Try adjusting the MMR difference.</template>
         </v-alert>
       </v-card-text>
       <v-card-actions>
@@ -1243,6 +1246,8 @@ const proposePlayersTeam_1 = ref([]);
 const proposePlayersTeam_2 = ref([]);
 const proposeSeriesMMRDiff = ref(null);
 const proposedSeries = ref([]);
+const proposePairs = ref(0);  // selected pairs on the last proposal
+const proposeExisting = ref(0);  // of those, pairs that already had a series
 const selectedProposedSeries = ref([]);
 
 // Search state
@@ -1650,6 +1655,8 @@ const proposeSeries = async () => {
     proposedSeries.value = []
     let t1_player = playersById(roster1.value, proposePlayersTeam_1.value);
     let t2_player = playersById(roster2.value, proposePlayersTeam_2.value);
+    proposePairs.value = t1_player.length * t2_player.length;
+    proposeExisting.value = 0;
 
     for(let i = 0; i< t1_player.length; i++) {
       let p1 = t1_player[i];
@@ -1683,6 +1690,7 @@ const proposeSeries = async () => {
             }
           }
           if(seriesExists){
+            proposeExisting.value++;
             continue;
           }
         }

@@ -273,6 +273,7 @@ import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useColumns } from '@/helpers/columns';
 
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();
@@ -310,19 +311,20 @@ watch(expanded, async (ids) => {
 });
 
 // Points and Achievements sit together because the first is the sum of the second and the ladder
-const tableHeader = computed(() => [
+const allTableHeader = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: 48 },
   { title: 'Race', key: 'race', sortable: true, width: 64 },
   { title: 'Name', key: 'name', sortable: true },
-  { title: 'Team', key: 'teamName', sortable: true },
-  { title: 'Ladder Points', key: 'ladder_points', sortable: true },
-  { title: 'Achievements', key: 'achievements', sortable: false },
+  { mobile: false, title: 'Team', key: 'teamName', sortable: true },
+  { mobile: false, title: 'Ladder Points', key: 'ladder_points', sortable: true },
+  { mobile: false, title: 'Achievements', key: 'achievements', sortable: false },
   { title: 'Total Points', key: 'points', sortable: true },
   { title: 'Wins', key: 'wins', sortable: true },
   { title: 'Losses', key: 'losses', sortable: true },
   { title: 'MMR', key: 'mmr', sortable: true },
-  { title: 'MMR +/-', key: 'mmrDiff', sortable: true },
+  { mobile: false, title: 'MMR +/-', key: 'mmrDiff', sortable: true },
 ]);
+const tableHeader = useColumns(allTableHeader);
 
 const seasonName = computed(() =>
   seasons.value.find(s => s.id === selectedSeasonId.value)?.name ?? ''

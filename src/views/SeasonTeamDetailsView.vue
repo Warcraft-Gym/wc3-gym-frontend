@@ -108,10 +108,10 @@
           <tr>
             <th style="width: 64px">Race</th>
             <th>Name</th>
-            <th class="text-right">
+            <th class="text-right d-none d-md-table-cell">
               <ColumnNote title="Ladder Points" :note="LADDER_NOTE" />
             </th>
-            <th>
+            <th class="d-none d-md-table-cell">
               <ColumnNote title="Achievements" :note="ACHIEVEMENTS_NOTE" />
             </th>
             <th class="text-right">
@@ -120,7 +120,7 @@
             <th class="text-right">W</th>
             <th class="text-right">L</th>
             <th class="text-right"><W3CMmr /></th>
-            <th class="text-right">
+            <th class="text-right d-none d-md-table-cell">
               <W3CMmr suffix=" +/-" />
             </th>
           </tr>
@@ -129,15 +129,15 @@
           <tr v-for="row in ladderTeam.players" :key="row.id">
             <td><RaceIcon v-if="row.race" :raceIdentifier="row.race" /></td>
             <td><PlayerName :player="row" @click.stop="showStats(row)" /></td>
-            <td class="text-right">{{ row.ladder_points }}</td>
-            <td>
+            <td class="text-right d-none d-md-table-cell">{{ row.ladder_points }}</td>
+            <td class="d-none d-md-table-cell">
               <AchievementChip :badges="row.achievements" />
             </td>
             <td class="text-right font-weight-bold">{{ row.points }}</td>
             <td class="text-right text-green">{{ row.wins }}</td>
             <td class="text-right text-red">{{ row.losses }}</td>
             <td class="text-right">{{ row.mmr?.current ?? '\u2014' }}</td>
-            <td class="text-right" :class="ladderMmrDiff(row) > 0 ? 'text-green' : ladderMmrDiff(row) < 0 ? 'text-red' : ''">
+            <td class="text-right d-none d-md-table-cell" :class="ladderMmrDiff(row) > 0 ? 'text-green' : ladderMmrDiff(row) < 0 ? 'text-red' : ''">
               <span v-if="ladderMmrDiff(row) == null">&mdash;</span>
               <span v-else>{{ ladderMmrDiff(row) > 0 ? `+${ladderMmrDiff(row)}` : ladderMmrDiff(row) }}</span>
             </td>
@@ -193,10 +193,10 @@
 
             <template v-slot:item="{ item }">
               <tr class="text-no-wrap">
-                <td>{{ item.id }}</td>
+                <td class="d-none d-md-table-cell">{{ item.id }}</td>
                 <td><PlayerName :player="item" @click.stop="showStats(item)" /></td>
-                <td>{{ item.battleTag }}</td>
-                <td>{{ item.discordTag }}</td>
+                <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
+                <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
                 <td>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}
                   <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                 </td>
@@ -319,6 +319,7 @@ import { getW3CMMR, syncedAgo, syncedAt, agoFromIso, localFromIso } from '@/help
 import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers/players';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
+import { useColumns } from '@/helpers/columns';
 
 
 // Router and store setup
@@ -416,16 +417,17 @@ const searchName = ref(null);
 const rangeValues = ref([0, 3000]);
 
 // Table configuration
-const tableHeader = [
-  { title: 'ID', value: 'id', align: 'start', sortable: true },
+const allTableHeader = [
+  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },  
-  { title: 'Battletag', value: 'battleTag', sortable: true },    
-  { title: 'Discord Name', value: 'discordTag', sortable: true }, 
+  { mobile: false, title: 'Battletag', value: 'battleTag', sortable: true },    
+  { mobile: false, title: 'Discord Name', value: 'discordTag', sortable: true }, 
   { title: 'W3C MMR', value: 'mmr', sortable: false }, 
   { title: 'Main Race', value: 'race', sortable: true },  
   { title: 'Signups', value: 'signups', sortable: false },    
   { title: '', key: 'actions', align: 'end', sortable: false }, 
 ];
+const tableHeader = useColumns(allTableHeader);
 
 const playerTableHeaders = [
   { title: 'Name', value: 'name' },

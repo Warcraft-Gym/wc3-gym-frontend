@@ -74,7 +74,7 @@ const axisEl = ref(null);
 const width = ref(1000);
 let observer = null;
 onMounted(() => {
-  observer = new ResizeObserver(([entry]) => { width.value = Math.max(320, Math.round(entry.contentRect.width)); });
+  observer = new ResizeObserver(([entry]) => { width.value = Math.max(280, Math.round(entry.contentRect.width)); });
   observer.observe(svg.value.parentNode);
   select(svg.value).call(cutDrag);
 });

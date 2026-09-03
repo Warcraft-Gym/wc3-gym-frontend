@@ -6,7 +6,7 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1 v-if="playerData" class="d-flex align-center ga-3">
+        <h1 v-if="playerData" class="d-flex flex-wrap align-center ga-3">
           <v-avatar size="48" color="primary">
             <v-img v-if="authStore.me?.avatar" :src="authStore.me.avatar" alt="" />
             <span v-else>{{ (playerData.player.name || '?').slice(0, 2).toUpperCase() }}</span>

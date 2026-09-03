@@ -49,7 +49,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watchEffect } from
 import { axisBottom } from 'd3-axis';
 import { drag } from 'd3-drag';
 import { scaleLinear } from 'd3-scale';
-import { pointer, select } from 'd3-selection';
+import { select } from 'd3-selection';
 import { dodge, moveCut } from '@/helpers/divisions.mjs';
 
 const props = defineProps({
@@ -121,12 +121,13 @@ const commit = async (i, input) => {
 // One gesture for the whole strip: the subject is the cut nearest the pointer, so this keeps
 // working when the number of cuts changes and there is no per-line hit target to maintain.
 const cutDrag = drag()
+  .container(() => svg.value)  // event.x is then an svg coordinate for mouse and touch alike
   // A press inside a cut's box edits it, so it never starts a drag
   .filter((event) => !props.disabled && !event.ctrlKey && !event.button && event.target.tagName !== 'INPUT')
   .subject((event) => {
-    const [px] = pointer(event, svg.value);
+    const px = event.x;
     let nearest = null;
-    let best = GRAB;
+    let best = event.sourceEvent.type.startsWith('touch') ? 2 * GRAB : GRAB;
     props.cuts.forEach((c, i) => {
       const distance = Math.abs(x(c) - px);
       if (distance < best) { best = distance; nearest = i; }
@@ -140,7 +141,7 @@ const cutDrag = drag()
 .division-strip {
   max-width: 100%;
   user-select: none;
-  touch-action: none;
+  touch-action: pan-y;
   cursor: default;
 }
 .band-name { font-size: 18px; font-weight: 500; }

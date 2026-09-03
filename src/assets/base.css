@@ -49,3 +49,27 @@
   transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
 }
+
+/* A column title is a short label; it never wraps, so every header row is one line tall. */
+.v-table > .v-table__wrapper > table > thead > tr > th { white-space: nowrap; }
+
+/* Phones and small tablets: tighter titles, cells and gutters. */
+@media (max-width: 959px) {
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.3rem; }
+  .v-container { padding: 8px; }
+  .v-table > .v-table__wrapper > table > thead > tr > th,
+  .v-table > .v-table__wrapper > table > tbody > tr > td { padding: 0 8px; }
+}
+
+/* A table wider than its card shows a shadow at the hidden edge, so the reader knows it scrolls. */
+.v-table__wrapper {
+  background:
+    linear-gradient(to right, rgb(var(--v-theme-surface)) 30%, rgba(var(--v-theme-surface), 0)),
+    linear-gradient(to left, rgb(var(--v-theme-surface)) 30%, rgba(var(--v-theme-surface), 0)) 100% 0,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.2), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.2), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}

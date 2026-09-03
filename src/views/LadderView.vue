@@ -313,7 +313,7 @@ watch(expanded, async (ids) => {
 // Points and Achievements sit together because the first is the sum of the second and the ladder
 const allTableHeader = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: 48 },
-  { title: 'Race', key: 'race', sortable: true, width: 64 },
+  { mobile: false, title: 'Race', key: 'race', sortable: true, width: 64 },
   { title: 'Name', key: 'name', sortable: true },
   { mobile: false, title: 'Team', key: 'teamName', sortable: true },
   { mobile: false, title: 'Ladder Points', key: 'ladder_points', sortable: true },

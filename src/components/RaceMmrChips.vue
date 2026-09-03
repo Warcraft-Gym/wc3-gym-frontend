@@ -1,7 +1,7 @@
 <!-- One chip per race the player has ladder games on: race icon + that race's MMR.
      A player is not one race, so every raced MMR shows; races without games stay hidden. -->
 <template>
-  <span class="d-inline-flex align-center ga-2 flex-wrap">
+  <span class="d-inline-flex align-center ga-2">
     <v-tooltip
       v-for="stat in raceStats"
       :key="stat.race"

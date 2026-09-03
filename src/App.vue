@@ -117,7 +117,7 @@ const applyCaptain = () => {
                                 <RouterLink to="/teams">Teams</RouterLink>
                             </v-list-item>
                             <v-list-item v-if="canSee('/maps')">
-                                <RouterLink to="/maps">Maps</RouterLink>
+                                <RouterLink to="/maps">1v1 Maps</RouterLink>
                             </v-list-item>
                             <v-list-item>
                                 <RouterLink to="/player-stats">Player Stats</RouterLink>

@@ -9,7 +9,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-map</v-icon>
-          Maps
+          1v1 Maps
         </h1>
       </v-col>
     </v-row>
@@ -18,51 +18,32 @@
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-map</v-icon>
-        <span>Maps Overview</span>
+        <span>All maps</span>
       </v-card-title>
 
-      <v-card-text v-if="!errorMessage" class="pa-0">
-        <v-data-table
-          :headers="tableHeader"
-          :items="maps"
-          :loading="isLoading"
-          :row-props="getRowClass"
-          fixed-header
-          hover
-        >
-          <template v-slot:loading>
-            <v-skeleton-loader type="table-row@5"></v-skeleton-loader>
-          </template>
-
-          <template #top>
-            <v-toolbar flat height="auto">
-              <v-row align="center" class="flex-wrap ma-0 pa-2">
-                <v-spacer />
-                <v-col cols="12" sm="auto">
-                  <v-btn variant="outlined" color="primary" prepend-icon="mdi-download" @click="openImport" block>
-                    Import ladder pool
-                  </v-btn>
-                </v-col>
-                <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap" block>
-                    Add New Map
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-toolbar>
-          </template>
-
-          <template v-slot:[`item.image`]="{ item }">
-            <span class="map-thumb"><img v-if="item.image" :src="item.image" :alt="item.name" @error="hideMissingImage"></span>
-          </template>
-
-          <template v-slot:[`item.actions`]="{ item }">
-            <RowActions :actions="[
-              { icon: 'mdi-pencil', label: 'Edit', onClick: () => editMap(item) },
-              { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item.id, removeMap) },
-            ]" />
-          </template>
-        </v-data-table>
+      <v-card-text v-if="!errorMessage">
+        <div class="d-flex justify-end flex-wrap ga-2 mb-4">
+          <v-btn variant="outlined" color="primary" prepend-icon="mdi-download" @click="openImport">Import W3C map pool</v-btn>
+          <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">Add New Map</v-btn>
+        </div>
+        <v-row>
+          <v-col v-for="item in maps" :key="item.id" cols="12" sm="6" md="4" lg="3">
+            <v-card variant="outlined">
+              <v-img :src="item.image" :aspect-ratio="3 / 2" cover class="bg-grey-darken-3">
+                <v-chip v-if="item.shortname" class="shortname" size="small" label>{{ item.shortname }}</v-chip>
+              </v-img>
+              <v-card-item>
+                <div class="text-subtitle-1 font-weight-medium">{{ item.name }}</div>
+                <template #append>
+                  <RowActions :actions="[
+                    { icon: 'mdi-pencil', label: 'Edit', onClick: () => editMap(item) },
+                    { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item.id, removeMap) },
+                  ]" />
+                </template>
+              </v-card-item>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-card-text>
 
       <!-- Enhanced Empty State -->
@@ -177,20 +158,6 @@ const picturePreview = computed(() => (pictureFile.value ? URL.createObjectURL(p
 
 // Delete dialog state
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
-
-// Table configuration
-const tableHeader = [
-  { title: 'ID', value: 'id', align: 'start', sortable: true },
-  { title: '', value: 'image', sortable: false },
-  { title: 'Name', value: 'name', sortable: true },
-  { title: 'Short Name', value: 'shortname', sortable: true },
-  { title: '', value: 'actions', align: 'end', sortable: false }
-];
-
-// Methods
-const getRowClass = () => ({
-  class: 'map-row'
-});
 
 const fetchMaps = async () => {
   isLoading.value = true;
@@ -308,11 +275,15 @@ onMounted(() => {
 <style scoped>
 .map-thumb {
   display: block;
-  width: 40px;
-  height: 27px;
   background: #263238;
   border-radius: 3px;
   overflow: hidden;
+}
+
+.shortname {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
 }
 
 .map-thumb img {
@@ -325,14 +296,5 @@ onMounted(() => {
 .thumb-lg {
   width: 100px;
   height: 64px;
-}
-
-.map-row {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.map-row:hover {
-  background-color: rgba(var(--v-theme-primary), 0.05) !important;
 }
 </style>

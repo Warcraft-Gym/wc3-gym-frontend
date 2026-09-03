@@ -171,7 +171,7 @@
         </v-alert>
 
         <v-card-text class="pt-4">
-          <v-list density="compact" :disabled="isLoadingGroups">
+          <v-list density="compact" :disabled="isLoadingGroups" v-model:opened="openedSeasons">
             <v-list-subheader>{{ listScopeLabel }}</v-list-subheader>
             <v-list-item
               v-for="group in seasonGroups"
@@ -185,23 +185,37 @@
               </template>
             </v-list-item>
 
+            <!-- One collapsed group per season, newest first; opening it loads that season's teams -->
             <v-list-subheader>Teams</v-list-subheader>
-            <v-list-item
-              v-for="group in teamGroups"
-              :key="groupKey(group)"
-              :active="groupKey(group) === groupKey(picker)"
-              @click="selectGroup(group)"
-            >
-              <template #prepend>
-                <v-avatar size="24" rounded="sm" style="flex-shrink:0">
-                  <img class="team-icon" :src="teamImageUrl(teamById(group.team_id) ?? group.team_id)" @error="showDefaultTeamImage">
-                </v-avatar>
+            <v-list-group v-for="season in seasonsNewestFirst" :key="season.id" :value="season.id">
+              <template #activator="{ props }">
+                <v-list-item v-bind="props" :title="season.name" />
               </template>
-              <v-list-item-title class="ml-2">{{ teamName(group.team_id) }}</v-list-item-title>
-              <template #append>
-                <v-chip size="x-small" variant="tonal">{{ group.count }}</v-chip>
-              </template>
-            </v-list-item>
+
+              <v-list-item v-if="seasonTeams[season.id] === null" title="Loading teams…">
+                <template #append>
+                  <v-progress-circular indeterminate size="16" width="2" />
+                </template>
+              </v-list-item>
+              <v-list-item v-else-if="!seasonTeams[season.id]?.length" title="No teams in this season" />
+
+              <v-list-item
+                v-for="team in seasonTeams[season.id] ?? []"
+                :key="team.id"
+                :active="`team:${team.id}` === groupKey(picker)"
+                @click="selectGroup({ kind: 'team', team_id: team.id })"
+              >
+                <template #prepend>
+                  <v-avatar size="24" rounded="sm" style="flex-shrink:0">
+                    <img class="team-icon" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
+                  </v-avatar>
+                </template>
+                <v-list-item-title class="ml-2">{{ team.long_name || team.name }}</v-list-item-title>
+                <template #append>
+                  <v-chip size="x-small" variant="tonal">{{ teamCounts[team.id] ?? 0 }}</v-chip>
+                </template>
+              </v-list-item>
+            </v-list-group>
           </v-list>
 
           <!-- One scope control under the list, in the shape the picked group's kind needs -->
@@ -275,7 +289,7 @@ import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useConfigStore, useSeasonStore, useTeamStore } from '@/stores';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
@@ -319,6 +333,9 @@ const dialogError = ref(null);
 const pickerDialog = ref(false);
 const picker = ref(null);
 const currentSeasonId = ref(null);
+// The season groups the picker has open, and the teams of each opened season: null while loading, kept for the dialog's life
+const openedSeasons = ref([]);
+const seasonTeams = ref({});
 const showDeleteDialog = ref(false);
 const deleteBinding = ref(null);
 const dragRoleId = ref(null);
@@ -361,7 +378,9 @@ const scopeCaption = computed(() => {
 });
 
 const seasonGroups = computed(() => groups.value.filter(g => g.kind !== 'team'));
-const teamGroups = computed(() => groups.value.filter(g => g.kind === 'team'));
+const seasonsNewestFirst = computed(() => [...seasons.value].sort((a, b) => b.id - a.id));
+// The holder count of each team group, so a team with no group row shows 0
+const teamCounts = computed(() => Object.fromEntries(groups.value.filter(g => g.kind === 'team').map(g => [g.team_id, g.count])));
 
 const scopeWords = (row) => (row.scope === 'season' ? seasonName(row.season_id) : row.scope === 'all' ? 'all seasons' : 'current season');
 
@@ -553,6 +572,21 @@ const loadGroups = async () => {
   }
 };
 
+// The teams of a season are read once, when its group first opens
+const loadSeasonTeams = async (id) => {
+  if (!id || seasonTeams.value[id] !== undefined) return;
+  seasonTeams.value[id] = null;
+  try {
+    await teamStore.fetchTeamsBySeasonBasic(id);
+    seasonTeams.value[id] = teamStore.teams;
+  } catch (error) {
+    delete seasonTeams.value[id];
+    dialogError.value = `Failed to load the teams of ${seasonName(id)}: ` + error.message;
+  }
+};
+
+watch(openedSeasons, (ids) => ids.forEach(loadSeasonTeams));
+
 const selectGroup = async (group) => {
   const before = `${listScope.value}:${listSeasonId.value}`;
   picker.value.kind = group.kind;
@@ -576,6 +610,9 @@ const openPicker = async (card, column) => {
     seasonId: row?.season_id ?? currentSeasonId.value,
     scope: row?.scope ?? null
   };
+  // A fresh dialog starts with no teams cached; editing a team binding opens the current season's group
+  seasonTeams.value = {};
+  openedSeasons.value = row?.kind === 'team' ? [currentSeasonId.value] : [];
   pickerDialog.value = true;
   await loadGroups();
 };

@@ -756,6 +756,7 @@
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                         <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -822,6 +823,7 @@
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                         <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -903,6 +905,7 @@
                 Matched Players
               </v-toolbar-title>
               <v-chip size="small" class="ml-2">{{ selectedProposedSeries.length }} selected</v-chip>
+              <v-chip v-if="proposeExisting" size="small" class="ml-2" variant="text">{{ proposeExisting }} skipped, already have a series</v-chip>
               <v-spacer></v-spacer>
               <v-text-field
                 v-model="searchQuerySeries"
@@ -975,7 +978,8 @@
           </template>
         </v-data-table>
         <v-alert v-else type="info" variant="tonal" class="ma-4">
-          <template v-if="proposeExisting === proposePairs">Every selected pair already has a series on this match.</template>
+          <template v-if="!proposePairs">Select players on both rosters first.</template>
+          <template v-else-if="proposeExisting === proposePairs">Every selected pair already has a series on this match.</template>
           <template v-else-if="proposeExisting">{{ proposeExisting }} of {{ proposePairs }} selected pairs already have a series; the rest are outside the MMR difference.</template>
           <template v-else>No matchups found with current MMR criteria. Try adjusting the MMR difference.</template>
         </v-alert>
@@ -1297,16 +1301,19 @@ const isOut = (rows, playerId) => rows.some(
 );
 const outTeam1 = (player) => isOut(availability1.value, player.id);
 const outTeam2 = (player) => isOut(availability2.value, player.id);
+// Already in a series on this match, published or draft; a second one is allowed by hand
+const hasSeries = (playerId) => [...(series.value || []), ...(draftSeries.value || [])]
+  .some(s => s.player1_id === playerId || s.player2_id === playerId);
 const sideTeams = computed(() => [
   { team: team1.value, roster: roster1.value, isOut: outTeam1 },
   { team: team2.value, roster: roster2.value, isOut: outTeam2 },
 ]);
 
 const selectAvailableTeam1 = () => {
-  proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p)).map(p => p.id);
+  proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p) && !hasSeries(p.id)).map(p => p.id);
 };
 const selectAvailableTeam2 = () => {
-  proposePlayersTeam_2.value = roster2.value.filter(p => !outTeam2(p)).map(p => p.id);
+  proposePlayersTeam_2.value = roster2.value.filter(p => !outTeam2(p) && !hasSeries(p.id)).map(p => p.id);
 };
 
 // A captain reads their own team only, so the team they cannot read stays empty

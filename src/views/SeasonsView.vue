@@ -128,6 +128,12 @@
               <td>{{ item.number_weeks }}</td>
               <td>{{ item.pick_ban }}</td>
               <td>{{ item.series_per_week }}</td>
+              <td>
+                {{ PHASE_LABEL[item.phase] ?? '' }}
+                <v-tooltip v-if="item.phase === 'overdue'" :text="`Past its end date with ${item.unscored_series} series still unscored`" location="top">
+                  <template #activator="{ props }"><v-icon v-bind="props" color="warning" size="small">mdi-alert</v-icon></template>
+                </v-tooltip>
+              </td>
               <td v-if="auth.isAdmin" class="text-end">
                 <RowActions :actions="[
                   { icon: 'mdi-pencil', label: 'Edit Season', onClick: () => editSeason(item) },
@@ -282,6 +288,7 @@ import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore, useSeasonStore, useMapStore } from '@/stores';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
+import { PHASE_LABEL } from '@/helpers/season-phase.mjs';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 
 
@@ -313,6 +320,7 @@ const tableHeader = computed(() => [
   { title: 'Weeks', value: 'number_weeks', sortable: true },
   { title: 'Pick Ban', value: 'pick_ban', sortable: false },
   { title: 'Series/Week', value: 'series_per_week', sortable: true },
+  { title: 'Phase', value: 'phase', sortable: true },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
 

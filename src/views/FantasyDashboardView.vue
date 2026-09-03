@@ -93,7 +93,7 @@
                         <div>
                           <strong class="mb-2 d-block">Drafted Players:</strong>
                           <v-chip-group>
-                            <v-chip v-for="player in existingTeam.drafted_players" :key="player.id" size="small" @click="showPlayerDetails(player)" style="cursor: pointer;">
+                            <v-chip v-for="player in existingTeam.drafted_players" :key="player.id" size="small">
                               {{ player.name }}
                             </v-chip>
                             <v-chip v-if="!existingTeam.drafted_players || existingTeam.drafted_players.length === 0" size="small" color="grey">
@@ -179,45 +179,38 @@
                       </v-card-title>
                       <v-card-text class="pt-4">
                         <v-alert type="info" variant="tonal" class="mb-4">
-                          Select players for your fantasy team from different tiers. Each tier is based on player MMR.
+                          Pick one player from each tier. Records and games are W3C ladder, {{ windowLabel }}.
                         </v-alert>
 
-                        <v-row>
-                          <v-col cols="12" md="6" v-for="tier in tiers" :key="tier">
-                            <v-autocomplete
-                              v-model="tierSelections[tier]"
-                              :items="playersByTier[tier]"
-                              item-title="name"
-                              item-value="id"
-                              :label="`Tier ${tier} - ${tierNames[tier - 1]}`"
-                              variant="outlined"
-                              density="comfortable"
-                              clearable
-                            >
-                              <template v-slot:selection="{ item }">
-                                <PlayerName :player="item.raw" :race="item.raw.signup_race" />
-                              </template>
-                              <template v-slot:item="{ item }">
-                                <v-list-item
-                                  :value="item.value"
-                                  @click="tierSelections[tier] = item.value"
-                                >
-                                  <v-list-item-title><PlayerName :player="item.raw" :race="item.raw.signup_race" /></v-list-item-title>
-                                  <v-list-item-subtitle><W3CMmr /> {{ displayMMR(item.raw) }}</v-list-item-subtitle>
-                                  <template v-slot:append>
-                                    <v-btn
-                                      v-if="item.raw.battleTag"
-                                      icon="mdi-open-in-new"
-                                      size="x-small"
-                                      variant="text"
-                                      @click.stop="openW3CStats(item.raw.battleTag)"
-                                    ></v-btn>
-                                  </template>
-                                </v-list-item>
-                              </template>
-                            </v-autocomplete>
-                          </v-col>
-                        </v-row>
+                        <GroupedTable :columns="draftColumns" :groups="draftGroups" default-open empty="No players tiered this season">
+                          <template #head.mmr><W3CMmr /></template>
+                          <template #group="{ group }">
+                            <td :colspan="draftColumns.length">
+                              <v-chip size="small" :color="group.color" variant="flat" class="mr-2">{{ group.title }}</v-chip>
+                              <span class="text-medium-emphasis">{{ group.rows.length }} {{ group.rows.length === 1 ? 'player' : 'players' }}</span>
+                            </td>
+                          </template>
+                          <template #rows="{ group }">
+                            <template v-for="row in group.rows" :key="row.id">
+                              <tr class="detail-row" :class="{ picked: tierSelections[group.tier] === row.id }">
+                                <td><input v-model="tierSelections[group.tier]" type="radio" class="pick" :name="`tier-${group.tier}`" :value="row.id" :disabled="!canDraft"></td>
+                                <td><PlayerName :player="row" :race="row.signup_race" /></td>
+                                <td class="text-medium-emphasis">{{ row.ladder?.team ?? '' }}</td>
+                                <td class="text-right">{{ row.ladder?.mmr?.current ?? '—' }}</td>
+                                <td class="text-right">{{ row.ladder ? `${row.ladder.wins}–${row.ladder.losses}` : '—' }}</td>
+                                <td class="text-right">{{ row.rate == null ? '—' : `${row.rate}%` }}</td>
+                                <td><LadderDayBars v-if="row.days" :days="row.days" :ymax="ymax" /><span v-else class="text-disabled">—</span></td>
+                                <td class="text-right"><v-btn v-if="row.ladder" :icon="openRows.has(row.id) ? 'mdi-chevron-up' : 'mdi-chevron-down'" size="small" variant="text" @click="toggleRow(row.id)"></v-btn></td>
+                              </tr>
+                              <tr v-if="openRows.has(row.id) && row.ladder" class="detail-row">
+                                <td></td>
+                                <td :colspan="draftColumns.length" class="open-row">
+                                  <PlayerLadderPanel :player="row.ladder" :days="row.days" :ymax="ymax" :ladder-to="ladderTo" />
+                                </td>
+                              </tr>
+                            </template>
+                          </template>
+                        </GroupedTable>
 
                       </v-card-text>
                     </v-card>
@@ -274,11 +267,19 @@
                       item-key="id"
                     >
                       <template #item.players="{ item }">
-                        <div>
-                          <PlayerName v-if="item.player1" :player="item.player1" :race="item.player1.signup_race" @click="showPlayerDetails(item.player1)" />
-                          vs
-                          <PlayerName v-if="item.player2" :player="item.player2" :race="item.player2.signup_race" @click="showPlayerDetails(item.player2)" />
-                        </div>
+                        <MatchupCompare
+                          v-if="item.player1 && item.player2"
+                          :a="item.player1"
+                          :b="item.player2"
+                          :la="ladderById.get(item.player1.id)"
+                          :lb="ladderById.get(item.player2.id)"
+                          :ga="gnlOf(item.player1)"
+                          :gb="gnlOf(item.player2)"
+                          :days-a="daysById.get(item.player1.id)"
+                          :days-b="daysById.get(item.player2.id)"
+                          :ymax="ymax"
+                          class="my-2"
+                        />
                       </template>
 
                       <template #item.date_time="{ item }">
@@ -345,9 +346,9 @@
       <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
       <v-card-text>
         <div class="mb-4">
-          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1.signup_race" @click="showPlayerDetails(betSeries.player1)" />
+          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1.signup_race" />
           vs
-          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2.signup_race" @click="showPlayerDetails(betSeries.player2)" />
+          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2.signup_race" />
         </div>
         <v-radio-group v-model="selectedBetWinnerId">
           <v-radio
@@ -402,12 +403,6 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
-
-  <!-- Player Details Dialog -->
-  <PlayerDetailsDialog
-    ref="playerDetailsDialog"
-    :seasonId="existingTeam?.season?.id"
-  />
 </template>
 
 <script setup>
@@ -415,13 +410,17 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useFantasyStore, useTeamStore, useSeasonStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
+import GroupedTable from '@/components/GroupedTable.vue';
+import LadderDayBars from '@/components/LadderDayBars.vue';
+import MatchupCompare from '@/components/MatchupCompare.vue';
+import PlayerLadderPanel from '@/components/PlayerLadderPanel.vue';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
 import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
-import { getW3CMMR, w3cPlayerUrl } from '@/helpers/w3c-stats';
-import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { ALL_COLORS, ALL_NAMES } from '@/helpers/tiers.mjs';
+import { fillDays, maxGamesPerDay, winRate } from '@/helpers/ladder-days.mjs';
+import { DateTime } from 'luxon';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -458,21 +457,56 @@ const phase = computed(() => season.value?.phase ?? 'open');
 const ended = computed(() => phase.value === 'complete');
 const canDraft = computed(() => isCreationEnabled.value && phase.value === 'open' && tierCount.value > 0);
 
-// Current W3C season for MMR display
-const currentW3CSeason = ref(null);
-
-const displayMMR = (player) => {
-  const mmr = getW3CMMR(player, currentW3CSeason.value, player.signup_race);
-  return mmr > 0 ? mmr : 'N/A';
-};
-
 // Tier selections. The season says how many tiers it cuts; tier 1 is always Diamond,
 // so a shorter season drops the names off the bottom.
-const tierNames = ['Diamond', 'Platinum', 'Gold', 'Silver', 'Bronze', 'Grass'];
+const tierNames = [...ALL_NAMES].reverse();
+const tierColors = [...ALL_COLORS].reverse();
 const tierCount = ref(tierNames.length);
 const tiers = computed(() => Array.from({ length: tierCount.value }, (_, i) => i + 1));
 const emptyTierSelections = () => Object.fromEntries(tiers.value.map((tier) => [tier, null]));
 const tierSelections = ref(emptyTierSelections());
+
+// The ladder record of every signup, for the draft rows and the bet rows
+const ladderPlayers = ref([]);
+const ladderById = computed(() => new Map(ladderPlayers.value.map((p) => [p.id, p])));
+const ladderWindow = computed(() =>
+  season.value?.start_date ? { start: season.value.start_date, end: season.value.end_date || DateTime.now().toISODate() } : null,
+);
+const fmtDay = (iso) => DateTime.fromISO(iso).toFormat('d MMM');
+const windowLabel = computed(() => (ladderWindow.value ? `${fmtDay(ladderWindow.value.start)} – ${fmtDay(ladderWindow.value.end)}` : ''));
+const ymax = computed(() => maxGamesPerDay(ladderPlayers.value));
+const daysById = computed(() =>
+  new Map(ladderPlayers.value.map((p) => [p.id, ladderWindow.value ? fillDays(p.per_day, ladderWindow.value.start, ladderWindow.value.end) : null])),
+);
+const gnlOf = (player) => player.gnl_stats?.find((s) => s.season_id === selectedSeasonId.value) ?? player.gnl_stats?.[0] ?? null;
+const ladderTo = computed(() => ({ path: '/ladder', query: route.query.season ? { season: route.query.season } : {} }));
+const openRows = ref(new Set());
+const toggleRow = (id) => {
+  openRows.value.has(id) ? openRows.value.delete(id) : openRows.value.add(id);
+  openRows.value = new Set(openRows.value);
+};
+
+const draftColumns = computed(() => [
+  { key: 'name', title: 'Player' },
+  { key: 'team', title: 'Team' },
+  { key: 'mmr', title: 'W3C MMR', align: 'right' },
+  { key: 'record', title: 'Record', align: 'right' },
+  { key: 'rate', title: 'Win %', align: 'right' },
+  { key: 'ladder', title: `Ladder · ${windowLabel.value}` },
+  { key: 'open', title: '' },
+]);
+const draftGroups = computed(() =>
+  tiers.value.map((tier) => ({
+    key: tier,
+    tier,
+    title: `Tier ${tier} · ${tierNames[tier - 1]}`,
+    color: tierColors[tier - 1],
+    rows: playersByTier.value[tier].map((p) => {
+      const ladder = ladderById.value.get(p.id) || null;
+      return { ...p, ladder, days: daysById.value.get(p.id) || null, rate: ladder && ladder.games ? winRate(ladder.wins, ladder.losses) : null };
+    }),
+  })),
+);
 
 // Betting state
 const fantasySeries = ref([]);
@@ -497,7 +531,7 @@ const teamForm = ref({
 
 // Table headers for betting
 const fantasyHeaders = [
-  { title: 'Players', key: 'players', sortable: false },
+  { title: 'Match', key: 'players', sortable: false },
   { title: 'Date & Time', key: 'date_time', sortable: true },
   { title: 'My Bet', key: 'my_bet', sortable: false },
   { title: 'Score', key: 'score', sortable: false },
@@ -651,6 +685,7 @@ const loadSeason = async () => {
 
     // The draft pool: the season's signups, carrying signup_race and w3c_stats
     availablePlayers.value = await seasonStore.fetchSeasonSignups(seasonId) || [];
+    ladderPlayers.value = await seasonStore.fetchSeasonLadderPlayers(seasonId).catch(() => []);
     await checkExistingTeam();
   } catch (error) {
     console.error('Failed to load the season:', error);
@@ -933,25 +968,15 @@ const getScoreColorForBet = (series) => {
   return 'warning';
 };
 
-const openW3CStats = (battleTag) => {
-  window.open(w3cPlayerUrl(battleTag), '_blank');
-};
-
 onMounted(async () => {
-  currentW3CSeason.value = await resolveCurrentW3CSeason();
   fetchInitialData();
 });
-
-// Player Details Dialog
-const playerDetailsDialog = ref(null);
-
-const showPlayerDetails = (player) => {
-  if (!player) return;
-  playerDetailsDialog.value.open(player);
-};
 </script>
 
 <style scoped>
+.pick { accent-color: rgb(var(--v-theme-primary)); width: 18px; height: 18px; cursor: pointer; vertical-align: middle; }
+.picked > td { background: rgba(24, 103, 192, 0.06); }
+.open-row { padding: 10px 12px 12px; background: rgba(0, 0, 0, 0.02); }
 
 .team-icon {
   width: 100%;

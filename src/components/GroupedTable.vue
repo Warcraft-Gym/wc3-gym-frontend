@@ -35,15 +35,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
-defineProps({
+const props = defineProps({
   columns: { type: Array, required: true }, // [{ key, title, align?: 'right', width? }]
   groups: { type: Array, required: true }, // each needs a unique `key`
   empty: { type: String, default: 'No data' },
+  defaultOpen: Boolean, // every group starts open, later groups too
 });
 
 const open = ref(new Set());
+watch(() => props.groups, (groups) => {
+  if (props.defaultOpen) open.value = new Set([...open.value, ...groups.map((g) => g.key)]);
+}, { immediate: true });
 const toggle = (key) => {
   open.value.has(key) ? open.value.delete(key) : open.value.add(key);
   open.value = new Set(open.value);

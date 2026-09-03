@@ -233,12 +233,12 @@
                   </td>
                   <td class="text-center">
                     <v-chip :color="item.player1_score > item.player2_score ? 'success' : 'default'" size="small">
-                      {{ item.player1_score }}
+                      {{ item.player1_score ?? '–' }}
                     </v-chip>
                   </td>
                   <td class="text-center">
                     <v-chip :color="item.player2_score > item.player1_score ? 'success' : 'default'" size="small">
-                      {{ item.player2_score }}
+                      {{ item.player2_score ?? '–' }}
                     </v-chip>
                   </td>
                   <td>
@@ -268,7 +268,7 @@
                 </template>
                 <template #actions><RowActions :actions="seriesActions(item)" /></template>
                 <template #side="{ n, won }">
-                  <v-chip size="small" :color="won ? 'success' : 'default'">{{ n ? item.player2_score : item.player1_score }}</v-chip>
+                  <v-chip size="small" :color="won ? 'success' : 'default'">{{ (n ? item.player2_score : item.player1_score) ?? '–' }}</v-chip>
                 </template>
               </SeriesCard>
             </div>
@@ -681,7 +681,8 @@
                     variant="outlined"
                     density="comfortable"
                     prepend-inner-icon="mdi-target"
-                    hint="Maximum MMR difference for matchmaking"
+                    hint="Pairs every selected player across both rosters within this gap; a pair that already has a series is skipped"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="8" class="text-right">
@@ -755,6 +756,7 @@
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                         <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -821,6 +823,7 @@
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
                         <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -902,6 +905,7 @@
                 Matched Players
               </v-toolbar-title>
               <v-chip size="small" class="ml-2">{{ selectedProposedSeries.length }} selected</v-chip>
+              <v-chip v-if="proposeExisting" size="small" class="ml-2" variant="text">{{ proposeExisting }} skipped, already have a series</v-chip>
               <v-spacer></v-spacer>
               <v-text-field
                 v-model="searchQuerySeries"
@@ -974,7 +978,10 @@
           </template>
         </v-data-table>
         <v-alert v-else type="info" variant="tonal" class="ma-4">
-          No matchups found with current MMR criteria. Try adjusting the MMR difference.
+          <template v-if="!proposePairs">Select players on both rosters first.</template>
+          <template v-else-if="proposeExisting === proposePairs">Every selected pair already has a series on this match.</template>
+          <template v-else-if="proposeExisting">{{ proposeExisting }} of {{ proposePairs }} selected pairs already have a series; the rest are outside the MMR difference.</template>
+          <template v-else>No matchups found with current MMR criteria. Try adjusting the MMR difference.</template>
         </v-alert>
       </v-card-text>
       <v-card-actions>
@@ -1243,6 +1250,8 @@ const proposePlayersTeam_1 = ref([]);
 const proposePlayersTeam_2 = ref([]);
 const proposeSeriesMMRDiff = ref(null);
 const proposedSeries = ref([]);
+const proposePairs = ref(0);  // selected pairs on the last proposal
+const proposeExisting = ref(0);  // of those, pairs that already had a series
 const selectedProposedSeries = ref([]);
 
 // Search state
@@ -1292,16 +1301,19 @@ const isOut = (rows, playerId) => rows.some(
 );
 const outTeam1 = (player) => isOut(availability1.value, player.id);
 const outTeam2 = (player) => isOut(availability2.value, player.id);
+// Already in a series on this match, published or draft; a second one is allowed by hand
+const hasSeries = (playerId) => [...(series.value || []), ...(draftSeries.value || [])]
+  .some(s => s.player1_id === playerId || s.player2_id === playerId);
 const sideTeams = computed(() => [
   { team: team1.value, roster: roster1.value, isOut: outTeam1 },
   { team: team2.value, roster: roster2.value, isOut: outTeam2 },
 ]);
 
 const selectAvailableTeam1 = () => {
-  proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p)).map(p => p.id);
+  proposePlayersTeam_1.value = roster1.value.filter(p => !outTeam1(p) && !hasSeries(p.id)).map(p => p.id);
 };
 const selectAvailableTeam2 = () => {
-  proposePlayersTeam_2.value = roster2.value.filter(p => !outTeam2(p)).map(p => p.id);
+  proposePlayersTeam_2.value = roster2.value.filter(p => !outTeam2(p) && !hasSeries(p.id)).map(p => p.id);
 };
 
 // A captain reads their own team only, so the team they cannot read stays empty
@@ -1650,6 +1662,8 @@ const proposeSeries = async () => {
     proposedSeries.value = []
     let t1_player = playersById(roster1.value, proposePlayersTeam_1.value);
     let t2_player = playersById(roster2.value, proposePlayersTeam_2.value);
+    proposePairs.value = t1_player.length * t2_player.length;
+    proposeExisting.value = 0;
 
     for(let i = 0; i< t1_player.length; i++) {
       let p1 = t1_player[i];
@@ -1683,6 +1697,7 @@ const proposeSeries = async () => {
             }
           }
           if(seriesExists){
+            proposeExisting.value++;
             continue;
           }
         }

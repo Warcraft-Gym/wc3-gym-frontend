@@ -184,7 +184,18 @@
       <v-window v-model="seriesViewTab">
         <v-window-item value="published">
           <v-card-text v-if="series && series.length > 0" class="pa-0">
+            <v-toolbar flat height="auto">
+              <v-row align="center" class="flex-wrap ma-0 pa-2">
+                <v-spacer />
+                <v-col cols="12" sm="auto">
+                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" v-if="auth.isAdmin" @click="openCreateNewSeries" block>
+                    Add Series
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-toolbar>
             <v-data-table
+              v-if="!smAndDown"
               :headers="seriesTableHeader"
               :items="enrichedSeries"
               fixed-header
@@ -199,19 +210,6 @@
               </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
-              </template>
-
-              <template #top>
-                <v-toolbar flat height="auto">
-                  <v-row align="center" class="flex-wrap ma-0 pa-2">
-                    <v-spacer />
-                    <v-col cols="12" sm="auto">
-                      <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" v-if="auth.isAdmin" @click="openCreateNewSeries" block>
-                        Add Series
-                      </v-btn>
-                    </v-col>
-                  </v-row>
-                </v-toolbar>
               </template>
 
               <template v-slot:item="{ item }">
@@ -257,15 +255,23 @@
                     <span v-else class="text-grey">—</span>
                   </td>
                   <td v-if="auth.isAdmin" class="text-center">
-                    <RowActions :actions="[
-                      { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
-                      { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
-                      { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
-                    ]" />
+                    <RowActions :actions="seriesActions(item)" />
                   </td>
                 </tr>
               </template>
             </v-data-table>
+            <div v-else>
+              <SeriesCard v-for="item in enrichedSeries" :key="item.id" :series="item" @player="showStats">
+                <template #title>
+                  <span v-if="item.date_time">{{ formateDate(item.date_time) }}</span>
+                  <span v-else>Not scheduled</span>
+                </template>
+                <template #actions><RowActions :actions="seriesActions(item)" /></template>
+                <template #side="{ n, won }">
+                  <v-chip size="small" :color="won ? 'success' : 'default'">{{ n ? item.player2_score : item.player1_score }}</v-chip>
+                </template>
+              </SeriesCard>
+            </div>
           </v-card-text>
 
           <!-- Empty State for Published -->
@@ -299,7 +305,22 @@
         <!-- Draft Series Table -->
         <v-window-item v-if="auth.isCaptain" value="draft">
           <v-card-text v-if="draftSeries && draftSeries.length > 0" class="pa-0">
+            <v-toolbar flat height="auto">
+              <v-row align="center" class="flex-wrap ma-0 pa-2">
+                <v-alert type="info" variant="tonal" density="compact" class="ma-2" border="start">
+                  <v-icon start>mdi-information</v-icon>
+                  Draft series won't appear on the website or affect calculations until an admin publishes them.
+                </v-alert>
+                <v-spacer />
+                <v-col cols="12" sm="auto">
+                  <v-btn variant="elevated" color="warning" prepend-icon="mdi-plus" v-if="canDraft" @click="openCreateNewDraftSeries" block>
+                    Add Draft Series
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-toolbar>
             <v-data-table
+              v-if="!smAndDown"
               :headers="draftSeriesTableHeader"
               :items="enrichedDraftSeries"
               fixed-header
@@ -314,23 +335,6 @@
               </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
-              </template>
-
-              <template #top>
-                <v-toolbar flat height="auto">
-                  <v-row align="center" class="flex-wrap ma-0 pa-2">
-                    <v-alert type="info" variant="tonal" density="compact" class="ma-2" border="start">
-                      <v-icon start>mdi-information</v-icon>
-                      Draft series won't appear on the website or affect calculations until an admin publishes them.
-                    </v-alert>
-                    <v-spacer />
-                    <v-col cols="12" sm="auto">
-                      <v-btn variant="elevated" color="warning" prepend-icon="mdi-plus" v-if="canDraft" @click="openCreateNewDraftSeries" block>
-                        Add Draft Series
-                      </v-btn>
-                    </v-col>
-                  </v-row>
-                </v-toolbar>
               </template>
 
               <template v-slot:item="{ item }">
@@ -391,15 +395,22 @@
                     <span v-else class="text-grey">—</span>
                   </td>
                   <td v-if="canDraft" class="text-center">
-                    <RowActions :actions="[
-                      { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
-                      { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
-                      { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
-                    ]" />
+                    <RowActions :actions="draftActions(item)" />
                   </td>
                 </tr>
               </template>
             </v-data-table>
+            <div v-else>
+              <SeriesCard v-for="item in enrichedDraftSeries" :key="item.id" :series="item" @player="showStats">
+                <template #title>
+                  <v-icon v-if="item.is_fantasy_match" size="small" color="purple" title="Marked to count for fantasy when published">mdi-star</v-icon>
+                </template>
+                <template #actions><RowActions v-if="canDraft" :actions="draftActions(item)" /></template>
+                <template #side="{ player }">
+                  <v-chip size="small" color="info">{{ getW3CMMR(player, null, player.signup_race) || '—' }}</v-chip>
+                </template>
+              </SeriesCard>
+            </div>
           </v-card-text>
 
           <!-- Empty State for Drafts -->
@@ -1013,6 +1024,7 @@
 
 <script setup>
 import RowActions from '@/components/RowActions.vue';
+import SeriesCard from '@/components/SeriesCard.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
 import { useRouter } from 'vue-router';
@@ -1510,6 +1522,17 @@ const fetchMatchSeries = async () => {
     isLoading.value = false;
   }
 };
+
+const seriesActions = (item) => [
+  { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
+  { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
+  { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
+];
+const draftActions = (item) => [
+  { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
+  { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
+  { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', public: canDraft.value, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
+];
 
 const editSeries = async (seriesItem) => {
   const copy_series =  { ...seriesItem };

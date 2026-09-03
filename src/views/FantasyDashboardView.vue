@@ -40,7 +40,7 @@
                   <v-alert v-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
                     You had no fantasy team in {{ seasonName }}.
                   </v-alert>
-                  <v-alert v-else-if="phase === 'commenced' && !existingTeam" type="info" variant="tonal" class="mb-4">
+                  <v-alert v-else-if="phase !== 'open' && !existingTeam" type="info" variant="tonal" class="mb-4">
                     {{ seasonName }} has commenced. Fantasy team creation closed when its first series started.
                   </v-alert>
                   <v-alert v-else-if="!isCreationEnabled && !existingTeam" type="warning" variant="tonal" class="mb-4">

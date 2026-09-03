@@ -130,7 +130,7 @@
               <td>{{ item.series_per_week }}</td>
               <td>
                 {{ PHASE_LABEL[item.phase] ?? '' }}
-                <v-tooltip v-if="startOverdue(item, today)" text="Past its start date and no series has started" location="top">
+                <v-tooltip v-if="item.phase === 'overdue'" text="Past its end date with series still unscored" location="top">
                   <template #activator="{ props }"><v-icon v-bind="props" color="warning" size="small">mdi-alert</v-icon></template>
                 </v-tooltip>
               </td>
@@ -288,7 +288,7 @@ import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore, useSeasonStore, useMapStore } from '@/stores';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
-import { PHASE_LABEL, startOverdue } from '@/helpers/season-phase.mjs';
+import { PHASE_LABEL } from '@/helpers/season-phase.mjs';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 
 
@@ -313,8 +313,6 @@ const selectedSeasonMapIds = ref([]);
 const formError = ref(null);
 
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
-
-const today = new Date().toISOString().slice(0, 10);
 
 const tableHeader = computed(() => [
   { title: 'ID', value: 'id', align: 'start', sortable: true },

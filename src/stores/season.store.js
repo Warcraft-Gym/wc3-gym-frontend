@@ -73,6 +73,9 @@ export const useSeasonStore = defineStore({
             const updated = await fetchWrapper.delete(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids});
             return updated;
         },
+        async updateSeasonSignup(season_id, user_id, data) {
+            return await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/signups/${user_id}`, data);
+        },
         async fetchSeasonLadderPlayers(season_id) {
             return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/ladder/players`);
         },

@@ -54,6 +54,13 @@
                 density="comfortable"
                 hide-details
               ></v-checkbox>
+              <v-checkbox
+                v-model="hideLowGames"
+                label="Hide players with fewer than 20 games"
+                color="primary"
+                density="comfortable"
+                hide-details
+              ></v-checkbox>
             </v-col>
           </template>
         </FilterPanel>
@@ -61,6 +68,8 @@
       <v-data-table
               :headers="playerTableHeaders"
               :items="availablePlayers"
+              :items-per-page="teams.length || 10"
+              :sort-by="[{ key: 'w3c_mmr', order: 'asc' }]"
               return-object
               dense
             >
@@ -128,6 +137,29 @@
               </template>
               <template #item.race="{ item }">
                 <RaceIcon v-if="item.signup_race" :raceIdentifier="item.signup_race" />
+              </template>
+              <template #item.round="{ item }">
+                <div class="d-flex align-center ga-1">
+                  <v-select
+                    v-if="auth.isAdmin"
+                    :model-value="roundOf(item)"
+                    :items="rounds"
+                    density="compact"
+                    variant="underlined"
+                    hide-details
+                    style="width: 64px"
+                    @update:model-value="moveToRound(item, $event)"
+                  ></v-select>
+                  <span v-else>{{ roundOf(item) }}</span>
+                  <v-btn v-if="auth.isAdmin && item.draft_position != null" icon size="x-small" variant="text" @click="setDraftPosition(item, null)">
+                    <v-icon>mdi-pin-off</v-icon>
+                    <v-tooltip activator="parent" location="top">Moved by hand. Click to sort by MMR again</v-tooltip>
+                  </v-btn>
+                  <span v-else-if="item.draft_position != null">
+                    <v-icon size="small">mdi-pin</v-icon>
+                    <v-tooltip activator="parent" location="top">Moved by hand</v-tooltip>
+                  </span>
+                </div>
               </template>
               <template #item.actions="{ item }">
                 <v-btn
@@ -308,6 +340,7 @@ const searchName = ref('');
 const searchRace = ref(null);
 const rangeValues = ref([0, 3000]);
 const hideNoW3CStats = ref(false);
+const hideLowGames = ref(false);
 
 // Track team selection per player
 const playerTeamSelection = ref({});
@@ -324,15 +357,40 @@ const editPlayerDialog = ref(null);
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
 
+const mmrOf = (p) => getW3CMMR(p, currentW3CSeason.value, p.signup_race) || 0;
+
+// The draft order over every signup: MMR ascending, each moved player at his slot
+const orderedPlayers = computed(() => {
+  const all = signedUpPlayersData.value || [];
+  const order = all.filter(p => p.draft_position == null).sort((a, b) => mmrOf(a) - mmrOf(b));
+  for (const p of all.filter(p => p.draft_position != null).sort((a, b) => a.draft_position - b.draft_position)) {
+    order.splice(Math.min(p.draft_position, order.length), 0, p);
+  }
+  return order;
+});
+const positionOf = computed(() => new Map(orderedPlayers.value.map((p, i) => [p.id, i])));
+// One round = one pick per team
+const roundSize = computed(() => teams.value?.length || 10);
+const rounds = computed(() => Array.from({ length: Math.ceil(orderedPlayers.value.length / roundSize.value) }, (_, i) => i + 1));
+const roundOf = (p) => Math.floor(positionOf.value.get(p.id) / roundSize.value) + 1;
+
+const setDraftPosition = async (player, draft_position) => {
+  try {
+    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { draft_position });
+    player.draft_position = draft_position;
+  } catch (error) {
+    console.error('Failed to move the player:', error);
+  }
+};
+const moveToRound = (player, round) => setDraftPosition(player, (round - 1) * roundSize.value);
+
 const playerTableHeaders = [
   { title: 'ID', value: 'id' },
   { title: 'Name', value: 'name' },
-  { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a, currentW3CSeason.value, a.signup_race) || 0;
-    let bValue = getW3CMMR(b, currentW3CSeason.value, b.signup_race) || 0;
-    return aValue - bValue;
-  }},
+  // The draft order, so a reversed sort keeps the moved players in place
+  { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => positionOf.value.get(a.id) - positionOf.value.get(b.id) },
   { title: 'Race', value: 'race' },
+  { title: 'Round', value: 'round', sortable: false },
   { title: 'Team', value: 'team', sortable: false },
   { title: '', value: 'actions', sortable: false, align: 'end' },
 ];
@@ -400,10 +458,8 @@ const seasonName = computed(() => {
   return current_season.name;
 });
 
-// players signed up for this season - from local data fetched separately
-const signedUpPlayers = computed(() => {
-  return signedUpPlayersData.value || [];
-});
+// players signed up for this season, in draft order
+const signedUpPlayers = orderedPlayers;
 
 const filteredPlayers = computed(() => {
   let list = signedUpPlayers.value || [];
@@ -413,11 +469,14 @@ const filteredPlayers = computed(() => {
   if (searchRace.value) list = list.filter(p => p.signup_race === searchRace.value);
   
   // filter by mmr range — only apply if user changed from defaults
-  list = filterByMmrRange(list, rangeValues.value, p => getW3CMMR(p, null, p.signup_race) ?? 0);
+  list = filterByMmrRange(list, rangeValues.value, mmrOf);
   
   // filter out players without W3C stats if checkbox is checked
   if (hideNoW3CStats.value) {
     list = list.filter(p => hasW3CStatsTwoSeasons(p, currentW3CSeason.value, p.signup_race));
+  }
+  if (hideLowGames.value) {
+    list = list.filter(p => !hasLowGamesTwoSeasons(p, currentW3CSeason.value, p.signup_race));
   }
   
   return list;
@@ -428,6 +487,7 @@ const clearFilters = () => {
   searchRace.value = null;
   rangeValues.value = [0, 3000];
   hideNoW3CStats.value = false;
+  hideLowGames.value = false;
 };
 
 const onResetFilters = async () => {

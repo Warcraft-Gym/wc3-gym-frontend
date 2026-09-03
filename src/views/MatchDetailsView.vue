@@ -681,8 +681,6 @@
                     variant="outlined"
                     density="comfortable"
                     prepend-inner-icon="mdi-target"
-                    hint="Pairs every selected player across both rosters within this gap; a pair that already has a series is skipped"
-                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="8" class="text-right">
@@ -980,8 +978,7 @@
         <v-alert v-else type="info" variant="tonal" class="ma-4">
           <template v-if="!proposePairs">Select players on both rosters first.</template>
           <template v-else-if="proposeExisting === proposePairs">Every selected pair already has a series on this match.</template>
-          <template v-else-if="proposeExisting">{{ proposeExisting }} of {{ proposePairs }} selected pairs already have a series; the rest are outside the MMR difference.</template>
-          <template v-else>No matchups found with current MMR criteria. Try adjusting the MMR difference.</template>
+          <template v-else>No pairs within the MMR difference.</template>
         </v-alert>
       </v-card-text>
       <v-card-actions>
@@ -1678,33 +1675,10 @@ const proposeSeries = async () => {
         let p2_mmr = 0;
         let p2 = t2_player[k];
         
-        // Check if series already exists (in either regular series or draft series)
-        if(series.value != null || draftSeries.value != null) {
-          let seriesExists = false;
-          // Check published series
-          if (series.value) {
-            for (let n = 0; n < series.value.length; n++){
-              let s = series.value[n];
-              if(p1.id == s.player1_id && p2.id == s.player2_id){
-                seriesExists = true;
-                break;
-              }
-            }
-          }
-          // Check draft series
-          if (!seriesExists && draftSeries.value) {
-            for (let n = 0; n < draftSeries.value.length; n++){
-              let s = draftSeries.value[n];
-              if(p1.id == s.player1_id && p2.id == s.player2_id){
-                seriesExists = true;
-                break;
-              }
-            }
-          }
-          if(seriesExists){
-            proposeExisting.value++;
-            continue;
-          }
+        // A published or draft series for this pair already exists
+        if ([...(series.value ?? []), ...(draftSeries.value ?? [])].some(s => p1.id == s.player1_id && p2.id == s.player2_id)) {
+          proposeExisting.value++;
+          continue;
         }
 
         const keptSeries = kept.find(sPropS => sPropS.key === proposedKey(p1, p2));

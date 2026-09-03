@@ -101,7 +101,8 @@
                   <span :title="role.id">{{ role.name }}</span>
                   <v-spacer />
                   <v-chip size="x-small" variant="tonal" class="mr-1">{{ role.members }} in Discord</v-chip>
-                  <RowActions :actions="[{ icon: 'mdi-eye', label: 'Unhide', onClick: () => setHidden(role, false) }]" inline />
+                  <v-chip v-if="!role.manageable" size="x-small" variant="tonal" class="mr-1">above the bot</v-chip>
+                  <RowActions v-if="role.hidden" :actions="[{ icon: 'mdi-eye', label: 'Unhide', onClick: () => setHidden(role, false) }]" inline />
                 </div>
               </v-expansion-panel-text>
             </v-expansion-panel>
@@ -429,11 +430,11 @@ const columnOf = (card) => (card.binding ? (card.binding.synced ? 'managed' : 'i
 const cards = computed(() => ({
   managed: allCards.value.filter(c => columnOf(c) === 'managed'),
   ignored: allCards.value.filter(c => columnOf(c) === 'ignored'),
-  notBound: allCards.value.filter(c => columnOf(c) === 'notBound' && !c.hidden)
+  notBound: allCards.value.filter(c => columnOf(c) === 'notBound' && !c.hidden && c.manageable)
 }));
 
-// The roles an admin hid, listed under the Not bound column
-const hiddenRoles = computed(() => guildRoles.value.filter(r => r.hidden));
+// The roles an admin hid, and the unbound ones above the bot that it could never manage, listed under Not bound
+const hiddenRoles = computed(() => guildRoles.value.filter(r => r.hidden || (!r.manageable && !bindingFor(r.id))));
 
 const cardActions = (card) => {
   if (!card.manageable) return [];

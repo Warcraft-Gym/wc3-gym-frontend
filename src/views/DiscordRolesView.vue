@@ -14,7 +14,7 @@
           Managed roles are granted and removed by Sync. Ignored roles are bound but left alone. Not bound roles are never touched.
         </div>
         <div class="text-body-2 text-medium-emphasis">
-          Drag a card to a column, or double-click it to move it: Not bound to Managed, Managed to Ignored, Ignored to Managed.
+          Drag a card to a column, or double-click it to move it: Not bound to Managed, Managed to Ignored, Ignored to Managed. Hide a Not bound role the app must never touch.
         </div>
       </v-col>
     </v-row>
@@ -91,6 +91,21 @@
               </v-card-text>
             </v-card>
           </v-card-text>
+
+          <!-- The roles an admin hid, folded away under the Not bound column -->
+          <v-expansion-panels v-if="column.key === 'notBound' && hiddenRoles.length" variant="accordion" flat>
+            <v-expansion-panel :title="`Hidden roles (${hiddenRoles.length})`">
+              <v-expansion-panel-text>
+                <div v-for="role in hiddenRoles" :key="role.id" class="d-flex align-center mb-2">
+                  <span class="colour-dot mr-2" :style="{ backgroundColor: roleDot(role) }"></span>
+                  <span :title="role.id">{{ role.name }}</span>
+                  <v-spacer />
+                  <v-chip size="x-small" variant="tonal" class="mr-1">{{ role.members }} in Discord</v-chip>
+                  <RowActions :actions="[{ icon: 'mdi-eye', label: 'Unhide', onClick: () => setHidden(role, false) }]" inline />
+                </div>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </v-card>
       </v-col>
     </v-row>
@@ -328,6 +343,7 @@ const teamName = (id) => {
 const guildRole = (id) => guildRoles.value.find(r => r.id === id);
 const bindingFor = (id) => bindings.value.find(b => b.discord_role === id);
 const roleName = (id) => guildRole(id)?.name ?? id;
+const roleDot = (role) => (role.color ? (role.color.startsWith('#') ? role.color : `#${role.color}`) : '#9e9e9e');
 // Within one season a group is unique by kind and team, so a binding that follows the current season still matches
 const groupKey = (group) => `${group.kind}:${group.team_id ?? ''}`;
 
@@ -372,7 +388,7 @@ const allCards = computed(() => {
       ...role,
       binding,
       handManaged: binding?.kind === 'admin',
-      dot: role.color ? (role.color.startsWith('#') ? role.color : `#${role.color}`) : '#9e9e9e',
+      dot: roleDot(role),
       groupLabel: binding ? groupLabel(binding) : null,
       groupTeam: binding?.kind === 'team' ? (teamById(binding.team_id) ?? binding.team_id) : null,
       grants: report.value.filter(r => r.missing.includes(role.id)).length,
@@ -386,14 +402,20 @@ const columnOf = (card) => (card.binding ? (card.binding.synced ? 'managed' : 'i
 const cards = computed(() => ({
   managed: allCards.value.filter(c => columnOf(c) === 'managed'),
   ignored: allCards.value.filter(c => columnOf(c) === 'ignored'),
-  notBound: allCards.value.filter(c => columnOf(c) === 'notBound')
+  notBound: allCards.value.filter(c => columnOf(c) === 'notBound' && !c.hidden)
 }));
+
+// The roles an admin hid, listed under the Not bound column
+const hiddenRoles = computed(() => guildRoles.value.filter(r => r.hidden));
 
 const cardActions = (card) => {
   if (!card.manageable) return [];
   // An admin binding never moves; sync does not read it
   if (card.handManaged) return [{ icon: 'mdi-link-off', label: 'Unbind', color: 'error', onClick: () => openDeleteDialog(card.binding) }];
-  if (!card.binding) return [{ icon: 'mdi-link-variant', label: 'Bind', onClick: () => openPicker(card, 'ignored') }];
+  if (!card.binding) return [
+    { icon: 'mdi-link-variant', label: 'Bind', onClick: () => openPicker(card, 'ignored') },
+    { icon: 'mdi-eye-off', label: 'Hide: the app never shows or touches this role', onClick: () => setHidden(card, true) }
+  ];
 
   const edit = { icon: 'mdi-pencil', label: 'Edit', onClick: () => openPicker(card, columnOf(card)) };
   const unbind = { icon: 'mdi-link-off', label: 'Unbind', color: 'error', onClick: () => openDeleteDialog(card.binding) };
@@ -499,6 +521,23 @@ const setSynced = async (row, synced) => {
   } catch (error) {
     row.synced = before;
     errorMessage.value = 'Failed to move the role: ' + error.message;
+  }
+};
+
+// The role leaves or rejoins the Not bound column at once; the call follows it
+const setHidden = async (role, hidden) => {
+  const row = guildRole(role.id);
+  if (!row) return;
+  errorMessage.value = null;
+  successMessage.value = null;
+  row.hidden = hidden;
+  try {
+    if (hidden) await configStore.hideDiscordRole(row.id);
+    else await configStore.unhideDiscordRole(row.id);
+    successMessage.value = hidden ? 'The app now leaves this role alone.' : 'Role unhidden.';
+  } catch (error) {
+    row.hidden = !hidden;
+    errorMessage.value = `Failed to ${hidden ? 'hide' : 'unhide'} the role: ` + error.message;
   }
 };
 

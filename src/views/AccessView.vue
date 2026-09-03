@@ -121,6 +121,7 @@ import { useAuthStore, useConfigStore, usePlayerStore } from '@/stores';
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { useColumns } from '@/helpers/columns';
 
 const authStore = useAuthStore();
 const configStore = useConfigStore();
@@ -138,13 +139,13 @@ const picked = ref(null);  // a discordId from the list, or a raw one typed in
 const showDeleteDialog = ref(false);
 const deleteRow = ref(null);
 
-const headers = [
+const headers = useColumns([
   { title: 'Name', value: 'name', sortable: true },
-  { title: 'Discord ID', value: 'discord_id', sortable: true },
-  { title: 'Granted', value: 'granted_at', sortable: true },
+  { mobile: false, title: 'Discord ID', value: 'discord_id', sortable: true },
+  { mobile: false, title: 'Granted', value: 'granted_at', sortable: true },
   { title: 'Source', value: 'source', sortable: true },
   { title: '', value: 'actions', align: 'end', sortable: false }
-];
+]);
 
 // env rows are granted outside the app, and an admin cannot remove themself
 const canRemove = (row) => row.source === 'app' && row.discord_id !== authStore.me?.discord_id;

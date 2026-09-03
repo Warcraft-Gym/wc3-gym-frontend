@@ -374,7 +374,7 @@ const scopeCaption = computed(() => {
   if (picker.value?.kind === 'admin') return 'Follows the current season.';
   if (listScope.value === 'season') return `Holders keep the role after ${seasonName(listSeasonId.value)} ends.`;
   if (listScope.value === 'all') return 'Anyone who ever earned it keeps the role.';
-  return 'The role moves to the new holders when the current season changes.';
+  return 'When the next season becomes current, Apply or Sync All grants it to the new holders and removes it from last season\'s.';
 });
 
 const seasonGroups = computed(() => groups.value.filter(g => g.kind !== 'team'));

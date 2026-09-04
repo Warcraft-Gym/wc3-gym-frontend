@@ -60,12 +60,13 @@
               </template>
 
               <template v-slot:[`item.series`]="{ item }">
-                <div v-if="item.series">
-                  <PlayerName v-if="item.series.player1" :player="item.series.player1" :race="item.series.player1.signup_race" />
-                  <template v-else>Player 1</template>
-                  vs
-                  <PlayerName v-if="item.series.player2" :player="item.series.player2" :race="item.series.player2.signup_race" />
-                  <template v-else>Player 2</template>
+                <div v-if="item.series" class="series-sides">
+                  <template v-for="(side, i) in sides(item.series)" :key="i">
+                    <PlayerName v-if="side.player" :player="side.player" :race="side.player.signup_race" />
+                    <span v-else>Player {{ i + 1 }}</span>
+                    <span class="text-no-wrap"><W3CIcon size="14" /> {{ mmrOf(side.player) ?? '—' }}</span>
+                    <VsRaces :player="ladderById.get(side.player?.id)" :race="side.vsRace" />
+                  </template>
                 </div>
                 <div v-else>N/A</div>
               </template>
@@ -317,11 +318,13 @@
 <script setup>
 import BetIcon from '@/components/BetIcon.vue';
 import RowActions from '@/components/RowActions.vue';
+import VsRaces from '@/components/VsRaces.vue';
+import W3CIcon from '@/components/W3CIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import SeasonSelect from '@/components/SeasonSelect.vue';
-import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
+import { sides, validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
 
@@ -347,6 +350,8 @@ const selectedWinnerId = ref(null);
 const selectedBetPoints = ref(null);
 const allSeries = ref([]);
 const fantasyTeams = ref([]);
+// The season ladder record of every signup, by user id, for the MMR and the record against each race
+const ladderById = ref(new Map());
 const page = ref(1);
 const itemsPerPage = ref(25);
 const sortBy = ref([{ key: 'id', order: 'asc' }]);  // the order the server pages by
@@ -429,6 +434,8 @@ watch(() => newBet.value.captain_id, async (captainId) => {
 
 const validateBetPoints = (points) => checkBetPoints(points, minBetPoints.value, maxBetPoints.value);
 
+const mmrOf = (player) => ladderById.value.get(player?.id)?.mmr?.current ?? null;
+
 const isSeriesPlayed = (series) => {
   if (!series) return false;
   const p1 = series.player1_score || 0;
@@ -488,6 +495,18 @@ const fetchData = async () => {
     isLoading.value = false;
   }
 };
+
+// One read per season for the whole page: the ladder record of every signup
+watch(selectedSeasonId, async (seasonId) => {
+  ladderById.value = new Map();
+  if (!seasonId) return;
+  try {
+    const rows = await seasonStore.fetchSeasonLadderPlayers(seasonId);
+    ladderById.value = new Map((rows || []).map(p => [p.id, p]));
+  } catch (error) {
+    console.error('Failed to load the season ladder:', error);
+  }
+}, { immediate: true });
 
 // A new season reads from its first page
 watch(selectedSeasonId, () => {
@@ -680,5 +699,13 @@ onMounted(loadBetPointsSettings);
 <style scoped>
 .v-chip {
   font-weight: 500;
+}
+/* one row per player of the series, so the two MMRs and the two records line up */
+.series-sides {
+  display: inline-grid;
+  grid-template-columns: max-content max-content max-content;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 2px;
 }
 </style>

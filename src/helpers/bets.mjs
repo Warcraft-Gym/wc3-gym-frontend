@@ -11,3 +11,9 @@ export const validateBetPoints = (points, minPoints, maxPoints) => {
   }
   return null;
 };
+
+// The two sides of a series, each carrying the race the other player signed up on
+export const sides = (series) => [
+  { player: series.player1, vsRace: series.player2?.signup_race },
+  { player: series.player2, vsRace: series.player1?.signup_race },
+];

@@ -14,7 +14,6 @@
         <div class="text-subtitle-1 text-grey">{{ season.name }}</div>
       </v-col>
       <v-col cols="auto" class="d-flex align-center ga-2">
-        <v-select :model-value="rules.length" :items="GAMES" item-title="label" item-value="value" variant="outlined" density="compact" hide-details class="games-select" @update:modelValue="setGames" />
         <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${route.params.id}`">Back to season</v-btn>
         <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isDirty || overLimit" @click="saveSettings">
           Save
@@ -253,7 +252,6 @@ const STEPS = [
   { value: 'Pick_B', label: '+ Pick B', color: 'success' },
 ];
 const DEFAULT_RULES = 'veto,veto,veto';
-const GAMES = [1, 3, 5].map((n) => ({ value: n, label: `Best of ${n}` }));
 
 const route = useRoute();
 const seasonStore = useSeasonStore();
@@ -299,10 +297,6 @@ const bans = computed(() => order.value.filter((step) => step.startsWith('Ban'))
 const picks = computed(() => order.value.length - bans.value);
 const overLimit = computed(() => bans.value > bansMax.value || picks.value > picksMax.value);
 const atLimit = (step) => (step.startsWith('Ban') ? bans.value >= bansMax.value : picks.value >= picksMax.value);
-// A longer series keeps the rules it has and plays the new games as vetoes
-const setGames = (n) => {
-  rules.value = Array.from({ length: n }, (_, i) => rules.value[i] || 'veto');
-};
 const counts = computed(() => [
   { label: 'Steps', value: order.value.length },
   { label: 'Bans', value: `${bans.value} / ${bansMax.value}`, negative: bans.value > bansMax.value },
@@ -425,9 +419,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.games-select {
-  width: 140px;
-}
 .map-thumb {
   display: block;
   background: #263238;

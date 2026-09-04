@@ -223,7 +223,7 @@
                     <span v-else class="text-grey">Not scheduled</span>
                   </td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
+                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" />
                   </td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
@@ -242,7 +242,7 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
+                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" />
                   </td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
@@ -261,7 +261,7 @@
               </template>
             </v-data-table>
             <div v-else>
-              <SeriesCard v-for="item in enrichedSeries" :key="item.id" :series="item" @player="showStats">
+              <SeriesCard v-for="item in enrichedSeries" :key="item.id" :series="item">
                 <template #title>
                   <span v-if="item.date_time">{{ formateDate(item.date_time) }}</span>
                   <span v-else>Not scheduled</span>
@@ -341,7 +341,7 @@
                 <tr class="series-row draft-series-row">
                   <td class="d-none d-md-table-cell">{{ item.id }}</td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" @click.stop="showStats(item.player1)" />
+                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" />
                   </td>
                   <td class="d-none d-md-table-cell">
                     <div class="d-flex align-center ga-1">
@@ -366,7 +366,7 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" @click.stop="showStats(item.player2)" />
+                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" />
                   </td>
                   <td class="d-none d-md-table-cell">
                     <div class="d-flex align-center ga-1">
@@ -401,7 +401,7 @@
               </template>
             </v-data-table>
             <div v-else>
-              <SeriesCard v-for="item in enrichedDraftSeries" :key="item.id" :series="item" @player="showStats">
+              <SeriesCard v-for="item in enrichedDraftSeries" :key="item.id" :series="item">
                 <template #title>
                   <v-icon v-if="item.is_fantasy_match" size="small" color="purple" title="Marked to count for fantasy when published">mdi-star</v-icon>
                 </template>
@@ -520,7 +520,7 @@
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
-                    <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
+                    <PlayerName :player="item" :race="item.signup_race">
                       <v-chip v-if="s.isOut(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                     </PlayerName>
                   </template>
@@ -752,7 +752,7 @@
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
-                      <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
+                      <PlayerName :player="item" :race="item.signup_race">
                         <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                         <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
                       </PlayerName>
@@ -819,7 +819,7 @@
                       </v-toolbar>
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
-                      <PlayerName :player="item" :race="item.signup_race" @click.stop="showStats(item)">
+                      <PlayerName :player="item" :race="item.signup_race">
                         <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
                         <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
                       </PlayerName>
@@ -918,10 +918,10 @@
             </v-toolbar>
           </template>
               <template v-slot:[`item.player1.name`]="{ item }">
-                <PlayerName :player="item.player1" :race="item.player1.signup_race" @click.stop="showStats(item.player1)" />
+                <PlayerName :player="item.player1" :race="item.player1.signup_race" />
               </template>
               <template v-slot:[`item.player2.name`]="{ item }">
-                <PlayerName :player="item.player2" :race="item.player2.signup_race" @click.stop="showStats(item.player2)" />
+                <PlayerName :player="item.player2" :race="item.player2.signup_race" />
               </template>
               <template v-slot:[`item.p1_matchup_history`]="{ item }">
                 <div class="d-flex align-center ga-1">
@@ -1006,14 +1006,6 @@
     </v-card>
   </v-dialog>
 
-  <!-- Player Details Dialog -->
-  <PlayerDetailsDialog 
-    ref="playerDetailsDialog"
-    :seasonId="match?.season_id"
-    :seasonName="match?.season?.name"
-    :w3cSeason="currentW3CSeason"
-  />
-
   <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
 
   <ConfirmDeleteDialog
@@ -1042,7 +1034,6 @@ import { fetchWrapper } from '@/helpers';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
-import PlayerDetailsDialog from '../components/PlayerDetailsDialog.vue';
 import { getW3CMMR, mmrSeasonLabel, syncedAgo, syncedAt } from '@/helpers/w3c-stats';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
@@ -1254,9 +1245,6 @@ const selectedProposedSeries = ref([]);
 // Search state
 const searchQueryTeam = ref(['', '']);
 const searchQuerySeries = ref('');
-
-// Player details state
-const playerDetailsDialog = ref(null);
 
 // Sync state
 const syncDialog = ref(false);
@@ -1515,10 +1503,6 @@ const syncW3CTeams = async () => {
 
   isLoading.value = false;
 };
-
-const showStats = async(player) => {
-  playerDetailsDialog.value.open(player);
-}
 
 const fetchSeriesRows = () => Promise.all([
   seriesStore.getSeriesByMatchId(matchId.value),

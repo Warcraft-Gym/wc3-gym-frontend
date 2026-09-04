@@ -4,6 +4,7 @@ export { default as AdminLoginView } from './AdminLoginView.vue';
 export { default as ProfileView } from './ProfileView.vue';
 export { default as SeasonsView } from './SeasonsView.vue';
 export { default as PlayersView } from './PlayersView.vue';
+export { default as PlayerView } from './PlayerView.vue';
 export { default as SeasonDetailsView } from './SeasonDetailsView.vue';
 export { default as MatchDetailsView } from './MatchDetailsView.vue';
 export { default as SeasonTeamDetailsView } from './SeasonTeamDetailsView.vue';

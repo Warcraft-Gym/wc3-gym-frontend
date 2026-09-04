@@ -188,29 +188,32 @@ const applyCaptain = () => {
             </v-list>
         </v-navigation-drawer>
 
-        <v-main>
-            <v-alert v-if="authStore.viewAs" type="warning" density="compact" class="ma-2">
-                Viewing as {{ roleLabel }}
-                <template v-slot:append>
-                    <v-btn size="small" variant="outlined" @click="authStore.setViewAs(null)">Exit</v-btn>
-                </template>
-            </v-alert>
-            <v-dialog v-model="teamDialog" max-width="400">
-                <v-card title="View as captain">
-                    <v-card-text>
-                        <v-select v-model="chosenTeam" :items="teams" item-title="name" item-value="id" label="Team" />
-                    </v-card-text>
-                    <v-card-actions>
-                        <v-spacer />
-                        <v-btn @click="teamDialog = false">Cancel</v-btn>
-                        <v-btn color="primary" :disabled="!chosenTeam" @click="applyCaptain">Apply</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-dialog>
-            <v-container>
-                <RouterView />
-            </v-container>
-        </v-main>
+        <!-- A dialog fills the screen on a phone -->
+        <v-defaults-provider :defaults="{ VDialog: { fullscreen: smAndDown } }">
+            <v-main>
+                <v-alert v-if="authStore.viewAs" type="warning" density="compact" class="ma-2">
+                    Viewing as {{ roleLabel }}
+                    <template v-slot:append>
+                        <v-btn size="small" variant="outlined" @click="authStore.setViewAs(null)">Exit</v-btn>
+                    </template>
+                </v-alert>
+                <v-dialog v-model="teamDialog" max-width="400">
+                    <v-card title="View as captain">
+                        <v-card-text>
+                            <v-select v-model="chosenTeam" :items="teams" item-title="name" item-value="id" label="Team" />
+                        </v-card-text>
+                        <v-card-actions>
+                            <v-spacer />
+                            <v-btn @click="teamDialog = false">Cancel</v-btn>
+                            <v-btn color="primary" :disabled="!chosenTeam" @click="applyCaptain">Apply</v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
+                <v-container>
+                    <RouterView />
+                </v-container>
+            </v-main>
+        </v-defaults-provider>
         <v-footer v-if="showBar" class="justify-end text-caption py-1" color="transparent">
             <RouterLink to="/credits" class="text-grey text-decoration-none">Credits</RouterLink>
         </v-footer>

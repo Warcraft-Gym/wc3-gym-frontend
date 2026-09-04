@@ -39,10 +39,10 @@ const allHeaders = computed(() => [
   { title: 'Rating', key: 'rating', sortable: true },
   { title: 'Series W-L', key: 'series_record', sortable: true },
   { mobile: false, title: 'Series %', key: 'series_winrate', sortable: true },
-  { title: 'Games W-L', key: 'games_record', sortable: true },
+  { mobile: false, title: 'Games W-L', key: 'games_record', sortable: true },
   { mobile: false, title: 'Games %', key: 'games_winrate', sortable: true },
   { mobile: false, title: 'Seasons', key: 'seasons_played', sortable: true },
-  { title: '', key: 'actions', sortable: false }
+  { mobile: false, title: '', key: 'actions', sortable: false }
 ].filter(h => auth.isAdmin || (h.key !== 'status' && h.key !== 'actions')));
 const headers = useColumns(allHeaders);
 

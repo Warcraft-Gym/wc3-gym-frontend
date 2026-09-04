@@ -103,10 +103,10 @@
                   </td>
                   <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
                   <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
-                  <td>
+                  <td class="d-none d-md-table-cell">
                     <RaceMmrChips :player="item" :w3cSeason="currentW3CSeason" />
                   </td>
-                  <td>
+                  <td class="d-none d-md-table-cell">
                     <div v-if="item.signup_seasons && item.signup_seasons.length > 0">
                       <template v-for="s in item.signup_seasons.slice().sort((a,b) => b.id - a.id).slice(0,2)" :key="s.id">
                         <v-chip small class="ma-1">{{ s.name }}</v-chip>
@@ -383,8 +383,8 @@ const allTableHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
   { mobile: false, title: 'Battletag', value: 'battleTag', sortable: true },
   { mobile: false, title: 'Discord Name', value: 'discordTag', sortable: true },
-  { title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'races', sortable: false },
-  { title: 'Signups', value: 'signups', sortable: false },
+  { mobile: false, title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'races', sortable: false },
+  { mobile: false, title: 'Signups', value: 'signups', sortable: false },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
 const tableHeader = useColumns(allTableHeader);

@@ -319,9 +319,9 @@ const allTableHeader = computed(() => [
   { mobile: false, title: 'Ladder Points', key: 'ladder_points', sortable: true },
   { mobile: false, title: 'Achievements', key: 'achievements', sortable: false },
   { title: 'Total Points', key: 'points', sortable: true },
-  { title: 'Wins', key: 'wins', sortable: true },
-  { title: 'Losses', key: 'losses', sortable: true },
-  { title: 'MMR', key: 'mmr', sortable: true },
+  { mobile: false, title: 'Wins', key: 'wins', sortable: true },
+  { mobile: false, title: 'Losses', key: 'losses', sortable: true },
+  { mobile: false, title: 'MMR', key: 'mmr', sortable: true },
   { mobile: false, title: 'MMR +/-', key: 'mmrDiff', sortable: true },
 ]);
 const tableHeader = useColumns(allTableHeader);

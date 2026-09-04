@@ -50,8 +50,6 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-    const legacy = to.fullPath.indexOf('#/');  // links sent before history mode: /#/x?y opens /x?y
-    if (legacy > -1) return to.fullPath.slice(legacy + 1);
     const auth = useAuthStore();
     // A season in the path is a slug; the page reads its id off the loaded list
     if (to.meta.season) await useSeasonStore().ensureSeasons();

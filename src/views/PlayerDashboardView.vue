@@ -1135,10 +1135,7 @@ const replaySlots = computed(() => {
   const [p1, p2] = reportedScore.value;
   return isValidResult(p1, p2, seriesWins.value) ? replaysNeeded(p1, p2) : seriesWins.value;
 });
-const decidingHint = computed(() => {
-  const [p1, p2] = reportedScore.value;
-  return `Required for ${Math.max(p1, p2)}:${Math.min(p1, p2)} or ${Math.min(p1, p2)}:${Math.max(p1, p2)} results`;
-});
+const decidingHint = computed(() => `Required for a ${reportedScore.value.join(':')} result`);
 
 // Validate schedule: date and time must be present
 const isScheduleValid = computed(() => {

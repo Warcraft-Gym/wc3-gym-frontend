@@ -254,7 +254,7 @@
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
                     <span v-else class="text-grey">—</span>
                   </td>
-                  <td v-if="auth.isAdmin" class="text-center">
+                  <td class="text-center">
                     <RowActions :actions="seriesActions(item)" />
                   </td>
                 </tr>
@@ -1080,7 +1080,7 @@ const allSeriesTableHeader = computed(() => [
     return aValue - bValue;
   }},
   { mobile: false, title: 'Fantasy Match'},
-  ...(auth.isAdmin ? [{ title: '', value: 'actions', sortable: false }] : []),
+  { title: '', value: 'actions', sortable: false },
 ]);
 const seriesTableHeader = useColumns(allSeriesTableHeader);
 
@@ -1504,8 +1504,11 @@ const syncW3CTeams = async () => {
   isLoading.value = false;
 };
 
+const replays = ref([]);
 const fetchSeriesRows = () => Promise.all([
   seriesStore.getSeriesByMatchId(matchId.value),
+  // a failed replay list must not blank the series table
+  matchStore.getMatchReplays(matchId.value).then((rows) => { replays.value = rows; }, console.warn),
   auth.isCaptain && seriesStore.getDraftSeriesByMatchId(matchId.value),  // drafts are captain-only on the backend
 ]);
 
@@ -1522,6 +1525,8 @@ const fetchMatchSeries = async () => {
 };
 
 const seriesActions = (item) => [
+  ...replays.value.filter((r) => r.series_id === item.id).map((r) => (
+    { icon: 'mdi-download', label: `Replay game ${r.game_no}`, href: r.url, public: true })),
   { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
   { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
   { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },

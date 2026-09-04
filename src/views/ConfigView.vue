@@ -399,8 +399,8 @@ const isGeneratingKothToken = ref(false);
 
 // Score system options
 const scoreSystemOptions = [
-  { title: 'Standard (2 x wins - 1 points max)', value: 'standard' },
-  { title: 'Helpstone (2 x wins points max)', value: 'helpstone' }
+  { title: 'Standard', value: 'standard' },
+  { title: 'Helpstone', value: 'helpstone' }
 ];
 
 // Map of setting keys to values

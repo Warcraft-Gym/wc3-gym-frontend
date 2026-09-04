@@ -550,41 +550,17 @@
                 />
               </v-col>
             </v-row>
-            <v-row>
+            <v-row v-for="game in replaySlots" :key="game">
               <v-col cols="12">
-                <v-file-input 
-                  v-model="scoreSeries.game1File" 
-                  label="Game 1 Replay" 
+                <v-file-input
+                  v-model="scoreSeries.replays[game]"
+                  :label="`Game ${game} Replay`"
                   variant="outlined"
-                  accept=".w3g" 
+                  accept=".w3g"
                   prepend-icon="mdi-file-upload"
-                  :rules="[rules.w3gFile]"
-                />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12">
-                <v-file-input 
-                  v-model="scoreSeries.game2File" 
-                  label="Game 2 Replay" 
-                  variant="outlined"
-                  accept=".w3g" 
-                  prepend-icon="mdi-file-upload"
-                  :rules="[rules.w3gFile]"
-                />
-              </v-col>
-            </v-row>
-            <v-row v-if="needsGame3">
-              <v-col cols="12">
-                <v-file-input 
-                  v-model="scoreSeries.game3File" 
-                  label="Game 3 Replay" 
-                  variant="outlined"
-                  accept=".w3g" 
-                  prepend-icon="mdi-file-upload" 
-                  :rules="[rules.required, rules.w3gFile]" 
-                  required 
-                  :hint="'Required for 2:1 or 1:2 results'" 
+                  :rules="game > seriesWins ? [rules.required, rules.w3gFile] : [rules.w3gFile]"
+                  :required="game > seriesWins"
+                  :hint="game > seriesWins ? decidingHint : undefined"
                 />
               </v-col>
             </v-row>
@@ -639,6 +615,7 @@ import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore, useMatchStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
+import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
@@ -747,7 +724,7 @@ const scoreFormValid = ref(true);
 const scheduleForm = ref(null);
 const scoreForm = ref(null);
 const scheduleSeries = ref({});
-const scoreSeries = ref({});
+const scoreSeries = ref({ replays: {} });
 // a result carries its veto, so the dialog reads the board before the scores
 const scoreVeto = ref(null);
 const vetoMissing = computed(() => !!scoreVeto.value && !scoreVeto.value.complete);
@@ -1080,9 +1057,8 @@ const reportResult = (item) => {
     player2_name: item.player2?.name || `Player ${item.player2_id}`,
     isPlayer1Current: isPlayer1,
     isPlayer2Current: !isPlayer1,
-    game1File: null,
-    game2File: null,
-    game3File: null
+    map_rules: item.match?.season?.map_rules,
+    replays: {}
   };
 
   scoreVeto.value = null;
@@ -1101,7 +1077,7 @@ const goToVeto = () => {
 
 const closeScore = () => {
   scoreDialog.value = false;
-  scoreSeries.value = {};
+  scoreSeries.value = { replays: {} };
 };
 
 const saveResult = async () => {
@@ -1110,19 +1086,12 @@ const saveResult = async () => {
     const p1 = parseInt(scoreSeries.value.player1_score) || 0;
     const p2 = parseInt(scoreSeries.value.player2_score) || 0;
 
-    const hasGame1File = scoreSeries.value.game1File && scoreSeries.value.game1File instanceof File;
-    const hasGame2File = scoreSeries.value.game2File && scoreSeries.value.game2File instanceof File;
-    const hasGame3File = scoreSeries.value.game3File && scoreSeries.value.game3File instanceof File;
-
-    if (!hasGame1File || !hasGame2File) {
-      errorMessage.value = 'Game 1 and Game 2 replay files are required when reporting a result.';
-      return;
-    }
-
-    const needG3 = (p1 === 2 && p2 === 1) || (p1 === 1 && p2 === 2);
-    if (needG3 && !hasGame3File) {
-      errorMessage.value = 'Game 3 replay file is required for 2:1 or 1:2 results.';
-      return;
+    const played = replaysNeeded(p1, p2);
+    for (let game = 1; game <= played; game++) {
+      if (!hasReplay(game)) {
+        errorMessage.value = `Game ${game} replay file is required for a ${p1}:${p2} result.`;
+        return;
+      }
     }
 
     const formData = new FormData();
@@ -1131,9 +1100,7 @@ const saveResult = async () => {
     formData.append('player2_score', p2);
     formData.append('action', 'score_updated');
 
-    if (hasGame1File) formData.append('game1', scoreSeries.value.game1File);
-    if (hasGame2File) formData.append('game2', scoreSeries.value.game2File);
-    if (hasGame3File) formData.append('game3', scoreSeries.value.game3File);
+    for (let game = 1; game <= played; game++) formData.append(`game${game}`, scoreSeries.value.replays[game]);
 
     const url = `${backendUrl}/player-series/${scoreSeries.value.id}`;
     const response = await fetch(url, {
@@ -1158,12 +1125,19 @@ const saveResult = async () => {
   }
 };
 
-// Show Game 3 input only when needed (2:1 or 1:2) for the score dialog
-const needsGame3 = computed(() => {
-  const p1 = Number(scoreSeries.value.player1_score);
-  const p2 = Number(scoreSeries.value.player2_score);
-  if (Number.isNaN(p1) || Number.isNaN(p2)) return false;
-  return (p1 === 2 && p2 === 1) || (p1 === 1 && p2 === 2);
+// The reported score, the season's maps to win, and the replay the reporter picked for a game
+const reportedScore = computed(() => [parseInt(scoreSeries.value.player1_score), parseInt(scoreSeries.value.player2_score)]);
+const seriesWins = computed(() => winsOf(scoreSeries.value.map_rules));
+const hasReplay = (game) => scoreSeries.value.replays?.[game] instanceof File;
+
+// The series always plays as many maps as it takes to win; the rest show once the score calls for them
+const replaySlots = computed(() => {
+  const [p1, p2] = reportedScore.value;
+  return isValidResult(p1, p2, seriesWins.value) ? replaysNeeded(p1, p2) : seriesWins.value;
+});
+const decidingHint = computed(() => {
+  const [p1, p2] = reportedScore.value;
+  return `Required for ${Math.max(p1, p2)}:${Math.min(p1, p2)} or ${Math.min(p1, p2)}:${Math.max(p1, p2)} results`;
 });
 
 // Validate schedule: date and time must be present
@@ -1178,27 +1152,11 @@ const isScoreValid = computed(() => {
   // Check if form is valid (includes file validation rules)
   if (!scoreFormValid.value) return false;
   
-  const p1 = parseInt(scoreSeries.value.player1_score);
-  const p2 = parseInt(scoreSeries.value.player2_score);
-  if (Number.isNaN(p1) || Number.isNaN(p2)) return false;
+  const [p1, p2] = reportedScore.value;
+  if (!isValidResult(p1, p2, seriesWins.value)) return false;
 
-  const allowed = (
-    (p1 === 2 && p2 === 0) ||
-    (p1 === 0 && p2 === 2) ||
-    (p1 === 2 && p2 === 1) ||
-    (p1 === 1 && p2 === 2)
-  );
-  if (!allowed) return false;
-
-  const hasGame1 = scoreSeries.value.game1File && scoreSeries.value.game1File instanceof File;
-  const hasGame2 = scoreSeries.value.game2File && scoreSeries.value.game2File instanceof File;
-  if (!hasGame1 || !hasGame2) return false;
-
-  // If it's a 2:1 or 1:2 result, require game3
-  if ((p1 === 2 && p2 === 1) || (p1 === 1 && p2 === 2)) {
-    const hasGame3 = scoreSeries.value.game3File && scoreSeries.value.game3File instanceof File;
-    return !!hasGame3;
-  }
+  const played = replaysNeeded(p1, p2);
+  for (let game = 1; game <= played; game++) if (!hasReplay(game)) return false;
 
   return true;
 });

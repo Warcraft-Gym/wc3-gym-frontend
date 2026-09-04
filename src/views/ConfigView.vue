@@ -90,7 +90,7 @@
                     v-model="settingsMap.score_system"
                     :items="scoreSystemOptions"
                     label="Score System"
-                    hint="Scoring method for series: Standard (2:0 = 3pts, 2:1 = 2pts) or Helpstone (2:0 = 4pts, 2:1 = 3pts)"
+                    hint="Series points: the winner takes the top of the scale minus the loser's maps, the loser keeps theirs"
                     variant="outlined"
                     prepend-inner-icon="mdi-trophy-variant"
                   ></v-select>
@@ -399,8 +399,8 @@ const isGeneratingKothToken = ref(false);
 
 // Score system options
 const scoreSystemOptions = [
-  { title: 'Standard (3 points max)', value: 'standard' },
-  { title: 'Helpstone (4 points max)', value: 'helpstone' }
+  { title: 'Standard', value: 'standard' },
+  { title: 'Helpstone', value: 'helpstone' }
 ];
 
 // Map of setting keys to values

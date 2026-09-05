@@ -84,7 +84,7 @@
                   <td>
                     <PlayerName :player="item">
                       <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
-                        <v-tooltip open-on-click>
+                        <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
                           </template>
@@ -92,7 +92,7 @@
                         </v-tooltip>
                       </template>
                       <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason, item.race)">
-                        <v-tooltip open-on-click>
+                        <v-tooltip>
                           <template #activator="{ props }">
                             <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
                           </template>

@@ -11,7 +11,7 @@
     </span>
     <span class="note-icon ml-1" @click.stop>
       <v-icon size="x-small">mdi-help-circle-outline</v-icon>
-      <v-tooltip activator="parent" location="top" max-width="320" open-on-click>{{ note }}</v-tooltip>
+      <v-tooltip activator="parent" location="top" max-width="320">{{ note }}</v-tooltip>
     </span>
   </span>
 </template>

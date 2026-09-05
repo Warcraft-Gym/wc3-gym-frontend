@@ -42,7 +42,9 @@ const vuetify = new createVuetify ({
     components :{
         ...components,
     },
-    directives
+    directives,
+    // A tooltip opens on tap as well as hover, so its text is reachable on a phone
+    defaults: { VTooltip: { openOnClick: true } },
 });
 
 //App + Router

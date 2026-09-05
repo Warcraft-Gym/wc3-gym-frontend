@@ -35,7 +35,7 @@
         @click="action.onClick?.()"
       >
         <v-icon>{{ action.icon }}</v-icon>
-        <v-tooltip activator="parent" location="top" open-on-click>{{ action.label }}</v-tooltip>
+        <v-tooltip activator="parent" location="top">{{ action.label }}</v-tooltip>
       </v-btn>
     </template>
   </div>

@@ -59,7 +59,7 @@
   h2 { font-size: 1.3rem; }
   .v-container { padding: 8px; }
   .v-table > .v-table__wrapper > table > thead > tr > th,
-  .v-table > .v-table__wrapper > table > tbody > tr > td { padding: 0 8px; }
+  .v-table > .v-table__wrapper > table > tbody > tr > td { padding: 4px 8px; }
   /* A two-word column title wraps rather than push the table off the screen. */
   .v-table > .v-table__wrapper > table > thead > tr > th { white-space: normal; }
 }

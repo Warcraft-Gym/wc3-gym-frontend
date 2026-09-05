@@ -15,7 +15,7 @@
       <v-container class="fill-height">
         <v-row align="center" justify="center">
           <v-col cols="12" md="8" class="text-center">
-            <h1 class="text-h2 font-weight-bold mb-4 season-title">{{ season.name }}</h1>
+            <h1 class="text-h5 text-md-h2 font-weight-bold mb-4 season-title">{{ season.name }}</h1>
             <v-row class="justify-center mt-6 d-none d-sm-flex">
               <v-col cols="auto">
                 <v-card class="stat-card" elevation="8">

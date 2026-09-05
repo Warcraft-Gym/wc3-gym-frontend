@@ -90,7 +90,6 @@
           <template v-else>
             <div class="d-flex ga-2 mt-2">
               <v-btn
-                size="small"
                 color="success"
                 :variant="answerFor(week) === true ? 'flat' : 'outlined'"
                 :loading="savingWeek === week"
@@ -100,7 +99,6 @@
                 Can play
               </v-btn>
               <v-btn
-                size="small"
                 color="error"
                 :variant="answerFor(week) === false ? 'flat' : 'outlined'"
                 :loading="savingWeek === week"

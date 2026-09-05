@@ -558,9 +558,9 @@
                   variant="outlined"
                   accept=".w3g"
                   prepend-icon="mdi-file-upload"
-                  :rules="game > seriesWins ? [rules.required, rules.w3gFile] : [rules.w3gFile]"
-                  :required="game > seriesWins"
-                  :hint="game > seriesWins ? decidingHint : undefined"
+                  :rules="needsFile(game) ? [rules.required, rules.w3gFile] : [rules.w3gFile]"
+                  :required="needsFile(game)"
+                  :hint="fileHint(game)"
                 />
               </v-col>
             </v-row>
@@ -1058,6 +1058,8 @@ const reportResult = (item) => {
     isPlayer1Current: isPlayer1,
     isPlayer2Current: !isPlayer1,
     map_rules: item.match?.season?.map_rules,
+    // games already reported: their stored replays stay unless a new file is picked
+    reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score : 0,
     replays: {}
   };
 
@@ -1080,6 +1082,22 @@ const closeScore = () => {
   scoreSeries.value = { replays: {} };
 };
 
+const REPLAY_MAGIC = 'Warcraft III recorded game';
+
+// The file goes from the browser straight to the bucket, at a link the backend signs per game
+const uploadReplay = async (seriesId, game, file) => {
+  const head = new TextDecoder().decode(await file.slice(0, REPLAY_MAGIC.length).arrayBuffer());
+  if (head !== REPLAY_MAGIC) throw new Error(`Game ${game} is not a Warcraft III replay`);
+  const query = token.value ? `?token=${encodeURIComponent(token.value)}` : '';
+  const { url } = await fetchWrapper.post(`${backendUrl}/player-series/${seriesId}/replays/${game}/upload-url${query}`);
+  const put = await fetch(url, {
+    method: 'PUT',
+    body: file,
+    headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename="game${game}.w3g"` }
+  });
+  if (!put.ok) throw new Error(`Game ${game} replay upload failed`);
+};
+
 const saveResult = async () => {
   scoreSavingId.value = scoreSeries.value.id;
   try {
@@ -1088,30 +1106,37 @@ const saveResult = async () => {
 
     const played = replaysNeeded(p1, p2);
     for (let game = 1; game <= played; game++) {
-      if (!hasReplay(game)) {
+      if (needsFile(game) && !hasReplay(game)) {
         errorMessage.value = `Game ${game} replay file is required for a ${p1}:${p2} result.`;
         return;
       }
     }
 
-    const formData = new FormData();
-    if (token.value) formData.append('token', token.value);
-    formData.append('player1_score', p1);
-    formData.append('player2_score', p2);
-    formData.append('action', 'score_updated');
+    const id = scoreSeries.value.id;
+    const uploaded = [];
+    for (let game = 1; game <= played; game++) {
+      if (!hasReplay(game)) continue;
+      await uploadReplay(id, game, scoreSeries.value.replays[game]);
+      uploaded.push(game);
+    }
 
-    for (let game = 1; game <= played; game++) formData.append(`game${game}`, scoreSeries.value.replays[game]);
-
-    const url = `${backendUrl}/player-series/${scoreSeries.value.id}`;
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: await authHeader('PUT', url),
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Update failed');
+    const query = token.value ? `?token=${encodeURIComponent(token.value)}` : '';
+    if (played === scoreSeries.value.reported && uploaded.length) {
+      // the result stands; each new file replaces one stored replay
+      for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}${query}`);
+    } else {
+      // the report confirms every game's file in the bucket before it writes the score
+      const formData = new FormData();
+      if (token.value) formData.append('token', token.value);
+      formData.append('player1_score', p1);
+      formData.append('player2_score', p2);
+      formData.append('action', 'score_updated');
+      const url = `${backendUrl}/player-series/${id}`;
+      const response = await fetch(url, { method: 'PUT', headers: await authHeader('PUT', url), body: formData });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Update failed');
+      }
     }
 
     successMessage.value = 'Result reported successfully!';
@@ -1129,6 +1154,12 @@ const saveResult = async () => {
 const reportedScore = computed(() => [parseInt(scoreSeries.value.player1_score), parseInt(scoreSeries.value.player2_score)]);
 const seriesWins = computed(() => winsOf(scoreSeries.value.map_rules));
 const hasReplay = (game) => scoreSeries.value.replays?.[game] instanceof File;
+// A first report needs every game's file; a fix keeps the stored ones unless a new file is picked
+const needsFile = (game) => game > (scoreSeries.value.reported || 0);
+const fileHint = (game) => {
+  if (!needsFile(game)) return 'Leave empty to keep the stored replay';
+  return game > seriesWins.value ? decidingHint.value : undefined;
+};
 
 // The series always plays as many maps as it takes to win; the rest show once the score calls for them
 const replaySlots = computed(() => {
@@ -1153,7 +1184,7 @@ const isScoreValid = computed(() => {
   if (!isValidResult(p1, p2, seriesWins.value)) return false;
 
   const played = replaysNeeded(p1, p2);
-  for (let game = 1; game <= played; game++) if (!hasReplay(game)) return false;
+  for (let game = 1; game <= played; game++) if (needsFile(game) && !hasReplay(game)) return false;
 
   return true;
 });

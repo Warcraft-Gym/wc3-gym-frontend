@@ -7,7 +7,7 @@
 
       <!-- Event Header -->
       <div v-if="event" class="text-center mb-8">
-        <h1 class="text-h2 font-weight-bold mb-2">
+        <h1 class="text-h5 text-md-h2 font-weight-bold mb-2">
           <v-icon size="48" color="warning" class="mr-3">mdi-crown</v-icon>
           {{ event.name }}
         </h1>

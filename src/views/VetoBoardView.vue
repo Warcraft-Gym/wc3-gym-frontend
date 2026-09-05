@@ -88,7 +88,6 @@
                 </v-chip>
                 <v-btn
                   v-else-if="tile.canAct"
-                  size="small"
                   variant="outlined"
                   :color="nextAction === 'Pick' ? 'success' : 'error'"
                   :loading="saving"
@@ -355,7 +354,8 @@ onUnmounted(() => clearInterval(timer));
 
 <style scoped>
 .map-tile {
-  width: 190px;
+  width: calc(50% - 6px);
+  max-width: 190px;
 }
 
 .week-map {

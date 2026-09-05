@@ -14,7 +14,7 @@
           Managed roles are granted and removed by Sync. Ignored roles are bound but left alone. Not bound roles are never touched.
         </div>
         <div class="text-body-2 text-medium-emphasis">
-          Drag a card to a column, or double-click it to move it: Not bound to Managed, Managed to Ignored, Ignored to Managed. Ignore a role the app knows the holders of but a person applies by hand. Hide a role with nothing in the app to bind it to.
+          Move a card with its Bind, Manage or Ignore button, or drag it to a column, or double-click it: Not bound to Managed, Managed to Ignored, Ignored to Managed. Ignore a role the app knows the holders of but a person applies by hand. Hide a role with nothing in the app to bind it to.
         </div>
       </v-col>
     </v-row>

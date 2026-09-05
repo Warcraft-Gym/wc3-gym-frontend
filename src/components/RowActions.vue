@@ -11,7 +11,8 @@
           v-for="action in visible"
           :key="action.label"
           :disabled="action.disabled"
-          @click="action.onClick()"
+          :href="action.href"
+          @click="action.onClick?.()"
         >
           <template #prepend>
             <v-icon :color="action.color">{{ action.icon }}</v-icon>
@@ -30,7 +31,8 @@
         :color="action.color"
         :disabled="action.disabled"
         :loading="action.loading"
-        @click="action.onClick()"
+        :href="action.href"
+        @click="action.onClick?.()"
       >
         <v-icon>{{ action.icon }}</v-icon>
         <v-tooltip activator="parent" location="top">{{ action.label }}</v-tooltip>
@@ -45,7 +47,7 @@ import { computed } from 'vue';
 import { useAuthStore } from '@/stores';
 
 const auth = useAuthStore();  // an action writes unless marked public, so only an admin sees it
-// action: { icon, label, onClick, color?, disabled?, loading?, public? }
+// action: { icon, label, onClick | href, color?, disabled?, loading?, public? }
 const props = defineProps({
   actions: { type: Array, required: true },
   // inline renders the icon buttons whatever the count, instead of folding three or more into a menu

@@ -17,6 +17,10 @@ export const useMatchStore = defineStore({
         async fetchMatchDetails(matchId){
             this.match = await fetchWrapper.get(`${backendUrl}/matches/${matchId}`);
         },
+        // one file per game played, a public store URL each
+        async getMatchReplays(matchId) {
+            return fetchWrapper.get(`${backendUrl}/matches/${matchId}/replays`);
+        },
         async updateMatch(match) {
             const matchId = match.id;
             await fetchWrapper.put(`${backendUrl}/matches/${matchId}`, match);

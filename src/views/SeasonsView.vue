@@ -2,7 +2,7 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1 class="text-h3 font-weight-bold">
+        <h1 class="text-h5 text-md-h3 font-weight-bold">
           <v-icon class="mr-2" size="large">mdi-trophy</v-icon>
           Seasons
         </h1>

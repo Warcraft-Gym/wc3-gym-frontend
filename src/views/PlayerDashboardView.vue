@@ -422,27 +422,25 @@
         <thead>
           <tr>
             <th>Opponent</th>
-            <th>Played</th>
             <th>Series record</th>
-            <th>Last met</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           <template v-for="opp in history.opponents" :key="opp.id">
             <tr class="opponent-row" @click="openOpponent = openOpponent === opp.id ? null : opp.id">
               <!-- no race here: the row spans every season, and a player is not one race -->
-              <td><PlayerName :player="opp" /></td>
-              <td>{{ opp.played }} series</td>
+              <td>
+                <PlayerName :player="opp" />
+                <div class="text-caption text-medium-emphasis">last met {{ lastMet(opp) }}</div>
+              </td>
               <td>
                 <v-chip :color="recordColor(opp.won, opp.lost)" variant="tonal" size="small">
                   {{ opp.won }} to {{ opp.lost }}
                 </v-chip>
               </td>
-              <td>
-                <div class="d-flex align-center justify-space-between ga-2">
-                  <span class="text-medium-emphasis">{{ lastMet(opp) }}</span>
-                  <v-icon size="small">{{ openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </div>
+              <td class="text-right">
+                <v-icon size="small">{{ openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
               </td>
             </tr>
             <tr
@@ -459,7 +457,7 @@
                 </v-chip>
                 <span class="text-caption text-medium-emphasis ml-1">games</span>
               </td>
-              <td colspan="2" class="text-caption text-medium-emphasis">
+              <td class="text-caption text-medium-emphasis">
                 <template v-if="meeting.maps?.length">{{ meeting.maps.join(', ') }} · </template>
                 {{ meeting.date_time ? formatDateTime(meeting.date_time) : '' }}
               </td>

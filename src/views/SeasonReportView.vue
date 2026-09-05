@@ -160,8 +160,7 @@
                 <th>Player</th>
                 <th class="text-center">Race</th>
                 <th class="text-center d-none d-md-table-cell">Team</th>
-                <th class="text-center">W</th>
-                <th class="text-center">L</th>
+                <th class="text-center">W-L</th>
                 <th class="text-center d-none d-md-table-cell">Played</th>
                 <th class="text-center d-none d-md-table-cell">Win %</th>
                 <th class="text-center">Points</th>
@@ -201,8 +200,7 @@
                   </v-tooltip>
                   <span v-else class="text-caption">–</span>
                 </td>
-                <td class="text-center text-success font-weight-medium">{{ player.wins }}</td>
-                <td class="text-center text-error">{{ player.losses }}</td>
+                <td class="text-center">{{ player.wins }}-{{ player.losses }}</td>
                 <td class="text-center d-none d-md-table-cell">{{ player.games }}</td>
                 <td class="text-center d-none d-md-table-cell">
                   <span :class="player.winRate >= 60 ? 'text-success' : player.winRate >= 40 ? 'text-warning' : 'text-error'">
@@ -866,6 +864,10 @@ const dayTicks = computed(() => {
   }
   .standings-table :deep(.player-name) {
     white-space: normal;
+  }
+  /* A name with no space in it breaks mid-word rather than push the table off the screen */
+  .standings-table td {
+    overflow-wrap: anywhere;
   }
 }
 

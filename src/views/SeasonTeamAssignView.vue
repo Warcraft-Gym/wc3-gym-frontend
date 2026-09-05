@@ -72,7 +72,7 @@
               :items-per-page="teams.length || 10"
               :sort-by="[{ key: 'w3c_mmr', order: 'asc' }]"
               return-object
-              dense
+              mobile-breakpoint="sm"
             >
               <template v-slot:[`header.w3c_mmr`]="{ column, isSorted, getSortIcon }">
                 <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
@@ -386,8 +386,8 @@ const setDraftPosition = async (player, draft_position) => {
 };
 const moveToRound = (player, round) => setDraftPosition(player, (round - 1) * roundSize.value);
 
-const playerTableHeaders = [
-  { title: 'ID', value: 'id' },
+const playerTableHeaders = computed(() => [
+  ...(smAndDown.value ? [] : [{ title: 'ID', value: 'id' }]),
   { title: 'Name', value: 'name' },
   // The draft order, so a reversed sort keeps the moved players in place
   { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => positionOf.value.get(a.id) - positionOf.value.get(b.id) },
@@ -395,7 +395,7 @@ const playerTableHeaders = [
   { title: 'Round', value: 'round', sortable: false },
   { title: 'Team', value: 'team', sortable: false },
   { title: '', value: 'actions', sortable: false, align: 'end' },
-];
+]);
 
 // compute assigned player ids across all teams for this season
 const assignedPlayerIds = computed(() => {

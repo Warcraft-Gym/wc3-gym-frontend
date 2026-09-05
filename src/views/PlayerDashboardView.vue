@@ -438,9 +438,11 @@
                   {{ opp.won }} to {{ opp.lost }}
                 </v-chip>
               </td>
-              <td class="d-flex align-center justify-space-between ga-2">
-                <span class="text-medium-emphasis">{{ lastMet(opp) }}</span>
-                <v-icon size="small">{{ openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+              <td>
+                <div class="d-flex align-center justify-space-between ga-2">
+                  <span class="text-medium-emphasis">{{ lastMet(opp) }}</span>
+                  <v-icon size="small">{{ openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                </div>
               </td>
             </tr>
             <tr

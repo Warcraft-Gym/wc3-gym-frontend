@@ -96,8 +96,7 @@ function request(method) {
     };
 }
 
-// Sent without a bearer on purpose: the Vercel edge caches this open read (Cache-Control from the
-// backend), and it never caches a request that carries an Authorization header
+// no bearer on purpose: the Vercel edge caches this open read, never a request with one
 const EDGE_CACHED = /\/seasons\/\d+\/ladder$/;
 
 // exported so the raw FormData requests can send the same bearer

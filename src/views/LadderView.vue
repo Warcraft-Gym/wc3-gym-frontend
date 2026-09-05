@@ -84,6 +84,7 @@
               </th>
               <th class="text-center">Games</th>
               <th class="text-center">Players</th>
+              <th>Team badges</th>
             </tr>
           </thead>
           <tbody>
@@ -103,6 +104,7 @@
               <td class="text-center font-weight-bold">{{ team.points }}</td>
               <td class="text-center">{{ team.games }}</td>
               <td class="text-center">{{ team.players.length }}</td>
+              <td><AchievementChip :badges="team.achievements" :show-points="false" /></td>
             </tr>
           </tbody>
           <tfoot>
@@ -111,6 +113,7 @@
               <td class="text-center font-weight-bold">{{ seasonPoints }}</td>
               <td class="text-center">{{ ladder.total_games }}</td>
               <td class="text-center">{{ seasonPlayers }}</td>
+              <td></td>
             </tr>
           </tfoot>
         </v-table>

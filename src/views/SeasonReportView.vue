@@ -859,6 +859,16 @@ const dayTicks = computed(() => {
   flex: 1;
 }
 
+/* A phone has no width to spare for a fixed win-rate column or an unbroken name */
+@media (max-width: 959px) {
+  .win-rate-cell {
+    min-width: 0;
+  }
+  .standings-table :deep(.player-name) {
+    white-space: normal;
+  }
+}
+
 /* ── Ladder activity ─────────────────────────────────────────────────────── */
 .heat-grid {
   display: grid;

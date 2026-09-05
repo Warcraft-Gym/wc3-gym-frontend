@@ -13,7 +13,7 @@ export const useLadderStore = defineStore({
         syncProgress: null,
     }),
     actions: {
-        // The ladder GETs carry the session bearer
+        // No bearer on the season ladder GET, so the edge can cache it; the user ladder keeps it
         async seasonLadder(season_id) {
             const ladder = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/ladder`);
             this.ladders[season_id] = ladder;

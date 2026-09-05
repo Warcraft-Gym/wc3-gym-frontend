@@ -96,10 +96,13 @@ function request(method) {
     };
 }
 
+// Open reads the Vercel edge caches; a request with a bearer is never cached there
+const EDGE_CACHED = /\/seasons\/\d+\/ladder$/;
+
 // exported so the raw FormData requests can send the same bearer
 export async function authHeader(method, url) {
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
-    if (!url.startsWith(backendUrl) || url.startsWith(`${backendUrl}/login`)) {
+    if (!url.startsWith(backendUrl) || url.startsWith(`${backendUrl}/login`) || EDGE_CACHED.test(url)) {
         return {};
     }
 

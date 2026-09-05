@@ -36,8 +36,8 @@
           </v-row>
         </v-toolbar>
       </v-card-text>
-          <v-card-text>
-            <v-alert v-if="enrichedBets.length === 0 && !isLoading" type="info" variant="tonal" class="mb-4">
+          <v-card-text class="px-0 px-md-4">
+            <v-alert v-if="enrichedBets.length === 0 && !isLoading" type="info" variant="tonal" class="mb-4 mx-2 mx-md-0">
               No fantasy bets found. Bets will appear here once bettors place them.
             </v-alert>
             <v-data-table-server
@@ -52,6 +52,7 @@
               :loading="isLoading"
               class="elevation-1"
               density="comfortable"
+              mobile-breakpoint="sm"
             >
               <template v-slot:[`item.captain`]="{ item }">
                 <!-- no race: the bettor bets, they don't play -->
@@ -65,7 +66,7 @@
                     <PlayerName v-if="side.player" :player="side.player" :race="side.player.signup_race" />
                     <span v-else>Player {{ i + 1 }}</span>
                     <span class="text-no-wrap"><W3CIcon size="14" /> {{ mmrOf(side.player) ?? '—' }}</span>
-                    <VsRaces :player="ladderById.get(side.player?.id)" :race="side.vsRace" />
+                    <VsRaces v-if="!smAndDown" :player="ladderById.get(side.player?.id)" :race="side.vsRace" />
                   </template>
                 </div>
                 <div v-else>N/A</div>
@@ -323,6 +324,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import { useDisplay } from 'vuetify';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import { sides, validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import StatusAlert from '@/components/StatusAlert.vue';
@@ -383,6 +385,7 @@ const allHeaders = [
   { title: '', value: 'actions', sortable: false, align: 'center' }
 ];
 const headers = useColumns(allHeaders);
+const { smAndDown } = useDisplay();
 
 // Enrich bets with series data
 const enrichedBets = computed(() => {
@@ -707,5 +710,9 @@ onMounted(loadBetPointsSettings);
   align-items: center;
   column-gap: 12px;
   row-gap: 2px;
+}
+/* A phone has room for the name and the MMR, not the race record */
+@media (max-width: 959px) {
+  .series-sides { grid-template-columns: max-content max-content; }
 }
 </style>

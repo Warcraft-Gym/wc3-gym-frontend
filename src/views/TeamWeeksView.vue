@@ -21,22 +21,28 @@
         <span>{{ team?.name }}</span>
       </v-card-title>
 
+      <v-select v-if="smAndDown" v-model="shownWeek" :items="weeks" label="Week" density="compact" hide-details class="ma-2" />
       <v-table density="compact">
         <thead>
           <tr>
             <th>Player</th>
-            <th v-for="week in weeks" :key="week" class="text-center">
+            <th v-for="week in shownWeeks" :key="week" class="text-center">
               Week {{ week }}
               <div v-if="opponentOfWeek(week)" class="text-caption text-medium-emphasis font-weight-regular">vs {{ opponentOfWeek(week).name }}</div>
               <div v-if="matchOfWeek(week)?.date_frame" class="text-caption text-medium-emphasis font-weight-regular">{{ matchOfWeek(week).date_frame }}</div>
             </th>
-            <th></th>
+            <th v-if="!smAndDown"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="player in players" :key="player.id">
-            <td><PlayerName :player="player" :race="player.signup_race" /></td>
-            <td v-for="week in weeks" :key="week" class="text-center">
+            <td>
+              <PlayerName :player="player" :race="player.signup_race" />
+              <v-btn v-if="smAndDown" size="x-small" variant="text" class="d-block px-0" :disabled="!!saving || !weeks.length" @click="outToLastWeek(player.id)">
+                Out to week {{ weeks.length }}
+              </v-btn>
+            </td>
+            <td v-for="week in shownWeeks" :key="week" class="text-center">
               <div class="d-flex ga-1 justify-center">
                 <v-btn
                   icon="mdi-check"
@@ -59,7 +65,7 @@
               </div>
               <div class="text-caption text-medium-emphasis">{{ setByLine(player.id, week) }}</div>
             </td>
-            <td>
+            <td v-if="!smAndDown">
               <v-btn
                 size="small"
                 variant="outlined"
@@ -85,6 +91,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { useDisplay } from 'vuetify';
 
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useTeamStore } from '@/stores';
 import StatusAlert from '@/components/StatusAlert.vue';
@@ -113,6 +120,10 @@ const saving = ref(null);
 
 const players = computed(() => team.value?.player_by_season?.[seasonId.value] || []);
 const weeks = computed(() => Array.from({ length: season.value?.number_weeks || 0 }, (_, i) => i + 1));
+// A phone shows one week at a time; wider screens show them all
+const { smAndDown } = useDisplay();
+const shownWeek = ref(1);
+const shownWeeks = computed(() => smAndDown.value ? weeks.value.filter(w => w === shownWeek.value) : weeks.value);
 
 const rowFor = (userId, week) => rows.value.find(row => row.user_id === userId && row.playday === week);
 const answerFor = (userId, week) => rowFor(userId, week)?.available ?? null;

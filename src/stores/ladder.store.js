@@ -13,7 +13,8 @@ export const useLadderStore = defineStore({
         syncProgress: null,
     }),
     actions: {
-        // No bearer on the season ladder GET, so the edge can cache it; the user ladder keeps it
+        // fetchWrapper sends this GET without a bearer so the Vercel edge can cache it (EDGE_CACHED);
+        // the read needs no token. The user ladder and the sync keep the bearer.
         async seasonLadder(season_id) {
             const ladder = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/ladder`);
             this.ladders[season_id] = ladder;

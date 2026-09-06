@@ -235,6 +235,7 @@ import { useRoute } from 'vue-router';
 
 import { useMapStore, useSeasonStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
+import { DEFAULT_RULES } from '@/helpers/best-of.mjs';
 import StatusAlert from '@/components/StatusAlert.vue';
 import LadderImportDialog from '@/components/LadderImportDialog.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
@@ -251,7 +252,6 @@ const STEPS = [
   { value: 'Pick_A', label: '+ Pick A', color: 'success' },
   { value: 'Pick_B', label: '+ Pick B', color: 'success' },
 ];
-const DEFAULT_RULES = 'veto,veto,veto';
 
 const route = useRoute();
 const seasonStore = useSeasonStore();

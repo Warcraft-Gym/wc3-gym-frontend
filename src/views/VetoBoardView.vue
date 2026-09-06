@@ -178,6 +178,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { fetchWrapper } from '@/helpers';
+import { DEFAULT_RULES } from '@/helpers/best-of.mjs';
 import { hideMissingImage } from '@/helpers/team-image';
 import { useAuthStore, useMapStore } from '@/stores';
 import PlayerName from '@/components/PlayerName.vue';
@@ -207,7 +208,7 @@ const mapImage = (id) => mapsById.value.get(id)?.image;
 const order = computed(() => board.value?.order || []);
 const taken = computed(() => board.value?.steps || []);
 const stepByMap = computed(() => new Map(taken.value.map(step => [step.map_id, step])));
-const rules = computed(() => (board.value?.map_rules || '').split(',').map(rule => rule.trim()).filter(Boolean));
+const rules = computed(() => (board.value?.map_rules || DEFAULT_RULES).split(',').map(rule => rule.trim()).filter(Boolean));
 
 const entrySide = (entry) => (entry || '').split('_').pop().toUpperCase();
 const sideName = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.name || `Player ${side}`;
@@ -219,7 +220,7 @@ const canRecord = computed(() => (admin || !!board.value?.viewer_side) && !board
 
 const statusLine = computed(() => {
   if (board.value?.complete) return 'Veto complete';
-  if (recording.value) return `${nextAction.value} for ${sideName(entrySide(order.value[taken.value.length]))}`;
+  if (recording.value) return `${admin ? 'Admin: ' : ''}${nextAction.value} for ${sideName(entrySide(order.value[taken.value.length]))}`;
   if (board.value?.on_turn) return `Your turn: ${nextAction.value} a map`;
   return `Waiting for ${sideName(entrySide(order.value[taken.value.length]))}`;
 });
@@ -275,11 +276,13 @@ const orderRows = computed(() => order.value.map((entry, index) => {
   };
 }));
 
-// one row per map rule: a week rule names its map, a veto rule takes the picks then what is left,
-// and a loser rule is only decided at play time
+// one row per map rule: a week rule names its map, a veto rule takes the picks then, once the veto
+// is complete, what is left; a loser rule is only decided at play time
 const games = computed(() => {
   const picksMade = taken.value.filter(step => step.action === 'pick');
-  const leftOver = (board.value?.pool || []).filter(id => !stepByMap.value.has(id) && id !== board.value?.week_map_id);
+  const leftOver = board.value?.complete
+    ? board.value.pool.filter(id => !stepByMap.value.has(id) && id !== board.value.week_map_id)
+    : [];
   let nextPick = 0;
   let nextLeft = 0;
 

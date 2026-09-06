@@ -137,7 +137,24 @@
                 <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
               </template>
               <template #item.race="{ item }">
-                <RaceIcon v-if="item.signup_race" :raceIdentifier="item.signup_race" />
+                <v-select
+                  v-if="auth.isAdmin"
+                  :model-value="item.signup_race"
+                  :items="raceWrapper.races"
+                  item-title="name"
+                  item-value="id"
+                  density="compact"
+                  variant="underlined"
+                  hide-details
+                  clearable
+                  style="width: 140px"
+                  @update:model-value="setSignupRace(item, $event)"
+                >
+                  <template #selection="{ item: race }">
+                    <RaceIcon :raceIdentifier="race.raw.id" /> {{ race.raw.name }}
+                  </template>
+                </v-select>
+                <RaceIcon v-else-if="item.signup_race" :raceIdentifier="item.signup_race" />
               </template>
               <template #item.round="{ item }">
                 <div class="d-flex align-center ga-1">
@@ -316,6 +333,7 @@ import {
   syncedAt
 } from '@/helpers/w3c-stats';
 import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
+import { raceWrapper } from '@/helpers/races';
 import { useDisplay } from 'vuetify';
 
 
@@ -385,6 +403,16 @@ const setDraftPosition = async (player, draft_position) => {
   }
 };
 const moveToRound = (player, round) => setDraftPosition(player, (round - 1) * roundSize.value);
+
+// The race the MMR, the icon and the race filters read
+const setSignupRace = async (player, race) => {
+  try {
+    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { race: race || null });
+    player.signup_race = race || null;
+  } catch (error) {
+    console.error('Failed to set the race:', error);
+  }
+};
 
 const playerTableHeaders = computed(() => [
   ...(smAndDown.value ? [] : [{ title: 'ID', value: 'id' }]),

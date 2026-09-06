@@ -145,7 +145,7 @@ const updatePlayer = async () => {
     const toRemove = originalSignupSeasonIds.filter(id => !newSignupIds.includes(id));
 
     try {
-      await Promise.all(toAdd.map(sid => seasonStore.addUserSignup(sid, [playerId])));
+      await Promise.all(toAdd.map(sid => seasonStore.addUserSignup(sid, [playerId], selectedPlayer.value.race || null)));
       await Promise.all(toRemove.map(sid => seasonStore.removeUserSignup(sid, [playerId])));
     } catch (err) {
       console.error('Failed to sync signup seasons:', err);

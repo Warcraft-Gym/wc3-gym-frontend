@@ -65,8 +65,8 @@ export const useSeasonStore = defineStore({
         async importLadderMaps(season_id, names) {
             await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/maps/ladder-import`, {'names': names});
         },
-        async addUserSignup(season_id, user_ids) {
-            const updated = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids});
+        async addUserSignup(season_id, user_ids, race = null) {
+            const updated = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids, race});
             return updated;
         },
         async removeUserSignup(season_id, user_ids) {

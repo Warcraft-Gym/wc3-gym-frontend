@@ -478,7 +478,7 @@ const createNewPlayer = async () => {
     if (createdId && Array.isArray(selectedSignupSeasonIdsNew.value) && selectedSignupSeasonIdsNew.value.length > 0) {
       try {
         await Promise.all(selectedSignupSeasonIdsNew.value.map(async sid => {
-          const result = await seasonStore.addUserSignup(sid, [createdId]);
+          const result = await seasonStore.addUserSignup(sid, [createdId], newPlayer.value.race || null);
           return result;
         }));
       } catch (err) {

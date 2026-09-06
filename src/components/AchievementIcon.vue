@@ -18,7 +18,8 @@ const props = defineProps({
   size: { type: Number, default: 20 },
 });
 
-const svg = computed(() => byId[props.id]);
+// A per-map badge (`map_win:<map>`) draws the glyph of its rule
+const svg = computed(() => byId[props.id] ?? byId[props.id.split(':')[0]]);
 </script>
 
 <style scoped>

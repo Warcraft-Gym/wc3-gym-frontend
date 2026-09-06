@@ -82,6 +82,9 @@
               <th class="text-center">
                 <ColumnNote title="Total Points" :note="SCORED_NOTE" />
               </th>
+              <th class="text-center">
+                <ColumnNote title="Achievement Points" :note="TEAM_BADGES_NOTE" />
+              </th>
               <th class="text-center">Games</th>
               <th class="text-center">Players</th>
               <th>Team badges</th>
@@ -102,6 +105,7 @@
                 </div>
               </td>
               <td class="text-center font-weight-bold">{{ team.points }}</td>
+              <td class="text-center">{{ teamBadgePoints(team) }}</td>
               <td class="text-center">{{ team.games }}</td>
               <td class="text-center">{{ team.players.length }}</td>
               <td><AchievementChip :badges="team.achievements" :show-points="false" /></td>
@@ -111,6 +115,7 @@
             <tr class="standings-total">
               <td class="text-medium-emphasis">{{ ladder.teams.length }} teams</td>
               <td class="text-center font-weight-bold">{{ seasonPoints }}</td>
+              <td class="text-center">{{ seasonBadgePoints }}</td>
               <td class="text-center">{{ ladder.total_games }}</td>
               <td class="text-center">{{ seasonPlayers }}</td>
               <td></td>
@@ -118,6 +123,14 @@
           </tfoot>
         </v-table>
       </v-card>
+
+      <LadderLeaderboards :players="allPlayers" @open-player="openPlayerDetails" />
+      <BadgeRarity
+        :rules="ladder.achievement_rules"
+        :teamRules="ladder.team_achievement_rules"
+        :players="allPlayers"
+        :teams="ladder.teams"
+      />
 
       <!-- Filters (reusable) -->
       <FilterPanel
@@ -173,10 +186,11 @@
               <ColumnNote :title="column.title" :note="LADDER_NOTE"
                 :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
             </template>
-            <template v-slot:[`header.achievements`]="{ column }">
-              <ColumnNote :title="column.title" :note="ACHIEVEMENTS_NOTE" />
+            <template v-slot:[`header.badgePoints`]="{ column, isSorted, getSortIcon }">
+              <ColumnNote :title="column.title" :note="ACHIEVEMENTS_NOTE"
+                :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
             </template>
-            <template v-slot:[`item.achievements`]="{ item }">
+            <template v-slot:[`item.badgePoints`]="{ item }">
               <AchievementChip :badges="item.achievements" />
             </template>
             <template v-slot:[`item.ladder_points`]="{ item }">{{ item.ladder_points }}</template>
@@ -265,7 +279,9 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import w3championsLogo from '@/assets/media/w3champions-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
-import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers/achievements';
+import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, TEAM_BADGES_NOTE, achievementPoints } from '@/helpers/achievements';
+import LadderLeaderboards from '@/components/LadderLeaderboards.vue';
+import BadgeRarity from '@/components/BadgeRarity.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
@@ -320,7 +336,7 @@ const allTableHeader = computed(() => [
   { title: 'Name', key: 'name', sortable: true },
   { mobile: false, title: 'Team', key: 'teamName', sortable: true },
   { mobile: false, title: 'Ladder Points', key: 'ladder_points', sortable: true },
-  { mobile: false, title: 'Achievements', key: 'achievements', sortable: false },
+  { mobile: false, title: 'Achievements', key: 'badgePoints', sortable: true },
   { title: 'Total Points', key: 'points', sortable: true },
   { mobile: false, title: 'Wins', key: 'wins', sortable: true },
   { mobile: false, title: 'Losses', key: 'losses', sortable: true },
@@ -342,6 +358,11 @@ const seasonPoints = computed(() =>
   (ladder.value?.teams ?? []).reduce((sum, team) => sum + team.points, 0)
 );
 
+// The roster's badge points plus the team badges; the standing column and the season total
+const teamBadgePoints = (team) => team.points - team.ladder_points + achievementPoints(team.achievements);
+const seasonBadgePoints = computed(() =>
+  (ladder.value?.teams ?? []).reduce((sum, team) => sum + teamBadgePoints(team), 0)
+);
 const seasonPlayers = computed(() =>
   (ladder.value?.teams ?? []).reduce((sum, team) => sum + team.players.length, 0)
 );
@@ -368,6 +389,7 @@ const allPlayers = computed(() =>
       ...player,
       teamId: team.id,
       teamName: team.name,
+      badgePoints: player.points - player.ladder_points,
       mmr: player.mmr?.current ?? null,
       // A player still in his placement games has no MMR, so there is no span to subtract
       mmrDiff: player.mmr?.current != null && player.mmr?.start != null

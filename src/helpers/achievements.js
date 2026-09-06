@@ -7,6 +7,9 @@ export const LADDER_NOTE =
 export const ACHIEVEMENTS_NOTE =
   'Achievement points earned this season. Only counts games longer than 2 minutes.';
 
+export const TEAM_BADGES_NOTE =
+  'Achievement points of the roster plus the team badges. They add to no standing.';
+
 // What the earned badges add to the ladder points
 export function achievementPoints(earned) {
   return (earned ?? []).reduce((sum, badge) => sum + badge.points, 0);

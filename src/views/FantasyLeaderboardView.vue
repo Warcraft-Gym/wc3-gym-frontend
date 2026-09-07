@@ -58,7 +58,7 @@
 
               <template v-slot:[`item.captain`]="{ item }">
                 <!-- no race: the captain bets, they don't play -->
-                <PlayerName v-if="item.captain" :player="item.captain" @click.stop="openPlayer(item.captain)" />
+                <PlayerName v-if="item.captain" :player="item.captain" />
                 <template v-else>N/A</template>
               </template>
 
@@ -113,7 +113,6 @@
                         :drafted-players="item.drafted_players || []"
                         :season-id="selectedSeasonId"
                         :w3c-season="currentW3CSeason"
-                        @open-player="openPlayer"
                       />
                     </div>
                   </td>
@@ -125,13 +124,6 @@
       </v-col>
     </v-row>
   </v-container>
-
-  <!-- Player Details Dialog -->
-  <PlayerDetailsDialog
-    ref="playerDetailsDialog"
-    :seasonId="selectedSeasonId"
-    :w3cSeason="currentW3CSeason"
-  />
 
   <!-- Create/Edit Team Dialog -->
   <v-dialog v-model="editDialog" max-width="900px" persistent>
@@ -279,7 +271,6 @@
 
 <script setup>
 import RowActions from '@/components/RowActions.vue';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FantasyScoreBreakdown from '@/components/FantasyScoreBreakdown.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore, useFantasyStore, useSeasonStore, useTeamStore } from '@/stores';
@@ -315,7 +306,6 @@ const teamToDelete = ref(null);
 const isEditing = ref(false);
 const expanded = ref([]);
 const breakdowns = ref({});  // by team id, filled when a row expands
-const playerDetailsDialog = ref(null);
 const players = computed(() => seasonSignups.value);
 // The breakdown's opponent/bet resolve() pool: season signups, carrying signup_race
 const seasonSignups = ref([]);
@@ -374,10 +364,6 @@ const allHeaders = computed(() => [
 const headers = useColumns(allHeaders);
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
-
-const openPlayer = (player) => {
-  playerDetailsDialog.value.open(player);
-};
 
 // An expanded row shows the breakdown, fetched once per team and season
 watch(expanded, async (ids) => {

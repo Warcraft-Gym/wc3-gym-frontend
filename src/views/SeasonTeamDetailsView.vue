@@ -128,7 +128,7 @@
         <tbody>
           <tr v-for="row in ladderTeam.players" :key="row.id">
             <td><RaceIcon v-if="row.race" :raceIdentifier="row.race" /></td>
-            <td><PlayerName :player="row" @click.stop="showStats(row)" /></td>
+            <td><PlayerName :player="row" /></td>
             <td class="text-right d-none d-md-table-cell">{{ row.ladder_points }}</td>
             <td class="d-none d-md-table-cell">
               <AchievementChip :badges="row.achievements" />
@@ -195,7 +195,7 @@
             <template v-slot:item="{ item }">
               <tr class="text-no-wrap">
                 <td class="d-none d-md-table-cell">{{ item.id }}</td>
-                <td><PlayerName :player="item" @click.stop="showStats(item)" /></td>
+                <td><PlayerName :player="item" /></td>
                 <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
                 <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
                 <td>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}
@@ -226,7 +226,7 @@
                 </td>
                 <td>
                   <RowActions :actions="[
-                    { icon: 'mdi-chart-box', label: 'View Stats', public: true, onClick: () => showStats(item) },
+                    { icon: 'mdi-chart-box', label: 'View Stats', public: true, onClick: () => router.push(playerPath(item)) },
                     { icon: 'mdi-account-minus', label: 'Remove from Team', color: 'error', onClick: () => removePlayerFromTeam(item.id) },
                   ]" />
                 </td>
@@ -278,7 +278,7 @@
         >
           <template v-slot:[`header.mmr`]><W3CMmr /></template>
           <template v-slot:[`item.name`]="{ item }">
-            <PlayerName :player="item" @click.stop="showStats(item)" />
+            <PlayerName :player="item" />
           </template>
         </v-data-table>
       </v-card-text>
@@ -291,13 +291,6 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
-
-  <!-- Player Details Modal -->
-  <PlayerDetailsDialog 
-    ref="playerDetailsDialog"
-    :seasonId="seasonId"
-    :w3cSeason="currentW3CSeason"
-  />
 
   <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
   </v-container>
@@ -314,10 +307,9 @@ import W3CMmr from '@/components/W3CMmr.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import AchievementChip from '@/components/AchievementChip.vue';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import { getW3CMMR, syncedAgo, syncedAt, agoFromIso, localFromIso } from '@/helpers/w3c-stats';
-import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerPath, playerRowProps } from '@/helpers/players';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import { useColumns } from '@/helpers/columns';
@@ -373,9 +365,6 @@ const missingRoleCaptains = computed(() =>
   (team.value?.captains_by_season?.[seasonId.value] || [])
     .filter(captain => discordRoleMissing.value.includes(captain.discordId))
 );
-
-// Player details state
-const playerDetailsDialog = ref(null);
 
 // Ladder card state
 const seasonLadder = ref(null);
@@ -561,9 +550,6 @@ const isRowDisabled = (item) => {
   return playerAlreadyInTeam;
 };
 
-const showStats = async (player) => {
-  playerDetailsDialog.value.open(player);
-};
 
 
 

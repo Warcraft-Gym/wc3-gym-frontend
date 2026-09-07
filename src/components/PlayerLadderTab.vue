@@ -127,7 +127,7 @@
             <span
               v-if="item.opp_user_id"
               class="opponent-link"
-              @click.stop="emit('open-player', item.opp_user_id)"
+              @click.stop="emit('open-player', { id: item.opp_user_id, battleTag: item.opp_battletag })"
             >{{ item.opp_battletag }}</span>
             <span v-else>{{ item.opp_battletag }}</span>
             <v-chip v-if="teamOf(item.opp_user_id)" size="x-small">{{ teamOf(item.opp_user_id) }}</v-chip>

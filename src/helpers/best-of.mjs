@@ -1,4 +1,4 @@
-// A season with no map rules plays GNL's format: the week map, then the loser picks
+// A season with no map rules plays GNL's format: the fixed map of the week, then the loser picks
 export const DEFAULT_RULES = 'week,loser,loser';
 
 // A season's best-of is the number of maps its rules list: "veto,veto,veto" is a Bo3

@@ -82,7 +82,7 @@
         </v-card>
       </v-col>
 
-      <!-- Rules and week maps -->
+      <!-- Rules and the fixed map per week -->
       <v-col cols="12" md="3">
         <v-card elevation="2" class="mb-4">
           <v-card-title class="bg-primary d-flex align-center">
@@ -110,7 +110,7 @@
         <v-card v-if="usesWeekMap" elevation="2">
           <v-card-title class="bg-primary d-flex align-center">
             <v-icon class="mr-2">mdi-calendar-week</v-icon>
-            <span>Week maps</span>
+            <span>Fixed map per week</span>
           </v-card-title>
           <v-card-text class="pt-4">
             <v-select
@@ -244,7 +244,7 @@ const RULES = [
   { value: 'veto', label: 'Veto' },
   { value: 'loser', label: 'Loser picks' },
   { value: 'host', label: 'Host picks' },
-  { value: 'week', label: 'Week map' },
+  { value: 'week', label: 'Fixed map' },
 ];
 const STEPS = [
   { value: 'Ban_A', label: '+ Ban A', color: 'error' },

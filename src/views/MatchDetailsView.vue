@@ -21,9 +21,9 @@
                 <v-icon start>mdi-calendar-week</v-icon>
                 Week {{ match.playday }}
               </v-chip>
-              <div v-if="match.date_frame" class="text-subtitle-2 mt-1 text-white">
+              <div v-if="roundOf(match.playday).start_date" class="text-subtitle-2 mt-1 text-white">
                 <v-icon size="small" color="white">mdi-clock-outline</v-icon>
-                {{ match.date_frame }}
+                {{ roundLabel(roundOf(match.playday)) }}
               </div>
             </div>
 
@@ -1041,6 +1041,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { teamImageUrl, hideMissingImage, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { useColumns } from '@/helpers/columns';
+import { roundLabel } from '@/helpers/rounds.mjs';
 
 
 // Stores initialization
@@ -1053,6 +1054,9 @@ const seasonStore = useSeasonStore();
 const availabilityStore = useAvailabilityStore();
 const auth = useAuthStore();
 const { match } = storeToRefs(matchStore);
+// The season's round gives the header its dates; the match carries only the reduced season
+const { current_season: season } = storeToRefs(seasonStore);
+const roundOf = (playday) => season.value?.rounds?.find(r => r.playday === playday) || { playday };
 const { series, draftSeries } = storeToRefs(seriesStore);
 
 // Week navigation state
@@ -1444,6 +1448,7 @@ const fetchMatchDetails = async () => {
     // The rosters, the series rows and the season navigation do not depend on each other
     await Promise.all([
       matchStore.match.team1_id && matchStore.match.team2_id ? fetchTeamDetails() : null,
+      seasonStore.fetchSeason(matchStore.match.season_id).catch(() => null),
       fetchSeriesRows(),
       fetchSeasonMatches(),
       fetchAvailability(),

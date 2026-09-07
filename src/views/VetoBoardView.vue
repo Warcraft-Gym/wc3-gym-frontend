@@ -82,10 +82,14 @@
                 {{ tile.name }}
               </div>
               <div class="d-flex align-center justify-space-between ga-2 mt-2 tile-foot">
-                <span class="text-caption text-medium-emphasis">{{ tile.sub }}</span>
-                <v-chip v-if="tile.tag" size="x-small" variant="tonal" :color="tile.week ? 'primary' : 'success'">
-                  {{ tile.tag }}
-                </v-chip>
+                <span v-if="tile.step" class="d-flex align-center ga-2 text-caption">
+                  <v-chip size="x-small" variant="tonal" :color="tile.banned ? 'error' : 'success'">
+                    {{ tile.banned ? 'Ban' : 'Pick' }}
+                  </v-chip>
+                  {{ sideName(tile.step.side) }}
+                </span>
+                <span v-else class="text-caption text-medium-emphasis">{{ tile.sub }}</span>
+                <v-chip v-if="tile.week" size="x-small" variant="tonal" color="primary">Game 1</v-chip>
                 <v-btn
                   v-else-if="tile.canAct"
                   variant="outlined"
@@ -127,7 +131,7 @@
                 <v-spacer />
                 <span class="text-caption" :class="{ 'text-medium-emphasis': !row.done }">{{ row.map }}</span>
               </v-list-item-title>
-              <v-list-item-subtitle v-if="row.enteredBy">Entered by {{ row.enteredBy }}</v-list-item-subtitle>
+              <v-list-item-subtitle v-if="row.note">{{ row.note }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
         </v-card>
@@ -226,11 +230,23 @@ const statusLine = computed(() => {
 });
 const statusColor = computed(() => (board.value?.complete ? 'success' : recording.value ? 'warning' : board.value?.on_turn ? 'primary' : undefined));
 
-// the last step can be taken back by the side it belongs to or by whoever entered it
+// the last step takes itself when the order uses up the board: its map was the only one left
+const forcedLast = computed(() => order.value.length >= 2 && taken.value.length === order.value.length
+  && order.value.length === (board.value?.pool || []).length - (board.value?.week_map_id ? 1 : 0));
+
+// the last step can be taken back by the side it belongs to or by whoever entered it;
+// a forced last step goes with the step that forced it
 const canUndo = computed(() => {
-  const last = taken.value[taken.value.length - 1];
+  const last = taken.value[taken.value.length - (forcedLast.value ? 2 : 1)];
   return !!last && (admin || last.side === board.value?.viewer_side || last.entered_by === viewerId.value);
 });
+
+// a step typed in for the other side names who entered it; an admin who plays neither side is "an admin"
+const enteredBy = (step) => {
+  if (!step?.entered_by || step.entered_by === playerId(step.side)) return null;
+  const side = ['A', 'B'].find(s => playerId(s) === step.entered_by);
+  return side ? sideName(side) : 'an admin';
+};
 
 const poolChip = computed(() => {
   const inVeto = (board.value?.pool || []).length - (board.value?.week_map_id ? 1 : 0);
@@ -243,19 +259,14 @@ const poolChip = computed(() => {
 const tiles = computed(() => (board.value?.pool || []).map((id) => {
   const step = stepByMap.value.get(id);
   const week = id === board.value?.week_map_id;
-  const banned = step?.action === 'ban';
-  const picked = step?.action === 'pick';
   return {
     id,
     week,
-    banned,
+    step,
+    banned: step?.action === 'ban',
     name: mapName(id),
     shortname: mapsById.value.get(id)?.shortname || '',
-    sub: week ? 'Week map'
-      : banned ? `Banned by ${sideName(step.side)}`
-        : picked ? 'Picked'
-          : board.value?.complete ? 'Unused' : 'Available',
-    tag: week ? 'Game 1' : picked ? sideName(step.side) : null,
+    sub: week ? 'Week map' : board.value?.complete ? 'Unused' : 'Available',
     canAct: !week && !step && (recording.value ? canRecord.value : !!board.value?.on_turn)
   };
 }));
@@ -271,8 +282,8 @@ const orderRows = computed(() => order.value.map((entry, index) => {
     current,
     who: sideName(entrySide(entry)),
     map: step ? mapName(step.map_id) : current ? `To ${action.toLowerCase()}` : '',
-    // a step typed in for the other side names who entered it
-    enteredBy: step?.entered_by && step.entered_by !== playerId(step.side) ? sideName(step.entered_by === board.value?.player1?.id ? 'A' : 'B') : null
+    // the forced last step names nobody: its map was the only one left
+    note: forcedLast.value && index === order.value.length - 1 ? 'Only map left' : enteredBy(step) && `Entered by ${enteredBy(step)}`
   };
 }));
 
@@ -294,7 +305,7 @@ const games = computed(() => {
       mapId = board.value?.week_map_id;
       source = 'Week map';
     } else if (rule === 'loser') {
-      source = 'Loser picks';
+      source = index ? `Loser of game ${index} picks` : 'Loser picks';
     } else if (rule === 'veto') {
       if (nextPick < picksMade.length) {
         const step = picksMade[nextPick++];

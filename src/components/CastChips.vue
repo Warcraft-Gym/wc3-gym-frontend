@@ -1,10 +1,10 @@
-<!-- Who casts a series: one chip per cast, linking to the channel. A member claims; the owner or an admin edits or unclaims -->
+<!-- Who casts a series: one chip per cast with its platform icon, linking to the channel; red while the series is on now. A member claims; the owner or an admin edits or unclaims -->
 <template>
   <div class="d-flex align-center flex-wrap ga-1" @click.stop>
     <template v-for="cast in casts" :key="cast.id">
       <v-menu v-if="canEdit(cast)">
         <template #activator="{ props: menu }">
-          <v-chip v-bind="menu" size="small" color="purple" prepend-icon="mdi-video">{{ cast.name }}</v-chip>
+          <v-chip v-bind="{ ...menu, ...chipProps(cast) }" size="small">{{ cast.name }}<template v-if="live"> · on now</template></v-chip>
         </template>
         <v-list density="compact">
           <v-list-item :href="cast.channel_url" target="_blank" prepend-icon="mdi-open-in-new" title="Open channel" />
@@ -12,8 +12,8 @@
           <v-list-item prepend-icon="mdi-close" title="Unclaim" @click="unclaim(cast)" />
         </v-list>
       </v-menu>
-      <v-chip v-else size="small" color="purple" prepend-icon="mdi-video" :href="cast.channel_url" target="_blank">
-        {{ cast.name }}
+      <v-chip v-else size="small" v-bind="chipProps(cast)" :href="cast.channel_url" target="_blank">
+        {{ cast.name }}<template v-if="live"> · on now</template>
         <v-tooltip activator="parent" location="top">{{ cast.channel_url }}</v-tooltip>
       </v-chip>
     </template>
@@ -27,7 +27,8 @@
             v-model="url"
             label="Channel URL"
             placeholder="https://www.twitch.tv/yourname"
-            hint="A twitch.tv, youtube.com or youtu.be link"
+            hint="Twitch: your channel. YouTube: the stream's video URL, which becomes the VOD"
+            persistent-hint
             autofocus
             :error-messages="error"
             @keyup.enter="save"
@@ -47,6 +48,7 @@
 import { computed, ref, watch } from 'vue';
 
 import { useAuthStore, useSeriesStore } from '@/stores';
+import { PLATFORM_ICONS, onNow, platformOf } from '@/helpers/casts.mjs';
 
 const props = defineProps({
   series: { type: Object, required: true }, // id, casts
@@ -59,6 +61,13 @@ const casts = ref([]);
 watch(() => props.series.casts, (rows) => { casts.value = [...(rows || [])]; }, { immediate: true });
 
 const myId = computed(() => auth.me?.user?.id);
+// Read once per page load: the window is hours wide, so a stale minute changes nothing
+const live = computed(() => onNow({ ...props.series, casts: casts.value }));
+const chipProps = (cast) => ({
+  color: live.value ? 'red' : 'purple',
+  variant: live.value ? 'flat' : 'tonal',
+  prependIcon: PLATFORM_ICONS[platformOf(cast.channel_url)] || 'mdi-video',
+});
 // A guest, and a member with no player row, cannot claim
 const canClaim = computed(() => myId.value && auth.me?.role !== 'guest' && !casts.value.some((c) => c.user_id === myId.value));
 const canEdit = (cast) => auth.isAdmin || cast.user_id === myId.value;

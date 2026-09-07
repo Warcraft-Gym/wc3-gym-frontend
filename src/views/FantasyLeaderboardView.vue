@@ -74,6 +74,10 @@
                 {{ item.team_points || 0 }}
               </template>
 
+              <template v-slot:[`item.grind_points`]="{ item }">
+                {{ item.grind_points || 0 }}
+              </template>
+
               <template v-slot:[`item.race_points`]="{ item }">
                 {{ item.race_points || 0 }}
               </template>
@@ -191,6 +195,19 @@
                 :rules="[v => !!v || 'Drafted team is required']"
               ></v-autocomplete>
             </v-col>
+            <v-col v-if="fantasyGrind" cols="12" md="6">
+              <v-autocomplete
+                v-model="editedTeam.grind_team_id"
+                :items="gnlTeams"
+                item-title="name"
+                item-value="id"
+                label="Grind Team"
+                variant="outlined"
+                prepend-inner-icon="mdi-shield-star"
+                density="comfortable"
+                clearable
+              ></v-autocomplete>
+            </v-col>
             <v-col cols="12" md="6">
               <v-select
                 v-model="editedTeam.drafted_race"
@@ -285,10 +302,11 @@ const isLoading = ref(false);
 const isSaving = ref(false);
 const isDeleting = ref(false);
 const errorMessage = ref(null);
+const pickedSeason = computed(() => seasonStore.seasons.find((season) => season.id === selectedSeasonId.value));
 // The season the picker is on says how many tiers it cuts; tier 1 is always Diamond
-const tierCount = computed(
-  () => seasonStore.seasons.find((season) => season.id === selectedSeasonId.value)?.fantasy_tiers,
-);
+const tierCount = computed(() => pickedSeason.value?.fantasy_tiers);
+// The season also says whether a bettor picks a second team to grind
+const fantasyGrind = computed(() => !!pickedSeason.value?.fantasy_grind);
 const tiers = computed(() => Array.from({ length: tierCount.value || 0 }, (_, i) => i + 1));
 const currentW3CSeason = ref(null);
 const editDialog = ref(false);
@@ -315,6 +333,7 @@ const emptyTeam = (seasonId = null) => ({
   season_id: seasonId,
   captain_id: null,
   drafted_team_id: null,
+  grind_team_id: null,
   drafted_race: null,
   player_ids: []
 });
@@ -342,6 +361,7 @@ const allHeaders = computed(() => [
   { mobile: false, title: 'Bettor', value: 'captain', sortable: false },
   // the order the breakdown panels open in, so a column and its panel line up
   { mobile: false, title: 'Team Points', value: 'team_points', align: 'end' },
+  ...(fantasyGrind.value ? [{ mobile: false, title: 'Grind Points', value: 'grind_points', align: 'end' }] : []),
   { mobile: false, title: 'Race Points', value: 'race_points', align: 'end' },
   { mobile: false, title: 'Player Points', value: 'player_points', align: 'end' },
   { mobile: false, title: 'Bench Points', value: 'bench_points', align: 'end' },
@@ -437,6 +457,7 @@ const openEditDialog = async (team) => {
     season_id: team.season_id,
     captain_id: team.captain_id,
     drafted_team_id: team.drafted_team_id,
+    grind_team_id: team.grind_team_id ?? null,
     drafted_race: team.drafted_race,
     player_ids: team.drafted_players?.map(p => p.user_id) || []
   };
@@ -499,6 +520,7 @@ const saveTeam = async () => {
       season_id: editedTeam.value.season_id,
       captain_id: editedTeam.value.captain_id,
       drafted_team_id: editedTeam.value.drafted_team_id,
+      grind_team_id: editedTeam.value.grind_team_id ?? null,
       drafted_race: editedTeam.value.drafted_race
     };
 

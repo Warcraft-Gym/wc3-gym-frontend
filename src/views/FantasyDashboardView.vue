@@ -69,6 +69,9 @@
                             <div class="mb-2">
                               <strong>Drafted Team:</strong> {{ existingTeam.drafted_team?.name || 'N/A' }}
                             </div>
+                            <div v-if="season?.fantasy_grind" class="mb-2">
+                              <strong>Grind Team:</strong> {{ grindTeamName || 'N/A' }}
+                            </div>
                             <div class="mb-2">
                               <strong>Drafted Race:</strong>
                               <RaceIcon v-if="existingTeam.drafted_race" :raceIdentifier="existingTeam.drafted_race" />
@@ -167,6 +170,28 @@
                               density="comfortable"
                               required
                             />
+                          </v-col>
+                          <v-col v-if="season?.fantasy_grind" cols="12" md="6">
+                            <v-autocomplete
+                              v-model="teamForm.grind_team_id"
+                              :items="teams"
+                              :item-title="teamTitle"
+                              item-value="id"
+                              label="Grind Team"
+                              variant="outlined"
+                              density="comfortable"
+                              clearable
+                            >
+                              <template v-slot:item="{ props, item }">
+                                <v-list-item v-bind="props">
+                                  <template v-slot:prepend>
+                                    <v-avatar size="32" class="mr-2">
+                                      <img class="team-icon" :src="teamImageUrl(item.raw)" @error="showDefaultTeamImage">
+                                    </v-avatar>
+                                  </template>
+                                </v-list-item>
+                              </template>
+                            </v-autocomplete>
                           </v-col>
                         </v-row>
                       </v-card-text>
@@ -527,9 +552,15 @@ const teamForm = ref({
   name: '',
   season_id: null,
   drafted_team_id: null,
+  grind_team_id: null,
   drafted_race: null,
   player_ids: []
 });
+
+// The answer carries only the id, so the name comes from the season's teams
+const grindTeamName = computed(
+  () => teams.value.find((team) => team.id === existingTeam.value?.grind_team_id)?.name,
+);
 
 // Table headers for betting
 const allFantasyHeaders = [
@@ -680,7 +711,7 @@ const loadSeason = async () => {
   try {
     season.value = await seasonStore.fetchSeason(seasonId);
     tierCount.value = season.value.fantasy_tiers;
-    teamForm.value = { name: '', season_id: seasonId, drafted_team_id: null, drafted_race: null, player_ids: [] };
+    teamForm.value = { name: '', season_id: seasonId, drafted_team_id: null, grind_team_id: null, drafted_race: null, player_ids: [] };
     tierSelections.value = emptyTierSelections();
 
     await teamStore.fetchTeamsBySeasonBasic(seasonId);
@@ -717,6 +748,7 @@ const checkExistingTeam = async () => {
           name: existingTeam.value.name || '',
           season_id: existingTeam.value.season_id,
           drafted_team_id: existingTeam.value.drafted_team_id,
+          grind_team_id: existingTeam.value.grind_team_id ?? null,
           drafted_race: existingTeam.value.drafted_race,
           player_ids: existingTeam.value.drafted_players?.map(p => p.id) || []
         };
@@ -756,6 +788,7 @@ const cancelEditing = () => {
       name: existingTeam.value.name || '',
       season_id: existingTeam.value.season_id,
       drafted_team_id: existingTeam.value.drafted_team_id,
+      grind_team_id: existingTeam.value.grind_team_id ?? null,
       drafted_race: existingTeam.value.drafted_race,
       player_ids: existingTeam.value.drafted_players?.map(p => p.id) || []
     };
@@ -800,6 +833,7 @@ const submitTeam = async () => {
       name: teamForm.value.name,
       season_id: teamForm.value.season_id,
       drafted_team_id: teamForm.value.drafted_team_id,
+      grind_team_id: teamForm.value.grind_team_id ?? null,
       drafted_race: teamForm.value.drafted_race,
       player_ids: teamForm.value.player_ids || [],
       user_name: playerData.value?.user?.name || playerData.value?.discord_tag,

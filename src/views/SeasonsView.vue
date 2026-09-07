@@ -269,6 +269,15 @@
                   prepend-inner-icon="mdi-map"
                 />
               </v-col>
+              <v-col cols="12" md="6">
+                <v-checkbox
+                  v-model="selectedSeason.fantasy_grind"
+                  label="Fantasy grind pick"
+                  density="comfortable"
+                  hint="Bettors pick a team and its achievement points pay by rank."
+                  persistent-hint
+                />
+              </v-col>
             </v-row>
           </v-form>
         </v-card-text>
@@ -365,7 +374,7 @@ onMounted(async () => {
 });
 
 const addNewSeason = () => {
-  selectedSeason.value = { name: '', number_weeks: 0, pick_ban: '', series_per_week: 0, discordRole: '', start_date: null, end_date: null };
+  selectedSeason.value = { name: '', number_weeks: 0, pick_ban: '', series_per_week: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false };
   selectedSeasonMapIds.value = [];
   formError.value = '';
   isEditing.value = false;

@@ -36,6 +36,42 @@
       </v-expansion-panel-text>
     </v-expansion-panel>
 
+    <!-- Grind Points Breakdown: the second team, paying by achievement rank -->
+    <v-expansion-panel v-if="breakdown.grind_breakdown?.team_name">
+      <v-expansion-panel-title>
+        <img class="tab-icon mr-2" :src="teamImageUrl(breakdown.grind_breakdown.team_id)" @error="showDefaultTeamImage" alt="" />
+        <strong>Grind Points Details</strong>
+        <span class="ml-2 text-medium-emphasis">{{ breakdown.grind_breakdown.team_name }}</span>
+        <v-spacer></v-spacer>
+        <v-chip color="teal" size="small">{{ breakdown.totals.grind_points }} points</v-chip>
+      </v-expansion-panel-title>
+      <v-expansion-panel-text>
+        <v-table density="compact" class="narrow">
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Achievement points</th>
+              <th>Rank</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="font-weight-bold">
+                <span class="d-inline-flex align-center ga-2">
+                  <img class="row-icon" :src="teamImageUrl(breakdown.grind_breakdown.team_id)" @error="showDefaultTeamImage" alt="" />
+                  {{ breakdown.grind_breakdown.team_name }}
+                </span>
+              </td>
+              <td>{{ breakdown.grind_breakdown.achievement_points }}</td>
+              <td>{{ breakdown.grind_breakdown.rank }} of {{ breakdown.grind_breakdown.teams }}</td>
+              <td>{{ breakdown.grind_breakdown.points }}</td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
     <!-- Race Points Breakdown -->
     <v-expansion-panel>
       <v-expansion-panel-title>

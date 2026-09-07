@@ -215,7 +215,7 @@
               <template v-slot:item="{ item }">
                 <tr class="series-row">
                   <td class="d-none d-md-table-cell">{{ item.id }}</td>
-                  <td class="d-none d-md-table-cell">{{ item.caster || '—' }}</td>
+                  <td class="d-none d-md-table-cell"><CastChips :series="item" /></td>
                   <td class="text-no-wrap">
                     <span v-if="item.date_time">
                       {{ formateDate(item.date_time) }}
@@ -266,7 +266,10 @@
                   <span v-if="item.date_time">{{ formateDate(item.date_time) }}</span>
                   <span v-else>Not scheduled</span>
                 </template>
-                <template #actions><RowActions :actions="seriesActions(item)" /></template>
+                <template #actions>
+                  <CastChips :series="item" />
+                  <RowActions :actions="seriesActions(item)" />
+                </template>
                 <template #side="{ n, won }">
                   <v-chip size="small" :color="won ? 'success' : 'default'">{{ (n ? item.player2_score : item.player1_score) ?? '–' }}</v-chip>
                 </template>
@@ -609,12 +612,6 @@
                   v-model="selectedTime"
                   label="Scheduled Time"
                 />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  v-model="selectedSeries.caster"
-                  label="Caster:"
-                ></v-text-field>
               </v-col>
               <v-col cols="12" sm="6">
                 <v-number-input
@@ -1021,6 +1018,7 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import SeriesCard from '@/components/SeriesCard.vue';
+import CastChips from '@/components/CastChips.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
 import { useRouter } from 'vue-router';
@@ -1063,7 +1061,7 @@ const weeklyMatches = ref([]);
 const allSeriesTableHeader = computed(() => [
 
   { mobile: false, title: 'ID', value: 'id', sortable: true },  
-  { mobile: false, title: 'Caster'},  
+  { mobile: false, title: 'Cast' },
   { title: 'Date/Time'}, 
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { mobile: false, title: 'MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {

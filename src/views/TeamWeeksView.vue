@@ -27,9 +27,10 @@
           <tr>
             <th>Player</th>
             <th v-for="week in shownWeeks" :key="week" class="text-center">
-              Week {{ week }}
-              <div v-if="opponentOfWeek(week)" class="text-caption text-medium-emphasis font-weight-regular">vs {{ opponentOfWeek(week).name }}</div>
-              <div v-if="matchOfWeek(week)?.date_frame" class="text-caption text-medium-emphasis font-weight-regular">{{ matchOfWeek(week).date_frame }}</div>
+              {{ roundLabel(roundOf(week)) }}
+              <div class="text-caption text-medium-emphasis font-weight-regular">
+                Week {{ week }}<template v-if="opponentOfWeek(week)"> · vs {{ opponentOfWeek(week).name }}</template>
+              </div>
             </th>
             <th v-if="!smAndDown"></th>
           </tr>
@@ -94,6 +95,7 @@ import { storeToRefs } from 'pinia';
 import { useDisplay } from 'vuetify';
 
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useTeamStore } from '@/stores';
+import { roundLabel } from '@/helpers/rounds.mjs';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 const router = useRouter();
@@ -112,7 +114,8 @@ const seasonId = computed(() => seasonStore.seasonIdOf(router.currentRoute.value
 const isLoading = ref(false);
 const errorMessage = ref(null);
 const rows = ref([]);
-// The week labels: the team's match of each week names the opponent and the dates (#33)
+// The week labels: the season's round gives the dates, the team's match names the opponent (#33)
+const roundOf = (week) => season.value?.rounds?.find(r => r.playday === week) || { playday: week };
 const matches = ref([]);
 const matchOfWeek = (week) => matches.value.find(m => m.playday === week && [m.team1_id, m.team2_id].includes(teamId.value));
 const opponentOfWeek = (week) => { const m = matchOfWeek(week); return m && (m.team1_id === teamId.value ? m.team2 : m.team1); };

@@ -57,219 +57,109 @@
       </v-card-text>
     </v-card>
 
-    <v-card v-if="!isLoading && weeks.length" elevation="2" class="mb-6">
+    <v-card v-if="!isLoading && roundCards.length" elevation="2" class="mb-6">
       <v-card-title class="bg-primary d-flex justify-space-between align-center">
         <div class="d-flex align-center">
           <v-icon class="mr-2">mdi-calendar-check</v-icon>
-          <span>My Weeks</span>
+          <span>My Rounds</span>
         </div>
-        <v-chip color="white" variant="outlined">
-          {{ answeredWeeks }} of {{ weeksAhead.length }} answered
+        <v-chip v-if="asking.length" color="white" variant="outlined">
+          {{ answered }} of {{ asking.length }} answered
         </v-chip>
       </v-card-title>
       <v-card-text class="d-flex flex-wrap ga-3 pt-4">
         <v-sheet
-          v-for="week in weeks"
-          :key="week"
+          v-for="card in roundCards"
+          :key="card.playday"
           border
           rounded
           class="pa-3 flex-grow-1"
-          style="min-width: 210px"
+          :style="card.current ? 'min-width: 230px; border-color: rgb(var(--v-theme-primary)) !important' : 'min-width: 230px'"
         >
-          <div class="text-subtitle-2">Week {{ week }}</div>
-          <div v-if="opponentOfWeek(week)" class="text-caption text-medium-emphasis">vs {{ opponentOfWeek(week).name }}</div>
-          <div v-if="matchOfWeek(week)?.date_frame" class="text-caption text-medium-emphasis">{{ matchOfWeek(week).date_frame }}</div>
-
-          <div v-if="week < currentWeek" class="mt-2">
-            <v-chip v-if="seriesOfWeek(week)" :color="getScoreColor(seriesOfWeek(week))" variant="outlined" size="small">
-              {{ myScore(seriesOfWeek(week)) }} - {{ theirScore(seriesOfWeek(week)) }}
-            </v-chip>
-            <v-chip v-else variant="tonal" size="small">No series</v-chip>
+          <div class="text-subtitle-2">{{ card.label }}</div>
+          <div class="text-caption text-medium-emphasis">
+            Week {{ card.playday }}<template v-if="card.opponentTeam"> · vs {{ card.opponentTeam.name }}</template>
           </div>
 
-          <template v-else>
-            <div class="d-flex ga-2 mt-2">
-              <v-btn
-                color="success"
-                :variant="answerFor(week) === true ? 'flat' : 'outlined'"
-                :loading="savingWeek === week"
-                :disabled="savingWeek !== null"
-                @click="setWeek(week, true)"
-              >
-                Can play
-              </v-btn>
-              <v-btn
-                color="error"
-                :variant="answerFor(week) === false ? 'flat' : 'outlined'"
-                :loading="savingWeek === week"
-                :disabled="savingWeek !== null"
-                @click="setWeek(week, false)"
-              >
-                Cannot play
-              </v-btn>
+          <!-- A series replaces the question: the round is already accounted for -->
+          <template v-if="card.series">
+            <div class="d-flex align-center ga-2 mt-2">
+              <PlayerName
+                :player="opponent(card.series)"
+                :race="opponent(card.series).signup_race"
+                @click.stop="showPlayerDetails(opponent(card.series))"
+              />
+              <v-chip v-if="!isUnplayed(card.series)" :color="getScoreColor(card.series)" variant="outlined" size="small">
+                {{ myScore(card.series) }} - {{ theirScore(card.series) }}
+              </v-chip>
             </div>
-            <div class="text-caption text-medium-emphasis mt-2">{{ setByLine(week) }}</div>
-          </template>
-        </v-sheet>
-      </v-card-text>
-    </v-card>
-
-    <v-card v-if="!isLoading && playerData" elevation="2">
-      <v-card-title class="bg-primary d-flex justify-space-between align-center">
-        <div class="d-flex align-center">
-          <v-icon class="mr-2">mdi-calendar-clock</v-icon>
-          <span>Upcoming Series</span>
-        </div>
-        <v-chip color="white" variant="outlined">
-          {{ upcoming.length }} series
-        </v-chip>
-      </v-card-title>
-
-      <!-- Desktop: Data Table -->
-      <v-card-text v-if="!isMobile" class="pa-0">
-      <v-data-table
-        :headers="upcomingHeaders"
-        :items="upcoming"
-        :sort-by="[{ key: 'week', order: 'asc' }]"
-        :items-per-page="-1"
-        hide-default-footer
-        class="elevation-1"
-        item-value="id"
-      >
-        <template #item.opponent="{ item }">
-          <PlayerName
-            :player="opponent(item)"
-            :race="opponent(item).signup_race"
-            @click.stop="showPlayerDetails(opponent(item))"
-          />
-        </template>
-
-        <template #item.date_time="{ item }">
-          {{ formatDateTime(item.date_time) }}
-        </template>
-
-        <template #item.week="{ item }">
-          {{ item.week || 'TBD' }}
-        </template>
-
-        <template #item.actions="{ item }">
-          <v-btn
-            color="primary"
-            variant="elevated"
-            size="small"
-            prepend-icon="mdi-calendar-edit"
-            @click="editSchedule(item)"
-            :loading="scheduleSavingId === item.id"
-            :disabled="scheduleSavingId === item.id || scoreSavingId === item.id"
-          >
-            Edit Schedule
-          </v-btn>
-          <v-btn
-            color="success"
-            variant="elevated"
-            size="small"
-            prepend-icon="mdi-trophy"
-            class="ml-2"
-            @click="reportResult(item)"
-            :loading="scoreSavingId === item.id"
-            :disabled="scoreSavingId === item.id || scheduleSavingId === item.id"
-          >
-            Report Result
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            size="small"
-            prepend-icon="mdi-map-outline"
-            class="ml-2"
-            @click="router.push(vetoRoute(item))"
-          >
-            Maps
-          </v-btn>
-        </template>
-
-        <template #no-data>
-          No upcoming series. Every result is in.
-        </template>
-      </v-data-table>
-      </v-card-text>
-
-      <!-- Mobile: Card Layout -->
-      <v-card-text v-if="isMobile" class="pa-4">
-        <v-card
-          v-for="item in upcoming"
-          :key="item.id"
-          elevation="1"
-          class="mb-4"
-        >
-          <v-card-text>
-            <div class="mb-3">
-              <div class="text-caption text-grey">Opponent</div>
-              <div class="text-h6">
-                <PlayerName
-                  :player="opponent(item)"
-                  :race="opponent(item).signup_race"
-                  @click.stop="showPlayerDetails(opponent(item))"
-                />
-              </div>
-            </div>
-
-            <v-divider class="my-3"></v-divider>
-
-            <div class="mb-2">
-              <div class="text-caption text-grey">Season</div>
-              <div>{{ item.season_name }}</div>
-            </div>
-
-            <div class="mb-2">
-              <div class="text-caption text-grey">Date & Time</div>
-              <div>{{ formatDateTime(item.date_time) }}</div>
-            </div>
-
-            <div class="mb-3">
-              <div class="text-caption text-grey">Week</div>
-              <div>{{ item.week || 'TBD' }}</div>
-            </div>
-
-            <div class="d-flex flex-column gap-2">
+            <div class="text-caption text-medium-emphasis">{{ formatDateTime(card.series.date_time) }}</div>
+            <CastChips :series="card.series" class="mt-1" />
+            <div v-if="isUnplayed(card.series)" class="d-flex flex-wrap ga-1 mt-2">
               <v-btn
                 color="primary"
                 variant="elevated"
-                block
+                size="small"
                 prepend-icon="mdi-calendar-edit"
-                @click="editSchedule(item)"
-                :loading="scheduleSavingId === item.id"
-                :disabled="scheduleSavingId === item.id || scoreSavingId === item.id"
+                @click="editSchedule(card.series)"
+                :loading="scheduleSavingId === card.series.id"
+                :disabled="scheduleSavingId === card.series.id || scoreSavingId === card.series.id"
               >
                 Edit Schedule
               </v-btn>
               <v-btn
                 color="success"
                 variant="elevated"
-                block
+                size="small"
                 prepend-icon="mdi-trophy"
-                @click="reportResult(item)"
-                :loading="scoreSavingId === item.id"
-                :disabled="scoreSavingId === item.id || scheduleSavingId === item.id"
+                @click="reportResult(card.series)"
+                :loading="scoreSavingId === card.series.id"
+                :disabled="scoreSavingId === card.series.id || scheduleSavingId === card.series.id"
               >
                 Report Result
               </v-btn>
               <v-btn
                 color="primary"
                 variant="outlined"
-                block
+                size="small"
                 prepend-icon="mdi-map-outline"
-                @click="router.push(vetoRoute(item))"
+                @click="router.push(vetoRoute(card.series))"
               >
                 Maps
               </v-btn>
             </div>
-          </v-card-text>
-        </v-card>
+          </template>
 
-        <v-alert v-if="upcoming.length === 0" type="info" variant="tonal">
-          No upcoming series. Every result is in.
-        </v-alert>
+          <div v-else-if="card.over" class="mt-2">
+            <v-chip size="small" variant="tonal" :color="card.answer === false ? 'error' : undefined">
+              {{ card.answer === false ? 'Out' : 'Not paired' }}
+            </v-chip>
+          </div>
+
+          <template v-else>
+            <div class="d-flex ga-2 mt-2">
+              <v-btn
+                color="success"
+                :variant="card.answer === true ? 'flat' : 'outlined'"
+                :loading="savingWeek === card.playday"
+                :disabled="savingWeek !== null"
+                @click="setWeek(card.playday, true)"
+              >
+                Can play
+              </v-btn>
+              <v-btn
+                color="error"
+                :variant="card.answer === false ? 'flat' : 'outlined'"
+                :loading="savingWeek === card.playday"
+                :disabled="savingWeek !== null"
+                @click="setWeek(card.playday, false)"
+              >
+                Cannot play
+              </v-btn>
+            </div>
+            <div class="text-caption text-medium-emphasis mt-2">{{ setByLine(card.playday) }}</div>
+          </template>
+        </v-sheet>
       </v-card-text>
     </v-card>
 
@@ -313,6 +203,10 @@
 
         <template #item.date_time="{ item }">
           {{ formatDateTime(item.date_time) }}
+        </template>
+
+        <template #item.cast="{ item }">
+          <CastChips :series="item" />
         </template>
 
         <template #item.actions="{ item }">
@@ -369,6 +263,7 @@
                 Fix result
               </v-btn>
             </div>
+            <CastChips :series="item" class="mt-2" />
           </v-card-text>
         </v-card>
       </v-card-text>
@@ -624,9 +519,11 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { DateTime } from 'luxon';
 import { formatDateTime } from '@/helpers/datetime';
+import { roundLabel, roundOver } from '@/helpers/rounds.mjs';
 import { useDisplay } from 'vuetify';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
+import CastChips from '@/components/CastChips.vue';
 
 
 const route = useRoute();
@@ -745,26 +642,18 @@ const rules = {
   }
 };
 
-const upcomingHeaders = [
-  { title: 'Opponent', key: 'opponent', sortable: false },
-  { title: 'Season', key: 'season_name' },
-  { title: 'Date & Time', key: 'date_time' },
-  { title: 'Week', key: 'week' },
-  { title: '', key: 'actions', sortable: false }
-];
-
 const completedHeaders = [
   { title: 'Opponent', key: 'opponent', sortable: false },
   { title: 'Season', key: 'season_name' },
   { title: 'Date & Time', key: 'date_time' },
   { title: 'Score', key: 'score', sortable: false },
   { title: 'Week', key: 'week' },
+  { title: 'Cast', key: 'cast', sortable: false },
   { title: '', key: 'actions', sortable: false }
 ];
 
 // week and season lifted out of the match so the tables sort on them
 const withKeys = (item) => ({ ...item, week: item.match?.playday ?? null, season_name: item.match?.season?.name || '' });
-const upcoming = computed(() => series.value.filter(isUnplayed).map(withKeys));
 const completed = computed(() => series.value.filter((item) => !isUnplayed(item)).map(withKeys));
 
 // Load player dashboard data
@@ -844,15 +733,13 @@ const getScoreColor = (item) => {
   return 'warning';
 };
 
-// My weeks: /player-series carries the answers and the length of the season
+// My rounds: /player-series carries the rounds, the answers and the series (#33)
 const availabilityStore = useAvailabilityStore();
 const matchStore = useMatchStore();
 const playerStore = usePlayerStore();
 const savingWeek = ref(null);
 
-const weeks = computed(() => Array.from({ length: playerData.value?.number_weeks || 0 }, (_, i) => i + 1));
-
-// The week labels: the team's match of each week names the opponent and the dates (#33)
+// The team's match of each round names the opponent team
 const teamMatches = ref([]);
 const myTeamId = ref(null);
 const fetchTeamMatches = async () => {
@@ -869,18 +756,6 @@ const fetchTeamMatches = async () => {
 const matchOfWeek = (week) => teamMatches.value.find(m => m.playday === week && [m.team1_id, m.team2_id].includes(myTeamId.value));
 const opponentOfWeek = (week) => { const m = matchOfWeek(week); return m && (m.team1_id === myTeamId.value ? m.team2 : m.team1); };
 
-// the earliest week whose series has no score; a season with none left starts again at week 1
-const currentWeek = computed(() => {
-  const open = series.value
-    .filter(item => !item.player1_score && !item.player2_score)
-    .map(item => item.match?.playday)
-    .filter(Boolean);
-  return open.length ? Math.min(...open) : 1;
-});
-
-const weeksAhead = computed(() => weeks.value.filter(week => week >= currentWeek.value));
-const answeredWeeks = computed(() => weeksAhead.value.filter(week => answerFor(week) !== null).length);
-
 const seriesOfWeek = (week) => series.value.find(item => item.match?.playday === week);
 const rowOfWeek = (week) => playerData.value?.availability?.find(row => row.playday === week);
 const answerFor = (week) => rowOfWeek(week)?.available ?? null;
@@ -890,6 +765,34 @@ const setByLine = (week) => {
   if (!row) return 'No answer';
   return `Set by ${row.set_by_user_id === playerData.value?.player?.id ? 'You' : row.set_by_name}`;
 };
+
+// One card per round. A series replaces the question, and a round with no date is never over.
+// A token with no season carries no rounds, so the unplayed series stand in for them.
+const roundCards = computed(() => {
+  const rounds = playerData.value?.rounds?.length
+    ? playerData.value.rounds
+    : [...new Set(series.value.filter(isUnplayed).map(item => item.match?.playday).filter(Boolean))]
+      .sort((a, b) => a - b)
+      .map(playday => ({ playday }));
+  let currentSeen = false;
+  return rounds.map(round => {
+    const over = roundOver(round);
+    const current = !over && !currentSeen;
+    if (current) currentSeen = true;
+    return {
+      playday: round.playday,
+      label: roundLabel(round),
+      over,
+      current,
+      series: seriesOfWeek(round.playday),
+      answer: answerFor(round.playday),
+      opponentTeam: opponentOfWeek(round.playday),
+    };
+  });
+});
+// The question is open on a round with no series that is not over
+const asking = computed(() => roundCards.value.filter(card => !card.series && !card.over));
+const answered = computed(() => asking.value.filter(card => card.answer !== null).length);
 
 // a second click on the state already set clears the week back to no answer
 const setWeek = async (week, want) => {

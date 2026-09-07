@@ -21,3 +21,8 @@ export const filterByMmrRange = (list, range, getMmr) => {
     return mmr >= mmrMin && mmr <= mmrMax;
   });
 };
+
+// The player page path. The battle tag is the key, like w3champions; the id
+// serves rows that carry none, and old links.
+export const playerPath = (player) =>
+  `/player/${player.battleTag ? encodeURIComponent(player.battleTag) : player.id}`;

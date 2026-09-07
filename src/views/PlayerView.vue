@@ -77,6 +77,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePlayerStore } from '@/stores';
+import { playerPath } from '@/helpers/players';
 import { getW3CMMR, getW3CMMRSeason, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
@@ -99,14 +100,15 @@ const signups = computed(() =>
 const raceMmr = (race) => (race ? getW3CMMR(player.value, null, race) : null);
 const raceMmrSeason = (race) => (race ? getW3CMMRSeason(player.value, null, race) : null);
 
-const openPlayer = (userId) => router.push(`/player/${userId}`);
+const openPlayer = (opponent) => router.push(playerPath(opponent));
 
-// One read for the whole page; the ladder card reads its own record
-watch(() => route.params.id, async (id) => {
+// One read for the whole page; the ladder card reads its own record.
+// A typed /player/thanks#11187 arrives as path + hash, so the key rejoins them.
+watch(() => route.params.id + route.hash, async (key) => {
   player.value = null;
   errorMessage.value = null;
   try {
-    player.value = await playerStore.getPlayer(id);
+    player.value = await playerStore.getPlayer(key);
   } catch (error) {
     errorMessage.value = error.message;
   }

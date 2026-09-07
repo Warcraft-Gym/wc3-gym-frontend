@@ -23,7 +23,7 @@ export const usePlayerStore = defineStore({
             }
         },
         async getPlayer(player_id) {
-            return await fetchWrapper.get(`${backendUrl}/users/${player_id}`);
+            return await fetchWrapper.get(`${backendUrl}/users/${encodeURIComponent(player_id)}`);
         },
         async updatePlayer(player) {
             const playerId = player.id;

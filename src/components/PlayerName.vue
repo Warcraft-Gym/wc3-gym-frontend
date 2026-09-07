@@ -1,5 +1,5 @@
 <template>
-  <span class="player-name" :class="{ link: !!$attrs.onClick || linked }" @click="linked && $router.push(`/player/${player.id}`)">
+  <span class="player-name" :class="{ link: !!$attrs.onClick || linked }" @click="linked && $router.push(playerPath(player))">
     <RaceIcon v-if="race" :raceIdentifier="race" />
     <span v-else-if="race !== undefined" class="fp race-gap" />
     <FlagIcon v-if="player.country" :countryIdentifier="player.country" />
@@ -12,6 +12,7 @@
 
 <script setup>
 import { computed, useAttrs } from 'vue'
+import { playerPath } from '@/helpers/players'
 
 const props = defineProps({
   player: { type: Object, required: true }, // needs name, country

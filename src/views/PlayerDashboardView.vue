@@ -11,7 +11,7 @@
             <v-img v-if="authStore.me?.avatar" :src="authStore.me.avatar" alt="" />
             <span v-else>{{ (playerData.player.name || '?').slice(0, 2).toUpperCase() }}</span>
           </v-avatar>
-          <PlayerName :player="playerData.player" @click.stop="showPlayerDetails(playerData.player)">
+          <PlayerName :player="playerData.player">
             <a :href="w3cPlayerUrl(playerData.player.battleTag)" target="_blank" rel="noopener noreferrer" class="text-body-1 text-decoration-none ml-2">
               {{ playerData.player.battleTag }} <W3CIcon :size="16" />
             </a>
@@ -87,7 +87,6 @@
               <PlayerName
                 :player="opponent(card.series)"
                 :race="opponent(card.series).signup_race"
-                @click.stop="showPlayerDetails(opponent(card.series))"
               />
               <v-chip v-if="!isUnplayed(card.series)" :color="getScoreColor(card.series)" variant="outlined" size="small">
                 {{ myScore(card.series) }} - {{ theirScore(card.series) }}
@@ -187,7 +186,6 @@
           <PlayerName
             :player="opponent(item)"
             :race="opponent(item).signup_race"
-            @click.stop="showPlayerDetails(opponent(item))"
           />
         </template>
 
@@ -239,7 +237,6 @@
               <PlayerName
                 :player="opponent(item)"
                 :race="opponent(item).signup_race"
-                @click.stop="showPlayerDetails(opponent(item))"
               />
               <v-chip
                 :color="getScoreColor(item)"
@@ -468,13 +465,6 @@
     </v-card>
   </v-dialog>
 
-  <!-- Player Details Dialog -->
-  <PlayerDetailsDialog
-    ref="playerDetailsDialog"
-    :seasonId="playerData?.season_id ? Number(playerData.season_id) : null"
-    :w3cSeason="currentW3CSeason"
-  />
-
   <!-- Edit Profile Dialog -->
   <v-dialog v-model="editProfileOpen" max-width="480" persistent>
     <v-card>
@@ -512,7 +502,6 @@ import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import RaceSelect from '@/components/RaceSelect.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
@@ -540,14 +529,6 @@ const isMobile = computed(() => {
   if (mobile !== undefined) return mobile.value;
   return window.innerWidth < 960;
 });
-
-// Player Details Dialog
-const playerDetailsDialog = ref(null);
-
-const showPlayerDetails = (player) => {
-  if (!player) return;
-  playerDetailsDialog.value.open(player);
-};
 
 // State
 const isLoading = ref(true);

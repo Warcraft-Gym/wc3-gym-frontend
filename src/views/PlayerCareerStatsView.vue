@@ -3,10 +3,8 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePlayerCareerStatsStore } from '@/stores/player_career_stats.store';
 import { usePlayerStore } from '@/stores/player.store';
-import { useAuthStore, useSeasonStore } from '@/stores';
+import { useAuthStore } from '@/stores';
 import PlayerName from '@/components/PlayerName.vue';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
 
@@ -14,10 +12,8 @@ import { useColumns } from '@/helpers/columns';
 const store = usePlayerCareerStatsStore();
 const { stats, totalStats } = storeToRefs(store);
 const playerStore = usePlayerStore();
-const seasonStore = useSeasonStore();
 const auth = useAuthStore();
 const { players } = storeToRefs(playerStore);
-const { seasons } = storeToRefs(seasonStore);
 
 const isLoading = ref(true);
 const errorMessage = ref(null);
@@ -215,26 +211,6 @@ const handleFileUpload = async () => {
   }
 };
 
-// Player details dialog, opened by clicking a mapped name
-const playerDetailsDialog = ref(null);
-const currentSeasonId = ref(null);
-const currentW3CSeason = ref(null);
-const currentSeasonName = computed(() => (seasons.value || []).find(s => s.id === currentSeasonId.value)?.name || '');
-
-const openPlayerDetails = async (user) => {
-  playerDetailsDialog.value.open(user);
-  // season context loads on the first open, not on every page view
-  if (!currentSeasonId.value) {
-    try {
-      await seasonStore.fetchSeasons();
-      currentSeasonId.value = await resolveCurrentSeasonId();
-      currentW3CSeason.value = await resolveCurrentW3CSeason();
-    } catch (error) {
-      console.error('Failed to resolve the current season:', error);
-    }
-  }
-};
-
 onMounted(async () => {
   // the full player list only feeds the admin "Link to User" autocomplete
   if (auth.isAdmin) await playerStore.fetchPlayers();
@@ -299,7 +275,7 @@ onMounted(async () => {
             class="elevation-1"
           >
             <template v-slot:item.display_name="{ item }">
-              <PlayerName v-if="item.user" :player="item.user" @click="openPlayerDetails(item.user)" />
+              <PlayerName v-if="item.user" :player="item.user" />
               <template v-else>{{ item.display_name }}</template>
             </template>
 
@@ -343,14 +319,6 @@ onMounted(async () => {
         </v-card>
       </v-col>
     </v-row>
-
-    <!-- Player Details Dialog -->
-    <PlayerDetailsDialog
-      ref="playerDetailsDialog"
-      :seasonId="currentSeasonId"
-      :seasonName="currentSeasonName"
-      :w3cSeason="currentW3CSeason"
-    />
 
     <!-- Edit Dialog -->
     <v-dialog v-model="editDialog" max-width="800px">

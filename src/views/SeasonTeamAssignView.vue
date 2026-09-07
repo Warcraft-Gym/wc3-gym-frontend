@@ -91,7 +91,7 @@
                 ></v-select>
               </template>
               <template #item.name="{ item }">
-                <PlayerName :player="item" @click.stop="showStats(item)">
+                <PlayerName :player="item">
                   <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.signup_race)">
                     <v-tooltip>
                       <template #activator="{ props }">
@@ -210,12 +210,6 @@
 
     <EditPlayerDialog ref="editPlayerDialog" :refresh="fetchData" />
 
-    <!-- Player details dialog (open when clicking a player's name) -->
-    <PlayerDetailsDialog
-      ref="playerDetailsDialog"
-      :seasonId="seasonId"
-    />
-
     <!-- Teams grid below -->
     <v-row>
       <v-col cols="12">
@@ -236,7 +230,7 @@
                     <div v-for="p in getTeamPlayersForSeason(team)" :key="p.id" class="team-player" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
                       <div>
                         <div style="display:flex;align-items:center;gap:8px;">
-                          <span style="cursor: pointer; color: var(--v-theme-primary);" @click="showStats(p)"><strong>{{ p.name }}</strong></span>
+                          <span style="cursor: pointer; color: var(--v-theme-primary);" @click="router.push(playerPath(p))"><strong>{{ p.name }}</strong></span>
                           <template v-if="!hasW3CStatsTwoSeasons(p, currentW3CSeason, p.signup_race)">
                             <v-tooltip>
                               <template #activator="{ props }">
@@ -317,7 +311,6 @@ import { useAuthStore, useLadderStore, useTeamStore, useSeasonStore } from '@/st
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
@@ -332,7 +325,7 @@ import {
   syncedAgo,
   syncedAt
 } from '@/helpers/w3c-stats';
-import { matchesPlayerSearch, filterByMmrRange } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerPath } from '@/helpers/players';
 import { raceWrapper } from '@/helpers/races';
 import { useDisplay } from 'vuetify';
 
@@ -524,13 +517,6 @@ const onResetFilters = async () => {
   clearFilters();
   // refresh available players after clearing filters
   await fetchData();
-};
-
-// player details dialog state (open by clicking a player's name)
-const playerDetailsDialog = ref(null);
-
-const showStats = async (player) => {
-  playerDetailsDialog.value.open(player);
 };
 
 // Get W3C MMR for player's signed up race (with fallback)

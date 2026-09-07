@@ -129,7 +129,7 @@
         <GroupedTable :columns="playerColumns" :groups="roster" empty="No drafted players">
           <template #head.mmr><W3CMmr /></template>
           <template #group="{ group: row }">
-            <td class="font-weight-bold"><PlayerName :player="row.player" :race="row.player.signup_race" @click.stop="openPlayer(row.player_name, row.player_id)" /></td>
+            <td class="font-weight-bold"><PlayerName :player="row.player" :race="row.player.signup_race" /></td>
             <td class="text-right">{{ row.mmr || 'N/A' }}</td>
             <td class="text-right">{{ row.record }}</td>
             <td class="text-right">{{ row.total }}</td>
@@ -144,7 +144,7 @@
                   <div class="d-flex align-center ga-1 flex-wrap">
                     <span class="week-label text-medium-emphasis">{{ idx ? '' : `Week ${week.week}` }}</span>
                     <span class="text-medium-emphasis">vs</span>
-                    <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" @click="openPlayer(series.opponent)" />
+                    <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" />
                   </div>
                 </td>
                 <td class="text-right">{{ opponentMmr(series) || 'N/A' }}</td>
@@ -203,7 +203,7 @@
                   <template v-for="side in [bet.player1, bet.player2]" :key="side">
                     <span v-if="side === bet.player2" class="text-medium-emphasis">{{ bet.score }}</span>
                     <span :class="{ winner: side === bet.actual_winner }">
-                      <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" @click="openPlayer(side)" />
+                      <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" />
                     </span>
                     <BetIcon v-if="side === bet.bet_on" class="text-green" />
                   </template>
@@ -256,18 +256,12 @@ const props = defineProps({
   seasonId: { type: Number, default: null },
   w3cSeason: { type: Object, default: null },
 });
-const emit = defineEmits(['open-player']);
 
 // drafted players last: they carry the season stats the roster table reads
 const byId = computed(() => new Map([...props.players, ...props.draftedPlayers].map(p => [p.id, p])));
 const byName = computed(() => new Map([...props.players, ...props.draftedPlayers].map(p => [p.name, p])));
 
 const resolve = (name, id = null) => byId.value.get(id) || byName.value.get(name) || { name };
-
-const openPlayer = (name, id = null) => {
-  const player = resolve(name, id);
-  if (player.id) emit('open-player', player);
-};
 
 // the opponent's MMR comes from the same signup pool the roster rows read
 const opponentMmr = (series) => {

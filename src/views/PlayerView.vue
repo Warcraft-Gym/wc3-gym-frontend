@@ -105,10 +105,13 @@ const openPlayer = (opponent) => router.push(playerPath(opponent));
 // One read for the whole page; the ladder card reads its own record.
 // A typed /player/thanks#11187 arrives as path + hash, so the key rejoins them.
 watch(() => route.params.id + route.hash, async (key) => {
+  // the rewrite below lands here again with the tag; the player is already loaded
+  if (player.value && [String(player.value.id), player.value.battleTag].includes(key)) return;
   player.value = null;
   errorMessage.value = null;
   try {
     player.value = await playerStore.getPlayer(key);
+    if (/^\d+$/.test(key)) router.replace(playerPath(player.value));  // the tag is the address
   } catch (error) {
     errorMessage.value = error.message;
   }

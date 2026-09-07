@@ -152,6 +152,10 @@
           {{ item.week || 'TBD' }}
         </template>
 
+        <template #item.cast="{ item }">
+          <CastChips :series="item" />
+        </template>
+
         <template #item.actions="{ item }">
           <v-btn
             color="primary"
@@ -229,6 +233,11 @@
             <div class="mb-3">
               <div class="text-caption text-grey">Week</div>
               <div>{{ item.week || 'TBD' }}</div>
+            </div>
+
+            <div class="mb-3">
+              <div class="text-caption text-grey">Cast</div>
+              <CastChips :series="item" />
             </div>
 
             <div class="d-flex flex-column gap-2">
@@ -315,6 +324,10 @@
           {{ formatDateTime(item.date_time) }}
         </template>
 
+        <template #item.cast="{ item }">
+          <CastChips :series="item" />
+        </template>
+
         <template #item.actions="{ item }">
           <v-tooltip text="Fix result" location="top">
             <template #activator="{ props }">
@@ -369,6 +382,7 @@
                 Fix result
               </v-btn>
             </div>
+            <CastChips :series="item" class="mt-2" />
           </v-card-text>
         </v-card>
       </v-card-text>
@@ -627,6 +641,7 @@ import { formatDateTime } from '@/helpers/datetime';
 import { useDisplay } from 'vuetify';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
+import CastChips from '@/components/CastChips.vue';
 
 
 const route = useRoute();
@@ -750,6 +765,7 @@ const upcomingHeaders = [
   { title: 'Season', key: 'season_name' },
   { title: 'Date & Time', key: 'date_time' },
   { title: 'Week', key: 'week' },
+  { title: 'Cast', key: 'cast', sortable: false },
   { title: '', key: 'actions', sortable: false }
 ];
 
@@ -759,6 +775,7 @@ const completedHeaders = [
   { title: 'Date & Time', key: 'date_time' },
   { title: 'Score', key: 'score', sortable: false },
   { title: 'Week', key: 'week' },
+  { title: 'Cast', key: 'cast', sortable: false },
   { title: '', key: 'actions', sortable: false }
 ];
 

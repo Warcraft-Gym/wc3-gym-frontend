@@ -127,6 +127,7 @@
                   <td v-if="auth.isAdmin">
                     <RowActions :actions="[
                       { icon: 'mdi-pencil', label: 'Edit', onClick: () => editPlayer(item) },
+                      { icon: 'mdi-account-check', label: 'Add to season', onClick: () => signupDialog.open({ player: item }) },
                       { icon: syncIcon(item.id), label: syncLabel(item.id), color: syncColor(item.id), loading: syncState(item.id) === 'loading', onClick: () => syncW3CPlayer(item.id) },
                       { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item.id, removePlayer) },
                     ]" />
@@ -219,23 +220,6 @@
               <RaceSelect v-model="newPlayer.race" />
             </v-col>
           </v-row>
-          <v-row>
-            <v-col cols="12">
-              <v-select
-                v-model="selectedSignupSeasonIdsNew"
-                :items="seasons"
-                item-title="name"
-                item-value="id"
-                multiple
-                chips
-                label="Signed-up Seasons"
-                clearable
-                variant="outlined"
-                prepend-inner-icon="mdi-calendar-check"
-                density="comfortable"
-              ></v-select>
-            </v-col>
-          </v-row>
         </v-card-text>
 
         <v-card-actions>
@@ -258,10 +242,11 @@
 
     <EditPlayerDialog
       ref="editPlayerDialog"
-      :seasons="seasons"
       :can-save="auth.isAdmin"
       :refresh="fetchPlayers"
     />
+
+    <SeasonSignupDialog ref="signupDialog" @added="fetchPlayers" />
 
     <ConfirmDeleteDialog
       v-model="showDeleteDialog"
@@ -279,6 +264,7 @@ import { useAuthStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref, computed } from 'vue';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
+import SeasonSignupDialog from '@/components/SeasonSignupDialog.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
@@ -297,6 +283,7 @@ import { useColumns } from '@/helpers/columns';
 
 // State for editing
 const editPlayerDialog = ref(null);
+const signupDialog = ref(null);
 const isLoading  = ref(false); // State for selected user
 const isCreating = ref(false); // State for creating new player
 const errorMessage = ref(null);
@@ -310,8 +297,6 @@ const newPlayer = ref({
   discordId: '',
   race: '',
 });
-// seasons selected when creating a new player
-const selectedSignupSeasonIdsNew = ref([]);
 const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const auth = useAuthStore();
@@ -462,30 +447,7 @@ const createNewPlayer = async () => {
   isCreating.value = true;
   try {
     // send newPlayer directly — fields use backend schema names
-    const created = await playerStore.createPlayer(newPlayer.value);
-
-    // determine created player id: prefer API return, otherwise refetch and find by unique battletag
-    let createdId = created && created.id ? created.id : null;
-    if (!createdId) {
-      await fetchPlayers();
-      // try to find by battletag and name as fallback
-      const found = (players.value || []).find(p => p.battleTag === newPlayer.value.battleTag && p.name === newPlayer.value.name);
-      createdId = found ? found.id : null;
-    }
-
-
-    // If seasons were selected, register the user for those seasons
-    if (createdId && Array.isArray(selectedSignupSeasonIdsNew.value) && selectedSignupSeasonIdsNew.value.length > 0) {
-      try {
-        await Promise.all(selectedSignupSeasonIdsNew.value.map(async sid => {
-          const result = await seasonStore.addUserSignup(sid, [createdId], newPlayer.value.race || null);
-          return result;
-        }));
-      } catch (err) {
-        console.error('Failed to add user signup for new player:', err);
-        creationError.value = 'Player created but failed to add to seasons: ' + err.message;
-      }
-    }
+    await playerStore.createPlayer(newPlayer.value);
 
     // refresh players list and close modal
     await fetchPlayers();
@@ -534,7 +496,6 @@ const cancelAddNewPlayer = () => {
     discordId: '',
     race: '',
   };
-  selectedSignupSeasonIdsNew.value = [];
 };
 </script>
 

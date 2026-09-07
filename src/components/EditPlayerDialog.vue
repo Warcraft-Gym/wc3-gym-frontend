@@ -73,18 +73,14 @@
         </v-row>
         <v-row>
           <v-col cols="12">
-            <v-select
-              v-model="selectedSignupSeasonIds"
-              :items="seasons"
-              item-title="name"
-              item-value="id"
-              multiple
-              chips
-              label="Signed-up Seasons"
-              variant="outlined"
-              prepend-inner-icon="mdi-calendar-check"
-              density="comfortable"
-            ></v-select>
+            <div class="text-subtitle-2 mb-1">Seasons</div>
+            <div v-if="signupSeasons.length" class="d-flex flex-wrap ga-1">
+              <v-chip v-for="s in signupSeasons" :key="s.id" size="small">
+                <RaceIcon v-if="s.signup_race" :raceIdentifier="s.signup_race" class="mr-1" />
+                {{ s.name }}
+              </v-chip>
+            </div>
+            <div v-else class="text-medium-emphasis">Not signed up for a season.</div>
           </v-col>
         </v-row>
       </v-card-text>
@@ -101,37 +97,30 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { usePlayerStore, useSeasonStore } from '@/stores';
+import { computed, ref } from 'vue';
+import { usePlayerStore } from '@/stores';
+import RaceIcon from '@/components/RaceIcon.vue';
 
 const props = defineProps({
-  // The season list of the "Signed-up Seasons" select
-  seasons: { type: Array, default: () => [] },
   canSave: { type: Boolean, default: true },
   // Awaited after a successful save so the dialog closes once the caller's list is fresh
   refresh: { type: Function, default: null },
 });
 
 const playerStore = usePlayerStore();
-const seasonStore = useSeasonStore();
 
 const show = ref(false);
 const selectedPlayer = ref(null);
 const updateError = ref(null);
-const selectedSignupSeasonIds = ref([]);
-let originalSignupSeasonIds = [];
 
-const open = async (player) => {
-  try {
-    if (seasonStore && seasonStore.fetchSeasons) await seasonStore.fetchSeasons();
-  } catch (err) {
-    console.error('Failed to fetch seasons before opening edit player dialog:', err);
-  }
+// Newest season first; signups are managed on the draft page
+const signupSeasons = computed(() =>
+  (selectedPlayer.value?.signup_seasons ?? []).slice().sort((a, b) => b.id - a.id)
+);
+
+const open = (player) => {
   selectedPlayer.value = { ...player };
   updateError.value = '';
-  const signup = selectedPlayer.value.signup_seasons || [];
-  originalSignupSeasonIds = signup.map(s => s.id);
-  selectedSignupSeasonIds.value = [...originalSignupSeasonIds];
   show.value = true;
 };
 
@@ -139,18 +128,6 @@ const updatePlayer = async () => {
   updateError.value = '';
   try {
     await playerStore.updatePlayer(selectedPlayer.value);
-    const playerId = selectedPlayer.value.id;
-    const newSignupIds = selectedSignupSeasonIds.value || [];
-    const toAdd = newSignupIds.filter(id => !originalSignupSeasonIds.includes(id));
-    const toRemove = originalSignupSeasonIds.filter(id => !newSignupIds.includes(id));
-
-    try {
-      await Promise.all(toAdd.map(sid => seasonStore.addUserSignup(sid, [playerId], selectedPlayer.value.race || null)));
-      await Promise.all(toRemove.map(sid => seasonStore.removeUserSignup(sid, [playerId])));
-    } catch (err) {
-      console.error('Failed to sync signup seasons:', err);
-    }
-
     if (props.refresh) await props.refresh();
     cancelEdit();
   } catch (error) {

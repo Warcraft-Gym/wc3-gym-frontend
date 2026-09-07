@@ -30,6 +30,11 @@
                 <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
               </v-btn>
             </v-col>
+            <v-col v-if="auth.isAdmin" cols="12" sm="auto">
+              <v-btn variant="elevated" color="primary" prepend-icon="mdi-account-plus" @click="signupDialog.open({ season: { id: seasonId, name: seasonName } })" block>
+                Add signup
+              </v-btn>
+            </v-col>
           </v-row>
         </v-toolbar>
       </v-card-text>
@@ -146,7 +151,6 @@
                   density="compact"
                   variant="underlined"
                   hide-details
-                  clearable
                   style="width: 140px"
                   @update:model-value="setSignupRace(item, $event)"
                 >
@@ -189,6 +193,16 @@
                 >
                   <v-icon>mdi-pencil</v-icon>
                 </v-btn>
+                <v-btn
+                  v-if="auth.isAdmin"
+                  icon
+                  size="small"
+                  variant="text"
+                  @click="openDeleteDialog(item.id, () => removeSignup(item))"
+                >
+                  <v-icon>mdi-account-remove</v-icon>
+                  <v-tooltip activator="parent" location="top">Remove signup</v-tooltip>
+                </v-btn>
               </template>
               <template #no-data>
                 <div>No available signed-up players for this season.</div>
@@ -209,6 +223,16 @@
     </v-card>
 
     <EditPlayerDialog ref="editPlayerDialog" :refresh="fetchData" />
+
+    <SeasonSignupDialog ref="signupDialog" @added="fetchData" />
+
+    <ConfirmDeleteDialog
+      v-model="showDeleteDialog"
+      message="Remove this player's signup for the season?"
+      delete-icon="mdi-account-remove"
+      @confirm="confirmDelete"
+      @cancel="cancelDeleteDialog"
+    />
 
     <!-- Teams grid below -->
     <v-row>
@@ -312,6 +336,8 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
+import SeasonSignupDialog from '@/components/SeasonSignupDialog.vue';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
@@ -327,6 +353,7 @@ import {
 } from '@/helpers/w3c-stats';
 import { matchesPlayerSearch, filterByMmrRange, playerPath } from '@/helpers/players';
 import { raceWrapper } from '@/helpers/races';
+import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { useDisplay } from 'vuetify';
 
 
@@ -366,6 +393,8 @@ const syncEntries = ref([]);
 
 // Edit player state
 const editPlayerDialog = ref(null);
+const signupDialog = ref(null);
+const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
@@ -399,9 +428,10 @@ const moveToRound = (player, round) => setDraftPosition(player, (round - 1) * ro
 
 // The race the MMR, the icon and the race filters read
 const setSignupRace = async (player, race) => {
+  if (!race) return;
   try {
-    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { race: race || null });
-    player.signup_race = race || null;
+    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { race });
+    player.signup_race = race;
   } catch (error) {
     console.error('Failed to set the race:', error);
   }
@@ -611,6 +641,15 @@ const syncAllDraftPlayers = async () => {
 };
 
 const editPlayer = (player) => editPlayerDialog.value.open(player);
+
+const removeSignup = async (player) => {
+  try {
+    await seasonStore.removeUserSignup(seasonId.value, [player.id]);
+    await fetchData();
+  } catch (error) {
+    console.error('Failed to remove the signup:', error);
+  }
+};
 </script>
 
 <style scoped>

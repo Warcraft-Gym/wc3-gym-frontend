@@ -56,8 +56,8 @@ export const useSeasonStore = defineStore({
         async setSeasonMapOrder(season_id, map_ids) {
             await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/maps/order`, {'map_ids': map_ids});
         },
-        async setSeasonWeekMap(season_id, playday, map_id) {
-            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/week-maps`, {'playday': playday, 'map_id': map_id});
+        async setSeasonRound(season_id, data) {
+            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/rounds`, data);
         },
         async fetchLadderMapImport(season_id) {
             return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/maps/ladder-import`);

@@ -81,6 +81,11 @@ export const useSeriesStore = defineStore({
                 this.isLoading = false; // Set loading to false once complete
             }
         },
+        // One player's series in one season, filtered on the server; leaves the list state alone
+        async playerSeries(season_id, user_id) {
+            const query = encodeURIComponent(`player1_id == ${user_id} or player2_id == ${user_id}`);
+            return await fetchWrapper.post(`${backendUrl}/series/season/${season_id}/search?query=${query}`);
+        },
         async searchSeriesBySeason(season_id, search) {
             try{
                 this.isLoading = true; // Set loading to true

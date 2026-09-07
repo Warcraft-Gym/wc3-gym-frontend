@@ -124,7 +124,7 @@
         </v-table>
       </v-card>
 
-      <LadderLeaderboards :players="allPlayers" @open-player="openPlayerDetails" />
+      <LadderLeaderboards :players="allPlayers" @open-player="openPlayer" />
       <BadgeRarity
         :rules="ladder.achievement_rules"
         :teamRules="ladder.team_achievement_rules"
@@ -204,7 +204,7 @@
               <RaceIcon v-if="item.race" :raceIdentifier="item.race" />
             </template>
             <template v-slot:[`item.name`]="{ item }">
-              <PlayerName :player="item" @click.stop="openPlayerDetails(item)">
+              <PlayerName :player="item">
                 <span v-if="!item.synced_at" class="d-inline-flex">
                   <v-icon size="x-small" color="amber-darken-2">mdi-sync-alert</v-icon>
                   <v-tooltip activator="parent" location="top">not fully synced</v-tooltip>
@@ -258,12 +258,6 @@
       </v-card>
     </template>
 
-    <PlayerDetailsDialog
-      ref="playerDetailsDialog"
-      :seasonId="selectedSeasonId"
-      :seasonName="seasonName"
-      :w3cSeason="currentW3CSeason"
-    />
 
     <W3CSyncResultDialog v-model="syncDialog" :entries="syncEntries" />
   </v-container>
@@ -271,6 +265,8 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { playerPath } from '@/helpers/players';
 import { storeToRefs } from 'pinia';
 import { useAuthStore, useLadderStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
@@ -285,7 +281,6 @@ import BadgeRarity from '@/components/BadgeRarity.vue';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
-import PlayerDetailsDialog from '@/components/PlayerDetailsDialog.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import AchievementChip from '@/components/AchievementChip.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
@@ -311,9 +306,9 @@ const searchName = ref('');
 const searchRace = ref(null);
 const searchTeam = ref(null);
 
+const router = useRouter();
 const syncDialog = ref(false);
 const syncEntries = ref([]);
-const playerDetailsDialog = ref(null);
 const expanded = ref([]);
 const fullPlayers = ref({});
 
@@ -448,14 +443,9 @@ const syncLadder = async () => {
   }
 };
 
-const openPlayerDetails = (player) => {
-  playerDetailsDialog.value.open({ id: player.id, name: player.name, battleTag: player.battleTag, race: player.race });
-};
-
-// An opponent clicked inside an expanded panel; the dialog fetches the rest itself
-const openOpponent = (userId) => {
-  playerDetailsDialog.value.open({ id: userId });
-};
+const openPlayer = (player) => router.push(playerPath(player));
+// An opponent clicked inside an expanded panel carries only an id
+const openOpponent = (userId) => router.push(playerPath({ id: userId }));
 
 watch(selectedSeasonId, loadLadder, { immediate: true });
 

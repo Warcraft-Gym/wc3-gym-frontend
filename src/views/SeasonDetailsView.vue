@@ -115,6 +115,18 @@
             <v-col cols="12" sm="auto">
               <v-btn
                 v-if="auth.isAdmin"
+                :to="`/seasons/${route.params.id}/achievements`"
+                color="primary"
+                prepend-icon="mdi-trophy-variant-outline"
+                variant="outlined"
+                block
+              >
+                Achievements
+              </v-btn>
+            </v-col>
+            <v-col cols="12" sm="auto">
+              <v-btn
+                v-if="auth.isAdmin"
                 @click="openMatchCreationModal"
                 color="primary"
                 prepend-icon="mdi-plus"

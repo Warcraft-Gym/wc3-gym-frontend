@@ -56,14 +56,23 @@ export const useSeasonStore = defineStore({
         async setSeasonMapOrder(season_id, map_ids) {
             await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/maps/order`, {'map_ids': map_ids});
         },
-        async setSeasonWeekMap(season_id, playday, map_id) {
-            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/week-maps`, {'playday': playday, 'map_id': map_id});
+        async setSeasonRound(season_id, data) {
+            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/rounds`, data);
         },
         async fetchLadderMapImport(season_id) {
             return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/maps/ladder-import`);
         },
         async importLadderMaps(season_id, names) {
             await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/maps/ladder-import`, {'names': names});
+        },
+        async fetchAchievementCatalogue() {
+            return await fetchWrapper.get(`${backendUrl}/achievements`);
+        },
+        async fetchSeasonAchievements(season_id) {
+            return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/achievements`);
+        },
+        async saveSeasonAchievements(season_id, rows) {
+            return await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/achievements`, rows);
         },
         async addUserSignup(season_id, user_ids, race = null) {
             const updated = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids, race});

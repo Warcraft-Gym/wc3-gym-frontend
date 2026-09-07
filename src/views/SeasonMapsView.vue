@@ -107,39 +107,61 @@
           </v-card-text>
         </v-card>
 
-        <v-card v-if="usesWeekMap" elevation="2">
+        <v-card elevation="2">
           <v-card-title class="bg-primary d-flex align-center">
             <v-icon class="mr-2">mdi-calendar-week</v-icon>
-            <span>Fixed map per week</span>
+            <span>Rounds</span>
           </v-card-title>
           <v-card-text class="pt-4">
-            <v-select
-              v-for="week in weekNumbers"
-              :key="week"
-              :model-value="weekMapId(week)"
-              :items="pool"
-              item-title="name"
-              item-value="id"
-              :label="`Week ${week}`"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-              class="mb-3"
-              @update:modelValue="setWeekMap(week, $event ?? null)"
-            >
-              <template #item="{ props: itemProps, item }">
-                <v-list-item v-bind="itemProps">
-                  <template #prepend>
-                    <span class="map-thumb thumb-sm mr-3"><img v-if="item.raw.image" :src="item.raw.image" :alt="item.raw.name" @error="hideMissingImage"></span>
-                  </template>
-                  <template #append>
-                    <v-chip size="x-small" label>{{ item.raw.shortname }}</v-chip>
-                  </template>
-                </v-list-item>
-              </template>
-            </v-select>
-            <div v-if="!weekNumbers.length" class="text-caption text-grey">This season has no playdays</div>
+            <div v-for="round in rounds" :key="round.playday" class="mb-4">
+              <div class="text-subtitle-2 mb-1">Week {{ round.playday }}</div>
+              <div class="d-flex ga-2">
+                <v-text-field
+                  :model-value="round.start_date"
+                  type="date"
+                  label="Start"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  @change="setRound(round.playday, { start_date: $event.target.value || null })"
+                />
+                <v-text-field
+                  :model-value="round.end_date"
+                  type="date"
+                  label="End"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  @change="setRound(round.playday, { end_date: $event.target.value || null })"
+                />
+              </div>
+              <v-select
+                v-if="usesWeekMap"
+                :model-value="round.map_id"
+                :items="pool"
+                item-title="name"
+                item-value="id"
+                label="Game 1 map"
+                variant="outlined"
+                density="compact"
+                hide-details
+                clearable
+                class="mt-2"
+                @update:modelValue="setRound(round.playday, { map_id: $event ?? null })"
+              >
+                <template #item="{ props: itemProps, item }">
+                  <v-list-item v-bind="itemProps">
+                    <template #prepend>
+                      <span class="map-thumb thumb-sm mr-3"><img v-if="item.raw.image" :src="item.raw.image" :alt="item.raw.name" @error="hideMissingImage"></span>
+                    </template>
+                    <template #append>
+                      <v-chip size="x-small" label>{{ item.raw.shortname }}</v-chip>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-select>
+            </div>
+            <div v-if="!rounds.length" class="text-caption text-grey">This season has no rounds</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -282,8 +304,7 @@ const importRows = ref([]);
 const pool = computed(() => season.value.maps || []);
 const notInPool = computed(() => maps.value.filter((m) => !pool.value.some((p) => p.id === m.id)));
 const usesWeekMap = computed(() => rules.value.includes('week'));
-const weekNumbers = computed(() => Array.from({ length: season.value.number_weeks || 0 }, (_, i) => i + 1));
-const weekMapId = (playday) => (season.value.week_maps || []).find((w) => w.playday === playday)?.map_id ?? null;
+const rounds = computed(() => season.value.rounds || []);
 
 const isDirty = computed(() => rules.value.join(',') !== savedRules.value || order.value.join('|') !== savedOrder.value);
 
@@ -354,7 +375,7 @@ const apply = async (action) => {
 
 const addMap = (mapId) => apply(() => seasonStore.addMapsToSeason(seasonId.value, [mapId]));
 const removeMap = (mapId) => apply(() => seasonStore.removeMapsFromSeason(seasonId.value, [mapId]));
-const setWeekMap = (playday, mapId) => apply(() => seasonStore.setSeasonWeekMap(seasonId.value, playday, mapId));
+const setRound = (playday, fields) => apply(() => seasonStore.setSeasonRound(seasonId.value, { playday, ...fields }));
 
 const moveMap = (index, step) => {
   const ids = pool.value.map((m) => m.id);

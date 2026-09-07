@@ -178,7 +178,7 @@
               <v-col cols="2" class="text-center">
                 <div class="vs-section">
                   <v-icon size="40" color="primary">mdi-sword-cross</v-icon>
-                  <div class="text-caption mt-2 text-grey">{{ match.date_frame || 'TBD' }}</div>
+                  <div class="text-caption mt-2 text-grey">{{ roundLabel(roundOf(match.playday)) }}</div>
                 </div>
               </v-col>
 
@@ -350,15 +350,6 @@
       <v-card-text class="pt-4">
         <v-row>
           <v-col cols="12">
-            <v-text-field
-              v-model="newMatch.date_frame" 
-              label="Date/Time Frame"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-calendar-clock"
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12">
             <v-select
               :items="maps"
               item-title="name"
@@ -417,15 +408,6 @@
       </v-card-title>
       <v-card-text class="pt-4">
         <v-row>
-          <v-col cols="12">
-            <v-text-field
-              v-model="selectedMatch.date_frame" 
-              label="Date/Time Frame"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-calendar-clock"
-            ></v-text-field>
-          </v-col>
           <v-col cols="12">
             <v-select
               :items="maps"
@@ -509,6 +491,7 @@ import bannerImg from '@/assets/media/GNL_Banner.png';
   import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { isUnscored } from '@/helpers/season-phase.mjs';
+import { roundLabel } from '@/helpers/rounds.mjs';
 import { formatDateTime } from '@/helpers/datetime';
 
 
@@ -529,6 +512,8 @@ const { maps } = storeToRefs(mapStore);
 
 // Route params
 const seasonId = seasonStore.seasonIdOf(route.params.id);
+// The round of a week gives the match card its dates
+const roundOf = (playday) => season.value?.rounds?.find(r => r.playday === playday) || { playday };
 
 // Series with no result: on from ?unscored=1, held here because the week hash push drops the query
 const seriesStore = useSeriesStore();
@@ -637,7 +622,6 @@ const closeTeamSelectionModal = () => {
 
     const openMatchCreationModal = () => {
       newMatch.value = {
-        date_frame:'',
         fixed_map_id:null,
         team1_id:null,
         team2_id:null,

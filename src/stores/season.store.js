@@ -74,7 +74,7 @@ export const useSeasonStore = defineStore({
         async saveSeasonAchievements(season_id, rows) {
             return await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/achievements`, rows);
         },
-        async addUserSignup(season_id, user_ids, race = null) {
+        async addUserSignup(season_id, user_ids, race) {
             const updated = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids, race});
             return updated;
         },

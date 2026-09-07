@@ -168,7 +168,18 @@
             <tbody>
               <tr v-for="pick in picks" :key="pick.side">
                 <td>{{ pick.who }}</td>
-                <td :class="{ 'text-medium-emphasis': !pick.map }">{{ pick.map || 'Not picked' }}</td>
+                <td :class="{ 'text-medium-emphasis': !pick.mapId }">
+                  <span class="d-flex align-center py-1">
+                    <img
+                      v-if="mapImage(pick.mapId)"
+                      class="mini rounded mr-3"
+                      :src="mapImage(pick.mapId)"
+                      :alt="pick.map"
+                      @error="hideMissingImage"
+                    >
+                    {{ pick.map || 'Not picked' }}
+                  </span>
+                </td>
               </tr>
             </tbody>
           </v-table>
@@ -255,7 +266,7 @@ const poolChip = computed(() => {
   return `${inVeto} in the veto, ${bansDone} of ${banTotal} banned`;
 });
 
-// the week map stays on the board as game 1; every other used map is dimmed or tagged
+// the fixed map of the week stays on the board as game 1; every other used map is dimmed or tagged
 const tiles = computed(() => (board.value?.pool || []).map((id) => {
   const step = stepByMap.value.get(id);
   const week = id === board.value?.week_map_id;
@@ -266,7 +277,7 @@ const tiles = computed(() => (board.value?.pool || []).map((id) => {
     banned: step?.action === 'ban',
     name: mapName(id),
     shortname: mapsById.value.get(id)?.shortname || '',
-    sub: week ? 'Week map' : board.value?.complete ? 'Unused' : 'Available',
+    sub: week ? 'Fixed map' : board.value?.complete ? 'Unused' : 'Available',
     canAct: !week && !step && (recording.value ? canRecord.value : !!board.value?.on_turn)
   };
 }));
@@ -303,7 +314,7 @@ const games = computed(() => {
 
     if (rule === 'week') {
       mapId = board.value?.week_map_id;
-      source = 'Week map';
+      source = 'Fixed map';
     } else if (rule === 'loser') {
       source = index ? `Loser of game ${index} picks` : 'Loser picks';
     } else if (rule === 'veto') {
@@ -326,7 +337,7 @@ const games = computed(() => {
 const showPicks = computed(() => rules.value.includes('loser') && order.value.some(entry => /^pick/i.test(entry)));
 const picks = computed(() => ['A', 'B'].map((side) => {
   const step = taken.value.find(row => row.action === 'pick' && row.side === side);
-  return { side, who: sideName(side), map: step ? mapName(step.map_id) : null };
+  return { side, who: sideName(side), mapId: step?.map_id, map: step ? mapName(step.map_id) : null };
 }));
 
 const load = async () => {

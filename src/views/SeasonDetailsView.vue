@@ -63,6 +63,7 @@
               <td><PlayerName :player="row.player1" /></td>
               <td><PlayerName :player="row.player2" /></td>
               <td class="text-no-wrap">{{ row.date_time ? formatDateTime(row.date_time) : 'Not scheduled' }}</td>
+              <td><CastChips :series="row" /></td>
             </tr>
           </template>
         </GroupedTable>
@@ -499,6 +500,7 @@ import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
+import CastChips from '@/components/CastChips.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore, useSeriesStore } from '@/stores';
@@ -537,6 +539,7 @@ const unscoredColumns = [
   { key: 'player1', title: 'Player 1' },
   { key: 'player2', title: 'Player 2' },
   { key: 'date_time', title: 'Scheduled' },
+  { key: 'cast', title: 'Cast' },
 ];
 const unscoredGroups = computed(() => {
   const weeks = new Map();

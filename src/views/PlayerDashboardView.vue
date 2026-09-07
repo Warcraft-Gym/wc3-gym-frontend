@@ -94,6 +94,7 @@
               </v-chip>
             </div>
             <div class="text-caption text-medium-emphasis">{{ formatDateTime(card.series.date_time) }}</div>
+            <CastChips :series="card.series" class="mt-1" />
             <div v-if="isUnplayed(card.series)" class="d-flex flex-wrap ga-1 mt-2">
               <v-btn
                 color="primary"
@@ -204,6 +205,10 @@
           {{ formatDateTime(item.date_time) }}
         </template>
 
+        <template #item.cast="{ item }">
+          <CastChips :series="item" />
+        </template>
+
         <template #item.actions="{ item }">
           <v-tooltip text="Fix result" location="top">
             <template #activator="{ props }">
@@ -258,6 +263,7 @@
                 Fix result
               </v-btn>
             </div>
+            <CastChips :series="item" class="mt-2" />
           </v-card-text>
         </v-card>
       </v-card-text>
@@ -517,6 +523,7 @@ import { roundLabel, roundOver } from '@/helpers/rounds.mjs';
 import { useDisplay } from 'vuetify';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
+import CastChips from '@/components/CastChips.vue';
 
 
 const route = useRoute();
@@ -641,6 +648,7 @@ const completedHeaders = [
   { title: 'Date & Time', key: 'date_time' },
   { title: 'Score', key: 'score', sortable: false },
   { title: 'Week', key: 'week' },
+  { title: 'Cast', key: 'cast', sortable: false },
   { title: '', key: 'actions', sortable: false }
 ];
 

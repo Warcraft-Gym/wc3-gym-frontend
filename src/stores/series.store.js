@@ -20,6 +20,19 @@ export const useSeriesStore = defineStore({
         async createSeries(series) {
             await fetchWrapper.post(`${backendUrl}/series`, series);
         },
+        // The casts of a series; every write answers the series' casts
+        async claimSeries(seriesId, channel_url) {
+            return await fetchWrapper.post(`${backendUrl}/series/${seriesId}/casts`, { channel_url });
+        },
+        async updateCast(seriesId, castId, channel_url) {
+            return await fetchWrapper.put(`${backendUrl}/series/${seriesId}/casts/${castId}`, { channel_url });
+        },
+        async unclaimSeries(seriesId, castId) {
+            await fetchWrapper.delete(`${backendUrl}/series/${seriesId}/casts/${castId}`);
+        },
+        async lastCastChannel() {
+            return (await fetchWrapper.get(`${backendUrl}/casts/last`)).channel_url;
+        },
         async deleteSeries(series_id) {
             await fetchWrapper.delete(`${backendUrl}/series/${series_id}`);
         },

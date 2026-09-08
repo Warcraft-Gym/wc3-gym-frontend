@@ -199,7 +199,7 @@
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="selectedSeason.number_weeks"
-                  label="Number of Weeks"
+                  label="Number of Rounds"
                   type="number"
                   variant="outlined"
                   density="comfortable"
@@ -218,7 +218,7 @@
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="selectedSeason.series_per_week"
-                  label="Series per Week"
+                  label="Series per Round"
                   type="number"
                   variant="outlined"
                   density="comfortable"
@@ -335,9 +335,9 @@ const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } 
 const allTableHeader = computed(() => [
   { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
-  { mobile: false, title: 'Weeks', value: 'number_weeks', sortable: true },
+  { mobile: false, title: 'Rounds', value: 'number_weeks', sortable: true },
   { mobile: false, title: 'Pick Ban', value: 'pick_ban', sortable: false },
-  { mobile: false, title: 'Series/Week', value: 'series_per_week', sortable: true },
+  { mobile: false, title: 'Series/Round', value: 'series_per_week', sortable: true },
   { title: 'Phase', value: 'phase', sortable: true },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);

@@ -41,7 +41,7 @@
             class="meeting-row"
           >
             <td class="text-caption">
-              {{ meeting.season_name }}<template v-if="meeting.playday">, week {{ meeting.playday }}</template>
+              {{ meeting.season_name }}<template v-if="meeting.playday">, round {{ meeting.playday }}</template>
             </td>
             <td>
               <v-chip :color="recordColor(meeting.my_score, meeting.their_score)" variant="tonal" size="x-small">
@@ -82,7 +82,7 @@ watch(() => props.playerId, async (id) => {
 
 const recordColor = (won, lost) => (won > lost ? 'success' : won < lost ? 'error' : undefined);
 
-const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `week ${opp.last_playday}` : null].filter(Boolean).join(', ');
+const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `round ${opp.last_playday}` : null].filter(Boolean).join(', ');
 </script>
 
 <style scoped>

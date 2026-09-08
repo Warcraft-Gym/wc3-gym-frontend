@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { roundCards, roundLabel, roundOver } from './rounds.mjs';
+import { currentRound, roundCards, roundLabel, roundOver } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
   assert.equal(roundLabel({ playday: 3, start_date: '2026-09-28', end_date: '2026-10-04' }), '28 Sep to 4 Oct');
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: null }), '13 Sep');
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-13' }), '13 Sep');
-  assert.equal(roundLabel({ playday: 4 }), 'Week 4');
+  assert.equal(roundLabel({ playday: 4 }), 'Round 4');
 });
 
 test('a round is over the day after its window closes', () => {
@@ -56,5 +56,18 @@ test('a season with no rounds falls back to the weeks of its unplayed series', (
     ],
   }, TODAY);
 
-  assert.deepEqual(cards.map(c => [c.playday, c.label, c.over]), [[2, 'Week 2', false]]);
+  assert.deepEqual(cards.map(c => [c.playday, c.label, c.over]), [[2, 'Round 2', false]]);
+});
+
+test('the current round is the first one not over, and a round is not a week', () => {
+  // three 14-day rounds; the 9th day of the season is still round 1
+  const rounds = [
+    { playday: 1, start_date: '2026-09-01', end_date: '2026-09-14' },
+    { playday: 2, start_date: '2026-09-15', end_date: '2026-09-28' },
+    { playday: 3, start_date: '2026-09-29', end_date: '2026-10-12' },
+  ];
+  assert.equal(currentRound(rounds, DateTime.fromISO('2026-09-09T10:00')).playday, 1);
+  assert.equal(currentRound(rounds, DateTime.fromISO('2026-09-16T10:00')).playday, 2);
+  assert.equal(currentRound(rounds, DateTime.fromISO('2026-10-13T10:00')), null);
+  assert.equal(currentRound([], DateTime.fromISO('2026-09-09T10:00')), null);
 });

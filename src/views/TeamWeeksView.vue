@@ -8,7 +8,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-calendar-account</v-icon>
-          Team Weeks
+          Team Rounds
         </h1>
       </v-col>
     </v-row>
@@ -21,7 +21,7 @@
         <span>{{ team?.name }}</span>
       </v-card-title>
 
-      <v-select v-if="smAndDown" v-model="shownWeek" :items="weeks" label="Week" density="compact" hide-details class="ma-2" />
+      <v-select v-if="smAndDown" v-model="shownWeek" :items="weeks" label="Round" density="compact" hide-details class="ma-2" />
       <v-table density="compact">
         <thead>
           <tr>
@@ -29,7 +29,7 @@
             <th v-for="week in shownWeeks" :key="week" class="text-center">
               {{ roundLabel(roundOf(week)) }}
               <div class="text-caption text-medium-emphasis font-weight-regular">
-                Week {{ week }}<template v-if="opponentOfWeek(week)"> · vs {{ opponentOfWeek(week).name }}</template>
+                Round {{ week }}<template v-if="opponentOfWeek(week)"> · vs {{ opponentOfWeek(week).name }}</template>
               </div>
             </th>
             <th v-if="!smAndDown"></th>
@@ -40,7 +40,7 @@
             <td>
               <PlayerName :player="player" :race="player.signup_race" />
               <v-btn v-if="smAndDown" size="x-small" variant="text" class="d-block px-0" :disabled="!!saving || !weeks.length" @click="outToLastWeek(player.id)">
-                Out to week {{ weeks.length }}
+                Out to round {{ weeks.length }}
               </v-btn>
             </td>
             <td v-for="week in shownWeeks" :key="week" class="text-center">
@@ -73,7 +73,7 @@
                 :disabled="!!saving || !weeks.length"
                 @click="outToLastWeek(player.id)"
               >
-                Out to week {{ weeks.length }}
+                Out to round {{ weeks.length }}
               </v-btn>
             </td>
           </tr>
@@ -199,7 +199,7 @@ onMounted(async () => {
     matches.value = seasonMatches;
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.message || 'Failed to load the team weeks.';
+    errorMessage.value = error.message || 'Failed to load the team rounds.';
   } finally {
     isLoading.value = false;
   }

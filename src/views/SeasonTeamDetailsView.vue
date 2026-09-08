@@ -180,7 +180,7 @@
                 </v-col>
                 <v-col cols="12" sm="auto">
                   <v-btn v-if="canSetWeeks" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${$route.params.season_id}/weeks`" block>
-                    Team Weeks
+                    Team Rounds
                   </v-btn>
                 </v-col>
                 <v-col cols="12" sm="auto">

@@ -82,7 +82,7 @@
         </v-card>
       </v-col>
 
-      <!-- Rules and the fixed map per week -->
+      <!-- Rules and the fixed map per round -->
       <v-col cols="12" md="3">
         <v-card elevation="2" class="mb-4">
           <v-card-title class="bg-primary d-flex align-center">
@@ -114,7 +114,7 @@
           </v-card-title>
           <v-card-text class="pt-4">
             <div v-for="round in rounds" :key="round.playday" class="mb-4">
-              <div class="text-subtitle-2 mb-1">Week {{ round.playday }}</div>
+              <div class="text-subtitle-2 mb-1">Round {{ round.playday }}</div>
               <div class="d-flex ga-2">
                 <v-text-field
                   :model-value="round.start_date"

@@ -21,7 +21,7 @@
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
                     <div class="text-h4 font-weight-bold primary--text">{{ season.number_weeks }}</div>
-                    <div class="text-subtitle-2 text-uppercase">Weeks</div>
+                    <div class="text-subtitle-2 text-uppercase">Rounds</div>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -52,7 +52,7 @@
         <GroupedTable :columns="unscoredColumns" :groups="unscoredGroups" default-open empty="Every series of this season has a result">
           <template #group="{ group }">
             <td :colspan="unscoredColumns.length">
-              <strong>Week {{ group.key }}</strong>
+              <strong>Round {{ group.key }}</strong>
               <span class="text-medium-emphasis ml-2">{{ group.rows.length }} with no result</span>
             </td>
           </template>
@@ -70,7 +70,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Week Navigation Tabs -->
+    <!-- Round navigation tabs -->
     <v-card class="mb-4" elevation="2">
       <v-tabs
         v-model="selectedWeek"
@@ -85,7 +85,7 @@
           :value="week"
         >
           <v-icon start>mdi-calendar-week</v-icon>
-          Week {{ week }}
+          Round {{ week }}
         </v-tab>
       </v-tabs>
     </v-card>
@@ -94,7 +94,7 @@
     <v-card class="mb-4" elevation="1">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-trophy</v-icon>
-        Week {{ selectedWeek }} Matches
+        Round {{ selectedWeek }} Matches
       </v-card-title>
       <v-card-text class="pa-0">
         <v-toolbar flat height="auto">
@@ -141,7 +141,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Matches for Selected Week -->
+    <!-- Matches for the selected round -->
     <v-row v-if="matches && matches.length > 0">
       <v-col
         v-for="(match, index) in matches"
@@ -223,7 +223,7 @@
     <!-- Empty State -->
     <v-card v-else elevation="0" class="text-center pa-8">
       <v-icon size="64" color="grey-lighten-1">mdi-calendar-blank</v-icon>
-      <div class="text-h6 mt-4 text-grey">No matches scheduled for Week {{ selectedWeek }}</div>
+      <div class="text-h6 mt-4 text-grey">No matches scheduled for Round {{ selectedWeek }}</div>
       <v-btn 
         color="primary" 
         variant="tonal" 
@@ -345,7 +345,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-calendar-plus</v-icon>
-        Create Match - Week {{ selectedWeek }}
+        Create Match - Round {{ selectedWeek }}
       </v-card-title>
       <v-card-text class="pt-4">
         <v-row>

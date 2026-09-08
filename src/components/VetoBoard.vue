@@ -289,7 +289,7 @@ const orderRows = computed(() => order.value.map((entry, index) => {
   };
 }));
 
-// one row per map rule: a week rule names its map, a veto rule takes the picks then, once the veto
+// one row per map rule: a fixed rule names its map, a veto rule takes the picks then, once the veto
 // is complete, what is left; a loser rule is only decided at play time
 const games = computed(() => {
   const picksMade = taken.value.filter(step => step.action === 'pick');
@@ -303,7 +303,7 @@ const games = computed(() => {
     let mapId = null;
     let source = 'Host picks';
 
-    if (rule === 'week') {
+    if (rule === 'fixed') {
       mapId = board.value?.week_map_id;
       source = 'Fixed map';
     } else if (rule === 'loser') {

@@ -136,12 +136,12 @@
                 />
               </div>
               <v-select
-                v-if="usesWeekMap"
+                v-if="usesFixedMap"
                 :model-value="round.map_id"
                 :items="pool"
                 item-title="name"
                 item-value="id"
-                label="Game 1 map"
+                label="Fixed map"
                 variant="outlined"
                 density="compact"
                 hide-details
@@ -266,7 +266,7 @@ const RULES = [
   { value: 'veto', label: 'Veto' },
   { value: 'loser', label: 'Loser picks' },
   { value: 'host', label: 'Host picks' },
-  { value: 'week', label: 'Fixed map' },
+  { value: 'fixed', label: 'Fixed map' },
 ];
 const STEPS = [
   { value: 'Ban_A', label: '+ Ban A', color: 'error' },
@@ -303,13 +303,13 @@ const importRows = ref([]);
 
 const pool = computed(() => season.value.maps || []);
 const notInPool = computed(() => maps.value.filter((m) => !pool.value.some((p) => p.id === m.id)));
-const usesWeekMap = computed(() => rules.value.includes('week'));
+const usesFixedMap = computed(() => rules.value.includes('fixed'));
 const rounds = computed(() => season.value.rounds || []);
 
 const isDirty = computed(() => rules.value.join(',') !== savedRules.value || order.value.join('|') !== savedOrder.value);
 
 // A game whose rule names its own map takes that map out of the veto
-const vetoPool = computed(() => pool.value.length - (usesWeekMap.value ? 1 : 0));
+const vetoPool = computed(() => pool.value.length - (usesFixedMap.value ? 1 : 0));
 const leftOver = computed(() => vetoPool.value - order.value.length);
 // A veto or loser game draws its map from the picks; every map left after the picks may be banned
 const picksMax = computed(() => rules.value.filter((rule) => rule === 'veto' || rule === 'loser').length);

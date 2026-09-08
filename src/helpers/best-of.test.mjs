@@ -4,7 +4,7 @@ import { gamesOf, winsOf, isValidResult, replaysNeeded } from './best-of.mjs';
 
 test('the games are the rules a season lists', () => {
   assert.equal(gamesOf('veto,veto,veto'), 3);
-  assert.equal(gamesOf('veto,week,loser,veto,veto'), 5);
+  assert.equal(gamesOf('veto,fixed,loser,veto,veto'), 5);
   assert.equal(gamesOf('veto'), 1);
 });
 

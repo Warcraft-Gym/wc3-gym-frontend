@@ -188,7 +188,6 @@ import StatusAlert from '@/components/StatusAlert.vue';
 // report: the board sits inside Report Result; the reporter enters both sides, then only the series shows
 const props = defineProps({
   seriesId: { type: [Number, String], required: true },
-  token: String,  // the dashboard link carries its token; a session reads the board without one
   report: Boolean,
 });
 const emit = defineEmits(['change']);
@@ -201,7 +200,7 @@ const board = ref(null);
 const errorMessage = ref(null);
 const pending = ref(0);  // writes not yet answered
 // an admin session edits either side from the match page; on the admin's own turn they are a player
-const admin = computed(() => !props.token && auth.isAdmin && !board.value?.on_turn);
+const admin = computed(() => auth.isAdmin && !board.value?.on_turn);
 // a veto done in a chat is typed in by one player for both sides, in the season's order
 const manual = ref(props.report);
 const recording = computed(() => admin.value || manual.value);
@@ -336,7 +335,7 @@ const picks = computed(() => ['A', 'B'].map((side) => {
 
 const load = async () => {
   try {
-    board.value = await fetchWrapper.get(props.token ? `${vetoUrl}?token=${encodeURIComponent(props.token)}` : vetoUrl);
+    board.value = await fetchWrapper.get(vetoUrl);
     errorMessage.value = null;
     emit('change', board.value);
   } catch (error) {
@@ -358,7 +357,7 @@ const send = (body) => {
   pending.value += 1;
   chain = chain.then(async () => {
     try {
-      board.value = await fetchWrapper.put(vetoUrl, props.token ? { ...body, token: props.token } : body);
+      board.value = await fetchWrapper.put(vetoUrl, body);
       errorMessage.value = null;
       emit('change', board.value);
     } catch (error) {

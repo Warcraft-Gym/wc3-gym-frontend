@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-4">
-    <VetoBoard :series-id="route.params.id" :token="route.query.token">
+    <VetoBoard :series-id="route.params.id">
       <h1 class="d-flex align-center ga-2">
         <v-icon>mdi-map-outline</v-icon>
         Map Veto

@@ -14,14 +14,14 @@
           Entering a veto done elsewhere
         </v-chip>
         <v-btn
-          v-if="canRecord && !admin && !report"
+          v-if="canRecord && !report"
           :variant="recording ? 'flat' : 'outlined'"
           color="warning"
           size="small"
-          prepend-icon="mdi-chat-processing-outline"
-          @click="manual = !manual"
+          :prepend-icon="auth.isAdmin ? 'mdi-shield-account-outline' : 'mdi-chat-processing-outline'"
+          @click="recording = !recording"
         >
-          {{ recording ? 'Entering a veto done elsewhere' : 'Enter a veto done elsewhere' }}
+          {{ auth.isAdmin ? 'Admin mode' : 'Enter a veto from chat' }}
         </v-btn>
         <v-btn
           v-if="canUndo"
@@ -198,11 +198,10 @@ const auth = useAuthStore();
 const board = ref(null);
 const errorMessage = ref(null);
 const pending = ref(0);  // writes not yet answered
-// an admin session edits either side from the match page; on the admin's own turn they are a player
-const admin = computed(() => auth.isAdmin && !board.value?.on_turn);
 // a veto done in a chat is typed in by one player for both sides, in the season's order
-const manual = ref(props.report);
-const recording = computed(() => admin.value || manual.value);
+const recording = ref(props.report);
+// an admin records either side from the match page, but only behind the same toggle as a player
+const admin = computed(() => auth.isAdmin && recording.value);
 const collapsed = computed(() => props.report && !!board.value?.complete);
 
 const vetoUrl = `${backendUrl}/player-series/${props.seriesId}/veto`;
@@ -222,7 +221,7 @@ const nextAction = computed(() => (order.value[taken.value.length] || '').split(
 
 const viewerId = computed(() => (board.value?.viewer_side === 'A' ? board.value?.player1 : board.value?.player2)?.id);
 const playerId = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.id;
-const canRecord = computed(() => (admin.value || !!board.value?.viewer_side) && !board.value?.complete);
+const canRecord = computed(() => (auth.isAdmin || !!board.value?.viewer_side) && !board.value?.complete);
 
 const statusLine = computed(() => {
   if (board.value?.complete) return 'Veto complete';

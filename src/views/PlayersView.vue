@@ -198,7 +198,7 @@
                 v-model="newPlayer.discordTag"
                 label="Discord Tag"
                 variant="outlined"
-                prepend-inner-icon="mdi-discord"
+                prepend-inner-icon="$discord"
                 density="comfortable"
               ></v-text-field>
             </v-col>

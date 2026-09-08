@@ -11,8 +11,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import CountryCodes from 'country-code-info'
+import { findCountry } from '@/helpers/countries.js'
 
 const props = defineProps({ countryIdentifier: String })
-const currentCountry = computed(() => props.countryIdentifier ? CountryCodes.findCountry({ a2: props.countryIdentifier }) : null)
+const currentCountry = computed(() => findCountry(props.countryIdentifier))
 </script>

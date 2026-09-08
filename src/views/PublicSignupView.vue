@@ -57,7 +57,7 @@
                   label="Discord Tag" 
                   variant="outlined"
                   required
-                  prepend-inner-icon="mdi-discord"
+                  prepend-inner-icon="$discord"
                   readonly 
                 />
               </v-col>
@@ -131,7 +131,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useSeasonStore, useAuthStore } from '@/stores';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { storeToRefs } from 'pinia';
-import CountryCodes from 'country-code-info';
+import { findCountry } from '@/helpers/countries.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -143,7 +143,7 @@ const discordTag = ref('');
 const name = ref('');
 const battleTag = ref('');
 // the browser's region is the default country, e.g. en-US -> US; empty when it names no country
-const country = ref(CountryCodes.findCountry({ a2: new Intl.Locale(navigator.language || 'en').region })?.a2 || '');
+const country = ref(findCountry(new Intl.Locale(navigator.language || 'en').region)?.a2 || '');
 const race = ref('');
 const timezones = Intl.supportedValuesOf('timeZone');
 const timezone = ref(Intl.DateTimeFormat().resolvedOptions().timeZone);

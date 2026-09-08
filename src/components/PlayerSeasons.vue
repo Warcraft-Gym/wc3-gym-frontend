@@ -3,7 +3,7 @@
      record and MMR; it opens into his weekly series and the ladder tab. -->
 <template>
   <StatusAlert v-model="errorMessage" />
-  <v-expansion-panels v-if="rows.length" variant="accordion" flat>
+  <v-expansion-panels v-if="rows.length" v-model="opened" variant="accordion" flat>
     <v-expansion-panel v-for="row in rows" :key="row.season.id" :value="row.season.id">
       <v-expansion-panel-title class="season-head">
         <div class="season-grid">
@@ -47,7 +47,8 @@
         </div>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <section class="section">
+        <slot v-if="row.season.id === open" name="current" :row="row" />
+        <section v-else class="section">
           <h4 class="text-body-1 font-weight-medium">Weekly series <span class="text-caption text-medium-emphasis">{{ row.stat?.wins ?? 0 }} – {{ row.stat?.losses ?? 0 }}</span></h4>
           <v-table density="compact">
             <thead>
@@ -91,6 +92,7 @@ import { DateTime } from 'luxon';
 import { useDisplay } from 'vuetify';
 import { useLadderStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
+import { isUnscored } from '@/helpers/season-phase.mjs';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
@@ -99,7 +101,9 @@ import W3CMmr from '@/components/W3CMmr.vue';
 
 const props = defineProps({
   player: { type: Object, required: true },
+  open: Number, // the season expanded at first, whose body the current slot draws
 });
+const opened = ref(props.open ?? null);
 
 // The backend's phase, in the words a player uses
 const STATE = { open: 'Scheduled', commenced: 'In progress', overdue: 'In progress', complete: 'Completed' };
@@ -162,7 +166,7 @@ const opponentTeam = (series, row) => {
 const scores = (series) => (mine(series)
   ? [series.player1_score, series.player2_score]
   : [series.player2_score, series.player1_score]);
-const scored = (series) => series.player1_score != null && series.player2_score != null;
+const scored = (series) => !isUnscored(series);
 const result = (series) => {
   if (!scored(series)) return series.date_time ? 'scheduled' : 'unscheduled';
   const [me, them] = scores(series);

@@ -67,7 +67,9 @@
                   <span class="colour-dot mr-2" :style="{ backgroundColor: card.dot }"></span>
                   <span :class="{ 'text-medium-emphasis font-italic': !card.named }" :title="card.id">{{ card.name }}</span>
                   <v-spacer />
-                  <v-chip v-if="card.named" size="x-small" variant="tonal">{{ card.members }} in Discord</v-chip>
+                  <v-chip v-if="card.named" size="x-small" variant="tonal" :color="card.binding && card.binding.holders !== card.members ? 'warning' : undefined">
+                    <template v-if="card.binding">{{ card.binding.holders }} in app &middot; </template>{{ card.members }} in Discord
+                  </v-chip>
                 </div>
 
                 <div v-if="card.binding" class="d-flex align-center text-body-2 text-medium-emphasis mt-1">
@@ -76,12 +78,6 @@
                     <img class="team-icon" :src="teamImageUrl(card.groupTeam)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <span>{{ card.groupLabel }}</span>
-                </div>
-
-                <div v-if="card.binding && (card.grants || card.removes)" class="d-flex align-center mt-1">
-                  <v-chip v-if="card.grants" size="x-small" color="success" variant="tonal" class="mr-1">+{{ card.grants }}</v-chip>
-                  <v-chip v-if="card.removes" size="x-small" color="error" variant="tonal" class="mr-1">&minus;{{ card.removes }}</v-chip>
-                  <span class="text-caption text-medium-emphasis">grant / remove on sync</span>
                 </div>
 
                 <RowActions :actions="cardActions(card)" inline />
@@ -418,9 +414,7 @@ const allCards = computed(() => {
       handManaged: binding?.kind === 'admin',
       dot: roleDot(role),
       groupLabel: binding ? groupLabel(binding) : null,
-      groupTeam: binding?.kind === 'team' ? (teamById(binding.team_id) ?? binding.team_id) : null,
-      grants: report.value.filter(r => r.missing.includes(role.id)).length,
-      removes: report.value.filter(r => r.extra.includes(role.id)).length
+      groupTeam: binding?.kind === 'team' ? (teamById(binding.team_id) ?? binding.team_id) : null
     };
   });
 });

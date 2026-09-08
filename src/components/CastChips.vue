@@ -1,4 +1,4 @@
-<!-- Who casts a series: one chip per cast with its platform icon, linking to the channel, or to the VOD with a play icon; red while the series is on now. A member claims; the owner or an admin edits, pastes a VOD or unclaims -->
+<!-- Who casts a series: one chip per cast with its platform icon, linking to the channel, or to the VOD with a play icon; red while the series is on now. A member claims, or adds the VOD once the series is over; the owner or an admin edits, pastes a VOD or unclaims -->
 <template>
   <div class="d-flex align-center flex-wrap ga-1" @click.stop>
     <template v-for="cast in casts" :key="cast.id">
@@ -19,11 +19,11 @@
         <v-tooltip activator="parent" location="top">{{ vodOf(series, cast) || cast.channel_url }}</v-tooltip>
       </v-chip>
     </template>
-    <v-btn v-if="canClaim" size="x-small" variant="tonal" prepend-icon="mdi-video-plus" @click="claim">Claim</v-btn>
+    <v-btn v-if="canClaim" size="x-small" variant="tonal" :prepend-icon="scored ? 'mdi-movie-plus' : 'mdi-video-plus'" @click="claim">{{ scored ? 'Add VOD' : 'Claim' }}</v-btn>
     <span v-else-if="!casts.length" class="text-medium-emphasis">&mdash;</span>
 
     <v-dialog v-model="dialog" max-width="420">
-      <v-card :title="field === 'vod' ? 'VOD URL' : editing ? 'Channel URL' : 'Claim to cast'">
+      <v-card :title="editing ? COPY[field].label : scored ? 'Add a VOD' : 'Claim to cast'">
         <v-card-text>
           <v-text-field
             v-model="url"
@@ -37,7 +37,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="saving" @click="save">Save</v-btn>
+          <v-btn color="primary" :loading="saving" :disabled="!editing && !url.trim()" @click="save">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -53,6 +53,7 @@ import { PLATFORM_ICONS, onNow, platformOf, vodOf } from '@/helpers/casts.mjs';
 const COPY = {
   channel: { label: 'Channel URL', placeholder: 'https://www.twitch.tv/yourname', hint: "Twitch: your channel. YouTube: the stream's video URL, which becomes the VOD" },
   vod: { label: 'VOD URL', placeholder: 'https://www.twitch.tv/videos/…', hint: 'Twitch: the video from your Videos page; blank removes it. YouTube: the stream URL is already the VOD' },
+  addVod: { label: 'VOD URL', placeholder: 'https://www.twitch.tv/videos/…', hint: 'The recording of this series on Twitch or YouTube' },
 };
 
 const props = defineProps({
@@ -76,20 +77,22 @@ const chipProps = (cast) => ({
 });
 // A guest, and a member with no player row, cannot claim
 const canClaim = computed(() => myId.value && auth.me?.role !== 'guest' && !casts.value.some((c) => c.user_id === myId.value));
+// A series with a result has nothing left to stream, so it takes a VOD instead of a claim
+const scored = computed(() => props.series.player1_score != null || props.series.player2_score != null);
 const canEdit = (cast) => auth.isAdmin || cast.user_id === myId.value;
 
 const dialog = ref(false);
 const editing = ref(null); // the cast being edited; null on a claim
-const field = ref('channel'); // 'channel' or 'vod'
+const field = ref('channel'); // 'channel', 'vod' or 'addVod'
 const url = ref('');
 const error = ref('');
 const saving = ref(false);
 
 async function claim() {
   editing.value = null;
-  field.value = 'channel';
+  field.value = scored.value ? 'addVod' : 'channel';
   error.value = '';
-  url.value = (await seriesStore.lastCastChannel().catch(() => null)) || '';
+  url.value = scored.value ? '' : (await seriesStore.lastCastChannel().catch(() => null)) || '';
   dialog.value = true;
 }
 
@@ -106,7 +109,8 @@ async function save() {
   error.value = '';
   try {
     const { id } = props.series;
-    if (!editing.value) casts.value = await seriesStore.claimSeries(id, url.value);
+    // A VOD claim streams nothing, so the video page is its channel too
+    if (!editing.value) casts.value = await seriesStore.claimSeries(id, url.value, scored.value ? url.value : null);
     else if (field.value === 'vod') casts.value = await seriesStore.setCastVod(id, editing.value.id, url.value.trim() || null);
     else casts.value = await seriesStore.updateCast(id, editing.value.id, url.value);
     dialog.value = false;

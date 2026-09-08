@@ -12,7 +12,7 @@ export const useAvailabilityStore = defineStore({
         async fetchTeamAvailability(team_id, season_id) {
             return await fetchWrapper.get(`${backendUrl}/teams/${team_id}/seasons/${season_id}/availability`);
         },
-        // { token?, season_id?, playday, available }; a null available clears the week
+        // { season_id?, playday, available }; a null available clears the week
         async setPlayerAvailability(answer) {
             return await fetchWrapper.put(`${backendUrl}/player-availability`, answer);
         },

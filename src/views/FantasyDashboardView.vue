@@ -434,7 +434,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
-import { useFantasyStore, useTeamStore, useSeasonStore, useConfigStore, useSeriesStore, useAuthStore } from '@/stores';
+import { useFantasyStore, useTeamStore, useSeasonStore, useConfigStore, useSeriesStore } from '@/stores';
 import GroupedTable from '@/components/GroupedTable.vue';
 import LadderDayBars from '@/components/LadderDayBars.vue';
 import MatchupCompare from '@/components/MatchupCompare.vue';
@@ -452,7 +452,6 @@ import { useColumns } from '@/helpers/columns';
 
 
 const route = useRoute();
-const authStore = useAuthStore();
 const fantasyStore = useFantasyStore();
 const teamStore = useTeamStore();
 const seasonStore = useSeasonStore();
@@ -468,7 +467,6 @@ const isBetSaving = ref(false);
 const isCreationEnabled = ref(true);
 const errorMessage = ref(null);
 const successMessage = ref(null);
-const playerToken = ref(null);
 const playerData = ref(null);
 const existingTeam = ref(null);
 const teams = ref([]);
@@ -667,29 +665,17 @@ const fetchInitialData = async () => {
       maxBetPoints.value = null;
     }
 
-    // the session drives the routes when there is no ?token=; the backend reads the id from the bearer
-    playerToken.value = route.query.token;
-    if (!playerToken.value && !authStore.me) {
-      errorMessage.value = 'No access token provided. Please use the link from Discord.';
-      return;
-    }
-
-    // Fetch user info using the public endpoint
+    // the backend reads the member off the session bearer
     try {
-      playerData.value = await fantasyStore.public_getUserInfo(playerToken.value);
-      
-      if (!playerData.value) {
-        errorMessage.value = 'Invalid token data.';
-        return;
-      }
+      playerData.value = await fantasyStore.public_getUserInfo();
     } catch (error) {
-      errorMessage.value = 'Invalid or expired token. Please request a new link from Discord.';
+      errorMessage.value = 'Could not load your player data. Please try again later.';
       return;
     }
 
-    // A Discord link opens on the season it was made for; the watcher loads a changed pick
-    const tokenSeason = playerData.value.season_id;
-    if (tokenSeason && tokenSeason !== selectedSeasonId.value) selectedSeasonId.value = tokenSeason;
+    // The page opens on the current season; the watcher loads a changed pick
+    const currentSeason = playerData.value.season_id;
+    if (currentSeason && currentSeason !== selectedSeasonId.value) selectedSeasonId.value = currentSeason;
     else await loadSeason();
   } catch (error) {
     console.error('Failed to load data:', error);
@@ -829,7 +815,6 @@ const submitTeam = async () => {
   try {
     // Use the public fantasy-team endpoint
     const payload = {
-      token: playerToken.value,
       name: teamForm.value.name,
       season_id: teamForm.value.season_id,
       drafted_team_id: teamForm.value.drafted_team_id,
@@ -916,7 +901,6 @@ const saveBet = async () => {
   isBetSaving.value = true;
   try {
     const betData = {
-      token: playerToken.value,
       series_id: betSeries.value.id,
       season_id: teamForm.value.season_id,
       winner_id: selectedBetWinnerId.value,
@@ -948,7 +932,7 @@ const deleteBet = async () => {
   
   isBetSaving.value = true;
   try {
-    await fantasyStore.public_deleteBet(betSeries.value.myBet.id, playerToken.value);
+    await fantasyStore.public_deleteBet(betSeries.value.myBet.id);
     successMessage.value = 'Bet deleted successfully!';
     closeBet();
     await fetchFantasyData(); // Refresh fantasy data

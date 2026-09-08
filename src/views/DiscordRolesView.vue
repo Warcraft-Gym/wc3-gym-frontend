@@ -4,18 +4,21 @@
   </v-overlay>
 
   <v-container fluid class="pa-4">
-    <v-row class="mb-4">
+    <v-row class="mb-4" align="center">
       <v-col>
         <h1>
-          <v-icon class="mr-2">mdi-discord</v-icon>
+          <v-icon class="mr-2">$discord</v-icon>
           Discord Roles
         </h1>
-        <div class="text-body-2 text-medium-emphasis">
-          Managed roles are granted and removed by Sync. Ignored roles are bound but left alone. Not bound roles are never touched.
-        </div>
-        <div class="text-body-2 text-medium-emphasis">
-          Move a card with its Bind, Manage or Ignore button, or drag it to a column, or double-click it: Not bound to Managed, Managed to Ignored, Ignored to Managed. Ignore a role the app knows the holders of but a person applies by hand. Hide a role with nothing in the app to bind it to.
-        </div>
+        <div v-if="view === 'columns'" class="text-body-2 text-medium-emphasis">Drag a card to a column, double-click it, or use its buttons.</div>
+      </v-col>
+      <v-col cols="auto" class="d-flex align-center ga-3">
+        <v-select v-if="view === 'columns'" v-model="sortKey" :items="SORTS" item-title="label" item-value="key" label="Sort" density="compact" variant="outlined" hide-details style="min-width: 170px" />
+        <!-- Temporary: both layouts ship so admins can say which they prefer; one goes after that -->
+        <v-btn-toggle v-model="view" mandatory density="compact" variant="outlined" divided>
+          <v-btn value="columns" icon="mdi-view-column"><v-tooltip activator="parent" location="top">Columns</v-tooltip></v-btn>
+          <v-btn value="table" icon="mdi-table"><v-tooltip activator="parent" location="top">Table</v-tooltip></v-btn>
+        </v-btn-toggle>
       </v-col>
     </v-row>
 
@@ -27,8 +30,9 @@
       The bot could not read the server's roles. Bindings are shown by id.
     </v-alert>
 
+    <div class="d-flex flex-column ga-4">
     <!-- One card per Discord role, in the column its binding puts it in -->
-    <v-row>
+    <v-row v-if="view === 'columns'">
       <v-col v-for="column in COLUMNS" :key="column.key" cols="12" md="4">
         <v-card elevation="2" class="role-column d-flex flex-column">
           <v-card-title class="d-flex align-center">
@@ -72,7 +76,9 @@
                   <span class="colour-dot mr-2" :style="{ backgroundColor: card.dot }"></span>
                   <span :class="{ 'text-medium-emphasis font-italic': !card.named }" :title="card.id">{{ card.name }}</span>
                   <v-spacer />
-                  <v-chip v-if="card.named" size="x-small" variant="tonal">{{ card.members }} in Discord</v-chip>
+                  <v-chip v-if="card.named" size="x-small" variant="tonal" :color="card.binding && card.binding.holders !== card.members ? 'warning' : undefined">
+                    <template v-if="card.binding">{{ card.binding.holders }} in app &middot; </template>{{ card.members }} in Discord
+                  </v-chip>
                 </div>
 
                 <div v-if="card.binding" class="d-flex align-center text-body-2 text-medium-emphasis mt-1">
@@ -81,12 +87,6 @@
                     <img class="team-icon" :src="teamImageUrl(card.groupTeam)" @error="showDefaultTeamImage">
                   </v-avatar>
                   <span>{{ card.groupLabel }}</span>
-                </div>
-
-                <div v-if="card.binding && (card.grants || card.removes)" class="d-flex align-center mt-1">
-                  <v-chip v-if="card.grants" size="x-small" color="success" variant="tonal" class="mr-1">+{{ card.grants }}</v-chip>
-                  <v-chip v-if="card.removes" size="x-small" color="error" variant="tonal" class="mr-1">&minus;{{ card.removes }}</v-chip>
-                  <span class="text-caption text-medium-emphasis">grant / remove on sync</span>
                 </div>
 
                 <RowActions :actions="cardActions(card)" inline />
@@ -114,8 +114,48 @@
       </v-col>
     </v-row>
 
+    <!-- One row per Discord role, hidden and locked ones included -->
+    <v-card v-else elevation="2">
+      <v-data-table :headers="roleHeaders" :items="allCards" :sort-by="[{ key: 'state', order: 'asc' }]" :items-per-page="-1" hide-default-footer hover>
+        <template #[`item.name`]="{ item }">
+          <div class="d-flex align-center" :class="{ 'role-locked': !item.manageable }">
+            <v-tooltip v-if="!item.manageable" activator="parent" location="top">{{ ABOVE_BOT }}</v-tooltip>
+            <span class="colour-dot mr-2" :style="{ backgroundColor: item.dot }"></span>
+            <span :class="{ 'text-medium-emphasis font-italic': !item.named }" :title="item.id">{{ item.name }}</span>
+          </div>
+        </template>
+        <template #[`item.groupLabel`]="{ item }">
+          <div v-if="item.binding" class="d-flex align-center">
+            <v-icon v-if="item.handManaged" size="small" class="mr-1">mdi-lock</v-icon>
+            <v-avatar v-if="item.groupTeam" size="20" rounded="sm" class="mr-1" style="flex-shrink:0">
+              <img class="team-icon" :src="teamImageUrl(item.groupTeam)" @error="showDefaultTeamImage">
+            </v-avatar>
+            <span>{{ item.groupLabel }}</span>
+          </div>
+          <span v-else class="text-medium-emphasis">&mdash;</span>
+        </template>
+        <template #[`item.holders`]="{ item }">
+          <span v-if="item.binding">{{ item.binding.holders }}</span>
+          <span v-else class="text-medium-emphasis">&mdash;</span>
+        </template>
+        <template #[`item.members`]="{ item }">
+          <span :class="{ 'text-orange-darken-2 font-weight-medium': item.binding && item.binding.holders !== item.members }">{{ item.members }}</span>
+        </template>
+        <template #[`item.state`]="{ item }">
+          <v-btn-toggle v-if="item.binding && !item.handManaged" :model-value="item.state" mandatory density="compact" variant="outlined" divided @update:model-value="setSynced(item.binding, $event === 'managed')">
+            <v-btn value="managed" size="small" prepend-icon="mdi-sync">Managed</v-btn>
+            <v-btn value="ignored" size="small" prepend-icon="mdi-hand-back-right">Ignored</v-btn>
+          </v-btn-toggle>
+          <span v-else class="text-medium-emphasis">{{ item.handManaged ? 'Hand-managed' : STATE_LABEL[item.state] }}</span>
+        </template>
+        <template #[`item.actions`]="{ item }">
+          <RowActions :actions="tableActions(item)" inline />
+        </template>
+      </v-data-table>
+    </v-card>
+
     <!-- What the guild has and the database says it should have -->
-    <v-card elevation="2" class="mt-4">
+    <v-card elevation="2" :class="{ 'order-first': view === 'columns' }">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-account-sync</v-icon>
         <span>Accounts Out of Sync</span>
@@ -161,6 +201,7 @@
         </v-data-table>
       </v-card-text>
     </v-card>
+    </div>
 
     <!-- The group picker: which people in the database hold this role -->
     <v-dialog v-model="pickerDialog" max-width="640" persistent>
@@ -329,6 +370,28 @@ const SCOPES = {
 };
 const KIND_LABEL = { team: 'Team', captain: 'Captains', gnl_participant: 'Players', fantasy: 'Bettors', champion: 'Champions', admin: 'Gym Admin' };
 
+// Temporary: which of the two layouts an admin last chose
+const view = ref(localStorage.getItem('discordRolesView') ?? 'columns');
+watch(view, (v) => localStorage.setItem('discordRolesView', v));
+const SORTS = [
+  { key: 'discord', label: 'Discord order' },
+  { key: 'name', label: 'Name' },
+  { key: 'holders', label: 'In app' },
+  { key: 'members', label: 'In Discord' },
+  { key: 'groupLabel', label: 'Bound to' }
+];
+const sortKey = ref('discord');
+const STATE_ORDER = ['managed', 'ignored', 'notBound', 'hidden', 'locked'];
+const STATE_LABEL = { notBound: 'Not bound', hidden: 'Hidden', locked: 'Above the bot' };
+const roleHeaders = [
+  { title: 'Role', key: 'name' },
+  { title: 'Bound to', key: 'groupLabel', value: (card) => card.groupLabel ?? '' },
+  { title: 'In app', key: 'holders', align: 'end', value: (card) => card.binding?.holders ?? -1 },
+  { title: 'In Discord', key: 'members', align: 'end' },
+  { title: 'Sync', key: 'state', sort: (a, b) => STATE_ORDER.indexOf(a) - STATE_ORDER.indexOf(b) },
+  { title: '', key: 'actions', align: 'end', sortable: false }
+];
+
 const guildRoles = ref([]);
 const bindings = ref([]);
 const groups = ref([]);
@@ -421,21 +484,27 @@ const allCards = computed(() => {
       ...role,
       binding,
       handManaged: binding?.kind === 'admin',
+      state: binding ? (binding.synced ? 'managed' : 'ignored') : role.hidden ? 'hidden' : role.manageable ? 'notBound' : 'locked',
       dot: roleDot(role),
       groupLabel: binding ? groupLabel(binding) : null,
-      groupTeam: binding?.kind === 'team' ? (teamById(binding.team_id) ?? binding.team_id) : null,
-      grants: report.value.filter(r => r.missing.includes(role.id)).length,
-      removes: report.value.filter(r => r.extra.includes(role.id)).length
+      groupTeam: binding?.kind === 'team' ? (teamById(binding.team_id) ?? binding.team_id) : null
     };
   });
 });
 
-const columnOf = (card) => (card.binding ? (card.binding.synced ? 'managed' : 'ignored') : 'notBound');
+const columnOf = (card) => card.state;
 
+// The picked sort: numbers largest first, names A to Z, the guild's own order untouched
+const sorted = (list) => {
+  const key = sortKey.value;
+  if (key === 'discord') return list;
+  const of = (c) => (key === 'holders' ? (c.binding?.holders ?? -1) : key === 'groupLabel' ? (c.groupLabel ?? '') : c[key]);
+  return [...list].sort((a, b) => (typeof of(a) === 'number' ? of(b) - of(a) : String(of(a)).localeCompare(String(of(b)))));
+};
 const cards = computed(() => ({
-  managed: allCards.value.filter(c => columnOf(c) === 'managed'),
-  ignored: allCards.value.filter(c => columnOf(c) === 'ignored'),
-  notBound: allCards.value.filter(c => columnOf(c) === 'notBound' && !c.hidden && c.manageable)
+  managed: sorted(allCards.value.filter(c => c.state === 'managed')),
+  ignored: sorted(allCards.value.filter(c => c.state === 'ignored')),
+  notBound: sorted(allCards.value.filter(c => c.state === 'notBound'))
 }));
 
 // The roles an admin hid, and the unbound ones above the bot that it could never manage, listed under Not bound
@@ -461,6 +530,12 @@ const cardActions = (card) => {
     ];
   }
   return [{ icon: 'mdi-check-decagram', label: 'Manage', onClick: () => setSynced(card.binding, true) }, edit, unbind];
+};
+
+// The table's Sync column carries Manage and Ignore, so its actions leave them out
+const tableActions = (card) => {
+  if (card.state === 'hidden') return [{ icon: 'mdi-eye', label: 'Unhide', onClick: () => setHidden(card, false) }];
+  return cardActions(card).filter(a => a.label !== 'Manage' && a.label !== 'Ignore');
 };
 
 const fetchReport = async () => {

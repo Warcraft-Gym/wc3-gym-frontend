@@ -32,7 +32,7 @@
         <v-icon class="mr-2">mdi-account-circle</v-icon>
         Player Information
         <v-spacer />
-        <v-btn v-if="!token" icon="mdi-pencil" size="small" variant="text" title="Edit profile" @click="openEditProfile" />
+        <v-btn icon="mdi-pencil" size="small" variant="text" title="Edit profile" @click="openEditProfile" />
       </v-card-title>
       <v-card-text class="pt-4">
         <v-alert v-if="needsSignup" type="info" variant="tonal" border="start" class="mb-4">
@@ -42,7 +42,7 @@
           </div>
         </v-alert>
         <div class="d-flex flex-wrap align-center ga-2 mb-3">
-          <v-chip color="secondary" prepend-icon="mdi-discord">
+          <v-chip color="secondary" prepend-icon="$discord">
             {{ playerData.discord_tag }}
           </v-chip>
           <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
@@ -57,17 +57,18 @@
       </v-card-text>
     </v-card>
 
-    <v-card v-if="!isLoading && roundCards.length" elevation="2" class="mb-6">
-      <v-card-title class="bg-primary d-flex justify-space-between align-center">
-        <div class="d-flex align-center">
-          <v-icon class="mr-2">mdi-calendar-check</v-icon>
-          <span>My Rounds</span>
-        </div>
-        <v-chip v-if="asking.length" color="white" variant="outlined">
-          {{ answered }} of {{ asking.length }} answered
-        </v-chip>
+    <v-card v-if="!isLoading && fullPlayer" elevation="2" class="mb-6">
+      <v-card-title class="bg-primary d-flex align-center">
+        <v-icon class="mr-2">mdi-calendar-account</v-icon>
+        Events
       </v-card-title>
-      <v-card-text class="d-flex flex-wrap ga-3 pt-4">
+      <!-- The current season opens onto its rounds; a series replaces the availability question -->
+      <PlayerSeasons :player="fullPlayer" :open="Number(playerData.season_id)">
+        <template #current>
+          <v-chip v-if="asking.length" size="small" variant="tonal" color="primary" class="mb-3">
+            {{ answered }} of {{ asking.length }} answered
+          </v-chip>
+          <div class="d-flex flex-wrap ga-3">
         <v-sheet
           v-for="card in roundCards"
           :key="card.playday"
@@ -159,145 +160,9 @@
             <div class="text-caption text-medium-emphasis mt-2">{{ setByLine(card.playday) }}</div>
           </template>
         </v-sheet>
-      </v-card-text>
-    </v-card>
-
-    <v-card v-if="!isLoading && completed.length" elevation="2" class="mt-6">
-      <v-card-title class="bg-primary d-flex justify-space-between align-center">
-        <div class="d-flex align-center">
-          <v-icon class="mr-2">mdi-trophy</v-icon>
-          <span>Completed Series</span>
-        </div>
-        <v-chip color="white" variant="outlined">
-          {{ completed.length }} series
-        </v-chip>
-      </v-card-title>
-
-      <!-- Desktop: Data Table -->
-      <v-card-text v-if="!isMobile" class="pa-0">
-      <v-data-table
-        :headers="completedHeaders"
-        :items="completed"
-        :sort-by="[{ key: 'week', order: 'desc' }]"
-        class="elevation-1"
-        item-value="id"
-      >
-        <template #item.opponent="{ item }">
-          <PlayerName
-            :player="opponent(item)"
-            :race="opponent(item).signup_race"
-          />
+          </div>
         </template>
-
-        <template #item.score="{ item }">
-          <v-chip
-            :color="getScoreColor(item)"
-            variant="outlined"
-            size="small"
-          >
-            {{ myScore(item) }} - {{ theirScore(item) }}
-          </v-chip>
-        </template>
-
-        <template #item.date_time="{ item }">
-          {{ formatDateTime(item.date_time) }}
-        </template>
-
-        <template #item.cast="{ item }">
-          <CastChips :series="item" />
-        </template>
-
-        <template #item.actions="{ item }">
-          <v-tooltip text="Fix result" location="top">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon="mdi-pencil"
-                variant="text"
-                size="small"
-                @click="reportResult(item)"
-                :loading="scoreSavingId === item.id"
-              />
-            </template>
-          </v-tooltip>
-        </template>
-      </v-data-table>
-      </v-card-text>
-
-      <!-- Mobile: Card Layout -->
-      <v-card-text v-if="isMobile" class="pa-4">
-        <v-card
-          v-for="item in completed"
-          :key="item.id"
-          elevation="1"
-          class="mb-4"
-        >
-          <v-card-text>
-            <div class="d-flex justify-space-between align-center">
-              <PlayerName
-                :player="opponent(item)"
-                :race="opponent(item).signup_race"
-              />
-              <v-chip
-                :color="getScoreColor(item)"
-                variant="outlined"
-              >
-                {{ myScore(item) }} - {{ theirScore(item) }}
-              </v-chip>
-            </div>
-            <div class="d-flex justify-space-between align-center mt-2">
-              <span class="text-caption text-medium-emphasis">
-                {{ item.season_name }}<template v-if="item.week">, week {{ item.week }}</template>
-                <template v-if="item.date_time"> · {{ formatDateTime(item.date_time) }}</template>
-              </span>
-              <v-btn
-                variant="text"
-                size="x-small"
-                prepend-icon="mdi-pencil"
-                @click="reportResult(item)"
-                :loading="scoreSavingId === item.id"
-              >
-                Fix result
-              </v-btn>
-            </div>
-            <CastChips :series="item" class="mt-2" />
-          </v-card-text>
-        </v-card>
-      </v-card-text>
-    </v-card>
-
-    <v-card v-if="!isLoading && history.events.length" elevation="2" class="mt-6">
-      <v-card-title class="bg-primary d-flex justify-space-between align-center">
-        <div class="d-flex align-center">
-          <v-icon class="mr-2">mdi-history</v-icon>
-          <span>My Events</span>
-        </div>
-        <v-chip color="white" variant="outlined">
-          {{ history.events.length }} events, {{ eventTotals.won }} to {{ eventTotals.lost }}
-        </v-chip>
-      </v-card-title>
-      <v-table density="comfortable">
-        <thead>
-          <tr>
-            <th>Event</th>
-            <th>Played for</th>
-            <th>Series record</th>
-            <th>Finish</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="event in history.events" :key="event.season_id">
-            <td>{{ event.season_name }}</td>
-            <td :class="{ 'text-medium-emphasis': !event.team_name }">{{ event.team_name || 'Solo' }}</td>
-            <td>
-              <v-chip :color="recordColor(event.won, event.lost)" variant="tonal" size="small">
-                {{ event.won }} to {{ event.lost }}
-              </v-chip>
-            </td>
-            <td>{{ finishText(event) }}</td>
-          </tr>
-        </tbody>
-      </v-table>
+      </PlayerSeasons>
     </v-card>
 
     <v-card v-if="!isLoading && history.opponents.length" elevation="2" class="mt-6">
@@ -393,7 +258,7 @@
   </v-dialog>
 
   <!-- Report Result Dialog -->
-  <v-dialog v-model="scoreDialog" max-width="600px">
+  <v-dialog v-model="scoreDialog" :max-width="vetoMissing ? 960 : 600">
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-trophy</v-icon>
@@ -407,11 +272,9 @@
           density="compact"
           class="mb-2"
         >
-          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it first.' }}
-          <template v-if="!scoreVeto.complete" #append>
-            <v-btn size="small" variant="outlined" prepend-icon="mdi-map-outline" @click="goToVeto">Map veto</v-btn>
-          </template>
+          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below.' }}
         </v-alert>
+        <VetoBoard v-if="scoreSeries.id" :key="scoreSeries.id" :series-id="scoreSeries.id" report class="mb-4" @change="board => scoreVeto = board" />
         <v-form ref="scoreForm" v-model="scoreFormValid">
           <v-container>
             <v-row>
@@ -493,12 +356,13 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore, useMatchStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
+import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
@@ -509,26 +373,17 @@ import W3CMmr from '@/components/W3CMmr.vue';
 import { DateTime } from 'luxon';
 import { formatDateTime } from '@/helpers/datetime';
 import { roundLabel, roundOver } from '@/helpers/rounds.mjs';
-import { useDisplay } from 'vuetify';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
+import VetoBoard from '@/components/VetoBoard.vue';
 import CastChips from '@/components/CastChips.vue';
 
 
-const route = useRoute();
 const router = useRouter();
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
-const { mobile } = useDisplay();
 
 // Current W3C season
 const currentW3CSeason = ref(null);
-
-// Computed property for mobile detection
-const isMobile = computed(() => {
-  // Use Vuetify's display breakpoint, or fallback to window width
-  if (mobile !== undefined) return mobile.value;
-  return window.innerWidth < 960;
-});
 
 // State
 const isLoading = ref(true);
@@ -573,11 +428,7 @@ const opponent = (item) => {
 
 const playerData = ref(null);
 const series = ref([]);
-const token = ref(null);
 const authStore = useAuthStore();
-
-// the session drives the routes when there is no ?token=; the backend reads the id from the bearer
-const hasAccess = () => !!token.value || !!authStore.me;
 
 // /me answers whether the session has a signup for the current GNL season
 const seasonStore = useSeasonStore();
@@ -601,9 +452,9 @@ const scheduleForm = ref(null);
 const scoreForm = ref(null);
 const scheduleSeries = ref({});
 const scoreSeries = ref({ replays: {} });
-// a result carries its veto, so the dialog reads the board before the scores
+// a result carries its veto, so the dialog holds the board above the scores
 const scoreVeto = ref(null);
-const vetoMissing = computed(() => !!scoreVeto.value && !scoreVeto.value.complete);
+const vetoMissing = computed(() => !scoreVeto.value?.complete);
 // Per-series saving state (store id of series currently being saved)
 const scheduleSavingId = ref(null);
 const scoreSavingId = ref(null);
@@ -623,44 +474,14 @@ const rules = {
   }
 };
 
-const completedHeaders = [
-  { title: 'Opponent', key: 'opponent', sortable: false },
-  { title: 'Season', key: 'season_name' },
-  { title: 'Date & Time', key: 'date_time' },
-  { title: 'Score', key: 'score', sortable: false },
-  { title: 'Week', key: 'week' },
-  { title: 'Cast', key: 'cast', sortable: false },
-  { title: '', key: 'actions', sortable: false }
-];
-
-// week and season lifted out of the match so the tables sort on them
-const withKeys = (item) => ({ ...item, week: item.match?.playday ?? null, season_name: item.match?.season?.name || '' });
-const completed = computed(() => series.value.filter((item) => !isUnplayed(item)).map(withKeys));
-
 // Load player dashboard data
 const fetchPlayerData = async () => {
   isLoading.value = true;
   errorMessage.value = null;
   
   try {
-    token.value = route.query.token;
-
-    if (!hasAccess()) {
-      errorMessage.value = 'No access token provided';
-      return;
-    }
-
-    // Validate token first
-    if (token.value) {
-      const tokenResponse = await fetchWrapper.get(`${backendUrl}/public-token/${token.value}`);
-      if (tokenResponse.access_type !== 'dashboard') {
-        errorMessage.value = 'Invalid access token type';
-        return;
-      }
-    }
-
-    const tokenParam = token.value ? `token=${encodeURIComponent(token.value)}&` : '';
-    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?${tokenParam}${pageQuery({ limit, offset })}`;
+    // the backend reads the member off the session bearer
+    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?${pageQuery({ limit, offset })}`;
 
     // Read every server page; the split into upcoming and completed happens here
     const collected = [];
@@ -684,9 +505,7 @@ const fetchPlayerData = async () => {
 
   } catch (error) {
     console.error('Error fetching player data:', error);
-    if (error?.message?.includes('token_not_found_or_expired')) {
-      errorMessage.value = 'Access link has expired. Please request a new one from Discord.';
-    } else if (error?.message?.includes('player_not_found')) {
+    if (error?.message?.includes('player_not_found')) {
       errorMessage.value = 'Player not found. Please make sure you have signed up first.';
     } else {
       errorMessage.value = 'Error loading player dashboard. Please try again.';
@@ -696,12 +515,9 @@ const fetchPlayerData = async () => {
   }
 };
 
-// the map veto is only worth opening before the series is played; the link carries the token
+// the map veto is only worth opening before the series is played
 const isUnplayed = (item) => !item.player1_score && !item.player2_score;
-const vetoRoute = (item, query = {}) => ({
-  path: `/player-series/${item.id}/veto`,
-  query: token.value ? { token: token.value, ...query } : query
-});
+const vetoRoute = (item, query = {}) => ({ path: `/player-series/${item.id}/veto`, query });
 
 // Scores read from the player's side: mine first, the opponent's second
 const myScore = (item) => (item.player1_id === playerData.value?.player?.id ? item.player1_score : item.player2_score) || 0;
@@ -723,6 +539,7 @@ const savingWeek = ref(null);
 // The team's match of each round names the opponent team
 const teamMatches = ref([]);
 const myTeamId = ref(null);
+const fullPlayer = ref(null);
 const fetchTeamMatches = async () => {
   const seasonId = Number(playerData.value?.season_id);
   if (!seasonId) return;
@@ -731,6 +548,7 @@ const fetchTeamMatches = async () => {
     playerStore.getPlayer(playerData.value.player.id).catch(() => null),
     matchStore.searchMatchesBySeason(seasonId).catch(() => []),
   ]);
+  fullPlayer.value = full;
   myTeamId.value = full?.gnl_stats?.find(stat => stat.season_id === seasonId)?.team_id ?? null;
   teamMatches.value = seasonMatches;
 };
@@ -748,7 +566,7 @@ const setByLine = (week) => {
 };
 
 // One card per round. A series replaces the question, and a round with no date is never over.
-// A token with no season carries no rounds, so the unplayed series stand in for them.
+// A season without rounds has none to show, so the unplayed series stand in for them.
 const roundCards = computed(() => {
   const rounds = playerData.value?.rounds?.length
     ? playerData.value.rounds
@@ -781,7 +599,6 @@ const setWeek = async (week, want) => {
   errorMessage.value = null;
   try {
     const answer = { playday: week, available: answerFor(week) === want ? null : want };
-    if (token.value) answer.token = token.value;
     if (playerData.value?.season_id) answer.season_id = Number(playerData.value.season_id);
     playerData.value.availability = await availabilityStore.setPlayerAvailability(answer);
   } catch (error) {
@@ -792,33 +609,18 @@ const setWeek = async (week, want) => {
   }
 };
 
-// My history: every event the player took part in and their lifetime head to head
+// My history: the lifetime head to head
 const history = ref({ events: [], opponents: [] });
 const openOpponent = ref(null);
 
-const eventTotals = computed(() => history.value.events.reduce(
-  (total, event) => ({ won: total.won + event.won, lost: total.lost + event.lost }),
-  { won: 0, lost: 0 }
-));
-
 const recordColor = (won, lost) => (won > lost ? 'success' : won < lost ? 'error' : undefined);
-
-const ordinal = (n) => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th'}`;
-
-const finishText = (event) => {
-  if (event.running) return 'Running';
-  if (!event.place) return '';
-  return event.team_count ? `${ordinal(event.place)} of ${event.team_count}` : ordinal(event.place);
-};
 
 const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `week ${opp.last_playday}` : null].filter(Boolean).join(', ');
 
 // read once; the history does not change with the series table controls
 const fetchHistory = async () => {
-  if (!hasAccess()) return;
-  const query = route.query.token ? `?token=${encodeURIComponent(route.query.token)}` : '';
   try {
-    history.value = await fetchWrapper.get(`${backendUrl}/player-history${query}`);
+    history.value = await fetchWrapper.get(`${backendUrl}/player-history`);
   } catch (error) {
     console.error('Error fetching player history:', error);  // the dashboard stands without it
   }
@@ -900,7 +702,6 @@ const saveSchedule = async () => {
     }
 
     const formData = new FormData();
-    if (token.value) formData.append('token', token.value);
     if (utcDateTime) formData.append('date_time', utcDateTime);
     formData.append('action', 'scheduled');
 
@@ -946,17 +747,7 @@ const reportResult = (item) => {
   };
 
   scoreVeto.value = null;
-  const vetoUrl = `${backendUrl}/player-series/${item.id}/veto`;
-  fetchWrapper.get(token.value ? `${vetoUrl}?token=${encodeURIComponent(token.value)}` : vetoUrl)
-    .then(board => { scoreVeto.value = board; })
-    .catch(() => {});  // the backend refuses the report anyway
   scoreDialog.value = true;
-};
-
-const goToVeto = () => {
-  const id = scoreSeries.value.id;
-  closeScore();
-  router.push(vetoRoute({ id }, { report: 1 }));  // the board opens in record mode and leads back here
 };
 
 const closeScore = () => {
@@ -970,8 +761,7 @@ const REPLAY_MAGIC = 'Warcraft III recorded game';
 const uploadReplay = async (seriesId, game, file) => {
   const head = new TextDecoder().decode(await file.slice(0, REPLAY_MAGIC.length).arrayBuffer());
   if (head !== REPLAY_MAGIC) throw new Error(`Game ${game} is not a Warcraft III replay`);
-  const query = token.value ? `?token=${encodeURIComponent(token.value)}` : '';
-  const { url } = await fetchWrapper.post(`${backendUrl}/player-series/${seriesId}/replays/${game}/upload-url${query}`);
+  const { url } = await fetchWrapper.post(`${backendUrl}/player-series/${seriesId}/replays/${game}/upload-url`);
   const put = await fetch(url, {
     method: 'PUT',
     body: file,
@@ -1002,14 +792,12 @@ const saveResult = async () => {
       uploaded.push(game);
     }
 
-    const query = token.value ? `?token=${encodeURIComponent(token.value)}` : '';
     if (played === scoreSeries.value.reported && uploaded.length) {
       // the result stands; each new file replaces one stored replay
-      for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}${query}`);
+      for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}`);
     } else {
       // the report confirms every game's file in the bucket before it writes the score
       const formData = new FormData();
-      if (token.value) formData.append('token', token.value);
       formData.append('player1_score', p1);
       formData.append('player2_score', p2);
       formData.append('action', 'score_updated');
@@ -1076,9 +864,6 @@ onMounted(async () => {
   if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
   await fetchPlayerData();
   fetchHistory();
-  // the veto board sends the reporter back with ?report=<series id>
-  const back = series.value.find(item => String(item.id) === route.query.report);
-  if (back) reportResult(back);
 });
 </script>
 

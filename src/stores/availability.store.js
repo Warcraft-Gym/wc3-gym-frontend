@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
-
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
+import { backendUrl, fetchWrapper } from '@/helpers';
 
 // Every route answers the rows of the players it touched, so the views keep what they read
 export const useAvailabilityStore = defineStore({

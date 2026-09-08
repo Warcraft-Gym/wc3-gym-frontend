@@ -19,7 +19,7 @@ Vue.js-based dashboard for managing GNL esports leagues, including team manageme
 
 ```bash
 git clone <repository-url>
-cd admin_frontend
+cd wc3-gym-frontend
 ```
 
 ### 2. Install Dependencies

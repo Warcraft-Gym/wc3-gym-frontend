@@ -129,7 +129,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useSeasonStore, useAuthStore } from '@/stores';
-import { fetchWrapper } from '@/helpers';
+import { backendUrl, fetchWrapper } from '@/helpers';
 import { storeToRefs } from 'pinia';
 import CountryCodes from 'country-code-info';
 
@@ -224,8 +224,7 @@ async function onSubmit() {
       timezone: timezone.value || undefined,
       season_id: selectedSignupSeasonId.value ? selectedSignupSeasonId.value : undefined
     };
-    const backend = import.meta.env.VITE_BACKEND_URL || '';
-    const created = await fetchWrapper.post(`${backend}/signup`, payload);
+    const created = await fetchWrapper.post(`${backendUrl}/signup`, payload);
 
     // user created on backend — end-user flow is complete; they can close the page
     success.value = true;

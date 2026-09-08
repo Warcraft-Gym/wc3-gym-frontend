@@ -200,6 +200,7 @@
                   prepend-inner-icon="mdi-numeric"
                   type="number" 
                   min="0" 
+                  :max="seriesWins" 
                   :hint="scoreSeries.isPlayer1Current ? '(You)' : ''" 
                   persistent-hint
                 />
@@ -212,10 +213,14 @@
                   prepend-inner-icon="mdi-numeric"
                   type="number" 
                   min="0" 
+                  :max="seriesWins" 
                   :hint="scoreSeries.isPlayer2Current ? '(You)' : ''" 
                   persistent-hint
                 />
               </v-col>
+            </v-row>
+            <v-row v-if="scoreProblem">
+              <v-col cols="12" class="pt-0 text-error text-caption">{{ scoreProblem }}</v-col>
             </v-row>
             <v-row v-for="game in replaySlots" :key="game">
               <v-col cols="12">
@@ -275,7 +280,7 @@ import { backendUrl, fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
-import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
+import { gamesOf, winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
@@ -672,6 +677,15 @@ const replaySlots = computed(() => {
   return isValidResult(p1, p2, seriesWins.value) ? replaysNeeded(p1, p2) : seriesWins.value;
 });
 const decidingHint = computed(() => `Required for a ${reportedScore.value.join(':')} result`);
+
+// The two map scores are one result, and the season's best-of says which results exist
+const scoreProblem = computed(() => {
+  const [p1, p2] = reportedScore.value;
+  if (Number.isNaN(p1) || Number.isNaN(p2)) return 'Enter both map scores';
+  if (!p1 && !p2) return null;  // the dialog opens at 0:0 and says nothing until a score is typed
+  if (isValidResult(p1, p2, seriesWins.value)) return null;
+  return `A Bo${gamesOf(scoreSeries.value.map_rules)} ends when one player wins ${seriesWins.value} maps`;
+});
 
 // Validate schedule: date and time must be present
 const isScheduleValid = computed(() => {

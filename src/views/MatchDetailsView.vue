@@ -82,15 +82,15 @@
               density="compact"
             >
               <v-tab
-                v-for="week in weeklyMatches"
-                :key="week.weekNumber"
-                :value="week.weekNumber"
+                v-for="round in matchesByRound"
+                :key="round.roundNumber"
+                :value="round.roundNumber"
               >
                 <v-menu location="bottom" :close-on-content-click="true" scroll-strategy="close" activator="parent">
                   <v-list density="compact" max-width="400">
-                    <v-list-subheader>Round {{ week.weekNumber }} Matches</v-list-subheader>
+                    <v-list-subheader>Round {{ round.roundNumber }} Matches</v-list-subheader>
                     <v-list-item
-                      v-for="matchItem in week.matches"
+                      v-for="matchItem in round.matches"
                       :key="matchItem.id"
                       :active="matchItem.id === match.id"
                       @click.stop="navigateToMatch(matchItem.id)"
@@ -117,14 +117,14 @@
                         </div>
                       </div>
                     </v-list-item>
-                    <v-divider v-if="week.matches.length === 0"></v-divider>
-                    <v-list-item v-if="week.matches.length === 0">
+                    <v-divider v-if="round.matches.length === 0"></v-divider>
+                    <v-list-item v-if="round.matches.length === 0">
                       <v-list-item-title class="text-grey text-center">No matches scheduled</v-list-item-title>
                     </v-list-item>
                   </v-list>
                 </v-menu>
                 <v-icon start size="small">mdi-calendar-week</v-icon>
-                Round {{ week.weekNumber }}
+                Round {{ round.roundNumber }}
               </v-tab>
             </v-tabs>
           </v-col>
@@ -1066,7 +1066,7 @@ const roundOf = (playday) => season.value?.rounds?.find(r => r.playday === playd
 const { series, draftSeries } = storeToRefs(seriesStore);
 
 // Week navigation state
-const weeklyMatches = ref([]);
+const matchesByRound = ref([]);
 
 const allSeriesTableHeader = computed(() => [
 
@@ -1433,11 +1433,11 @@ const fetchSeasonMatches = async () => {
 
   try {
     const seasonMatches = await matchStore.searchMatchesBySeason(match.value.season_id);
-    const numberOfWeeks = match.value.season?.number_weeks
+    const numberOfRounds = match.value.season?.number_rounds
       || Math.max(0, ...seasonMatches.map(m => m.playday || 0));
 
-    weeklyMatches.value = Array.from({ length: numberOfWeeks }, (_, i) => ({
-      weekNumber: i + 1,
+    matchesByRound.value = Array.from({ length: numberOfRounds }, (_, i) => ({
+      roundNumber: i + 1,
       matches: seasonMatches.filter(m => m.playday === i + 1),
     }));
   } catch (error) {

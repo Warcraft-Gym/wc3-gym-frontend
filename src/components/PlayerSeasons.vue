@@ -26,8 +26,8 @@
             <div class="text-caption text-medium-emphasis">Series</div>
             <div class="d-flex align-center ga-2">
               <span><span class="text-green">{{ row.stat?.wins ?? 0 }}</span> – <span class="text-red">{{ row.stat?.losses ?? 0 }}</span></span>
-              <span v-if="row.season.number_weeks" class="weeks">
-                <span v-for="week in row.season.number_weeks" :key="week" class="week" :class="weekClass(row, week)" :title="weekTitle(row, week)" />
+              <span v-if="row.season.number_rounds" class="weeks">
+                <span v-for="week in row.season.number_rounds" :key="week" class="week" :class="weekClass(row, week)" :title="weekTitle(row, week)" />
               </span>
             </div>
           </div>
@@ -156,7 +156,7 @@ const day = (iso) => DateTime.fromISO(iso).toFormat('LLL d');
 const dates = (season) => {
   if (!season.start_date) return '';
   const span = `${day(season.start_date)} – ${season.end_date ? day(season.end_date) : '…'}`;
-  const rounds = season.number_weeks;
+  const rounds = season.number_rounds;
   if (!rounds) return span;
   if (season.phase === 'complete') return `${span} · ${rounds} rounds`;
   if (season.phase === 'open') return span;

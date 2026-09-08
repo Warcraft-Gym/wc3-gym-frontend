@@ -1,7 +1,7 @@
 <template>
   <div class="koth-dashboard-wrapper">
     <v-container fluid class="pa-6 koth-dashboard">
-      <v-overlay v-model="initialLoad" persistent class="loading-overlay">
+      <v-overlay v-model="initialLoad" persistent class="loading-overlay align-center justify-center">
         <v-progress-circular indeterminate size="64" width="8" color="primary" />
       </v-overlay>
 

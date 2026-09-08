@@ -75,3 +75,7 @@
   background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
   background-attachment: local, local, scroll, scroll;
 }
+
+/* A scrim dims what is behind it. Vuetify paints it in on-surface, which is white
+   on the dark theme and washes the page out while it loads. */
+.v-theme--dark .v-overlay__scrim { background: rgb(0, 0, 0); }

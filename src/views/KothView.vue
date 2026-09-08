@@ -9,7 +9,7 @@
       </v-col>
     </v-row>
 
-    <v-overlay v-model="isLoading" persistent class="loading-overlay">
+    <v-overlay v-model="isLoading" persistent class="loading-overlay align-center justify-center">
       <v-progress-circular indeterminate size="64" width="8" color="primary" />
     </v-overlay>
 

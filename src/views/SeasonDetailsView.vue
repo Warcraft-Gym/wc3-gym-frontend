@@ -1,5 +1,5 @@
 <template>
-  <v-overlay v-model="isLoading" persistent class="loading-overlay">
+  <v-overlay v-model="isLoading" persistent class="align-center justify-center">
     <v-progress-circular
           indeterminate
           size="64" 

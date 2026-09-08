@@ -7,27 +7,28 @@
           <v-chip v-bind="{ ...menu, ...chipProps(cast) }" size="small">{{ cast.name }}<template v-if="live"> · on now</template></v-chip>
         </template>
         <v-list density="compact">
-          <v-list-item v-if="vodOf(series, cast)" :href="vodOf(series, cast)" target="_blank" prepend-icon="mdi-play" title="Watch VOD" />
+          <v-list-item v-if="cast.vod_url" :href="cast.vod_url" target="_blank" prepend-icon="mdi-play" title="Watch VOD" />
           <v-list-item :href="cast.channel_url" target="_blank" prepend-icon="mdi-open-in-new" title="Open channel" />
           <v-list-item prepend-icon="mdi-pencil" title="Channel URL" @click="edit(cast, 'channel')" />
           <v-list-item prepend-icon="mdi-movie-open" title="VOD URL" @click="edit(cast, 'vod')" />
           <v-list-item prepend-icon="mdi-close" title="Unclaim" @click="unclaim(cast)" />
         </v-list>
       </v-menu>
-      <v-chip v-else size="small" v-bind="chipProps(cast)" :href="vodOf(series, cast) || cast.channel_url" target="_blank">
+      <v-chip v-else size="small" v-bind="chipProps(cast)" :href="cast.vod_url || cast.channel_url" target="_blank">
         {{ cast.name }}<template v-if="live"> · on now</template>
-        <v-tooltip activator="parent" location="top">{{ vodOf(series, cast) || cast.channel_url }}</v-tooltip>
+        <v-tooltip activator="parent" location="top">{{ cast.vod_url || cast.channel_url }}</v-tooltip>
       </v-chip>
     </template>
-    <v-btn v-if="canClaim" size="x-small" variant="tonal" :prepend-icon="scored ? 'mdi-movie-plus' : 'mdi-video-plus'" @click="claim">{{ scored ? 'Add VOD' : 'Claim' }}</v-btn>
+    <v-btn v-if="canClaim" size="x-small" variant="tonal" :prepend-icon="scored ? 'mdi-movie-plus' : 'mdi-video-plus'" @click="claim">{{ scored ? 'Add your VOD' : 'Cast this' }}</v-btn>
     <span v-else-if="!casts.length" class="text-medium-emphasis">&mdash;</span>
 
     <v-dialog v-model="dialog" max-width="420">
-      <v-card :title="editing ? COPY[field].label : scored ? 'Add a VOD' : 'Claim to cast'">
+      <v-card :title="editing ? COPY[field].label : scored ? 'Add the VOD you cast' : 'Claim to cast'">
         <v-card-text>
           <v-text-field
             v-model="url"
             v-bind="COPY[field]"
+            :prepend-inner-icon="platformIcon"
             persistent-hint
             autofocus
             :error-messages="error"
@@ -48,17 +49,19 @@
 import { computed, ref, watch } from 'vue';
 
 import { useAuthStore, useSeriesStore } from '@/stores';
-import { PLATFORM_ICONS, onNow, platformOf, vodOf } from '@/helpers/casts.mjs';
+import { PLATFORM_ICONS, onNow, platformOf } from '@/helpers/casts.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 
+const VIDEO_PLACEHOLDER = 'twitch.tv/videos/… or youtube.com/watch?v=…';
 const COPY = {
-  channel: { label: 'Channel URL', placeholder: 'https://www.twitch.tv/yourname', hint: "Twitch: your channel. YouTube: the stream's video URL, which becomes the VOD" },
-  vod: { label: 'VOD URL', placeholder: 'https://www.twitch.tv/videos/…', hint: 'Twitch: the video from your Videos page; blank removes it. YouTube: the stream URL is already the VOD' },
-  addVod: { label: 'VOD URL', placeholder: 'https://www.twitch.tv/videos/…', hint: 'The recording of this series on Twitch or YouTube' },
+  channel: { label: 'Channel URL', placeholder: 'twitch.tv/you or youtube.com/@you/live', hint: "Twitch: your channel. YouTube: the stream's video URL, or youtube.com/@you/live before it starts" },
+  vod: { label: 'VOD URL', placeholder: VIDEO_PLACEHOLDER, hint: 'Twitch: the video from your Videos page; blank removes it. YouTube: the stream URL is already the VOD' },
+  addVod: { label: 'VOD URL', placeholder: VIDEO_PLACEHOLDER, hint: 'The Twitch or YouTube video of your cast of this series' },
 };
 
 const props = defineProps({
   series: { type: Object, required: true }, // id, casts
+  readonly: { type: Boolean, default: false }, // a page that only shows who cast, such as a player profile
 });
 
 const auth = useAuthStore();
@@ -74,13 +77,13 @@ const chipProps = (cast) => ({
   color: live.value ? 'red' : 'purple',
   variant: live.value ? 'flat' : 'tonal',
   prependIcon: PLATFORM_ICONS[platformOf(cast.channel_url)] || 'mdi-video',
-  appendIcon: vodOf(props.series, cast) ? 'mdi-play' : undefined,
+  appendIcon: cast.vod_url ? 'mdi-play' : undefined,
 });
 // A guest, and a member with no player row, cannot claim
-const canClaim = computed(() => myId.value && auth.me?.role !== 'guest' && !casts.value.some((c) => c.user_id === myId.value));
+const canClaim = computed(() => !props.readonly && myId.value && auth.me?.role !== 'guest' && !casts.value.some((c) => c.user_id === myId.value));
 // A series with a result has nothing left to stream, so it takes a VOD instead of a claim
 const scored = computed(() => !isUnscored(props.series));
-const canEdit = (cast) => auth.isAdmin || cast.user_id === myId.value;
+const canEdit = (cast) => !props.readonly && (auth.isAdmin || cast.user_id === myId.value);
 
 const dialog = ref(false);
 const editing = ref(null); // the cast being edited; null on a claim
@@ -88,6 +91,8 @@ const field = ref('channel'); // 'channel', 'vod' or 'addVod'
 const url = ref('');
 const error = ref('');
 const saving = ref(false);
+// The dialog reads the platform off what is typed, as a phone field reads its prefix
+const platformIcon = computed(() => PLATFORM_ICONS[platformOf(url.value)] || 'mdi-link-variant');
 
 async function claim() {
   editing.value = null;

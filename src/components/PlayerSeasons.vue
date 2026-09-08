@@ -71,7 +71,12 @@
                 <td v-if="mdAndUp">{{ opponentTeam(series, row) }}</td>
                 <td class="text-right font-weight-medium" :class="resultClass(series)">{{ result(series) }}</td>
                 <td v-if="mdAndUp" class="text-right">{{ playedOn(series) }}</td>
-                <td v-if="mdAndUp" class="text-medium-emphasis">{{ notes(series) }}</td>
+                <td v-if="mdAndUp" class="text-medium-emphasis">
+                  <div class="d-flex align-center ga-2">
+                    <span v-if="series.host_player_id === player.id">host</span>
+                    <CastChips v-if="series.casts?.length" :series="series" readonly />
+                  </div>
+                </td>
               </tr>
               <tr v-if="!row.series.length">
                 <td colspan="6" class="text-medium-emphasis">No series yet.</td>
@@ -93,6 +98,7 @@ import { useDisplay } from 'vuetify';
 import { useLadderStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
 import { isUnscored } from '@/helpers/season-phase.mjs';
+import CastChips from '@/components/CastChips.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
@@ -178,11 +184,6 @@ const resultClass = (series) => {
   return me > them ? 'text-green' : me < them ? 'text-red' : '';
 };
 const playedOn = (series) => (series.date_time ? DateTime.fromISO(series.date_time).toLocal().toFormat('LLL d') : '—');
-const notes = (series) => [
-  series.host_player_id === props.player.id ? 'host' : null,
-  series.casts?.length ? 'cast' : null,
-].filter(Boolean).join(' · ');
-
 // One square per week: won, lost, mixed, still to play, or no series
 const weekSeries = (row, week) => row.series.filter(s => s.match?.playday === week);
 const weekClass = (row, week) => {

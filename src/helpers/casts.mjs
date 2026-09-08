@@ -2,7 +2,7 @@ import { isUnscored } from './season-phase.mjs';
 
 // The host without www or m, and the path without its query or a trailing slash
 const hostPath = (url) => {
-  const clean = (url || '').replace(/^https?:\/\//, '').replace(/^(www|m)\./, '').split(/[?#]/)[0];
+  const clean = (url || '').trim().replace(/^https?:\/\//, '').replace(/^(www|m)\./, '').split(/[?#]/)[0];
   const cut = clean.indexOf('/');
   return cut < 0 ? [clean, ''] : [clean.slice(0, cut), clean.slice(cut).replace(/\/$/, '')];
 };
@@ -15,20 +15,35 @@ export const platformOf = (url) => {
   return null;
 };
 
-// A Twitch video, a YouTube watch or live page, or a youtu.be short link: a video, not a channel
-const VIDEO_PATHS = { 'twitch.tv': /^\/videos\/\d+$/, 'youtube.com': /^(\/watch|\/live\/[\w-]+)$/, 'youtu.be': /^\/[\w-]+$/ };
-export const isVideoUrl = (url) => {
-  const [host, path] = hostPath(url);
-  return VIDEO_PATHS[host]?.test(path) ?? false;
-};
-
-// The VOD a chip links: the pasted one, or a YouTube video URL once the series has a result
-export const vodOf = (series, cast) => {
-  if (cast.vod_url) return cast.vod_url;
-  return !isUnscored(series) && isVideoUrl(cast.channel_url) ? cast.channel_url : null;
-};
-
 export const PLATFORM_ICONS = { twitch: 'mdi-twitch', youtube: 'mdi-youtube' };
+const PLATFORM_NAMES = { twitch: 'Twitch', youtube: 'YouTube' };
+
+// One video rather than a channel. The backend decides the stored VOD; this only writes the advice
+const VIDEO_PATHS = { 'twitch.tv': /^\/videos\/\d+$/, 'youtube.com': /^(\/watch|\/live\/[\w-]+)$/, 'youtu.be': /^\/[\w-]+$/ };
+const YOUTUBE_LIVE_PAGE = /^\/@[\w.-]+\/live$/;
+
+// What a viewer gets from this link, as a sentence, so the field answers back while you type
+export const linkAdvice = (url, wantVideo) => {
+  const text = (url || '').trim();
+  if (!text) {
+    return wantVideo
+      ? 'Paste the video of your cast of this series.'
+      : 'Paste the page where people watch you cast this series.';
+  }
+  const platform = platformOf(text);
+  if (!platform) return 'Paste a twitch.tv or youtube.com link.';
+  const [host, path] = hostPath(text);
+  const isVideo = VIDEO_PATHS[host]?.test(path) ?? false;
+  if (wantVideo) {
+    return isVideo
+      ? `Viewers open this ${PLATFORM_NAMES[platform]} video.`
+      : `Paste the video itself, not a ${PLATFORM_NAMES[platform]} channel.`;
+  }
+  if (isVideo && platform === 'youtube') return 'Viewers open this video, and it stays the VOD after the stream.';
+  if (isVideo) return 'Viewers open this Twitch video.';
+  if (YOUTUBE_LIVE_PAGE.test(path)) return 'Viewers open your live page. Add the video link as the VOD afterwards.';
+  return `Viewers open your ${PLATFORM_NAMES[platform]} channel. Add the video link as the VOD afterwards.`;
+};
 
 // A cast series counts as on now from half an hour before its time to four hours after
 const BEFORE = 30 * 60 * 1000;

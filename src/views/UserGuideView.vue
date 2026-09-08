@@ -100,7 +100,7 @@ onMounted(() => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.6;
-  color: #24292e;
+  color: rgb(var(--v-theme-on-surface));
   max-width: 1200px;
 }
 
@@ -109,7 +109,7 @@ onMounted(() => {
   font-size: 2em;
   font-weight: 600;
   padding-bottom: 0.3em;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   margin-top: 24px;
   margin-bottom: 16px;
 }
@@ -118,7 +118,7 @@ onMounted(() => {
   font-size: 1.5em;
   font-weight: 600;
   padding-bottom: 0.3em;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   margin-top: 24px;
   margin-bottom: 16px;
 }
@@ -180,7 +180,7 @@ onMounted(() => {
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
-  background-color: rgba(27, 31, 35, 0.05);
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
   border-radius: 3px;
   font-family: 'Courier New', Courier, monospace;
 }
@@ -190,7 +190,7 @@ onMounted(() => {
   overflow: auto;
   font-size: 85%;
   line-height: 1.45;
-  background-color: #f6f8fa;
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
   border-radius: 3px;
   margin-bottom: 16px;
 }
@@ -209,8 +209,8 @@ onMounted(() => {
 /* Blockquotes */
 .markdown-body blockquote {
   padding: 0 1em;
-  color: #6a737d;
-  border-left: 0.25em solid #dfe2e5;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  border-left: 0.25em solid rgba(var(--v-theme-on-surface), 0.2);
   margin-bottom: 16px;
 }
 
@@ -224,16 +224,16 @@ onMounted(() => {
 .markdown-body table th,
 .markdown-body table td {
   padding: 6px 13px;
-  border: 1px solid #dfe2e5;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.2);
 }
 
 .markdown-body table th {
   font-weight: 600;
-  background-color: #f6f8fa;
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
 }
 
 .markdown-body table tr:nth-child(even) {
-  background-color: #f6f8fa;
+  background-color: rgba(var(--v-theme-on-surface), 0.05);
 }
 
 /* Horizontal Rule */
@@ -241,13 +241,13 @@ onMounted(() => {
   height: 0.25em;
   padding: 0;
   margin: 24px 0;
-  background-color: #e1e4e8;
+  background-color: rgba(var(--v-theme-on-surface), 0.2);
   border: 0;
 }
 
 /* Links */
 .markdown-body a {
-  color: #0366d6;
+  color: rgb(var(--v-theme-primary));
   text-decoration: none;
 }
 

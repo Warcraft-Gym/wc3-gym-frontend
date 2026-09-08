@@ -23,6 +23,10 @@ export const usePlayerStore = defineStore({
         async getPlayer(player_id) {
             return await fetchWrapper.get(`${backendUrl}/users/${encodeURIComponent(player_id)}`);
         },
+        // Every GNL season this player took part in, and every opponent they met
+        async playerHistory(player_id) {
+            return await fetchWrapper.get(`${backendUrl}/users/${player_id}/history`);
+        },
         async updatePlayer(player) {
             const playerId = player.id;
             await fetchWrapper.put(`${backendUrl}/users/${playerId}`, player);

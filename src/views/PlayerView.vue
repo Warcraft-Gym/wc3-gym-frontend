@@ -1,4 +1,6 @@
-<!-- One player: identity, the seasons they signed up for with the signup race, and the ladder record -->
+<!-- One player: identity, every event they entered with the rounds of the one
+     running, the ladder record, and the lifetime head to head. The owner of the
+     page reads the same facts on /profile, plus his own actions. -->
 <template>
   <v-container fluid class="pa-4">
     <StatusAlert v-model="errorMessage" />
@@ -34,18 +36,26 @@
           </div>
           <div class="d-flex flex-wrap align-center ga-2">
             <strong><W3CMmr /></strong>
-            <RaceMmrChips :player="player" />
+            <RaceMmrChips :player="player" :w3cSeason="currentW3CSeason" />
           </div>
+          <div class="text-caption text-medium-emphasis mt-2">{{ syncCaption }}</div>
         </v-card-text>
       </v-card>
 
       <v-card elevation="2">
         <v-card-title class="bg-primary d-flex align-center">
           <v-icon class="mr-2">mdi-calendar-account</v-icon>
-          Seasons
+          Events
         </v-card-title>
-        <PlayerSeasons :player="player" />
+        <!-- The event still running opens onto its rounds; the others onto their series -->
+        <PlayerSeasons :player="player">
+          <template #current="{ row }">
+            <RoundCards :player="player" :season="row.season" :series="row.series" :teamId="row.stat?.team_id" />
+          </template>
+        </PlayerSeasons>
       </v-card>
+
+      <HeadToHead :playerId="player.id" />
 
       <EditPlayerDialog ref="editPlayerDialog" :can-save="auth.isAdmin" :refresh="reload" />
     </template>
@@ -53,14 +63,17 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePlayerStore, useAuthStore } from '@/stores';
 import { playerPath } from '@/helpers/players';
-import { w3cPlayerUrl } from '@/helpers/w3c-stats';
+import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
+import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
+import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
+import RoundCards from '@/components/RoundCards.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
@@ -71,6 +84,9 @@ const playerStore = usePlayerStore();
 const auth = useAuthStore();
 
 const player = ref(null);
+// a stat from an older W3C season names its own season on the chip
+const currentW3CSeason = ref(null);
+resolveCurrentW3CSeason().then(season => { currentW3CSeason.value = season; });
 const editPlayerDialog = ref(null);
 const errorMessage = ref(null);
 
@@ -88,6 +104,12 @@ watch(() => route.params.id + route.hash, async (key) => {
     errorMessage.value = error.message;
   }
 }, { immediate: true });
+
+// e.g. "synced 2 hours ago"; syncedAgo already words the never case
+const syncCaption = computed(() => {
+  const ago = syncedAgo(player.value);
+  return ago === 'never synced' ? ago : `synced ${ago}`;
+});
 
 // after a save the battle tag may have changed, and the tag is the address
 const reload = async () => {

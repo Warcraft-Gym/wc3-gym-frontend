@@ -697,7 +697,7 @@ const closeTeamSelectionModal = () => {
     const fetchMatches = async (week) => {
   selectedWeek.value = week;
   isLoading.value = true;
-  router.push({ hash: `#week-${week}` });
+  router.push({ hash: `#round-${week}` });
   try {
     await matchStore.searchMatchesBySeasonAndPlayday(seasonId, week);
   } catch (error) {
@@ -746,12 +746,12 @@ const closeTeamSelectionModal = () => {
 
     watch(() => route.hash, (newHash) => {
       if (newHash) {
-        const weekFromHash = route.hash && route.hash.includes('#week-') 
-            ? parseInt(route.hash.replace('#week-', ''), 10) 
+        const roundFromHash = route.hash && route.hash.includes('#round-') 
+            ? parseInt(route.hash.replace('#round-', ''), 10) 
             : 1;
-          if(selectedWeek.value && weekFromHash!=selectedWeek.value){
-            selectedWeek.value = weekFromHash;
-            fetchMatches(weekFromHash);
+          if(selectedWeek.value && roundFromHash!=selectedWeek.value){
+            selectedWeek.value = roundFromHash;
+            fetchMatches(roundFromHash);
           }
       }
     });
@@ -762,17 +762,17 @@ onMounted(async () => {
   isInitLoading.value = true;
   isLoading.value = true;
   try {
-    const weekFromHash = route.hash && route.hash.includes('#week-') 
-      ? parseInt(route.hash.replace('#week-', ''), 10) 
+    const roundFromHash = route.hash && route.hash.includes('#round-') 
+      ? parseInt(route.hash.replace('#round-', ''), 10) 
       : 1;
 
     // Set the selected week before fetching
-    selectedWeek.value = weekFromHash;
+    selectedWeek.value = roundFromHash;
 
     await Promise.all([
       fetchSeasonDetails(),
       fetchTeams(),
-      fetchMatches(weekFromHash),
+      fetchMatches(roundFromHash),
       fetchMaps(),
       unscoredOnly.value && fetchUnscoredSeries()
     ]);

@@ -8,6 +8,16 @@
         <v-card-title class="bg-primary d-flex align-center">
           <v-icon class="mr-2">mdi-account-circle</v-icon>
           Player Information
+          <v-spacer />
+          <v-btn
+            v-if="auth.isAdmin"
+            variant="text"
+            size="small"
+            prepend-icon="mdi-pencil"
+            @click="editPlayerDialog.open(player)"
+          >
+            Edit
+          </v-btn>
         </v-card-title>
         <v-card-text class="pt-4">
           <div class="d-flex flex-wrap align-center ga-3 text-h6 mb-3">
@@ -36,6 +46,8 @@
         </v-card-title>
         <PlayerSeasons :player="player" />
       </v-card>
+
+      <EditPlayerDialog ref="editPlayerDialog" :can-save="auth.isAdmin" :refresh="reload" />
     </template>
   </v-container>
 </template>
@@ -43,9 +55,10 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { usePlayerStore } from '@/stores';
+import { usePlayerStore, useAuthStore } from '@/stores';
 import { playerPath } from '@/helpers/players';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
+import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
@@ -55,8 +68,10 @@ import W3CMmr from '@/components/W3CMmr.vue';
 const route = useRoute();
 const router = useRouter();
 const playerStore = usePlayerStore();
+const auth = useAuthStore();
 
 const player = ref(null);
+const editPlayerDialog = ref(null);
 const errorMessage = ref(null);
 
 // One read for the whole page; the ladder card reads its own record.
@@ -73,4 +88,10 @@ watch(() => route.params.id + route.hash, async (key) => {
     errorMessage.value = error.message;
   }
 }, { immediate: true });
+
+// after a save the battle tag may have changed, and the tag is the address
+const reload = async () => {
+  player.value = await playerStore.getPlayer(String(player.value.id));
+  router.replace(playerPath(player.value));
+};
 </script>

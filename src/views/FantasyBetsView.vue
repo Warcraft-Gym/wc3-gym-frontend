@@ -63,7 +63,7 @@
               <template v-slot:[`item.series`]="{ item }">
                 <div v-if="item.series" class="series-sides">
                   <template v-for="(side, i) in sides(item.series)" :key="i">
-                    <PlayerName v-if="side.player" :player="side.player" :race="side.player.signup_race" />
+                    <PlayerName v-if="side.player" :player="side.player" :race="side.race" />
                     <span v-else>Player {{ i + 1 }}</span>
                     <span class="text-no-wrap"><W3CIcon size="14" /> {{ mmrOf(side.player) ?? '—' }}</span>
                     <VsRaces v-if="!smAndDown" :player="ladderById.get(side.player?.id)" :race="side.vsRace" />
@@ -73,7 +73,7 @@
               </template>
 
               <template v-slot:[`item.bet_on`]="{ item }">
-                <PlayerName v-if="getWinner(item)" :player="getWinner(item)" :race="getWinner(item).signup_race" />
+                <PlayerName v-if="getWinner(item)" :player="getWinner(item)" :race="winnerRace(item)" />
                 <strong v-else>{{ item.series ? 'Unknown' : 'N/A' }}</strong>
               </template>
 
@@ -302,7 +302,7 @@
         <div v-if="deletingBet" class="mt-2">
           <strong>Captain:</strong> {{ deletingBet.user?.name }}<br>
           <strong>Bet:</strong>
-          <PlayerName v-if="getWinner(deletingBet)" :player="getWinner(deletingBet)" :race="getWinner(deletingBet).signup_race" />
+          <PlayerName v-if="getWinner(deletingBet)" :player="getWinner(deletingBet)" :race="winnerRace(deletingBet)" />
           <template v-else>N/A</template>
         </div>
       </v-card-text>
@@ -450,6 +450,14 @@ const getWinner = (bet) => {
   if (!bet.series) return null;
   if (bet.winner_id === bet.series.player1_id) return bet.series.player1;
   if (bet.winner_id === bet.series.player2_id) return bet.series.player2;
+  return null;
+};
+
+// the race the winner played in that series, not the one he signed the season up on
+const winnerRace = (bet) => {
+  if (!bet.series) return null;
+  if (bet.winner_id === bet.series.player1_id) return bet.series.player1_race;
+  if (bet.winner_id === bet.series.player2_id) return bet.series.player2_race;
   return null;
 };
 

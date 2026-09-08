@@ -144,7 +144,7 @@
                   <div class="d-flex align-center ga-1 flex-wrap">
                     <span class="week-label text-medium-emphasis">{{ idx ? '' : `Week ${week.week}` }}</span>
                     <span class="text-medium-emphasis">vs</span>
-                    <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" />
+                    <PlayerName :player="resolve(series.opponent)" :race="series.opponent_race" />
                   </div>
                 </td>
                 <td class="text-right">{{ opponentMmr(series) || 'N/A' }}</td>
@@ -263,10 +263,10 @@ const byName = computed(() => new Map([...props.players, ...props.draftedPlayers
 
 const resolve = (name, id = null) => byId.value.get(id) || byName.value.get(name) || { name };
 
-// the opponent's MMR comes from the same signup pool the roster rows read
+// the MMR of the race the opponent played, on the pool the roster rows read
 const opponentMmr = (series) => {
   const player = resolve(series.opponent);
-  return player.signup_race ? getW3CMMR(player, props.w3cSeason, player.signup_race) : null;
+  return series.opponent_race ? getW3CMMR(player, props.w3cSeason, series.opponent_race) : null;
 };
 
 const gnlRecord = (player) => {

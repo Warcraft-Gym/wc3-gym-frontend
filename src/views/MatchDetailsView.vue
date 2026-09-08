@@ -223,11 +223,11 @@
                     <span v-else class="text-grey">Not scheduled</span>
                   </td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" />
+                    <PlayerName :player="item.player1" :race="item.player1_race" :host="item.host_player_id === item.player1.id" />
                   </td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1, null, item.player1.signup_race) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player1, null, item.player1_race) ?? 'N/A' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
@@ -242,11 +242,11 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" />
+                    <PlayerName :player="item.player2" :race="item.player2_race" :host="item.host_player_id === item.player2.id" />
                   </td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2, null, item.player2.signup_race) ?? 'N/A' }}
+                      {{ getW3CMMR(item.player2, null, item.player2_race) ?? 'N/A' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
@@ -344,7 +344,7 @@
                 <tr class="series-row draft-series-row">
                   <td class="d-none d-md-table-cell">{{ item.id }}</td>
                   <td>
-                    <PlayerName :player="item.player1" :race="item.player1.signup_race" :host="item.host_player_id === item.player1.id" />
+                    <PlayerName :player="item.player1" :race="item.player1_race" :host="item.host_player_id === item.player1.id" />
                   </td>
                   <td class="d-none d-md-table-cell">
                     <div class="d-flex align-center ga-1">
@@ -356,10 +356,10 @@
                       <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
-                  <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2.signup_race" /></td>
+                  <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2_race" /></td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1, null, item.player1.signup_race) || '—' }}
+                      {{ getW3CMMR(item.player1, null, item.player1_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
@@ -369,7 +369,7 @@
                     </v-chip>
                   </td>
                   <td>
-                    <PlayerName :player="item.player2" :race="item.player2.signup_race" :host="item.host_player_id === item.player2.id" />
+                    <PlayerName :player="item.player2" :race="item.player2_race" :host="item.host_player_id === item.player2.id" />
                   </td>
                   <td class="d-none d-md-table-cell">
                     <div class="d-flex align-center ga-1">
@@ -381,10 +381,10 @@
                       <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
                     </div>
                   </td>
-                  <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1.signup_race" /></td>
+                  <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1_race" /></td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2, null, item.player2.signup_race) || '—' }}
+                      {{ getW3CMMR(item.player2, null, item.player2_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
@@ -409,8 +409,8 @@
                   <v-icon v-if="item.is_fantasy_match" size="small" color="purple" title="Marked to count for fantasy when published">mdi-star</v-icon>
                 </template>
                 <template #actions><RowActions v-if="canDraft" :actions="draftActions(item)" /></template>
-                <template #side="{ player }">
-                  <v-chip size="small" color="info">{{ getW3CMMR(player, null, player.signup_race) || '—' }}</v-chip>
+                <template #side="{ player, race }">
+                  <v-chip size="small" color="info">{{ getW3CMMR(player, null, race) || '—' }}</v-chip>
                 </template>
               </SeriesCard>
             </div>
@@ -915,10 +915,10 @@
             </v-toolbar>
           </template>
               <template v-slot:[`item.player1.name`]="{ item }">
-                <PlayerName :player="item.player1" :race="item.player1.signup_race" />
+                <PlayerName :player="item.player1" :race="item.player1_race" />
               </template>
               <template v-slot:[`item.player2.name`]="{ item }">
-                <PlayerName :player="item.player2" :race="item.player2.signup_race" />
+                <PlayerName :player="item.player2" :race="item.player2_race" />
               </template>
               <template v-slot:[`item.p1_matchup_history`]="{ item }">
                 <div class="d-flex align-center ga-1">
@@ -941,13 +941,13 @@
                 </div>
               </template>
               <template v-slot:[`item.p1_vs_race`]="{ item }">
-                <VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2.signup_race" />
+                <VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2_race" />
               </template>
               <template v-slot:[`item.p2_vs_race`]="{ item }">
-                <VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1.signup_race" />
+                <VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1_race" />
               </template>
               <template v-slot:[`item.p1_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player1, null, item.player1.signup_race) ?? 'N/A' }}
+                  <td>{{ getW3CMMR(item.player1, null, item.player1_race) ?? 'N/A' }}
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
               </template>
@@ -955,7 +955,7 @@
                   <td>{{ getHighestW3CMMR(item.player1) ?? 'N/A' }}</td>
               </template>
               <template v-slot:[`item.p2_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player2, null, item.player2.signup_race) ?? 'N/A' }}
+                  <td>{{ getW3CMMR(item.player2, null, item.player2_race) ?? 'N/A' }}
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
               </template>
@@ -1069,16 +1069,16 @@ const allSeriesTableHeader = computed(() => [
   { title: 'Date/Time'}, 
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { mobile: false, title: 'MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1?.signup_race) || 0;
-    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1?.signup_race) || 0;
+    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1_race) || 0;
+    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1_race) || 0;
     return aValue - bValue;
   } },
   { title: 'P1 Score' },
   { title: 'P2 Score' },
   { title: 'Player 2', value: 'player2.name', sortable: true },
   { mobile: false, title: 'MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2?.signup_race) || 0;
-    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2?.signup_race) || 0;
+    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2_race) || 0;
+    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2_race) || 0;
     return aValue - bValue;
   }},
   { mobile: false, title: 'Fantasy Match'},
@@ -1092,8 +1092,8 @@ const allDraftSeriesTableHeader = computed(() => [
   { mobile: false, title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { mobile: false, title: 'vs race', key: 'p1_vs_race', sortable: false },
   { mobile: false, title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1?.signup_race) || 0;
-    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1?.signup_race) || 0;
+    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1_race) || 0;
+    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1_race) || 0;
     return aValue - bValue;
   } },
   { mobile: false, title: 'Highest MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1105,8 +1105,8 @@ const allDraftSeriesTableHeader = computed(() => [
   { mobile: false, title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { mobile: false, title: 'vs race', key: 'p2_vs_race', sortable: false },
   { mobile: false, title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2?.signup_race) || 0;
-    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2?.signup_race) || 0;
+    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2_race) || 0;
+    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2_race) || 0;
     return aValue - bValue;
   }},
   { mobile: false, title: 'Highest MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1124,8 +1124,8 @@ const proposedSeriesTableHeader = [
   { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'vs race', key: 'p1_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, null, a?.player1?.signup_race) || 0;
-    let bValue = getW3CMMR(b?.player1, null, b?.player1?.signup_race) || 0;
+    let aValue = getW3CMMR(a?.player1, null, a?.player1_race) || 0;
+    let bValue = getW3CMMR(b?.player1, null, b?.player1_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Highest Race MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1137,8 +1137,8 @@ const proposedSeriesTableHeader = [
   { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { title: 'vs race', key: 'p2_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, null, a?.player2?.signup_race) || 0;
-    let bValue = getW3CMMR(b?.player2, null, b?.player2?.signup_race) || 0;
+    let aValue = getW3CMMR(a?.player2, null, a?.player2_race) || 0;
+    let bValue = getW3CMMR(b?.player2, null, b?.player2_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Highest Race MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1693,8 +1693,10 @@ const proposeSeries = async () => {
           newSeries.host_player_id = p1.id
           newSeries.player1_id = p1.id
           newSeries.player1 = p1
+          newSeries.player1_race = p1.signup_race
           newSeries.player2_id = p2.id
           newSeries.player2 = p2
+          newSeries.player2_race = p2.signup_race
           proposedSeries.value.push(newSeries)
         }
       }

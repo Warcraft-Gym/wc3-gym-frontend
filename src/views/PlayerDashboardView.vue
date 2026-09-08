@@ -87,7 +87,7 @@
             <div class="d-flex align-center ga-2 mt-2">
               <PlayerName
                 :player="opponent(card.series)"
-                :race="opponent(card.series).signup_race"
+                :race="opponentRace(card.series)"
               />
               <v-chip v-if="!isUnplayed(card.series)" :color="getScoreColor(card.series)" variant="outlined" size="small">
                 {{ myScore(card.series) }} - {{ theirScore(card.series) }}
@@ -303,6 +303,21 @@
                 />
               </v-col>
             </v-row>
+            <v-row v-if="!scoreSeries.raceOpen">
+              <v-col cols="12" class="pt-0">
+                <v-btn variant="text" size="small" density="comfortable" prepend-icon="mdi-account-switch" @click="scoreSeries.raceOpen = true">
+                  Played a different race
+                </v-btn>
+              </v-col>
+            </v-row>
+            <v-row v-else>
+              <v-col cols="6">
+                <RaceSelect v-model="scoreSeries.races.player1" :label="scoreSeries.player1_name || ''" density="comfortable" />
+              </v-col>
+              <v-col cols="6">
+                <RaceSelect v-model="scoreSeries.races.player2" :label="scoreSeries.player2_name || ''" density="comfortable" />
+              </v-col>
+            </v-row>
             <v-row v-for="game in replaySlots" :key="game">
               <v-col cols="12">
                 <v-file-input
@@ -425,6 +440,9 @@ const opponent = (item) => {
   const mine = item.player1_id === playerData.value?.player?.id;
   return (mine ? item.player2 : item.player1) || { name: `Player ${mine ? item.player2_id : item.player1_id}` };
 };
+// the race the opponent played in that series, not the one he signed the season up on
+const opponentRace = (item) =>
+  (item.player1_id === playerData.value?.player?.id ? item.player2_race : item.player1_race);
 
 const playerData = ref(null);
 const series = ref([]);
@@ -451,7 +469,7 @@ const scoreFormValid = ref(true);
 const scheduleForm = ref(null);
 const scoreForm = ref(null);
 const scheduleSeries = ref({});
-const scoreSeries = ref({ replays: {} });
+const scoreSeries = ref({ replays: {}, races: {} });
 // a result carries its veto, so the dialog holds the board above the scores
 const scoreVeto = ref(null);
 const vetoMissing = computed(() => !scoreVeto.value?.complete);
@@ -741,6 +759,9 @@ const reportResult = (item) => {
     isPlayer1Current: isPlayer1,
     isPlayer2Current: !isPlayer1,
     map_rules: item.match?.season?.map_rules,
+    // the race each side played; the panel opens by itself when one is an exception
+    races: { player1: item.player1_race, player2: item.player2_race },
+    raceOpen: !!(item.player1_off_race || item.player2_off_race),
     // games already reported: their stored replays stay unless a new file is picked
     reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score : 0,
     replays: {}
@@ -752,7 +773,7 @@ const reportResult = (item) => {
 
 const closeScore = () => {
   scoreDialog.value = false;
-  scoreSeries.value = { replays: {} };
+  scoreSeries.value = { replays: {}, races: {} };
 };
 
 const REPLAY_MAGIC = 'Warcraft III recorded game';
@@ -801,6 +822,11 @@ const saveResult = async () => {
       formData.append('player1_score', p1);
       formData.append('player2_score', p2);
       formData.append('action', 'score_updated');
+      if (scoreSeries.value.raceOpen) {
+        // the backend stores nothing when the race is the one he signed up on
+        formData.append('player1_off_race', scoreSeries.value.races.player1 || '');
+        formData.append('player2_off_race', scoreSeries.value.races.player2 || '');
+      }
       const url = `${backendUrl}/player-series/${id}`;
       const response = await fetch(url, { method: 'PUT', headers: await authHeader('PUT', url), body: formData });
       if (!response.ok) {

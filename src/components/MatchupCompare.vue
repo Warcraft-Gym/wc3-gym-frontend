@@ -1,9 +1,9 @@
 <!-- The two players of a series side by side: MMR, ladder record, the record against the other's race, the GNL record, the games per day -->
 <template>
   <div class="compare">
-    <div class="text-right"><PlayerName :player="a" :race="a.signup_race" class="font-weight-medium" /></div>
+    <div class="text-right"><PlayerName :player="a" :race="raceA" class="font-weight-medium" /></div>
     <div class="label">vs</div>
-    <div><PlayerName :player="b" :race="b.signup_race" class="font-weight-medium" /></div>
+    <div><PlayerName :player="b" :race="raceB" class="font-weight-medium" /></div>
 
     <div class="text-right">{{ la?.mmr?.current ?? '—' }}</div>
     <div class="label">MMR</div>
@@ -13,9 +13,9 @@
     <div class="label">record</div>
     <div>{{ record(lb) }}</div>
 
-    <div class="text-right d-inline-flex justify-end align-center ga-1">{{ vs(la, b.signup_race) }} <RaceIcon v-if="b.signup_race" :raceIdentifier="b.signup_race" size="1.1em" /></div>
+    <div class="text-right d-inline-flex justify-end align-center ga-1">{{ vs(la, raceB) }} <RaceIcon v-if="raceB" :raceIdentifier="raceB" size="1.1em" /></div>
     <div class="label">vs race</div>
-    <div class="d-inline-flex align-center ga-1"><RaceIcon v-if="a.signup_race" :raceIdentifier="a.signup_race" size="1.1em" /> {{ vs(lb, a.signup_race) }}</div>
+    <div class="d-inline-flex align-center ga-1"><RaceIcon v-if="raceA" :raceIdentifier="raceA" size="1.1em" /> {{ vs(lb, raceA) }}</div>
 
     <div class="text-right">{{ gnl(ga) }}</div>
     <div class="label">GNL</div>
@@ -34,6 +34,8 @@ import { winRate } from '@/helpers/ladder-days.mjs';
 defineProps({
   a: { type: Object, required: true }, // series.player1
   b: { type: Object, required: true }, // series.player2
+  raceA: String, // the race each side plays in this series
+  raceB: String,
   la: Object, // their SeasonPlayer rows, null while unsynced
   lb: Object,
   ga: Object, // their GNL stats of the season

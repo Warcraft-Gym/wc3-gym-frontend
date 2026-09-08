@@ -569,15 +569,16 @@ const raceBreakdown = computed(() => {
         }
     }
 
-    // Accumulate points from series
+    // Points go to the race the side played, which is his signup race unless
+    // he reported another one for that series
     for (const s of series.value) {
-        if (s.player1?.signup_race && s.player1_points != null) {
-            const r = s.player1.signup_race;
+        if (s.player1_race && s.player1_points != null) {
+            const r = s.player1_race;
             if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
             raceMap[r].points += s.player1_points;
         }
-        if (s.player2?.signup_race && s.player2_points != null) {
-            const r = s.player2.signup_race;
+        if (s.player2_race && s.player2_points != null) {
+            const r = s.player2_race;
             if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
             raceMap[r].points += s.player2_points;
         }

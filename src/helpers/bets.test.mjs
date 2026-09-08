@@ -3,20 +3,22 @@ import test from 'node:test';
 
 import { sides } from './bets.mjs';
 
-test('each side faces the race the other player signed up on', () => {
+test('each side carries the race it played and the race it met', () => {
   const series = {
-    player1: { id: 1, signup_race: 'HU' },
-    player2: { id: 2, signup_race: 'OC' },
+    player1: { id: 1 },
+    player2: { id: 2 },
+    player1_race: 'HU',
+    player2_race: 'OC',
   };
   assert.deepEqual(sides(series), [
-    { player: series.player1, vsRace: 'OC' },
-    { player: series.player2, vsRace: 'HU' },
+    { player: series.player1, race: 'HU', vsRace: 'OC' },
+    { player: series.player2, race: 'OC', vsRace: 'HU' },
   ]);
 });
 
-test('a missing player leaves the other side without an opponent race', () => {
-  assert.deepEqual(sides({ player1: { id: 1, signup_race: 'NE' } }), [
-    { player: { id: 1, signup_race: 'NE' }, vsRace: undefined },
-    { player: undefined, vsRace: 'NE' },
+test('a side the season holds no signup for carries no race', () => {
+  assert.deepEqual(sides({ player1: { id: 1 }, player1_race: 'NE' }), [
+    { player: { id: 1 }, race: 'NE', vsRace: undefined },
+    { player: undefined, race: undefined, vsRace: 'NE' },
   ]);
 });

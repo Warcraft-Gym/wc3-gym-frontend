@@ -626,6 +626,24 @@
                 ></v-number-input>
               </v-col>
               <v-col cols="12" sm="6">
+                <RaceSelect
+                  v-model="selectedSeries.player1_off_race"
+                  :label="`${selectedSeries.player1.name} played`"
+                  clearable
+                  hint="Empty: he played the race he signed up on"
+                  persistent-hint
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <RaceSelect
+                  v-model="selectedSeries.player2_off_race"
+                  :label="`${selectedSeries.player2.name} played`"
+                  clearable
+                  hint="Empty: he played the race he signed up on"
+                  persistent-hint
+                />
+              </v-col>
+              <v-col cols="12" sm="6">
                 <v-select
                   :items="hostPlayers"
                   label="Choose a Host"

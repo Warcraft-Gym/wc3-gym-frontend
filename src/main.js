@@ -20,6 +20,7 @@ import 'vuetify/styles'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { createVuetify } from 'vuetify';
+import { activeTheme } from '@/helpers/theme';
 
 
 //Components
@@ -31,7 +32,7 @@ import PlayerName from '@/components/PlayerName.vue'
 
 const vuetify = new createVuetify ({
     theme: {
-        defaultTheme: 'light',
+        defaultTheme: activeTheme(),  // the stored choice, so the first paint is already right
     },
     icons: {
         defaultSet: 'mdi',

@@ -1,5 +1,5 @@
 <template>
-  <v-overlay v-model="isLoading" persistent class="loading-overlay">
+  <v-overlay v-model="isLoading" persistent class="align-center justify-center">
     <v-progress-circular
           indeterminate
           size="64" 
@@ -823,7 +823,7 @@ onMounted(async () => {
 
   /* Stat Cards */
   .stat-card {
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: rgba(var(--v-theme-surface), 0.95) !important;
     backdrop-filter: blur(10px);
     transition: transform 0.2s, box-shadow 0.2s;
   }

@@ -9,7 +9,7 @@
       </v-col>
     </v-row>
 
-    <v-overlay v-model="isLoading" persistent class="loading-overlay">
+    <v-overlay v-model="isLoading" persistent class="loading-overlay align-center justify-center">
       <v-progress-circular indeterminate size="64" width="8" color="primary" />
     </v-overlay>
 
@@ -700,17 +700,17 @@ function formatEventDate(dateString) {
 }
 
 .king-item {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(var(--v-theme-surface), 0.9);
   border-radius: 4px;
   transition: background 0.2s;
 }
 
 .king-item:hover {
-  background: rgba(255, 255, 255, 1);
+  background: rgb(var(--v-theme-surface));
 }
 
 .no-king-section {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
   border-radius: 4px;
 }
 
@@ -720,13 +720,13 @@ function formatEventDate(dateString) {
 }
 
 .player-item {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(var(--v-theme-on-surface), 0.02);
   border-radius: 4px;
   transition: background 0.2s, transform 0.1s;
 }
 
 .player-item:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(var(--v-theme-on-surface), 0.04);
   transform: translateX(2px);
 }
 

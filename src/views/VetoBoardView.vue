@@ -14,14 +14,14 @@
         <v-spacer />
         <v-chip v-if="board" :color="statusColor" variant="tonal">{{ statusLine }}</v-chip>
         <v-btn
-          v-if="canRecord && !admin"
+          v-if="canRecord"
           :variant="recording ? 'flat' : 'outlined'"
           color="warning"
           size="small"
-          prepend-icon="mdi-chat-processing-outline"
-          @click="manual = !manual"
+          :prepend-icon="adminSession ? 'mdi-shield-account-outline' : 'mdi-chat-processing-outline'"
+          @click="recording = !recording"
         >
-          {{ recording ? 'Entering a veto done elsewhere' : 'Enter a veto done elsewhere' }}
+          {{ adminSession ? 'Admin mode' : 'Enter a veto from chat' }}
         </v-btn>
         <v-btn
           v-if="board?.complete && route.query.report"
@@ -209,11 +209,11 @@ const errorMessage = ref(null);
 const saving = ref(false);
 // the dashboard link carries its token; a session reads the board without one
 const token = route.query.token;
-// an admin session edits either side from the match page; on the admin's own turn they are a player
-const admin = computed(() => !token && auth.isAdmin && !board.value?.on_turn);
 // a veto done in a chat is typed in by one player for both sides, in the season's order
-const manual = ref(!!route.query.report);  // the Report Result dialog sends the player here to enter it
-const recording = computed(() => admin.value || manual.value);
+const recording = ref(!!route.query.report);  // the Report Result dialog sends the player here to enter it
+// an admin session edits either side from the match page, but only behind the same toggle as a player
+const adminSession = computed(() => !token && auth.isAdmin);
+const admin = computed(() => adminSession.value && recording.value);
 
 const vetoUrl = `${backendUrl}/player-series/${route.params.id}/veto`;
 // the board payload names maps only on the steps taken, so the pool is labelled from /maps
@@ -232,7 +232,7 @@ const nextAction = computed(() => (order.value[taken.value.length] || '').split(
 
 const viewerId = computed(() => (board.value?.viewer_side === 'A' ? board.value?.player1 : board.value?.player2)?.id);
 const playerId = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.id;
-const canRecord = computed(() => (admin.value || !!board.value?.viewer_side) && !board.value?.complete);
+const canRecord = computed(() => (adminSession.value || !!board.value?.viewer_side) && !board.value?.complete);
 
 const statusLine = computed(() => {
   if (board.value?.complete) return 'Veto complete';
@@ -365,7 +365,7 @@ const send = async (body) => {
 // the other player's steps arrive by poll; a step of the viewer's own comes back on the PUT
 let timer = null;
 const poll = () => {
-  if (document.hidden || saving.value || manual.value || !board.value || board.value.complete || board.value.on_turn) return;
+  if (document.hidden || saving.value || recording.value || !board.value || board.value.complete || board.value.on_turn) return;
   load();
 };
 

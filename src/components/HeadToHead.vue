@@ -38,7 +38,7 @@
           <tr
             v-for="meeting in (openOpponent === opp.id ? opp.meetings : [])"
             :key="meeting.series_id"
-            class="bg-grey-lighten-4"
+            class="meeting-row"
           >
             <td class="text-caption">
               {{ meeting.season_name }}<template v-if="meeting.playday">, week {{ meeting.playday }}</template>
@@ -87,4 +87,5 @@ const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `week ${opp.l
 
 <style scoped>
 .opponent-row { cursor: pointer; }
+.meeting-row { background: rgba(var(--v-theme-on-surface), 0.04); }
 </style>

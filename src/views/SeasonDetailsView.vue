@@ -20,7 +20,7 @@
               <v-col cols="auto">
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold primary--text">{{ season.number_weeks }}</div>
+                    <div class="text-h4 font-weight-bold primary--text">{{ season.number_rounds }}</div>
                     <div class="text-subtitle-2 text-uppercase">Rounds</div>
                   </v-card-text>
                 </v-card>
@@ -80,7 +80,7 @@
         @update:modelValue="fetchMatches"
       >
         <v-tab
-          v-for="week in season.number_weeks"
+          v-for="week in season.number_rounds"
           :key="week"
           :value="week"
         >

@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
+import { backendUrl, fetchWrapper } from '@/helpers';
 import { shrinkTeamImage } from '@/helpers/team-image';
-
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
 
 export const useTeamStore = defineStore({
     id: 'teamStore',

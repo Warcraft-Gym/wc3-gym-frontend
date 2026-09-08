@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper, router } from '@/helpers';
-
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
+import { backendUrl, fetchWrapper, router } from '@/helpers';
 
 if (!localStorage.getItem('me')) localStorage.removeItem('user');  // a pre-Clerk token has no me; it would shadow the Clerk session
 // a cached me belongs to one Clerk instance; a key change (dev to production) starts clean

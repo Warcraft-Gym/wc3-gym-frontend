@@ -271,7 +271,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
+import { backendUrl, fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
@@ -293,7 +293,6 @@ import VetoBoard from '@/components/VetoBoard.vue';
 
 
 const router = useRouter();
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 // Current W3C season
 const currentW3CSeason = ref(null);

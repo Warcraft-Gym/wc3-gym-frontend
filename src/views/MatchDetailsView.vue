@@ -1028,7 +1028,7 @@ import { DateTime } from "luxon";
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useDisplay } from 'vuetify';
-import { fetchWrapper } from '@/helpers';
+import { backendUrl, fetchWrapper } from '@/helpers';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
@@ -1171,8 +1171,6 @@ const canDraft = computed(() => auth.isAdmin || (auth.me?.team?.id != null
 const isLoading = ref(false);
 
 // Team state
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
-
 const team1 = ref({});
 const team2 = ref({});
 // The season ladder record of every signup, by user id, for the record against each race

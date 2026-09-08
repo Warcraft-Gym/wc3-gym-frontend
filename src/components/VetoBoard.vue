@@ -178,7 +178,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { fetchWrapper } from '@/helpers';
+import { backendUrl, fetchWrapper } from '@/helpers';
 import { DEFAULT_RULES } from '@/helpers/best-of.mjs';
 import { hideMissingImage } from '@/helpers/team-image';
 import { useAuthStore, useMapStore } from '@/stores';
@@ -192,7 +192,6 @@ const props = defineProps({
 });
 const emit = defineEmits(['change']);
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const mapStore = useMapStore();
 const auth = useAuthStore();
 

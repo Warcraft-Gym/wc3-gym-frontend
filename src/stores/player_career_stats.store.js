@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia';
-import { fetchWrapper, pageQuery } from '@/helpers';
-
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
+import { backendUrl, fetchWrapper, pageQuery } from '@/helpers';
 
 export const usePlayerCareerStatsStore = defineStore({
     id: 'playerCareerStats',

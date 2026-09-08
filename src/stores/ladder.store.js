@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { fetchWrapper } from '@/helpers';
-
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`
+import { backendUrl, fetchWrapper } from '@/helpers';
 
 export const useLadderStore = defineStore({
     id: 'ladderStore',

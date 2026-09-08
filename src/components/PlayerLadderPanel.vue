@@ -71,7 +71,7 @@ const last = computed(() => {
 <style scoped>
 .panel-left { width: 250px; }
 .plot-box { min-width: 0; }
-.cap { font-size: 11px; line-height: 14px; font-weight: 500; color: rgba(0, 0, 0, 0.6); }
+.cap { font-size: 11px; line-height: 14px; font-weight: 500; color: rgba(var(--v-theme-on-surface), 0.6); }
 .race-row { height: 22px; }
 .bar { width: 150px; }
 .seg { height: 10px; }

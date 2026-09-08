@@ -60,6 +60,6 @@ const toggle = (key) => {
 }
 .group-row > :deep(td),
 .grouped-table :deep(.detail-row > td:first-child) {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(var(--v-theme-on-surface), 0.04);
 }
 </style>

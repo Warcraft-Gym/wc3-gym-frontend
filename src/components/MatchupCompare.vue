@@ -63,5 +63,5 @@ const gnl = (g) => (g && g.games ? `${g.wins ?? 0}–${g.losses ?? 0}` : '—');
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
-.label { text-align: center; font-size: 0.75rem; color: rgba(0, 0, 0, 0.38); }
+.label { text-align: center; font-size: 0.75rem; color: rgba(var(--v-theme-on-surface), 0.38); }
 </style>

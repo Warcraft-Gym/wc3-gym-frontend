@@ -2,14 +2,21 @@
      Source of the mark in src/assets/media/README.md. -->
 <template>
   <span class="d-inline-flex align-baseline text-no-wrap">
-    <img :src="w3cLogo" alt="W3C" class="w3c-mmr-logo mr-1">
+    <img :src="logo" alt="W3C" class="w3c-mmr-logo mr-1">
     <span>MMR{{ suffix }}</span>
     <v-icon v-if="sortIcon" size="x-small" class="ml-1">{{ sortIcon }}</v-icon>
   </span>
 </template>
 
 <script setup>
+import { computed } from 'vue';
+import { useTheme } from 'vuetify';
 import w3cLogo from '@/assets/media/w3c-logo.png';
+import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
+
+// The dark-ink mark is made for the light theme; the dark theme takes the white original.
+const theme = useTheme();
+const logo = computed(() => (theme.global.current.value.dark ? w3cLogoWhite : w3cLogo));
 
 defineProps({
   suffix: { type: String, default: '' },

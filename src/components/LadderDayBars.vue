@@ -5,7 +5,7 @@
       <rect v-if="d.w" :x="x(i)" :y="y(d.w)" :width="x.bandwidth()" :height="y(0) - y(d.w)" :fill="WIN" />
       <rect v-if="d.l" :x="x(i)" :y="y(d.w + d.l)" :width="x.bandwidth()" :height="Math.max(1, y(d.w) - y(d.w + d.l) - (d.w ? gap : 0))" :fill="LOSS" />
     </template>
-    <line x1="0" :x2="width" :y1="height - 0.5" :y2="height - 0.5" stroke="rgba(0, 0, 0, 0.12)" />
+    <line x1="0" :x2="width" :y1="height - 0.5" :y2="height - 0.5" class="axis" />
   </svg>
 </template>
 
@@ -26,3 +26,7 @@ const props = defineProps({
 const x = computed(() => scaleBand().domain(range(props.days.length)).range([0, props.width]).paddingInner(0.3));
 const y = computed(() => scaleLinear().domain([0, props.ymax]).range([props.height - 1, 0]));
 </script>
+
+<style scoped>
+.axis { stroke: rgba(var(--v-theme-on-surface), 0.12); }
+</style>

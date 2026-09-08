@@ -617,14 +617,19 @@
                 <v-number-input
                   v-model="selectedSeries.player1_score"
                   :label="`${selectedSeries.player1.name} Score`"
+                  :min="0"
+                  :max="editWins"
                 ></v-number-input>
               </v-col>
               <v-col cols="12" sm="6">
                 <v-number-input
                   v-model="selectedSeries.player2_score"
                   :label="`${selectedSeries.player2.name} Score`"
+                  :min="0"
+                  :max="editWins"
                 ></v-number-input>
               </v-col>
+              <v-col v-if="editScoreProblem" cols="12" class="pt-0 text-error text-caption">{{ editScoreProblem }}</v-col>
               <v-col cols="12" sm="6">
                 <v-select
                   :items="hostPlayers"
@@ -645,7 +650,7 @@
           </v-form>
         </v-card-text>
         <v-card-actions style="position: sticky; bottom: 0; background: rgb(var(--v-theme-surface)); z-index: 10;">
-          <v-btn @click="updateSeries" color="green" prepend-icon="mdi-check">
+          <v-btn @click="updateSeries" color="green" prepend-icon="mdi-check" :disabled="!!editScoreProblem">
             Save
           </v-btn>
           <v-btn @click="cancelEditSeries" color="red" prepend-icon="mdi-close">
@@ -1042,6 +1047,7 @@ import { teamImageUrl, hideMissingImage, showDefaultTeamImage } from '@/helpers/
 import { raceWrapper } from '@/helpers/races';
 import { useColumns } from '@/helpers/columns';
 import { roundLabel } from '@/helpers/rounds.mjs';
+import { winsOf, resultProblem } from '@/helpers/best-of';
 
 
 // Stores initialization
@@ -1564,6 +1570,15 @@ const editSeries = async (seriesItem) => {
 const cancelEditSeries = async () => {
   editSeriesDialogOpen.value = false;
 }
+
+// An admin writes the same result the report form writes: the season's best-of
+const editWins = computed(() => winsOf(season.value?.map_rules));
+const editScoreProblem = computed(() => {
+  const score = (value) => (value === null || value === undefined || value === '' ? NaN : Number(value));
+  const p1 = score(selectedSeries.value?.player1_score), p2 = score(selectedSeries.value?.player2_score);
+  if (Number.isNaN(p1) && Number.isNaN(p2)) return null;  // a series nobody has played yet
+  return resultProblem(p1, p2, season.value?.map_rules);
+});
 
 const updateSeries = async () => {
   isLoading.value = true;

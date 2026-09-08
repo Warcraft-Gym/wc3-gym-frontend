@@ -71,7 +71,6 @@ const COPY = {
 
 const props = defineProps({
   series: { type: Object, required: true }, // id, casts
-  readonly: { type: Boolean, default: false }, // a page that only shows who cast, such as a player profile
 });
 
 const auth = useAuthStore();
@@ -90,10 +89,10 @@ const chipProps = (cast) => ({
   appendIcon: cast.vod_url ? 'mdi-play' : undefined,
 });
 // A guest, and a member with no player row, cannot claim
-const canClaim = computed(() => !props.readonly && myId.value && auth.me?.role !== 'guest' && !casts.value.some((c) => c.user_id === myId.value));
+const canClaim = computed(() => myId.value && auth.me?.role !== 'guest' && !casts.value.some((c) => c.user_id === myId.value));
 // A series with a result has nothing left to stream, so it takes a VOD instead of a claim
 const scored = computed(() => !isUnscored(props.series));
-const canEdit = (cast) => !props.readonly && (auth.isAdmin || cast.user_id === myId.value);
+const canEdit = (cast) => auth.isAdmin || cast.user_id === myId.value;
 
 const dialog = ref(false);
 const editing = ref(null); // the cast being edited; null on a claim

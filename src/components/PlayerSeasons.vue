@@ -75,7 +75,7 @@
                 <td v-if="mdAndUp" class="text-medium-emphasis">
                   <div class="d-flex align-center ga-2">
                     <span v-if="series.host_player_id === player.id">host</span>
-                    <CastChips v-if="series.casts?.length" :series="series" readonly />
+                    <CastChips :series="series" />
                   </div>
                 </td>
               </tr>

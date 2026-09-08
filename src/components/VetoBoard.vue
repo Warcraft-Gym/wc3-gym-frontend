@@ -37,6 +37,32 @@
 
     <StatusAlert v-model="errorMessage" />
 
+    <div v-if="board && !collapsed" class="order-strip mb-6">
+      <div v-for="lane in lanes" :key="lane.side" class="lane">
+        <div class="lane-name text-caption text-truncate" :class="lane.onTurn ? 'font-weight-bold' : 'text-medium-emphasis'">{{ lane.who }}</div>
+        <div class="lane-steps">
+        <div
+          v-for="row in orderRows"
+          :key="row.n"
+          class="step"
+          :class="{
+            'step--mine': row.side === lane.side,
+            'step--ban': row.action === 'Ban',
+            'step--current': row.current,
+            'step--todo': !row.done && !row.current,
+          }"
+          :title="row.side === lane.side ? [row.action, row.map, row.note].filter(Boolean).join(' — ') : undefined"
+        >
+          <template v-if="row.side === lane.side">
+            <img v-if="row.done && mapImage(row.mapId)" :src="mapImage(row.mapId)" :alt="row.map" @error="hideMissingImage">
+            <span v-if="row.done" class="step-tag">{{ row.shortname }}</span>
+            <span v-else-if="row.current" class="step-now">{{ row.action }}</span>
+          </template>
+        </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="!board && !errorMessage" class="d-flex justify-center pa-8">
       <v-progress-circular color="primary" indeterminate size="64" />
     </div>
@@ -44,12 +70,9 @@
     <v-row v-if="board">
       <v-col v-if="!collapsed" cols="12" md="8">
         <v-card elevation="2">
-          <v-card-title class="bg-primary d-flex justify-space-between align-center">
-            <div class="d-flex align-center">
-              <v-icon class="mr-2">mdi-map</v-icon>
-              <span>Map Pool</span>
-            </div>
-            <v-chip color="white" variant="outlined">{{ poolChip }}</v-chip>
+          <v-card-title class="bg-primary">
+            <v-icon class="mr-2">mdi-map</v-icon>
+            Map Pool
           </v-card-title>
           <v-card-text class="d-flex flex-wrap ga-3 pt-4">
             <v-sheet
@@ -58,7 +81,7 @@
               border
               rounded
               class="pa-3 map-tile"
-              :class="{ 'bg-grey-lighten-4': tile.banned, 'week-map': tile.week }"
+              :class="{ 'banned-map': tile.banned, 'week-map': tile.week }"
             >
               <div class="thumb rounded bg-grey-darken-4">
                 <img v-if="mapImage(tile.id)" :src="mapImage(tile.id)" :alt="tile.name" :class="{ dim: tile.banned }" @error="hideMissingImage">
@@ -70,7 +93,7 @@
               >
                 {{ tile.name }}
               </div>
-              <div class="d-flex align-center justify-space-between ga-2 mt-2 tile-foot">
+              <div v-if="tile.step || tile.sub || tile.week || tile.canAct" class="d-flex align-center justify-space-between ga-2 mt-2 tile-foot">
                 <span v-if="tile.step" class="d-flex align-center ga-2 text-caption">
                   <v-chip size="x-small" variant="tonal" :color="tile.banned ? 'error' : 'success'">
                     {{ tile.banned ? 'Ban' : 'Pick' }}
@@ -94,35 +117,6 @@
       </v-col>
 
       <v-col cols="12" :md="collapsed ? 12 : 4">
-        <v-card v-if="!collapsed" elevation="2" class="mb-6">
-          <v-card-title class="bg-primary">
-            <v-icon class="mr-2">mdi-format-list-numbered</v-icon>
-            Order
-          </v-card-title>
-          <v-list density="compact">
-            <v-list-item
-              v-for="row in orderRows"
-              :key="row.n"
-              :class="{ 'bg-blue-lighten-5': row.current }"
-            >
-              <template #prepend>
-                <v-icon size="small" class="mr-3" :color="row.done ? 'success' : undefined">
-                  {{ row.done ? 'mdi-check-circle' : 'mdi-circle-outline' }}
-                </v-icon>
-              </template>
-              <v-list-item-title class="d-flex align-center ga-2">
-                <v-chip size="x-small" variant="tonal" :color="row.action === 'Ban' ? 'error' : 'success'">
-                  {{ row.action }}
-                </v-chip>
-                <span>{{ row.who }}</span>
-                <v-spacer />
-                <span class="text-caption" :class="{ 'text-medium-emphasis': !row.done }">{{ row.map }}</span>
-              </v-list-item-title>
-              <v-list-item-subtitle v-if="row.note">{{ row.note }}</v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-        </v-card>
-
         <v-card elevation="2">
           <v-card-title class="bg-primary">
             <v-icon class="mr-2">mdi-tournament</v-icon>
@@ -249,12 +243,6 @@ const enteredBy = (step) => {
   return side ? sideName(side) : 'an admin';
 };
 
-const poolChip = computed(() => {
-  const inVeto = (board.value?.pool || []).length - (board.value?.week_map_id ? 1 : 0);
-  const banTotal = order.value.filter(entry => /^ban/i.test(entry)).length;
-  const bansDone = taken.value.filter(step => step.action === 'ban').length;
-  return `${inVeto} in the veto, ${bansDone} of ${banTotal} banned`;
-});
 
 // the fixed map of the week stays on the board as game 1; every other used map is dimmed or tagged
 const tiles = computed(() => (board.value?.pool || []).map((id) => {
@@ -267,11 +255,17 @@ const tiles = computed(() => (board.value?.pool || []).map((id) => {
     banned: step?.action === 'ban',
     name: mapName(id),
     shortname: mapsById.value.get(id)?.shortname || '',
-    sub: week ? 'Fixed map' : board.value?.complete ? 'Unused' : 'Available',
+    sub: week ? 'Fixed map' : board.value?.complete ? 'Unused' : '',
     // no action once every entry of the order is taken, even before the server confirms the last one
     canAct: !week && !step && !!order.value[taken.value.length] && (recording.value ? canRecord.value : !!board.value?.on_turn)
   };
 }));
+
+const lanes = computed(() => ['A', 'B'].map(side => ({
+  side,
+  who: sideName(side),
+  onTurn: entrySide(order.value[taken.value.length] || '') === side,
+})));
 
 const orderRows = computed(() => order.value.map((entry, index) => {
   const step = taken.value[index];
@@ -282,7 +276,10 @@ const orderRows = computed(() => order.value.map((entry, index) => {
     action,
     done: !!step,
     current,
+    side: entrySide(entry),
     who: sideName(entrySide(entry)),
+    mapId: step?.map_id,
+    shortname: step ? mapsById.value.get(step.map_id)?.shortname || '' : '',
     map: step ? mapName(step.map_id) : current ? `To ${action.toLowerCase()}` : '',
     // the forced last step names nobody: its map was the only one left
     note: forcedLast.value && index === order.value.length - 1 ? 'Only map left' : enteredBy(step) && `Entered by ${enteredBy(step)}`
@@ -387,6 +384,122 @@ onUnmounted(() => clearInterval(timer));
 </script>
 
 <style scoped>
+/* the veto order, one lane per player: a step sits in its own lane and the columns keep the order */
+.order-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.lane {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lane-steps {
+  display: flex;
+  gap: 6px;
+}
+
+.lane-name {
+  width: 104px;
+  flex: none;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.step {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 4px;
+}
+
+.step--mine {
+  border: 1px solid rgba(var(--v-border-color), 0.35);
+  overflow: hidden;
+}
+
+.step--mine.step--todo {
+  border-style: dashed;
+}
+
+.step--mine.step--current {
+  border-width: 2px;
+  border-color: rgb(var(--v-theme-error));
+}
+
+.step--mine.step--current:not(.step--ban) {
+  border-color: rgb(var(--v-theme-success));
+}
+
+.step img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.step--ban img {
+  filter: grayscale(0.9);  /* a ban spends the map, so it reads as muted, still readable */
+  opacity: 0.75;
+}
+
+/* a phone has no room for a name column beside eight slots, so the name goes above its lane */
+@media (max-width: 600px) {
+  .lane {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .lane-name {
+    width: auto;
+    text-align: left;
+    padding-right: 0;
+  }
+
+  .step {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lane-steps {
+    gap: 4px;
+  }
+}
+
+.step-tag {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  padding: 0 3px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 9px;
+  line-height: 13px;
+}
+
+.step-now {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-error));
+}
+
+.step--current:not(.step--ban) .step-now {
+  color: rgb(var(--v-theme-success));
+}
+
 .map-tile {
   width: calc(50% - 6px);
   max-width: 190px;
@@ -410,8 +523,12 @@ onUnmounted(() => clearInterval(timer));
 }
 
 .thumb img.dim {
-  filter: grayscale(1);
-  opacity: 0.4;
+  filter: grayscale(0.9);
+  opacity: 0.75;
+}
+
+.banned-map {
+  opacity: 0.7;  /* theme-aware: a fixed grey turned the tile white on the dark theme */
 }
 
 .shortname {

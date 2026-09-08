@@ -231,7 +231,7 @@
                   label="Discord Role ID"
                   variant="outlined"
                   density="comfortable"
-                  prepend-inner-icon="mdi-discord"
+                  prepend-inner-icon="$discord"
                 />
               </v-col>
               <v-col cols="12" md="6">

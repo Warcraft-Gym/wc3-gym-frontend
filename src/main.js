@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 
 import '@mdi/font/css/materialdesignicons.css'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { discordMark } from '@/assets/discordMark'
 
 //Countries API
 import 'flagpack/dist/flagpack.css'
@@ -34,7 +35,7 @@ const vuetify = new createVuetify ({
     },
     icons: {
         defaultSet: 'mdi',
-        aliases,
+        aliases: { ...aliases, discord: `svg:${discordMark}` },
         sets: {
             mdi,
         },

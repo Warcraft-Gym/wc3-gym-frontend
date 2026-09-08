@@ -17,7 +17,7 @@
             </a>
           </div>
           <div class="d-flex flex-wrap align-center ga-2 mb-3">
-            <v-chip color="secondary" prepend-icon="mdi-discord">{{ player.discordTag }}</v-chip>
+            <v-chip color="secondary" prepend-icon="$discord">{{ player.discordTag }}</v-chip>
             <v-chip v-if="player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
               {{ player.timezone }}
             </v-chip>

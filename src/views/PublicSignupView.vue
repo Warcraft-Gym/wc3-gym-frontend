@@ -57,7 +57,7 @@
                   label="Discord Tag" 
                   variant="outlined"
                   required
-                  prepend-inner-icon="mdi-discord"
+                  prepend-inner-icon="$discord"
                   readonly 
                 />
               </v-col>

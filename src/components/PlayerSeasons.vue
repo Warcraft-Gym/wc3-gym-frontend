@@ -91,6 +91,7 @@ import { DateTime } from 'luxon';
 import { useDisplay } from 'vuetify';
 import { useLadderStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
+import { isUnscored } from '@/helpers/season-phase.mjs';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
@@ -162,7 +163,7 @@ const opponentTeam = (series, row) => {
 const scores = (series) => (mine(series)
   ? [series.player1_score, series.player2_score]
   : [series.player2_score, series.player1_score]);
-const scored = (series) => series.player1_score != null && series.player2_score != null;
+const scored = (series) => !isUnscored(series);
 const result = (series) => {
   if (!scored(series)) return series.date_time ? 'scheduled' : 'unscheduled';
   const [me, them] = scores(series);

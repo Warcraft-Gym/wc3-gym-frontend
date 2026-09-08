@@ -49,6 +49,7 @@ import { computed, ref, watch } from 'vue';
 
 import { useAuthStore, useSeriesStore } from '@/stores';
 import { PLATFORM_ICONS, onNow, platformOf, vodOf } from '@/helpers/casts.mjs';
+import { isUnscored } from '@/helpers/season-phase.mjs';
 
 const COPY = {
   channel: { label: 'Channel URL', placeholder: 'https://www.twitch.tv/yourname', hint: "Twitch: your channel. YouTube: the stream's video URL, which becomes the VOD" },
@@ -78,7 +79,7 @@ const chipProps = (cast) => ({
 // A guest, and a member with no player row, cannot claim
 const canClaim = computed(() => myId.value && auth.me?.role !== 'guest' && !casts.value.some((c) => c.user_id === myId.value));
 // A series with a result has nothing left to stream, so it takes a VOD instead of a claim
-const scored = computed(() => props.series.player1_score != null || props.series.player2_score != null);
+const scored = computed(() => !isUnscored(props.series));
 const canEdit = (cast) => auth.isAdmin || cast.user_id === myId.value;
 
 const dialog = ref(false);

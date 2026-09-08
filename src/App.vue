@@ -139,16 +139,6 @@ const applyCaptain = () => {
             <v-app-bar-nav-icon v-if="showNavLinks && smAndDown" @click="drawer = !drawer" />
             <v-app-bar-title>GNL APP</v-app-bar-title>
             <template v-slot:append>
-                <v-menu offset-y>
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" :icon="themeIcon" variant="text" aria-label="Theme" />
-                    </template>
-                    <v-list>
-                        <v-list-item v-for="t in THEMES" :key="t.value" :title="t.title"
-                            :prepend-icon="t.icon" :active="themeMode === t.value"
-                            @click="setThemeMode(t.value)" />
-                    </v-list>
-                </v-menu>
                 <v-list v-show="showNavLinks" class="inline-nav" nav>
                     <template v-if="!smAndDown">
                         <template v-for="group in nav" :key="group.to">
@@ -195,6 +185,16 @@ const applyCaptain = () => {
                         </v-list>
                     </v-menu>
                 </v-list>
+                <v-menu offset-y>
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props" :icon="themeIcon" variant="text" aria-label="Theme" />
+                    </template>
+                    <v-list>
+                        <v-list-item v-for="t in THEMES" :key="t.value" :title="t.title"
+                            :prepend-icon="t.icon" :active="themeMode === t.value"
+                            @click="setThemeMode(t.value)" />
+                    </v-list>
+                </v-menu>
             </template>
         </v-app-bar>
         <v-navigation-drawer v-if="showNavLinks && smAndDown" v-model="drawer" temporary>

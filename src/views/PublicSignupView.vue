@@ -12,10 +12,7 @@
         {{ seasonName ? `Signup for Season: ${seasonName}` : 'Player Registration' }}
       </v-card-title>
       <v-card-text class="pt-4">
-        <div v-if="loading">Loading token...</div>
-        <div v-else-if="tokenInvalid">
-          <v-alert type="error">Token is invalid: {{ tokenInvalidReason }}</v-alert>
-        </div>
+        <div v-if="loading">Loading...</div>
         <div v-else>
           <v-alert
             v-if="alreadySignedUp"
@@ -131,19 +128,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-// token validation/consumption is handled server-side via backend endpoints
-import { useSeasonStore, useConfigStore, usePlayerStore, useAuthStore } from '@/stores';
+import { useSeasonStore, useAuthStore } from '@/stores';
 import { fetchWrapper } from '@/helpers';
 import { storeToRefs } from 'pinia';
 import CountryCodes from 'country-code-info';
 
 const route = useRoute();
 const router = useRouter();
-const token = ref(route.query.token || '');
 const loading = ref(true);
-const tokenInvalid = ref(false);
-const tokenInvalidReason = ref('');
-const tokenEntry = ref({ discordId: '', discordTag: '' });
 
 // Form fields (match the create player dialog)
 const discordId = ref('');
@@ -170,7 +162,7 @@ const seasonClosed = computed(() => {
 const alreadySignedUp = ref(false);
 
 const isFormValid = computed(() => {
-  // require the token-populated discord fields and all user-provided fields
+  // require the session's discord fields and all user-provided fields
   const discordOk = !!discordId.value && !!discordTag.value;
   const nameOk = !!name.value && String(name.value).trim().length > 0;
   const battleOk = !!battleTag.value && String(battleTag.value).trim().length > 0;
@@ -190,116 +182,27 @@ const battleTagRules = [
 
 const authStore = useAuthStore();
 const seasonStore = useSeasonStore();
-const configStore = useConfigStore();
-const playerStore = usePlayerStore();
 const { seasons } = storeToRefs(seasonStore);
 
 onMounted(async () => {
   loading.value = true;
-  // a Discord session identifies the player instead of a one-shot token
-  if (!token.value && authStore.me) {
-    discordId.value = authStore.me.discord_id;
-    discordTag.value = authStore.me.name;
-    // the linked users row prefills the form; /me says which season the signup is for
-    const existing = authStore.me.user;
-    if (existing) {
-      name.value = existing.name || '';
-      battleTag.value = existing.battleTag || '';
-      country.value = existing.country || country.value;
-      race.value = existing.race || '';
-      timezone.value = existing.timezone || timezone.value;
-    }
-    selectedSignupSeasonId.value = authStore.me.season_id || null;
-    alreadySignedUp.value = !!authStore.me.signed_up;
-    try { await seasonStore.fetchSeasons(); } catch (e) { /* ignore */ }
-    seasonName.value = seasons.value.find(x => x.id === selectedSignupSeasonId.value)?.name || '';
-    loading.value = false;
-    return;
+  // the Discord session identifies the player
+  discordId.value = authStore.me.discord_id;
+  discordTag.value = authStore.me.name;
+  // the linked users row prefills the form; /me says which season the signup is for
+  const existing = authStore.me.user;
+  if (existing) {
+    name.value = existing.name || '';
+    battleTag.value = existing.battleTag || '';
+    country.value = existing.country || country.value;
+    race.value = existing.race || '';
+    timezone.value = existing.timezone || timezone.value;
   }
-  if (!token.value) {
-    tokenInvalid.value = true;
-    tokenInvalidReason.value = 'missing_token';
-    loading.value = false;
-    return;
-  }
-
-  try {
-    const backend = import.meta.env.VITE_BACKEND_URL || '';
-    
-    // Check if signups are enabled
-    try {
-      const setting = await configStore.fetchSetting('signups_enabled');
-      if (setting && setting.value && setting.value.toLowerCase() === 'false') {
-        tokenInvalid.value = true;
-        tokenInvalidReason.value = 'Signups are currently closed. Please check back later.';
-        loading.value = false;
-        return;
-      }
-    } catch { /* ignore */ }
-    
-    // Use the public token endpoint (updated API): /public-token/<token>
-    const res = await fetch(`${backend}/public-token/${token.value}`);
-    if (!res.ok) {
-      tokenInvalid.value = true;
-      tokenInvalidReason.value = (await res.text()) || 'not_found';
-      loading.value = false;
-      return;
-    }
-    const data = await res.json();
-    // expected: { discord_id, discord_tag, season_id }
-    tokenEntry.value = {
-      discordId: data.discord_id || data.discordId || data.discordId || '',
-      discordTag: data.discord_tag || data.discordTag || data.discordTag || '',
-      season_id: data.season_id || data.seasonId || null
-    };
-
-    // prepopulate readonly fields
-    discordId.value = tokenEntry.value.discordId || '';
-    discordTag.value = tokenEntry.value.discordTag || '';
-
-    // look up existing user and prefill form if they have already registered
-    if (tokenEntry.value.discordId) {
-      try {
-        const existingUsers = await playerStore.searchByDiscordId(tokenEntry.value.discordId);
-        if (existingUsers && existingUsers.length > 0) {
-          const existing = existingUsers[0];
-          if (existing.name) name.value = existing.name;
-          if (existing.battleTag) battleTag.value = existing.battleTag;
-          if (existing.country) country.value = existing.country;
-          if (existing.race) race.value = existing.race;
-          if (existing.timezone) timezone.value = existing.timezone;
-        }
-      } catch { /* ignore */ }
-    }
-
-    // fetch seasons for signup selection
-    try { await seasonStore.fetchSeasons(); } catch (e) { /* ignore */ }
-    // if token contains a season_id prepopulate selection and seasonName
-    if (tokenEntry.value && tokenEntry.value.season_id) {
-      const sid = tokenEntry.value.season_id;
-      const s = (seasonStore.seasons || []).find(x => String(x.id) === String(sid));
-      if (s) {
-        seasonName.value = s.name;
-        selectedSignupSeasonId.value = s.id;
-      } else {
-        selectedSignupSeasonId.value = sid;
-      }
-
-      // Check if user is already signed up for this season
-      if (discordId.value && selectedSignupSeasonId.value) {
-        try {
-          const signups = await seasonStore.fetchSeasonSignups(selectedSignupSeasonId.value);
-          alreadySignedUp.value = Array.isArray(signups) &&
-            signups.some(u => String(u.discordId) === String(discordId.value));
-        } catch { /* ignore */ }
-      }
-    }
-  } catch (err) {
-    tokenInvalid.value = true;
-    tokenInvalidReason.value = err.message;
-  } finally {
-    loading.value = false;
-  }
+  selectedSignupSeasonId.value = authStore.me.season_id || null;
+  alreadySignedUp.value = !!authStore.me.signed_up;
+  try { await seasonStore.fetchSeasons(); } catch (e) { /* ignore */ }
+  seasonName.value = seasons.value.find(x => x.id === selectedSignupSeasonId.value)?.name || '';
+  loading.value = false;
 });
 
 async function onSubmit() {
@@ -314,13 +217,11 @@ async function onSubmit() {
   try {
     // Build payload and call the new public signup endpoint which creates the user
     const payload = {
-      token: token.value || undefined,
       name: name.value,
       battleTag: battleTag.value,
       country: country.value,
       race: race.value,
       timezone: timezone.value || undefined,
-      // include season id if token had one or it was provided
       season_id: selectedSignupSeasonId.value ? selectedSignupSeasonId.value : undefined
     };
     const backend = import.meta.env.VITE_BACKEND_URL || '';
@@ -330,7 +231,7 @@ async function onSubmit() {
     success.value = true;
     closedMessage.value = created?.signup === 'closed' ? created.message : '';
     // the profile needs the fresh users row and signup before it can show the dashboard
-    if (!token.value && !closedMessage.value) {
+    if (!closedMessage.value) {
       await authStore.fetchMe();
       if (route.path === '/signup') router.push('/profile');
     }

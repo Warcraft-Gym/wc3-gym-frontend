@@ -32,7 +32,7 @@
         <v-icon class="mr-2">mdi-account-circle</v-icon>
         Player Information
         <v-spacer />
-        <v-btn v-if="!token" icon="mdi-pencil" size="small" variant="text" title="Edit profile" @click="openEditProfile" />
+        <v-btn icon="mdi-pencil" size="small" variant="text" title="Edit profile" @click="openEditProfile" />
       </v-card-title>
       <v-card-text class="pt-4">
         <v-alert v-if="needsSignup" type="info" variant="tonal" border="start" class="mb-4">
@@ -409,7 +409,7 @@
         >
           {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below.' }}
         </v-alert>
-        <VetoBoard v-if="scoreSeries.id" :key="scoreSeries.id" :series-id="scoreSeries.id" :token="token" report class="mb-4" @change="board => scoreVeto = board" />
+        <VetoBoard v-if="scoreSeries.id" :key="scoreSeries.id" :series-id="scoreSeries.id" report class="mb-4" @change="board => scoreVeto = board" />
         <v-form ref="scoreForm" v-model="scoreFormValid">
           <v-container>
             <v-row>
@@ -491,7 +491,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore, useMatchStore, usePlayerStore } from '@/stores';
@@ -514,7 +514,6 @@ import VetoBoard from '@/components/VetoBoard.vue';
 import CastChips from '@/components/CastChips.vue';
 
 
-const route = useRoute();
 const router = useRouter();
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const { mobile } = useDisplay();
@@ -572,11 +571,7 @@ const opponent = (item) => {
 
 const playerData = ref(null);
 const series = ref([]);
-const token = ref(null);
 const authStore = useAuthStore();
-
-// the session drives the routes when there is no ?token=; the backend reads the id from the bearer
-const hasAccess = () => !!token.value || !!authStore.me;
 
 // /me answers whether the session has a signup for the current GNL season
 const seasonStore = useSeasonStore();
@@ -642,24 +637,8 @@ const fetchPlayerData = async () => {
   errorMessage.value = null;
   
   try {
-    token.value = route.query.token;
-
-    if (!hasAccess()) {
-      errorMessage.value = 'No access token provided';
-      return;
-    }
-
-    // Validate token first
-    if (token.value) {
-      const tokenResponse = await fetchWrapper.get(`${backendUrl}/public-token/${token.value}`);
-      if (tokenResponse.access_type !== 'dashboard') {
-        errorMessage.value = 'Invalid access token type';
-        return;
-      }
-    }
-
-    const tokenParam = token.value ? `token=${encodeURIComponent(token.value)}&` : '';
-    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?${tokenParam}${pageQuery({ limit, offset })}`;
+    // the backend reads the member off the session bearer
+    const seriesUrl = (limit, offset) => `${backendUrl}/player-series?${pageQuery({ limit, offset })}`;
 
     // Read every server page; the split into upcoming and completed happens here
     const collected = [];
@@ -683,9 +662,7 @@ const fetchPlayerData = async () => {
 
   } catch (error) {
     console.error('Error fetching player data:', error);
-    if (error?.message?.includes('token_not_found_or_expired')) {
-      errorMessage.value = 'Access link has expired. Please request a new one from Discord.';
-    } else if (error?.message?.includes('player_not_found')) {
+    if (error?.message?.includes('player_not_found')) {
       errorMessage.value = 'Player not found. Please make sure you have signed up first.';
     } else {
       errorMessage.value = 'Error loading player dashboard. Please try again.';
@@ -695,12 +672,9 @@ const fetchPlayerData = async () => {
   }
 };
 
-// the map veto is only worth opening before the series is played; the link carries the token
+// the map veto is only worth opening before the series is played
 const isUnplayed = (item) => !item.player1_score && !item.player2_score;
-const vetoRoute = (item, query = {}) => ({
-  path: `/player-series/${item.id}/veto`,
-  query: token.value ? { token: token.value, ...query } : query
-});
+const vetoRoute = (item, query = {}) => ({ path: `/player-series/${item.id}/veto`, query });
 
 // Scores read from the player's side: mine first, the opponent's second
 const myScore = (item) => (item.player1_id === playerData.value?.player?.id ? item.player1_score : item.player2_score) || 0;
@@ -747,7 +721,7 @@ const setByLine = (week) => {
 };
 
 // One card per round. A series replaces the question, and a round with no date is never over.
-// A token with no season carries no rounds, so the unplayed series stand in for them.
+// A season without rounds has none to show, so the unplayed series stand in for them.
 const roundCards = computed(() => {
   const rounds = playerData.value?.rounds?.length
     ? playerData.value.rounds
@@ -780,7 +754,6 @@ const setWeek = async (week, want) => {
   errorMessage.value = null;
   try {
     const answer = { playday: week, available: answerFor(week) === want ? null : want };
-    if (token.value) answer.token = token.value;
     if (playerData.value?.season_id) answer.season_id = Number(playerData.value.season_id);
     playerData.value.availability = await availabilityStore.setPlayerAvailability(answer);
   } catch (error) {
@@ -814,10 +787,8 @@ const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `week ${opp.l
 
 // read once; the history does not change with the series table controls
 const fetchHistory = async () => {
-  if (!hasAccess()) return;
-  const query = route.query.token ? `?token=${encodeURIComponent(route.query.token)}` : '';
   try {
-    history.value = await fetchWrapper.get(`${backendUrl}/player-history${query}`);
+    history.value = await fetchWrapper.get(`${backendUrl}/player-history`);
   } catch (error) {
     console.error('Error fetching player history:', error);  // the dashboard stands without it
   }
@@ -899,7 +870,6 @@ const saveSchedule = async () => {
     }
 
     const formData = new FormData();
-    if (token.value) formData.append('token', token.value);
     if (utcDateTime) formData.append('date_time', utcDateTime);
     formData.append('action', 'scheduled');
 
@@ -959,8 +929,7 @@ const REPLAY_MAGIC = 'Warcraft III recorded game';
 const uploadReplay = async (seriesId, game, file) => {
   const head = new TextDecoder().decode(await file.slice(0, REPLAY_MAGIC.length).arrayBuffer());
   if (head !== REPLAY_MAGIC) throw new Error(`Game ${game} is not a Warcraft III replay`);
-  const query = token.value ? `?token=${encodeURIComponent(token.value)}` : '';
-  const { url } = await fetchWrapper.post(`${backendUrl}/player-series/${seriesId}/replays/${game}/upload-url${query}`);
+  const { url } = await fetchWrapper.post(`${backendUrl}/player-series/${seriesId}/replays/${game}/upload-url`);
   const put = await fetch(url, {
     method: 'PUT',
     body: file,
@@ -991,14 +960,12 @@ const saveResult = async () => {
       uploaded.push(game);
     }
 
-    const query = token.value ? `?token=${encodeURIComponent(token.value)}` : '';
     if (played === scoreSeries.value.reported && uploaded.length) {
       // the result stands; each new file replaces one stored replay
-      for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}${query}`);
+      for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}`);
     } else {
       // the report confirms every game's file in the bucket before it writes the score
       const formData = new FormData();
-      if (token.value) formData.append('token', token.value);
       formData.append('player1_score', p1);
       formData.append('player2_score', p2);
       formData.append('action', 'score_updated');

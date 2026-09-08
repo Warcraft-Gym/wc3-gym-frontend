@@ -4,7 +4,7 @@ import { authHeader } from '@/helpers/fetch-wrapper';
 
 const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
-// The public write routes: the body carries ?token= callers, the bearer carries a session
+// The public write routes: the bearer carries the member's session
 async function publicWrite(method, url, payload) {
     const headers = await authHeader(method, url);
     if (payload) headers['Content-Type'] = 'application/json';
@@ -117,12 +117,12 @@ export const useFantasyStore = defineStore({
             }
         },
 
-        // Public endpoints: a ?token= link, or the session bearer when the member is signed in
-        async public_getUserInfo(token) {
-            const url = token ? `${backendUrl}/user-info?token=${token}` : `${backendUrl}/user-info`;
+        // Public endpoints: the session bearer names the member
+        async public_getUserInfo() {
+            const url = `${backendUrl}/user-info`;
             const response = await fetch(url, { headers: await authHeader('GET', url) });
             if (!response.ok) {
-                throw new Error('Invalid or expired token');
+                throw new Error('Could not load your player data');
             }
             return await response.json();
         },
@@ -139,9 +139,8 @@ export const useFantasyStore = defineStore({
             return publicWrite('PUT', `${backendUrl}/fantasy-bet/${betId}`, payload);
         },
 
-        async public_deleteBet(betId, token) {
-            const query = token ? `?token=${token}` : '';
-            await publicWrite('DELETE', `${backendUrl}/fantasy-bet/${betId}${query}`);
+        async public_deleteBet(betId) {
+            await publicWrite('DELETE', `${backendUrl}/fantasy-bet/${betId}`);
         },
 
         async getTeamScoreBreakdown(teamId, seasonId) {

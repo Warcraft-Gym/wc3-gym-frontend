@@ -398,7 +398,7 @@ onUnmounted(() => clearInterval(timer));
 
 .thumb {
   position: relative;
-  height: 66px;
+  aspect-ratio: 1;  /* the map pictures are square; a fixed height cropped the minimap */
   overflow: hidden;
 }
 

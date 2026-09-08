@@ -9,8 +9,8 @@
         <v-list density="compact">
           <v-list-item v-if="cast.vod_url" :href="cast.vod_url" target="_blank" prepend-icon="mdi-play" title="Watch VOD" />
           <v-list-item :href="cast.channel_url" target="_blank" prepend-icon="mdi-open-in-new" title="Open channel" />
-          <v-list-item prepend-icon="mdi-pencil" title="Channel URL" @click="edit(cast, 'channel')" />
-          <v-list-item prepend-icon="mdi-movie-open" title="VOD URL" @click="edit(cast, 'vod')" />
+          <v-list-item prepend-icon="mdi-pencil" title="Change channel" @click="edit(cast, 'channel')" />
+          <v-list-item prepend-icon="mdi-movie-open" title="Change VOD" @click="edit(cast, 'vod')" />
           <v-list-item prepend-icon="mdi-close" title="Unclaim" @click="unclaim(cast)" />
         </v-list>
       </v-menu>
@@ -19,26 +19,31 @@
         <v-tooltip activator="parent" location="top">{{ cast.vod_url || cast.channel_url }}</v-tooltip>
       </v-chip>
     </template>
-    <v-btn v-if="canClaim" size="x-small" variant="tonal" :prepend-icon="scored ? 'mdi-movie-plus' : 'mdi-video-plus'" @click="claim">{{ scored ? 'Add your VOD' : 'Cast this' }}</v-btn>
+    <v-btn v-if="canClaim" class="cast-add" size="x-small" variant="tonal" :prepend-icon="scored ? 'mdi-movie-plus' : 'mdi-video-plus'" @click="claim">{{ scored ? 'Add your VOD' : 'Cast this' }}</v-btn>
     <span v-else-if="!casts.length" class="text-medium-emphasis">&mdash;</span>
 
-    <v-dialog v-model="dialog" max-width="420">
-      <v-card :title="editing ? COPY[field].label : scored ? 'Add the VOD you cast' : 'Claim to cast'">
-        <v-card-text>
-          <v-text-field
+    <v-dialog v-model="dialog" max-width="480">
+      <v-card :title="copy.title" rounded="lg">
+        <v-card-text class="pt-2 pb-1">
+          <!-- A textarea, so a long link wraps and stays readable instead of scrolling out of the field -->
+          <v-textarea
             v-model="url"
-            v-bind="COPY[field]"
+            :label="copy.label"
+            :placeholder="copy.placeholder"
             :prepend-inner-icon="platformIcon"
+            :hint="advice"
+            :error-messages="error"
+            rows="1"
+            auto-grow
             persistent-hint
             autofocus
-            :error-messages="error"
-            @keyup.enter="save"
+            @keydown.enter.prevent="save"
           />
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="px-6 pb-4">
           <v-spacer />
-          <v-btn @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="saving" :disabled="!editing && !url.trim()" @click="save">Save</v-btn>
+          <v-btn variant="text" @click="dialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" :loading="saving" :disabled="!editing && !url.trim()" @click="save">{{ copy.confirm }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -49,14 +54,19 @@
 import { computed, ref, watch } from 'vue';
 
 import { useAuthStore, useSeriesStore } from '@/stores';
-import { PLATFORM_ICONS, onNow, platformOf } from '@/helpers/casts.mjs';
+import { PLATFORM_ICONS, linkAdvice, onNow, platformOf } from '@/helpers/casts.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 
-const VIDEO_PLACEHOLDER = 'twitch.tv/videos/… or youtube.com/watch?v=…';
+const CHANNEL_LABEL = 'Channel or stream link';
+const CHANNEL_PLACEHOLDER = 'twitch.tv/you';
+const VIDEO_LABEL = 'Video link';
+const VIDEO_PLACEHOLDER = 'twitch.tv/videos/123456789';
+// The title names the action and the button repeats it; neither says "Save" alone
 const COPY = {
-  channel: { label: 'Channel URL', placeholder: 'twitch.tv/you or youtube.com/@you/live', hint: "Twitch: your channel. YouTube: the stream's video URL, or youtube.com/@you/live before it starts" },
-  vod: { label: 'VOD URL', placeholder: VIDEO_PLACEHOLDER, hint: 'Twitch: the video from your Videos page; blank removes it. YouTube: the stream URL is already the VOD' },
-  addVod: { label: 'VOD URL', placeholder: VIDEO_PLACEHOLDER, hint: 'The Twitch or YouTube video of your cast of this series' },
+  claim: { title: 'Cast this series', confirm: 'Cast series', label: CHANNEL_LABEL, placeholder: CHANNEL_PLACEHOLDER },
+  channel: { title: 'Change your channel', confirm: 'Save channel', label: CHANNEL_LABEL, placeholder: CHANNEL_PLACEHOLDER },
+  vod: { title: 'Change your VOD', confirm: 'Save VOD', label: VIDEO_LABEL, placeholder: VIDEO_PLACEHOLDER },
+  addVod: { title: 'Add your VOD', confirm: 'Add VOD', label: VIDEO_LABEL, placeholder: VIDEO_PLACEHOLDER },
 };
 
 const props = defineProps({
@@ -93,6 +103,11 @@ const error = ref('');
 const saving = ref(false);
 // The dialog reads the platform off what is typed, as a phone field reads its prefix
 const platformIcon = computed(() => PLATFORM_ICONS[platformOf(url.value)] || 'mdi-link-variant');
+const copy = computed(() => (editing.value ? COPY[field.value] : scored.value ? COPY.addVod : COPY.claim));
+const advice = computed(() => {
+  if (editing.value && field.value === 'vod' && !url.value.trim()) return 'Leave this blank to remove your VOD.';
+  return linkAdvice(url.value, field.value !== 'channel');
+});
 
 async function claim() {
   editing.value = null;
@@ -132,3 +147,20 @@ async function unclaim(cast) {
   casts.value = casts.value.filter((c) => c.id !== cast.id);
 }
 </script>
+
+<!-- Unscoped, because the rule reads the row above the component. Every selector
+     is anchored on .cast-add, which no other component renders -->
+<style>
+/* Five people cast a season, so a table row keeps the button quiet until it is
+   pointed at or tabbed into. A card, which is not a row, always shows it. */
+@media (hover: hover) {
+  tr .cast-add {
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  tr:hover .cast-add,
+  tr:focus-within .cast-add {
+    opacity: 1;
+  }
+}
+</style>

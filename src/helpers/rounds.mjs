@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { isUnscored } from './season-phase.mjs';
 
 // "13 to 19 Sep", "28 Sep to 4 Oct", "13 Sep", or "Week n" for a round with no date
 export const roundLabel = (round) => {
@@ -13,4 +14,30 @@ export const roundLabel = (round) => {
 export const roundOver = (round, today = DateTime.now()) => {
   const last = round?.end_date || round?.start_date;
   return !!last && DateTime.fromISO(last).endOf('day') < today;
+};
+
+// One card per round of a season: the round window, the team the player's team
+// meets, the player's series of that round, and the answer they gave. A season
+// with no rounds falls back to the weeks its unplayed series carry.
+export const roundCards = ({ rounds = [], series = [], matches = [], teamId = null, answers = [] }, today = DateTime.now()) => {
+  const weeks = rounds.length ? rounds : [...new Set(
+    series.filter(isUnscored).map(s => s.match?.playday).filter(Boolean),
+  )].sort((a, b) => a - b).map(playday => ({ playday }));
+
+  let currentSeen = false;
+  return weeks.map(round => {
+    const over = roundOver(round, today);
+    const current = !over && !currentSeen;
+    if (current) currentSeen = true;
+    const match = matches.find(m => m.playday === round.playday && [m.team1_id, m.team2_id].includes(teamId));
+    return {
+      playday: round.playday,
+      label: roundLabel(round),
+      over,
+      current,
+      series: series.find(s => s.match?.playday === round.playday) ?? null,
+      answer: answers.find(a => a.playday === round.playday)?.available ?? null,
+      opponentTeam: (match && (match.team1_id === teamId ? match.team2 : match.team1)) ?? null,
+    };
+  });
 };

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { roundLabel, roundOver } from './rounds.mjs';
+import { roundCards, roundLabel, roundOver } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -18,4 +18,43 @@ test('a round is over the day after its window closes', () => {
   assert.equal(roundOver({ start_date: '2026-09-19', end_date: null }, today), true);
   assert.equal(roundOver({ start_date: '2026-09-20', end_date: null }, today), false);
   assert.equal(roundOver({ playday: 2 }, today), false);
+});
+
+const ROUNDS = [
+  { playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' },
+  { playday: 2, start_date: '2026-09-20', end_date: '2026-09-26' },
+  { playday: 3, start_date: '2026-09-27', end_date: '2026-10-03' },
+];
+const TODAY = DateTime.fromISO('2026-09-22T10:00');
+
+test('a card carries the round, its series and the team faced', () => {
+  const cards = roundCards({
+    rounds: ROUNDS,
+    series: [{ id: 7, match: { playday: 1 }, player1_score: 2, player2_score: 1 }],
+    matches: [{ playday: 1, team1_id: 5, team2_id: 6, team1: { name: 'Alpha' }, team2: { name: 'Beta' } }],
+    teamId: 5,
+    answers: [{ playday: 2, available: false }],
+  }, TODAY);
+
+  assert.deepEqual(cards.map(c => [c.playday, c.label, c.over, c.current]), [
+    [1, '13 to 19 Sep', true, false],
+    [2, '20 to 26 Sep', false, true],
+    [3, '27 Sep to 3 Oct', false, false],
+  ]);
+  assert.equal(cards[0].series.id, 7);
+  assert.equal(cards[0].opponentTeam.name, 'Beta');
+  assert.equal(cards[1].answer, false);
+  assert.equal(cards[2].series, null);
+  assert.equal(cards[2].opponentTeam, null);
+});
+
+test('a season with no rounds falls back to the weeks of its unplayed series', () => {
+  const cards = roundCards({
+    series: [
+      { id: 1, match: { playday: 2 }, player1_score: null, player2_score: null },
+      { id: 2, match: { playday: 1 }, player1_score: 2, player2_score: 0 },
+    ],
+  }, TODAY);
+
+  assert.deepEqual(cards.map(c => [c.playday, c.label, c.over]), [[2, 'Week 2', false]]);
 });

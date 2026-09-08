@@ -11,3 +11,11 @@ export const isValidResult = (p1, p2, wins) => p1 >= 0 && p2 >= 0 && ((p1 === wi
 
 // One replay per map played
 export const replaysNeeded = (p1, p2) => p1 + p2;
+
+// Why a pair of map scores is not a result of this season's best-of, or null
+export const resultProblem = (p1, p2, mapRules) => {
+  const wins = winsOf(mapRules);
+  if (isValidResult(p1, p2, wins)) return null;
+  if (Number.isNaN(p1) || Number.isNaN(p2)) return 'Enter both map scores';
+  return `A Bo${gamesOf(mapRules)} ends when one player wins ${wins} maps`;
+};

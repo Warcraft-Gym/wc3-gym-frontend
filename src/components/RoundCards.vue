@@ -16,7 +16,7 @@
     >
       <div class="text-subtitle-2">{{ card.label }}</div>
       <div class="text-caption text-medium-emphasis">
-        Week {{ card.playday }}<template v-if="card.opponentTeam"> · vs {{ card.opponentTeam.name }}</template>
+        Round {{ card.playday }}<template v-if="card.opponentTeam"> · vs {{ card.opponentTeam.name }}</template>
       </div>
 
       <!-- A series replaces the question: the round is already accounted for -->

@@ -8,7 +8,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-calendar-account</v-icon>
-          Team Weeks
+          Team Rounds
         </h1>
       </v-col>
     </v-row>
@@ -21,15 +21,15 @@
         <span>{{ team?.name }}</span>
       </v-card-title>
 
-      <v-select v-if="smAndDown" v-model="shownWeek" :items="weeks" label="Week" density="compact" hide-details class="ma-2" />
+      <v-select v-if="smAndDown" v-model="shownRound" :items="rounds" label="Round" density="compact" hide-details class="ma-2" />
       <v-table density="compact">
         <thead>
           <tr>
             <th>Player</th>
-            <th v-for="week in shownWeeks" :key="week" class="text-center">
-              {{ roundLabel(roundOf(week)) }}
+            <th v-for="round in shownRounds" :key="round" class="text-center">
+              {{ roundLabel(roundOf(round)) }}
               <div class="text-caption text-medium-emphasis font-weight-regular">
-                Week {{ week }}<template v-if="opponentOfWeek(week)"> · vs {{ opponentOfWeek(week).name }}</template>
+                Round {{ round }}<template v-if="opponentOfRound(round)"> · vs {{ opponentOfRound(round).name }}</template>
               </div>
             </th>
             <th v-if="!smAndDown"></th>
@@ -39,41 +39,41 @@
           <tr v-for="player in players" :key="player.id">
             <td>
               <PlayerName :player="player" :race="player.signup_race" />
-              <v-btn v-if="smAndDown" size="x-small" variant="text" class="d-block px-0" :disabled="!!saving || !weeks.length" @click="outToLastWeek(player.id)">
-                Out to week {{ weeks.length }}
+              <v-btn v-if="smAndDown" size="x-small" variant="text" class="d-block px-0" :disabled="!!saving || !rounds.length" @click="outToLastRound(player.id)">
+                Out to round {{ rounds.length }}
               </v-btn>
             </td>
-            <td v-for="week in shownWeeks" :key="week" class="text-center">
+            <td v-for="round in shownRounds" :key="round" class="text-center">
               <div class="d-flex ga-1 justify-center">
                 <v-btn
                   icon="mdi-check"
                   size="x-small"
                   color="success"
-                  :variant="answerFor(player.id, week) === true ? 'flat' : 'outlined'"
-                  :loading="saving === `${player.id}|${week}`"
+                  :variant="answerFor(player.id, round) === true ? 'flat' : 'outlined'"
+                  :loading="saving === `${player.id}|${round}`"
                   :disabled="!!saving"
-                  @click="setWeek(player.id, week, true)"
+                  @click="setRound(player.id, round, true)"
                 ></v-btn>
                 <v-btn
                   icon="mdi-close"
                   size="x-small"
                   color="error"
-                  :variant="answerFor(player.id, week) === false ? 'flat' : 'outlined'"
-                  :loading="saving === `${player.id}|${week}`"
+                  :variant="answerFor(player.id, round) === false ? 'flat' : 'outlined'"
+                  :loading="saving === `${player.id}|${round}`"
                   :disabled="!!saving"
-                  @click="setWeek(player.id, week, false)"
+                  @click="setRound(player.id, round, false)"
                 ></v-btn>
               </div>
-              <div class="text-caption text-medium-emphasis">{{ setByLine(player.id, week) }}</div>
+              <div class="text-caption text-medium-emphasis">{{ setByLine(player.id, round) }}</div>
             </td>
             <td v-if="!smAndDown">
               <v-btn
                 size="small"
                 variant="outlined"
-                :disabled="!!saving || !weeks.length"
-                @click="outToLastWeek(player.id)"
+                :disabled="!!saving || !rounds.length"
+                @click="outToLastRound(player.id)"
               >
-                Out to week {{ weeks.length }}
+                Out to round {{ rounds.length }}
               </v-btn>
             </td>
           </tr>
@@ -114,25 +114,25 @@ const seasonId = computed(() => seasonStore.seasonIdOf(router.currentRoute.value
 const isLoading = ref(false);
 const errorMessage = ref(null);
 const rows = ref([]);
-// The week labels: the season's round gives the dates, the team's match names the opponent (#33)
-const roundOf = (week) => season.value?.rounds?.find(r => r.playday === week) || { playday: week };
+// The round labels: the season's round gives the dates, the team's match names the opponent (#33)
+const roundOf = (round) => season.value?.rounds?.find(r => r.playday === round) || { playday: round };
 const matches = ref([]);
-const matchOfWeek = (week) => matches.value.find(m => m.playday === week && [m.team1_id, m.team2_id].includes(teamId.value));
-const opponentOfWeek = (week) => { const m = matchOfWeek(week); return m && (m.team1_id === teamId.value ? m.team2 : m.team1); };
+const matchOfRound = (round) => matches.value.find(m => m.playday === round && [m.team1_id, m.team2_id].includes(teamId.value));
+const opponentOfRound = (round) => { const m = matchOfRound(round); return m && (m.team1_id === teamId.value ? m.team2 : m.team1); };
 const saving = ref(null);
 
 const players = computed(() => team.value?.player_by_season?.[seasonId.value] || []);
-const weeks = computed(() => Array.from({ length: season.value?.number_weeks || 0 }, (_, i) => i + 1));
-// A phone shows one week at a time; wider screens show them all
+const rounds = computed(() => Array.from({ length: season.value?.number_weeks || 0 }, (_, i) => i + 1));
+// A phone shows one round at a time; wider screens show them all
 const { smAndDown } = useDisplay();
-const shownWeek = ref(1);
-const shownWeeks = computed(() => smAndDown.value ? weeks.value.filter(w => w === shownWeek.value) : weeks.value);
+const shownRound = ref(1);
+const shownRounds = computed(() => smAndDown.value ? rounds.value.filter(w => w === shownRound.value) : rounds.value);
 
-const rowFor = (userId, week) => rows.value.find(row => row.user_id === userId && row.playday === week);
-const answerFor = (userId, week) => rowFor(userId, week)?.available ?? null;
+const rowFor = (userId, round) => rows.value.find(row => row.user_id === userId && row.playday === round);
+const answerFor = (userId, round) => rowFor(userId, round)?.available ?? null;
 
-const setByLine = (userId, week) => {
-  const row = rowFor(userId, week);
+const setByLine = (userId, round) => {
+  const row = rowFor(userId, round);
   if (!row) return 'No answer';
   if (row.set_by_user_id === userId) return 'Player';
   return row.set_by_user_id === auth.me?.user?.id ? 'You' : row.set_by_name;
@@ -143,21 +143,21 @@ const applyRows = (userId, answered) => {
   rows.value = [...rows.value.filter(row => row.user_id !== userId), ...answered];
 };
 
-const write = async (userId, week, available) => {
+const write = async (userId, round, available) => {
   const answered = await availabilityStore.setTeamAvailability(teamId.value, seasonId.value, {
     user_id: userId,
-    playday: week,
+    playday: round,
     available,
   });
   applyRows(userId, answered);
 };
 
-// a second click on the state already set clears the week back to no answer
-const setWeek = async (userId, week, want) => {
-  saving.value = `${userId}|${week}`;
+// a second click on the state already set clears the round back to no answer
+const setRound = async (userId, round, want) => {
+  saving.value = `${userId}|${round}`;
   errorMessage.value = null;
   try {
-    await write(userId, week, answerFor(userId, week) === want ? null : want);
+    await write(userId, round, answerFor(userId, round) === want ? null : want);
   } catch (error) {
     console.error('Error saving availability:', error);
     errorMessage.value = error.message || 'Error saving availability.';
@@ -166,12 +166,12 @@ const setWeek = async (userId, week, want) => {
   }
 };
 
-const outToLastWeek = async (userId) => {
+const outToLastRound = async (userId) => {
   saving.value = `${userId}|all`;
   errorMessage.value = null;
   try {
-    for (const week of weeks.value) {
-      if (answerFor(userId, week) !== false) await write(userId, week, false);
+    for (const round of rounds.value) {
+      if (answerFor(userId, round) !== false) await write(userId, round, false);
     }
   } catch (error) {
     console.error('Error saving availability:', error);
@@ -199,7 +199,7 @@ onMounted(async () => {
     matches.value = seasonMatches;
   } catch (error) {
     console.error(error);
-    errorMessage.value = error.message || 'Failed to load the team weeks.';
+    errorMessage.value = error.message || 'Failed to load the team rounds.';
   } finally {
     isLoading.value = false;
   }

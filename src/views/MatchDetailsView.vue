@@ -19,7 +19,7 @@
             <div class="mb-2">
               <v-chip color="primary" size="large" class="mb-2">
                 <v-icon start>mdi-calendar-week</v-icon>
-                Week {{ match.playday }}
+                Round {{ match.playday }}
               </v-chip>
               <div v-if="roundOf(match.playday).start_date" class="text-subtitle-2 mt-1 text-white">
                 <v-icon size="small" color="white">mdi-clock-outline</v-icon>
@@ -88,7 +88,7 @@
               >
                 <v-menu location="bottom" :close-on-content-click="true" scroll-strategy="close" activator="parent">
                   <v-list density="compact" max-width="400">
-                    <v-list-subheader>Week {{ week.weekNumber }} Matches</v-list-subheader>
+                    <v-list-subheader>Round {{ week.weekNumber }} Matches</v-list-subheader>
                     <v-list-item
                       v-for="matchItem in week.matches"
                       :key="matchItem.id"
@@ -124,7 +124,7 @@
                   </v-list>
                 </v-menu>
                 <v-icon start size="small">mdi-calendar-week</v-icon>
-                Week {{ week.weekNumber }}
+                Round {{ week.weekNumber }}
               </v-tab>
             </v-tabs>
           </v-col>

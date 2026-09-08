@@ -86,7 +86,7 @@
         <v-table density="compact" class="narrow">
           <thead>
             <tr>
-              <th style="width: 80px">Week</th>
+              <th style="width: 80px">Round</th>
               <th class="text-right">Wins</th>
               <th class="text-right">Losses</th>
               <th class="text-right">Ratio</th>
@@ -116,7 +116,7 @@
       </v-expansion-panel-text>
     </v-expansion-panel>
 
-    <!-- Player Points Breakdown: the drafted roster; a row opens the player's weeks -->
+    <!-- Player Points Breakdown: the drafted roster; a row opens the player's rounds -->
     <v-expansion-panel>
       <v-expansion-panel-title>
         <v-icon class="mr-2" color="blue">mdi-account-multiple</v-icon>
@@ -142,7 +142,7 @@
                 <td></td>
                 <td>
                   <div class="d-flex align-center ga-1 flex-wrap">
-                    <span class="week-label text-medium-emphasis">{{ idx ? '' : `Week ${week.week}` }}</span>
+                    <span class="week-label text-medium-emphasis">{{ idx ? '' : `Round ${week.week}` }}</span>
                     <span class="text-medium-emphasis">vs</span>
                     <PlayerName :player="resolve(series.opponent)" :race="resolve(series.opponent).signup_race" />
                   </div>
@@ -156,7 +156,7 @@
               <tr v-if="week.series.length === 0" class="detail-row">
                 <td></td>
                 <td>
-                  <span class="week-label text-medium-emphasis">Week {{ week.week }}</span>
+                  <span class="week-label text-medium-emphasis">Round {{ week.week }}</span>
                   <span v-if="week.bench_points > 0" class="text-orange-darken-2">
                     <v-icon size="small">mdi-seat</v-icon> Benched
                   </span>
@@ -188,7 +188,7 @@
       <v-expansion-panel-text>
         <GroupedTable :columns="betColumns" :groups="betWeeks" empty="No bets" class="narrow">
           <template #group="{ group: week }">
-            <td>Week {{ week.week }}</td>
+            <td>Round {{ week.week }}</td>
             <td class="text-medium-emphasis">{{ week.summary }}</td>
             <td class="text-right">
               <strong :class="week.net >= 0 ? 'text-success' : 'text-error'">{{ week.net > 0 ? '+' : '' }}{{ week.net }}</strong>
@@ -242,7 +242,7 @@ const playerColumns = [
 ];
 
 const betColumns = [
-  { key: 'week', title: 'Week', width: '110px' },
+  { key: 'week', title: 'Round', width: '110px' },
   { key: 'series', title: 'Series' },
   { key: 'points', title: 'Points', align: 'right' },
 ];

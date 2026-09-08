@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon';
 import { isUnscored } from './season-phase.mjs';
 
-// "13 to 19 Sep", "28 Sep to 4 Oct", "13 Sep", or "Week n" for a round with no date
+// "13 to 19 Sep", "28 Sep to 4 Oct", "13 Sep", or "Round n" for a round with no date
 export const roundLabel = (round) => {
-  if (!round?.start_date) return `Week ${round?.playday ?? '?'}`;
+  if (!round?.start_date) return `Round ${round?.playday ?? '?'}`;
   const start = DateTime.fromISO(round.start_date);
   if (!round.end_date || round.end_date === round.start_date) return start.toFormat('d LLL');
   const end = DateTime.fromISO(round.end_date);
@@ -15,6 +15,9 @@ export const roundOver = (round, today = DateTime.now()) => {
   const last = round?.end_date || round?.start_date;
   return !!last && DateTime.fromISO(last).endOf('day') < today;
 };
+
+// The round in play: the first one not over. Null once every round is done.
+export const currentRound = (rounds = [], today = DateTime.now()) => rounds.find(r => !roundOver(r, today)) ?? null;
 
 // One card per round of a season: the round window, the team the player's team
 // meets, the player's series of that round, and the answer they gave. A season

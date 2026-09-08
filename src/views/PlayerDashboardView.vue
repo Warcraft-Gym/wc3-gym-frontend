@@ -393,7 +393,7 @@
   </v-dialog>
 
   <!-- Report Result Dialog -->
-  <v-dialog v-model="scoreDialog" max-width="600px">
+  <v-dialog v-model="scoreDialog" :max-width="vetoMissing ? 960 : 600">
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-trophy</v-icon>
@@ -407,11 +407,9 @@
           density="compact"
           class="mb-2"
         >
-          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it first.' }}
-          <template v-if="!scoreVeto.complete" #append>
-            <v-btn size="small" variant="outlined" prepend-icon="mdi-map-outline" @click="goToVeto">Map veto</v-btn>
-          </template>
+          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below.' }}
         </v-alert>
+        <VetoBoard v-if="scoreSeries.id" :key="scoreSeries.id" :series-id="scoreSeries.id" :token="token" report class="mb-4" @change="board => scoreVeto = board" />
         <v-form ref="scoreForm" v-model="scoreFormValid">
           <v-container>
             <v-row>
@@ -512,6 +510,7 @@ import { roundLabel, roundOver } from '@/helpers/rounds.mjs';
 import { useDisplay } from 'vuetify';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
+import VetoBoard from '@/components/VetoBoard.vue';
 import CastChips from '@/components/CastChips.vue';
 
 
@@ -601,9 +600,9 @@ const scheduleForm = ref(null);
 const scoreForm = ref(null);
 const scheduleSeries = ref({});
 const scoreSeries = ref({ replays: {} });
-// a result carries its veto, so the dialog reads the board before the scores
+// a result carries its veto, so the dialog holds the board above the scores
 const scoreVeto = ref(null);
-const vetoMissing = computed(() => !!scoreVeto.value && !scoreVeto.value.complete);
+const vetoMissing = computed(() => !scoreVeto.value?.complete);
 // Per-series saving state (store id of series currently being saved)
 const scheduleSavingId = ref(null);
 const scoreSavingId = ref(null);
@@ -946,17 +945,7 @@ const reportResult = (item) => {
   };
 
   scoreVeto.value = null;
-  const vetoUrl = `${backendUrl}/player-series/${item.id}/veto`;
-  fetchWrapper.get(token.value ? `${vetoUrl}?token=${encodeURIComponent(token.value)}` : vetoUrl)
-    .then(board => { scoreVeto.value = board; })
-    .catch(() => {});  // the backend refuses the report anyway
   scoreDialog.value = true;
-};
-
-const goToVeto = () => {
-  const id = scoreSeries.value.id;
-  closeScore();
-  router.push(vetoRoute({ id }, { report: 1 }));  // the board opens in record mode and leads back here
 };
 
 const closeScore = () => {
@@ -1076,9 +1065,6 @@ onMounted(async () => {
   if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
   await fetchPlayerData();
   fetchHistory();
-  // the veto board sends the reporter back with ?report=<series id>
-  const back = series.value.find(item => String(item.id) === route.query.report);
-  if (back) reportResult(back);
 });
 </script>
 

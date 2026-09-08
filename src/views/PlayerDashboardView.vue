@@ -280,7 +280,7 @@ import { backendUrl, fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
-import { gamesOf, winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
+import { winsOf, isValidResult, replaysNeeded, resultProblem } from '@/helpers/best-of';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
@@ -678,13 +678,10 @@ const replaySlots = computed(() => {
 });
 const decidingHint = computed(() => `Required for a ${reportedScore.value.join(':')} result`);
 
-// The two map scores are one result, and the season's best-of says which results exist
 const scoreProblem = computed(() => {
   const [p1, p2] = reportedScore.value;
-  if (Number.isNaN(p1) || Number.isNaN(p2)) return 'Enter both map scores';
   if (!p1 && !p2) return null;  // the dialog opens at 0:0 and says nothing until a score is typed
-  if (isValidResult(p1, p2, seriesWins.value)) return null;
-  return `A Bo${gamesOf(scoreSeries.value.map_rules)} ends when one player wins ${seriesWins.value} maps`;
+  return resultProblem(p1, p2, scoreSeries.value.map_rules);
 });
 
 // Validate schedule: date and time must be present

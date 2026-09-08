@@ -27,6 +27,9 @@ export const useSeriesStore = defineStore({
         async updateCast(seriesId, castId, channel_url) {
             return await fetchWrapper.put(`${backendUrl}/series/${seriesId}/casts/${castId}`, { channel_url });
         },
+        async setCastVod(seriesId, castId, vod_url) {
+            return await fetchWrapper.put(`${backendUrl}/series/${seriesId}/casts/${castId}/vod`, { vod_url });
+        },
         async unclaimSeries(seriesId, castId) {
             await fetchWrapper.delete(`${backendUrl}/series/${seriesId}/casts/${castId}`);
         },

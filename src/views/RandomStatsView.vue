@@ -165,7 +165,7 @@
           </tbody>
           <!-- Row totals -->
           <tfoot>
-            <tr style="border-top: 2px solid rgba(0,0,0,0.12);">
+            <tr style="border-top: 2px solid rgba(var(--v-theme-on-surface), 0.12);">
               <td class="font-weight-bold">Total</td>
               <td class="text-right font-weight-bold text-green">{{ data.wins }}</td>
               <td class="text-right font-weight-bold text-red">{{ data.losses }}</td>

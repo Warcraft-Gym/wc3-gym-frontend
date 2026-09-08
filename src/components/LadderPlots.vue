@@ -79,11 +79,11 @@ const tip = (d) => `${fmt(dateOf(d))} · ${d.w}–${d.l}${d.mmr != null ? ` · $
 
 <style scoped>
 .ladder-plots { font-family: inherit; }
-.cap { font-size: 11px; font-weight: 500; fill: rgba(0, 0, 0, 0.6); }
-.tick { font-size: 11px; fill: rgba(0, 0, 0, 0.6); }
-.end { font-size: 11px; font-weight: 500; fill: rgba(0, 0, 0, 0.87); }
-.grid { stroke: rgba(0, 0, 0, 0.08); }
-.axis { stroke: rgba(0, 0, 0, 0.2); }
+.cap { font-size: 11px; font-weight: 500; fill: rgba(var(--v-theme-on-surface), 0.6); }
+.tick { font-size: 11px; fill: rgba(var(--v-theme-on-surface), 0.6); }
+.end { font-size: 11px; font-weight: 500; fill: rgba(var(--v-theme-on-surface), 0.87); }
+.grid { stroke: rgba(var(--v-theme-on-surface), 0.08); }
+.axis { stroke: rgba(var(--v-theme-on-surface), 0.2); }
 .area { fill: #424242; fill-opacity: 0.1; }
 .line { fill: none; stroke: #424242; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .dot { fill: #424242; stroke: rgb(var(--v-theme-surface)); stroke-width: 2; }

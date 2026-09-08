@@ -8,7 +8,7 @@
     <v-row class="mb-4">
       <v-col>
         <h1 class="d-inline-flex">
-          <img :src="w3championsLogo" style="height: 1.35em" alt="W3Champions">
+          <img :src="wordmark" style="height: 1.35em" alt="W3Champions">
         </h1>
       </v-col>
     </v-row>
@@ -265,6 +265,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
+import { useTheme } from 'vuetify';
 import { useRouter } from 'vue-router';
 import { playerPath } from '@/helpers/players';
 import { storeToRefs } from 'pinia';
@@ -273,6 +274,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
 import W3CIcon from '@/components/W3CIcon.vue';
 import w3championsLogo from '@/assets/media/w3champions-logo.png';
+import w3championsLogoWhite from '@/assets/media/w3champions-logo-white.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, TEAM_BADGES_NOTE, achievementPoints } from '@/helpers/achievements';
@@ -288,6 +290,10 @@ import SyncProgress from '@/components/SyncProgress.vue';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
+
+// The dark-ink wordmark is made for the light theme; the dark theme takes the white original.
+const ladderTheme = useTheme();
+const wordmark = computed(() => (ladderTheme.global.current.value.dark ? w3championsLogoWhite : w3championsLogo));
 
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();

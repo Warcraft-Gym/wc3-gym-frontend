@@ -556,7 +556,7 @@
           </v-row>     
         </v-card-text>
                       
-        <v-card-actions class="px-4 py-3 flex-shrink-0 flex-wrap" style="border-top: 1px solid rgba(0,0,0,0.12);">
+        <v-card-actions class="px-4 py-3 flex-shrink-0 flex-wrap" style="border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);">
           <v-checkbox
             v-model="newSeries_IsDraft"
             label="Create as Draft"
@@ -644,7 +644,7 @@
             </v-row>
           </v-form>
         </v-card-text>
-        <v-card-actions style="position: sticky; bottom: 0; background: white; z-index: 10;">
+        <v-card-actions style="position: sticky; bottom: 0; background: rgb(var(--v-theme-surface)); z-index: 10;">
           <v-btn @click="updateSeries" color="green" prepend-icon="mdi-check">
             Save
           </v-btn>

@@ -1,17 +1,30 @@
 <script setup>
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
+import { onMounted, onUnmounted, computed, ref, watch, watchEffect } from 'vue';
 import { useAuth } from '@clerk/vue';
-import { useDisplay } from 'vuetify';
+import { useDisplay, useTheme } from 'vuetify';
 import { useAuthStore, useTeamStore } from '@/stores';
-import { canSeeRole } from '@/helpers';
+import { canSeeRole, themeMode, setThemeMode, activeTheme } from '@/helpers';
 import w3cLogo from '@/assets/media/w3c-logo.png';
+import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 
 const authStore = useAuthStore();
 const { me } = storeToRefs(authStore);
 const route = useRoute();
 const router = useRouter();
+
+// Light, dark, or the operating system setting. The choice is kept in localStorage.
+const THEMES = [
+    { value: 'light', title: 'Light', icon: 'mdi-white-balance-sunny' },
+    { value: 'dark', title: 'Dark', icon: 'mdi-weather-night' },
+    { value: 'system', title: 'System', icon: 'mdi-theme-light-dark' },
+];
+const vuetifyTheme = useTheme();
+watchEffect(() => { vuetifyTheme.global.name.value = activeTheme(); });
+// The dark-ink W3C mark is made for the light theme; the dark theme takes the white original.
+const w3cMark = computed(() => (vuetifyTheme.global.current.value.dark ? w3cLogoWhite : w3cLogo));
+const themeIcon = computed(() => THEMES.find(t => t.value === themeMode.value)?.icon || 'mdi-theme-light-dark');
 
 // Clerk owns the session; the fetch wrapper reads its token through the store
 const clerk = useAuth();
@@ -76,7 +89,7 @@ const NAV = [
         { title: '1v1 Maps', to: '/maps' },
         { title: 'Player Stats', to: '/player-stats' },
         { title: 'Season Report', to: '/report' },
-        { title: 'Ladder', to: '/ladder', icon: w3cLogo },
+        { title: 'Ladder', to: '/ladder', mark: true },
     ] },
     { title: 'Fantasy', to: '/fantasy', items: [
         { title: 'Leaderboard', to: '/fantasy' },
@@ -126,6 +139,16 @@ const applyCaptain = () => {
             <v-app-bar-nav-icon v-if="showNavLinks && smAndDown" @click="drawer = !drawer" />
             <v-app-bar-title>GNL APP</v-app-bar-title>
             <template v-slot:append>
+                <v-menu offset-y>
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props" :icon="themeIcon" variant="text" aria-label="Theme" />
+                    </template>
+                    <v-list>
+                        <v-list-item v-for="t in THEMES" :key="t.value" :title="t.title"
+                            :prepend-icon="t.icon" :active="themeMode === t.value"
+                            @click="setThemeMode(t.value)" />
+                    </v-list>
+                </v-menu>
                 <v-list v-show="showNavLinks" class="inline-nav" nav>
                     <template v-if="!smAndDown">
                         <template v-for="group in nav" :key="group.to">
@@ -140,7 +163,7 @@ const applyCaptain = () => {
                                 </template>
                                 <v-list class="nav-dropdown">
                                     <v-list-item v-for="item in group.items" :key="item.to">
-                                        <RouterLink :to="item.to" :class="{ 'd-inline-flex align-baseline': item.icon }"><img v-if="item.icon" :src="item.icon" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">{{ item.title }}</RouterLink>
+                                        <RouterLink :to="item.to" :class="{ 'd-inline-flex align-baseline': item.mark }"><img v-if="item.mark" :src="w3cMark" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">{{ item.title }}</RouterLink>
                                     </v-list-item>
                                 </v-list>
                             </v-menu>
@@ -239,7 +262,7 @@ const applyCaptain = () => {
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: #1976d2;
+    color: rgb(var(--v-theme-primary));
 }
 
 .nav-dropdown {
@@ -259,7 +282,7 @@ const applyCaptain = () => {
 }
 
 .nav-dropdown a:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(var(--v-theme-on-surface), 0.05);
 }
 
 .nav-dropdown a.active {

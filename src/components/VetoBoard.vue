@@ -28,8 +28,6 @@
           variant="outlined"
           size="small"
           prepend-icon="mdi-undo"
-          :loading="saving"
-          :disabled="saving"
           @click="send({ action: 'undo' })"
         >
           Undo
@@ -85,8 +83,6 @@
                   v-else-if="tile.canAct"
                   variant="outlined"
                   :color="nextAction === 'Pick' ? 'success' : 'error'"
-                  :loading="saving"
-                  :disabled="saving"
                   @click="send({ action: recording ? 'record' : 'step', map_id: tile.id })"
                 >
                   {{ nextAction }}
@@ -203,7 +199,7 @@ const auth = useAuthStore();
 
 const board = ref(null);
 const errorMessage = ref(null);
-const saving = ref(false);
+const pending = ref(0);  // writes not yet answered
 // an admin session edits either side from the match page; on the admin's own turn they are a player
 const admin = computed(() => !props.token && auth.isAdmin && !board.value?.on_turn);
 // a veto done in a chat is typed in by one player for both sides, in the season's order
@@ -275,7 +271,8 @@ const tiles = computed(() => (board.value?.pool || []).map((id) => {
     name: mapName(id),
     shortname: mapsById.value.get(id)?.shortname || '',
     sub: week ? 'Fixed map' : board.value?.complete ? 'Unused' : 'Available',
-    canAct: !week && !step && (recording.value ? canRecord.value : !!board.value?.on_turn)
+    // no action once every entry of the order is taken, even before the server confirms the last one
+    canAct: !week && !step && !!order.value[taken.value.length] && (recording.value ? canRecord.value : !!board.value?.on_turn)
   };
 }));
 
@@ -347,24 +344,38 @@ const load = async () => {
   }
 };
 
-const send = async (body) => {
-  saving.value = true;
-  try {
-    board.value = await fetchWrapper.put(vetoUrl, props.token ? { ...body, token: props.token } : body);
-    errorMessage.value = null;
-    emit('change', board.value);
-  } catch (error) {
-    errorMessage.value = error.message || 'Error saving the step.';
-  } finally {
-    saving.value = false;
+// the board shows a step the moment it is clicked; writes go out one after the other, each
+// answer replaces the guess, and a refused write reloads the board from the server
+let chain = Promise.resolve();
+const send = (body) => {
+  const entry = order.value[taken.value.length];
+  if (body.map_id && entry) {
+    const step = { side: entrySide(entry), action: entry.split('_')[0].toLowerCase(), map_id: body.map_id, entered_by: viewerId.value };
+    board.value = { ...board.value, steps: [...taken.value, step], on_turn: recording.value && board.value.on_turn };
+  } else if (body.action === 'undo') {
+    board.value = { ...board.value, steps: taken.value.slice(0, -1) };
   }
+  pending.value += 1;
+  chain = chain.then(async () => {
+    try {
+      board.value = await fetchWrapper.put(vetoUrl, props.token ? { ...body, token: props.token } : body);
+      errorMessage.value = null;
+      emit('change', board.value);
+    } catch (error) {
+      errorMessage.value = error.message || 'Error saving the step.';
+      await load();
+    } finally {
+      pending.value -= 1;
+    }
+  });
+  return chain;
 };
 
 // the other player's steps arrive by poll; a step of the viewer's own comes back on the PUT;
 // a recorder polls on their own turn too, since the other side may be entering the same veto
 let timer = null;
 const poll = () => {
-  if (document.hidden || saving.value || !board.value || board.value.complete) return;
+  if (document.hidden || pending.value || !board.value || board.value.complete) return;
   if (board.value.on_turn && !recording.value) return;
   load();
 };

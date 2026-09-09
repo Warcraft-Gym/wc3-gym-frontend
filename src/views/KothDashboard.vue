@@ -11,7 +11,7 @@
           <v-icon size="48" color="warning" class="mr-3">mdi-crown</v-icon>
           {{ event.name }}
         </h1>
-        <p v-if="event.description" class="text-h6 text-grey-darken-1">{{ event.description }}</p>
+        <p v-if="event.description" class="text-h6 text-medium-emphasis">{{ event.description }}</p>
       </div>
 
       <!-- Signup Button -->
@@ -63,7 +63,7 @@
                 <v-row align="center" no-gutters>
                   <v-col>
                     <PlayerName class="text-h5 font-weight-bold" :player="{ name: king.twitch_username || king.battle_tag, country: king.country }" :race="king.race" />
-                    <div class="text-subtitle-1 text-grey-darken-2">{{ king.mmr }} MMR</div>
+                    <div class="text-subtitle-1 text-medium-emphasis">{{ king.mmr }} MMR</div>
                   </v-col>
                   <v-col cols="auto">
                     <v-icon color="warning" size="56">mdi-crown</v-icon>
@@ -89,7 +89,7 @@
                   <PlayerName class="text-h6" :player="player" />
                   <div v-for="signup in player.signups" :key="signup.id" class="race-row d-flex align-center ga-2">
                     <RaceIcon v-if="signup.race" :raceIdentifier="signup.race" />
-                    <span class="text-body-1 text-grey-darken-2">{{ signup.mmr }} MMR</span>
+                    <span class="text-body-1 text-medium-emphasis">{{ signup.mmr }} MMR</span>
                   </div>
                 </div>
               </div>

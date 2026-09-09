@@ -261,7 +261,7 @@
                       :color="getRaceColor(raceEntry.race)"
                       height="10"
                       rounded
-                      bg-color="grey-lighten-3"
+                      bg-color="surface-light"
                     />
                   </div>
                   <span class="race-stat-value text-success font-weight-bold">{{ raceEntry.wins }}</span>
@@ -274,7 +274,7 @@
                       color="error"
                       height="10"
                       rounded
-                      bg-color="grey-lighten-3"
+                      bg-color="surface-light"
                     />
                   </div>
                   <span class="race-stat-value text-error">{{ raceEntry.losses }}</span>
@@ -287,7 +287,7 @@
                       :color="getRaceColor(raceEntry.race)"
                       height="10"
                       rounded
-                      bg-color="grey-lighten-3"
+                      bg-color="surface-light"
                     />
                   </div>
                   <span class="race-stat-value font-weight-bold">{{ raceEntry.points }}</span>

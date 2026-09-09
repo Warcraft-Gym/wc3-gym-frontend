@@ -55,7 +55,7 @@
               border
               rounded
               class="pa-3 map-tile"
-              :class="{ 'bg-grey-lighten-4': tile.banned, 'week-map': tile.week }"
+              :class="{ 'bg-surface-light': tile.banned, 'week-map': tile.week }"
             >
               <div class="thumb rounded bg-grey-darken-4">
                 <img v-if="mapImage(tile.id)" :src="mapImage(tile.id)" :alt="tile.name" :class="{ dim: tile.banned }" @error="hideMissingImage">

@@ -53,7 +53,7 @@
       <v-card-text v-else class="text-center pa-8">
         <v-icon size="64" color="grey-lighten-1">mdi-map-outline</v-icon>
         <div class="text-h6 text-grey mt-4 mb-2">No maps found</div>
-        <p class="text-grey-darken-1 mb-4">Get started by adding your first map</p>
+        <p class="text-medium-emphasis mb-4">Get started by adding your first map</p>
         <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">
           Add First Map
         </v-btn>

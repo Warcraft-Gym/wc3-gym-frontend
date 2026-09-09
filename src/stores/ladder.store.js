@@ -18,13 +18,13 @@ export const useLadderStore = defineStore({
             this.ladders[season_id] = ladder;
             return ladder;
         },
-        async userLadder(user_id, { seasonId = null, limit = null, offset = null } = {}) {
+        async userLadder(user_id, { seasonId = null, limit = null, offset = null, race = null } = {}) {
             if (limit === -1) {  // 'All': the route caps a read at PAGE_LIMIT, so read it again
                 return await allMatches(next =>
-                    this.userLadder(user_id, { seasonId, limit: PAGE_LIMIT, offset: next }));
+                    this.userLadder(user_id, { seasonId, race, limit: PAGE_LIMIT, offset: next }), race);
             }
             const query = new URLSearchParams();
-            for (const [key, value] of Object.entries({ season_id: seasonId, limit, offset })) {
+            for (const [key, value] of Object.entries({ season_id: seasonId, race, limit, offset })) {
                 if (value !== null && value !== undefined) query.append(key, value);
             }
             const suffix = query.toString() ? `?${query}` : '';

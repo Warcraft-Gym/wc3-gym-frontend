@@ -78,11 +78,12 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { usePlayerStore, useSeasonStore } from '@/stores';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { getW3CMMR } from '@/helpers/w3c-stats';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { getW3CGames, getW3CMMR } from '@/helpers/w3c-stats';
+import { defaultSignupRace } from '@/helpers/players.mjs';
 
 const emit = defineEmits(['added']);
 
@@ -104,6 +105,14 @@ const mmr = computed(() =>
   selectedPlayer.value && race.value ? getW3CMMR(selectedPlayer.value, currentW3CSeason.value, race.value) : null
 );
 
+// The signup opens on the race the player last registered on, or the race he
+// plays most on the ladder. Picking another player moves it.
+watch([selectedPlayer, currentW3CSeason], ([player], [previousPlayer]) => {
+  if (player !== previousPlayer || race.value === null) {
+    race.value = defaultSignupRace(player, r => getW3CGames(player, currentW3CSeason.value, r));
+  }
+});
+
 const open = async ({ season = null, player = null } = {}) => {
   presetSeason.value = season;
   presetPlayer.value = player;
@@ -115,6 +124,7 @@ const open = async ({ season = null, player = null } = {}) => {
   try {
     if (!seasonStore.seasons.length) await seasonStore.fetchSeasons();
     if (!playerStore.players.length) await playerStore.fetchPlayers();
+    if (!seasonId.value) seasonId.value = await resolveCurrentSeasonId();
     currentW3CSeason.value = await resolveCurrentW3CSeason();
   } catch (err) {
     console.error('Failed to load the signup dialog lists:', err);

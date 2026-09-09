@@ -36,8 +36,9 @@
           You host and ban first
         </div>
         <div class="text-caption text-medium-emphasis">{{ formatDateTime(card.series.date_time) }}</div>
-        <div v-if="card.series.match?.fixed_map" class="text-caption text-medium-emphasis">
-          Game 1: {{ card.series.match.fixed_map.name }}
+        <!-- The three maps of the series once the veto has decided them -->
+        <div v-for="line in maps(card.series)" :key="line" class="text-caption text-medium-emphasis">
+          {{ line }}
         </div>
         <CastChips :series="card.series" class="mt-1" />
         <slot v-if="isUnscored(card.series)" name="series-actions" :series="card.series" />
@@ -102,6 +103,19 @@ const opponent = (series) => {
 // the race the opponent played in that series, not the one he signed the season up on
 const opponentRace = (series) =>
   (series.player1_id === props.player.id ? series.player2_race : series.player1_race);
+
+// The maps of the series, read from the player's side: game 1 is the season's
+// fixed map, and each side picks the map it takes after a loss
+const maps = (series) => {
+  const mine = series.player1_id === props.player.id;
+  const myPick = mine ? series.player1_pick_map : series.player2_pick_map;
+  const theirPick = mine ? series.player2_pick_map : series.player1_pick_map;
+  return [
+    series.match?.fixed_map && `Game 1: ${series.match.fixed_map.name}`,
+    myPick && `Your pick: ${myPick}`,
+    theirPick && `${opponent(series).name}'s pick: ${theirPick}`,
+  ].filter(Boolean);
+};
 
 // Scores read from the player's side: his first, the opponent's second
 const myScore = (series) => (series.player1_id === props.player.id ? series.player1_score : series.player2_score) || 0;

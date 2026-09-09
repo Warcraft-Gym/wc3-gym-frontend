@@ -481,7 +481,7 @@ import { useLadderStore } from '@/stores/ladder.store';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
-import { playerPath } from '@/helpers/players';
+import { openPlayer } from '@/helpers/players';
 
 
 const route = useRoute();
@@ -513,8 +513,6 @@ const toggle = (key) => {
     collapsed.value.has(key) ? collapsed.value.delete(key) : collapsed.value.add(key);
     collapsed.value = new Set(collapsed.value);
 };
-
-const openPlayer = (player) => router.push(playerPath(player));
 
 // ─── Read-only mode: ?readonly=1 hides the season selector ───────────────────
 const isReadonly = computed(() => route.query.readonly === '1' || route.query.readonly === 'true');

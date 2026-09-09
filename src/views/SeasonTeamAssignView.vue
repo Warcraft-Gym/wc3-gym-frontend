@@ -254,7 +254,7 @@
                     <div v-for="p in getTeamPlayersForSeason(team)" :key="p.id" class="team-player" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
                       <div>
                         <div style="display:flex;align-items:center;gap:8px;">
-                          <span style="cursor: pointer; color: var(--v-theme-primary);" @click="router.push(playerPath(p))"><strong>{{ p.name }}</strong></span>
+                          <span style="cursor: pointer; color: var(--v-theme-primary);" @click="openPlayer(p)"><strong>{{ p.name }}</strong></span>
                           <template v-if="!hasW3CStatsTwoSeasons(p, currentW3CSeason, p.signup_race)">
                             <v-tooltip>
                               <template #activator="{ props }">
@@ -351,7 +351,7 @@ import {
   syncedAgo,
   syncedAt
 } from '@/helpers/w3c-stats';
-import { matchesPlayerSearch, filterByMmrRange, playerPath } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, openPlayer } from '@/helpers/players';
 import { raceWrapper } from '@/helpers/races';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { useDisplay } from 'vuetify';

@@ -266,8 +266,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useTheme } from 'vuetify';
-import { useRouter } from 'vue-router';
-import { playerPath } from '@/helpers/players';
+import { openPlayer } from '@/helpers/players';
 import { storeToRefs } from 'pinia';
 import { useAuthStore, useLadderStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
@@ -312,7 +311,6 @@ const searchName = ref('');
 const searchRace = ref(null);
 const searchTeam = ref(null);
 
-const router = useRouter();
 const syncDialog = ref(false);
 const syncEntries = ref([]);
 const expanded = ref([]);
@@ -449,9 +447,8 @@ const syncLadder = async () => {
   }
 };
 
-const openPlayer = (player) => router.push(playerPath(player));
 // An opponent clicked inside an expanded panel carries only an id
-const openOpponent = (userId) => router.push(playerPath({ id: userId }));
+const openOpponent = (userId) => openPlayer({ id: userId });
 
 watch(selectedSeasonId, loadLadder, { immediate: true });
 

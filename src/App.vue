@@ -6,6 +6,7 @@ import { useAuth } from '@clerk/vue';
 import { useDisplay, useTheme } from 'vuetify';
 import { useAuthStore, useTeamStore } from '@/stores';
 import { canSeeRole, themeMode, setThemeMode, activeTheme } from '@/helpers';
+import PlayerPanel from '@/components/PlayerPanel.vue';
 import w3cLogo from '@/assets/media/w3c-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 
@@ -244,6 +245,8 @@ const applyCaptain = () => {
                 <v-container>
                     <RouterView />
                 </v-container>
+                <!-- A player name opens this over the page, so nothing typed is lost -->
+                <PlayerPanel />
             </v-main>
         </v-defaults-provider>
         <v-footer v-if="showBar" class="justify-end text-caption py-1" color="transparent">

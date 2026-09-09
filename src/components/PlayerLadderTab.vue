@@ -114,7 +114,7 @@
             <span
               v-if="item.opp_user_id"
               class="opponent-link"
-              @click.stop="router.push(playerPath({ id: item.opp_user_id, battleTag: item.opp_battletag }))"
+              @click.stop="openPlayer({ id: item.opp_user_id, battleTag: item.opp_battletag })"
             >{{ item.opp_battletag }}</span>
             <span v-else>{{ item.opp_battletag }}</span>
             <v-chip v-if="teamOf(item.opp_user_id)" size="x-small">{{ teamOf(item.opp_user_id) }}</v-chip>
@@ -138,13 +138,12 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { DateTime } from 'luxon';
-import { useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import { useLadderStore } from '@/stores';
 import RaceIcon from '@/components/RaceIcon.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import { achievementPoints, SCORED_NOTE } from '@/helpers/achievements';
-import { playerPath } from '@/helpers/players';
+import { openPlayer } from '@/helpers/players';
 import { raceTotal } from '@/helpers/all-matches.mjs';
 import { raceWrapper } from '@/helpers/races';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
@@ -159,7 +158,6 @@ const props = defineProps({
   seasonId: { type: Number, required: true },
 });
 
-const router = useRouter();
 const { mdAndUp } = useDisplay();
 const ladderStore = useLadderStore();
 

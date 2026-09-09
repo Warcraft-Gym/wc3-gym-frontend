@@ -18,37 +18,30 @@
       {{ errorMessage }}
     </v-alert>
 
-    <!-- Teams Table -->
-    <v-card v-if="!errorMessage" elevation="2">
+    <div v-if="auth.isAdmin" class="d-flex justify-end mb-4">
+      <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="createTeam()">
+        Add New Team
+      </v-btn>
+    </div>
+
+    <!-- The season's own teams first, so the historical ones do not bury them -->
+    <v-card v-for="group in groups" v-show="!errorMessage" :key="group.title" elevation="2" class="mb-4">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
-        All Teams
+        {{ group.title }}
       </v-card-title>
-      
+
       <v-card-text class="pa-0">
         <v-data-table
           :headers="tableHeader"
-          :items="teams"
+          :items="group.items"
           :loading="isLoading"
-          fixed-header
           hover
           density="comfortable"
+          @click:row="openTeam"
         >
           <template #loading>
             <v-skeleton-loader type="table-row@10" />
-          </template>
-
-          <template #top>
-            <v-toolbar flat height="auto">
-              <v-row align="center" class="flex-wrap ma-0 pa-2">
-                <v-spacer />
-                <v-col cols="12" sm="auto">
-                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="createTeam()" block>
-                    Add New Team
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-toolbar>
           </template>
 
           <template #[`item.icon`]="{ item }">
@@ -57,24 +50,42 @@
             </v-avatar>
           </template>
 
-          <template #[`item.name`]="{ item }">
-            <strong>{{ item.name }}</strong>
+          <template #[`item.long_name`]="{ item }">
+            <strong>{{ item.long_name || item.name }}</strong>
+          </template>
+
+          <template #[`item.seasons`]="{ item }">
+            <template v-if="playedSeasons(item).length">
+              <v-chip
+                v-for="season in playedSeasons(item)"
+                :key="season.id"
+                size="small"
+                class="ma-1"
+                :color="season.id === currentSeasonId ? 'primary' : undefined"
+                :variant="season.id === currentSeasonId ? 'flat' : 'tonal'"
+              >
+                {{ season.name }}
+              </v-chip>
+            </template>
+            <span v-else>—</span>
           </template>
 
           <template #[`item.actions`]="{ item }">
-            <RowActions :actions="[
-              { icon: 'mdi-pencil', label: 'Edit Team', onClick: () => editTeam(item) },
-              { icon: 'mdi-delete', label: 'Delete Team', color: 'error', onClick: () => openDeleteDialog(item.id, removeTeam) },
-            ]" />
+            <div @click.stop>
+              <RowActions :actions="[
+                { icon: 'mdi-pencil', label: 'Edit Team', onClick: () => editTeam(item) },
+                { icon: 'mdi-delete', label: 'Delete Team', color: 'error', onClick: () => openDeleteDialog(item.id, removeTeam) },
+              ]" />
+            </div>
           </template>
 
           <template #no-data>
             <div class="text-center pa-8">
               <v-icon size="64" color="grey-lighten-1">mdi-shield-off</v-icon>
               <div class="text-h6 mt-4 text-grey">No teams found</div>
-              <v-btn 
-                color="primary" 
-                variant="tonal" 
+              <v-btn
+                color="primary"
+                variant="tonal"
                 class="mt-4"
                 prepend-icon="mdi-plus"
                 v-if="auth.isAdmin"
@@ -155,9 +166,11 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
-import { useAuthStore, useTeamStore } from '@/stores';
+import { useAuthStore, useSeasonStore, useTeamStore } from '@/stores';
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { loadSeasons, resolveCurrentSeasonId } from '@/helpers/current-season';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { useColumns } from '@/helpers/columns';
@@ -189,12 +202,37 @@ const file = ref(null);
 
 const allTableHeader = computed(() => [
   { title:'', value: 'icon'},
-  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
-  { title: 'Name', value: 'name', sortable: true },
-  { mobile: false, title: 'Long Name', value: 'long_name', sortable: true },
+  { title: 'Long Name', value: 'long_name', sortable: true },
+  { title: 'Handle', value: 'name', sortable: true },
+  { mobile: false, title: 'Seasons', value: 'seasons', sortable: false },
   ...(auth.isAdmin ? [{ title: '', value: 'actions', align: 'end', sortable: false }] : []),
 ])
 const tableHeader = useColumns(allTableHeader);
+
+// The seasons a team played, newest first; the team list carries one row per season
+const currentSeasonId = ref(null);
+const seasonStore = useSeasonStore();
+const playedSeasons = (team) => (team.seasons_info || [])
+  .map((info) => seasonStore.seasons.find((season) => season.id === info.season_id))
+  .filter(Boolean)
+  .sort((a, b) => b.id - a.id);
+
+const currentSeasonName = computed(() =>
+  seasonStore.seasons.find((season) => season.id === currentSeasonId.value)?.name
+);
+const playsCurrentSeason = (team) =>
+  (team.seasons_info || []).some((info) => info.season_id === currentSeasonId.value);
+
+const groups = computed(() => {
+  if (!currentSeasonId.value) return [{ title: 'All Teams', items: teams.value }];
+  return [
+    { title: currentSeasonName.value || 'Current season', items: teams.value.filter(playsCurrentSeason) },
+    { title: 'Past Teams', items: teams.value.filter((team) => !playsCurrentSeason(team)) },
+  ];
+});
+
+const router = useRouter();
+const openTeam = (event, { item }) => router.push(`/team/${item.id}`);
 // Fetch data when the page is loaded
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
@@ -217,8 +255,10 @@ const fetchTeams = async () => {
   }
 };
 
-onMounted( () => {
-  fetchTeams(); 
+onMounted(async () => {
+  await loadSeasons();  // the season chips need the names
+  currentSeasonId.value = await resolveCurrentSeasonId();
+  fetchTeams();
 });
 
 const createTeam = () => {

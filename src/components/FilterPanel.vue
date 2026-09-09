@@ -3,7 +3,7 @@
     <v-expansion-panel>
       <v-expansion-panel-title class="bg-primary">
         <v-icon class="mr-2">mdi-filter</v-icon>
-        <span>Filters</span>
+        <span class="text-h6 font-weight-bold">Filters</span>
       </v-expansion-panel-title>
       <v-expansion-panel-text class="pt-4">
         <!-- First Row: Name, Race, MMR -->

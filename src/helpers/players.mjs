@@ -36,3 +36,19 @@ export const panelPlayerKey = ref(null);
 
 export const openPlayer = (player) =>
   panelPlayerKey.value = player.battleTag ? String(player.battleTag) : String(player.id);
+
+// The race a new signup opens on: the race he registered on in his last season,
+// else the race he plays most on the w3champions ladder, else nothing. The
+// profile race is one self-declared value, so a player who plays two races
+// would sign up on the wrong one. `gamesOf` counts ladder games of one race.
+export const defaultSignupRace = (player, gamesOf) => {
+  if (!player) return null;
+  const last = (player.signup_seasons || [])
+    .filter(season => season.signup_race)
+    .sort((a, b) => b.id - a.id)[0];
+  if (last) return last.signup_race;
+  const played = [...new Set((player.w3c_stats || []).map(stat => stat.race).filter(Boolean))]
+    .map(race => ({ race, games: gamesOf(race) }))
+    .sort((a, b) => b.games - a.games)[0];
+  return played && played.games > 0 ? played.race : null;
+};

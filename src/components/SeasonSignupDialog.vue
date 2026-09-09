@@ -82,7 +82,8 @@ import { computed, ref, watch } from 'vue';
 import { usePlayerStore, useSeasonStore } from '@/stores';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { getW3CMMR } from '@/helpers/w3c-stats';
+import { getW3CGames, getW3CMMR } from '@/helpers/w3c-stats';
+import { defaultSignupRace } from '@/helpers/players.mjs';
 
 const emit = defineEmits(['added']);
 
@@ -104,9 +105,12 @@ const mmr = computed(() =>
   selectedPlayer.value && race.value ? getW3CMMR(selectedPlayer.value, currentW3CSeason.value, race.value) : null
 );
 
-// The signup starts on the race the player plays; picking another player moves it.
-watch(selectedPlayer, player => {
-  race.value = player?.race ?? null;
+// The signup opens on the race the player last registered on, or the race he
+// plays most on the ladder. Picking another player moves it.
+watch([selectedPlayer, currentW3CSeason], ([player], [previousPlayer]) => {
+  if (player !== previousPlayer || race.value === null) {
+    race.value = defaultSignupRace(player, r => getW3CGames(player, currentW3CSeason.value, r));
+  }
 });
 
 const open = async ({ season = null, player = null } = {}) => {

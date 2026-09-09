@@ -131,6 +131,19 @@ export function getW3CMMR(player, currentSeason = null, race = null) {
 }
 
 /**
+ * Get the games played on one race, from the same stats row the MMR comes from
+ *
+ * @param {Object} player - Player object
+ * @param {number} currentSeason - Current W3C season (optional, null = newest available)
+ * @param {string} race - Race to read (required, null gives 0)
+ * @returns {number} - Games played, 0 when there are no stats
+ */
+export function getW3CGames(player, currentSeason = null, race = null) {
+  const stats = getW3CStatsWithFallback(player, race, currentSeason);
+  return stats ? (stats.games ?? Number(stats.wins || 0) + Number(stats.losses || 0)) : 0;
+}
+
+/**
  * Get the w3champions season the MMR shown for a player came from
  *
  * @param {Object} player - Player object

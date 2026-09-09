@@ -33,3 +33,4 @@ export { default as LadderView } from './LadderView.vue';
 export { default as RandomStatsView } from './RandomStatsView.vue';
 export { default as VetoBoardView } from './VetoBoardView.vue';
 export { default as CreditsView } from './CreditsView.vue';
+export { default as UpcomingView } from './UpcomingView.vue';

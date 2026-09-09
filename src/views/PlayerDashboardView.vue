@@ -199,39 +199,11 @@
           density="compact"
           class="mb-2"
         >
-          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below.' }}
+          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below, or report without it.' }}
         </v-alert>
         <VetoBoard v-if="scoreSeries.id" :key="scoreSeries.id" :series-id="scoreSeries.id" report class="mb-4" @change="board => scoreVeto = board" />
         <v-form ref="scoreForm" v-model="scoreFormValid">
           <v-container>
-            <v-row>
-              <v-col cols="6">
-                <v-text-field 
-                  v-model="scoreSeries.player1_score" 
-                  :label="scoreSeries.player1_name || ''" 
-                  variant="outlined"
-                  prepend-inner-icon="mdi-numeric"
-                  type="number" 
-                  min="0" 
-                  :max="seriesWins" 
-                  :hint="scoreSeries.isPlayer1Current ? '(You)' : ''" 
-                  persistent-hint
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field 
-                  v-model="scoreSeries.player2_score" 
-                  :label="scoreSeries.player2_name || ''" 
-                  variant="outlined"
-                  prepend-inner-icon="mdi-numeric"
-                  type="number" 
-                  min="0" 
-                  :max="seriesWins" 
-                  :hint="scoreSeries.isPlayer2Current ? '(You)' : ''" 
-                  persistent-hint
-                />
-              </v-col>
-            </v-row>
             <v-row v-if="!scoreSeries.raceOpen">
               <v-col cols="12" class="pt-0">
                 <v-btn variant="text" size="small" density="comfortable" prepend-icon="mdi-account-switch" @click="scoreSeries.raceOpen = true">
@@ -247,21 +219,55 @@
                 <RaceSelect v-model="scoreSeries.races.player2" :label="scoreSeries.player2_name || ''" density="comfortable" />
               </v-col>
             </v-row>
-            <v-row v-if="scoreProblem">
-              <v-col cols="12" class="pt-0 text-error text-caption">{{ scoreProblem }}</v-col>
-            </v-row>
-            <v-row v-for="game in replaySlots" :key="game">
+            <v-row v-for="game in gameRows" :key="game">
               <v-col cols="12">
-                <v-file-input
-                  v-model="scoreSeries.replays[game]"
-                  :label="`Game ${game} Replay`"
-                  variant="outlined"
-                  accept=".w3g"
-                  prepend-icon="mdi-file-upload"
-                  :rules="needsFile(game) ? [rules.required, rules.w3gFile] : [rules.w3gFile]"
-                  :required="needsFile(game)"
-                  :hint="fileHint(game)"
-                />
+                <v-card variant="outlined">
+                  <v-card-text class="py-3">
+                    <div class="text-subtitle-2 mb-2">Game {{ game }}</div>
+                    <v-btn-toggle
+                      :model-value="scoreSeries.winners[game - 1]"
+                      color="primary"
+                      divided
+                      variant="outlined"
+                      density="comfortable"
+                      class="d-flex mb-3"
+                      @update:model-value="setWinner(game, $event)"
+                    >
+                      <v-btn value="A" class="flex-grow-1 text-none">{{ scoreSeries.player1_name }} won</v-btn>
+                      <v-btn value="B" class="flex-grow-1 text-none">{{ scoreSeries.player2_name }} won</v-btn>
+                    </v-btn-toggle>
+                    <v-select
+                      :model-value="mapOf(game)"
+                      :items="mapStore.maps"
+                      item-title="name"
+                      item-value="id"
+                      label="Map played"
+                      variant="outlined"
+                      density="comfortable"
+                      hide-details
+                      clearable
+                      class="mb-3"
+                      @update:model-value="setMap(game, $event)"
+                    />
+                    <v-file-input
+                      v-model="scoreSeries.replays[game]"
+                      :label="`Game ${game} replay`"
+                      variant="outlined"
+                      density="comfortable"
+                      accept=".w3g"
+                      prepend-icon="mdi-file-upload"
+                      :rules="needsFile(game) ? [rules.required, rules.w3gFile] : [rules.w3gFile]"
+                      :required="needsFile(game)"
+                      :hint="fileHint(game)"
+                    />
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" class="pt-0 text-center">
+                <span v-if="scoreProblem" class="text-caption text-medium-emphasis">{{ scoreProblem }}</span>
+                <span v-else class="text-subtitle-1 font-weight-medium">{{ resultLine }}</span>
               </v-col>
             </v-row>
           </v-container>
@@ -270,7 +276,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="closeScore" :disabled="scoreSavingId === scoreSeries.id">Cancel</v-btn>
-        <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isScoreValid || vetoMissing || scoreSavingId === scoreSeries.id" :loading="scoreSavingId === scoreSeries.id" @click="saveResult">Save Result</v-btn>
+        <v-btn :color="vetoMissing ? 'warning' : 'primary'" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isScoreValid || scoreSavingId === scoreSeries.id" :loading="scoreSavingId === scoreSeries.id" @click="saveResult">{{ vetoMissing ? 'Report without a veto' : 'Save Result' }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -306,9 +312,10 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { backendUrl, fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
-import { useAuthStore, useAvailabilityStore, useSeasonStore, usePlayerStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useMapStore, useSeasonStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
-import { winsOf, isValidResult, replaysNeeded, resultProblem } from '@/helpers/best-of';
+import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
+import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from '@/helpers/map-order.mjs';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
@@ -379,6 +386,7 @@ watch([() => route.query.edit, playerData], ([edit, data]) => {
   openEditProfile();
 }, { immediate: true });
 const authStore = useAuthStore();
+const mapStore = useMapStore();
 
 // /me answers whether the session has a signup for the current GNL season
 const seasonStore = useSeasonStore();
@@ -401,7 +409,7 @@ const scoreFormValid = ref(true);
 const scheduleForm = ref(null);
 const scoreForm = ref(null);
 const scheduleSeries = ref({});
-const scoreSeries = ref({ replays: {}, races: {} });
+const scoreSeries = ref({ replays: {}, races: {}, winners: [], maps: {} });
 // a result carries its veto, so the dialog holds the board above the scores
 const scoreVeto = ref(null);
 const vetoMissing = computed(() => !scoreVeto.value?.complete);
@@ -608,32 +616,47 @@ const saveSchedule = async () => {
 
 // Report result handlers
 const reportResult = (item) => {
-  const isPlayer1 = item.player1_id === playerData.value?.player?.id;
-  
   scoreSeries.value = {
     id: item.id,
-    player1_score: item.player1_score || 0,
-    player2_score: item.player2_score || 0,
     player1_name: item.player1?.name || `Player ${item.player1_id}`,
     player2_name: item.player2?.name || `Player ${item.player2_id}`,
-    isPlayer1Current: isPlayer1,
-    isPlayer2Current: !isPlayer1,
     map_rules: item.match?.season?.map_rules,
     // the race each side played; the panel opens by itself when one is an exception
     races: { player1: item.player1_race, player2: item.player2_race },
     raceOpen: !!(item.player1_off_race || item.player2_off_race),
     // games already reported: their stored replays stay unless a new file is picked
     reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score : 0,
-    replays: {}
+    replays: {},
+    // the side that won each game, in play order, and the map named for a game
+    winners: [],
+    maps: {},
+    storedGames: '[]'
   };
 
   scoreVeto.value = null;
   scoreDialog.value = true;
+  loadGames(item.id);
+};
+
+// A series reported before opens on the games it recorded, so a fix starts from them
+const loadGames = async (id) => {
+  let games = [];
+  try {
+    games = await fetchWrapper.get(`${backendUrl}/series/${id}/games`);
+  } catch {
+    return;  // a series with no games recorded answers nothing to start from
+  }
+  if (scoreSeries.value.id !== id) return;  // the dialog moved on while the read was out
+  for (const game of games) {
+    scoreSeries.value.winners[game.game_no - 1] = game.winner_side;
+    if (game.map_id) scoreSeries.value.maps[game.game_no] = game.map_id;
+  }
+  scoreSeries.value.storedGames = JSON.stringify(gamesReported(scoreSeries.value.winners, mapOf));
 };
 
 const closeScore = () => {
   scoreDialog.value = false;
-  scoreSeries.value = { replays: {}, races: {} };
+  scoreSeries.value = { replays: {}, races: {}, winners: [], maps: {} };
 };
 
 const REPLAY_MAGIC = 'Warcraft III recorded game';
@@ -654,8 +677,8 @@ const uploadReplay = async (seriesId, game, file) => {
 const saveResult = async () => {
   scoreSavingId.value = scoreSeries.value.id;
   try {
-    const p1 = parseInt(scoreSeries.value.player1_score) || 0;
-    const p2 = parseInt(scoreSeries.value.player2_score) || 0;
+    const [p1, p2] = reportedScore.value;
+    const games = gamesReported(scoreSeries.value.winners, mapOf);
 
     const played = replaysNeeded(p1, p2);
     for (let game = 1; game <= played; game++) {
@@ -673,7 +696,7 @@ const saveResult = async () => {
       uploaded.push(game);
     }
 
-    if (played === scoreSeries.value.reported && uploaded.length) {
+    if (played === scoreSeries.value.reported && uploaded.length && JSON.stringify(games) === scoreSeries.value.storedGames) {
       // the result stands; each new file replaces one stored replay
       for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}`);
     } else {
@@ -682,6 +705,8 @@ const saveResult = async () => {
       formData.append('player1_score', p1);
       formData.append('player2_score', p2);
       formData.append('action', 'score_updated');
+      // one entry per game played, which the backend checks against the score
+      formData.append('games', JSON.stringify(games));
       if (scoreSeries.value.raceOpen) {
         // the backend stores nothing when the race is the one he signed up on
         formData.append('player1_off_race', scoreSeries.value.races.player1 || '');
@@ -706,28 +731,45 @@ const saveResult = async () => {
   }
 };
 
-// The reported score, the season's maps to win, and the replay the reporter picked for a game
-const reportedScore = computed(() => [parseInt(scoreSeries.value.player1_score), parseInt(scoreSeries.value.player2_score)]);
+// The score the tapped winners add up to, the season's maps to win, and the file picked for a game
+const reportedScore = computed(() => scoreOf(scoreSeries.value.winners || []));
 const seriesWins = computed(() => winsOf(scoreSeries.value.map_rules));
 const hasReplay = (game) => scoreSeries.value.replays?.[game] instanceof File;
 // A first report needs every game's file; a fix keeps the stored ones unless a new file is picked
 const needsFile = (game) => game > (scoreSeries.value.reported || 0);
-const fileHint = (game) => {
-  if (!needsFile(game)) return 'Leave empty to keep the stored replay';
-  return game > seriesWins.value ? decidingHint.value : undefined;
-};
+const fileHint = (game) => (needsFile(game) ? undefined : 'Leave empty to keep the stored replay');
 
-// The series always plays as many maps as it takes to win; the rest show once the score calls for them
-const replaySlots = computed(() => {
-  const [p1, p2] = reportedScore.value;
-  return isValidResult(p1, p2, seriesWins.value) ? replaysNeeded(p1, p2) : seriesWins.value;
-});
-const decidingHint = computed(() => `Required for a ${reportedScore.value.join(':')} result`);
+// One row per game played, plus the next while neither side has won the series
+const gameRows = computed(() => gameSlots(scoreSeries.value.map_rules, scoreSeries.value.winners || []));
+
+// The map the season's rules offer for each game, given the veto and who won the games before
+const offeredMaps = computed(() => mapsByGame(
+  scoreSeries.value.map_rules,
+  scoreVeto.value?.week_map_id,
+  picksOf(scoreVeto.value?.steps),
+  scoreSeries.value.winners || []
+));
+const mapOf = (game) => scoreSeries.value.maps?.[game] ?? offeredMaps.value[game - 1] ?? null;
+const setMap = (game, mapId) => { scoreSeries.value.maps[game] = mapId; };
+
+// A changed winner reopens the games after it: they were played under a different map order
+const setWinner = (game, side) => {
+  const winners = scoreSeries.value.winners;
+  if (winners[game - 1] === side) return;
+  winners[game - 1] = side || null;
+  winners.length = game;
+  for (const named of Object.keys(scoreSeries.value.maps)) {
+    if (Number(named) > game) delete scoreSeries.value.maps[named];
+  }
+};
 
 const scoreProblem = computed(() => {
   const [p1, p2] = reportedScore.value;
-  if (!p1 && !p2) return null;  // the dialog opens at 0:0 and says nothing until a score is typed
-  return resultProblem(p1, p2, scoreSeries.value.map_rules);
+  return isValidResult(p1, p2, seriesWins.value) ? null : 'Tap the winner of each game played';
+});
+const resultLine = computed(() => {
+  const [p1, p2] = reportedScore.value;
+  return `${scoreSeries.value.player1_name} ${p1} – ${p2} ${scoreSeries.value.player2_name}`;
 });
 
 // Validate schedule: date and time must be present
@@ -754,6 +796,7 @@ const isScoreValid = computed(() => {
 onMounted(async () => {
   currentW3CSeason.value = await resolveCurrentW3CSeason();
   if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
+  mapStore.fetchMaps().catch(() => {});  // names the maps the report offers for each game
   await fetchPlayerData();
 });
 </script>

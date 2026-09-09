@@ -229,7 +229,9 @@
                       label="Map played"
                       variant="outlined"
                       density="comfortable"
-                      hide-details
+                      :hint="mapHint(game)"
+                      :hide-details="!mapHint(game)"
+                      persistent-hint
                       clearable
                       class="mb-3"
                       @update:model-value="setMap(game, $event)"
@@ -244,7 +246,17 @@
                       :rules="needsFile(game) ? [rules.required, rules.w3gFile] : [rules.w3gFile]"
                       :required="needsFile(game)"
                       :hint="fileHint(game)"
+                      @update:model-value="readGameReplay(game, $event)"
                     />
+                    <v-alert
+                      v-if="replayNote(game)"
+                      type="warning"
+                      variant="tonal"
+                      density="compact"
+                      class="mt-2"
+                    >
+                      {{ replayNote(game) }}
+                    </v-alert>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -301,6 +313,7 @@ import { useAuthStore, useAvailabilityStore, useMapStore, useSeasonStore, usePla
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from '@/helpers/map-order.mjs';
+import { readReplay, matchMap, isOtherSeries } from '@/helpers/w3g.mjs';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
@@ -604,6 +617,8 @@ const reportResult = (item) => {
     id: item.id,
     player1_name: item.player1?.name || `Player ${item.player1_id}`,
     player2_name: item.player2?.name || `Player ${item.player2_id}`,
+    // the tags name the sides in a replay, which carries no player id of ours
+    tags: [item.player1?.battleTag, item.player2?.battleTag],
     map_rules: item.match?.season?.map_rules,
     // the race each side played; the panel opens by itself when one is an exception
     races: { player1: item.player1_race, player2: item.player2_race },
@@ -614,6 +629,8 @@ const reportResult = (item) => {
     // the side that won each game, in play order, and the map named for a game
     winners: [],
     maps: {},
+    // what each game's replay says, by game number
+    reads: {},
     storedGames: '[]'
   };
 
@@ -640,7 +657,57 @@ const loadGames = async (id) => {
 
 const closeScore = () => {
   scoreDialog.value = false;
-  scoreSeries.value = { replays: {}, races: {}, winners: [], maps: {} };
+  scoreSeries.value = { replays: {}, races: {}, winners: [], maps: {}, reads: {}, tags: [] };
+};
+
+// A picked replay says which map was played. It never blocks a report: the file is the
+// evidence, but a player who names something else may be right and the parse may be wrong.
+const readGameReplay = async (game, file) => {
+  delete scoreSeries.value.reads[game];
+  if (!(file instanceof File)) return;
+  const series = scoreSeries.value.id;
+  const read = await readReplay(file).catch(() => null);
+  if (!read || scoreSeries.value.id !== series) return;  // the dialog moved on, or not a replay
+  scoreSeries.value.reads[game] = read;
+  // the replay beats the season's rule, but never a map the reporter named himself
+  const map = matchMap(read.mapPath, mapStore.maps);
+  if (map && !scoreSeries.value.maps[game]) scoreSeries.value.maps[game] = map.id;
+};
+
+// Says where the map came from when the replay named it, so a changed field is not a surprise
+const mapHint = (game) => {
+  const read = scoreSeries.value.reads?.[game];
+  const played = read && matchMap(read.mapPath, mapStore.maps);
+  return played && played.id === scoreSeries.value.maps[game] ? 'Read from the replay' : undefined;
+};
+
+// What the replay disagrees with, or null. The loser of a 1v1 almost always leaves first,
+// so a contradiction is worth saying and is never a verdict.
+const replayNote = (game) => {
+  const read = scoreSeries.value.reads?.[game];
+  if (!read) return null;
+  if (isOtherSeries(read.tags, scoreSeries.value.tags)) {
+    return `This replay is ${read.tags.join(' against ')}. It is not this series.`;
+  }
+  const played = matchMap(read.mapPath, mapStore.maps);
+  if (played && scoreSeries.value.maps[game] && scoreSeries.value.maps[game] !== played.id) {
+    return `The replay was played on ${played.name}.`;
+  }
+  const loser = sideOfTag(read.leftFirst);
+  const won = scoreSeries.value.winners[game - 1];
+  if (loser && won && loser === won) {
+    const name = won === 'A' ? scoreSeries.value.player2_name : scoreSeries.value.player1_name;
+    return `The replay suggests ${name} won this game.`;
+  }
+  return null;
+};
+
+const sideOfTag = (tag) => {
+  const fold = (text) => (text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!fold(tag)) return null;
+  if (fold(scoreSeries.value.tags?.[0]) === fold(tag)) return 'A';
+  if (fold(scoreSeries.value.tags?.[1]) === fold(tag)) return 'B';
+  return null;
 };
 
 const REPLAY_MAGIC = 'Warcraft III recorded game';

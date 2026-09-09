@@ -50,26 +50,7 @@
           :showMMR="true"
           :showReset="true"
           @reset="onResetFilters"
-        >
-          <template #after>
-            <v-col cols="12" md="6">
-              <v-checkbox
-                v-model="hideNoW3CStats"
-                label="Hide players without W3C stats"
-                color="primary"
-                density="comfortable"
-                hide-details
-              ></v-checkbox>
-              <v-checkbox
-                v-model="hideLowGames"
-                label="Hide players with fewer than 20 games"
-                color="primary"
-                density="comfortable"
-                hide-details
-              ></v-checkbox>
-            </v-col>
-          </template>
-        </FilterPanel>
+        />
       </v-card-text>
       <v-data-table
               :headers="playerTableHeaders"
@@ -198,6 +179,16 @@
                   icon
                   size="small"
                   variant="text"
+                  @click="setExcluded(item, true)"
+                >
+                  <v-icon>mdi-account-off</v-icon>
+                  <v-tooltip activator="parent" location="top">Take out of the pick list</v-tooltip>
+                </v-btn>
+                <v-btn
+                  v-if="auth.isAdmin"
+                  icon
+                  size="small"
+                  variant="text"
                   @click="openDeleteDialog(item.id, () => removeSignup(item))"
                 >
                   <v-icon>mdi-account-remove</v-icon>
@@ -208,6 +199,25 @@
                 <div>No available signed-up players for this season.</div>
               </template>
             </v-data-table>
+      <v-card-text v-if="excludedPlayers.length" class="pt-2 pb-0">
+        <div class="text-caption text-medium-emphasis mb-1">
+          Out of the pick list ({{ excludedPlayers.length }}). This browser only.
+        </div>
+        <v-chip
+          v-for="p in excludedPlayers"
+          :key="p.id"
+          class="mr-2 mb-2"
+          size="small"
+          :closable="auth.isAdmin"
+          close-icon="mdi-undo"
+          @click:close="setExcluded(p, false)"
+        >
+          <RaceIcon v-if="p.signup_race" :raceIdentifier="p.signup_race" class="mr-1" />
+          {{ p.name }}
+          <v-tooltip activator="parent" location="top">Put back in the pick list</v-tooltip>
+        </v-chip>
+      </v-card-text>
+
       <v-card-actions v-if="auth.isAdmin" class="px-4 pb-4">
         <v-btn
           color="primary"
@@ -352,6 +362,7 @@ import {
   syncedAt
 } from '@/helpers/w3c-stats';
 import { matchesPlayerSearch, filterByMmrRange, openPlayer } from '@/helpers/players';
+import { draftOrder, loadExcluded, saveExcluded } from '@/helpers/draft.mjs';
 import { raceWrapper } from '@/helpers/races';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { useDisplay } from 'vuetify';
@@ -379,8 +390,6 @@ const signedUpPlayersData = ref([]);
 const searchName = ref('');
 const searchRace = ref(null);
 const rangeValues = ref([0, 3000]);
-const hideNoW3CStats = ref(false);
-const hideLowGames = ref(false);
 
 // Track team selection per player
 const playerTeamSelection = ref({});
@@ -401,15 +410,19 @@ const currentW3CSeason = ref(null);
 
 const mmrOf = (p) => getW3CMMR(p, currentW3CSeason.value, p.signup_race) || 0;
 
-// The draft order over every signup: MMR ascending, each moved player at his slot
-const orderedPlayers = computed(() => {
-  const all = signedUpPlayersData.value || [];
-  const order = all.filter(p => p.draft_position == null).sort((a, b) => mmrOf(a) - mmrOf(b));
-  for (const p of all.filter(p => p.draft_position != null).sort((a, b) => a.draft_position - b.draft_position)) {
-    order.splice(Math.min(p.draft_position, order.length), 0, p);
-  }
-  return order;
-});
+// The players an admin takes out of the pick list, kept in this browser only
+const excluded = ref(new Set());
+const excludedPlayers = computed(() => (signedUpPlayersData.value || []).filter(p => excluded.value.has(p.id)));
+const setExcluded = (player, out) => {
+  const ids = new Set(excluded.value);
+  if (out) ids.add(player.id);
+  else ids.delete(player.id);
+  excluded.value = ids;
+  saveExcluded(seasonId.value, ids);
+};
+
+// The draft order: MMR ascending, each moved player at his slot, no excluded player
+const orderedPlayers = computed(() => draftOrder(signedUpPlayersData.value, mmrOf, excluded.value));
 const positionOf = computed(() => new Map(orderedPlayers.value.map((p, i) => [p.id, i])));
 // One round = one pick per team
 const roundSize = computed(() => teams.value?.length || 10);
@@ -503,6 +516,7 @@ const fetchData = async () => {
 };
 
 onMounted(async () => {
+  excluded.value = loadExcluded(seasonId.value);
   currentW3CSeason.value = await resolveCurrentW3CSeason();
   fetchData();
 });
@@ -524,14 +538,6 @@ const filteredPlayers = computed(() => {
   // filter by mmr range — only apply if user changed from defaults
   list = filterByMmrRange(list, rangeValues.value, mmrOf);
   
-  // filter out players without W3C stats if checkbox is checked
-  if (hideNoW3CStats.value) {
-    list = list.filter(p => hasW3CStatsTwoSeasons(p, currentW3CSeason.value, p.signup_race));
-  }
-  if (hideLowGames.value) {
-    list = list.filter(p => !hasLowGamesTwoSeasons(p, currentW3CSeason.value, p.signup_race));
-  }
-  
   return list;
 });
 
@@ -539,8 +545,6 @@ const clearFilters = () => {
   searchName.value = '';
   searchRace.value = null;
   rangeValues.value = [0, 3000];
-  hideNoW3CStats.value = false;
-  hideLowGames.value = false;
 };
 
 const onResetFilters = async () => {

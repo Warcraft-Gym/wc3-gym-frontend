@@ -125,7 +125,7 @@
             <tr @click="$router.push(`/seasons/${seasonSlug(item)}`)" class="season-row">
               <td class="d-none d-md-table-cell">{{ item.id }}</td>
               <td><strong>{{ item.name }}</strong></td>
-              <td class="d-none d-md-table-cell">{{ item.number_rounds }}</td>
+              <td class="d-none d-md-table-cell">{{ item.round_count }}</td>
               <td class="d-none d-md-table-cell">{{ item.pick_ban }}</td>
               <td class="d-none d-md-table-cell">{{ item.series_per_round }}</td>
               <td>
@@ -198,7 +198,7 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="selectedSeason.number_rounds"
+                  v-model="selectedSeason.round_count"
                   label="Number of Rounds"
                   type="number"
                   variant="outlined"
@@ -335,7 +335,7 @@ const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } 
 const allTableHeader = computed(() => [
   { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
-  { mobile: false, title: 'Rounds', value: 'number_rounds', sortable: true },
+  { mobile: false, title: 'Rounds', value: 'round_count', sortable: true },
   { mobile: false, title: 'Pick Ban', value: 'pick_ban', sortable: false },
   { mobile: false, title: 'Series/Round', value: 'series_per_round', sortable: true },
   { title: 'Phase', value: 'phase', sortable: true },
@@ -374,7 +374,7 @@ onMounted(async () => {
 });
 
 const addNewSeason = () => {
-  selectedSeason.value = { name: '', number_rounds: 0, pick_ban: '', series_per_round: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false };
+  selectedSeason.value = { name: '', round_count: 0, pick_ban: '', series_per_round: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false };
   selectedSeasonMapIds.value = [];
   formError.value = '';
   isEditing.value = false;

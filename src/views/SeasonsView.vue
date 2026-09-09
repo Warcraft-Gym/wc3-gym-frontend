@@ -17,7 +17,7 @@
     <v-card v-if="auth.isAdmin" class="mb-4" elevation="2">
       <v-expansion-panels>
         <v-expansion-panel>
-          <v-expansion-panel-title class="bg-grey-lighten-4">
+          <v-expansion-panel-title class="bg-surface-light">
             <v-icon class="mr-2">mdi-file-upload</v-icon>
             Import Excel File
           </v-expansion-panel-title>

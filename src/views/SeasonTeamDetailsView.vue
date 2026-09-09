@@ -239,7 +239,7 @@
       <v-card-text v-else class="text-center pa-8">
         <v-icon size="64" color="grey-lighten-1">mdi-account-off</v-icon>
         <div class="text-h6 text-grey mt-4 mb-2">No players found</div>
-        <p class="text-grey-darken-1 mb-4">Add players to this team to get started</p>
+        <p class="text-medium-emphasis mb-4">Add players to this team to get started</p>
         <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewPlayerModal = true">
           Add First Player
         </v-btn>

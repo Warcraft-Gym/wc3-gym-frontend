@@ -151,10 +151,10 @@
         <v-icon class="mr-2">mdi-trophy-variant</v-icon>
         Series Management
         <v-spacer></v-spacer>
-        <v-chip class="mr-2" size="small" color="success">
+        <v-chip class="mr-2" size="small" color="success" variant="flat">
           {{ series?.length || 0 }} Published
         </v-chip>
-        <v-chip v-if="auth.isCaptain" class="mr-2" size="small" color="warning">
+        <v-chip v-if="auth.isCaptain" class="mr-2" size="small" color="warning" variant="flat">
           {{ draftSeries?.length || 0 }} Drafts
         </v-chip>
         <v-btn
@@ -169,7 +169,7 @@
       </v-card-title>
 
       <!-- Tabs for Published vs Draft Series -->
-      <v-tabs v-model="seriesViewTab" bg-color="grey-lighten-4" color="primary" align-tabs="center">
+      <v-tabs v-model="seriesViewTab" bg-color="surface-light" color="primary" align-tabs="center">
         <v-tab value="published">
           <v-icon start>mdi-check-circle</v-icon>
           Published Series
@@ -2013,10 +2013,10 @@ onMounted(async () => {
 <style>
 /* Global styles for table row highlighting (cannot be scoped) */
 .highlight-row {
-  background-color: #ffc87a !important;
+  background-color: rgba(255, 167, 38, 0.28) !important;
 }
 
 .highlight-selected-row {
-  background-color: #99ff7a !important;
+  background-color: rgba(76, 175, 80, 0.28) !important;
 }
 </style>

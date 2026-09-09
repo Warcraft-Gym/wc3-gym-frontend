@@ -12,6 +12,16 @@
 </head>
 
 <body>
+    <script>
+        // Paint the stored theme's ground before the app loads, so a hard load does not
+        // flash white. Same three modes as src/helpers/theme.js.
+        try {
+            var q = new URLSearchParams(location.search).get('readonly');
+            var mode = (q === '1' || q === 'true') ? 'light' : (localStorage.getItem('theme') || 'system');
+            var dark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+            document.body.style.backgroundColor = dark ? '#121212' : '#fff';
+        } catch (e) { /* a browser that blocks storage just keeps the default ground */ }
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
 </body>

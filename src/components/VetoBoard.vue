@@ -178,7 +178,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { fetchWrapper } from '@/helpers';
+import { backendUrl, fetchWrapper } from '@/helpers';
 import { DEFAULT_RULES } from '@/helpers/best-of.mjs';
 import { hideMissingImage } from '@/helpers/team-image';
 import { useAuthStore, useMapStore } from '@/stores';
@@ -192,7 +192,6 @@ const props = defineProps({
 });
 const emit = defineEmits(['change']);
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const mapStore = useMapStore();
 const auth = useAuthStore();
 
@@ -290,7 +289,7 @@ const orderRows = computed(() => order.value.map((entry, index) => {
   };
 }));
 
-// one row per map rule: a week rule names its map, a veto rule takes the picks then, once the veto
+// one row per map rule: a fixed rule names its map, a veto rule takes the picks then, once the veto
 // is complete, what is left; a loser rule is only decided at play time
 const games = computed(() => {
   const picksMade = taken.value.filter(step => step.action === 'pick');
@@ -304,7 +303,7 @@ const games = computed(() => {
     let mapId = null;
     let source = 'Host picks';
 
-    if (rule === 'week') {
+    if (rule === 'fixed') {
       mapId = board.value?.week_map_id;
       source = 'Fixed map';
     } else if (rule === 'loser') {
@@ -399,7 +398,7 @@ onUnmounted(() => clearInterval(timer));
 
 .thumb {
   position: relative;
-  height: 66px;
+  aspect-ratio: 1;  /* the map pictures are square; a fixed height cropped the minimap */
   overflow: hidden;
 }
 

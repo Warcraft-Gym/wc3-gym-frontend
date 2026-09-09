@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gamesOf, winsOf, isValidResult, replaysNeeded } from './best-of.mjs';
+import { gamesOf, winsOf, isValidResult, replaysNeeded, resultProblem } from './best-of.mjs';
 
 test('the games are the rules a season lists', () => {
   assert.equal(gamesOf('veto,veto,veto'), 3);
-  assert.equal(gamesOf('veto,week,loser,veto,veto'), 5);
+  assert.equal(gamesOf('veto,fixed,loser,veto,veto'), 5);
   assert.equal(gamesOf('veto'), 1);
 });
 
@@ -36,4 +36,14 @@ test('every map played leaves a replay', () => {
   assert.equal(replaysNeeded(2, 0), 2);
   assert.equal(replaysNeeded(2, 1), 3);
   assert.equal(replaysNeeded(3, 2), 5);
+});
+
+test('a pair that is not a result says why', () => {
+  assert.equal(resultProblem(2, 1, 'veto,veto,veto'), null);
+  assert.equal(resultProblem(0, 2, null), null);
+  assert.equal(resultProblem(17, 0, null), 'A Bo3 ends when one player wins 2 maps');
+  assert.equal(resultProblem(1, 0, null), 'A Bo3 ends when one player wins 2 maps');
+  assert.equal(resultProblem(2, 2, null), 'A Bo3 ends when one player wins 2 maps');
+  assert.equal(resultProblem(2, 1, 'veto,veto,veto,veto,veto'), 'A Bo5 ends when one player wins 3 maps');
+  assert.equal(resultProblem(NaN, 2, null), 'Enter both map scores');
 });

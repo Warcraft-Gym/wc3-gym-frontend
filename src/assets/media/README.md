@@ -18,9 +18,13 @@ baseline-aligned with the text next to it and sized in `em` so it scales
 with that text.
 
 `w3c-logo-white.png` is `medium-logo.png` byte for byte, white letters as
-published. The ladder page's "Sync W3C" button uses it on its blue fill.
+published. The ladder page's "Sync W3C" button uses it on its blue fill. The
+dark theme uses it wherever the light theme uses `w3c-logo.png`.
 
 `w3champions-logo.png` is their full "W3Champions" wordmark with crown,
 `public/assets/logos/medium-logotype.png` of the same repo, recoloured dark
 the same way as `w3c-logo.png`. The ladder page title carries it. Same
 geometry: letters in the bottom half, baseline-aligned, sized in `em`.
+
+`w3champions-logo-white.png` is `medium-logotype.png` byte for byte, white
+letters as published. The ladder page title uses it on the dark theme.

@@ -1,7 +1,7 @@
 <template>
   <div class="koth-dashboard-wrapper">
     <v-container fluid class="pa-6 koth-dashboard">
-      <v-overlay v-model="initialLoad" persistent class="loading-overlay">
+      <v-overlay v-model="initialLoad" persistent class="loading-overlay align-center justify-center">
         <v-progress-circular indeterminate size="64" width="8" color="primary" />
       </v-overlay>
 
@@ -342,7 +342,7 @@ async function submitSignup() {
 
 <style scoped>
 .koth-dashboard-wrapper {
-  background: #f5f5f5;
+  background: rgb(var(--v-theme-background));
   min-height: 100vh;
 }
 
@@ -355,7 +355,7 @@ async function submitSignup() {
 }
 
 .bracket-card {
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(var(--v-theme-surface), 0.95) !important;
   border-radius: 16px !important;
   overflow: hidden;
   transition: transform 0.2s;
@@ -381,7 +381,7 @@ async function submitSignup() {
 }
 
 .king-card {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(var(--v-theme-surface), 0.8) !important;
   border: 2px solid #ffc107 !important;
   border-radius: 8px !important;
 }
@@ -398,19 +398,19 @@ async function submitSignup() {
 }
 
 .player-item {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(var(--v-theme-surface), 0.5);
   border-radius: 6px;
   transition: background 0.2s;
 }
 
 .player-item:hover {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(var(--v-theme-surface), 0.7);
 }
 
 .player-item {
   padding: 4px 8px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(var(--v-theme-surface), 0.6);
 }
 
 .race-row {

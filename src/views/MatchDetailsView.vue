@@ -1,5 +1,5 @@
 <template>
-  <v-overlay v-model="isLoading" persistent class="loading-overlay">
+  <v-overlay v-model="isLoading" persistent class="align-center justify-center">
     <v-progress-circular
       indeterminate
       size="64" 
@@ -19,7 +19,7 @@
             <div class="mb-2">
               <v-chip color="primary" size="large" class="mb-2">
                 <v-icon start>mdi-calendar-week</v-icon>
-                Week {{ match.playday }}
+                Round {{ match.playday }}
               </v-chip>
               <div v-if="roundOf(match.playday).start_date" class="text-subtitle-2 mt-1 text-white">
                 <v-icon size="small" color="white">mdi-clock-outline</v-icon>
@@ -82,15 +82,15 @@
               density="compact"
             >
               <v-tab
-                v-for="week in weeklyMatches"
-                :key="week.weekNumber"
-                :value="week.weekNumber"
+                v-for="round in matchesByRound"
+                :key="round.roundNumber"
+                :value="round.roundNumber"
               >
                 <v-menu location="bottom" :close-on-content-click="true" scroll-strategy="close" activator="parent">
                   <v-list density="compact" max-width="400">
-                    <v-list-subheader>Week {{ week.weekNumber }} Matches</v-list-subheader>
+                    <v-list-subheader>Round {{ round.roundNumber }} Matches</v-list-subheader>
                     <v-list-item
-                      v-for="matchItem in week.matches"
+                      v-for="matchItem in round.matches"
                       :key="matchItem.id"
                       :active="matchItem.id === match.id"
                       @click.stop="navigateToMatch(matchItem.id)"
@@ -117,14 +117,14 @@
                         </div>
                       </div>
                     </v-list-item>
-                    <v-divider v-if="week.matches.length === 0"></v-divider>
-                    <v-list-item v-if="week.matches.length === 0">
+                    <v-divider v-if="round.matches.length === 0"></v-divider>
+                    <v-list-item v-if="round.matches.length === 0">
                       <v-list-item-title class="text-grey text-center">No matches scheduled</v-list-item-title>
                     </v-list-item>
                   </v-list>
                 </v-menu>
                 <v-icon start size="small">mdi-calendar-week</v-icon>
-                Week {{ week.weekNumber }}
+                Round {{ round.roundNumber }}
               </v-tab>
             </v-tabs>
           </v-col>
@@ -556,7 +556,7 @@
           </v-row>     
         </v-card-text>
                       
-        <v-card-actions class="px-4 py-3 flex-shrink-0 flex-wrap" style="border-top: 1px solid rgba(0,0,0,0.12);">
+        <v-card-actions class="px-4 py-3 flex-shrink-0 flex-wrap" style="border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);">
           <v-checkbox
             v-model="newSeries_IsDraft"
             label="Create as Draft"
@@ -617,14 +617,19 @@
                 <v-number-input
                   v-model="selectedSeries.player1_score"
                   :label="`${selectedSeries.player1.name} Score`"
+                  :min="0"
+                  :max="editWins"
                 ></v-number-input>
               </v-col>
               <v-col cols="12" sm="6">
                 <v-number-input
                   v-model="selectedSeries.player2_score"
                   :label="`${selectedSeries.player2.name} Score`"
+                  :min="0"
+                  :max="editWins"
                 ></v-number-input>
               </v-col>
+              <v-col v-if="editScoreProblem" cols="12" class="pt-0 text-error text-caption">{{ editScoreProblem }}</v-col>
               <v-col cols="12" sm="6">
                 <RaceSelect
                   v-model="selectedSeries.player1_off_race"
@@ -662,8 +667,8 @@
             </v-row>
           </v-form>
         </v-card-text>
-        <v-card-actions style="position: sticky; bottom: 0; background: white; z-index: 10;">
-          <v-btn @click="updateSeries" color="green" prepend-icon="mdi-check">
+        <v-card-actions style="position: sticky; bottom: 0; background: rgb(var(--v-theme-surface)); z-index: 10;">
+          <v-btn @click="updateSeries" color="green" prepend-icon="mdi-check" :disabled="!!editScoreProblem">
             Save
           </v-btn>
           <v-btn @click="cancelEditSeries" color="red" prepend-icon="mdi-close">
@@ -1046,7 +1051,7 @@ import { DateTime } from "luxon";
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useDisplay } from 'vuetify';
-import { fetchWrapper } from '@/helpers';
+import { backendUrl, fetchWrapper } from '@/helpers';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import SimpleTimePicker from '../components/SimpleTimePicker.vue';
 import SimpleDatePicker from '../components/SimpleDatePicker.vue';
@@ -1060,6 +1065,7 @@ import { teamImageUrl, hideMissingImage, showDefaultTeamImage } from '@/helpers/
 import { raceWrapper } from '@/helpers/races';
 import { useColumns } from '@/helpers/columns';
 import { roundLabel } from '@/helpers/rounds.mjs';
+import { winsOf, resultProblem } from '@/helpers/best-of';
 
 
 // Stores initialization
@@ -1078,7 +1084,7 @@ const roundOf = (playday) => season.value?.rounds?.find(r => r.playday === playd
 const { series, draftSeries } = storeToRefs(seriesStore);
 
 // Week navigation state
-const weeklyMatches = ref([]);
+const matchesByRound = ref([]);
 
 const allSeriesTableHeader = computed(() => [
 
@@ -1189,8 +1195,6 @@ const canDraft = computed(() => auth.isAdmin || (auth.me?.team?.id != null
 const isLoading = ref(false);
 
 // Team state
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
-
 const team1 = ref({});
 const team2 = ref({});
 // The season ladder record of every signup, by user id, for the record against each race
@@ -1447,11 +1451,11 @@ const fetchSeasonMatches = async () => {
 
   try {
     const seasonMatches = await matchStore.searchMatchesBySeason(match.value.season_id);
-    const numberOfWeeks = match.value.season?.number_weeks
+    const numberOfRounds = match.value.season?.number_rounds
       || Math.max(0, ...seasonMatches.map(m => m.playday || 0));
 
-    weeklyMatches.value = Array.from({ length: numberOfWeeks }, (_, i) => ({
-      weekNumber: i + 1,
+    matchesByRound.value = Array.from({ length: numberOfRounds }, (_, i) => ({
+      roundNumber: i + 1,
       matches: seasonMatches.filter(m => m.playday === i + 1),
     }));
   } catch (error) {
@@ -1584,6 +1588,15 @@ const editSeries = async (seriesItem) => {
 const cancelEditSeries = async () => {
   editSeriesDialogOpen.value = false;
 }
+
+// An admin writes the same result the report form writes: the season's best-of
+const editWins = computed(() => winsOf(season.value?.map_rules));
+const editScoreProblem = computed(() => {
+  const score = (value) => (value === null || value === undefined || value === '' ? NaN : Number(value));
+  const p1 = score(selectedSeries.value?.player1_score), p2 = score(selectedSeries.value?.player2_score);
+  if (Number.isNaN(p1) && Number.isNaN(p2)) return null;  // a series nobody has played yet
+  return resultProblem(p1, p2, season.value?.map_rules);
+});
 
 const updateSeries = async () => {
   isLoading.value = true;

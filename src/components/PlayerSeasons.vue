@@ -1,6 +1,7 @@
 <!-- One row per season the player signed up for, newest first. The row carries
-     the season's state, his team, race, series record and week strip, ladder
-     record and MMR; it opens into his weekly series and the ladder tab. -->
+     the season's state, his team, race, series record and round strip, ladder
+     record and MMR; it opens into his series by round and the ladder tab. The
+     season named by `open` draws the `current` slot instead of the series table. -->
 <template>
   <StatusAlert v-model="errorMessage" />
   <v-expansion-panels v-if="rows.length" v-model="opened" variant="accordion" flat>
@@ -25,8 +26,8 @@
             <div class="text-caption text-medium-emphasis">Series</div>
             <div class="d-flex align-center ga-2">
               <span><span class="text-green">{{ row.stat?.wins ?? 0 }}</span> – <span class="text-red">{{ row.stat?.losses ?? 0 }}</span></span>
-              <span v-if="row.season.number_weeks" class="weeks">
-                <span v-for="week in row.season.number_weeks" :key="week" class="week" :class="weekClass(row, week)" :title="weekTitle(row, week)" />
+              <span v-if="row.season.number_rounds" class="weeks">
+                <span v-for="week in row.season.number_rounds" :key="week" class="week" :class="weekClass(row, week)" :title="weekTitle(row, week)" />
               </span>
             </div>
           </div>
@@ -47,13 +48,13 @@
         </div>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <slot v-if="row.season.id === open" name="current" :row="row" />
+        <slot v-if="row.season.id === openId && $slots.current" name="current" :row="row" />
         <section v-else class="section">
-          <h4 class="text-body-1 font-weight-medium">Weekly series <span class="text-caption text-medium-emphasis">{{ row.stat?.wins ?? 0 }} – {{ row.stat?.losses ?? 0 }}</span></h4>
+          <h4 class="text-body-1 font-weight-medium">Series by round <span class="text-caption text-medium-emphasis">{{ row.stat?.wins ?? 0 }} – {{ row.stat?.losses ?? 0 }}</span></h4>
           <v-table density="compact">
             <thead>
               <tr>
-                <th>Week</th>
+                <th>Round</th>
                 <th>Opponent</th>
                 <th v-if="mdAndUp">Team</th>
                 <th class="text-right">Result</th>
@@ -71,7 +72,12 @@
                 <td v-if="mdAndUp">{{ opponentTeam(series, row) }}</td>
                 <td class="text-right font-weight-medium" :class="resultClass(series)">{{ result(series) }}</td>
                 <td v-if="mdAndUp" class="text-right">{{ playedOn(series) }}</td>
-                <td v-if="mdAndUp" class="text-medium-emphasis">{{ notes(series) }}</td>
+                <td v-if="mdAndUp" class="text-medium-emphasis">
+                  <div class="d-flex align-center ga-2">
+                    <span v-if="series.host_player_id === player.id">host</span>
+                    <CastChips :series="series" />
+                  </div>
+                </td>
               </tr>
               <tr v-if="!row.series.length">
                 <td colspan="6" class="text-medium-emphasis">No series yet.</td>
@@ -93,6 +99,8 @@ import { useDisplay } from 'vuetify';
 import { useLadderStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
 import { isUnscored } from '@/helpers/season-phase.mjs';
+import { currentRound } from '@/helpers/rounds.mjs';
+import CastChips from '@/components/CastChips.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
@@ -148,12 +156,13 @@ const day = (iso) => DateTime.fromISO(iso).toFormat('LLL d');
 const dates = (season) => {
   if (!season.start_date) return '';
   const span = `${day(season.start_date)} – ${season.end_date ? day(season.end_date) : '…'}`;
-  const weeks = season.number_weeks;
-  if (!weeks) return span;
-  if (season.phase === 'complete') return `${span} · ${weeks} weeks`;
+  const rounds = season.number_rounds;
+  if (!rounds) return span;
+  if (season.phase === 'complete') return `${span} · ${rounds} rounds`;
   if (season.phase === 'open') return span;
-  const week = Math.min(weeks, Math.max(1, Math.floor(-DateTime.fromISO(season.start_date).diffNow('days').days / 7) + 1));
-  return `${span} · week ${week} of ${weeks}`;
+  // The round windows say which round is in play; a round is not a week long
+  const now = currentRound(season.rounds ?? []);
+  return now ? `${span} · round ${now.playday} of ${rounds}` : `${span} · ${rounds} rounds`;
 };
 
 const mine = (series) => series.player1_id === props.player.id;
@@ -180,12 +189,7 @@ const resultClass = (series) => {
   return me > them ? 'text-green' : me < them ? 'text-red' : '';
 };
 const playedOn = (series) => (series.date_time ? DateTime.fromISO(series.date_time).toLocal().toFormat('LLL d') : '—');
-const notes = (series) => [
-  series.host_player_id === props.player.id ? 'host' : null,
-  series.casts?.length ? 'cast' : null,
-].filter(Boolean).join(' · ');
-
-// One square per week: won, lost, mixed, still to play, or no series
+// One square per round: won, lost, mixed, still to play, or no series
 const weekSeries = (row, week) => row.series.filter(s => s.match?.playday === week);
 const weekClass = (row, week) => {
   const list = weekSeries(row, week);
@@ -197,14 +201,20 @@ const weekClass = (row, week) => {
 };
 const weekTitle = (row, week) => {
   const list = weekSeries(row, week);
-  if (!list.length) return `Week ${week} · no series`;
-  return list.map(s => `Week ${week} · vs ${opponent(s).name} · ${result(s)}`).join('\n');
+  if (!list.length) return `Round ${week} · no series`;
+  return list.map(s => `Round ${week} · vs ${opponent(s).name} · ${result(s)}`).join('\n');
 };
 
 const mmrDelta = (row) => {
   const mmr = row.ladder?.mmr;
   return mmr?.current != null && mmr?.start != null ? mmr.current - mmr.start : 0;
 };
+
+// With no season named, the newest season still running opens onto its rounds
+const openId = computed(() => props.open
+  ?? rows.value.find(row => row.season.phase && row.season.phase !== 'complete')?.season.id
+  ?? null);
+watch(openId, (id) => { if (opened.value == null) opened.value = id; }, { immediate: true });
 
 // The season list and the team names once; one series read and one ladder
 // read per season, for the row's own facts

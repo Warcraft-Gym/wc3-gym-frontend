@@ -1,5 +1,5 @@
 <template>
-  <v-overlay v-model="isLoading" persistent absolute>
+  <v-overlay v-model="isLoading" persistent absolute class="align-center justify-center">
     <v-progress-circular indeterminate size="64" width="8" color="primary"></v-progress-circular>
   </v-overlay>
 
@@ -999,7 +999,7 @@ onMounted(async () => {
 <style scoped>
 .pick { accent-color: rgb(var(--v-theme-primary)); width: 18px; height: 18px; cursor: pointer; vertical-align: middle; }
 .picked > td { background: rgba(24, 103, 192, 0.06); }
-.open-row { padding: 10px 12px 12px; background: rgba(0, 0, 0, 0.02); }
+.open-row { padding: 10px 12px 12px; background: rgba(var(--v-theme-on-surface), 0.02); }
 
 .team-icon {
   width: 100%;

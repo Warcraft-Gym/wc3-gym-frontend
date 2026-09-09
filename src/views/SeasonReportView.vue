@@ -605,7 +605,7 @@ const sortedFantasyTeams = computed(() =>
 
 // ─── Header summary stats ─────────────────────────────────────────────────────
 const headerStats = computed(() => [
-    { label: 'Weeks', value: season.value?.number_weeks ?? '–', icon: 'mdi-calendar-week' },
+    { label: 'Rounds', value: season.value?.number_rounds ?? '–', icon: 'mdi-calendar-week' },
     { label: 'Teams', value: teams.value.length, icon: 'mdi-shield-outline' },
     { label: 'Players', value: allPlayers.value.length, icon: 'mdi-account-group' },
     { label: 'Series Played', value: series.value.length, icon: 'mdi-sword-cross' },

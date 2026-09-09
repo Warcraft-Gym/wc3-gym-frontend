@@ -1,5 +1,5 @@
 <template>
-  <v-overlay v-model="isLoading" persistent class="loading-overlay">
+  <v-overlay v-model="isLoading" persistent class="align-center justify-center">
     <v-progress-circular
           indeterminate
           size="64" 
@@ -20,8 +20,8 @@
               <v-col cols="auto">
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold primary--text">{{ season.number_weeks }}</div>
-                    <div class="text-subtitle-2 text-uppercase">Weeks</div>
+                    <div class="text-h4 font-weight-bold primary--text">{{ season.number_rounds }}</div>
+                    <div class="text-subtitle-2 text-uppercase">Rounds</div>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -52,7 +52,7 @@
         <GroupedTable :columns="unscoredColumns" :groups="unscoredGroups" default-open empty="Every series of this season has a result">
           <template #group="{ group }">
             <td :colspan="unscoredColumns.length">
-              <strong>Week {{ group.key }}</strong>
+              <strong>Round {{ group.key }}</strong>
               <span class="text-medium-emphasis ml-2">{{ group.rows.length }} with no result</span>
             </td>
           </template>
@@ -70,7 +70,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Week Navigation Tabs -->
+    <!-- Round navigation tabs -->
     <v-card class="mb-4" elevation="2">
       <v-tabs
         v-model="selectedWeek"
@@ -80,12 +80,12 @@
         @update:modelValue="fetchMatches"
       >
         <v-tab
-          v-for="week in season.number_weeks"
+          v-for="week in season.number_rounds"
           :key="week"
           :value="week"
         >
           <v-icon start>mdi-calendar-week</v-icon>
-          Week {{ week }}
+          Round {{ week }}
         </v-tab>
       </v-tabs>
     </v-card>
@@ -94,7 +94,7 @@
     <v-card class="mb-4" elevation="1">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-trophy</v-icon>
-        Week {{ selectedWeek }} Matches
+        Round {{ selectedWeek }} Matches
       </v-card-title>
       <v-card-text class="pa-0">
         <v-toolbar flat height="auto">
@@ -141,7 +141,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Matches for Selected Week -->
+    <!-- Matches for the selected round -->
     <v-row v-if="matches && matches.length > 0">
       <v-col
         v-for="(match, index) in matches"
@@ -223,7 +223,7 @@
     <!-- Empty State -->
     <v-card v-else elevation="0" class="text-center pa-8">
       <v-icon size="64" color="grey-lighten-1">mdi-calendar-blank</v-icon>
-      <div class="text-h6 mt-4 text-grey">No matches scheduled for Week {{ selectedWeek }}</div>
+      <div class="text-h6 mt-4 text-grey">No matches scheduled for Round {{ selectedWeek }}</div>
       <v-btn 
         color="primary" 
         variant="tonal" 
@@ -345,7 +345,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-calendar-plus</v-icon>
-        Create Match - Week {{ selectedWeek }}
+        Create Match - Round {{ selectedWeek }}
       </v-card-title>
       <v-card-text class="pt-4">
         <v-row>
@@ -697,7 +697,7 @@ const closeTeamSelectionModal = () => {
     const fetchMatches = async (week) => {
   selectedWeek.value = week;
   isLoading.value = true;
-  router.push({ hash: `#week-${week}` });
+  router.push({ hash: `#round-${week}` });
   try {
     await matchStore.searchMatchesBySeasonAndPlayday(seasonId, week);
   } catch (error) {
@@ -746,12 +746,12 @@ const closeTeamSelectionModal = () => {
 
     watch(() => route.hash, (newHash) => {
       if (newHash) {
-        const weekFromHash = route.hash && route.hash.includes('#week-') 
-            ? parseInt(route.hash.replace('#week-', ''), 10) 
+        const roundFromHash = route.hash && route.hash.includes('#round-') 
+            ? parseInt(route.hash.replace('#round-', ''), 10) 
             : 1;
-          if(selectedWeek.value && weekFromHash!=selectedWeek.value){
-            selectedWeek.value = weekFromHash;
-            fetchMatches(weekFromHash);
+          if(selectedWeek.value && roundFromHash!=selectedWeek.value){
+            selectedWeek.value = roundFromHash;
+            fetchMatches(roundFromHash);
           }
       }
     });
@@ -762,17 +762,17 @@ onMounted(async () => {
   isInitLoading.value = true;
   isLoading.value = true;
   try {
-    const weekFromHash = route.hash && route.hash.includes('#week-') 
-      ? parseInt(route.hash.replace('#week-', ''), 10) 
+    const roundFromHash = route.hash && route.hash.includes('#round-') 
+      ? parseInt(route.hash.replace('#round-', ''), 10) 
       : 1;
 
     // Set the selected week before fetching
-    selectedWeek.value = weekFromHash;
+    selectedWeek.value = roundFromHash;
 
     await Promise.all([
       fetchSeasonDetails(),
       fetchTeams(),
-      fetchMatches(weekFromHash),
+      fetchMatches(roundFromHash),
       fetchMaps(),
       unscoredOnly.value && fetchUnscoredSeries()
     ]);
@@ -823,7 +823,7 @@ onMounted(async () => {
 
   /* Stat Cards */
   .stat-card {
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: rgba(var(--v-theme-surface), 0.95) !important;
     backdrop-filter: blur(10px);
     transition: transform 0.2s, box-shadow 0.2s;
   }

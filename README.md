@@ -19,14 +19,17 @@ Vue.js-based dashboard for managing GNL esports leagues, including team manageme
 
 ```bash
 git clone <repository-url>
-cd admin_frontend
+cd wc3-gym-frontend
 ```
 
 ### 2. Install Dependencies
 
 ```bash
 npm install
+cp .env.example .env
 ```
+
+`.env` is not tracked. See [Environment Variables](#environment-variables).
 
 ### 3. Start Development Server
 
@@ -129,26 +132,18 @@ proxy: {
 - **Local backend not in Docker:** Use `http://localhost:5002` (default)
 - **Remote backend:** Update target to backend URL (e.g., `https://backend.warcraft-gym.com`)
 
-### Production Mode (Static Build)
+### Environment Variables
 
-In production, the built app makes direct API calls. Update stores to use the correct backend URL:
+Vite reads `.env` at build time and inlines every `VITE_` value into the public bundle. Do not put a secret in it.
 
-```javascript
-// Example from stores/*.store.js
-const backendUrl = 'https://backend.warcraft-gym.com';  // Production backend
-```
+| Name | Local value | Purpose |
+|------|-------------|---------|
+| `VITE_BACKEND_URL` | `/api` | Base URL for API calls. The dev server proxies `/api` to the backend. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_test_...` | Clerk publishable key. The dev instance key in `.env.example` is public. |
+| `VITE_CLERK_PROXY_URL` | unset | Clerk proxy URL. Set only on the Vercel production project. |
+| `VITE_PROXY_TARGET` | unset | Dev-server proxy target. Read from the shell, not from `.env`. Defaults to `http://localhost:5002`. |
 
-Alternatively, you can use environment variables (requires rebuild):
-
-1. Create `.env` file:
-```env
-VITE_BACKEND_URL=https://backend.warcraft-gym.com
-```
-
-2. Update store files to use:
-```javascript
-const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5002';
-```
+`.env` is not tracked. Copy `.env.example` to `.env` once per clone. Vercel holds its own values for production and preview builds.
 
 ## Available Scripts
 

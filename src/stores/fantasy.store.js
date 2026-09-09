@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
-import { fetchWrapper, pageQuery } from '@/helpers';
+import { backendUrl, fetchWrapper, pageQuery } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
-
-const backendUrl = `${import.meta.env.VITE_BACKEND_URL}`;
 
 // The public write routes: the bearer carries the member's session
 async function publicWrite(method, url, payload) {

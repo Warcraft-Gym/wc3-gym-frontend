@@ -64,165 +64,79 @@
       </v-card-title>
       <!-- The current season opens onto its rounds; a series replaces the availability question -->
       <PlayerSeasons :player="fullPlayer" :open="Number(playerData.season_id)">
-        <template #current>
-          <v-chip v-if="asking.length" size="small" variant="tonal" color="primary" class="mb-3">
-            {{ answered }} of {{ asking.length }} answered
-          </v-chip>
-          <div class="d-flex flex-wrap ga-3">
-        <v-sheet
-          v-for="card in roundCards"
-          :key="card.playday"
-          border
-          rounded
-          class="pa-3 flex-grow-1"
-          :style="card.current ? 'min-width: 230px; border-color: rgb(var(--v-theme-primary)) !important' : 'min-width: 230px'"
-        >
-          <div class="text-subtitle-2">{{ card.label }}</div>
-          <div class="text-caption text-medium-emphasis">
-            Week {{ card.playday }}<template v-if="card.opponentTeam"> · vs {{ card.opponentTeam.name }}</template>
-          </div>
+        <template #current="{ row }">
+          <RoundCards
+            :player="playerData.player"
+            :season="row.season"
+            :series="series"
+            :teamId="row.stat?.team_id"
+            :answers="playerData.availability ?? []"
+          >
+            <template #series-actions="{ series: item }">
+              <div class="d-flex flex-wrap ga-1 mt-2">
+                <v-btn
+                  color="primary"
+                  variant="elevated"
+                  size="small"
+                  prepend-icon="mdi-calendar-edit"
+                  @click="editSchedule(item)"
+                  :loading="scheduleSavingId === item.id"
+                  :disabled="scheduleSavingId === item.id || scoreSavingId === item.id"
+                >
+                  Edit Schedule
+                </v-btn>
+                <v-btn
+                  color="success"
+                  variant="elevated"
+                  size="small"
+                  prepend-icon="mdi-trophy"
+                  @click="reportResult(item)"
+                  :loading="scoreSavingId === item.id"
+                  :disabled="scoreSavingId === item.id || scheduleSavingId === item.id"
+                >
+                  Report Result
+                </v-btn>
+                <v-btn
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  prepend-icon="mdi-map-outline"
+                  @click="router.push(vetoRoute(item))"
+                >
+                  Maps
+                </v-btn>
+              </div>
+            </template>
 
-          <!-- A series replaces the question: the round is already accounted for -->
-          <template v-if="card.series">
-            <div class="d-flex align-center ga-2 mt-2">
-              <PlayerName
-                :player="opponent(card.series)"
-                :race="opponentRace(card.series)"
-              />
-              <v-chip v-if="!isUnplayed(card.series)" :color="getScoreColor(card.series)" variant="outlined" size="small">
-                {{ myScore(card.series) }} - {{ theirScore(card.series) }}
-              </v-chip>
-            </div>
-            <div class="text-caption text-medium-emphasis">{{ formatDateTime(card.series.date_time) }}</div>
-            <CastChips :series="card.series" class="mt-1" />
-            <div v-if="isUnplayed(card.series)" class="d-flex flex-wrap ga-1 mt-2">
-              <v-btn
-                color="primary"
-                variant="elevated"
-                size="small"
-                prepend-icon="mdi-calendar-edit"
-                @click="editSchedule(card.series)"
-                :loading="scheduleSavingId === card.series.id"
-                :disabled="scheduleSavingId === card.series.id || scoreSavingId === card.series.id"
-              >
-                Edit Schedule
-              </v-btn>
-              <v-btn
-                color="success"
-                variant="elevated"
-                size="small"
-                prepend-icon="mdi-trophy"
-                @click="reportResult(card.series)"
-                :loading="scoreSavingId === card.series.id"
-                :disabled="scoreSavingId === card.series.id || scheduleSavingId === card.series.id"
-              >
-                Report Result
-              </v-btn>
-              <v-btn
-                color="primary"
-                variant="outlined"
-                size="small"
-                prepend-icon="mdi-map-outline"
-                @click="router.push(vetoRoute(card.series))"
-              >
-                Maps
-              </v-btn>
-            </div>
-          </template>
-
-          <div v-else-if="card.over" class="mt-2">
-            <v-chip size="small" variant="tonal" :color="card.answer === false ? 'error' : undefined">
-              {{ card.answer === false ? 'Out' : 'Not paired' }}
-            </v-chip>
-          </div>
-
-          <template v-else>
-            <div class="d-flex ga-2 mt-2">
-              <v-btn
-                color="success"
-                :variant="card.answer === true ? 'flat' : 'outlined'"
-                :loading="savingWeek === card.playday"
-                :disabled="savingWeek !== null"
-                @click="setWeek(card.playday, true)"
-              >
-                Can play
-              </v-btn>
-              <v-btn
-                color="error"
-                :variant="card.answer === false ? 'flat' : 'outlined'"
-                :loading="savingWeek === card.playday"
-                :disabled="savingWeek !== null"
-                @click="setWeek(card.playday, false)"
-              >
-                Cannot play
-              </v-btn>
-            </div>
-            <div class="text-caption text-medium-emphasis mt-2">{{ setByLine(card.playday) }}</div>
-          </template>
-        </v-sheet>
-          </div>
+            <template #question="{ card }">
+              <div class="d-flex ga-2 mt-2">
+                <v-btn
+                  color="success"
+                  :variant="card.answer === true ? 'flat' : 'outlined'"
+                  :loading="savingWeek === card.playday"
+                  :disabled="savingWeek !== null"
+                  @click="setWeek(card.playday, true)"
+                >
+                  Can play
+                </v-btn>
+                <v-btn
+                  color="error"
+                  :variant="card.answer === false ? 'flat' : 'outlined'"
+                  :loading="savingWeek === card.playday"
+                  :disabled="savingWeek !== null"
+                  @click="setWeek(card.playday, false)"
+                >
+                  Cannot play
+                </v-btn>
+              </div>
+              <div class="text-caption text-medium-emphasis mt-2">{{ setByLine(card.playday) }}</div>
+            </template>
+          </RoundCards>
         </template>
       </PlayerSeasons>
     </v-card>
 
-    <v-card v-if="!isLoading && history.opponents.length" elevation="2" class="mt-6">
-      <v-card-title class="bg-primary d-flex justify-space-between align-center">
-        <div class="d-flex align-center">
-          <v-icon class="mr-2">mdi-sword-cross</v-icon>
-          <span>Head to Head, Lifetime</span>
-        </div>
-        <v-chip color="white" variant="outlined">
-          {{ history.opponents.length }} players faced
-        </v-chip>
-      </v-card-title>
-      <v-table density="comfortable">
-        <thead>
-          <tr>
-            <th>Opponent</th>
-            <th>Series record</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <template v-for="opp in history.opponents" :key="opp.id">
-            <tr class="opponent-row" @click="openOpponent = openOpponent === opp.id ? null : opp.id">
-              <!-- no race here: the row spans every season, and a player is not one race -->
-              <td>
-                <PlayerName :player="opp" />
-                <div class="text-caption text-medium-emphasis">last met {{ lastMet(opp) }}</div>
-              </td>
-              <td>
-                <v-chip :color="recordColor(opp.won, opp.lost)" variant="tonal" size="small">
-                  {{ opp.won }} to {{ opp.lost }}
-                </v-chip>
-              </td>
-              <td class="text-right">
-                <v-icon size="small">{{ openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-              </td>
-            </tr>
-            <tr
-              v-for="meeting in (openOpponent === opp.id ? opp.meetings : [])"
-              :key="meeting.series_id"
-              class="bg-grey-lighten-4"
-            >
-              <td class="text-caption">
-                {{ meeting.season_name }}<template v-if="meeting.playday">, week {{ meeting.playday }}</template>
-              </td>
-              <td>
-                <v-chip :color="recordColor(meeting.my_score, meeting.their_score)" variant="tonal" size="x-small">
-                  {{ meeting.my_score }} to {{ meeting.their_score }}
-                </v-chip>
-                <span class="text-caption text-medium-emphasis ml-1">games</span>
-              </td>
-              <td class="text-caption text-medium-emphasis">
-                <template v-if="meeting.maps?.length">{{ meeting.maps.join(', ') }} · </template>
-                {{ meeting.date_time ? formatDateTime(meeting.date_time) : '' }}
-              </td>
-            </tr>
-          </template>
-        </tbody>
-      </v-table>
-    </v-card>
+    <HeadToHead v-if="!isLoading && playerData" :playerId="playerData.player.id" />
   </v-container>
 
   <!-- Schedule Dialog -->
@@ -286,6 +200,7 @@
                   prepend-inner-icon="mdi-numeric"
                   type="number" 
                   min="0" 
+                  :max="seriesWins" 
                   :hint="scoreSeries.isPlayer1Current ? '(You)' : ''" 
                   persistent-hint
                 />
@@ -298,6 +213,7 @@
                   prepend-inner-icon="mdi-numeric"
                   type="number" 
                   min="0" 
+                  :max="seriesWins" 
                   :hint="scoreSeries.isPlayer2Current ? '(You)' : ''" 
                   persistent-hint
                 />
@@ -317,6 +233,9 @@
               <v-col cols="6">
                 <RaceSelect v-model="scoreSeries.races.player2" :label="scoreSeries.player2_name || ''" density="comfortable" />
               </v-col>
+            </v-row>
+            <v-row v-if="scoreProblem">
+              <v-col cols="12" class="pt-0 text-error text-caption">{{ scoreProblem }}</v-col>
             </v-row>
             <v-row v-for="game in replaySlots" :key="game">
               <v-col cols="12">
@@ -372,13 +291,15 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
+import { backendUrl, fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
-import { useAuthStore, useAvailabilityStore, useSeasonStore, useMatchStore, usePlayerStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useSeasonStore, usePlayerStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
-import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
+import { winsOf, isValidResult, replaysNeeded, resultProblem } from '@/helpers/best-of';
+import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
+import RoundCards from '@/components/RoundCards.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import RaceSelect from '@/components/RaceSelect.vue';
@@ -386,16 +307,12 @@ import CountrySelect from '@/components/CountrySelect.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { DateTime } from 'luxon';
-import { formatDateTime } from '@/helpers/datetime';
-import { roundLabel, roundOver } from '@/helpers/rounds.mjs';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
 import VetoBoard from '@/components/VetoBoard.vue';
-import CastChips from '@/components/CastChips.vue';
 
 
 const router = useRouter();
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 // Current W3C season
 const currentW3CSeason = ref(null);
@@ -435,14 +352,6 @@ const saveProfile = async () => {
     isSavingProfile.value = false;
   }
 };
-// the other side of a series; the id is the fallback when the payload carries no player row
-const opponent = (item) => {
-  const mine = item.player1_id === playerData.value?.player?.id;
-  return (mine ? item.player2 : item.player1) || { name: `Player ${mine ? item.player2_id : item.player1_id}` };
-};
-// the race the opponent played in that series, not the one he signed the season up on
-const opponentRace = (item) =>
-  (item.player1_id === playerData.value?.player?.id ? item.player2_race : item.player1_race);
 
 const playerData = ref(null);
 const series = ref([]);
@@ -519,7 +428,7 @@ const fetchPlayerData = async () => {
 
     playerData.value = firstPage;
     series.value = collected;
-    await fetchTeamMatches();
+    await fetchFullPlayer();
 
   } catch (error) {
     console.error('Error fetching player data:', error);
@@ -534,46 +443,19 @@ const fetchPlayerData = async () => {
 };
 
 // the map veto is only worth opening before the series is played
-const isUnplayed = (item) => !item.player1_score && !item.player2_score;
 const vetoRoute = (item, query = {}) => ({ path: `/player-series/${item.id}/veto`, query });
-
-// Scores read from the player's side: mine first, the opponent's second
-const myScore = (item) => (item.player1_id === playerData.value?.player?.id ? item.player1_score : item.player2_score) || 0;
-const theirScore = (item) => (item.player1_id === playerData.value?.player?.id ? item.player2_score : item.player1_score) || 0;
-
-// Get score color based on win/loss
-const getScoreColor = (item) => {
-  if (myScore(item) > theirScore(item)) return 'success';
-  if (myScore(item) < theirScore(item)) return 'error';
-  return 'warning';
-};
 
 // My rounds: /player-series carries the rounds, the answers and the series (#33)
 const availabilityStore = useAvailabilityStore();
-const matchStore = useMatchStore();
 const playerStore = usePlayerStore();
 const savingWeek = ref(null);
 
-// The team's match of each round names the opponent team
-const teamMatches = ref([]);
-const myTeamId = ref(null);
+// the dashboard player is the reduced one; the full player names the team of each season
 const fullPlayer = ref(null);
-const fetchTeamMatches = async () => {
-  const seasonId = Number(playerData.value?.season_id);
-  if (!seasonId) return;
-  // the dashboard player is the reduced one; the full player names the team of each season
-  const [full, seasonMatches] = await Promise.all([
-    playerStore.getPlayer(playerData.value.player.id).catch(() => null),
-    matchStore.searchMatchesBySeason(seasonId).catch(() => []),
-  ]);
-  fullPlayer.value = full;
-  myTeamId.value = full?.gnl_stats?.find(stat => stat.season_id === seasonId)?.team_id ?? null;
-  teamMatches.value = seasonMatches;
+const fetchFullPlayer = async () => {
+  fullPlayer.value = await playerStore.getPlayer(playerData.value.player.id).catch(() => null);
 };
-const matchOfWeek = (week) => teamMatches.value.find(m => m.playday === week && [m.team1_id, m.team2_id].includes(myTeamId.value));
-const opponentOfWeek = (week) => { const m = matchOfWeek(week); return m && (m.team1_id === myTeamId.value ? m.team2 : m.team1); };
 
-const seriesOfWeek = (week) => series.value.find(item => item.match?.playday === week);
 const rowOfWeek = (week) => playerData.value?.availability?.find(row => row.playday === week);
 const answerFor = (week) => rowOfWeek(week)?.available ?? null;
 
@@ -582,34 +464,6 @@ const setByLine = (week) => {
   if (!row) return 'No answer';
   return `Set by ${row.set_by_user_id === playerData.value?.player?.id ? 'You' : row.set_by_name}`;
 };
-
-// One card per round. A series replaces the question, and a round with no date is never over.
-// A season without rounds has none to show, so the unplayed series stand in for them.
-const roundCards = computed(() => {
-  const rounds = playerData.value?.rounds?.length
-    ? playerData.value.rounds
-    : [...new Set(series.value.filter(isUnplayed).map(item => item.match?.playday).filter(Boolean))]
-      .sort((a, b) => a - b)
-      .map(playday => ({ playday }));
-  let currentSeen = false;
-  return rounds.map(round => {
-    const over = roundOver(round);
-    const current = !over && !currentSeen;
-    if (current) currentSeen = true;
-    return {
-      playday: round.playday,
-      label: roundLabel(round),
-      over,
-      current,
-      series: seriesOfWeek(round.playday),
-      answer: answerFor(round.playday),
-      opponentTeam: opponentOfWeek(round.playday),
-    };
-  });
-});
-// The question is open on a round with no series that is not over
-const asking = computed(() => roundCards.value.filter(card => !card.series && !card.over));
-const answered = computed(() => asking.value.filter(card => card.answer !== null).length);
 
 // a second click on the state already set clears the week back to no answer
 const setWeek = async (week, want) => {
@@ -624,23 +478,6 @@ const setWeek = async (week, want) => {
     errorMessage.value = error.message || 'Error saving availability.';
   } finally {
     savingWeek.value = null;
-  }
-};
-
-// My history: the lifetime head to head
-const history = ref({ events: [], opponents: [] });
-const openOpponent = ref(null);
-
-const recordColor = (won, lost) => (won > lost ? 'success' : won < lost ? 'error' : undefined);
-
-const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `week ${opp.last_playday}` : null].filter(Boolean).join(', ');
-
-// read once; the history does not change with the series table controls
-const fetchHistory = async () => {
-  try {
-    history.value = await fetchWrapper.get(`${backendUrl}/player-history`);
-  } catch (error) {
-    console.error('Error fetching player history:', error);  // the dashboard stands without it
   }
 };
 
@@ -864,6 +701,12 @@ const replaySlots = computed(() => {
 });
 const decidingHint = computed(() => `Required for a ${reportedScore.value.join(':')} result`);
 
+const scoreProblem = computed(() => {
+  const [p1, p2] = reportedScore.value;
+  if (!p1 && !p2) return null;  // the dialog opens at 0:0 and says nothing until a score is typed
+  return resultProblem(p1, p2, scoreSeries.value.map_rules);
+});
+
 // Validate schedule: date and time must be present
 const isScheduleValid = computed(() => {
   return !!(scheduleSeries.value && scheduleSeries.value.date && scheduleSeries.value.time);
@@ -889,7 +732,6 @@ onMounted(async () => {
   currentW3CSeason.value = await resolveCurrentW3CSeason();
   if (authStore.me) seasonStore.fetchSeasons().catch(() => {});  // names the season the signup alert asks about
   await fetchPlayerData();
-  fetchHistory();
 });
 </script>
 
@@ -898,9 +740,6 @@ onMounted(async () => {
   margin: 2px;
 }
 
-.opponent-row {
-  cursor: pointer;
-}
 
 .text-primary {
   color: rgb(var(--v-theme-primary)) !important;

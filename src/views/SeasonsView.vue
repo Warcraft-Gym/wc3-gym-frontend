@@ -9,7 +9,7 @@
       </v-col>
     </v-row>
 
-    <v-overlay v-model="isLoading" persistent class="loading-overlay">
+    <v-overlay v-model="isLoading" persistent class="align-center justify-center">
       <v-progress-circular indeterminate size="64" width="8" color="primary" />
     </v-overlay>
 
@@ -125,9 +125,9 @@
             <tr @click="$router.push(`/seasons/${seasonSlug(item)}`)" class="season-row">
               <td class="d-none d-md-table-cell">{{ item.id }}</td>
               <td><strong>{{ item.name }}</strong></td>
-              <td class="d-none d-md-table-cell">{{ item.number_weeks }}</td>
+              <td class="d-none d-md-table-cell">{{ item.number_rounds }}</td>
               <td class="d-none d-md-table-cell">{{ item.pick_ban }}</td>
-              <td class="d-none d-md-table-cell">{{ item.series_per_week }}</td>
+              <td class="d-none d-md-table-cell">{{ item.series_per_round }}</td>
               <td>
                 {{ PHASE_LABEL[item.phase] ?? '' }}
                 <v-tooltip v-if="item.phase === 'overdue'" text="Past its end date" location="top">
@@ -198,8 +198,8 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="selectedSeason.number_weeks"
-                  label="Number of Weeks"
+                  v-model="selectedSeason.number_rounds"
+                  label="Number of Rounds"
                   type="number"
                   variant="outlined"
                   density="comfortable"
@@ -217,8 +217,8 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="selectedSeason.series_per_week"
-                  label="Series per Week"
+                  v-model="selectedSeason.series_per_round"
+                  label="Series per Round"
                   type="number"
                   variant="outlined"
                   density="comfortable"
@@ -335,9 +335,9 @@ const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } 
 const allTableHeader = computed(() => [
   { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
-  { mobile: false, title: 'Weeks', value: 'number_weeks', sortable: true },
+  { mobile: false, title: 'Rounds', value: 'number_rounds', sortable: true },
   { mobile: false, title: 'Pick Ban', value: 'pick_ban', sortable: false },
-  { mobile: false, title: 'Series/Week', value: 'series_per_week', sortable: true },
+  { mobile: false, title: 'Series/Round', value: 'series_per_round', sortable: true },
   { title: 'Phase', value: 'phase', sortable: true },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
@@ -374,7 +374,7 @@ onMounted(async () => {
 });
 
 const addNewSeason = () => {
-  selectedSeason.value = { name: '', number_weeks: 0, pick_ban: '', series_per_week: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false };
+  selectedSeason.value = { name: '', number_rounds: 0, pick_ban: '', series_per_round: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false };
   selectedSeasonMapIds.value = [];
   formError.value = '';
   isEditing.value = false;

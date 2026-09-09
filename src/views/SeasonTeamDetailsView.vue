@@ -179,8 +179,8 @@
                   </v-btn>
                 </v-col>
                 <v-col cols="12" sm="auto">
-                  <v-btn v-if="canSetWeeks" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${$route.params.season_id}/weeks`" block>
-                    Team Weeks
+                  <v-btn v-if="canSetRounds" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${$route.params.season_id}/rounds`" block>
+                    Team Rounds
                   </v-btn>
                 </v-col>
                 <v-col cols="12" sm="auto">
@@ -330,8 +330,8 @@ const seasonId = computed(() => {
   return id ? useSeasonStore().seasonIdOf(id) : null;
 });
 
-// The weeks grid takes a captain of this team, or any admin
-const canSetWeeks = computed(() => auth.isAdmin || auth.me?.team?.id === Number(teamId.value));
+// The rounds grid takes a captain of this team, or any admin
+const canSetRounds = computed(() => auth.isAdmin || auth.me?.team?.id === Number(teamId.value));
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);

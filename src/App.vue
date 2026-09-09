@@ -180,6 +180,8 @@ const applyCaptain = () => {
                         <v-list>
                             <v-list-item title="Player Dashboard" :subtitle="identity" prepend-icon="mdi-view-dashboard" :to="dashboardPath" />
                             <v-list-item v-if="canSee('/player-dashboard')" title="Edit Player Info" prepend-icon="mdi-pencil" :to="{ path: '/player-dashboard', query: { edit: 1 } }" />
+                            <!-- /me names a team for a captain only, so a plain member sees no item yet -->
+                            <v-list-item v-if="me?.team" title="My Team" prepend-icon="mdi-shield-account" :to="`/team/${me.team.id}`" />
                             <template v-if="canViewAs">
                                 <v-divider />
                                 <v-list-subheader>View as</v-list-subheader>

@@ -39,7 +39,7 @@
     <StatusAlert v-model="successMessage" type="success" />
 
     <v-card elevation="2" class="mb-4 pa-4">
-      <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="names" :colors="colors" :domain="domain" :disabled="locked" />
+      <DivisionBracketing v-model:cuts="cuts" :players="stripPlayers" :names="names" :colors="colors" :domain="domain" :stored="stored" :disabled="locked" />
     </v-card>
 
     <v-card elevation="2">

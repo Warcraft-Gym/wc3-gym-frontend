@@ -76,14 +76,29 @@
     </section>
 
     <section class="section">
-      <h4 class="text-body-1 font-weight-medium">
-        W3C ladder matches
-        <span class="text-caption text-medium-emphasis">{{ scopeNote }} · {{ data?.games ?? 0 }}</span>
-      </h4>
+      <div class="d-flex align-center flex-wrap ga-2 mb-2">
+        <h4 class="text-body-1 font-weight-medium">
+          W3C ladder matches
+          <span class="text-caption text-medium-emphasis">ranked 1v1, not GNL series · {{ matchCount }}</span>
+        </h4>
+        <v-chip v-if="!isScoredRace" size="x-small" color="warning" variant="tonal">not scored this season</v-chip>
+        <v-spacer />
+        <v-select
+          v-if="raceOptions.length > 1"
+          :model-value="shownRace"
+          :items="raceOptions"
+          density="compact"
+          variant="outlined"
+          hide-details
+          label="Race"
+          class="race-pick"
+          @update:model-value="pickRace"
+        />
+      </div>
       <v-data-table-server
         :headers="matchHeaders"
         :items="data?.matches ?? []"
-        :items-length="data?.games ?? 0"
+        :items-length="matchCount"
         :items-per-page="itemsPerPage"
         v-model:page="page"
         :loading="isLoading"
@@ -130,6 +145,7 @@ import RaceIcon from '@/components/RaceIcon.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import { achievementPoints, SCORED_NOTE } from '@/helpers/achievements';
 import { playerPath } from '@/helpers/players';
+import { raceTotal } from '@/helpers/all-matches.mjs';
 import { raceWrapper } from '@/helpers/races';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import AchievementIcon from '@/components/AchievementIcon.vue';
@@ -153,6 +169,8 @@ const isLoading = ref(false);
 const errorMessage = ref(null);
 const itemsPerPage = ref(10);
 const page = ref(1);
+// null until the first answer names the race the season scores him on
+const raceFilter = ref(null);
 const showLocked = ref(false);
 
 const allMatchHeaders = [
@@ -165,12 +183,32 @@ const allMatchHeaders = [
 ];
 const matchHeaders = useColumns(allMatchHeaders);
 
-// The season pays him on the race he signed up with and on no other, so the
-// list names that race; without a signup for the season nothing counts
-const scopeNote = computed(() => {
-  const name = raceWrapper.getRaceObject(data.value?.race)?.name;
-  return `ranked 1v1${name ? ` on ${name}` : ''}, not GNL series`;
+// The list opens on the race the season scores, and holds it until the player
+// picks another race he laddered on
+const shownRace = computed(() => raceFilter.value ?? data.value?.race ?? null);
+const isScoredRace = computed(() => shownRace.value === (data.value?.race ?? null));
+const matchCount = computed(() => raceTotal(data.value ?? {}, shownRace.value));
+
+// Most games first. The scored race is always offered, at 0 when he never
+// played it, so a player who laddered off it can still reach his games.
+const raceOptions = computed(() => {
+  const counts = { ...(data.value?.by_race ?? {}) };
+  const signup = data.value?.race;
+  if (signup && !(signup in counts)) counts[signup] = 0;
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([code, games]) => {
+      const name = raceWrapper.getRaceObject(code)?.name ?? code;
+      const scored = code === signup ? ' · scored' : '';
+      return { value: code, title: `${name} · ${games}${scored}` };
+    });
 });
+
+const pickRace = (code) => {
+  raceFilter.value = code;
+  page.value = 1;
+  loadPage({ page: 1, itemsPerPage: itemsPerPage.value });
+};
 
 const w3cStatsUrl = computed(() => `${w3cPlayerUrl(props.player?.battleTag ?? '')}/statistics`);
 
@@ -227,9 +265,12 @@ const loadPage = async ({ page, itemsPerPage: perPage }) => {
   try {
     data.value = await ladderStore.userLadder(props.player.id, {
       seasonId: props.seasonId,
+      race: raceFilter.value,
       limit: perPage,
       offset: (page - 1) * perPage,
     });
+    // The first answer names the race the season scores; the select opens on it
+    if (raceFilter.value === null) raceFilter.value = data.value?.race ?? null;
     seasonLadder.value =
       ladderStore.ladders[props.seasonId] ?? (await ladderStore.seasonLadder(props.seasonId));
   } catch (error) {
@@ -243,6 +284,7 @@ const loadPage = async ({ page, itemsPerPage: perPage }) => {
 // A new player or season reopens the tab on its first page
 watch(() => [props.player, props.seasonId], () => {
   page.value = 1;
+  raceFilter.value = null;
   loadPage({ page: 1, itemsPerPage: itemsPerPage.value });
 });
 </script>
@@ -250,6 +292,7 @@ watch(() => [props.player, props.seasonId], () => {
 <style scoped>
 .section { padding-bottom: 16px; }
 .section h4 { margin-bottom: 8px; }
+.race-pick { max-width: 200px; flex: 0 0 auto; }
 .tiles { display: flex; flex-wrap: wrap; gap: 12px 40px; align-items: flex-start; margin-bottom: 12px; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .versus .bar { width: 120px; }

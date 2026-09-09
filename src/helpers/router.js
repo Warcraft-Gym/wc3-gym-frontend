@@ -29,7 +29,7 @@ export const router = createRouter({
         { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false, season: true } },
         { path: '/seasons/:id/achievements', component: SeasonAchievementsView, meta: { role: 'admin', nav: false, season: true } },
         { path: '/match/:id', component: MatchDetailsView, meta: { role: 'member' } },
-        { path: '/team/:id', component: TeamView, meta: { role: 'member', nav: false } },
+        { path: '/team/:id', component: TeamView, meta: { role: 'member' } },
         { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'member', season: true } },
         { path: '/team/:id/season/:season_id/rounds', component: TeamRoundsView, meta: { role: 'captain', season: true } },
         { path: '/maps', component: MapsView, meta: { role: 'admin' } },

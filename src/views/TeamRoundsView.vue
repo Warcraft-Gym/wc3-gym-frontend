@@ -183,7 +183,7 @@ const outToLastRound = async (userId) => {
 
 onMounted(async () => {
   // same gate as the link that leads here: admins, or the captain of this team
-  if (!auth.isAdmin && auth.me?.team?.id !== teamId.value) {
+  if (!auth.isAdmin && auth.captainTeamId !== teamId.value) {
     router.replace('/profile');
     return;
   }

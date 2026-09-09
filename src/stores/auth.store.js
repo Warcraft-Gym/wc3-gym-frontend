@@ -24,7 +24,9 @@ export const useAuthStore = defineStore({
     }),
     getters: {
         isAdmin: (s) => s.me?.role === 'admin',
-        isCaptain: (s) => s.me?.role === 'captain' || s.me?.role === 'admin'
+        isCaptain: (s) => s.me?.role === 'captain' || s.me?.role === 'admin',
+        // /me names the team of every member, so only a captain's team grants captain rights
+        captainTeamId: (s) => (s.me?.role === 'captain' ? s.me?.team?.id ?? null : null)
     },
     actions: {
         useClerkAuth(auth) {

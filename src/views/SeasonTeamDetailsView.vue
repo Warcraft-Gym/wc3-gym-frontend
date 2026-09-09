@@ -331,7 +331,7 @@ const seasonId = computed(() => {
 });
 
 // The rounds grid takes a captain of this team, or any admin
-const canSetRounds = computed(() => auth.isAdmin || auth.me?.team?.id === Number(teamId.value));
+const canSetRounds = computed(() => auth.isAdmin || auth.captainTeamId === Number(teamId.value));
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);

@@ -697,8 +697,7 @@ const mapHint = (game) => {
   return played && played.id === scoreSeries.value.maps[game] ? 'Read from the replay' : undefined;
 };
 
-// What the replay disagrees with, or null. The loser of a 1v1 almost always leaves first,
-// so a contradiction is worth saying and is never a verdict.
+// What the replay disagrees with, or null
 const replayNote = (game) => {
   const read = scoreSeries.value.reads?.[game];
   if (!read) return null;
@@ -709,20 +708,6 @@ const replayNote = (game) => {
   if (played && scoreSeries.value.maps[game] && scoreSeries.value.maps[game] !== played.id) {
     return `The replay was played on ${played.name}.`;
   }
-  const loser = sideOfTag(read.leftFirst);
-  const won = scoreSeries.value.winners[game - 1];
-  if (loser && won && loser === won) {
-    const name = won === 'A' ? scoreSeries.value.player2_name : scoreSeries.value.player1_name;
-    return `The replay suggests ${name} won this game.`;
-  }
-  return null;
-};
-
-const sideOfTag = (tag) => {
-  const fold = (text) => (text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (!fold(tag)) return null;
-  if (fold(scoreSeries.value.tags?.[0]) === fold(tag)) return 'A';
-  if (fold(scoreSeries.value.tags?.[1]) === fold(tag)) return 'B';
   return null;
 };
 

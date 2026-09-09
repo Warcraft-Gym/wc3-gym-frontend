@@ -78,7 +78,7 @@
     <section class="section">
       <h4 class="text-body-1 font-weight-medium">
         W3C ladder matches
-        <span class="text-caption text-medium-emphasis">ranked 1v1, not GNL series · {{ data?.games ?? 0 }}</span>
+        <span class="text-caption text-medium-emphasis">{{ scopeNote }} · {{ data?.games ?? 0 }}</span>
       </h4>
       <v-data-table-server
         :headers="matchHeaders"
@@ -164,6 +164,13 @@ const allMatchHeaders = [
   { title: 'MMR +/-', key: 'mmr_diff', sortable: false },
 ];
 const matchHeaders = useColumns(allMatchHeaders);
+
+// The season pays him on the race he signed up with and on no other, so the
+// list names that race; without a signup for the season nothing counts
+const scopeNote = computed(() => {
+  const name = raceWrapper.getRaceObject(data.value?.race)?.name;
+  return `ranked 1v1${name ? ` on ${name}` : ''}, not GNL series`;
+});
 
 const w3cStatsUrl = computed(() => `${w3cPlayerUrl(props.player?.battleTag ?? '')}/statistics`);
 

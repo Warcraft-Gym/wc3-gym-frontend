@@ -44,11 +44,6 @@
     </FilterPanel>
     <!-- Main Card -->
     <v-card elevation="2">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-account-group</v-icon>
-        <span>Players Overview</span>
-      </v-card-title>
-
       <v-card-text v-if="!errorMessage" class="pa-0">
         <v-data-table
           :headers="tableHeader"
@@ -79,8 +74,7 @@
               </template>
 
               <template v-slot:item="{ item }">
-                <tr class="text-no-wrap">
-                  <td class="d-none d-md-table-cell">{{ item.id }}</td>
+                <tr class="text-no-wrap player-row" @click="openPlayer(item)">
                   <td>
                     <PlayerName :player="item">
                       <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
@@ -124,7 +118,7 @@
                     </div>
                     <div v-else>—</div>
                   </td>
-                  <td v-if="auth.isAdmin">
+                  <td v-if="auth.isAdmin" @click.stop>
                     <RowActions :actions="[
                       { icon: 'mdi-pencil', label: 'Edit', onClick: () => editPlayer(item) },
                       { icon: 'mdi-account-check', label: 'Add to season', onClick: () => signupDialog.open({ player: item }) },
@@ -277,9 +271,13 @@ import {
 } from '@/helpers/w3c-stats';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { matchesPlayerSearch, filterByMmrRange, playerRowProps } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerRowProps, playerPath } from '@/helpers/players';
 import { useColumns } from '@/helpers/columns';
+import { useRouter } from 'vue-router';
 
+// the whole row opens the player, not the name alone
+const router = useRouter();
+const openPlayer = (player) => router.push(playerPath(player));
 
 // State for editing
 const editPlayerDialog = ref(null);
@@ -355,12 +353,11 @@ const w3cFilterOptions = [
 
 // the Actions column carries admin operations (edit, W3C sync, delete)
 const allTableHeader = computed(() => [
-  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
   { mobile: false, title: 'Battletag', value: 'battleTag', sortable: true },
   { mobile: false, title: 'Discord Name', value: 'discordTag', sortable: true },
   { mobile: false, title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'races', sortable: false },
-  { mobile: false, title: 'Signups', value: 'signups', sortable: false },
+  { mobile: false, title: 'Seasons', value: 'signups', sortable: false },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);
 const tableHeader = useColumns(allTableHeader);

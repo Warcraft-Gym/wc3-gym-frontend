@@ -1433,7 +1433,7 @@ const fetchSeasonMatches = async () => {
 
   try {
     const seasonMatches = await matchStore.searchMatchesBySeason(match.value.season_id);
-    const numberOfRounds = match.value.season?.number_rounds
+    const numberOfRounds = match.value.season?.round_count
       || Math.max(0, ...seasonMatches.map(m => m.playday || 0));
 
     matchesByRound.value = Array.from({ length: numberOfRounds }, (_, i) => ({

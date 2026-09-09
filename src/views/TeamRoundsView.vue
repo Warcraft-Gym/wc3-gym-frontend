@@ -122,7 +122,7 @@ const opponentOfRound = (round) => { const m = matchOfRound(round); return m && 
 const saving = ref(null);
 
 const players = computed(() => team.value?.player_by_season?.[seasonId.value] || []);
-const rounds = computed(() => Array.from({ length: season.value?.number_rounds || 0 }, (_, i) => i + 1));
+const rounds = computed(() => Array.from({ length: season.value?.round_count || 0 }, (_, i) => i + 1));
 // A phone shows one round at a time; wider screens show them all
 const { smAndDown } = useDisplay();
 const shownRound = ref(1);

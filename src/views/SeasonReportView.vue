@@ -10,7 +10,7 @@
         <v-col v-if="!isReadonly" cols="12" sm="4" md="3">
           <v-select
             v-model="selectedSeasonId"
-            :items="seasons"
+            :items="seasonItems"
             item-title="name"
             item-value="id"
             label="Select Season"
@@ -78,10 +78,11 @@
     <v-container fluid class="report-body pa-4">
 
       <!-- ── Team Standings ── -->
-      <div class="report-section mb-6">
-        <div class="section-title">
+      <div class="report-section mb-6" :class="{ collapsed: collapsed.has('standings') }">
+        <div class="section-title" @click="toggle('standings')">
           <v-icon color="amber-darken-2" class="mr-2">mdi-trophy</v-icon>
           Team Standings
+          <v-icon class="ml-2 no-print">{{ collapsed.has('standings') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
           <v-table density="comfortable" class="standings-table">
@@ -147,10 +148,11 @@
       </div>
 
       <!-- ── Player Leaderboard ── -->
-      <div class="report-section mb-6">
-        <div class="section-title">
+      <div class="report-section mb-6" :class="{ collapsed: collapsed.has('leaderboard') }">
+        <div class="section-title" @click="toggle('leaderboard')">
           <v-icon color="amber-darken-2" class="mr-2">mdi-account-star</v-icon>
           Player Leaderboard
+          <v-icon class="ml-2 no-print">{{ collapsed.has('leaderboard') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
           <v-table density="compact" class="standings-table">
@@ -183,6 +185,8 @@
                   }))
                   .sort((a, b) => b.totalPoints - a.totalPoints || b.winRate - a.winRate || b.wins - a.wins)"
                 :key="player.id"
+                class="player-row"
+                @click="openPlayer(player)"
               >
                 <td class="text-center text-caption text-medium-emphasis">{{ idx + 1 }}</td>
                 <td><PlayerName :player="player" /></td>
@@ -220,10 +224,11 @@
       </div>
 
       <!-- ── Race Performance ── -->
-      <div class="report-section mb-6">
-        <div class="section-title">
+      <div class="report-section mb-6" :class="{ collapsed: collapsed.has('races') }">
+        <div class="section-title" @click="toggle('races')">
           <v-icon color="amber-darken-2" class="mr-2">mdi-sword-cross</v-icon>
           Race Performance
+          <v-icon class="ml-2 no-print">{{ collapsed.has('races') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-row>
           <v-col
@@ -314,10 +319,11 @@
       </div>
 
       <!-- ── Ladder Activity ── -->
-      <div v-if="heatRows.length" class="report-section mb-6">
-        <div class="section-title">
+      <div v-if="heatRows.length" class="report-section mb-6" :class="{ collapsed: collapsed.has('ladder') }">
+        <div class="section-title" @click="toggle('ladder')">
           <v-icon color="amber-darken-2" class="mr-2">mdi-podium</v-icon>
           Ladder Activity
+          <v-icon class="ml-2 no-print">{{ collapsed.has('ladder') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-row>
           <v-col cols="12" md="6">
@@ -382,10 +388,11 @@
       </div>
 
       <!-- ── Fantasy Leaderboard ── -->
-      <div v-if="sortedFantasyTeams.length > 0" class="report-section mb-6">
-        <div class="section-title">
+      <div v-if="sortedFantasyTeams.length > 0" class="report-section mb-6" :class="{ collapsed: collapsed.has('fantasy') }">
+        <div class="section-title" @click="toggle('fantasy')">
           <v-icon color="amber-darken-2" class="mr-2">mdi-cards</v-icon>
           Fantasy League Leaderboard
+          <v-icon class="ml-2 no-print">{{ collapsed.has('fantasy') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
           <v-table density="comfortable" class="standings-table">
@@ -473,6 +480,8 @@ import { useFantasyStore } from '@/stores/fantasy.store';
 import { useLadderStore } from '@/stores/ladder.store';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
+import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { playerPath } from '@/helpers/players';
 
 
 const route = useRoute();
@@ -491,6 +500,21 @@ const { series } = storeToRefs(seriesStore);
 const ladder = ref(null);
 const isLoading = ref(false);
 const errorMessage = ref(null);
+
+// The current season heads the dropdown and is what a cold open loads
+const currentSeasonId = ref(null);
+const seasonItems = computed(() => seasons.value.slice().sort((a, b) =>
+    (b.id === currentSeasonId.value) - (a.id === currentSeasonId.value) || b.id - a.id
+));
+
+// Every section starts open, so the report still prints and embeds whole
+const collapsed = ref(new Set());
+const toggle = (key) => {
+    collapsed.value.has(key) ? collapsed.value.delete(key) : collapsed.value.add(key);
+    collapsed.value = new Set(collapsed.value);
+};
+
+const openPlayer = (player) => router.push(playerPath(player));
 
 // ─── Read-only mode: ?readonly=1 hides the season selector ───────────────────
 const isReadonly = computed(() => route.query.readonly === '1' || route.query.readonly === 'true');
@@ -635,13 +659,14 @@ onMounted(async () => {
     isLoading.value = true;
     try {
         await seasonStore.fetchSeasons();
+        currentSeasonId.value = await resolveCurrentSeasonId();
         // The path names the season; without one, the season picked on another page, then the first season
         const paramId = route.params.id ? seasonStore.seasonIdOf(route.params.id) : null;
         if (paramId) {
             selectedSeasonId.value = paramId;
         } else if (seasons.value.length > 0) {
             const picked = seasons.value.find((season) => season.id === selectedSeasonId.value);
-            selectedSeasonId.value = picked ? picked.id : seasons.value[0].id;
+            selectedSeasonId.value = picked ? picked.id : (currentSeasonId.value ?? seasonItems.value[0].id);
             // Reflect the resolved id in the URL without adding a history entry
             router.replace({ path: `/report/${seasonStore.slugOf(selectedSeasonId.value)}`, query: route.query });
         }
@@ -829,6 +854,21 @@ const dayTicks = computed(() => {
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
+  cursor: pointer;
+}
+
+/* A collapsed section hides its body on screen only, so a print holds the whole report */
+@media screen {
+  .report-section.collapsed > :not(.section-title) {
+    display: none;
+  }
+}
+
+.player-row {
+  cursor: pointer;
+}
+.player-row:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
 /* ── Standings table ──────────────────────────────────────────────────────── */

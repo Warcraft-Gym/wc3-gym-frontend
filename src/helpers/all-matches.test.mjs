@@ -16,6 +16,11 @@ test('the signup race is the total before a race is chosen', () => {
     assert.equal(raceTotal(answer, 'UD'), 0);
 });
 
+test('a backend without by_race falls back to the scored games', () => {
+    assert.equal(raceTotal({ race: 'OC', games: 379 }, null), 379);
+    assert.equal(raceTotal({}, null), 0);
+});
+
 test('one page holds every match', async () => {
     const answer = await allMatches(reader(3, 500));
     assert.deepEqual(answer.matches, [0, 1, 2]);

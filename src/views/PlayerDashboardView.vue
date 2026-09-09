@@ -64,7 +64,8 @@
       <v-card-text class="pt-2 d-flex flex-wrap ga-6">
         <div v-for="trophy in fullPlayer.trophies" :key="trophy.season_id" class="text-center">
           <TrophyIcon :trophy="trophy" :size="56" />
-          <div class="text-caption mt-1">{{ trophy.title }}</div>
+          <!-- the plate names the season and the crown says champion, so the caption names the team -->
+          <div class="text-caption mt-1">{{ trophy.team_name }}</div>
         </div>
       </v-card-text>
     </v-card>

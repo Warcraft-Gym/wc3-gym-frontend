@@ -2012,11 +2012,19 @@ onMounted(async () => {
 
 <style>
 /* Global styles for table row highlighting (cannot be scoped) */
+/* Both fills stay light in either theme, so the row switches to the light text palette */
+.highlight-row,
+.highlight-selected-row {
+  --v-theme-on-background: 0, 0, 0;
+  --v-theme-on-surface: 0, 0, 0;
+  color: rgba(0, 0, 0, 0.87);
+}
+
 .highlight-row {
-  background-color: rgba(255, 167, 38, 0.28) !important;
+  background-color: #ffc87a !important;
 }
 
 .highlight-selected-row {
-  background-color: rgba(76, 175, 80, 0.28) !important;
+  background-color: #99ff7a !important;
 }
 </style>

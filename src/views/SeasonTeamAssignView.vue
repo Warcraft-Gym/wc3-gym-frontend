@@ -201,7 +201,7 @@
             </v-data-table>
       <v-card-text v-if="excludedPlayers.length" class="pt-2 pb-0">
         <div class="text-caption text-medium-emphasis mb-1">
-          Out of the pick list ({{ excludedPlayers.length }}). This browser only.
+          Out of the pick list ({{ excludedPlayers.length }})
         </div>
         <v-chip
           v-for="p in excludedPlayers"
@@ -362,7 +362,7 @@ import {
   syncedAt
 } from '@/helpers/w3c-stats';
 import { matchesPlayerSearch, filterByMmrRange, openPlayer } from '@/helpers/players';
-import { draftOrder, loadExcluded, saveExcluded } from '@/helpers/draft.mjs';
+import { draftOrder } from '@/helpers/draft.mjs';
 import { raceWrapper } from '@/helpers/races';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { useDisplay } from 'vuetify';
@@ -410,24 +410,25 @@ const currentW3CSeason = ref(null);
 
 const mmrOf = (p) => getW3CMMR(p, currentW3CSeason.value, p.signup_race) || 0;
 
-// The players an admin takes out of the pick list, kept in this browser only
-const excluded = ref(new Set());
-const excludedPlayers = computed(() => (signedUpPlayersData.value || []).filter(p => excluded.value.has(p.id)));
-const setExcluded = (player, out) => {
-  const ids = new Set(excluded.value);
-  if (out) ids.add(player.id);
-  else ids.delete(player.id);
-  excluded.value = ids;
-  saveExcluded(seasonId.value, ids);
-};
+// The players an admin took out of the pick list
+const excludedPlayers = computed(() => (signedUpPlayersData.value || []).filter(p => p.draft_excluded));
 
 // The draft order: MMR ascending, each moved player at his slot, no excluded player
-const orderedPlayers = computed(() => draftOrder(signedUpPlayersData.value, mmrOf, excluded.value));
+const orderedPlayers = computed(() => draftOrder(signedUpPlayersData.value, mmrOf));
 const positionOf = computed(() => new Map(orderedPlayers.value.map((p, i) => [p.id, i])));
 // One round = one pick per team
 const roundSize = computed(() => teams.value?.length || 10);
 const rounds = computed(() => Array.from({ length: Math.ceil(orderedPlayers.value.length / roundSize.value) }, (_, i) => i + 1));
 const roundOf = (p) => Math.floor(positionOf.value.get(p.id) / roundSize.value) + 1;
+
+const setExcluded = async (player, draft_excluded) => {
+  try {
+    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { draft_excluded });
+    player.draft_excluded = draft_excluded;
+  } catch (error) {
+    console.error('Failed to change the pick list:', error);
+  }
+};
 
 const setDraftPosition = async (player, draft_position) => {
   try {
@@ -516,7 +517,6 @@ const fetchData = async () => {
 };
 
 onMounted(async () => {
-  excluded.value = loadExcluded(seasonId.value);
   currentW3CSeason.value = await resolveCurrentW3CSeason();
   fetchData();
 });

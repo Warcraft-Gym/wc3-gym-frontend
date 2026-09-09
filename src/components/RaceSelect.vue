@@ -1,7 +1,7 @@
 <template>
     <v-autocomplete
         v-model="model"
-        label="Race"
+        :label="label"
         :menu-props="{ scrollStrategy: 'close'}"
         item-title="name"
         item-value="id"
@@ -28,4 +28,5 @@
 import { raceWrapper } from '@/helpers/races.js'
 
 const model = defineModel();
+defineProps({ label: { type: String, default: 'Race' } });
 </script>

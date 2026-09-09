@@ -5,6 +5,7 @@
     <FlagIcon v-if="player.country" :countryIdentifier="player.country" />
     <span v-else class="fp" />
     {{ player.name }}
+    <v-chip v-if="offRace" size="x-small" variant="tonal" color="warning" :title="offRaceHint">off-race</v-chip>
     <v-chip v-if="host" size="x-small" variant="tonal" color="primary">Host</v-chip>
     <slot />
   </span>
@@ -13,12 +14,22 @@
 <script setup>
 import { computed, useAttrs } from 'vue'
 import { playerPath } from '@/helpers/players'
+import { raceWrapper } from '@/helpers/races.js'
 
 const props = defineProps({
   player: { type: Object, required: true }, // needs name, country
   race: String, // the race for this (race, player) pair; omit to show none
   host: Boolean,
 })
+
+// A series where the player played another race marks him, so a reader on a
+// phone sees the exception without hovering anything
+const offRace = computed(
+  () => !!props.race && !!props.player.signup_race && props.race !== props.player.signup_race
+)
+const offRaceHint = computed(
+  () => `Signed up as ${raceWrapper.getRaceObject(props.player.signup_race)?.name || props.player.signup_race}`
+)
 
 // The name opens the player page, unless the view handles the click itself
 const attrs = useAttrs()

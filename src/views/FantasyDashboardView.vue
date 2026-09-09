@@ -296,6 +296,8 @@
                           v-if="item.player1 && item.player2"
                           :a="item.player1"
                           :b="item.player2"
+                          :race-a="item.player1_race"
+                          :race-b="item.player2_race"
                           :la="ladderById.get(item.player1.id)"
                           :lb="ladderById.get(item.player2.id)"
                           :ga="gnlOf(item.player1)"
@@ -371,9 +373,9 @@
       <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
       <v-card-text>
         <div class="mb-4">
-          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1.signup_race" />
+          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1_race" />
           vs
-          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2.signup_race" />
+          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2_race" />
         </div>
         <v-radio-group v-model="selectedBetWinnerId">
           <v-radio

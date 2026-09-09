@@ -22,7 +22,7 @@
       <!-- A series replaces the question: the round is already accounted for -->
       <template v-if="card.series">
         <div class="d-flex align-center ga-2 mt-2">
-          <PlayerName :player="opponent(card.series)" :race="opponent(card.series).signup_race" />
+          <PlayerName :player="opponent(card.series)" :race="opponentRace(card.series)" />
           <v-chip v-if="!isUnscored(card.series)" :color="scoreColor(card.series)" variant="outlined" size="small">
             {{ myScore(card.series) }} - {{ theirScore(card.series) }}
           </v-chip>
@@ -87,6 +87,10 @@ const opponent = (series) => {
   const mine = series.player1_id === props.player.id;
   return (mine ? series.player2 : series.player1) || { name: `Player ${mine ? series.player2_id : series.player1_id}` };
 };
+
+// the race the opponent played in that series, not the one he signed the season up on
+const opponentRace = (series) =>
+  (series.player1_id === props.player.id ? series.player2_race : series.player1_race);
 
 // Scores read from the player's side: his first, the opponent's second
 const myScore = (series) => (series.player1_id === props.player.id ? series.player1_score : series.player2_score) || 0;

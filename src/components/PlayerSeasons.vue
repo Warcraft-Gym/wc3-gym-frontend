@@ -66,7 +66,7 @@
               <tr v-for="series in row.series" :key="series.id">
                 <td>{{ series.match?.playday ?? '—' }}</td>
                 <td>
-                  <PlayerName :player="opponent(series)" :race="opponent(series).signup_race" />
+                  <PlayerName :player="opponent(series)" :race="opponentRace(series)" />
                   <span v-if="!mdAndUp" class="text-medium-emphasis ml-1">{{ opponentTeam(series, row) }}</span>
                 </td>
                 <td v-if="mdAndUp">{{ opponentTeam(series, row) }}</td>
@@ -167,6 +167,8 @@ const dates = (season) => {
 
 const mine = (series) => series.player1_id === props.player.id;
 const opponent = (series) => (mine(series) ? series.player2 : series.player1) ?? { name: '—' };
+// the race the opponent played in that series, not the one he signed the season up on
+const opponentRace = (series) => (mine(series) ? series.player2_race : series.player1_race);
 const opponentTeam = (series, row) => {
   const match = series.match;
   if (!match) return '';

@@ -60,8 +60,8 @@
             <tr v-for="row in group.rows" :key="row.id" class="detail-row unscored-row" @click="router.push(`/match/${row.match_id}`)">
               <td></td>
               <td class="text-no-wrap">{{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}</td>
-              <td><PlayerName :player="row.player1" /></td>
-              <td><PlayerName :player="row.player2" /></td>
+              <td><PlayerName :player="row.player1" :race="row.player1_race" /></td>
+              <td><PlayerName :player="row.player2" :race="row.player2_race" /></td>
               <td class="text-no-wrap">{{ row.date_time ? formatDateTime(row.date_time) : 'Not scheduled' }}</td>
               <td><CastChips :series="row" /></td>
             </tr>

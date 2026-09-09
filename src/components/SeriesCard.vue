@@ -6,8 +6,8 @@
       <slot name="actions" />
     </div>
     <div v-for="(player, n) in [series.player1, series.player2]" :key="n" class="d-flex align-center ga-2" :class="{ 'font-weight-bold': winner === n }">
-      <PlayerName :player="player" :race="player.signup_race" :host="series.host_player_id === player.id" class="flex-grow-1" />
-      <slot name="side" :player="player" :n="n" :won="winner === n" />
+      <PlayerName :player="player" :race="races[n]" :host="series.host_player_id === player.id" class="flex-grow-1" />
+      <slot name="side" :player="player" :race="races[n]" :n="n" :won="winner === n" />
     </div>
   </div>
 </template>
@@ -19,6 +19,9 @@ import PlayerName from '@/components/PlayerName.vue';
 const props = defineProps({
   series: { type: Object, required: true }, // player1, player2, host_player_id, scores
 });
+
+// the race each side played, which is his signup race unless he reported another
+const races = computed(() => [props.series.player1_race, props.series.player2_race]);
 
 const winner = computed(() => {
   const { player1_score: a = 0, player2_score: b = 0 } = props.series;

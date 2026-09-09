@@ -82,14 +82,14 @@ const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.ro
 // one link tree drawn as the bar's menus on desktop and as the drawer on phones
 const NAV = [
     { title: 'Home', to: '/' },
-    { title: 'GNL', to: '/seasons', items: [
-        { title: 'Seasons', to: '/seasons' },
-        { title: 'Players', to: '/players' },
-        { title: 'Teams', to: '/teams' },
-        { title: '1v1 Maps', to: '/maps' },
-        { title: 'Player Stats', to: '/player-stats' },
+    { title: 'GNL', to: '/report', items: [
         { title: 'Season Report', to: '/report' },
+        { title: 'Teams', to: '/teams' },
+        { title: 'Players', to: '/players' },
         { title: 'Ladder', to: '/ladder', mark: true },
+        { title: 'Player Stats', to: '/player-stats' },
+        { title: 'Seasons', to: '/seasons' },
+        { title: '1v1 Maps', to: '/maps' },
     ] },
     { title: 'Fantasy', to: '/fantasy', items: [
         { title: 'Leaderboard', to: '/fantasy' },
@@ -118,6 +118,10 @@ const roleLabel = computed(() => {
     return me.value?.team ? `${role} · ${me.value.team.name}` : role;  // a captain is named with the team
 });
 
+// a guest reaches no dashboard, so his menu item stays on /profile
+const dashboardPath = computed(() => (canSee('/player-dashboard') ? '/player-dashboard' : '/profile'));
+const identity = computed(() => [me.value?.name, roleLabel.value].filter(Boolean).join(' · '));
+
 // view-as: an admin sees the app as a lower role; the legacy token session cannot
 const canViewAs = computed(() => me.value?.actual_role === 'admin' && !authStore.user);
 const teamDialog = ref(false);
@@ -137,7 +141,9 @@ const applyCaptain = () => {
     <v-app> 
     <v-app-bar v-if="showBar">
             <v-app-bar-nav-icon v-if="showNavLinks && smAndDown" @click="drawer = !drawer" />
-            <v-app-bar-title>GNL APP</v-app-bar-title>
+            <v-app-bar-title>
+                <RouterLink to="/report" class="app-title">GNL APP</RouterLink>
+            </v-app-bar-title>
             <template v-slot:append>
                 <v-list v-show="showNavLinks" class="inline-nav" nav>
                     <template v-if="!smAndDown">
@@ -172,7 +178,8 @@ const applyCaptain = () => {
                             </v-list-item>
                         </template>
                         <v-list>
-                            <v-list-item :title="me?.name" :subtitle="roleLabel" prepend-icon="mdi-account" to="/profile" />
+                            <v-list-item title="Player Dashboard" :subtitle="identity" prepend-icon="mdi-view-dashboard" :to="dashboardPath" />
+                            <v-list-item v-if="canSee('/player-dashboard')" title="Edit Player Info" prepend-icon="mdi-pencil" :to="{ path: '/player-dashboard', query: { edit: 1 } }" />
                             <template v-if="canViewAs">
                                 <v-divider />
                                 <v-list-subheader>View as</v-list-subheader>
@@ -245,6 +252,11 @@ const applyCaptain = () => {
 
 <style>
 @import '@/assets/base.css';
+
+.app-title {
+    color: inherit;
+    text-decoration: none;
+}
 
 .inline-nav {
     display: flex;

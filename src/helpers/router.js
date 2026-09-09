@@ -17,7 +17,7 @@ export const router = createRouter({
         { path: '/sso-callback', component: LoginView, meta: { role: 'public', nav: false } },  // where Discord sends the browser back; the login page finishes the Clerk handshake
         { path: '/admin-login', component: AdminLoginView, meta: { role: 'public', nav: false } },
         { path: '/profile', component: ProfileView, meta: { role: 'guest' } },  // the only guest route, and the fallback below lands there: it shows the join-the-Discord card
-        { path: '/seasons', component: SeasonsView, meta: { role: 'member' } },
+        { path: '/seasons', component: SeasonsView, meta: { role: 'admin' } },  // the list holds admin data only; a member reads a season through /report
         { path: '/signup', component: PublicSignupView, meta: { role: 'member' } },
         { path: '/player-dashboard', component: PlayerDashboardView, meta: { role: 'member' } },
         { path: '/player-series/:id/veto', component: VetoBoardView, meta: { role: 'member' } },

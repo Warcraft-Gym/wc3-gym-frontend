@@ -271,13 +271,8 @@ import {
 } from '@/helpers/w3c-stats';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { matchesPlayerSearch, filterByMmrRange, playerRowProps, playerPath } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerRowProps, openPlayer } from '@/helpers/players';
 import { useColumns } from '@/helpers/columns';
-import { useRouter } from 'vue-router';
-
-// the whole row opens the player, not the name alone
-const router = useRouter();
-const openPlayer = (player) => router.push(playerPath(player));
 
 // State for editing
 const editPlayerDialog = ref(null);

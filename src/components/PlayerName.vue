@@ -1,5 +1,5 @@
 <template>
-  <span class="player-name" :class="{ link: !!$attrs.onClick || linked }" @click="linked && $router.push(playerPath(player))">
+  <span class="player-name" :class="{ link: !!$attrs.onClick || linked }" @click="linked && openPlayer(player)">
     <RaceIcon v-if="race" :raceIdentifier="race" />
     <span v-else-if="race !== undefined" class="fp race-gap" />
     <FlagIcon v-if="player.country" :countryIdentifier="player.country" />
@@ -13,7 +13,7 @@
 
 <script setup>
 import { computed, useAttrs } from 'vue'
-import { playerPath } from '@/helpers/players'
+import { openPlayer } from '@/helpers/players'
 import { raceWrapper } from '@/helpers/races.js'
 
 const props = defineProps({
@@ -31,7 +31,7 @@ const offRaceHint = computed(
   () => `Signed up as ${raceWrapper.getRaceObject(props.player.signup_race)?.name || props.player.signup_race}`
 )
 
-// The name opens the player page, unless the view handles the click itself
+// The name opens the player panel over this page, unless the view handles the click
 const attrs = useAttrs()
 const linked = computed(() => !attrs.onClick && props.player.id != null)
 </script>

@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore, useSeasonStore } from '@/stores';
-import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
+import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -23,6 +23,7 @@ export const router = createRouter({
         { path: '/player-series/:id/veto', component: VetoBoardView, meta: { role: 'member' } },
         { path: '/fantasy-registration', component: FantasyDashboardView, meta: { role: 'member' } },
         { path: '/players', component: PlayersView, meta: { role: 'member' } },
+        { path: '/upcoming', component: UpcomingView, meta: { role: 'member' } },
         { path: '/player/:id', component: PlayerView, meta: { role: 'member', season: true } },
         { path: '/seasons/:id', component: SeasonDetailsView, meta: { role: 'member', season: true } },
         { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'captain', season: true } },  // captains read it; the view gates every write to admins

@@ -85,6 +85,7 @@ const NAV = [
     { title: 'Home', to: '/' },
     { title: 'GNL', to: '/report', items: [
         { title: 'Season Report', to: '/report' },
+        { title: 'Upcoming', to: '/upcoming' },
         { title: 'Teams', to: '/teams' },
         { title: 'Players', to: '/players' },
         { title: 'Ladder', to: '/ladder', mark: true },

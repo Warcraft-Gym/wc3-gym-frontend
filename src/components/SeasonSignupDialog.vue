@@ -78,10 +78,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { usePlayerStore, useSeasonStore } from '@/stores';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { getW3CMMR } from '@/helpers/w3c-stats';
 
 const emit = defineEmits(['added']);
@@ -104,6 +104,11 @@ const mmr = computed(() =>
   selectedPlayer.value && race.value ? getW3CMMR(selectedPlayer.value, currentW3CSeason.value, race.value) : null
 );
 
+// The signup starts on the race the player plays; picking another player moves it.
+watch(selectedPlayer, player => {
+  race.value = player?.race ?? null;
+});
+
 const open = async ({ season = null, player = null } = {}) => {
   presetSeason.value = season;
   presetPlayer.value = player;
@@ -115,6 +120,7 @@ const open = async ({ season = null, player = null } = {}) => {
   try {
     if (!seasonStore.seasons.length) await seasonStore.fetchSeasons();
     if (!playerStore.players.length) await playerStore.fetchPlayers();
+    if (!seasonId.value) seasonId.value = await resolveCurrentSeasonId();
     currentW3CSeason.value = await resolveCurrentW3CSeason();
   } catch (err) {
     console.error('Failed to load the signup dialog lists:', err);

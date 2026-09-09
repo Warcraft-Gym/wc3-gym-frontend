@@ -44,12 +44,9 @@
     <v-row v-if="board">
       <v-col v-if="!collapsed" cols="12" md="8">
         <v-card elevation="2">
-          <v-card-title class="bg-primary d-flex justify-space-between align-center">
-            <div class="d-flex align-center">
-              <v-icon class="mr-2">mdi-map</v-icon>
-              <span>Map Pool</span>
-            </div>
-            <v-chip color="white" variant="outlined">{{ poolChip }}</v-chip>
+          <v-card-title class="bg-primary">
+            <v-icon class="mr-2">mdi-map</v-icon>
+            Map Pool
           </v-card-title>
           <v-card-text class="d-flex flex-wrap ga-3 pt-4">
             <v-sheet
@@ -248,13 +245,6 @@ const enteredBy = (step) => {
   const side = ['A', 'B'].find(s => playerId(s) === step.entered_by);
   return side ? sideName(side) : 'an admin';
 };
-
-const poolChip = computed(() => {
-  const inVeto = (board.value?.pool || []).length - (board.value?.week_map_id ? 1 : 0);
-  const banTotal = order.value.filter(entry => /^ban/i.test(entry)).length;
-  const bansDone = taken.value.filter(step => step.action === 'ban').length;
-  return `${inVeto} in the veto, ${bansDone} of ${banTotal} banned`;
-});
 
 // the fixed map of the week stays on the board as game 1; every other used map is dimmed or tagged
 const tiles = computed(() => (board.value?.pool || []).map((id) => {

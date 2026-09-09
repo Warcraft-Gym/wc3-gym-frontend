@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
-import { backendUrl, fetchWrapper } from '@/helpers';
+import { backendUrl, fetchWrapper, PAGE_LIMIT } from '@/helpers';
+import { allMatches } from '@/helpers/all-matches.mjs';
 
 export const useLadderStore = defineStore({
     id: 'ladderStore',
@@ -18,6 +19,10 @@ export const useLadderStore = defineStore({
             return ladder;
         },
         async userLadder(user_id, { seasonId = null, limit = null, offset = null } = {}) {
+            if (limit === -1) {  // 'All': the route caps a read at PAGE_LIMIT, so read it again
+                return await allMatches(next =>
+                    this.userLadder(user_id, { seasonId, limit: PAGE_LIMIT, offset: next }));
+            }
             const query = new URLSearchParams();
             for (const [key, value] of Object.entries({ season_id: seasonId, limit, offset })) {
                 if (value !== null && value !== undefined) query.append(key, value);

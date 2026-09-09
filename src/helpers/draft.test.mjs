@@ -12,16 +12,18 @@ const SIGNUPS = [
   { id: 4, name: 'moved', mmr: 2500, draft_position: 1 },
 ];
 
+const without = (id) => SIGNUPS.map(p => p.id === id ? { ...p, draft_excluded: true } : p);
+
 test('the order is MMR ascending and a moved player keeps his slot', () => {
   assert.deepEqual(names(draftOrder(SIGNUPS, mmrOf)), ['low', 'moved', 'mid', 'high']);
 });
 
-test('an excluded player leaves the order, so the players after him move up', () => {
-  assert.deepEqual(names(draftOrder(SIGNUPS, mmrOf, new Set([2]))), ['low', 'moved', 'high']);
+test('a player out of the pick list leaves the order, so the players after him move up', () => {
+  assert.deepEqual(names(draftOrder(without(2), mmrOf)), ['low', 'moved', 'high']);
 });
 
-test('excluding a moved player drops him, not his slot', () => {
-  assert.deepEqual(names(draftOrder(SIGNUPS, mmrOf, new Set([4]))), ['low', 'mid', 'high']);
+test('taking a moved player out drops him, not his slot', () => {
+  assert.deepEqual(names(draftOrder(without(4), mmrOf)), ['low', 'mid', 'high']);
 });
 
 test('a slot past the end of the list puts the player last', () => {

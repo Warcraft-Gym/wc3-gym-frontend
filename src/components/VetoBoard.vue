@@ -37,7 +37,7 @@
 
     <StatusAlert v-model="errorMessage" />
 
-    <div v-if="board && !collapsed" class="order-strip mb-6">
+    <div v-if="board && !collapsed" ref="stripRef" class="order-strip mb-6">
       <div v-for="lane in lanes" :key="lane.side" class="lane">
         <div class="lane-name text-caption text-truncate" :class="lane.onTurn ? 'font-weight-bold' : 'text-medium-emphasis'">{{ lane.who }}</div>
         <div class="lane-steps">
@@ -111,6 +111,7 @@
                   {{ nextAction }}
                 </v-btn>
               </div>
+              <div v-if="tile.note" class="text-caption text-medium-emphasis">{{ tile.note }}</div>
             </v-sheet>
           </v-card-text>
         </v-card>
@@ -171,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { DEFAULT_RULES } from '@/helpers/best-of.mjs';
 import { hideMissingImage } from '@/helpers/team-image';
@@ -253,6 +254,9 @@ const tiles = computed(() => (board.value?.pool || []).map((id) => {
     week,
     step,
     banned: step?.action === 'ban',
+    note: step && (forcedLast.value && step === taken.value[taken.value.length - 1]
+      ? 'Only map left'
+      : enteredBy(step) && `Entered by ${enteredBy(step)}`),
     name: mapName(id),
     shortname: mapsById.value.get(id)?.shortname || '',
     sub: week ? 'Fixed map' : board.value?.complete ? 'Unused' : '',
@@ -260,6 +264,15 @@ const tiles = computed(() => (board.value?.pool || []).map((id) => {
     canAct: !week && !step && !!order.value[taken.value.length] && (recording.value ? canRecord.value : !!board.value?.on_turn)
   };
 }));
+
+const stripRef = ref(null);
+// season.pick_ban sets the order, so its length varies; a long one scrolls and the live step leads
+watch(() => taken.value.length, () => nextTick(() => {
+  const current = stripRef.value?.querySelector('.step--current');
+  if (!current) return;
+  const left = current.offsetLeft - current.offsetWidth;
+  stripRef.value.querySelectorAll('.lane-steps').forEach((lane) => { lane.scrollLeft = left; });
+}), { immediate: true });
 
 const lanes = computed(() => ['A', 'B'].map(side => ({
   side,
@@ -389,8 +402,6 @@ onUnmounted(() => clearInterval(timer));
   display: flex;
   flex-direction: column;
   gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 4px;
 }
 
 .lane {
@@ -402,6 +413,13 @@ onUnmounted(() => clearInterval(timer));
 .lane-steps {
   display: flex;
   gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.lane-steps::-webkit-scrollbar {
+  display: none;
 }
 
 .lane-name {
@@ -464,8 +482,8 @@ onUnmounted(() => clearInterval(timer));
   }
 
   .step {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
   }
 
   .lane-steps {

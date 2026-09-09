@@ -629,6 +629,16 @@
                   :max="editWins"
                 ></v-number-input>
               </v-col>
+              <v-col cols="12" class="pt-0">
+                <v-checkbox
+                  v-model="editNotPlayed"
+                  label="Not played"
+                  hint="Stores 0-0. The series counts as a result and pays neither team."
+                  persistent-hint
+                  density="compact"
+                  hide-details="auto"
+                />
+              </v-col>
               <v-col v-if="editScoreProblem" cols="12" class="pt-0 text-error text-caption">{{ editScoreProblem }}</v-col>
               <v-col cols="12" sm="6">
                 <RaceSelect
@@ -1065,7 +1075,7 @@ import { teamImageUrl, hideMissingImage, showDefaultTeamImage } from '@/helpers/
 import { raceWrapper } from '@/helpers/races';
 import { useColumns } from '@/helpers/columns';
 import { roundLabel } from '@/helpers/rounds.mjs';
-import { winsOf, resultProblem } from '@/helpers/best-of';
+import { winsOf, resultProblem, neverPlayed } from '@/helpers/best-of';
 
 
 // Stores initialization
@@ -1591,11 +1601,26 @@ const cancelEditSeries = async () => {
 
 // An admin writes the same result the report form writes: the season's best-of
 const editWins = computed(() => winsOf(season.value?.map_rules));
+// A blank field is no score at all, which Number() would read as a zero
+const editedScore = (value) => (value === null || value === undefined || value === '' ? NaN : Number(value));
 const editScoreProblem = computed(() => {
-  const score = (value) => (value === null || value === undefined || value === '' ? NaN : Number(value));
-  const p1 = score(selectedSeries.value?.player1_score), p2 = score(selectedSeries.value?.player2_score);
+  const p1 = editedScore(selectedSeries.value?.player1_score);
+  const p2 = editedScore(selectedSeries.value?.player2_score);
   if (Number.isNaN(p1) && Number.isNaN(p2)) return null;  // a series nobody has played yet
   return resultProblem(p1, p2, season.value?.map_rules);
+});
+
+// A series nobody played is stored 0-0; unticking clears both scores again
+const editNotPlayed = computed({
+  get: () => neverPlayed(
+    editedScore(selectedSeries.value?.player1_score),
+    editedScore(selectedSeries.value?.player2_score),
+  ),
+  set: (on) => {
+    if (!selectedSeries.value) return;
+    selectedSeries.value.player1_score = on ? 0 : null;
+    selectedSeries.value.player2_score = on ? 0 : null;
+  },
 });
 
 const updateSeries = async () => {

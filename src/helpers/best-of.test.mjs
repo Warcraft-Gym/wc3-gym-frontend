@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gamesOf, winsOf, isValidResult, replaysNeeded, resultProblem } from './best-of.mjs';
+import { gamesOf, winsOf, isValidResult, replaysNeeded, resultProblem, neverPlayed } from './best-of.mjs';
 
 test('the games are the rules a season lists', () => {
   assert.equal(gamesOf('veto,veto,veto'), 3);
@@ -41,9 +41,18 @@ test('every map played leaves a replay', () => {
 test('a pair that is not a result says why', () => {
   assert.equal(resultProblem(2, 1, 'veto,veto,veto'), null);
   assert.equal(resultProblem(0, 2, null), null);
-  assert.equal(resultProblem(17, 0, null), 'A Bo3 ends when one player wins 2 maps');
-  assert.equal(resultProblem(1, 0, null), 'A Bo3 ends when one player wins 2 maps');
-  assert.equal(resultProblem(2, 2, null), 'A Bo3 ends when one player wins 2 maps');
-  assert.equal(resultProblem(2, 1, 'veto,veto,veto,veto,veto'), 'A Bo5 ends when one player wins 3 maps');
+  assert.equal(resultProblem(17, 0, null), 'A Bo3 ends when one player wins 2 maps, or 0-0 when it was never played');
+  assert.equal(resultProblem(1, 0, null), 'A Bo3 ends when one player wins 2 maps, or 0-0 when it was never played');
+  assert.equal(resultProblem(2, 2, null), 'A Bo3 ends when one player wins 2 maps, or 0-0 when it was never played');
+  assert.equal(resultProblem(2, 1, 'veto,veto,veto,veto,veto'), 'A Bo5 ends when one player wins 3 maps, or 0-0 when it was never played');
   assert.equal(resultProblem(NaN, 2, null), 'Enter both map scores');
+});
+
+test('0-0 is a result, a series that was never played', () => {
+  assert.equal(neverPlayed(0, 0), true);
+  assert.equal(neverPlayed(1, 0), false);
+  assert.equal(resultProblem(0, 0, null), null);
+  assert.equal(resultProblem(0, 0, 'veto,veto,veto,veto,veto'), null);
+  // a player reports through isValidResult, which never admits 0-0
+  assert.equal(isValidResult(0, 0, 2), false);
 });

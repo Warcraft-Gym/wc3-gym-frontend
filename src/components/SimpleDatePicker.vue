@@ -52,6 +52,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { checkDate } from '@/helpers/date-input.mjs';
 
 const props = defineProps({
   modelValue: {
@@ -84,25 +85,8 @@ const displayDate = computed({
   }
 });
 
-// Date validation rules
-const dateRules = [
-  (value) => {
-    if (!value) return true; // Allow empty
-    const datePattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
-    if (!datePattern.test(value)) {
-      return 'Invalid date format. Use MM/DD/YYYY';
-    }
-    
-    // Check if it's a valid date
-    const [month, day, year] = value.split('/').map(Number);
-    const date = new Date(year, month - 1, day);
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-      return 'Invalid date. Please enter a valid date.';
-    }
-    
-    return true;
-  }
-];
+// The typed field and the blur handler read the same check
+const dateRules = [(value) => (value ? checkDate(value) : true)];
 
 // Format date string to MM/DD/YYYY
 const formatDate = (dateStr) => {
@@ -132,27 +116,21 @@ const validateAndFormat = () => {
   }
   
   const formatted = formatDate(internalDate.value);
-  const datePattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
-  
-  if (datePattern.test(formatted)) {
-    const [month, day, year] = formatted.split('/').map(Number);
-    const date = new Date(year, month - 1, day);
-    
-    if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
-      // Ensure two-digit formatting for month and day
-      const formattedDate = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
-      internalDate.value = formattedDate;
-      selectedDate.value = date;
-      errorMessage.value = '';
-      emit('update:modelValue', date);
-    } else {
-      errorMessage.value = 'Invalid date. Please enter a valid date.';
-      selectedDate.value = null;
-    }
-  } else {
-    errorMessage.value = 'Invalid date format. Use MM/DD/YYYY';
+  const problem = checkDate(formatted);
+
+  if (problem !== true) {
+    // The caller reads the model, so a bad date clears it instead of keeping the last good one
+    errorMessage.value = problem;
     selectedDate.value = null;
+    emit('update:modelValue', null);
+    return;
   }
+
+  const [month, day, year] = formatted.split('/').map(Number);
+  internalDate.value = `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+  selectedDate.value = new Date(year, month - 1, day);
+  errorMessage.value = '';
+  emit('update:modelValue', selectedDate.value);
 };
 
 // Update date when input changes

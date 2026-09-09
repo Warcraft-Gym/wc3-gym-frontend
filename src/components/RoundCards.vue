@@ -22,12 +22,23 @@
       <!-- A series replaces the question: the round is already accounted for -->
       <template v-if="card.series">
         <div class="d-flex align-center ga-2 mt-2">
-          <PlayerName :player="opponent(card.series)" :race="opponentRace(card.series)" />
+          <PlayerName
+            :player="opponent(card.series)"
+            :race="opponentRace(card.series)"
+            :host="card.series.host_player_id === opponent(card.series).id"
+          />
           <v-chip v-if="!isUnscored(card.series)" :color="scoreColor(card.series)" variant="outlined" size="small">
             {{ myScore(card.series) }} - {{ theirScore(card.series) }}
           </v-chip>
         </div>
+        <!-- The host bans first and hosts game one, so the card names that side -->
+        <div v-if="card.series.host_player_id === player.id" class="text-caption text-primary">
+          You host and ban first
+        </div>
         <div class="text-caption text-medium-emphasis">{{ formatDateTime(card.series.date_time) }}</div>
+        <div v-if="card.series.match?.fixed_map" class="text-caption text-medium-emphasis">
+          Game 1: {{ card.series.match.fixed_map.name }}
+        </div>
         <CastChips :series="card.series" class="mt-1" />
         <slot v-if="isUnscored(card.series)" name="series-actions" :series="card.series" />
       </template>

@@ -31,8 +31,6 @@
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-account-circle</v-icon>
         Player Information
-        <v-spacer />
-        <v-btn icon="mdi-pencil" size="small" variant="text" title="Edit profile" @click="openEditProfile" />
       </v-card-title>
       <v-card-text class="pt-4">
         <v-alert v-if="needsSignup" type="info" variant="tonal" border="start" class="mb-4">
@@ -289,8 +287,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { backendUrl, fetchWrapper, pageQuery, PAGE_LIMIT } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useAuthStore, useAvailabilityStore, useSeasonStore, usePlayerStore } from '@/stores';
@@ -313,6 +311,7 @@ import VetoBoard from '@/components/VetoBoard.vue';
 
 
 const router = useRouter();
+const route = useRoute();
 
 // Current W3C season
 const currentW3CSeason = ref(null);
@@ -355,6 +354,14 @@ const saveProfile = async () => {
 
 const playerData = ref(null);
 const series = ref([]);
+
+// the avatar menu asks for the dialog with ?edit=1; the form needs the loaded player,
+// and the flag is dropped once used so a later save does not reopen it
+watch([() => route.query.edit, playerData], ([edit, data]) => {
+  if (!edit || !data) return;
+  router.replace({ query: { ...route.query, edit: undefined } });
+  openEditProfile();
+}, { immediate: true });
 const authStore = useAuthStore();
 
 // /me answers whether the session has a signup for the current GNL season

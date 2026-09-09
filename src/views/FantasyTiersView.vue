@@ -32,8 +32,8 @@
         <v-btn size="small" variant="text" :prepend-icon="locked ? 'mdi-lock-open-variant' : 'mdi-lock'" @click="locked = !locked">{{ locked ? 'Unlock' : 'Lock' }}</v-btn>
       </div>
     </v-alert>
-    <v-alert v-if="currentSeason && !currentSeason.fantasy_tier_cuts.length" type="warning" variant="tonal" density="compact" class="mb-4">
-      No tiers are stored for {{ seasonName }}. The chart proposes an even split of today's W3C MMR.
+    <v-alert v-if="tierState" :type="tierState.type" variant="tonal" density="compact" class="mb-4">
+      {{ tierState.text }}
     </v-alert>
     <StatusAlert v-model="errorMessage" />
     <StatusAlert v-model="successMessage" type="success" />
@@ -92,7 +92,7 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { ALL_COLORS, ALL_NAMES } from '@/helpers/tiers.mjs';
+import { ALL_COLORS, ALL_NAMES, tierChanges } from '@/helpers/tiers.mjs';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
 
 // Bands ascend by MMR; tier numbers descend, so the top band is always tier 1.
@@ -170,6 +170,21 @@ const groups = computed(() => {
   return none.length ? [...banded, { key: 'none', title: 'No W3C MMR', color: 'grey', range: 'not applied, move by hand', rows: none }] : banded;
 });
 
+// What the last Apply wrote, so the page can say whether the chart still matches it
+const stored = computed(() => currentSeason.value?.fantasy_tier_cuts ?? []);
+// A stored pin comes back on the signup as a tier number; a live pin is a band index
+const storedPins = computed(() =>
+  Object.fromEntries(signups.value.filter((p) => p.fantasy_tier_pinned).map((p) => [p.id, p.fantasy_tier])),
+);
+const livePins = computed(() => Object.fromEntries(Object.entries(moves.value).map(([id, band]) => [id, tierOf(band)])));
+const changes = computed(() => tierChanges(cuts.value, stored.value, names.value, livePins.value, storedPins.value));
+const tierState = computed(() => {
+  if (isLoading.value || !currentSeason.value) return null;  // a half-loaded page would call the old cuts a change
+  if (!stored.value.length) return { type: 'warning', text: `No tiers are stored for ${seasonName.value}. The chart proposes an even split of today's W3C MMR.` };
+  if (changes.value.length) return { type: 'warning', text: `Changed since the last Apply: ${changes.value.join('; ')}.` };
+  return { type: 'success', text: `These ${tierCount.value} tiers are the ones stored for ${seasonName.value}.` };
+});
+
 const evenSplit = () => {
   cuts.value = quantileCuts(rows.value.map((r) => r.mmr), tierCount.value);
 };
@@ -234,6 +249,8 @@ const applyTiers = async () => {
     const sync = await ladderStore.syncSeason(currentSeasonId.value);
     const synced = `${sync.synced.length} of ${sync.synced.length + sync.skipped.length + sync.failed.length} players synced`;
     successMessage.value = `${tierCount.value} tiers written, ${pinned} set by hand. ${synced}.`;
+    // The page re-reads what it wrote, so the stored-tier alert stops warning
+    currentSeason.value = await seasonStore.fetchSeason(currentSeasonId.value);
     signups.value = (await seasonStore.fetchSeasonSignups(currentSeasonId.value)) || [];
   } catch (error) {
     console.error('Error applying tier allocation:', error);

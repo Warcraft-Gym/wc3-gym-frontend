@@ -54,6 +54,10 @@ export const playerPath = (player) =>
 // null means closed; the value is a battle tag, or an id for a row without one.
 export const panelPlayerKey = ref(null);
 
+// A drafting page and the panel provide this; every PlayerName under them opens
+// the panel. Everywhere else a name is a link to the player page.
+export const panelLinks = Symbol('panelLinks');
+
 export const openPlayer = (player) =>
   panelPlayerKey.value = player.battleTag ? String(player.battleTag) : String(player.id);
 

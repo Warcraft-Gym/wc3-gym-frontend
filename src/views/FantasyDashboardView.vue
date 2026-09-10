@@ -373,9 +373,9 @@
       <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
       <v-card-text>
         <div class="mb-4">
-          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1_race" />
+          <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1_race" plain />
           vs
-          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2_race" />
+          <PlayerName v-if="betSeries.player2" :player="betSeries.player2" :race="betSeries.player2_race" plain />
         </div>
         <v-radio-group v-model="selectedBetWinnerId">
           <v-radio

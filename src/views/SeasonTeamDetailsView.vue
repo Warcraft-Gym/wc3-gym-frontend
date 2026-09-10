@@ -226,7 +226,7 @@
                 </td>
                 <td>
                   <RowActions :actions="[
-                    { icon: 'mdi-chart-box', label: 'View Stats', public: true, onClick: () => openPlayer(item) },
+                    { icon: 'mdi-chart-box', label: 'View Stats', public: true, onClick: () => router.push(playerPath(item)) },
                     { icon: 'mdi-account-minus', label: 'Remove from Team', color: 'error', onClick: () => removePlayerFromTeam(item.id) },
                   ]" />
                 </td>
@@ -278,7 +278,7 @@
         >
           <template v-slot:[`header.mmr`]><W3CMmr /></template>
           <template v-slot:[`item.name`]="{ item }">
-            <PlayerName :player="item" />
+            <PlayerName :player="item" plain />
           </template>
         </v-data-table>
       </v-card-text>
@@ -309,7 +309,7 @@ import { storeToRefs } from 'pinia';
 import AchievementChip from '@/components/AchievementChip.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import { getW3CMMR, syncedAgo, syncedAt, agoFromIso, localFromIso } from '@/helpers/w3c-stats';
-import { matchesPlayerSearch, filterByMmrRange, openPlayer, playerRowProps } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerPath, playerRowProps } from '@/helpers/players';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import { useColumns } from '@/helpers/columns';

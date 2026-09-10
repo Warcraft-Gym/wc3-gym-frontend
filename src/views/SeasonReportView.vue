@@ -186,7 +186,7 @@
                   .sort((a, b) => b.totalPoints - a.totalPoints || b.winRate - a.winRate || b.wins - a.wins)"
                 :key="player.id"
                 class="player-row"
-                @click="openPlayer(player)"
+                @click="router.push(playerPath(player))"
               >
                 <td class="text-center text-caption text-medium-emphasis">{{ idx + 1 }}</td>
                 <td><PlayerName :player="player" /></td>
@@ -481,7 +481,7 @@ import { useLadderStore } from '@/stores/ladder.store';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
-import { openPlayer } from '@/helpers/players';
+import { playerPath } from '@/helpers/players';
 
 
 const route = useRoute();

@@ -124,7 +124,7 @@
         </v-table>
       </v-card>
 
-      <LadderLeaderboards :players="allPlayers" @open-player="openPlayer" />
+      <LadderLeaderboards :players="allPlayers" @open-player="goToPlayer" />
       <BadgeRarity
         :rules="ladder.achievement_rules"
         :teamRules="ladder.team_achievement_rules"
@@ -268,7 +268,8 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useTheme } from 'vuetify';
-import { openPlayer } from '@/helpers/players';
+import { useRouter } from 'vue-router';
+import { playerPath } from '@/helpers/players';
 import { storeToRefs } from 'pinia';
 import { useAuthStore, useLadderStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
@@ -449,8 +450,10 @@ const syncLadder = async () => {
   }
 };
 
+const router = useRouter();
+const goToPlayer = (player) => router.push(playerPath(player));
 // An opponent clicked inside an expanded panel carries only an id
-const openOpponent = (userId) => openPlayer({ id: userId });
+const openOpponent = (userId) => goToPlayer({ id: userId });
 
 watch(selectedSeasonId, loadLadder, { immediate: true });
 

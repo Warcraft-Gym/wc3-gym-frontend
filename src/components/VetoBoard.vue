@@ -4,9 +4,9 @@
       <v-col class="d-flex align-center flex-wrap ga-3">
         <slot />
         <span v-if="board" class="d-flex align-center ga-2 text-medium-emphasis">
-          <PlayerName :player="board.player1" />
+          <PlayerName :player="board.player1" :plain="report" />
           <span>vs</span>
-          <PlayerName :player="board.player2" />
+          <PlayerName :player="board.player2" :plain="report" />
         </span>
         <v-spacer />
         <v-chip v-if="board && !collapsed" :color="statusColor" variant="tonal">{{ statusLine }}</v-chip>

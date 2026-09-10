@@ -29,6 +29,7 @@ const props = defineProps({
   player: { type: Object, required: true }, // needs name, country
   race: String, // the race for this (race, player) pair; omit to show none
   host: Boolean,
+  plain: Boolean, // text only: a form in a dialog must not lose its input to a click
 })
 
 // A series where the player played another race marks him, so a reader on a
@@ -45,7 +46,7 @@ const offRaceHint = computed(
 // icon says so before the click.
 const attrs = useAttrs()
 const inPanelMode = inject(panelLinks, false)
-const clickable = computed(() => !attrs.onClick && props.player.id != null)
+const clickable = computed(() => !props.plain && !attrs.onClick && props.player.id != null)
 const opensPanel = computed(() => clickable.value && inPanelMode)
 const to = computed(() => (clickable.value && !inPanelMode ? playerPath(props.player) : null))
 </script>

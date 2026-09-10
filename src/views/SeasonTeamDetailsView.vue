@@ -278,7 +278,7 @@
         >
           <template v-slot:[`header.mmr`]><W3CMmr /></template>
           <template v-slot:[`item.name`]="{ item }">
-            <PlayerName :player="item" />
+            <PlayerName :player="item" plain />
           </template>
         </v-data-table>
       </v-card-text>

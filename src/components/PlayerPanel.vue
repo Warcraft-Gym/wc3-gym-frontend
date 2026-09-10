@@ -24,16 +24,18 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, provide, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores';
 import { canSeeRole } from '@/helpers';
-import { panelPlayerKey } from '@/helpers/players';
+import { panelLinks, panelPlayerKey } from '@/helpers/players';
 import PlayerProfile from '@/components/PlayerProfile.vue';
 
 const router = useRouter();
 const { me } = storeToRefs(useAuthStore());
+// a name inside the panel swaps the panel, so the page under it keeps its work
+provide(panelLinks, true);
 
 // the key is already the address, whether it is a battle tag or an id
 const fullPage = computed(() => `/player/${encodeURIComponent(panelPlayerKey.value || '')}`);

@@ -264,7 +264,7 @@
                     <div v-for="p in getTeamPlayersForSeason(team)" :key="p.id" class="team-player" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
                       <div>
                         <div style="display:flex;align-items:center;gap:8px;">
-                          <span style="cursor: pointer; color: var(--v-theme-primary);" @click="openPlayer(p)"><strong>{{ p.name }}</strong></span>
+                          <PlayerName :player="p" />
                           <template v-if="!hasW3CStatsTwoSeasons(p, currentW3CSeason, p.signup_race)">
                             <v-tooltip>
                               <template #activator="{ props }">
@@ -340,7 +340,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, provide, ref } from 'vue';
 import { useAuthStore, useLadderStore, useTeamStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { storeToRefs } from 'pinia';
@@ -361,7 +361,7 @@ import {
   syncedAgo,
   syncedAt
 } from '@/helpers/w3c-stats';
-import { matchesPlayerSearch, filterByMmrRange, openPlayer } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, panelLinks } from '@/helpers/players';
 import { draftOrder } from '@/helpers/draft.mjs';
 import { raceWrapper } from '@/helpers/races';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
@@ -369,6 +369,7 @@ import { useDisplay } from 'vuetify';
 
 
 const router = useRouter();
+provide(panelLinks, true); // a drafting page: a name opens the panel, so the roster ticks survive
 const auth = useAuthStore();
 
 const seasonId = computed(() => {

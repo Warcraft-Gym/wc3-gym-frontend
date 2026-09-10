@@ -1056,7 +1056,8 @@ import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
 import { useRouter } from 'vue-router';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, provide } from 'vue';
+import { panelLinks } from '@/helpers/players';
 import { DateTime } from "luxon";
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
@@ -1080,6 +1081,7 @@ import { winsOf, resultProblem, neverPlayed } from '@/helpers/best-of';
 
 // Stores initialization
 const router = useRouter();
+provide(panelLinks, true); // a drafting page: a name opens the panel, so a proposal is never lost
 const { smAndDown } = useDisplay();
 const matchStore = useMatchStore();
 const seriesStore = useSeriesStore();

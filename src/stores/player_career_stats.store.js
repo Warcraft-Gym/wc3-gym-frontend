@@ -1,42 +1,22 @@
 import { defineStore } from 'pinia';
-import { backendUrl, fetchWrapper, pageQuery } from '@/helpers';
+import { backendUrl, fetchWrapper } from '@/helpers';
 
 export const usePlayerCareerStatsStore = defineStore({
     id: 'playerCareerStats',
     state: () => ({
-        stats: [],
-        totalStats: 0,
-        isLoading: false
+        stats: []
     }),
     actions: {
-        async fetchPage({ limit, offset, search, sort, order }) {
-            this.isLoading = true;
-            try {
-                if (limit === -1) {  // 'All': walk the server pages, which keeps the server order
-                    this.stats = await fetchWrapper.getAll(`${backendUrl}/stats/career?${pageQuery({ search, sort, order })}`);
-                    this.totalStats = this.stats.length;
-                    return this.stats;
-                }
-
-                const query = pageQuery({ limit, offset, search, sort, order });
-                const { items, total } = await fetchWrapper.getPage(`${backendUrl}/stats/career?${query}`);
-                this.stats = items || [];
-                this.totalStats = total ?? this.stats.length;
-                return this.stats;
-            } finally {
-                this.isLoading = false;
-            }
+        // Every career row; the players page joins them onto the player list
+        async fetchAll() {
+            this.stats = await fetchWrapper.getAll(`${backendUrl}/stats/career`);
+            return this.stats;
         },
         async update(id, data) {
             return await fetchWrapper.put(`${backendUrl}/stats/career/${id}`, data);
         },
         async delete(id) {
             return await fetchWrapper.delete(`${backendUrl}/stats/career/${id}`);
-        },
-        async importCsv(file) {
-            const formData = new FormData();
-            formData.append('file', file);
-            return await fetchWrapper.fileUpload(`${backendUrl}/stats/career/import-csv`, formData);
         }
     }
 });

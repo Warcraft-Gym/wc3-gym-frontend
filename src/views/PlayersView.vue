@@ -1,146 +1,140 @@
 <template>
   <v-container fluid class="pa-4">
-    <!-- Page Header -->
-    <v-row class="mb-4">
-      <v-col>
-        <h1>
-          <v-icon class="mr-2">mdi-account-group</v-icon>
-          Players
-        </h1>
-      </v-col>
-    </v-row>
+    <div class="d-flex align-center flex-wrap ga-3 mb-4">
+      <h1>
+        <v-icon class="mr-2">mdi-account-group</v-icon>
+        Players
+      </h1>
+      <v-spacer />
+      <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateNew">
+        Add Player
+      </v-btn>
+    </div>
 
-    <!-- Filters (extracted to reusable component) -->
     <FilterPanel
       v-model:searchName="searchName"
       v-model:searchRace="searchRace"
       v-model:selectedSeasonFilter="selectedSeasonFilter"
       v-model:rangeValues="rangeValues"
       :seasons="seasons"
-      :showName="true"
-      :showRace="true"
-      :showSeason="true"
-      :showMMR="true"
-      :showReset="true"
-      @reset="fetchPlayers"
+      @reset="clearFilters"
     >
       <template #after>
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="3">
           <v-select
-            v-model="selectedW3CFilter"
-            :items="w3cFilterOptions"
-            label="W3C Stats Filter"
+            v-model="selectedFlags"
+            :items="flagOptions"
+            placeholder="Show only"
+            aria-label="Show only"
+            prepend-inner-icon="mdi-alert-outline"
             multiple
             chips
+            closable-chips
             clearable
             variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-filter"
-            hint="Filter players by W3Champions stats"
-            persistent-hint
-          ></v-select>
+            density="compact"
+            hide-details
+          />
         </v-col>
       </template>
+      <template #summary>
+        <span class="text-body-2 text-medium-emphasis">{{ countLabel }}</span>
+      </template>
     </FilterPanel>
-    <!-- Main Card -->
-    <v-card elevation="2">
-      <v-card-text v-if="!errorMessage" class="pa-0">
-        <v-data-table
-          :headers="tableHeader"
-          :loading="isLoading"
-          :items="filteredPlayers"
-          :row-props="playerRowProps"
-          fixed-header
-          hover
-        >
-          <template v-slot:loading>
-            <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
-          </template>
 
-          <template #top>
-            <v-toolbar flat height="auto">
-              <v-row align="center" class="flex-wrap ma-0 pa-2">
-                <v-spacer />
-                <v-col cols="12" sm="auto">
-                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateNew" block>
-                    Add New Player
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-toolbar>
-          </template>
-              <template v-slot:header.races>
-                <W3CMmr :suffix="currentW3CSeason ? ` (S${currentW3CSeason})` : ''" />
+    <v-card elevation="1">
+      <v-alert v-if="errorMessage" type="error" variant="tonal" class="ma-4">{{ errorMessage }}</v-alert>
+      <v-data-table
+        v-else
+        :headers="tableHeader"
+        :items="filteredRows"
+        item-value="key"
+        :loading="isLoading"
+        v-model:sort-by="sortBy"
+        must-sort
+        :items-per-page="25"
+        no-data-text="No players match these filters"
+        hover
+      >
+        <template #loading>
+          <v-skeleton-loader type="table-row@10" />
+        </template>
+
+        <template #[`header.best_mmr`]="{ column, isSorted, getSortIcon }">
+          <W3CMmr
+            :suffix="currentW3CSeason ? ` (S${currentW3CSeason})` : ''"
+            :sort-icon="isSorted(column) ? getSortIcon(column) : null"
+          />
+        </template>
+
+        <template #item="{ item }">
+          <tr class="text-no-wrap" :class="{ 'player-row': item.id != null }" @click="go(item)">
+            <td>
+              <PlayerName v-if="item.id != null" :player="item" @click.stop="go(item)">
+                <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
+                  <v-tooltip>
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
+                    </template>
+                    <span>No W3C stats found for {{ item.race }}</span>
+                  </v-tooltip>
+                </template>
+                <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason, item.race)">
+                  <v-tooltip>
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
+                    </template>
+                    <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason, item.race) }} games) for {{ item.race }}</span>
+                  </v-tooltip>
+                </template>
+              </PlayerName>
+              <span v-else class="text-medium-emphasis">{{ item.name }}</span>
+            </td>
+            <td class="d-none d-md-table-cell mmr-cell">
+              <RaceMmrChips v-if="item.id != null" :player="item" :w3cSeason="currentW3CSeason" class="flex-wrap py-1" />
+            </td>
+            <td class="text-end">{{ item.rating ?? '—' }}</td>
+            <td class="text-end">
+              <template v-if="item.career">
+                {{ item.career.series_won }}-{{ item.career.series_lost }}
+                <span class="text-medium-emphasis ml-1">{{ item.career.series_winrate }}%</span>
               </template>
-
-              <template v-slot:item="{ item }">
-                <tr class="text-no-wrap player-row" @click="openPlayer(item)">
-                  <td>
-                    <PlayerName :player="item">
-                      <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
-                        <v-tooltip>
-                          <template #activator="{ props }">
-                            <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
-                          </template>
-                          <span>No W3C stats found for {{ item.race }}</span>
-                        </v-tooltip>
-                      </template>
-                      <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason, item.race)">
-                        <v-tooltip>
-                          <template #activator="{ props }">
-                            <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
-                          </template>
-                          <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason, item.race) }} games) for {{ item.race }}</span>
-                        </v-tooltip>
-                      </template>
-                    </PlayerName>
-                  </td>
-                  <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
-                  <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
-                  <td class="d-none d-md-table-cell">
-                    <RaceMmrChips :player="item" :w3cSeason="currentW3CSeason" />
-                  </td>
-                  <td class="d-none d-md-table-cell">
-                    <div v-if="item.signup_seasons && item.signup_seasons.length > 0">
-                      <template v-for="s in item.signup_seasons.slice().sort((a,b) => b.id - a.id).slice(0,2)" :key="s.id">
-                        <v-chip small class="ma-1">{{ s.name }}</v-chip>
-                      </template>
-                      <v-menu v-if="item.signup_seasons.length > 2" offset-y>
-                        <template #activator="{ props }">
-                          <v-chip v-bind="props" class="ma-1" small>+{{ item.signup_seasons.length - 2 }}</v-chip>
-                        </template>
-                        <v-list>
-                          <v-list-item v-for="s in item.signup_seasons.slice().sort((a,b) => b.id - a.id)" :key="s.id">
-                            <v-list-item-title>{{ s.name }}</v-list-item-title>
-                          </v-list-item>
-                        </v-list>
-                      </v-menu>
-                    </div>
-                    <div v-else>—</div>
-                  </td>
-                  <td v-if="auth.isAdmin" @click.stop>
-                    <RowActions :actions="[
-                      { icon: 'mdi-pencil', label: 'Edit', onClick: () => editPlayer(item) },
-                      { icon: 'mdi-account-check', label: 'Add to season', onClick: () => signupDialog.open({ player: item }) },
-                      { icon: syncIcon(item.id), label: syncLabel(item.id), color: syncColor(item.id), loading: syncState(item.id) === 'loading', onClick: () => syncW3CPlayer(item.id) },
-                      { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item.id, removePlayer) },
-                    ]" />
-                  </td>
-                </tr>
+              <template v-else>—</template>
+            </td>
+            <td class="text-end d-none d-md-table-cell">
+              <template v-if="item.career">
+                {{ item.career.games_won }}-{{ item.career.games_lost }}
+                <span class="text-medium-emphasis ml-1">{{ item.career.games_winrate }}%</span>
               </template>
-        </v-data-table>
-      </v-card-text>
-
-      <!-- Enhanced Empty State -->
-      <v-card-text v-else class="text-center pa-8">
-        <v-icon size="64" color="grey-lighten-1">mdi-account-off</v-icon>
-        <div class="text-h6 text-grey mt-4 mb-2">No players found</div>
-        <p class="text-medium-emphasis mb-4">Get started by adding your first player</p>
-        <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateNew">
-          Add First Player
-        </v-btn>
-      </v-card-text>
+              <template v-else>—</template>
+            </td>
+            <td class="text-end d-none d-md-table-cell">{{ item.seasons_played ?? '—' }}</td>
+            <td class="d-none d-md-table-cell">
+              <div v-if="item.signup_seasons && item.signup_seasons.length > 0">
+                <template v-for="s in item.signup_seasons.slice().sort((a,b) => b.id - a.id).slice(0,1)" :key="s.id">
+                  <v-chip small class="ma-1">{{ s.name }}</v-chip>
+                </template>
+                <v-menu v-if="item.signup_seasons.length > 1" offset-y>
+                  <template #activator="{ props }">
+                    <v-chip v-bind="props" class="ma-1" small @click.stop>+{{ item.signup_seasons.length - 1 }}</v-chip>
+                  </template>
+                  <v-list>
+                    <v-list-item v-for="s in item.signup_seasons.slice().sort((a,b) => b.id - a.id)" :key="s.id">
+                      <v-list-item-title>{{ s.name }}</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </div>
+              <div v-else>—</div>
+            </td>
+            <td v-if="auth.isAdmin" @click.stop>
+              <RowActions :actions="rowActions(item)" />
+            </td>
+          </tr>
+        </template>
+      </v-data-table>
     </v-card>
+
     <!-- Add New Player Dialog -->
     <v-dialog v-model="showNewPlayerModal" max-width="800">
       <v-card>
@@ -237,10 +231,12 @@
     <EditPlayerDialog
       ref="editPlayerDialog"
       :can-save="auth.isAdmin"
-      :refresh="fetchPlayers"
+      :refresh="load"
     />
 
-    <SeasonSignupDialog ref="signupDialog" @added="fetchPlayers" />
+    <SeasonSignupDialog ref="signupDialog" @added="load" />
+
+    <CareerStatsDialog v-if="auth.isAdmin" ref="careerDialog" :players="players" @changed="load" />
 
     <ConfirmDeleteDialog
       v-model="showDeleteDialog"
@@ -255,10 +251,13 @@
 <script setup>
 import RowActions from '@/components/RowActions.vue';
 import { useAuthStore, usePlayerStore, useSeasonStore } from '@/stores';
+import { usePlayerCareerStatsStore } from '@/stores/player_career_stats.store';
 import { storeToRefs } from 'pinia';
 import { onMounted, ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import SeasonSignupDialog from '@/components/SeasonSignupDialog.vue';
+import CareerStatsDialog from '@/components/CareerStatsDialog.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
@@ -271,14 +270,14 @@ import {
 } from '@/helpers/w3c-stats';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { matchesPlayerSearch, filterByMmrRange, playerRowProps, openPlayer } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerPath, playersWithCareers } from '@/helpers/players';
 import { useColumns } from '@/helpers/columns';
 
-// State for editing
 const editPlayerDialog = ref(null);
 const signupDialog = ref(null);
-const isLoading  = ref(false); // State for selected user
-const isCreating = ref(false); // State for creating new player
+const careerDialog = ref(null);
+const isLoading = ref(false);
+const isCreating = ref(false);
 const errorMessage = ref(null);
 const creationError = ref(null);
 const showNewPlayerModal = ref(false);
@@ -290,117 +289,22 @@ const newPlayer = ref({
   discordId: '',
   race: '',
 });
+const router = useRouter();
 const playerStore = usePlayerStore();
+const careerStore = usePlayerCareerStatsStore();
 const seasonStore = useSeasonStore();
 const auth = useAuthStore();
 const { players } = storeToRefs(playerStore);
+const { stats: careers } = storeToRefs(careerStore);
 const { seasons } = storeToRefs(seasonStore);
-// filter for season in the grid
-const selectedSeasonFilter = ref(null);
-
-const filteredPlayers = computed(() => {
-  let list = players.value || [];
-
-  // filter by name / battletag / discord
-  if (searchName.value && searchName.value.trim().length > 0) {
-    list = list.filter(p => matchesPlayerSearch(p, searchName.value));
-  }
-
-  // filter by race
-  if (searchRace.value) {
-    list = list.filter(p => p.race === searchRace.value);
-  }
-
-  // filter by season signup
-  if (selectedSeasonFilter.value) {
-    list = list.filter(p => (p.signup_seasons || []).some(s => s.id === selectedSeasonFilter.value));
-  }
-
-  // filter by mmr range — only apply if user changed from defaults
-  list = filterByMmrRange(list, rangeValues.value, bestMmr);
-
-  // filter by W3C stats
-  if (selectedW3CFilter.value && selectedW3CFilter.value.length > 0) {
-    list = list.filter(p => {
-      const includeNoStats = selectedW3CFilter.value.includes('no_stats');
-      const includeLowGames = selectedW3CFilter.value.includes('low_games');
-      
-      if (includeNoStats && !hasW3CStatsTwoSeasons(p, currentW3CSeason.value, p.race)) return true;
-      if (includeLowGames && hasLowGamesTwoSeasons(p, currentW3CSeason.value, p.race)) return true;
-      
-      return false;
-    });
-  }
-
-  return list;
-});
-// Fetch data when the page is loaded
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
-//research models
+
+// Filters
+const searchName = ref('');
 const searchRace = ref(null);
-const searchName = ref(null);
+const selectedSeasonFilter = ref(null);
 const rangeValues = ref([0, 3000]);
-const selectedW3CFilter = ref([]);
-const w3cFilterOptions = [
-  { title: 'No W3C Stats', value: 'no_stats' },
-  { title: 'Less than 20 games', value: 'low_games' }
-];
-
-// the Actions column carries admin operations (edit, W3C sync, delete)
-const allTableHeader = computed(() => [
-  { title: 'Name', value: 'name', sortable: true },
-  { mobile: false, title: 'Battletag', value: 'battleTag', sortable: true },
-  { mobile: false, title: 'Discord Name', value: 'discordTag', sortable: true },
-  { mobile: false, title: currentW3CSeason.value ? `W3C MMR (S${currentW3CSeason.value})` : 'W3C MMR', value: 'races', sortable: false },
-  { mobile: false, title: 'Seasons', value: 'signups', sortable: false },
-  ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
-]);
-const tableHeader = useColumns(allTableHeader);
-
-// Fetch users when the component is mounted
-const fetchPlayers = async () => {
-  
-  isLoading.value = true;
-  errorMessage.value = null; // Reset error message
-  try {
-    await playerStore.fetchPlayers(); // Fetch user data
-
-
-    if (playerStore.players.length === 0) {
-      errorMessage.value = 'No users found.';
-    }
-  } catch (error) {
-    errorMessage.value = 'Failed to load users. Please try again later.';
-    } finally {
-    isLoading.value = false;
-
-    //reset placeholders
-    searchName.value = ''
-    searchRace.value = ''
-    // reset season filter as well
-    selectedSeasonFilter.value = null;
-    // reset W3C filter
-    selectedW3CFilter.value = [];
-    // keep numeric defaults
-    rangeValues.value = [0, 3000];
-  }
-};
-
-// Refresh data without resetting filters (for sync operations)
-onMounted( async () => {
-  // Ensure seasons are loaded first for the filter dropdown
-  try {
-    await seasonStore.fetchSeasons();
-  } catch (err) {
-    console.error('Failed to fetch seasons:', err);
-  }
-  
-  await fetchPlayers();
-  currentW3CSeason.value = await resolveCurrentW3CSeason();
-});
-
-// per-player sync status map: { [playerId]: { state: 'loading'|'success'|'error', message?: string } }
-const perPlayerSyncStatus = ref({});
+const selectedFlags = ref([]);
 
 // Current W3C season number (for stats fallback logic)
 const currentW3CSeason = ref(null);
@@ -410,12 +314,109 @@ const bestMmr = (player) => Math.max(0, ...getAllRaceStats(player, currentW3CSea
   .filter((stat) => (stat.games || 0) > 0)
   .map((stat) => stat.mmr || 0));
 
-const openCreateNew = async () => {
-  try {
-    if (seasonStore && seasonStore.fetchSeasons) await seasonStore.fetchSeasons();
-  } catch (err) {
-    console.error('Failed to fetch seasons before opening create player dialog:', err);
+const FLAGS = {
+  no_stats: row => row.id != null && !hasW3CStatsTwoSeasons(row, currentW3CSeason.value, row.race),
+  low_games: row => row.id != null && hasLowGamesTwoSeasons(row, currentW3CSeason.value, row.race),
+  unlinked: row => row.id == null && row.career?.id != null,
+};
+const flagOptions = computed(() => [
+  { title: 'No W3C stats', value: 'no_stats' },
+  { title: 'Less than 20 games', value: 'low_games' },
+  ...(auth.isAdmin ? [{ title: 'History with no player', value: 'unlinked' }] : []),
+]);
+
+const rows = computed(() => playersWithCareers(players.value || [], careers.value || [])
+  .map(row => ({ ...row, best_mmr: row.id != null ? bestMmr(row) || null : null })));
+
+const filteredRows = computed(() => {
+  let list = rows.value;
+  if (searchName.value && searchName.value.trim().length > 0) {
+    list = list.filter(row => matchesPlayerSearch(row, searchName.value));
   }
+  if (searchRace.value) {
+    list = list.filter(row => row.race === searchRace.value);
+  }
+  if (selectedSeasonFilter.value) {
+    list = list.filter(row => (row.signup_seasons || []).some(s => s.id === selectedSeasonFilter.value));
+  }
+  list = filterByMmrRange(list, rangeValues.value, row => row.best_mmr ?? 0);
+  if (selectedFlags.value.length > 0) {
+    list = list.filter(row => selectedFlags.value.some(flag => FLAGS[flag](row)));
+  }
+  return list;
+});
+
+const countLabel = computed(() => filteredRows.value.length === rows.value.length
+  ? `${rows.value.length} players`
+  : `${filteredRows.value.length} of ${rows.value.length} players`);
+
+// Rows without career totals sort last, because Vuetify orders empty values first on ascending
+const sortBy = ref([{ key: 'rating', order: 'desc' }]);
+
+const allTableHeader = computed(() => [
+  { title: 'Name', key: 'name' },
+  { mobile: false, title: 'W3C MMR', key: 'best_mmr' },
+  { title: 'Rating', key: 'rating', align: 'end' },
+  { title: 'Series', key: 'series_winrate', align: 'end' },
+  { mobile: false, title: 'Games', key: 'games_winrate', align: 'end' },
+  { mobile: false, title: 'Seasons', key: 'seasons_played', align: 'end' },
+  { mobile: false, title: 'Events', key: 'events', sortable: false },
+  ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
+]);
+const tableHeader = useColumns(allTableHeader);
+
+// A history row has no player page to open
+const go = (row) => {
+  if (row.id != null) router.push(playerPath(row));
+};
+
+const openCareer = (row) => careerDialog.value.open(row.career);
+const rowActions = (row) => row.id == null
+  ? [{ icon: 'mdi-history', label: 'Career stats', onClick: () => openCareer(row) }]
+  : [
+    { icon: 'mdi-pencil', label: 'Edit', onClick: () => editPlayerDialog.value.open(row) },
+    { icon: 'mdi-account-check', label: 'Add to season', onClick: () => signupDialog.value.open({ player: row }) },
+    { icon: syncIcon(row.id), label: syncLabel(row.id), color: syncColor(row.id), loading: syncState(row.id) === 'loading', onClick: () => syncW3CPlayer(row.id) },
+    ...(row.career?.id != null ? [{ icon: 'mdi-history', label: 'Career stats', onClick: () => openCareer(row) }] : []),
+    { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(row.id, removePlayer) },
+  ];
+
+const load = async () => {
+  isLoading.value = true;
+  errorMessage.value = null;
+  try {
+    await Promise.all([playerStore.fetchPlayers(), careerStore.fetchAll()]);
+  } catch (error) {
+    console.error('Failed to load players:', error);
+    errorMessage.value = 'Failed to load players. Please try again later.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const clearFilters = () => {
+  searchName.value = '';
+  searchRace.value = null;
+  selectedSeasonFilter.value = null;
+  rangeValues.value = [0, 3000];
+  selectedFlags.value = [];
+};
+
+onMounted(async () => {
+  // Seasons feed the events filter
+  try {
+    await seasonStore.fetchSeasons();
+  } catch (err) {
+    console.error('Failed to fetch seasons:', err);
+  }
+  await load();
+  currentW3CSeason.value = await resolveCurrentW3CSeason();
+});
+
+// per-player sync status map: { [playerId]: { state: 'loading'|'success'|'error', message?: string } }
+const perPlayerSyncStatus = ref({});
+
+const openCreateNew = () => {
   newPlayer.value = {
     name: '',
     battleTag: '',
@@ -429,20 +430,13 @@ const openCreateNew = async () => {
   showNewPlayerModal.value = true;
 };
 
-// Methods
-
-
-const editPlayer = (player) => editPlayerDialog.value.open(player);
-
 const createNewPlayer = async () => {
   creationError.value = '';
   isCreating.value = true;
   try {
     // send newPlayer directly — fields use backend schema names
     await playerStore.createPlayer(newPlayer.value);
-
-    // refresh players list and close modal
-    await fetchPlayers();
+    await load();
     cancelAddNewPlayer();
   } catch (error) {
     console.error('Error creating user:', error);
@@ -455,7 +449,7 @@ const createNewPlayer = async () => {
 const removePlayer = async (playerId) => {
   try {
     await playerStore.deletePlayer(playerId);
-    await fetchPlayers(); // Refresh the list after deletion
+    await load();
   } catch (error) {
     console.error('Error deleting player:', error);
   }
@@ -494,10 +488,11 @@ const cancelAddNewPlayer = () => {
 <style scoped>
 .player-row {
   cursor: pointer;
-  transition: all 0.2s ease;
 }
-
-.player-row:hover {
-  background-color: rgba(var(--v-theme-primary), 0.05) !important;
+/* A player on five races wraps his chips rather than push the table off the card */
+.mmr-cell {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 320px;
 }
 </style>

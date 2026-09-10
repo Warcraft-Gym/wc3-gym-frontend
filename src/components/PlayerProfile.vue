@@ -41,6 +41,8 @@
       </v-card-text>
     </v-card>
 
+    <PlayerTrophies :trophies="player.trophies" />
+
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-calendar-account</v-icon>
@@ -68,6 +70,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
+import PlayerTrophies from '@/components/PlayerTrophies.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import RoundCards from '@/components/RoundCards.vue';
 import StatusAlert from '@/components/StatusAlert.vue';

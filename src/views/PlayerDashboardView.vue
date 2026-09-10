@@ -55,20 +55,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- A trophy is a league or tournament win, not a seasonal or lifetime badge -->
-    <v-card v-if="!isLoading && fullPlayer?.trophies?.length" elevation="2" class="mb-6">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-trophy</v-icon>
-        Trophies
-      </v-card-title>
-      <v-card-text class="pt-2 d-flex flex-wrap ga-6">
-        <div v-for="trophy in fullPlayer.trophies" :key="trophy.season_id" class="text-center">
-          <TrophyIcon :trophy="trophy" :size="56" />
-          <!-- the plate names the season and the crown says champion, so the caption names the team -->
-          <div class="text-caption mt-1">{{ trophy.team_name }}</div>
-        </div>
-      </v-card-text>
-    </v-card>
+    <PlayerTrophies v-if="!isLoading" :trophies="fullPlayer?.trophies" />
 
     <v-card v-if="!isLoading && fullPlayer" elevation="2" class="mb-6">
       <v-card-title class="bg-primary d-flex align-center">
@@ -333,7 +320,7 @@ import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import RoundCards from '@/components/RoundCards.vue';
-import TrophyIcon from '@/components/TrophyIcon.vue';
+import PlayerTrophies from '@/components/PlayerTrophies.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import RaceSelect from '@/components/RaceSelect.vue';

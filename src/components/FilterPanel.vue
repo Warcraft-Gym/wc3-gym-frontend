@@ -1,7 +1,7 @@
 <template>
   <v-sheet class="mb-4 pa-3" border rounded="lg">
     <v-row dense align="center">
-      <v-col v-if="showName" cols="12" md>
+      <v-col v-if="showName">
         <v-text-field
           v-model="searchName"
           placeholder="Search name, battle tag or Discord"
@@ -14,6 +14,15 @@
         />
       </v-col>
 
+      <!-- A phone keeps the search in view and folds the rest behind this button -->
+      <v-col v-if="!mdAndUp" cols="auto">
+        <v-btn variant="tonal" prepend-icon="mdi-tune-variant" :aria-expanded="open" @click="open = !open">
+          Filters
+          <v-badge v-if="activeCount" :content="activeCount" color="primary" inline />
+        </v-btn>
+      </v-col>
+
+      <template v-if="expanded">
       <v-col v-if="showSeason" cols="12" md="3">
         <v-select
           v-model="selectedSeasonFilter"
@@ -31,18 +40,20 @@
       </v-col>
 
       <slot name="after" />
+      </template>
     </v-row>
 
     <v-row v-if="showRace || showMMR || showReset" dense align="center" class="mt-1">
-      <v-col v-if="showRace" cols="12" sm="auto">
+      <v-col v-if="showRace && expanded" cols="12" sm="auto">
         <v-btn-toggle v-model="searchRace" variant="outlined" density="compact" divided rounded="lg" color="primary" aria-label="Race">
           <v-btn v-for="race in raceWrapper.races" :key="race.id" :value="race.id" :title="race.name" :aria-label="race.name" min-width="48">
             <img :src="race.icon" :alt="race.name" class="race-toggle" />
+            <span v-if="searchRace === race.id" class="ml-2">{{ race.name }}</span>
           </v-btn>
         </v-btn-toggle>
       </v-col>
 
-      <v-col v-if="showMMR" cols="12" md class="d-flex align-center ga-3">
+      <v-col v-if="showMMR && expanded" cols="12" md class="d-flex align-center ga-3">
         <span class="text-body-2 text-medium-emphasis">MMR</span>
         <v-text-field
           :model-value="rangeValues[0]"
@@ -86,11 +97,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useDisplay } from 'vuetify';
 import { raceWrapper } from '@/helpers/races.js';
 
 const props = defineProps({
   seasons: { type: Array, default: () => [] },
+  extraActive: { type: Number, default: 0 }, // filters the after slot holds, counted on the phone button
   showName: { type: Boolean, default: true },
   showRace: { type: Boolean, default: true },
   showSeason: { type: Boolean, default: true },
@@ -108,6 +121,15 @@ const selectedSeasonFilter = defineModel('selectedSeasonFilter', { type: [String
 const rangeValues = defineModel('rangeValues', { type: Array, default: () => [0, 3000] });
 
 const events = computed(() => [...(props.seasons || [])].sort((a, b) => b.id - a.id));
+
+const { mdAndUp } = useDisplay();
+const open = ref(false);
+const expanded = computed(() => mdAndUp.value || open.value);
+const activeCount = computed(() => [
+  searchRace.value,
+  selectedSeasonFilter.value,
+  rangeValues.value[0] !== props.min || rangeValues.value[1] !== props.max,
+].filter(Boolean).length + props.extraActive);
 
 const setRange = (i, value) => {
   const next = [...rangeValues.value];

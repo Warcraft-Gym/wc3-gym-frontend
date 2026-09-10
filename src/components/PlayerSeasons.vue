@@ -228,7 +228,7 @@ const load = async () => {
     await Promise.all((props.player.signup_seasons ?? []).map(async (signup) => {
       const [series, ladder] = await Promise.all([
         seriesStore.playerSeries(signup.id, props.player.id),
-        ladderStore.userLadder(props.player.id, { seasonId: signup.id, limit: 1 }).catch(() => null),
+        ladderStore.userLadder(props.player.id, { seasonId: signup.id }).catch(() => null),
       ]);
       seriesBySeason.value = { ...seriesBySeason.value, [signup.id]: series };
       ladderBySeason.value = { ...ladderBySeason.value, [signup.id]: ladder };

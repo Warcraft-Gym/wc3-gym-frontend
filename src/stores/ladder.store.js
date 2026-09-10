@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 
-import { backendUrl, fetchWrapper, PAGE_LIMIT } from '@/helpers';
-import { allMatches } from '@/helpers/all-matches.mjs';
+import { backendUrl, fetchWrapper } from '@/helpers';
 
 export const useLadderStore = defineStore({
     id: 'ladderStore',
@@ -18,16 +17,8 @@ export const useLadderStore = defineStore({
             this.ladders[season_id] = ladder;
             return ladder;
         },
-        async userLadder(user_id, { seasonId = null, limit = null, offset = null, race = null } = {}) {
-            if (limit === -1) {  // 'All': the route caps a read at PAGE_LIMIT, so read it again
-                return await allMatches(next =>
-                    this.userLadder(user_id, { seasonId, race, limit: PAGE_LIMIT, offset: next }), race);
-            }
-            const query = new URLSearchParams();
-            for (const [key, value] of Object.entries({ season_id: seasonId, race, limit, offset })) {
-                if (value !== null && value !== undefined) query.append(key, value);
-            }
-            const suffix = query.toString() ? `?${query}` : '';
+        async userLadder(user_id, { seasonId = null } = {}) {
+            const suffix = seasonId == null ? '' : `?season_id=${seasonId}`;
             return await fetchWrapper.get(`${backendUrl}/users/${user_id}/ladder${suffix}`);
         },
         // The sync route answers one chunk of players and where the next one starts

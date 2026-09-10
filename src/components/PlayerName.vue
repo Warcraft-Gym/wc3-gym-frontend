@@ -11,7 +11,7 @@
     <span v-else-if="race !== undefined" class="fp race-gap" />
     <FlagIcon v-if="player.country" :countryIdentifier="player.country" />
     <span v-else class="fp" />
-    {{ player.name }}
+    <span class="name">{{ player.name }}</span>
     <v-icon v-if="opensPanel" class="panel-cue" size="16" aria-label="Opens in a side panel">mdi-dock-right</v-icon>
     <v-chip v-if="offRace" size="x-small" variant="tonal" color="warning" :title="offRaceHint">off-race</v-chip>
     <v-chip v-if="host" size="x-small" variant="tonal" color="primary">Host</v-chip>
@@ -68,6 +68,9 @@ const to = computed(() => (clickable.value && !inPanelMode ? playerPath(props.pl
 }
 .link:hover {
   color: rgb(var(--v-theme-primary));
+}
+/* only the name underlines, not the flag or the Host and off-race chips */
+.link:hover .name {
   text-decoration: underline;
 }
 /* the cue is always coloured, so a reader knows before the click that the page stays */

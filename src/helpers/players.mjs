@@ -24,6 +24,26 @@ export const filterByMmrRange = (list, range, getMmr) => {
   });
 };
 
+// One row per player carrying his career row, then one row per career row no
+// listed player claims: the league's history from before the app.
+export const playersWithCareers = (players, careers) => {
+  const byPlayer = new Map(careers.filter(c => c.user_id != null).map(c => [c.user_id, c]));
+  const listed = new Set(players.map(p => p.id));
+  const totals = (career) => ({
+    career,
+    rating: career?.rating ?? null,
+    series_winrate: career?.series_winrate ?? null,
+    games_winrate: career?.games_winrate ?? null,
+    seasons_played: career?.seasons_played ?? null,
+  });
+  return [
+    ...players.map(p => ({ ...p, key: `p${p.id}`, ...totals(byPlayer.get(p.id) ?? null) })),
+    ...careers
+      .filter(c => !listed.has(c.user_id))
+      .map(c => ({ id: null, name: c.user?.name ?? c.player_name, key: `c${c.id ?? c.user_id}`, ...totals(c) })),
+  ];
+};
+
 // The player page path. The battle tag is the key, like w3champions; the id
 // serves rows that carry none, and old links.
 export const playerPath = (player) =>

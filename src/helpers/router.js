@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore, useSeasonStore } from '@/stores';
-import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, PlayerCareerStatsView, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
+import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -44,7 +44,7 @@ export const router = createRouter({
         { path: '/koth', component: KothView, meta: { role: 'admin' } },
         { path: '/koth/dashboard', component: KothDashboard, meta: { role: 'public', nav: false, bar: false } },
         { path: '/user-guide', component: UserGuideView, meta: { role: 'admin' } },
-        { path: '/player-stats', component: PlayerCareerStatsView, meta: { role: 'member' } },
+        { path: '/player-stats', redirect: '/players' },  // career stats live on the players page
         { path: '/report', component: SeasonReportView, meta: { role: 'public' } },
         { path: '/report/:id', component: SeasonReportView, meta: { role: 'public', season: true } },
         { path: '/ladder', component: LadderView, meta: { role: 'member' } },

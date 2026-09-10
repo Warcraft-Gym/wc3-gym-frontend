@@ -322,14 +322,19 @@ const FLAGS = {
 const flagOptions = computed(() => [
   { title: 'No W3C stats', value: 'no_stats' },
   { title: 'Less than 20 games', value: 'low_games' },
-  ...(auth.isAdmin ? [{ title: 'History with no player', value: 'unlinked' }] : []),
+  ...(auth.isAdmin ? [{ title: 'Unlinked players', value: 'unlinked' }] : []),
 ]);
 
 const rows = computed(() => playersWithCareers(players.value || [], careers.value || [])
   .map(row => ({ ...row, best_mmr: row.id != null ? bestMmr(row) || null : null })));
 
+// Career rows no player claims stay out until an admin asks for them to link them
+const baseRows = computed(() => selectedFlags.value.includes('unlinked')
+  ? rows.value
+  : rows.value.filter(row => row.id != null));
+
 const filteredRows = computed(() => {
-  let list = rows.value;
+  let list = baseRows.value;
   if (searchName.value && searchName.value.trim().length > 0) {
     list = list.filter(row => matchesPlayerSearch(row, searchName.value));
   }
@@ -346,9 +351,9 @@ const filteredRows = computed(() => {
   return list;
 });
 
-const countLabel = computed(() => filteredRows.value.length === rows.value.length
-  ? `${rows.value.length} players`
-  : `${filteredRows.value.length} of ${rows.value.length} players`);
+const countLabel = computed(() => filteredRows.value.length === baseRows.value.length
+  ? `${baseRows.value.length} players`
+  : `${filteredRows.value.length} of ${baseRows.value.length} players`);
 
 // Rows without career totals sort last, because Vuetify orders empty values first on ascending
 const sortBy = ref([{ key: 'rating', order: 'desc' }]);

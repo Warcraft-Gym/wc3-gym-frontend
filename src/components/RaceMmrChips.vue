@@ -1,9 +1,10 @@
 <!-- One chip per race the player has ladder games on: race icon + that race's MMR.
-     A player is not one race, so every raced MMR shows; races without games stay hidden. -->
+     A player is not one race, so every raced MMR shows; races without games stay hidden.
+     `max` keeps the best ones as chips and folds the rest into a "+n" chip. -->
 <template>
   <span class="d-inline-flex align-center ga-2">
     <v-tooltip
-      v-for="stat in raceStats"
+      v-for="stat in raceStats.slice(0, max)"
       :key="stat.race"
       location="top"
       :text="`${raceName(stat.race)}: ${stat.wins || 0} wins, ${stat.losses || 0} losses in season ${stat.wc3_season}`"
@@ -15,6 +16,14 @@
           <span v-if="w3cSeason && stat.wc3_season !== w3cSeason" class="text-caption text-medium-emphasis ml-1">S{{ stat.wc3_season }}</span>
         </v-chip>
       </template>
+    </v-tooltip>
+    <v-tooltip v-if="raceStats.length > max" location="top">
+      <template #activator="{ props: tooltip }">
+        <v-chip v-bind="tooltip" size="small" variant="tonal">+{{ raceStats.length - max }}</v-chip>
+      </template>
+      <div v-for="stat in raceStats.slice(max)" :key="stat.race">
+        {{ raceName(stat.race) }} {{ stat.mmr }}<template v-if="w3cSeason && stat.wc3_season !== w3cSeason"> (S{{ stat.wc3_season }})</template>
+      </div>
     </v-tooltip>
     <span v-if="!raceStats.length" class="text-caption text-medium-emphasis">no ladder games</span>
   </span>
@@ -29,6 +38,7 @@ import { getAllRaceStats } from '@/helpers/w3c-stats';
 const props = defineProps({
   player: { type: Object, required: true }, // needs w3c_stats
   w3cSeason: Number, // current W3C season; a stat from an older season names its own
+  max: { type: Number, default: Infinity },
 });
 
 const raceStats = computed(() =>

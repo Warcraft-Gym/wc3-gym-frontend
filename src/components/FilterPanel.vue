@@ -1,111 +1,109 @@
 <template>
-  <v-expansion-panels class="mb-4">
-    <v-expansion-panel>
-      <v-expansion-panel-title class="bg-primary">
-        <v-icon class="mr-2">mdi-filter</v-icon>
-        <span class="text-h6 font-weight-bold">Filters</span>
-      </v-expansion-panel-title>
-      <v-expansion-panel-text class="pt-4">
-        <!-- First Row: Name, Race, MMR -->
-        <v-row>
-          <v-col v-if="showName" cols="12" md="4">
-            <v-text-field
-              v-model="localSearchName"
-              label="Search Player Name"
-              variant="outlined"
-              prepend-inner-icon="mdi-magnify"
-              density="comfortable"
-              clearable
-            ></v-text-field>
-          </v-col>
+  <v-sheet class="mb-4 pa-3" border rounded="lg">
+    <v-row dense align="center">
+      <v-col v-if="showName">
+        <v-text-field
+          v-model="searchName"
+          placeholder="Search name, battle tag or Discord"
+          aria-label="Search players"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+        />
+      </v-col>
 
-          <v-col v-if="showRace" cols="12" md="2">
-            <RaceSelect v-model="localSearchRace" />
-          </v-col>
+      <!-- A phone keeps the search in view and folds the rest behind this button -->
+      <v-col v-if="!mdAndUp" cols="auto">
+        <v-btn variant="tonal" prepend-icon="mdi-tune-variant" :aria-expanded="open" @click="open = !open">
+          Filters
+          <v-badge v-if="activeCount" :content="activeCount" color="primary" inline />
+        </v-btn>
+      </v-col>
 
-          <v-col v-if="showMMR" cols="12" md="6">
-            <div class="text-subtitle-1 font-weight-medium mb-2">
-              <v-icon class="mr-1" size="small">mdi-numeric</v-icon>
-              MMR Range
-            </div>
-            <v-range-slider
-              v-model="localRangeValues"
-              :min="min"
-              :max="max"
-              strict
-              :step="step"
-              color="primary"
-              class="align-center"
-              hide-details
-            >
-              <template v-slot:prepend>
-                <v-text-field
-                  v-model.number="localRangeValues[0]"
-                  density="compact"
-                  type="number"
-                  hide-details
-                  single-line
-                  variant="outlined"
-                  style="width: 80px"
-                  hide-spin-buttons
-                ></v-text-field>
-              </template>
-              <template v-slot:append>
-                <v-text-field
-                  v-model.number="localRangeValues[1]"
-                  density="compact"
-                  type="number"
-                  hide-details
-                  single-line
-                  variant="outlined"
-                  style="width: 80px"
-                  hide-spin-buttons
-                ></v-text-field>
-              </template>
-            </v-range-slider>
-          </v-col>
-        </v-row>
+      <template v-if="expanded">
+      <v-col v-if="showSeason" cols="12" md="3">
+        <v-select
+          v-model="selectedSeasonFilter"
+          :items="events"
+          item-title="name"
+          item-value="id"
+          placeholder="Filter by events"
+          aria-label="Filter by events"
+          prepend-inner-icon="mdi-calendar"
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+        />
+      </v-col>
 
-        <!-- Second Row: Season Filter and After Slot (W3C Stats) -->
-        <v-row v-if="showSeason || $slots.after">
-          <v-col v-if="showSeason" cols="12" md="6">
-            <v-select
-              v-model="localSelectedSeasonFilter"
-              :items="seasons"
-              item-title="name"
-              item-value="id"
-              clearable
-              label="Filter by Season"
-              variant="outlined"
-              prepend-inner-icon="mdi-calendar"
-              density="comfortable"
-            ></v-select>
-          </v-col>
+      <slot name="after" />
+      </template>
+    </v-row>
 
-          <slot name="after"></slot>
-        </v-row>
+    <v-row v-if="showRace || showMMR || showReset" dense align="center" class="mt-1">
+      <v-col v-if="showRace && expanded" cols="12" sm="auto">
+        <v-btn-toggle v-model="searchRace" variant="outlined" density="compact" divided rounded="lg" color="primary" aria-label="Race">
+          <v-btn v-for="race in raceWrapper.races" :key="race.id" :value="race.id" :title="race.name" :aria-label="race.name" min-width="48">
+            <img :src="race.icon" :alt="race.name" class="race-toggle" />
+            <span v-if="searchRace === race.id" class="ml-2">{{ race.name }}</span>
+          </v-btn>
+        </v-btn-toggle>
+      </v-col>
 
-        <!-- Reset Button Row -->
-        <v-row v-if="showReset" justify="center" class="mt-2">
-          <v-col cols="auto">
-            <v-btn @click="$emit('reset')" variant="elevated" prepend-icon="mdi-refresh" color="primary">Reset Filters</v-btn>
-          </v-col>
-        </v-row>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-  </v-expansion-panels>
+      <v-col v-if="showMMR && expanded" cols="12" md class="d-flex align-center ga-3">
+        <span class="text-body-2 text-medium-emphasis">MMR</span>
+        <v-text-field
+          :model-value="rangeValues[0]"
+          @update:model-value="v => setRange(0, v)"
+          aria-label="Lowest MMR"
+          type="number"
+          variant="outlined"
+          density="compact"
+          hide-details
+          hide-spin-buttons
+          class="mmr-input"
+        />
+        <v-range-slider
+          v-model="rangeValues"
+          :min="min"
+          :max="max"
+          :step="step"
+          strict
+          color="primary"
+          hide-details
+          class="flex-grow-1 mmr-slider"
+        />
+        <v-text-field
+          :model-value="rangeValues[1]"
+          @update:model-value="v => setRange(1, v)"
+          aria-label="Highest MMR"
+          type="number"
+          variant="outlined"
+          density="compact"
+          hide-details
+          hide-spin-buttons
+          class="mmr-input"
+        />
+      </v-col>
+      <v-col v-if="showReset" cols="auto" class="d-flex align-center ga-3 ms-auto">
+        <slot name="summary" />
+        <v-btn variant="text" prepend-icon="mdi-filter-remove-outline" @click="$emit('reset')">Clear filters</v-btn>
+      </v-col>
+    </v-row>
+  </v-sheet>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import RaceSelect from '@/components/RaceSelect.vue';
+import { computed, ref } from 'vue';
+import { useDisplay } from 'vuetify';
+import { raceWrapper } from '@/helpers/races.js';
 
 const props = defineProps({
-  searchName: { type: String, default: '' },
-  searchRace: { type: [String, null], default: null },
-  selectedSeasonFilter: { type: [String, Number, null], default: null },
-  rangeValues: { type: Array, default: () => [0, 3000] },
   seasons: { type: Array, default: () => [] },
+  extraActive: { type: Number, default: 0 }, // filters the after slot holds, counted on the phone button
   showName: { type: Boolean, default: true },
   showRace: { type: Boolean, default: true },
   showSeason: { type: Boolean, default: true },
@@ -115,44 +113,49 @@ const props = defineProps({
   max: { type: Number, default: 3000 },
   step: { type: Number, default: 10 },
 });
+defineEmits(['reset']);
 
-const emit = defineEmits(['update:searchName', 'update:searchRace', 'update:selectedSeasonFilter', 'update:rangeValues', 'reset']);
+const searchName = defineModel('searchName', { type: String, default: '' });
+const searchRace = defineModel('searchRace', { type: [String, null], default: null });
+const selectedSeasonFilter = defineModel('selectedSeasonFilter', { type: [String, Number, null], default: null });
+const rangeValues = defineModel('rangeValues', { type: Array, default: () => [0, 3000] });
 
-// local copies so v-model bindings work with primitives/arrays
-const localSearchName = ref('');
-const localSearchRace = ref(null);
-const localSelectedSeasonFilter = ref(null);
-const localRangeValues = ref([0, 3000]);
+const events = computed(() => [...(props.seasons || [])].sort((a, b) => b.id - a.id));
 
-// keep parent -> local in sync, seeding the locals on setup
-watch(() => props.searchName, v => { localSearchName.value = v; }, { immediate: true });
-watch(() => props.searchRace, v => { localSearchRace.value = v; }, { immediate: true });
-watch(() => props.selectedSeasonFilter, v => { localSelectedSeasonFilter.value = v; }, { immediate: true });
-watch(() => props.rangeValues, v => { localRangeValues.value = Array.isArray(v) ? [...v] : [v, v]; }, { deep: true, immediate: true });
+const { mdAndUp } = useDisplay();
+const open = ref(false);
+const expanded = computed(() => mdAndUp.value || open.value);
+const activeCount = computed(() => [
+  searchRace.value,
+  selectedSeasonFilter.value,
+  rangeValues.value[0] !== props.min || rangeValues.value[1] !== props.max,
+].filter(Boolean).length + props.extraActive);
 
-// helper to avoid recursive emit loops by checking equality
-function isEqual(a, b) {
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
-  }
-  return a === b;
-}
-
-// emit local changes up to parent, but only when they differ from props (prevents recursive loops)
-watch(localSearchName, v => {
-  if (!isEqual(v, props.searchName)) emit('update:searchName', v);
-});
-watch(localSearchRace, v => {
-  if (!isEqual(v, props.searchRace)) emit('update:searchRace', v);
-});
-watch(localSelectedSeasonFilter, v => {
-  if (!isEqual(v, props.selectedSeasonFilter)) emit('update:selectedSeasonFilter', v);
-});
-watch(localRangeValues, v => {
-  if (!isEqual(v, props.rangeValues)) emit('update:rangeValues', v);
-}, { deep: true });
+const setRange = (i, value) => {
+  const next = [...rangeValues.value];
+  next[i] = Number(value) || 0;
+  rangeValues.value = next;
+};
 </script>
+
+<style scoped>
+.race-toggle {
+  width: 22px;
+  height: 22px;
+}
+/* A race off the filter reads grey, so the chosen one stands out in its own colours */
+.v-btn:not(.v-btn--active) .race-toggle {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+.mmr-input {
+  min-width: 64px;
+  max-width: 88px;
+}
+.mmr-input :deep(.v-field__input) {
+  padding-inline: 8px;
+}
+.mmr-slider {
+  min-width: 100px;
+}
+</style>

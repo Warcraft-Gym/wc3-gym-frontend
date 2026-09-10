@@ -27,7 +27,6 @@ export { default as FantasyTiersView } from './FantasyTiersView.vue';
 export { default as UserGuideView } from './UserGuideView.vue';
 export { default as KothView } from './KothView.vue';
 export { default as KothDashboard } from './KothDashboard.vue';
-export { default as PlayerCareerStatsView } from './PlayerCareerStatsView.vue';
 export { default as SeasonReportView } from './SeasonReportView.vue';
 export { default as LadderView } from './LadderView.vue';
 export { default as RandomStatsView } from './RandomStatsView.vue';

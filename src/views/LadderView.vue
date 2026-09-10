@@ -150,10 +150,12 @@
               :items="teamOptions"
               item-title="name"
               item-value="id"
-              label="Team"
+              placeholder="Team"
+              aria-label="Team"
               clearable
               variant="outlined"
-              density="comfortable"
+              density="compact"
+              hide-details
               prepend-inner-icon="mdi-shield-account"
             ></v-select>
           </v-col>

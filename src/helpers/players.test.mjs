@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSignupRace, openPlayer, panelPlayerKey, playerPath } from './players.mjs';
+import { defaultSignupRace, openPlayer, panelPlayerKey, playerPath, playersWithCareers } from './players.mjs';
 
 // The panel and the page must address the same player, and a row without a
 // battle tag (a ladder opponent, a leaderboard row) still has to open.
@@ -42,4 +42,23 @@ test('a player with no signup falls back to his most played ladder race', () => 
 test('a signup with no race and a ladder with no games prefill nothing', () => {
   assert.equal(defaultSignupRace({ signup_seasons: [{ id: 6 }], w3c_stats: [{ race: 'HU' }] }, () => 0), null);
   assert.equal(defaultSignupRace(null, () => 99), null);
+});
+
+// The players page lists every player once, with his career totals, and keeps
+// the history rows no player claims, so the all-time record stays readable.
+test('a career row joins its player, and a row no player claims stands alone', () => {
+  const rows = playersWithCareers(
+    [{ id: 8, name: 'Tha Grinchy UNO' }, { id: 9, name: 'Newcomer' }],
+    [
+      { id: 618, user_id: 8, rating: 2252 },
+      { id: 700, user_id: null, player_name: 'Dekker', rating: 1539 },
+      { id: null, user_id: 40, player_name: 'gone', user: { name: 'Gone' }, rating: 600 },
+    ],
+  );
+  assert.deepEqual(rows.map(r => [r.key, r.id, r.name, r.rating]), [
+    ['p8', 8, 'Tha Grinchy UNO', 2252],
+    ['p9', 9, 'Newcomer', null],
+    ['c700', null, 'Dekker', 1539],
+    ['c40', null, 'Gone', 600],
+  ]);
 });

@@ -89,7 +89,6 @@ const NAV = [
         { title: 'Teams', to: '/teams' },
         { title: 'Players', to: '/players' },
         { title: 'Ladder', to: '/ladder', mark: true },
-        { title: 'Player Stats', to: '/player-stats' },
         { title: 'Seasons', to: '/seasons' },
         { title: '1v1 Maps', to: '/maps' },
     ] },

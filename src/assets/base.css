@@ -50,6 +50,12 @@
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
 }
 
+/* Button labels read as written, not shouted in capitals. */
+.v-btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 /* A column title is a short label; it never wraps, so every header row is one line tall. */
 .v-table > .v-table__wrapper > table > thead > tr > th { white-space: nowrap; }
 

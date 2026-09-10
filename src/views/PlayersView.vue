@@ -17,6 +17,7 @@
       v-model:selectedSeasonFilter="selectedSeasonFilter"
       v-model:rangeValues="rangeValues"
       :seasons="seasons"
+      :extra-active="selectedFlags.length"
       @reset="clearFilters"
     >
       <template #after>
@@ -54,6 +55,7 @@
         must-sort
         :items-per-page="25"
         no-data-text="No players match these filters"
+        class="tabular"
         hover
       >
         <template #loading>
@@ -90,8 +92,8 @@
               </PlayerName>
               <span v-else class="text-medium-emphasis">{{ item.name }}</span>
             </td>
-            <td class="d-none d-md-table-cell mmr-cell">
-              <RaceMmrChips v-if="item.id != null" :player="item" :w3cSeason="currentW3CSeason" class="flex-wrap py-1" />
+            <td class="d-none d-md-table-cell">
+              <RaceMmrChips v-if="item.id != null" :player="item" :w3cSeason="currentW3CSeason" :max="2" />
             </td>
             <td class="text-end">{{ item.rating ?? '—' }}</td>
             <td class="text-end">
@@ -112,7 +114,7 @@
             <td class="d-none d-md-table-cell">
               <div v-if="item.signup_seasons && item.signup_seasons.length > 0">
                 <template v-for="s in item.signup_seasons.slice().sort((a,b) => b.id - a.id).slice(0,1)" :key="s.id">
-                  <v-chip small class="ma-1">{{ s.name }}</v-chip>
+                  <v-chip small class="ma-1 event-chip" :title="s.name">{{ s.name }}</v-chip>
                 </template>
                 <v-menu v-if="item.signup_seasons.length > 1" offset-y>
                   <template #activator="{ props }">
@@ -494,10 +496,23 @@ const cancelAddNewPlayer = () => {
 .player-row {
   cursor: pointer;
 }
-/* A player on five races wraps his chips rather than push the table off the card */
-.mmr-cell {
-  white-space: normal;
-  min-width: 220px;
-  max-width: 320px;
+/* Fixed-width digits, so ratings and records line up down a column */
+.tabular :deep(td) {
+  font-variant-numeric: tabular-nums;
+}
+/* Eight columns fit a 1440px screen with the admin menu; phones keep base.css padding */
+@media (min-width: 960px) {
+  .tabular :deep(.v-table__wrapper > table > tbody > tr > td),
+  .tabular :deep(.v-table__wrapper > table > thead > tr > th) {
+    padding-inline: 12px;
+  }
+}
+/* A long event name ends in an ellipsis rather than push the table off the card */
+.event-chip {
+  max-width: 120px;
+}
+.event-chip :deep(.v-chip__content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

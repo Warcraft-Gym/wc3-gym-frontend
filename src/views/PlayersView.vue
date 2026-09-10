@@ -74,9 +74,10 @@
               </template>
 
               <template v-slot:item="{ item }">
-                <tr class="text-no-wrap player-row" @click="openPlayer(item)">
+                <tr class="text-no-wrap player-row" @click="router.push(playerPath(item))">
                   <td>
-                    <PlayerName :player="item">
+                    <!-- a handler turns off the name's own panel link, so the row opens the page -->
+                    <PlayerName :player="item" @click.prevent>
                       <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
                         <v-tooltip>
                           <template #activator="{ props }">
@@ -271,8 +272,9 @@ import {
 } from '@/helpers/w3c-stats';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { matchesPlayerSearch, filterByMmrRange, playerRowProps, openPlayer } from '@/helpers/players';
+import { matchesPlayerSearch, filterByMmrRange, playerRowProps, playerPath } from '@/helpers/players';
 import { useColumns } from '@/helpers/columns';
+import { useRouter } from 'vue-router';
 
 // State for editing
 const editPlayerDialog = ref(null);
@@ -293,6 +295,7 @@ const newPlayer = ref({
 const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const auth = useAuthStore();
+const router = useRouter();
 const { players } = storeToRefs(playerStore);
 const { seasons } = storeToRefs(seasonStore);
 // filter for season in the grid

@@ -12,7 +12,7 @@
             <div class="d-flex align-center flex-wrap ga-2 text-subtitle-1 font-weight-medium">
               {{ row.season.name }}
               <v-chip v-if="row.won" size="x-small" variant="outlined">
-                <v-icon start size="x-small" color="amber-darken-2">mdi-crown</v-icon>Champion
+                <v-icon start size="x-small" color="primary">mdi-crown</v-icon>Champion
               </v-chip>
               <v-chip v-else size="x-small" variant="outlined" :color="STATE_COLOR[row.season.phase] ?? undefined">
                 <v-icon start size="x-small">mdi-circle</v-icon>{{ STATE[row.season.phase] ?? row.season.phase ?? '—' }}
@@ -118,7 +118,7 @@ const opened = ref(props.open ?? null);
 
 // The backend's phase, in the words a player uses
 const STATE = { open: 'Scheduled', commenced: 'In progress', overdue: 'In progress', complete: 'Completed' };
-const STATE_COLOR = { commenced: 'green', overdue: 'green' };
+const STATE_COLOR = { commenced: 'info', overdue: 'info' };
 
 const { mdAndUp } = useDisplay();
 const ladderStore = useLadderStore();

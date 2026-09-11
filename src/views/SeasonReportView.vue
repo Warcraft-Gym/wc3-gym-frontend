@@ -133,7 +133,7 @@
                   <div class="win-rate-cell">
                     <v-progress-linear
                       :model-value="team.winRate"
-                      :color="team.winRate >= 60 ? 'success' : team.winRate >= 40 ? 'warning' : 'error'"
+                      color="win"
                       height="8"
                       rounded
                       class="win-rate-bar"
@@ -207,7 +207,7 @@
                 <td class="text-center">{{ player.wins }}-{{ player.losses }}</td>
                 <td class="text-center d-none d-md-table-cell">{{ player.games }}</td>
                 <td class="text-center d-none d-md-table-cell">
-                  <span :class="player.winRate >= 60 ? 'text-success' : player.winRate >= 40 ? 'text-warning' : 'text-error'">
+                  <span>
                     {{ player.winRate }}%
                   </span>
                 </td>

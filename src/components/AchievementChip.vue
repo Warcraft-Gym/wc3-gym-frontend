@@ -3,7 +3,7 @@
   <div v-if="badges.length">
     <div class="d-flex align-center flex-wrap" style="gap: 2px">
       <span v-for="badge in badges" :key="badge.id" class="badge-icon">
-        <AchievementIcon :id="badge.id" :size="16" class="text-amber-darken-2" />
+        <AchievementIcon :id="badge.id" :size="16" class="text-primary" />
         <v-tooltip activator="parent" location="top">{{ badge.name }} (+{{ badge.points }})</v-tooltip>
       </span>
     </div>

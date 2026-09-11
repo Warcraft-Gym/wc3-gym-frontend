@@ -11,7 +11,7 @@
         type="error"
         variant="tonal"
         border="start"
-        border-color="red"
+        border-color="error"
         class="mx-4 my-2"
         closable
         @click:close="addError = null"

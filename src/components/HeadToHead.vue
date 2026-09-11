@@ -6,7 +6,7 @@
         <v-icon class="mr-2">mdi-sword-cross</v-icon>
         <span>Head to Head, Lifetime</span>
       </div>
-      <v-chip color="white" variant="outlined">
+      <v-chip color="on-primary" variant="outlined">
         {{ opponents.length }} players faced
       </v-chip>
     </v-card-title>

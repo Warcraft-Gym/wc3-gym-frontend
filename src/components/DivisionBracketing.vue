@@ -16,8 +16,7 @@
         y="16"
         text-anchor="middle"
         class="band-name"
-        :style="fill(colors[i])"
-      >{{ name }} · {{ counts[i] }}</text>
+      ><tspan :style="fill(colors[i])">●</tspan> {{ name }} · {{ counts[i] }}</text>
       <g v-for="(g, i) in ghosts" :key="`ghost-${i}`">
         <rect :x="g.left" :y="top - 2" :width="g.width" :height="axisY - top + 2" :style="fill(g.color)" fill-opacity="0.3" />
         <line :x1="g.at" :x2="g.at" :y1="top - 2" :y2="axisY" class="ghost-line" />
@@ -34,7 +33,7 @@
       >
         <title>{{ p.label }} · {{ p.mmr }}</title>
       </circle>
-      <!-- The colour names the band that grew and the span shows by how much, so the label is the old MMR alone -->
+      <!-- The tinted span names the band that grew and shows by how much, so the label is the old MMR alone -->
       <text
         v-for="(g, i) in ghosts"
         :key="`was-${i}`"
@@ -42,7 +41,6 @@
         :y="top - 7"
         text-anchor="middle"
         class="ghost-text"
-        :style="fill(g.color)"
       >was {{ g.was }}</text>
       <g v-for="(c, i) in cuts" :key="i" class="cut">
         <rect v-if="!compact" :x="x(c) - GRAB" :y="boxY(i) + 24" :width="2 * GRAB" :height="axisY + 12 - boxY(i) - 24" class="grab" />
@@ -240,7 +238,7 @@ const endScrub = () => { scrubbing = null; };
 }
 /* The phone chart claims no sideways gesture, so nothing competes with the page */
 .division-strip.read-only { touch-action: auto; }
-.band-name { font-size: 18px; font-weight: 500; }
+.band-name { font-size: 18px; font-weight: 500; fill: rgb(var(--v-theme-on-surface)); }
 .axis :deep(path),
 .axis :deep(line) { stroke: rgba(var(--v-theme-on-surface), 0.3); }
 .axis :deep(text) { font-size: 13px; fill: rgba(var(--v-theme-on-surface), 0.6); }
@@ -250,7 +248,7 @@ circle.pinned { stroke: rgb(var(--v-theme-on-surface)); }
 .cut-line { stroke: rgb(var(--v-theme-on-surface)); stroke-width: 2; }
 .cut-value { font-size: 15px; font-weight: 600; fill: rgb(var(--v-theme-on-surface)); }
 .ghost-line { stroke: rgba(var(--v-theme-on-surface), 0.5); stroke-width: 1.5; stroke-dasharray: 3 4; }
-.ghost-text { font-size: 12px; font-weight: 500; }
+.ghost-text { font-size: 12px; font-weight: 500; fill: rgba(var(--v-theme-on-surface), 0.7); }
 .grab { fill: transparent; cursor: ew-resize; }
 .grab:hover ~ .cut-line { stroke-width: 4; }
 .grip { fill: rgb(var(--v-theme-on-surface)); }

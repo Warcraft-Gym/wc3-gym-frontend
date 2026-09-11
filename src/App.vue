@@ -146,7 +146,7 @@ const applyCaptain = () => {
 </script>
 
 <template>
-    <v-app :class="{ 'embed-ground': isReadonly }">
+    <v-app> 
     <v-app-bar v-if="showBar">
             <v-app-bar-nav-icon v-if="showNavLinks && smAndDown" @click="drawer = !drawer" />
             <v-app-bar-title>
@@ -312,10 +312,5 @@ const applyCaptain = () => {
 .nav-dropdown a.active {
     background-color: rgba(var(--v-theme-primary), 0.12);
     color: rgb(var(--v-theme-primary));
-}
-
-/* A read-only page sits inside the white warcraft-gym.com page, so its ground is white too */
-.v-application.embed-ground {
-    --v-theme-background: 255, 255, 255;
 }
 </style>

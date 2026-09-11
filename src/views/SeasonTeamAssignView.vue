@@ -1,12 +1,15 @@
 <template>
   <v-container fluid class="pa-4">
     <!-- Page Header -->
-    <v-row class="mb-4">
+    <v-row class="mb-4" align="center">
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-account-multiple-check</v-icon>
           Draft Players for Season
         </h1>
+      </v-col>
+      <v-col cols="auto">
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${$route.params.id}`">Back to season</v-btn>
       </v-col>
     </v-row>
 

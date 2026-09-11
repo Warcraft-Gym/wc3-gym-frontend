@@ -4,7 +4,7 @@
     :type="type"
     variant="tonal"
     border="start"
-    :border-color="type === 'error' ? 'red' : 'green'"
+    :border-color="type === 'error' ? 'error' : 'success'"
     class="mb-4"
     closable
     @click:close="emit('update:modelValue', null)"

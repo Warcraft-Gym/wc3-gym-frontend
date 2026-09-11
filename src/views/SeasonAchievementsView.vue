@@ -11,7 +11,7 @@
           <v-icon class="mr-2">mdi-trophy-variant-outline</v-icon>
           Season achievements
         </h1>
-        <div class="text-subtitle-1 text-grey">{{ season?.name }}</div>
+        <div class="text-subtitle-1 text-medium-emphasis">{{ season?.name }}</div>
       </v-col>
       <v-col cols="auto" class="d-flex align-center ga-2">
         <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${route.params.id}`">Back to season</v-btn>
@@ -35,7 +35,7 @@
           @update:modelValue="runImport"
         />
       </v-col>
-      <v-col class="text-caption text-grey">Imported prices are the source season's. Edit them before you save.</v-col>
+      <v-col class="text-caption text-medium-emphasis">Imported prices are the source season's. Edit them before you save.</v-col>
     </v-row>
 
     <v-row>
@@ -51,7 +51,7 @@
 
           <v-expand-transition>
             <div v-if="addOpen[card.key]" class="add-panel">
-              <div class="d-flex align-center px-4 pt-2 text-caption text-grey">
+              <div class="d-flex align-center px-4 pt-2 text-caption text-medium-emphasis">
                 <span>Rules not in this season</span>
                 <v-spacer />
                 <span>{{ notAdded(card.team).length }} available</span>
@@ -66,7 +66,7 @@
                     <v-chip size="x-small" label>{{ rule.points }}</v-chip>
                   </template>
                 </v-list-item>
-                <v-list-item v-if="!notAdded(card.team).length" class="text-caption text-grey">Every rule is already in this season</v-list-item>
+                <v-list-item v-if="!notAdded(card.team).length" class="text-caption text-medium-emphasis">Every rule is already in this season</v-list-item>
               </v-list>
             </div>
           </v-expand-transition>
@@ -104,7 +104,7 @@
                 <v-btn icon="mdi-close" variant="text" size="small" color="error" @click="removeRow(row)" />
               </template>
             </v-list-item>
-            <v-list-item v-if="!rowsOf(card.team).length" class="text-grey">No rules yet. Add one or import a season.</v-list-item>
+            <v-list-item v-if="!rowsOf(card.team).length" class="text-medium-emphasis">No rules yet. Add one or import a season.</v-list-item>
           </v-list>
         </v-card>
       </v-col>

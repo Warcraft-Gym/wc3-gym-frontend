@@ -83,7 +83,7 @@ const myId = computed(() => auth.me?.user?.id);
 // Read once per page load: the window is hours wide, so a stale minute changes nothing
 const live = computed(() => onNow({ ...props.series, casts: casts.value }));
 const chipProps = (cast) => ({
-  color: live.value ? 'red' : 'purple',
+  color: live.value ? 'error' : 'primary',
   variant: live.value ? 'flat' : 'tonal',
   prependIcon: PLATFORM_ICONS[platformOf(cast.channel_url)] || 'mdi-video',
   appendIcon: cast.vod_url ? 'mdi-play' : undefined,

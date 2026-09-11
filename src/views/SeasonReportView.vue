@@ -13,7 +13,7 @@
             :items="seasonItems"
             item-title="name"
             item-value="id"
-            label="Select Season"
+            label="Select season"
             variant="outlined"
             density="compact"
             hide-details
@@ -38,7 +38,7 @@
         type="error"
         variant="tonal"
         border="start"
-        border-color="red"
+        border-color="error"
         class="mt-3"
         closable
         @click:close="errorMessage = null"
@@ -50,8 +50,8 @@
 
   <!-- Empty state -->
   <div v-if="!reportReady && !isLoading" class="empty-state">
-    <v-icon size="80" color="grey-lighten-1">mdi-chart-box-outline</v-icon>
-    <p class="text-grey mt-4 text-h6">Select a season to generate the report</p>
+    <v-icon size="80" class="text-disabled">mdi-chart-box-outline</v-icon>
+    <p class="text-medium-emphasis mt-4 text-h6">Select a season to generate the report</p>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -60,14 +60,14 @@
   <div v-if="reportReady" id="season-report">
 
     <!-- ── Hero Header ── -->
-    <div class="report-hero">
+    <div class="report-hero text-on-hero">
       <div class="report-hero-overlay" />
       <v-container class="report-hero-content">
-        <div class="text-overline text-white mb-1" style="opacity: 0.8;">Season Report</div>
-        <div class="text-h3 font-weight-bold text-white mb-6">{{ season.name }}</div>
+        <div class="text-subtitle-1 mb-1" style="opacity: 0.8;">Season report</div>
+        <div class="text-h3 font-weight-bold mb-6">{{ season.name }}</div>
         <div class="hero-stats-row">
           <div v-for="stat in headerStats" :key="stat.label" class="hero-stat-card">
-            <v-icon :icon="stat.icon" size="24" color="white" class="mb-1" style="opacity:0.9" />
+            <v-icon :icon="stat.icon" size="24" class="mb-1" style="opacity:0.9" />
             <div class="hero-stat-value">{{ stat.value }}</div>
             <div class="hero-stat-label">{{ stat.label }}</div>
           </div>
@@ -77,11 +77,11 @@
 
     <v-container fluid class="report-body pa-4">
 
-      <!-- ── Team Standings ── -->
+      <!-- ── Team standings ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('standings') }">
         <div class="section-title" @click="toggle('standings')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-trophy</v-icon>
-          Team Standings
+          <v-icon color="primary" class="mr-2">mdi-trophy</v-icon>
+          Team standings
           <v-icon class="ml-2 no-print">{{ collapsed.has('standings') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
@@ -91,10 +91,10 @@
                 <th class="text-center" style="width:56px">#</th>
                 <th>Team</th>
                 <th class="text-center">Points</th>
-                <th class="text-center d-none d-md-table-cell">Points Available</th>
-                <th class="text-center d-none d-md-table-cell">Points Against</th>
+                <th class="text-center d-none d-md-table-cell">Points available</th>
+                <th class="text-center d-none d-md-table-cell">Points against</th>
                 <th class="text-center d-none d-md-table-cell">Players</th>
-                <th class="text-center">Win Rate</th>
+                <th class="text-center">Win rate</th>
               </tr>
             </thead>
             <tbody>
@@ -109,8 +109,9 @@
                       v-if="rankMedal(idx + 1)"
                       :color="rankMedal(idx + 1).color"
                       size="22"
+                      class="mr-1"
                     >{{ rankMedal(idx + 1).icon }}</v-icon>
-                    <span v-else class="text-caption text-medium-emphasis">{{ idx + 1 }}</span>
+                    <span class="text-caption" :class="{ 'text-medium-emphasis': !rankMedal(idx + 1) }">{{ idx + 1 }}</span>
                   </div>
                 </td>
                 <td>
@@ -133,7 +134,7 @@
                   <div class="win-rate-cell">
                     <v-progress-linear
                       :model-value="team.winRate"
-                      :color="team.winRate >= 60 ? 'success' : team.winRate >= 40 ? 'warning' : 'error'"
+                      color="win"
                       height="8"
                       rounded
                       class="win-rate-bar"
@@ -147,11 +148,11 @@
         </v-card>
       </div>
 
-      <!-- ── Player Leaderboard ── -->
+      <!-- ── Player leaderboard ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('leaderboard') }">
         <div class="section-title" @click="toggle('leaderboard')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-account-star</v-icon>
-          Player Leaderboard
+          <v-icon color="primary" class="mr-2">mdi-account-star</v-icon>
+          Player leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('leaderboard') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
@@ -207,7 +208,7 @@
                 <td class="text-center">{{ player.wins }}-{{ player.losses }}</td>
                 <td class="text-center d-none d-md-table-cell">{{ player.games }}</td>
                 <td class="text-center d-none d-md-table-cell">
-                  <span :class="player.winRate >= 60 ? 'text-success' : player.winRate >= 40 ? 'text-warning' : 'text-error'">
+                  <span>
                     {{ player.winRate }}%
                   </span>
                 </td>
@@ -223,11 +224,11 @@
         </v-card>
       </div>
 
-      <!-- ── Race Performance ── -->
+      <!-- ── Race performance ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('races') }">
         <div class="section-title" @click="toggle('races')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-sword-cross</v-icon>
-          Race Performance
+          <v-icon color="primary" class="mr-2">mdi-sword-cross</v-icon>
+          Race performance
           <v-icon class="ml-2 no-print">{{ collapsed.has('races') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-row>
@@ -237,54 +238,49 @@
             cols="12" sm="6" md="4"
           >
             <v-card class="race-card" elevation="2">
-              <div
-                class="race-card-header"
-                :style="{ background: getRaceColor(raceEntry.race) }"
-              >
+              <div class="race-stripe" :style="{ background: getRaceColor(raceEntry.race) }" />
+              <div class="race-card-header">
                 <div class="d-flex align-center">
                   <RaceIcon :raceIdentifier="raceEntry.race" class="mr-2" />
-                  <span class="text-white font-weight-bold text-subtitle-1">
+                  <span class="font-weight-bold text-subtitle-1">
                     {{ getRaceName(raceEntry.race) }}
                   </span>
                 </div>
-                <v-chip color="white" variant="flat" size="small" class="font-weight-bold"
-                  :style="{ color: getRaceColor(raceEntry.race) }">
-                  {{ raceEntry.players }} players
-                </v-chip>
+                <span class="text-caption text-medium-emphasis">{{ raceEntry.players }} players</span>
               </div>
               <v-card-text>
                 <div class="race-stat-row">
-                  <span class="text-caption text-medium-emphasis">Series Won</span>
+                  <span class="text-caption text-medium-emphasis">Series won</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.gamesBarPct"
-                      :color="getRaceColor(raceEntry.race)"
+                      color="win"
                       height="10"
                       rounded
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value text-success font-weight-bold">{{ raceEntry.wins }}</span>
+                  <span class="race-stat-value font-weight-bold">{{ raceEntry.wins }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
-                  <span class="text-caption text-medium-emphasis">Series Lost</span>
+                  <span class="text-caption text-medium-emphasis">Series lost</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.games > 0 ? Math.round((raceEntry.losses / raceEntry.games) * 100) : 0"
-                      color="error"
+                      color="loss"
                       height="10"
                       rounded
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value text-error">{{ raceEntry.losses }}</span>
+                  <span class="race-stat-value">{{ raceEntry.losses }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
-                  <span class="text-caption text-medium-emphasis">Total Points</span>
+                  <span class="text-caption text-medium-emphasis">Total points</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.pointsBarPct"
-                      :color="getRaceColor(raceEntry.race)"
+                      color="draw"
                       height="10"
                       rounded
                       bg-color="surface-light"
@@ -299,16 +295,11 @@
                     <div class="text-caption text-medium-emphasis">Played</div>
                   </div>
                   <div class="text-center">
-                    <div
-                      class="text-h6 font-weight-bold"
-                      :class="raceEntry.winRate >= 60 ? 'text-success' : raceEntry.winRate >= 40 ? 'text-warning' : 'text-error'"
-                    >
-                      {{ raceEntry.winRate }}%
-                    </div>
-                    <div class="text-caption text-medium-emphasis">Win Rate</div>
+                    <div class="text-h6 font-weight-bold">{{ raceEntry.winRate }}%</div>
+                    <div class="text-caption text-medium-emphasis">Win rate</div>
                   </div>
                   <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-primary">{{ raceEntry.points }}</div>
+                    <div class="text-h6 font-weight-bold">{{ raceEntry.points }}</div>
                     <div class="text-caption text-medium-emphasis">Points</div>
                   </div>
                 </div>
@@ -318,11 +309,11 @@
         </v-row>
       </div>
 
-      <!-- ── Ladder Activity ── -->
+      <!-- ── Ladder activity ── -->
       <div v-if="heatRows.length" class="report-section mb-6" :class="{ collapsed: collapsed.has('ladder') }">
         <div class="section-title" @click="toggle('ladder')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-podium</v-icon>
-          Ladder Activity
+          <v-icon color="primary" class="mr-2">mdi-podium</v-icon>
+          Ladder activity
           <v-icon class="ml-2 no-print">{{ collapsed.has('ladder') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-row>
@@ -343,14 +334,14 @@
                       v-for="cell in row.cells"
                       :key="cell.key"
                       class="heat-cell"
-                      :style="{ opacity: cell.opacity }"
+                      :style="{ background: cell.color }"
                       :title="cell.title"
                     ></div>
                   </template>
                 </div>
                 <div class="heat-legend">
                   <template v-for="step in heatLegend" :key="step.label">
-                    <span class="heat-swatch" :style="{ opacity: step.opacity }"></span>
+                    <span class="heat-swatch" :style="{ background: step.color }"></span>
                     <span>{{ step.label }}</span>
                   </template>
                 </div>
@@ -390,8 +381,8 @@
       <!-- ── Fantasy Leaderboard ── -->
       <div v-if="sortedFantasyTeams.length > 0" class="report-section mb-6" :class="{ collapsed: collapsed.has('fantasy') }">
         <div class="section-title" @click="toggle('fantasy')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-cards</v-icon>
-          Fantasy League Leaderboard
+          <v-icon color="primary" class="mr-2">mdi-cards</v-icon>
+          Fantasy league leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('fantasy') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
@@ -399,10 +390,10 @@
             <thead>
               <tr class="table-header-row">
                 <th class="text-center" style="width:56px">#</th>
-                <th>Fantasy Team</th>
+                <th>Fantasy team</th>
                 <th class="text-center">Captain</th>
-                <th class="text-center d-none d-md-table-cell">Drafted Team</th>
-                <th class="text-center d-none d-md-table-cell">Drafted Race</th>
+                <th class="text-center d-none d-md-table-cell">Drafted team</th>
+                <th class="text-center d-none d-md-table-cell">Drafted race</th>
                 <th class="text-center d-none d-md-table-cell">Player pts</th>
                 <th class="text-center d-none d-md-table-cell">Team pts</th>
                 <th class="text-center d-none d-md-table-cell">Race pts</th>
@@ -422,8 +413,9 @@
                       v-if="rankMedal(idx + 1)"
                       :color="rankMedal(idx + 1).color"
                       size="22"
+                      class="mr-1"
                     >{{ rankMedal(idx + 1).icon }}</v-icon>
-                    <span v-else class="text-caption text-medium-emphasis">{{ idx + 1 }}</span>
+                    <span class="text-caption" :class="{ 'text-medium-emphasis': !rankMedal(idx + 1) }">{{ idx + 1 }}</span>
                   </div>
                 </td>
                 <td class="font-weight-medium">{{ ft.name }}</td>
@@ -438,7 +430,7 @@
                 <td class="text-center d-none d-md-table-cell">{{ ft.race_points ?? '–' }}</td>
                 <td class="text-center d-none d-md-table-cell">{{ ft.bet_points ?? '–' }}</td>
                 <td class="text-center">
-                  <v-chip color="amber-darken-2" size="small" class="font-weight-bold">
+                  <v-chip color="primary" size="small" class="font-weight-bold">
                     {{ ft.total_points ?? 0 }}
                   </v-chip>
                 </td>
@@ -461,7 +453,7 @@
       <div class="report-footer print-only">
         <v-divider class="mb-2" />
         <div class="text-caption text-center text-medium-emphasis">
-          GNL Admin &mdash; {{ season.name }} Season Report
+          GNL Admin &mdash; {{ season.name }} season report
         </div>
       </div>
 
@@ -482,6 +474,7 @@ import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
 import { playerPath } from '@/helpers/players';
+import { scaleQuantize } from 'd3-scale';
 
 
 const route = useRoute();
@@ -630,25 +623,20 @@ const headerStats = computed(() => [
     { label: 'Rounds', value: season.value?.round_count ?? '–', icon: 'mdi-calendar-week' },
     { label: 'Teams', value: teams.value.length, icon: 'mdi-shield-outline' },
     { label: 'Players', value: allPlayers.value.length, icon: 'mdi-account-group' },
-    { label: 'Series Played', value: series.value.length, icon: 'mdi-sword-cross' },
+    { label: 'Series played', value: series.value.length, icon: 'mdi-sword-cross' },
 ]);
 
 // ─── Race display helpers ─────────────────────────────────────────────────────
-const raceColors = {
-    HU: '#1565C0',     // blue
-    OC: '#C62828',     // red
-    UD: '#6A1B9A',     // purple
-    NE: '#2E7D32',     // green
-    RANDOM: '#F9A825', // yellow
-};
-const getRaceColor = race => raceColors[race] || '#607D8B';
+// Random is not a race, so it and any unknown race take the neutral draw colour
+const raceTokens = { HU: 'race-hu', OC: 'race-oc', UD: 'race-ud', NE: 'race-ne' };
+const getRaceColor = race => `rgb(var(--v-theme-${raceTokens[race] || 'draw'}))`;
 const getRaceName = race => raceWrapper.getRaceObject(race)?.name || race;
 
 // ─── Rank medal ───────────────────────────────────────────────────────────────
 const rankMedal = rank => {
-    if (rank === 1) return { icon: 'mdi-medal', color: '#FFD700' };
-    if (rank === 2) return { icon: 'mdi-medal', color: '#C0C0C0' };
-    if (rank === 3) return { icon: 'mdi-medal', color: '#CD7F32' };
+    if (rank === 1) return { icon: 'mdi-medal', color: 'medal-gold' };
+    if (rank === 2) return { icon: 'mdi-medal', color: 'medal-silver' };
+    if (rank === 3) return { icon: 'mdi-medal', color: 'primary' };
     return null;
 };
 
@@ -725,6 +713,11 @@ const monthDay = (iso) =>
 
 const hourMax = computed(() => Math.max(1, ...(ladder.value?.by_hour ?? []).flat()));
 
+// Five equal buckets of 1..5 x step games, one bronze step each; an hour with no games stays surface-light
+const heatStep = computed(() => Math.ceil(hourMax.value / 5));
+const heatScale = computed(() => scaleQuantize().domain([0.5, 5 * heatStep.value + 0.5]).range([1, 2, 3, 4, 5]));
+const heatColor = (games) => `rgb(var(--v-theme-${games ? `heat-${heatScale.value(games)}` : 'surface-light'}))`;
+
 const heatRows = computed(() => {
     const grid = ladder.value?.by_hour;
     if (!grid?.length || !ladder.value?.total_games) return [];
@@ -735,7 +728,7 @@ const heatRows = computed(() => {
             const games = grid[row]?.[hour] ?? 0;
             return {
                 key: `${row}-${hour}`,
-                opacity: games ? 0.15 + (0.85 * games) / hourMax.value : 0.05,
+                color: heatColor(games),
                 title: `${dayLabels[col]} ${pad2(hour)}:00 \u00b7 ${games} games`,
             };
         }),
@@ -743,10 +736,10 @@ const heatRows = computed(() => {
 });
 
 const heatLegend = computed(() => {
-    const step = Math.ceil(hourMax.value / 5);
+    const step = heatStep.value;
     return Array.from({ length: 5 }, (_, i) => ({
-        opacity: 0.15 + (0.85 * (i + 1)) / 5,
-        label: i === 4 ? `${step * 4 + 1}+` : `${i * step + (i ? 1 : 0)}-${(i + 1) * step}`,
+        color: `rgb(var(--v-theme-heat-${i + 1}))`,
+        label: i === 4 ? `${step * 4 + 1}+` : `${i * step + 1}-${(i + 1) * step}`,
     }));
 });
 
@@ -794,14 +787,14 @@ const dayTicks = computed(() => {
 /* ── Hero header ──────────────────────────────────────────────────────────── */
 .report-hero {
   position: relative;
-  background: linear-gradient(135deg, #1a237e 0%, #283593 40%, #1565C0 100%);
+  background: rgb(var(--v-theme-hero));
   padding: 3rem 0 2.5rem;
   overflow: hidden;
 }
 .report-hero-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at top right, rgba(255,255,255,0.08) 0%, transparent 60%);
+  background: radial-gradient(ellipse at top right, rgba(var(--v-theme-on-hero), 0.08) 0%, transparent 60%);
   pointer-events: none;
 }
 .report-hero-content {
@@ -816,8 +809,8 @@ const dayTicks = computed(() => {
   flex-wrap: wrap;
 }
 .hero-stat-card {
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(var(--v-theme-on-hero), 0.12);
+  border: 1px solid rgba(var(--v-theme-on-hero), 0.18);
   border-radius: 12px;
   padding: 1rem 1.5rem;
   text-align: center;
@@ -827,15 +820,13 @@ const dayTicks = computed(() => {
 .hero-stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: rgb(var(--v-theme-on-hero));
   line-height: 1;
   margin-bottom: 0.25rem;
 }
 .hero-stat-label {
   font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(255,255,255,0.75);
+  color: rgb(var(--v-theme-band-muted));
 }
 
 /* ── Report body ──────────────────────────────────────────────────────────── */
@@ -847,8 +838,6 @@ const dayTicks = computed(() => {
 .section-title {
   font-size: 1.15rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
@@ -872,9 +861,7 @@ const dayTicks = computed(() => {
 /* ── Standings table ──────────────────────────────────────────────────────── */
 .standings-table thead tr th {
   font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(var(--v-theme-on-surface), 0.6) !important;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity)) !important;
 }
 .standings-first {
   background: rgba(var(--v-theme-primary), 0.06);
@@ -916,7 +903,7 @@ const dayTicks = computed(() => {
   grid-template-columns: 46px repeat(7, minmax(0, 1fr));
   gap: 2px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 .heat-day {
   text-align: center;
@@ -930,7 +917,6 @@ const dayTicks = computed(() => {
 .heat-cell {
   height: 12px;
   border-radius: 2px;
-  background: #1867C0;
 }
 .heat-legend {
   display: flex;
@@ -938,14 +924,13 @@ const dayTicks = computed(() => {
   gap: 6px;
   margin-top: 10px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 .heat-swatch {
   display: inline-block;
   width: 14px;
   height: 10px;
   border-radius: 2px;
-  background: #1867C0;
 }
 .day-chart {
   position: relative;
@@ -962,7 +947,7 @@ const dayTicks = computed(() => {
   right: 0;
   top: 2px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
   background: rgb(var(--v-theme-surface));
   padding-left: 4px;
 }
@@ -976,23 +961,27 @@ const dayTicks = computed(() => {
 .day-bar {
   flex: 1;
   min-width: 4px;
-  background: #1867C0;
+  background: rgb(var(--v-theme-primary));
   border-radius: 1px 1px 0 0;
 }
 .day-ticks {
   display: flex;
   margin-top: 6px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 
 /* ── Race cards ───────────────────────────────────────────────────────────── */
+.race-stripe {
+  height: 4px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 .race-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-radius: 4px 4px 0 0;
 }
 .race-stat-row {
   display: flex;
@@ -1036,7 +1025,7 @@ const dayTicks = computed(() => {
   /* Card shadows become borders for print */
   .v-card {
     box-shadow: none !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
   }
 
   /* Avoid breaking sections across pages */

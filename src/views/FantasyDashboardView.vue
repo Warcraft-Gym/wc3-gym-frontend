@@ -27,10 +27,10 @@
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-account-group</v-icon>
         Fantasy Team
-        <v-chip v-if="existingTeam" class="ml-3" size="small" color="white" variant="outlined">
+        <v-chip v-if="existingTeam" class="ml-3" size="small" color="on-primary" variant="outlined">
           Registered
         </v-chip>
-        <v-chip v-if="phase !== 'open'" class="ml-3" size="small" color="white" variant="outlined">
+        <v-chip v-if="phase !== 'open'" class="ml-3" size="small" color="on-primary" variant="outlined">
           {{ seasonName }} has {{ ended ? 'ended' : 'commenced' }}
         </v-chip>
       </v-card-title>
@@ -99,7 +99,7 @@
                             <v-chip v-for="player in existingTeam.drafted_players" :key="player.id" size="small">
                               {{ player.name }}
                             </v-chip>
-                            <v-chip v-if="!existingTeam.drafted_players || existingTeam.drafted_players.length === 0" size="small" color="grey">
+                            <v-chip v-if="!existingTeam.drafted_players || existingTeam.drafted_players.length === 0" size="small" color="secondary">
                               No players selected
                             </v-chip>
                           </v-chip-group>
@@ -114,7 +114,7 @@
                       </v-card-actions>
                       <v-card-actions v-else-if="!ended">
                         <v-spacer></v-spacer>
-                        <v-chip size="small" color="grey" variant="outlined">
+                        <v-chip size="small" color="secondary" variant="outlined">
                           Team editing is currently disabled
                         </v-chip>
                       </v-card-actions>
@@ -124,7 +124,7 @@
                   <!-- Registration/Edit Form -->
                   <v-form v-if="canDraft && (!existingTeam || isEditing)" ref="registrationForm" @submit.prevent="submitTeam">
                     <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="bg-primary text-white">
+                      <v-card-title class="bg-primary text-on-primary">
                         <v-icon start>mdi-account-group</v-icon>
                         Team Details
                       </v-card-title>
@@ -198,7 +198,7 @@
                     </v-card>
 
                     <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="bg-secondary text-white">
+                      <v-card-title class="bg-primary">
                         <v-icon start>mdi-account-multiple</v-icon>
                         Draft Players
                       </v-card-title>
@@ -242,7 +242,7 @@
 
                     <v-row>
                       <v-col cols="12" class="text-center">
-                        <v-btn v-if="isEditing" color="grey" variant="outlined" @click="cancelEditing" class="mr-2" :disabled="isSaving">
+                        <v-btn v-if="isEditing" color="secondary" variant="outlined" @click="cancelEditing" class="mr-2" :disabled="isSaving">
                           Cancel
                         </v-btn>
                         <v-btn color="success" type="submit" size="large" :loading="isSaving">
@@ -262,7 +262,7 @@
           <v-icon class="mr-2">mdi-crystal-ball</v-icon>
           <span>Fantasy Bets</span>
         </div>
-        <v-chip v-if="existingTeam" color="white" variant="outlined">
+        <v-chip v-if="existingTeam" color="on-primary" variant="outlined">
           {{ fantasyBets.length }} bets
         </v-chip>
       </v-card-title>
@@ -321,7 +321,7 @@
                         >
                           {{ getBetPlayerName(item, item.myBet) }}
                         </v-chip>
-                        <span v-else class="text-grey">No bet</span>
+                        <span v-else class="text-medium-emphasis">No bet</span>
                       </template>
 
                       <template #item.score="{ item }">
@@ -333,25 +333,25 @@
                         >
                           {{ item.player1_score || 0 }} - {{ item.player2_score || 0 }}
                         </v-chip>
-                        <span v-else class="text-grey">Not played</span>
+                        <span v-else class="text-medium-emphasis">Not played</span>
                       </template>
 
                       <template #item.result="{ item }">
                         <v-chip
                           v-if="item.myBet && isSeriesPlayed(item)"
-                          :color="item.myBet.bet_result === 'WIN' ? 'success' : item.myBet.bet_result === 'LOSS' ? 'error' : 'grey'"
+                          :color="item.myBet.bet_result === 'WIN' ? 'win' : item.myBet.bet_result === 'LOSS' ? 'loss' : 'secondary'"
                           size="small"
                         >
                           {{ item.myBet.bet_result || 'PENDING' }}
                         </v-chip>
-                        <span v-else-if="!isSeriesPlayed(item)" class="text-grey">-</span>
-                        <span v-else class="text-grey">No bet</span>
+                        <span v-else-if="!isSeriesPlayed(item)" class="text-medium-emphasis">-</span>
+                        <span v-else class="text-medium-emphasis">No bet</span>
                       </template>
 
                       <template #item.actions="{ item }">
                         <v-btn
                           v-if="!isSeriesPlayed(item) && !ended"
-                          color="purple"
+                          color="primary"
                           variant="outlined"
                           size="small"
                           @click="placeBet(item)"
@@ -359,7 +359,7 @@
                         >
                           {{ item.myBet ? 'Change Bet' : 'Place Bet' }}
                         </v-btn>
-                        <v-chip v-else size="small" color="grey">Locked</v-chip>
+                        <v-chip v-else size="small" color="secondary">Locked</v-chip>
                       </template>
                     </v-data-table>
                   </div>
@@ -418,9 +418,9 @@
           Delete Bet
         </v-btn>
         <v-spacer />
-        <v-btn color="grey" variant="text" @click="closeBet" :disabled="isBetSaving">Cancel</v-btn>
+        <v-btn color="secondary" variant="text" @click="closeBet" :disabled="isBetSaving">Cancel</v-btn>
         <v-btn 
-          color="purple" 
+          color="primary" 
           :disabled="!selectedBetWinnerId || isBetSaving || (!useFixedBetPoints && (!!betPointsError || !betPoints))" 
           :loading="isBetSaving" 
           @click="saveBet"
@@ -971,10 +971,10 @@ const isSeriesPlayed = (series) => {
 };
 
 const getBetResultColor = (bet) => {
-  if (!bet || !bet.bet_result) return 'grey';
-  if (bet.bet_result === 'WIN') return 'success';
-  if (bet.bet_result === 'LOSS') return 'error';
-  return 'grey';
+  if (!bet || !bet.bet_result) return 'secondary';
+  if (bet.bet_result === 'WIN') return 'win';
+  if (bet.bet_result === 'LOSS') return 'loss';
+  return 'secondary';
 };
 
 const getBetPlayerName = (series, bet) => {
@@ -986,9 +986,9 @@ const getBetPlayerName = (series, bet) => {
 
 const getScoreColorForBet = (series) => {
   // For betting view, we don't care about the captain's score, just showing the result
-  if (series.player1_score > series.player2_score) return 'success';
-  if (series.player2_score > series.player1_score) return 'error';
-  return 'warning';
+  if (series.player1_score > series.player2_score) return 'win';
+  if (series.player2_score > series.player1_score) return 'loss';
+  return 'draw';
 };
 
 onMounted(async () => {
@@ -998,7 +998,7 @@ onMounted(async () => {
 
 <style scoped>
 .pick { accent-color: rgb(var(--v-theme-primary)); width: 18px; height: 18px; cursor: pointer; vertical-align: middle; }
-.picked > td { background: rgba(24, 103, 192, 0.06); }
+.picked > td { background: rgba(var(--v-theme-primary), 0.06); }
 .open-row { padding: 10px 12px 12px; background: rgba(var(--v-theme-on-surface), 0.02); }
 
 .team-icon {

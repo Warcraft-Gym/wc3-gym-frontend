@@ -28,7 +28,7 @@
         </template>
       </template>
       <tr v-if="!groups.length">
-        <td :colspan="columns.length + 1" class="text-grey">{{ empty }}</td>
+        <td :colspan="columns.length + 1" class="text-medium-emphasis">{{ empty }}</td>
       </tr>
     </tbody>
   </v-table>

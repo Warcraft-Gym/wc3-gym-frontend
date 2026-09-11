@@ -8,7 +8,7 @@
       <!-- Event Header -->
       <div v-if="event" class="text-center mb-8">
         <h1 class="text-h5 text-md-h2 font-weight-bold mb-2">
-          <v-icon size="48" color="warning" class="mr-3">mdi-crown</v-icon>
+          <v-icon size="48" color="primary" class="mr-3">mdi-crown</v-icon>
           {{ event.name }}
         </h1>
         <p v-if="event.description" class="text-h6 text-medium-emphasis">{{ event.description }}</p>
@@ -43,7 +43,7 @@
     <!-- Brackets Grid -->
     <v-row v-if="event" class="mb-8">
       <v-col v-for="bracket in [1, 2, 3]" :key="bracket" cols="12" md="4">
-        <v-card elevation="8" class="bracket-card" :class="`bracket-${bracket}`">
+        <v-card elevation="8" class="bracket-card">
           <v-card-title class="bracket-header text-center py-4">
             <div class="d-flex align-center justify-center">
               <img :src="getBracketIcon(bracket)" alt="Bracket Icon" style="width: 60px; height: 60px;" class="mr-3" />
@@ -66,13 +66,13 @@
                     <div class="text-subtitle-1 text-medium-emphasis">{{ king.mmr }} MMR</div>
                   </v-col>
                   <v-col cols="auto">
-                    <v-icon color="warning" size="56">mdi-crown</v-icon>
+                    <v-icon color="primary" size="56">mdi-crown</v-icon>
                   </v-col>
                 </v-row>
               </v-card>
             </div>
-            <div v-else class="text-center py-4 text-grey">
-              <v-icon size="56" color="grey-lighten-1">mdi-crown-outline</v-icon>
+            <div v-else class="text-center py-4 text-medium-emphasis">
+              <v-icon size="56" class="text-disabled">mdi-crown-outline</v-icon>
               <div class="mt-2 text-body-1">No King Yet</div>
             </div>
 
@@ -93,7 +93,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="text-center py-4 text-grey-lighten-1 text-body-1">
+              <div v-else class="text-center py-4 text-medium-emphasis text-body-1">
                 No players signed up
               </div>
             </div>
@@ -365,24 +365,14 @@ async function submitSignup() {
   transform: translateY(-4px);
 }
 
-.bracket-1 .bracket-header {
-  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
-  color: white;
-}
-
-.bracket-2 .bracket-header {
-  background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%);
-  color: white;
-}
-
-.bracket-3 .bracket-header {
-  background: linear-gradient(135deg, #ff9800 0%, #ffa726 100%);
-  color: white;
+.bracket-header {
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
 }
 
 .king-card {
   background: rgba(var(--v-theme-surface), 0.8) !important;
-  border: 2px solid #ffc107 !important;
+  border: 2px solid rgb(var(--v-theme-primary)) !important;
   border-radius: 8px !important;
 }
 

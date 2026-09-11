@@ -76,7 +76,7 @@
                 <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
                   <v-tooltip>
                     <template #activator="{ props }">
-                      <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
+                      <v-icon v-bind="props" small color="error">mdi-alert</v-icon>
                     </template>
                     <span>No W3C stats found for {{ item.race }}</span>
                   </v-tooltip>
@@ -84,7 +84,7 @@
                 <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason, item.race)">
                   <v-tooltip>
                     <template #activator="{ props }">
-                      <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
+                      <v-icon v-bind="props" small color="warning">mdi-alert</v-icon>
                     </template>
                     <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason, item.race) }} games) for {{ item.race }}</span>
                   </v-tooltip>
@@ -150,7 +150,7 @@
           type="error"
           variant="tonal"
           border="start"
-          border-color="red"
+          border-color="error"
           class="mx-4 my-2"
           closable
           @click:close="creationError = null"

@@ -6,7 +6,7 @@
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-calendar-clock</v-icon>
         Upcoming games
-        <v-chip v-if="season?.name" class="ml-3" size="small" color="white" variant="outlined">{{ season.name }}</v-chip>
+        <v-chip v-if="season?.name" class="ml-3" size="small" color="on-primary" variant="outlined">{{ season.name }}</v-chip>
       </v-card-title>
       <v-card-text class="pa-0">
         <v-progress-linear v-if="loading" indeterminate />
@@ -47,13 +47,13 @@
               </template>
               <template #actions><CastChips :series="row" /></template>
               <template #side="{ n, won }">
-                <v-chip v-if="!isUnscored(row)" size="small" :color="won ? 'success' : 'default'">
+                <v-chip v-if="!isUnscored(row)" size="small" :color="won ? 'win' : 'default'">
                   {{ n ? row.player2_score : row.player1_score }}
                 </v-chip>
               </template>
             </SeriesCard>
           </template>
-          <div v-if="!days.length" class="pa-4 text-grey">No series is scheduled yet</div>
+          <div v-if="!days.length" class="pa-4 text-medium-emphasis">No series is scheduled yet</div>
         </div>
       </v-card-text>
     </v-card>

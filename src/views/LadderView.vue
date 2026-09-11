@@ -44,7 +44,7 @@
     <v-card v-if="ladder && !ladder.total_games" elevation="2">
       <v-card-text class="text-center pa-8">
         <W3CIcon :size="64" style="opacity: 0.35" />
-        <div class="text-h6 text-grey mt-4 mb-2">No ladder games synced for {{ seasonName }}</div>
+        <div class="text-h6 text-medium-emphasis mt-4 mb-2">No ladder games synced for {{ seasonName }}</div>
         <p class="text-medium-emphasis mb-4">Sync the season to fetch its W3Champions matches</p>
         <v-btn
           variant="elevated"
@@ -67,7 +67,7 @@
       <v-card elevation="2" class="mb-4">
         <v-card-title class="bg-primary d-flex align-center">
           <v-icon class="mr-2">mdi-trophy</v-icon>
-          <span>Team Standings</span>
+          <span>Team standings</span>
         </v-card-title>
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2" style="gap: 8px">
@@ -80,10 +80,10 @@
             <tr>
               <th>Team</th>
               <th class="text-center">
-                <ColumnNote title="Total Points" :note="SCORED_NOTE" />
+                <ColumnNote title="Total points" :note="SCORED_NOTE" />
               </th>
               <th class="text-center d-none d-sm-table-cell">
-                <ColumnNote title="Achievement Points" :note="TEAM_BADGES_NOTE" />
+                <ColumnNote title="Achievement points" :note="TEAM_BADGES_NOTE" />
               </th>
               <th class="text-center">Games</th>
               <th class="text-center d-none d-sm-table-cell">Players</th>
@@ -208,7 +208,7 @@
             <template v-slot:[`item.name`]="{ item }">
               <PlayerName :player="item">
                 <span v-if="!item.synced_at" class="d-inline-flex">
-                  <v-icon size="x-small" color="amber-darken-2">mdi-sync-alert</v-icon>
+                  <v-icon size="x-small" color="warning">mdi-sync-alert</v-icon>
                   <v-tooltip activator="parent" location="top">not fully synced</v-tooltip>
                 </span>
               </PlayerName>
@@ -225,15 +225,15 @@
               <span class="font-weight-bold">{{ item.points }}</span>
             </template>
             <template v-slot:[`item.wins`]="{ item }">
-              <span class="text-green">{{ item.wins }}</span>
+              <span class="text-win">{{ item.wins }}</span>
             </template>
             <template v-slot:[`item.losses`]="{ item }">
-              <span class="text-red">{{ item.losses }}</span>
+              <span class="text-loss">{{ item.losses }}</span>
             </template>
             <template v-slot:[`item.mmr`]="{ item }">{{ item.mmr ?? '—' }}</template>
             <template v-slot:[`item.mmrDiff`]="{ item }">
               <span v-if="item.mmrDiff == null">—</span>
-              <span v-else :class="item.mmrDiff > 0 ? 'text-green' : item.mmrDiff < 0 ? 'text-red' : ''">
+              <span v-else :class="item.mmrDiff > 0 ? 'text-win' : item.mmrDiff < 0 ? 'text-loss' : ''">
                 {{ item.mmrDiff > 0 ? `+${item.mmrDiff}` : item.mmrDiff }}
               </span>
             </template>
@@ -337,9 +337,9 @@ const allTableHeader = computed(() => [
   { title: 'Name', key: 'name', sortable: true },
   { mobile: false, title: 'Race', key: 'race', sortable: true, width: 64 },
   { mobile: false, title: 'Team', key: 'teamName', sortable: true },
-  { mobile: false, title: 'Ladder Points', key: 'ladder_points', sortable: true },
+  { mobile: false, title: 'Ladder points', key: 'ladder_points', sortable: true },
   { mobile: false, title: 'Achievements', key: 'badgePoints', sortable: true },
-  { title: 'Total Points', key: 'points', sortable: true },
+  { title: 'Total points', key: 'points', sortable: true },
   { mobile: false, title: 'Wins', key: 'wins', sortable: true },
   { mobile: false, title: 'Losses', key: 'losses', sortable: true },
   { mobile: false, title: 'MMR', key: 'mmr', sortable: true },
@@ -474,8 +474,6 @@ onMounted(async () => {
 }
 .standings-table thead tr th {
   font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: rgba(var(--v-theme-on-surface), 0.6) !important;
 }
 .standings-first {

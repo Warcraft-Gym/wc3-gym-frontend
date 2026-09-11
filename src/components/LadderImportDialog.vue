@@ -23,7 +23,7 @@
             <v-list-item-title class="text-body-2">{{ row.matched_name || '—' }}</v-list-item-title>
             <template #append>
               <v-chip v-if="row.shortname" size="x-small" label class="mr-3">{{ row.shortname }}</v-chip>
-              <v-chip size="x-small" :color="isSkipped(row) ? 'grey' : 'primary'" variant="tonal">{{ statusLabel(row) }}</v-chip>
+              <v-chip size="x-small" :color="isSkipped(row) ? 'secondary' : 'primary'" variant="tonal">{{ statusLabel(row) }}</v-chip>
             </template>
           </v-list-item>
           </template>
@@ -75,7 +75,7 @@ const toggleSkip = (row) => {
   display: block;
   width: 40px;
   height: 27px;
-  background: #263238;
+  background: rgb(var(--v-theme-band));
   border-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;

@@ -20,9 +20,9 @@
         <div>
           <div class="text-caption text-medium-emphasis">Record</div>
           <div class="text-h6">
-            <span class="text-green">{{ data?.wins ?? 0 }}</span>
+            <span class="text-win">{{ data?.wins ?? 0 }}</span>
             <span class="text-medium-emphasis"> – </span>
-            <span class="text-red">{{ data?.losses ?? 0 }}</span>
+            <span class="text-loss">{{ data?.losses ?? 0 }}</span>
           </div>
           <div class="text-caption text-medium-emphasis">{{ winrate }} of {{ data?.games ?? 0 }} games</div>
         </div>
@@ -37,7 +37,7 @@
             <tbody>
               <tr v-for="row in versusRaces" :key="row.code">
                 <td><div class="d-flex align-center ga-2"><RaceIcon :raceIdentifier="row.code" />{{ row.name }}</div></td>
-                <td class="text-right text-no-wrap"><span class="text-green">{{ row.w }}</span> – <span class="text-red">{{ row.l }}</span></td>
+                <td class="text-right text-no-wrap"><span class="text-win">{{ row.w }}</span> – <span class="text-loss">{{ row.l }}</span></td>
                 <td class="bar"><div class="meter"><div class="fill" :style="{ width: `${row.rate}%` }" /></div></td>
                 <td class="text-right text-medium-emphasis">{{ row.rate }}%</td>
               </tr>
@@ -47,12 +47,12 @@
         <div>
           <div class="text-caption text-medium-emphasis mb-1">Achievements</div>
           <div v-for="badge in earned" :key="badge.id" class="d-flex align-center badge-row">
-            <AchievementIcon :id="badge.id" class="mr-3 text-amber-darken-2" />
+            <AchievementIcon :id="badge.id" class="mr-3 text-primary" />
             <span class="text-body-2 font-weight-medium mr-3">{{ badge.name }}</span>
             <span v-if="mdAndUp" class="text-caption text-medium-emphasis">{{ badge.description }}</span>
             <v-spacer />
             <span class="text-caption text-medium-emphasis text-no-wrap ml-3">{{ badgeDate(badge.achieved_at) }}</span>
-            <span class="text-body-2 text-amber-darken-2 ml-3">+{{ badge.points }}</span>
+            <span class="text-body-2 text-primary-text ml-3">+{{ badge.points }}</span>
           </div>
           <div v-if="!earned.length" class="text-caption text-medium-emphasis">None earned yet.</div>
           <div
@@ -157,8 +157,8 @@ watch(() => [props.player, props.seasonId], load, { immediate: true });
 .tiles { display: flex; flex-wrap: wrap; gap: 12px 40px; align-items: flex-start; margin-bottom: 12px; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .versus .bar { width: 120px; }
-.meter { height: 6px; border-radius: 3px; background: rgba(var(--v-theme-primary), 0.18); overflow: hidden; }
-.fill { height: 100%; background: rgb(var(--v-theme-primary)); border-radius: 3px; }
+.meter { height: 6px; border-radius: 3px; background: rgba(var(--v-theme-win), 0.18); overflow: hidden; }
+.fill { height: 100%; background: rgb(var(--v-theme-win)); border-radius: 3px; }
 .badge-row {
   padding: 4px 0;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));

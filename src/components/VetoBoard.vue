@@ -57,7 +57,7 @@
               class="pa-3 map-tile"
               :class="{ 'bg-surface-light': tile.banned, 'week-map': tile.week }"
             >
-              <div class="thumb rounded bg-grey-darken-4">
+              <div class="thumb rounded bg-band">
                 <img v-if="mapImage(tile.id)" :src="mapImage(tile.id)" :alt="tile.name" :class="{ dim: tile.banned }" @error="hideMissingImage">
                 <v-chip class="shortname" size="x-small" label>{{ tile.shortname }}</v-chip>
               </div>
@@ -100,7 +100,7 @@
             <v-list-item
               v-for="row in orderRows"
               :key="row.n"
-              :class="{ 'bg-blue-lighten-5': row.current }"
+              :class="{ 'current-step': row.current }"
             >
               <template #prepend>
                 <v-icon size="small" class="mr-3" :color="row.done ? 'success' : undefined">
@@ -380,6 +380,10 @@ onUnmounted(() => clearInterval(timer));
 .map-tile {
   width: calc(50% - 6px);
   max-width: 190px;
+}
+
+.current-step {
+  background: rgba(var(--v-theme-primary), 0.12);
 }
 
 .week-map {

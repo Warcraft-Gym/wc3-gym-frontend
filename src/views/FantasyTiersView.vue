@@ -7,7 +7,7 @@
     <v-row class="mb-2" align="center">
       <v-col>
         <h1><v-icon class="mr-2">mdi-trophy-variant</v-icon> Fantasy Player Tiers</h1>
-        <p class="text-grey">Cut the {{ seasonName }} roster into {{ tierCount }} tiers by <W3CMmr /></p>
+        <p class="text-medium-emphasis">Cut the {{ seasonName }} roster into {{ tierCount }} tiers by <W3CMmr /></p>
       </v-col>
       <v-col cols="12" md="auto" class="d-flex flex-wrap ga-2 align-center">
         <SeasonSelect />
@@ -167,7 +167,7 @@ const groups = computed(() => {
     rows: rows.value.filter((r) => bandFor(r) === i).sort((a, b) => b.mmr - a.mmr),
   })).reverse();
   const none = rows.value.filter((r) => bandFor(r) === null);
-  return none.length ? [...banded, { key: 'none', title: 'No W3C MMR', color: 'grey', range: 'not applied, move by hand', rows: none }] : banded;
+  return none.length ? [...banded, { key: 'none', title: 'No W3C MMR', color: 'tag', range: 'not applied, move by hand', rows: none }] : banded;
 });
 
 // What the last Apply wrote, so the page can say whether the chart still matches it

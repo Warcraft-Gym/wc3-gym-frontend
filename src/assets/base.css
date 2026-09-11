@@ -1,3 +1,19 @@
+/* Alegreya Sans for body and controls; numbers use lining, equal-width digits so columns line up. */
+html, body, .v-application,
+.text-subtitle-1, .text-subtitle-2, .text-body-1, .text-body-2,
+.text-button, .text-caption, .text-overline {
+  font-family: 'Alegreya Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Alegreya for titles and headings. */
+h1, h2, h3, h4, h5, h6, .v-card-title,
+.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6 {
+  font-family: Alegreya, Georgia, serif;
+  font-weight: 700;
+}
+h1, .text-h1, .text-h2, .text-h3 { font-weight: 800; }
+
 /* Show the sort icon of an unsorted sortable header at rest, not only on hover. */
 .v-data-table .v-table__wrapper > table > thead > tr > th:not(.v-data-table__th--sorted) .v-data-table-header__sort-icon,
 .v-data-table .v-table__wrapper > table tbody > tr > th:not(.v-data-table__th--sorted) .v-data-table-header__sort-icon {
@@ -82,6 +98,12 @@
   background-attachment: local, local, scroll, scroll;
 }
 
+/* Vuetify 3.8 builds .text-X only for colours that are not on-*, so these on-* text colours need their own rule. */
+.text-on-band { color: rgb(var(--v-theme-on-band)) !important; }
+.text-on-hero { color: rgb(var(--v-theme-on-hero)) !important; }
+.text-on-primary { color: rgb(var(--v-theme-on-primary)) !important; }
+.text-on-error { color: rgb(var(--v-theme-on-error)) !important; }
+
 /* A scrim dims what is behind it. Vuetify paints it in on-surface, which is white
    on the dark theme and washes the page out while it loads. */
-.v-theme--dark .v-overlay__scrim { background: rgb(0, 0, 0); }
+.v-theme--dark .v-overlay__scrim { background: rgb(var(--v-theme-background)); }

@@ -1,6 +1,6 @@
 // Fantasy tier names and colours from the lowest band up; tier 1 is the last of a season's slice
 export const ALL_NAMES = ['Grass', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-export const ALL_COLORS = ['#4CAF50', '#795548', '#9E9E9E', '#FF9800', '#2196F3', '#9C27B0'];
+export const ALL_COLORS = ['tier-1', 'tier-2', 'tier-3', 'tier-4', 'tier-5', 'tier-6']; // theme colour names
 
 // What the chart changed since the last Apply, as lines a person reads. Empty means it matches.
 // `pins` and `storedPins` map a player id to the tier a hand-move gave them.

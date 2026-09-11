@@ -38,7 +38,7 @@
                         type="error"
                         variant="tonal"
                         border="start"
-                        border-color="red"
+                        border-color="error"
                         class="mt-4"
                     >
                         {{ apiError }}

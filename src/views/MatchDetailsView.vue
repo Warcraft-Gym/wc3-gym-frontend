@@ -12,6 +12,7 @@
   <div id="matchHeader">
     <v-parallax class="banner-image" :src="bannerImg" height="250">
       <div class="banner-overlay"></div>
+      <v-theme-provider theme="dark"><!-- the band is dark in both themes, so its chips read the dark tokens -->
       <v-container class="fill-height banner-content">
         <v-row align="center" class="fill-height">
           <!-- Match Info Column -->
@@ -21,8 +22,8 @@
                 <v-icon start>mdi-calendar-week</v-icon>
                 Round {{ match.playday }}
               </v-chip>
-              <div v-if="roundOf(match.playday).start_date" class="text-subtitle-2 mt-1 text-white">
-                <v-icon size="small" color="white">mdi-clock-outline</v-icon>
+              <div v-if="roundOf(match.playday).start_date" class="text-subtitle-2 mt-1 text-on-band">
+                <v-icon size="small" color="on-band">mdi-clock-outline</v-icon>
                 {{ roundLabel(roundOf(match.playday)) }}
               </div>
             </div>
@@ -31,21 +32,21 @@
             <v-row align="center" justify="center" class="teams-matchup">
               <v-col cols="5" class="text-center">
                 <div class="team-section-header">
-                  <h2 class="text-h4 font-weight-bold team-name-header text-white">{{ team1.name }}</h2>
-                  <v-chip color="success" size="large" class="mt-2 score-chip-large">
+                  <h2 class="text-h4 font-weight-bold team-name-header text-on-band">{{ team1.name }}</h2>
+                  <v-chip :color="resultColor(match.team1_score, match.team2_score)" size="large" class="mt-2 score-chip-large">
                     {{ match.team1_score || 0 }}
                   </v-chip>
                 </div>
               </v-col>
               
               <v-col cols="2" class="text-center">
-                <v-icon size="48" color="white">mdi-sword-cross</v-icon>
+                <v-icon size="48" color="on-band">mdi-sword-cross</v-icon>
               </v-col>
               
               <v-col cols="5" class="text-center">
                 <div class="team-section-header">
-                  <h2 class="text-h4 font-weight-bold team-name-header text-white">{{ team2.name }}</h2>
-                  <v-chip color="error" size="large" class="mt-2 score-chip-large">
+                  <h2 class="text-h4 font-weight-bold team-name-header text-on-band">{{ team2.name }}</h2>
+                  <v-chip :color="resultColor(match.team2_score, match.team1_score)" size="large" class="mt-2 score-chip-large">
                     {{ match.team2_score || 0 }}
                   </v-chip>
                 </div>
@@ -54,6 +55,7 @@
           </v-col>
         </v-row>
       </v-container>
+      </v-theme-provider>
     </v-parallax>
   </div>
 
@@ -77,7 +79,7 @@
             <v-tabs
               :model-value="match.playday"
               bg-color="primary"
-              slider-color="white"
+              slider-color="on-primary"
               show-arrows
               density="compact"
             >
@@ -94,7 +96,6 @@
                       :key="matchItem.id"
                       :active="matchItem.id === match.id"
                       @click.stop="navigateToMatch(matchItem.id)"
-                      :class="{ 'bg-primary-lighten-4': matchItem.id === match.id }"
                     >
                       <div class="d-flex align-center justify-space-between w-100">
                         <!-- Team 1 -->
@@ -106,7 +107,7 @@
                         </div>
                         
                         <!-- VS -->
-                        <div class="text-caption text-grey">vs</div>
+                        <div class="text-caption text-medium-emphasis">vs</div>
                         
                         <!-- Team 2 -->
                         <div class="d-flex flex-column align-center" style="width: 45%;">
@@ -119,7 +120,7 @@
                     </v-list-item>
                     <v-divider v-if="round.matches.length === 0"></v-divider>
                     <v-list-item v-if="round.matches.length === 0">
-                      <v-list-item-title class="text-grey text-center">No matches scheduled</v-list-item-title>
+                      <v-list-item-title class="text-medium-emphasis text-center">No matches scheduled</v-list-item-title>
                     </v-list-item>
                   </v-list>
                 </v-menu>
@@ -151,16 +152,16 @@
         <v-icon class="mr-2">mdi-trophy-variant</v-icon>
         Series Management
         <v-spacer></v-spacer>
-        <v-chip class="mr-2" size="small" color="success" variant="flat">
+        <v-chip class="mr-2" size="small" color="on-primary" variant="outlined">
           {{ series?.length || 0 }} Published
         </v-chip>
-        <v-chip v-if="auth.isCaptain" class="mr-2" size="small" color="warning" variant="flat">
+        <v-chip v-if="auth.isCaptain" class="mr-2" size="small" color="on-primary" variant="outlined">
           {{ draftSeries?.length || 0 }} Drafts
         </v-chip>
         <v-btn
           icon="mdi-refresh"
           variant="text"
-          color="white"
+          color="on-primary"
           size="small"
           @click="fetchMatchSeries"
           :loading="isLoading"
@@ -203,7 +204,7 @@
               density="comfortable"
             >
               <template v-slot:[`header.fantasy`]="{ column }">
-                <v-icon icon="mdi-star" color="purple" size="small" :title="column.title" :aria-label="column.title" />
+                <v-icon icon="mdi-star" color="primary" size="small" :title="column.title" :aria-label="column.title" />
               </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
@@ -215,7 +216,7 @@
                   <td class="py-1">
                     <div class="text-no-wrap">
                       <span v-if="item.date_time">{{ formateDate(item.date_time) }}</span>
-                      <span v-else class="text-grey">Not scheduled</span>
+                      <span v-else class="text-medium-emphasis">Not scheduled</span>
                     </div>
                     <CastChips :series="item" />
                   </td>
@@ -227,12 +228,12 @@
                     </div>
                   </td>
                   <td class="text-center">
-                    <v-chip :color="item.player1_score > item.player2_score ? 'success' : 'default'" size="small">
+                    <v-chip :color="item.player1_score > item.player2_score ? 'win' : 'default'" size="small">
                       {{ item.player1_score ?? '–' }}
                     </v-chip>
                   </td>
                   <td class="text-center">
-                    <v-chip :color="item.player2_score > item.player1_score ? 'success' : 'default'" size="small">
+                    <v-chip :color="item.player2_score > item.player1_score ? 'win' : 'default'" size="small">
                       {{ item.player2_score ?? '–' }}
                     </v-chip>
                   </td>
@@ -244,8 +245,8 @@
                     </div>
                   </td>
                   <td class="d-none d-md-table-cell text-center">
-                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
-                    <span v-else class="text-grey">—</span>
+                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="primary" title="Fantasy match"></v-icon>
+                    <span v-else class="text-medium-emphasis">—</span>
                   </td>
                   <td class="text-center">
                     <RowActions :actions="seriesActions(item)" />
@@ -264,7 +265,7 @@
                   <RowActions :actions="seriesActions(item)" />
                 </template>
                 <template #side="{ n, won }">
-                  <v-chip size="small" :color="won ? 'success' : 'default'">{{ (n ? item.player2_score : item.player1_score) ?? '–' }}</v-chip>
+                  <v-chip size="small" :color="won ? 'win' : 'default'">{{ (n ? item.player2_score : item.player1_score) ?? '–' }}</v-chip>
                 </template>
               </SeriesCard>
             </div>
@@ -272,8 +273,8 @@
 
           <!-- Empty State for Published -->
           <v-card-text v-else class="text-center pa-8">
-            <v-icon size="64" color="grey-lighten-1">mdi-trophy-broken</v-icon>
-            <div class="text-h6 mt-4 text-grey">No published series yet</div>
+            <v-icon size="64" class="text-disabled">mdi-trophy-broken</v-icon>
+            <div class="text-h6 mt-4 text-medium-emphasis">No published series yet</div>
             <v-btn 
               color="primary" 
               variant="tonal" 
@@ -346,7 +347,7 @@
                           <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
                         </v-avatar>
                       </template>
-                      <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-grey text-caption">—</span>
+                      <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-medium-emphasis text-caption">—</span>
                     </div>
                   </td>
                   <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2_race" /></td>
@@ -357,7 +358,7 @@
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
                   <td class="d-none d-md-table-cell text-end">
-                    <v-chip size="small" color="purple">
+                    <v-chip size="small" color="secondary">
                       {{ getHighestW3CMMR(item.player1) || '—' }}
                     </v-chip>
                   </td>
@@ -371,7 +372,7 @@
                           <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
                         </v-avatar>
                       </template>
-                      <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
+                      <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-medium-emphasis text-caption">—</span>
                     </div>
                   </td>
                   <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1_race" /></td>
@@ -382,13 +383,13 @@
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
                   <td class="d-none d-md-table-cell text-end">
-                    <v-chip size="small" color="purple">
+                    <v-chip size="small" color="secondary">
                       {{ getHighestW3CMMR(item.player2) || '—' }}
                     </v-chip>
                   </td>
                   <td v-if="auth.isAdmin" class="text-center">
-                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Marked to count for fantasy when published"></v-icon>
-                    <span v-else class="text-grey">—</span>
+                    <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="primary" title="Marked to count for fantasy when published"></v-icon>
+                    <span v-else class="text-medium-emphasis">—</span>
                   </td>
                   <td v-if="canDraft" class="text-center">
                     <RowActions :actions="draftActions(item)" />
@@ -399,7 +400,7 @@
             <div v-else>
               <SeriesCard v-for="item in enrichedDraftSeries" :key="item.id" :series="item">
                 <template #title>
-                  <v-icon v-if="item.is_fantasy_match" size="small" color="purple" title="Marked to count for fantasy when published">mdi-star</v-icon>
+                  <v-icon v-if="item.is_fantasy_match" size="small" color="primary" title="Marked to count for fantasy when published">mdi-star</v-icon>
                 </template>
                 <template #actions><RowActions v-if="canDraft" :actions="draftActions(item)" /></template>
                 <template #side="{ player, race }">
@@ -412,8 +413,8 @@
           <!-- Empty State for Drafts -->
           <v-card-text v-else class="text-center pa-8">
             <v-icon size="64" color="warning">mdi-pencil-box-outline</v-icon>
-            <div class="text-h6 mt-4 text-grey">No draft series yet</div>
-            <div class="text-body-2 text-grey mt-2">Drafts let you plan series without affecting the website or calculations</div>
+            <div class="text-h6 mt-4 text-medium-emphasis">No draft series yet</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">Drafts let you plan series without affecting the website or calculations</div>
             <v-btn 
               color="warning" 
               variant="tonal" 
@@ -462,7 +463,7 @@
           variant="tonal"
           class="mx-4 mt-4 mb-2 flex-shrink-0"
           border="start"
-          border-color="red"
+          border-color="error"
           closable
           @click:close="creationSeriesError = null"
         >
@@ -517,7 +518,7 @@
                   </template>
                   <template v-slot:[`item.name`]="{ item }">
                     <PlayerName :player="item" :race="item.signup_race">
-                      <v-chip v-if="s.isOut(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
+                      <v-chip v-if="s.isOut(item)" size="x-small" variant="tonal" color="secondary">Out</v-chip>
                     </PlayerName>
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -586,7 +587,7 @@
           class="mx-4 my-2"
           dense
           border="start"
-          border-color="red"
+          border-color="error"
         >
           {{ updateSeriesError }}
         </v-alert>
@@ -671,10 +672,10 @@
           </v-form>
         </v-card-text>
         <v-card-actions style="position: sticky; bottom: 0; background: rgb(var(--v-theme-surface)); z-index: 10;">
-          <v-btn @click="updateSeries" color="green" prepend-icon="mdi-check" :disabled="!!editScoreProblem">
+          <v-btn @click="updateSeries" color="primary" prepend-icon="mdi-check" :disabled="!!editScoreProblem">
             Save
           </v-btn>
-          <v-btn @click="cancelEditSeries" color="red" prepend-icon="mdi-close">
+          <v-btn @click="cancelEditSeries" color="secondary" prepend-icon="mdi-close">
             Cancel
           </v-btn>
         </v-card-actions>
@@ -726,10 +727,10 @@
           <v-row>
             <v-col cols="12" md="6">
               <v-card elevation="2">
-                <v-card-title class="bg-success d-flex align-center">
+                <v-card-title class="bg-primary d-flex align-center">
                   <v-avatar size="28" class="mr-2"><img v-if="team1.id" class="team-icon" :src="teamImageUrl(team1)" @error="showDefaultTeamImage"></v-avatar>
                   {{ team1.name }}
-                  <v-chip size="small" class="ml-2" color="white">
+                  <v-chip size="small" class="ml-2" color="on-primary" variant="outlined">
                     {{ proposePlayersTeam_1.length }} selected
                   </v-chip>
                 </v-card-title>
@@ -776,8 +777,8 @@
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race">
-                        <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
-                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
+                        <v-chip v-if="outTeam1(item)" size="x-small" variant="tonal" color="secondary">Out</v-chip>
+                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="secondary">Has series</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -793,10 +794,10 @@
 
             <v-col cols="12" md="6">
               <v-card elevation="2">
-                <v-card-title class="bg-error d-flex align-center">
+                <v-card-title class="bg-primary d-flex align-center">
                   <v-avatar size="28" class="mr-2"><img v-if="team2.id" class="team-icon" :src="teamImageUrl(team2)" @error="showDefaultTeamImage"></v-avatar>
                   {{ team2.name }}
-                  <v-chip size="small" class="ml-2" color="white">
+                  <v-chip size="small" class="ml-2" color="on-primary" variant="outlined">
                     {{ proposePlayersTeam_2.length }} selected
                   </v-chip>
                 </v-card-title>
@@ -843,8 +844,8 @@
                     </template>
                     <template v-slot:[`item.name`]="{ item }">
                       <PlayerName :player="item" :race="item.signup_race">
-                        <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="grey">Out</v-chip>
-                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="grey">Has series</v-chip>
+                        <v-chip v-if="outTeam2(item)" size="x-small" variant="tonal" color="secondary">Out</v-chip>
+                        <v-chip v-else-if="hasSeries(item.id)" size="x-small" variant="tonal" color="secondary">Has series</v-chip>
                       </PlayerName>
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
@@ -877,7 +878,7 @@
       <v-card-subtitle class="pa-3">
         <v-row align="center" justify="center">
           <v-col cols="5" class="text-center">
-            <v-chip color="success" size="large">
+            <v-chip color="primary" size="large">
               <v-avatar start><img class="team-icon" :src="teamImageUrl(team1)" @error="showDefaultTeamImage"></v-avatar>
               {{ team1.name }}
             </v-chip>
@@ -886,7 +887,7 @@
             <v-icon size="large">mdi-sword-cross</v-icon>
           </v-col>        
           <v-col cols="5" class="text-center">
-            <v-chip color="error" size="large">
+            <v-chip color="primary" size="large">
               <v-avatar start><img class="team-icon" :src="teamImageUrl(team2)" @error="showDefaultTeamImage"></v-avatar>
               {{ team2.name }}
             </v-chip>
@@ -953,7 +954,7 @@
                       <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
                     </v-avatar>
                   </template>
-                  <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-grey text-caption">—</span>
+                  <span v-if="getOpponentRaceHistory(item.player1).length === 0" class="text-medium-emphasis text-caption">—</span>
                 </div>
               </template>
               <template v-slot:[`item.p2_matchup_history`]="{ item }">
@@ -963,7 +964,7 @@
                       <v-img :src="getRaceIconUrl(race)" :alt="race" cover></v-img>
                     </v-avatar>
                   </template>
-                  <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-grey text-caption">—</span>
+                  <span v-if="getOpponentRaceHistory(item.player2).length === 0" class="text-medium-emphasis text-caption">—</span>
                 </div>
               </template>
               <template v-slot:[`item.p1_vs_race`]="{ item }">
@@ -1556,8 +1557,11 @@ const seriesActions = (item) => [
   { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
   { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },
 ];
+// win, loss or draw for one side's score against the other's
+const resultColor = (own, other) => ((own || 0) > (other || 0) ? 'win' : (own || 0) < (other || 0) ? 'loss' : 'draw');
+
 const draftActions = (item) => [
-  { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'orange' : 'purple', onClick: () => toggleDraftFantasyMatch(item) },
+  { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'warning' : 'primary', onClick: () => toggleDraftFantasyMatch(item) },
   { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
   { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', public: canDraft.value, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
 ];
@@ -1957,7 +1961,7 @@ onMounted(async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7));
+  background: linear-gradient(to bottom, rgba(var(--v-theme-band), 0.4), rgba(var(--v-theme-band), 0.7));
   z-index: 1;
 }
 
@@ -1971,7 +1975,7 @@ onMounted(async () => {
 }
 
 .team-name-header {
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  text-shadow: 2px 2px 4px rgba(var(--v-theme-band), 0.8);
   letter-spacing: 1px;
 }
 
@@ -2004,19 +2008,11 @@ onMounted(async () => {
 
 <style>
 /* Global styles for table row highlighting (cannot be scoped) */
-/* Both fills stay light in either theme, so the row switches to the light text palette */
-.highlight-row,
-.highlight-selected-row {
-  --v-theme-on-background: 0, 0, 0;
-  --v-theme-on-surface: 0, 0, 0;
-  color: rgba(0, 0, 0, 0.87);
-}
-
 .highlight-row {
-  background-color: #ffc87a !important;
+  background-color: rgba(var(--v-theme-warning), 0.16) !important;
 }
 
 .highlight-selected-row {
-  background-color: #99ff7a !important;
+  background-color: rgba(var(--v-theme-primary), 0.24) !important;
 }
 </style>

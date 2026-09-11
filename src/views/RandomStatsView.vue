@@ -6,7 +6,7 @@
       <v-icon size="x-large" color="primary" class="mr-3">mdi-dice-multiple</v-icon>
       <div>
         <div class="text-h5 font-weight-bold">Random Stats Helper</div>
-        <div class="text-body-2 text-grey">Breakdown of drawn race vs opponent race for Random games only</div>
+        <div class="text-body-2 text-medium-emphasis">Breakdown of drawn race vs opponent race for Random games only</div>
       </div>
     </div>
 
@@ -84,25 +84,25 @@
     <v-card v-if="hasResults && !isLoading" elevation="2" class="mb-6">
       <v-card-title class="bg-primary">
         Summary — {{ resolvedTag }}
-        <span class="text-body-2 ml-2 text-white opacity-80">(seasons {{ selectedSeasons.join(', ') }})</span>
+        <span class="text-body-2 ml-2 text-on-primary opacity-80">(seasons {{ selectedSeasons.join(', ') }})</span>
       </v-card-title>
       <v-card-text class="pt-4">
         <v-row>
           <v-col cols="6" sm="3" class="text-center">
             <div class="text-h5 font-weight-bold">{{ totalGames }}</div>
-            <div class="text-caption text-grey">Total games</div>
+            <div class="text-caption text-medium-emphasis">Total games</div>
           </v-col>
           <v-col cols="6" sm="3" class="text-center">
-            <div class="text-h5 font-weight-bold text-green">{{ totalWins }}</div>
-            <div class="text-caption text-grey">Wins</div>
+            <div class="text-h5 font-weight-bold text-win">{{ totalWins }}</div>
+            <div class="text-caption text-medium-emphasis">Wins</div>
           </v-col>
           <v-col cols="6" sm="3" class="text-center">
-            <div class="text-h5 font-weight-bold text-red">{{ totalLosses }}</div>
-            <div class="text-caption text-grey">Losses</div>
+            <div class="text-h5 font-weight-bold text-loss">{{ totalLosses }}</div>
+            <div class="text-caption text-medium-emphasis">Losses</div>
           </v-col>
           <v-col cols="6" sm="3" class="text-center">
-            <div class="text-h5 font-weight-bold" :class="winRateTextColor(totalWins, totalLosses)">{{ overallWinRate }}%</div>
-            <div class="text-caption text-grey">Win rate</div>
+            <div class="text-h5 font-weight-bold">{{ overallWinRate }}%</div>
+            <div class="text-caption text-medium-emphasis">Win rate</div>
           </v-col>
         </v-row>
       </v-card-text>
@@ -116,14 +116,14 @@
         elevation="2"
         class="mb-5"
       >
-        <v-card-title class="bg-secondary d-flex align-center">
+        <v-card-title class="bg-primary d-flex align-center">
           <RaceIcon :raceIdentifier="raceIdMap[raceName]" class="mr-2" />
           <span>Playing as {{ raceName }}</span>
           <v-spacer />
-          <v-chip color="white" variant="tonal" size="small" class="mr-2">
+          <v-chip color="on-primary" variant="tonal" size="small" class="mr-2">
             {{ data.wins + data.losses }} games
           </v-chip>
-          <v-chip :color="winRateChipColor(data.wins, data.losses)" size="small">
+          <v-chip color="win" size="small">
             {{ Math.round(data.wins / (data.wins + data.losses) * 100) }}% WR
           </v-chip>
         </v-card-title>
@@ -132,8 +132,8 @@
           <thead>
             <tr class="bg-surface-variant">
               <th class="text-left">Opponent Race</th>
-              <th class="text-right text-green">Wins</th>
-              <th class="text-right text-red">Losses</th>
+              <th class="text-right text-win">Wins</th>
+              <th class="text-right text-loss">Losses</th>
               <th class="text-right">Total</th>
               <th class="text-right" style="min-width:90px">Win %</th>
             </tr>
@@ -149,13 +149,13 @@
                   <span>{{ oppRace }}</span>
                 </div>
               </td>
-              <td class="text-right text-green font-weight-medium">{{ matchup.wins }}</td>
-              <td class="text-right text-red font-weight-medium">{{ matchup.losses }}</td>
+              <td class="text-right text-win font-weight-medium">{{ matchup.wins }}</td>
+              <td class="text-right text-loss font-weight-medium">{{ matchup.losses }}</td>
               <td class="text-right">{{ matchup.wins + matchup.losses }}</td>
               <td class="text-right">
                 <v-chip
                   size="small"
-                  :color="winRateChipColor(matchup.wins, matchup.losses)"
+                  color="win"
                   variant="tonal"
                 >
                   {{ Math.round(matchup.wins / (matchup.wins + matchup.losses) * 100) }}%
@@ -167,13 +167,13 @@
           <tfoot>
             <tr style="border-top: 2px solid rgba(var(--v-theme-on-surface), 0.12);">
               <td class="font-weight-bold">Total</td>
-              <td class="text-right font-weight-bold text-green">{{ data.wins }}</td>
-              <td class="text-right font-weight-bold text-red">{{ data.losses }}</td>
+              <td class="text-right font-weight-bold text-win">{{ data.wins }}</td>
+              <td class="text-right font-weight-bold text-loss">{{ data.losses }}</td>
               <td class="text-right font-weight-bold">{{ data.wins + data.losses }}</td>
               <td class="text-right">
                 <v-chip
                   size="small"
-                  :color="winRateChipColor(data.wins, data.losses)"
+                  color="win"
                 >
                   {{ Math.round(data.wins / (data.wins + data.losses) * 100) }}%
                 </v-chip>
@@ -269,24 +269,6 @@ const overallWinRate = computed(() =>
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function raceName(raceValue) {
   return W3C_RACE_NAMES[raceValue] ?? `Random`;
-}
-
-function winRateChipColor(wins, losses) {
-  const total = wins + losses;
-  if (total === 0) return 'grey';
-  const r = wins / total;
-  if (r >= 0.6) return 'success';
-  if (r >= 0.5) return 'warning';
-  return 'error';
-}
-
-function winRateTextColor(wins, losses) {
-  const total = wins + losses;
-  if (total === 0) return '';
-  const r = wins / total;
-  if (r >= 0.6) return 'text-green';
-  if (r >= 0.5) return 'text-warning';
-  return 'text-red';
 }
 
 // Sort matchups by total games descending

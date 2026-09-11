@@ -6,7 +6,7 @@
         <v-icon class="mr-2">mdi-sword-cross</v-icon>
         <span>Head to Head, Lifetime</span>
       </div>
-      <v-chip color="white" variant="outlined">
+      <v-chip color="on-primary" variant="outlined">
         {{ opponents.length }} players faced
       </v-chip>
     </v-card-title>
@@ -80,7 +80,7 @@ watch(() => props.playerId, async (id) => {
   opponents.value = id ? (await playerStore.playerHistory(id).catch(() => null))?.opponents ?? [] : [];
 }, { immediate: true });
 
-const recordColor = (won, lost) => (won > lost ? 'success' : won < lost ? 'error' : undefined);
+const recordColor = (won, lost) => (won > lost ? 'win' : won < lost ? 'loss' : undefined);
 
 const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `round ${opp.last_playday}` : null].filter(Boolean).join(', ');
 </script>

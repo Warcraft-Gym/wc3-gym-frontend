@@ -81,8 +81,8 @@
       </v-table>
 
       <v-card-text v-if="!players.length && !isLoading" class="text-center pa-8">
-        <v-icon size="64" color="grey-lighten-1">mdi-account-off</v-icon>
-        <div class="text-h6 text-grey mt-4">No players on this team this season</div>
+        <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
+        <div class="text-h6 text-medium-emphasis mt-4">No players on this team this season</div>
       </v-card-text>
     </v-card>
   </v-container>

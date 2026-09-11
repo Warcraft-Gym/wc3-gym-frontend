@@ -11,7 +11,7 @@
           <v-icon class="mr-2">mdi-map-outline</v-icon>
           Series maps
         </h1>
-        <div class="text-subtitle-1 text-grey">{{ season.name }}</div>
+        <div class="text-subtitle-1 text-medium-emphasis">{{ season.name }}</div>
       </v-col>
       <v-col cols="auto" class="d-flex align-center ga-2">
         <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/seasons/${route.params.id}`">Back to season</v-btn>
@@ -37,7 +37,7 @@
 
           <v-expand-transition>
             <div v-if="addOpen" class="add-panel">
-              <div class="d-flex align-center px-4 pt-2 text-caption text-grey">
+              <div class="d-flex align-center px-4 pt-2 text-caption text-medium-emphasis">
                 <span>Maps not in this season</span>
                 <v-spacer />
                 <span>{{ notInPool.length }} available</span>
@@ -52,7 +52,7 @@
                     <v-chip size="x-small" label>{{ m.shortname }}</v-chip>
                   </template>
                 </v-list-item>
-                <v-list-item v-if="!notInPool.length" class="text-caption text-grey">Every map is already in this season</v-list-item>
+                <v-list-item v-if="!notInPool.length" class="text-caption text-medium-emphasis">Every map is already in this season</v-list-item>
               </v-list>
               <div class="d-flex justify-end ga-2 px-4 py-2">
                 <v-btn size="small" variant="outlined" color="primary" @click="openImport">
@@ -77,7 +77,7 @@
                 <v-btn icon="mdi-close" variant="text" size="small" color="error" @click="removeMap(m.id)" />
               </template>
             </v-list-item>
-            <v-list-item v-if="!pool.length" class="text-grey">No maps in this season yet</v-list-item>
+            <v-list-item v-if="!pool.length" class="text-medium-emphasis">No maps in this season yet</v-list-item>
           </v-list>
         </v-card>
       </v-col>
@@ -161,7 +161,7 @@
                 </template>
               </v-select>
             </div>
-            <div v-if="!rounds.length" class="text-caption text-grey">This season has no rounds</div>
+            <div v-if="!rounds.length" class="text-caption text-medium-emphasis">This season has no rounds</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -183,7 +183,7 @@
             </div>
             <v-divider class="mb-2" />
             <div v-for="count in counts" :key="count.label" class="d-flex justify-space-between py-1">
-              <span class="text-caption text-grey">{{ count.label }}</span>
+              <span class="text-caption text-medium-emphasis">{{ count.label }}</span>
               <span class="text-body-2 font-weight-medium" :class="{ 'text-error': count.negative }">{{ count.value }}</span>
             </div>
           </v-card-text>
@@ -442,7 +442,7 @@ onMounted(async () => {
 <style scoped>
 .map-thumb {
   display: block;
-  background: #263238;
+  background: rgb(var(--v-theme-band));
   border-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;
@@ -474,7 +474,6 @@ onMounted(async () => {
   padding: 9px 11px;
   border-radius: 4px;
   background: rgba(var(--v-border-color), 0.06);
-  font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 0.75rem;
   line-height: 1.6;
   word-break: break-word;

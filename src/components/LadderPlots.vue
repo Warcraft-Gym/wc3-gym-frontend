@@ -8,8 +8,8 @@
         <text x="-8" :y="t.y" dy="0.32em" text-anchor="end" class="tick">{{ t.v }}</text>
       </g>
       <template v-for="(d, i) in days" :key="d.d">
-        <rect v-if="d.w" :x="x(i)" :y="yG(d.w)" :width="x.bandwidth()" :height="yG(0) - yG(d.w)" :fill="WIN" />
-        <rect v-if="d.l" :x="x(i)" :y="yG(d.w + d.l)" :width="x.bandwidth()" :height="Math.max(1, yG(d.w) - yG(d.w + d.l) - (d.w ? 2 : 0))" :fill="LOSS" />
+        <rect v-if="d.w" :x="x(i)" :y="yG(d.w)" :width="x.bandwidth()" :height="yG(0) - yG(d.w)" :style="{ fill: WIN }" />
+        <rect v-if="d.l" :x="x(i)" :y="yG(d.w + d.l)" :width="x.bandwidth()" :height="Math.max(1, yG(d.w) - yG(d.w + d.l) - (d.w ? 2 : 0))" :style="{ fill: LOSS }" />
       </template>
       <line :x2="innerW" :y1="gH" :y2="gH" class="axis" />
     </g>
@@ -84,7 +84,7 @@ const tip = (d) => `${fmt(dateOf(d))} · ${d.w}–${d.l}${d.mmr != null ? ` · $
 .end { font-size: 11px; font-weight: 500; fill: rgba(var(--v-theme-on-surface), 0.87); }
 .grid { stroke: rgba(var(--v-theme-on-surface), 0.08); }
 .axis { stroke: rgba(var(--v-theme-on-surface), 0.2); }
-.area { fill: #424242; fill-opacity: 0.1; }
-.line { fill: none; stroke: #424242; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.dot { fill: #424242; stroke: rgb(var(--v-theme-surface)); stroke-width: 2; }
+.area { fill: rgb(var(--v-theme-on-surface)); fill-opacity: 0.1; }
+.line { fill: none; stroke: rgb(var(--v-theme-on-surface)); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dot { fill: rgb(var(--v-theme-on-surface)); stroke: rgb(var(--v-theme-surface)); stroke-width: 2; }
 </style>

@@ -97,6 +97,6 @@ const boards = computed(() => {
 /* The data end is rounded, the baseline end square */
 .seg { display: block; border-radius: 0 4px 4px 0; min-width: 2px; }
 .seg.ladder, .swatch.ladder { background: rgb(var(--v-theme-primary)); }
-.seg.badge, .swatch.badge { background: #ff8f00; }
+.seg.badge, .swatch.badge { background: rgb(var(--v-theme-warning)); }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 </style>

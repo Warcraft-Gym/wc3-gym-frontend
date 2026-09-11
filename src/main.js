@@ -83,6 +83,11 @@ const vuetify = new createVuetify ({
                     'race-ud': '#7546BA',
                     'medal-gold': '#8F6B00',
                     'medal-silver': '#6E7881',
+                    'heat-1': '#D0A076',
+                    'heat-2': '#BA8351',
+                    'heat-3': '#A3682E',
+                    'heat-4': '#865017',
+                    'heat-5': '#683C0B',
                 },
                 variables: {
                     'border-color': '#1A241E',
@@ -134,6 +139,11 @@ const vuetify = new createVuetify ({
                     'race-ud': '#9B6FE4',
                     'medal-gold': '#E0B84A',
                     'medal-silver': '#B9C2C8',
+                    'heat-1': '#784D25',
+                    'heat-2': '#9C642F',
+                    'heat-3': '#C37D39',
+                    'heat-4': '#E29A57',
+                    'heat-5': '#FABC86',
                     // Vuetify picks white on these mid-tone fills, which is under 3.4:1; ink is 4.75:1 or more
                     'on-error': '#1A241E',
                     'on-info': '#1A241E',

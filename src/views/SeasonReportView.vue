@@ -334,14 +334,14 @@
                       v-for="cell in row.cells"
                       :key="cell.key"
                       class="heat-cell"
-                      :style="{ opacity: cell.opacity }"
+                      :style="{ background: cell.color }"
                       :title="cell.title"
                     ></div>
                   </template>
                 </div>
                 <div class="heat-legend">
                   <template v-for="step in heatLegend" :key="step.label">
-                    <span class="heat-swatch" :style="{ opacity: step.opacity }"></span>
+                    <span class="heat-swatch" :style="{ background: step.color }"></span>
                     <span>{{ step.label }}</span>
                   </template>
                 </div>
@@ -474,6 +474,7 @@ import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
 import { playerPath } from '@/helpers/players';
+import { scaleQuantize } from 'd3-scale';
 
 
 const route = useRoute();
@@ -712,6 +713,11 @@ const monthDay = (iso) =>
 
 const hourMax = computed(() => Math.max(1, ...(ladder.value?.by_hour ?? []).flat()));
 
+// Five equal buckets of 1..5 x step games, one bronze step each; an hour with no games stays surface-light
+const heatStep = computed(() => Math.ceil(hourMax.value / 5));
+const heatScale = computed(() => scaleQuantize().domain([0.5, 5 * heatStep.value + 0.5]).range([1, 2, 3, 4, 5]));
+const heatColor = (games) => `rgb(var(--v-theme-${games ? `heat-${heatScale.value(games)}` : 'surface-light'}))`;
+
 const heatRows = computed(() => {
     const grid = ladder.value?.by_hour;
     if (!grid?.length || !ladder.value?.total_games) return [];
@@ -722,7 +728,7 @@ const heatRows = computed(() => {
             const games = grid[row]?.[hour] ?? 0;
             return {
                 key: `${row}-${hour}`,
-                opacity: games ? 0.15 + (0.85 * games) / hourMax.value : 0.05,
+                color: heatColor(games),
                 title: `${dayLabels[col]} ${pad2(hour)}:00 \u00b7 ${games} games`,
             };
         }),
@@ -730,10 +736,10 @@ const heatRows = computed(() => {
 });
 
 const heatLegend = computed(() => {
-    const step = Math.ceil(hourMax.value / 5);
+    const step = heatStep.value;
     return Array.from({ length: 5 }, (_, i) => ({
-        opacity: 0.15 + (0.85 * (i + 1)) / 5,
-        label: i === 4 ? `${step * 4 + 1}+` : `${i * step + (i ? 1 : 0)}-${(i + 1) * step}`,
+        color: `rgb(var(--v-theme-heat-${i + 1}))`,
+        label: i === 4 ? `${step * 4 + 1}+` : `${i * step + 1}-${(i + 1) * step}`,
     }));
 });
 
@@ -917,7 +923,6 @@ const dayTicks = computed(() => {
 .heat-cell {
   height: 12px;
   border-radius: 2px;
-  background: rgb(var(--v-theme-primary));
 }
 .heat-legend {
   display: flex;
@@ -932,7 +937,6 @@ const dayTicks = computed(() => {
   width: 14px;
   height: 10px;
   border-radius: 2px;
-  background: rgb(var(--v-theme-primary));
 }
 .day-chart {
   position: relative;

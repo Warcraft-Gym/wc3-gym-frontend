@@ -202,11 +202,8 @@
               hover
               density="comfortable"
             >
-              <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
-              </template>
-              <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+              <template v-slot:[`header.fantasy`]="{ column }">
+                <v-icon icon="mdi-star" color="purple" size="small" :title="column.title" :aria-label="column.title" />
               </template>
               <template v-slot:loading>
                 <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
@@ -215,21 +212,19 @@
               <template v-slot:item="{ item }">
                 <tr class="series-row">
                   <td class="d-none d-md-table-cell">{{ item.id }}</td>
-                  <td class="d-none d-md-table-cell"><CastChips :series="item" /></td>
-                  <td class="text-no-wrap">
-                    <span v-if="item.date_time">
-                      {{ formateDate(item.date_time) }}
-                    </span>
-                    <span v-else class="text-grey">Not scheduled</span>
+                  <td class="py-1">
+                    <div class="text-no-wrap">
+                      <span v-if="item.date_time">{{ formateDate(item.date_time) }}</span>
+                      <span v-else class="text-grey">Not scheduled</span>
+                    </div>
+                    <CastChips :series="item" />
                   </td>
-                  <td>
+                  <td class="py-1">
                     <PlayerName :player="item.player1" :race="item.player1_race" :host="item.host_player_id === item.player1.id" />
-                  </td>
-                  <td class="d-none d-md-table-cell text-end">
-                    <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1, null, item.player1_race) ?? 'N/A' }}
-                    </v-chip>
-                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
+                    <div class="d-flex align-center ga-2">
+                      <v-chip size="small" color="info">{{ getW3CMMR(item.player1, null, item.player1_race) ?? 'N/A' }}</v-chip>
+                      <span class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></span>
+                    </div>
                   </td>
                   <td class="text-center">
                     <v-chip :color="item.player1_score > item.player2_score ? 'success' : 'default'" size="small">
@@ -241,14 +236,12 @@
                       {{ item.player2_score ?? '–' }}
                     </v-chip>
                   </td>
-                  <td>
+                  <td class="py-1">
                     <PlayerName :player="item.player2" :race="item.player2_race" :host="item.host_player_id === item.player2.id" />
-                  </td>
-                  <td class="d-none d-md-table-cell text-end">
-                    <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2, null, item.player2_race) ?? 'N/A' }}
-                    </v-chip>
-                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
+                    <div class="d-flex align-center ga-2">
+                      <v-chip size="small" color="info">{{ getW3CMMR(item.player2, null, item.player2_race) ?? 'N/A' }}</v-chip>
+                      <span class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></span>
+                    </div>
                   </td>
                   <td class="d-none d-md-table-cell text-center">
                     <v-icon v-if="item.is_fantasy_match" icon="mdi-star" color="purple" title="Fantasy match"></v-icon>
@@ -1101,24 +1094,13 @@ const matchesByRound = ref([]);
 
 const allSeriesTableHeader = computed(() => [
 
-  { mobile: false, title: 'ID', value: 'id', sortable: true },  
-  { mobile: false, title: 'Cast' },
-  { title: 'Date/Time'}, 
+  { mobile: false, title: 'ID', value: 'id', sortable: true },
+  { title: 'Date/Time'},
   { title: 'Player 1', value: 'player1.name', sortable: true },
-  { mobile: false, title: 'MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1_race) || 0;
-    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1_race) || 0;
-    return aValue - bValue;
-  } },
   { title: 'P1 Score' },
   { title: 'P2 Score' },
   { title: 'Player 2', value: 'player2.name', sortable: true },
-  { mobile: false, title: 'MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2_race) || 0;
-    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2_race) || 0;
-    return aValue - bValue;
-  }},
-  { mobile: false, title: 'Fantasy Match'},
+  { mobile: false, title: 'Fantasy match', key: 'fantasy' },
   { title: '', value: 'actions', sortable: false },
 ]);
 const seriesTableHeader = useColumns(allSeriesTableHeader);
@@ -1586,11 +1568,9 @@ const editSeries = async (seriesItem) => {
   copy_series.isDraft = seriesViewTab.value === 'draft';
   updateSeriesError.value = '';
   selectedSeries.value = copy_series;
-  if (copy_series.date_time) {
-    const { date, time } = pickerParts(copy_series.date_time);
-    selectedDate.value = date;
-    selectedTime.value = time;
-  }
+  const { date, time } = copy_series.date_time ? pickerParts(copy_series.date_time) : { date: null, time: null };
+  selectedDate.value = date;
+  selectedTime.value = time;
 
   hostPlayers.value = [copy_series.player1, copy_series.player2];
   editSeriesDialogOpen.value = true;

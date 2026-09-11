@@ -60,7 +60,7 @@
   <div v-if="reportReady" id="season-report">
 
     <!-- ── Hero Header ── -->
-    <div class="report-hero on-band">
+    <div class="report-hero text-on-band">
       <div class="report-hero-overlay" />
       <v-container class="report-hero-content">
         <div class="text-overline mb-1" style="opacity: 0.8;">Season Report</div>

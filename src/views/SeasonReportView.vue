@@ -109,8 +109,9 @@
                       v-if="rankMedal(idx + 1)"
                       :color="rankMedal(idx + 1).color"
                       size="22"
+                      class="mr-1"
                     >{{ rankMedal(idx + 1).icon }}</v-icon>
-                    <span v-else class="text-caption text-medium-emphasis">{{ idx + 1 }}</span>
+                    <span class="text-caption" :class="{ 'text-medium-emphasis': !rankMedal(idx + 1) }">{{ idx + 1 }}</span>
                   </div>
                 </td>
                 <td>
@@ -412,8 +413,9 @@
                       v-if="rankMedal(idx + 1)"
                       :color="rankMedal(idx + 1).color"
                       size="22"
+                      class="mr-1"
                     >{{ rankMedal(idx + 1).icon }}</v-icon>
-                    <span v-else class="text-caption text-medium-emphasis">{{ idx + 1 }}</span>
+                    <span class="text-caption" :class="{ 'text-medium-emphasis': !rankMedal(idx + 1) }">{{ idx + 1 }}</span>
                   </div>
                 </td>
                 <td class="font-weight-medium">{{ ft.name }}</td>
@@ -631,9 +633,9 @@ const getRaceName = race => raceWrapper.getRaceObject(race)?.name || race;
 
 // ─── Rank medal ───────────────────────────────────────────────────────────────
 const rankMedal = rank => {
-    if (rank === 1) return { icon: 'mdi-medal', color: '#FFD700' };
-    if (rank === 2) return { icon: 'mdi-medal', color: '#C0C0C0' };
-    if (rank === 3) return { icon: 'mdi-medal', color: '#CD7F32' };
+    if (rank === 1) return { icon: 'mdi-medal', color: 'medal-gold' };
+    if (rank === 2) return { icon: 'mdi-medal', color: 'medal-silver' };
+    if (rank === 3) return { icon: 'mdi-medal', color: 'primary' };
     return null;
 };
 

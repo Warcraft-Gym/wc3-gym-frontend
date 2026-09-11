@@ -44,7 +44,7 @@
             {{ playerData.discord_tag }}
           </v-chip>
           <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
-            {{ playerData.player.timezone }}
+            {{ zoneLabel(playerData.player.timezone, userTimezone) }}
           </v-chip>
         </div>
         <div class="d-flex flex-wrap align-center ga-2">
@@ -147,7 +147,7 @@
       </v-card-title>
       <v-card-text class="pt-4">
         <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-          Enter time in your local timezone ({{ userTimezone }}).
+          Enter time in your local timezone ({{ zoneLabel(userTimezone, userTimezone, chosen) }}).
         </v-alert>
         <v-form ref="scheduleForm" v-model="scheduleFormValid">
           <v-container>
@@ -157,6 +157,15 @@
               </v-col>
               <v-col cols="12" md="6">
                 <SimpleTimePicker v-model="scheduleSeries.time" :label="`Time (${userTimezone})`" />
+              </v-col>
+            </v-row>
+            <v-row v-if="opponentZone">
+              <v-col cols="12" class="pt-0">
+                <div class="d-flex flex-wrap align-center ga-2">
+                  <PlayerName :player="scheduleSeries.opponent" />
+                  <strong v-if="opponentTime" class="text-no-wrap">{{ opponentTime }}</strong>
+                </div>
+                <div class="text-caption text-medium-emphasis">{{ opponentZone }}</div>
               </v-col>
             </v-row>
           </v-container>
@@ -326,7 +335,7 @@ import RaceSelect from '@/components/RaceSelect.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
-import { DateTime } from 'luxon';
+import { pickedInstant, pickerParts, viewerZone, zoneLabel } from '@/helpers/timezone.mjs';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
 import VetoBoard from '@/components/VetoBoard.vue';
@@ -416,10 +425,18 @@ const vetoMissing = computed(() => !scoreVeto.value?.complete);
 const scheduleSavingId = ref(null);
 const scoreSavingId = ref(null);
 
-// User's timezone for display
-const userTimezone = computed(() => {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+const userTimezone = viewerZone();
+
+// the instant the dialog's date and time name, read in the player's zone
+const chosen = computed(() => {
+  const { date, time } = scheduleSeries.value;
+  return date instanceof Date && time ? pickedInstant(date, time, userTimezone) : null;
 });
+// the opponent's zone and the chosen time on their clock; their availability stays private
+const opponentZone = computed(() => zoneLabel(scheduleSeries.value.opponent?.timezone, userTimezone, chosen.value));
+const opponentTime = computed(() =>
+  opponentZone.value && chosen.value ? chosen.value.setZone(scheduleSeries.value.opponent.timezone).toFormat('ccc d LLL, HH:mm') : '',
+);
 
 // Validation rules
 const rules = {
@@ -513,30 +530,12 @@ const setWeek = async (week, want) => {
 
 // Edit schedule handlers
 const editSchedule = (item) => {
-  let date = '';
-  let time = '';
-
-  if (item.date_time) {
-    // Backend stores datetime in UTC as naive datetime (no timezone info)
-    // Parse as UTC and convert to user's local timezone
-    const utcDateTime = DateTime.fromISO(item.date_time, { zone: 'UTC' });
-    
-    if (utcDateTime.isValid) {
-      // Convert to local timezone
-      const localDateTime = utcDateTime.toLocal();
-      
-      // Format for pickers
-      date = localDateTime.toFormat('MM/dd/yyyy');
-      time = localDateTime.toFormat('HH:mm');
-    }
-  }
-
+  const mine = item.player1_id === playerData.value.player.id;
   scheduleSeries.value = {
     id: item.id,
-    date: date,
-    time: time
+    ...(item.date_time ? pickerParts(item.date_time, userTimezone) : { date: null, time: '' }),
+    opponent: mine ? item.player2 : item.player1,
   };
-
   scheduleDialog.value = true;
 };
 
@@ -548,43 +547,7 @@ const closeSchedule = () => {
 const saveSchedule = async () => {
   scheduleSavingId.value = scheduleSeries.value.id;
   try {
-    let utcDateTime = null;
-    if (scheduleSeries.value.date && scheduleSeries.value.time) {
-      let year, month, day, hour, minute;
-      
-      // Handle date: could be a Date object or string (MM/DD/YYYY)
-      if (scheduleSeries.value.date instanceof Date) {
-        year = scheduleSeries.value.date.getFullYear();
-        month = scheduleSeries.value.date.getMonth() + 1;
-        day = scheduleSeries.value.date.getDate();
-      } else if (typeof scheduleSeries.value.date === 'string' && scheduleSeries.value.date.includes('/')) {
-        [month, day, year] = scheduleSeries.value.date.split('/');
-        month = parseInt(month);
-        day = parseInt(day);
-        year = parseInt(year);
-      }
-      
-      // Handle time: could be a Date object or string (HH:mm)
-      if (scheduleSeries.value.time instanceof Date) {
-        hour = scheduleSeries.value.time.getHours();
-        minute = scheduleSeries.value.time.getMinutes();
-      } else if (typeof scheduleSeries.value.time === 'string' && scheduleSeries.value.time.includes(':')) {
-        [hour, minute] = scheduleSeries.value.time.split(':');
-        hour = parseInt(hour);
-        minute = parseInt(minute);
-      }
-      
-      if (year && month && day !== undefined && hour !== undefined && minute !== undefined) {
-        // Create datetime in user's local timezone
-        const localDateTime = DateTime.local(year, month, day, hour, minute);
-        
-        // Convert to UTC
-        const utcDateTimeObj = localDateTime.toUTC();
-        
-        // Format as required by backend: "YYYY-MM-DD HH:mm:ss" (without 'Z')
-        utcDateTime = utcDateTimeObj.toFormat('yyyy-MM-dd HH:mm:ss');
-      }
-    }
+    const utcDateTime = chosen.value?.toUTC().toFormat('yyyy-MM-dd HH:mm:ss') ?? null;
 
     const formData = new FormData();
     if (utcDateTime) formData.append('date_time', utcDateTime);

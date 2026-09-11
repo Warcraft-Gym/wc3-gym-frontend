@@ -629,14 +629,9 @@ const headerStats = computed(() => [
 ]);
 
 // ─── Race display helpers ─────────────────────────────────────────────────────
-const raceColors = {
-    HU: '#1565C0',     // blue
-    OC: '#C62828',     // red
-    UD: '#6A1B9A',     // purple
-    NE: '#2E7D32',     // green
-    RANDOM: '#F9A825', // yellow
-};
-const getRaceColor = race => raceColors[race] || '#607D8B';
+// Random is not a race, so it and any unknown race take the neutral draw colour
+const raceTokens = { HU: 'race-hu', OC: 'race-oc', UD: 'race-ud', NE: 'race-ne' };
+const getRaceColor = race => `rgb(var(--v-theme-${raceTokens[race] || 'draw'}))`;
 const getRaceName = race => raceWrapper.getRaceObject(race)?.name || race;
 
 // ─── Rank medal ───────────────────────────────────────────────────────────────

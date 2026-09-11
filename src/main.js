@@ -77,6 +77,10 @@ const vuetify = new createVuetify ({
                     'tier-4': '#AE7C00',
                     'tier-5': '#008F99',
                     'tier-6': '#8B48CF',
+                    'race-hu': '#1689A6',
+                    'race-oc': '#D06D69',
+                    'race-ne': '#086A12',
+                    'race-ud': '#7546BA',
                 },
                 variables: {
                     'border-color': '#1A241E',
@@ -122,6 +126,10 @@ const vuetify = new createVuetify ({
                     'tier-4': '#BE8A00',
                     'tier-5': '#16A3A6',
                     'tier-6': '#A574E6',
+                    'race-hu': '#02809C',
+                    'race-oc': '#BA4C4B',
+                    'race-ne': '#44AB46',
+                    'race-ud': '#9B6FE4',
                     // Vuetify picks white on these mid-tone fills, which is under 3.4:1; ink is 4.75:1 or more
                     'on-error': '#1A241E',
                     'on-info': '#1A241E',

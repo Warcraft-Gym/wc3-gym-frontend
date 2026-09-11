@@ -32,7 +32,7 @@
         <v-row>
           <v-col v-for="item in maps" :key="item.id" cols="12" sm="6" md="4" lg="3">
             <v-card variant="outlined">
-              <v-img :src="item.image" :aspect-ratio="3 / 2" cover class="bg-grey-darken-3">
+              <v-img :src="item.image" :aspect-ratio="3 / 2" cover class="bg-band">
                 <v-chip v-if="item.shortname" class="shortname" size="small" label>{{ item.shortname }}</v-chip>
               </v-img>
               <v-card-item>
@@ -51,8 +51,8 @@
 
       <!-- Enhanced Empty State -->
       <v-card-text v-else class="text-center pa-8">
-        <v-icon size="64" color="grey-lighten-1">mdi-map-outline</v-icon>
-        <div class="text-h6 text-grey mt-4 mb-2">No maps found</div>
+        <v-icon size="64" class="text-disabled">mdi-map-outline</v-icon>
+        <div class="text-h6 text-medium-emphasis mt-4 mb-2">No maps found</div>
         <p class="text-medium-emphasis mb-4">Get started by adding your first map</p>
         <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">
           Add First Map
@@ -68,7 +68,7 @@
           {{ isEditing ? `Edit Map: ${selectedMap.name}` : 'Add New Map' }}
         </v-card-title>
 
-        <v-alert v-if="formError" type="error" variant="tonal" border="start" border-color="red" class="mx-4 my-2" closable @click:close="formError = null">
+        <v-alert v-if="formError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="formError = null">
           {{ formError }}
         </v-alert>
 
@@ -279,7 +279,7 @@ onMounted(() => {
 <style scoped>
 .map-thumb {
   display: block;
-  background: #263238;
+  background: rgb(var(--v-theme-band));
   border-radius: 3px;
   overflow: hidden;
 }

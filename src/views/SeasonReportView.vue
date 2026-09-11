@@ -38,7 +38,7 @@
         type="error"
         variant="tonal"
         border="start"
-        border-color="red"
+        border-color="error"
         class="mt-3"
         closable
         @click:close="errorMessage = null"
@@ -50,8 +50,8 @@
 
   <!-- Empty state -->
   <div v-if="!reportReady && !isLoading" class="empty-state">
-    <v-icon size="80" color="grey-lighten-1">mdi-chart-box-outline</v-icon>
-    <p class="text-grey mt-4 text-h6">Select a season to generate the report</p>
+    <v-icon size="80" class="text-disabled">mdi-chart-box-outline</v-icon>
+    <p class="text-medium-emphasis mt-4 text-h6">Select a season to generate the report</p>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -63,11 +63,11 @@
     <div class="report-hero">
       <div class="report-hero-overlay" />
       <v-container class="report-hero-content">
-        <div class="text-overline text-white mb-1" style="opacity: 0.8;">Season Report</div>
-        <div class="text-h3 font-weight-bold text-white mb-6">{{ season.name }}</div>
+        <div class="text-overline text-on-band mb-1" style="opacity: 0.8;">Season Report</div>
+        <div class="text-h3 font-weight-bold text-on-band mb-6">{{ season.name }}</div>
         <div class="hero-stats-row">
           <div v-for="stat in headerStats" :key="stat.label" class="hero-stat-card">
-            <v-icon :icon="stat.icon" size="24" color="white" class="mb-1" style="opacity:0.9" />
+            <v-icon :icon="stat.icon" size="24" color="on-band" class="mb-1" style="opacity:0.9" />
             <div class="hero-stat-value">{{ stat.value }}</div>
             <div class="hero-stat-label">{{ stat.label }}</div>
           </div>
@@ -80,7 +80,7 @@
       <!-- ── Team Standings ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('standings') }">
         <div class="section-title" @click="toggle('standings')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-trophy</v-icon>
+          <v-icon color="primary" class="mr-2">mdi-trophy</v-icon>
           Team Standings
           <v-icon class="ml-2 no-print">{{ collapsed.has('standings') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
@@ -150,7 +150,7 @@
       <!-- ── Player Leaderboard ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('leaderboard') }">
         <div class="section-title" @click="toggle('leaderboard')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-account-star</v-icon>
+          <v-icon color="primary" class="mr-2">mdi-account-star</v-icon>
           Player Leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('leaderboard') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
@@ -226,7 +226,7 @@
       <!-- ── Race Performance ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('races') }">
         <div class="section-title" @click="toggle('races')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-sword-cross</v-icon>
+          <v-icon color="primary" class="mr-2">mdi-sword-cross</v-icon>
           Race Performance
           <v-icon class="ml-2 no-print">{{ collapsed.has('races') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
@@ -264,20 +264,20 @@
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value text-success font-weight-bold">{{ raceEntry.wins }}</span>
+                  <span class="race-stat-value text-win font-weight-bold">{{ raceEntry.wins }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
                   <span class="text-caption text-medium-emphasis">Series Lost</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.games > 0 ? Math.round((raceEntry.losses / raceEntry.games) * 100) : 0"
-                      color="error"
+                      color="loss"
                       height="10"
                       rounded
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value text-error">{{ raceEntry.losses }}</span>
+                  <span class="race-stat-value text-loss">{{ raceEntry.losses }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
                   <span class="text-caption text-medium-emphasis">Total Points</span>
@@ -321,7 +321,7 @@
       <!-- ── Ladder Activity ── -->
       <div v-if="heatRows.length" class="report-section mb-6" :class="{ collapsed: collapsed.has('ladder') }">
         <div class="section-title" @click="toggle('ladder')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-podium</v-icon>
+          <v-icon color="primary" class="mr-2">mdi-podium</v-icon>
           Ladder Activity
           <v-icon class="ml-2 no-print">{{ collapsed.has('ladder') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
@@ -390,7 +390,7 @@
       <!-- ── Fantasy Leaderboard ── -->
       <div v-if="sortedFantasyTeams.length > 0" class="report-section mb-6" :class="{ collapsed: collapsed.has('fantasy') }">
         <div class="section-title" @click="toggle('fantasy')">
-          <v-icon color="amber-darken-2" class="mr-2">mdi-cards</v-icon>
+          <v-icon color="primary" class="mr-2">mdi-cards</v-icon>
           Fantasy League Leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('fantasy') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
@@ -438,7 +438,7 @@
                 <td class="text-center d-none d-md-table-cell">{{ ft.race_points ?? '–' }}</td>
                 <td class="text-center d-none d-md-table-cell">{{ ft.bet_points ?? '–' }}</td>
                 <td class="text-center">
-                  <v-chip color="amber-darken-2" size="small" class="font-weight-bold">
+                  <v-chip color="primary" size="small" class="font-weight-bold">
                     {{ ft.total_points ?? 0 }}
                   </v-chip>
                 </td>
@@ -794,14 +794,14 @@ const dayTicks = computed(() => {
 /* ── Hero header ──────────────────────────────────────────────────────────── */
 .report-hero {
   position: relative;
-  background: linear-gradient(135deg, #1a237e 0%, #283593 40%, #1565C0 100%);
+  background: rgb(var(--v-theme-band));
   padding: 3rem 0 2.5rem;
   overflow: hidden;
 }
 .report-hero-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at top right, rgba(255,255,255,0.08) 0%, transparent 60%);
+  background: radial-gradient(ellipse at top right, rgba(var(--v-theme-on-band), 0.08) 0%, transparent 60%);
   pointer-events: none;
 }
 .report-hero-content {
@@ -816,8 +816,8 @@ const dayTicks = computed(() => {
   flex-wrap: wrap;
 }
 .hero-stat-card {
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(var(--v-theme-on-band), 0.12);
+  border: 1px solid rgba(var(--v-theme-on-band), 0.18);
   border-radius: 12px;
   padding: 1rem 1.5rem;
   text-align: center;
@@ -827,7 +827,7 @@ const dayTicks = computed(() => {
 .hero-stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: rgb(var(--v-theme-on-band));
   line-height: 1;
   margin-bottom: 0.25rem;
 }
@@ -835,7 +835,7 @@ const dayTicks = computed(() => {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(255,255,255,0.75);
+  color: rgb(var(--v-theme-band-muted));
 }
 
 /* ── Report body ──────────────────────────────────────────────────────────── */
@@ -930,7 +930,7 @@ const dayTicks = computed(() => {
 .heat-cell {
   height: 12px;
   border-radius: 2px;
-  background: #1867C0;
+  background: rgb(var(--v-theme-primary));
 }
 .heat-legend {
   display: flex;
@@ -945,7 +945,7 @@ const dayTicks = computed(() => {
   width: 14px;
   height: 10px;
   border-radius: 2px;
-  background: #1867C0;
+  background: rgb(var(--v-theme-primary));
 }
 .day-chart {
   position: relative;
@@ -976,7 +976,7 @@ const dayTicks = computed(() => {
 .day-bar {
   flex: 1;
   min-width: 4px;
-  background: #1867C0;
+  background: rgb(var(--v-theme-primary));
   border-radius: 1px 1px 0 0;
 }
 .day-ticks {
@@ -1036,7 +1036,7 @@ const dayTicks = computed(() => {
   /* Card shadows become borders for print */
   .v-card {
     box-shadow: none !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
   }
 
   /* Avoid breaking sections across pages */

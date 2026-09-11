@@ -46,7 +46,7 @@
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-clipboard-alert</v-icon>
         Series
-        <v-chip class="ml-3" size="small" color="white" variant="outlined" closable @click:close="unscoredOnly = false">No result</v-chip>
+        <v-chip class="ml-3" size="small" color="on-primary" variant="outlined" closable @click:close="unscoredOnly = false">No result</v-chip>
       </v-card-title>
       <v-card-text class="pa-0">
         <GroupedTable :columns="unscoredColumns" :groups="unscoredGroups" default-open empty="Every series of this season has a result">
@@ -75,7 +75,7 @@
       <v-tabs
         v-model="selectedWeek"
         bg-color="primary"
-        slider-color="white"
+        slider-color="on-primary"
         show-arrows
         @update:modelValue="fetchMatches"
       >
@@ -178,7 +178,7 @@
               <v-col cols="2" class="text-center">
                 <div class="vs-section">
                   <v-icon size="40" color="primary">mdi-sword-cross</v-icon>
-                  <div class="text-caption mt-2 text-grey">{{ roundLabel(roundOf(match.playday)) }}</div>
+                  <div class="text-caption mt-2 text-medium-emphasis">{{ roundLabel(roundOf(match.playday)) }}</div>
                 </div>
               </v-col>
 
@@ -222,8 +222,8 @@
 
     <!-- Empty State -->
     <v-card v-else elevation="0" class="text-center pa-8">
-      <v-icon size="64" color="grey-lighten-1">mdi-calendar-blank</v-icon>
-      <div class="text-h6 mt-4 text-grey">No matches scheduled for Round {{ selectedWeek }}</div>
+      <v-icon size="64" class="text-disabled">mdi-calendar-blank</v-icon>
+      <div class="text-h6 mt-4 text-medium-emphasis">No matches scheduled for Round {{ selectedWeek }}</div>
       <v-btn 
         color="primary" 
         variant="tonal" 
@@ -289,11 +289,11 @@
                       </v-chip>
                     </v-col>
                     <v-col cols="6" class="text-left">
-                      <div class="text-grey">Against:</div>
+                      <div class="text-medium-emphasis">Against:</div>
                       <div class="font-weight-bold">{{ team.seasons_info[0].points_against }}</div>
                     </v-col>
                     <v-col cols="6" class="text-right">
-                      <div class="text-grey">Available:</div>
+                      <div class="text-medium-emphasis">Available:</div>
                       <div class="font-weight-bold">{{ team.seasons_info[0].points_available }}</div>
                     </v-col>
                   </v-row>
@@ -594,9 +594,9 @@ const availableTeams = computed(() => {
 
 // Helper to get score color
 const getScoreColor = (score, opponentScore) => {
-  if (score > opponentScore) return 'success';
-  if (score < opponentScore) return 'error';
-  return 'grey';
+  if (score > opponentScore) return 'win';
+  if (score < opponentScore) return 'loss';
+  return 'draw';
 };
 
 // Helper to get map name
@@ -799,7 +799,7 @@ onMounted(async () => {
   /* Header Styles */
   #seasonHeader {
     position: relative;
-    color: white;
+    color: rgb(var(--v-theme-on-band));
   }
   
   .banner-image {
@@ -812,12 +812,12 @@ onMounted(async () => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+    background: linear-gradient(to bottom, rgba(var(--v-theme-band), 0.3), rgba(var(--v-theme-band), 0.6));
     z-index: 1;
   }
 
   .season-title {
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 2px 2px 8px rgba(var(--v-theme-band), 0.8);
     letter-spacing: 1px;
   }
 

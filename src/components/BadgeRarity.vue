@@ -9,11 +9,11 @@
     <v-card-text class="pt-0 pb-2">
       <div class="tiles">
         <div v-for="tile in shown" :key="tile.id" class="tile">
-          <AchievementIcon :id="tile.id" :size="22" class="text-amber-darken-2 mr-2" />
+          <AchievementIcon :id="tile.id" :size="22" class="text-primary mr-2" />
           <div class="text">
             <div class="d-flex align-baseline" style="gap: 6px">
               <span class="text-body-2 font-weight-medium name">{{ tile.name }}</span>
-              <span class="text-body-2 text-amber-darken-2">+{{ tile.points }}</span>
+              <span class="text-body-2 text-primary-text">+{{ tile.points }}</span>
             </div>
             <div class="share"><span class="fill" :style="{ width: `${100 * tile.share}%` }" /></div>
             <div class="text-caption text-medium-emphasis">{{ tile.caption }}</div>
@@ -75,6 +75,6 @@ const shown = computed(() => (showAll.value ? tiles.value : tiles.value.slice(0,
 .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* One hue: the width is the share of players who earned it */
 .share { height: 4px; margin: 4px 0 2px; background: rgba(var(--v-theme-on-surface), 0.08); border-radius: 2px; }
-.fill { display: block; height: 100%; background: rgb(var(--v-theme-warning)); border-radius: 0 2px 2px 0; min-width: 0; }
+.fill { display: block; height: 100%; background: rgb(var(--v-theme-primary)); border-radius: 0 2px 2px 0; min-width: 0; }
 .toggle { cursor: pointer; width: fit-content; }
 </style>

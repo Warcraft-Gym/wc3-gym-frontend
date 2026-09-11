@@ -49,7 +49,7 @@
                   <v-list-item v-bind="props">
                     <template #prepend>
                       <v-icon v-if="item.raw.is_active" color="success">mdi-check-circle</v-icon>
-                      <v-icon v-else color="grey">mdi-circle-outline</v-icon>
+                      <v-icon v-else class="text-medium-emphasis">mdi-circle-outline</v-icon>
                     </template>
                   </v-list-item>
                 </template>
@@ -78,11 +78,11 @@
 
           <v-row v-if="selectedEvent">
             <v-col cols="12" md="4">
-              <div class="text-subtitle-2 text-grey">Event Date</div>
+              <div class="text-subtitle-2 text-medium-emphasis">Event Date</div>
               <div class="mt-2">{{ formatEventDate(selectedEvent.event_date) }}</div>
             </v-col>
             <v-col cols="12" md="4">
-              <div class="text-subtitle-2 text-grey">Bracket Thresholds</div>
+              <div class="text-subtitle-2 text-medium-emphasis">Bracket Thresholds</div>
               <div class="mt-2">
                 <div><strong>Bracket 1:</strong> &lt; {{ selectedEvent.bracket_1_threshold }} MMR</div>
                 <div><strong>Bracket 2:</strong> {{ selectedEvent.bracket_1_threshold }} - {{ selectedEvent.bracket_2_threshold - 1 }} MMR</div>
@@ -90,7 +90,7 @@
               </div>
             </v-col>
             <v-col cols="12" md="4">
-              <div class="text-subtitle-2 text-grey">Total Signups</div>
+              <div class="text-subtitle-2 text-medium-emphasis">Total Signups</div>
               <div class="text-h4 mt-2">{{ activeSignups.length }}</div>
             </v-col>
           </v-row>
@@ -117,7 +117,7 @@
       <v-row>
         <v-col v-for="bracket in [1, 2, 3]" :key="bracket" cols="12" md="4">
           <v-card elevation="2" class="bracket-card">
-            <v-card-title :class="`bg-${getBracketColor(bracket)} text-white`">
+            <v-card-title class="bg-primary">
               <v-icon class="mr-2">mdi-trophy</v-icon>
               Bracket {{ bracket }}
             </v-card-title>
@@ -132,14 +132,14 @@
               <!-- Kings Section -->
               <div v-if="kings[bracket] && kings[bracket].length > 0" class="mb-4 pa-3 king-section">
                 <div class="d-flex align-center mb-2">
-                  <v-icon color="warning" class="mr-2">mdi-crown</v-icon>
+                  <v-icon color="primary" class="mr-2">mdi-crown</v-icon>
                   <span class="text-subtitle-2 font-weight-bold">King{{ kings[bracket].length > 1 ? 's' : '' }}</span>
                 </div>
                 <div v-for="king in kings[bracket]" :key="king.id" class="king-item pa-2 mb-2">
                   <div class="d-flex align-center justify-space-between">
                     <div class="flex-grow-1">
                       <PlayerName class="font-weight-bold" :player="{ name: king.twitch_username || king.battle_tag, country: king.country }" :race="king.race" />
-                      <div class="text-caption text-grey">{{ king.mmr }} MMR</div>
+                      <div class="text-caption text-medium-emphasis">{{ king.mmr }} MMR</div>
                     </div>
                     <v-btn size="small" variant="tonal" color="error" @click="removeKing(king.id)" title="Remove King">
                       <v-icon>mdi-close-circle</v-icon>
@@ -148,8 +148,8 @@
                 </div>
               </div>
               <div v-else class="text-center pa-3 mb-4 no-king-section">
-                <v-icon size="32" color="grey-lighten-1">mdi-crown-outline</v-icon>
-                <div class="text-caption text-grey mt-1">No King Yet</div>
+                <v-icon size="32" class="text-disabled">mdi-crown-outline</v-icon>
+                <div class="text-caption text-medium-emphasis mt-1">No King Yet</div>
               </div>
               
               <v-divider class="my-3"></v-divider>
@@ -171,18 +171,18 @@
                     :key="signup.id"
                     class="d-flex align-center justify-space-between race-row"
                   >
-                    <span class="text-caption text-grey d-flex align-center ga-1">
+                    <span class="text-caption text-medium-emphasis d-flex align-center ga-1">
                       <RaceIcon v-if="signup.race" :raceIdentifier="signup.race" />
                       {{ signup.mmr }} MMR
                     </span>
                     <div class="d-flex gap-1">
-                      <v-btn icon="mdi-crown" size="x-small" variant="tonal" color="warning" @click="setAsKing(signup.id)" title="Make King"></v-btn>
+                      <v-btn icon="mdi-crown" size="x-small" variant="tonal" color="primary" @click="setAsKing(signup.id)" title="Make King"></v-btn>
                       <v-btn icon="mdi-delete" size="x-small" variant="tonal" color="error" @click="deleteSignup(signup.id)" title="Remove from bracket"></v-btn>
                     </div>
                   </div>
                 </div>
               </div>
-              <div v-else class="text-center pa-4 text-grey-lighten-1">
+              <div v-else class="text-center pa-4 text-disabled">
                 <v-icon size="40">mdi-account-off</v-icon>
                 <div class="text-caption mt-2">No players signed up</div>
               </div>
@@ -193,9 +193,9 @@
     </template>
 
     <div v-else class="text-center pa-8">
-      <v-icon size="80" color="grey-lighten-1">mdi-trophy-outline</v-icon>
-      <div class="text-h5 mt-4 text-grey">No Event Selected</div>
-      <div class="text-body-2 text-grey mt-2">Create or select an event to manage brackets and players</div>
+      <v-icon size="80" class="text-disabled">mdi-trophy-outline</v-icon>
+      <div class="text-h5 mt-4 text-medium-emphasis">No Event Selected</div>
+      <div class="text-body-2 text-medium-emphasis mt-2">Create or select an event to manage brackets and players</div>
       <v-btn color="primary" variant="elevated" class="mt-4" prepend-icon="mdi-plus" @click="openCreateEventDialog">
         Create Event
       </v-btn>
@@ -338,17 +338,17 @@
     <!-- Delete Event Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="500px" persistent>
       <v-card>
-        <v-card-title class="bg-error text-white">
-          <v-icon class="mr-2" color="white">mdi-alert</v-icon>
+        <v-card-title class="bg-error text-on-error">
+          <v-icon class="mr-2">mdi-alert</v-icon>
           Confirm Delete Event
         </v-card-title>
         
         <v-card-text class="pt-4">
           <p class="text-h6 mb-2">Are you sure you want to delete this event?</p>
-          <p class="text-body-2 text-grey">
+          <p class="text-body-2 text-medium-emphasis">
             This will permanently delete:
           </p>
-          <ul class="text-body-2 text-grey mt-2">
+          <ul class="text-body-2 text-medium-emphasis mt-2">
             <li>Event: <strong>{{ selectedEvent?.name }}</strong></li>
             <li>All signups ({{ activeSignups.length }})</li>
           </ul>
@@ -653,11 +653,6 @@ async function saveSignup() {
   }
 }
 
-function getBracketColor(bracket) {
-  const colors = { 1: 'success', 2: 'info', 3: 'warning' };
-  return colors[bracket] || 'grey';
-}
-
 function formatEventDate(dateString) {
   if (!dateString) return 'Not set';
   return DateTime.fromISO(dateString, { zone: 'UTC' }).toFormat('ccc, LLL d, yyyy');
@@ -676,8 +671,8 @@ function formatEventDate(dateString) {
 }
 
 .king-section {
-  background-color: rgba(255, 193, 7, 0.1);
-  border-left: 4px solid #FFC107;
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  border-left: 4px solid rgb(var(--v-theme-primary));
   border-radius: 4px;
 }
 

@@ -44,7 +44,7 @@
     <v-card v-if="ladder && !ladder.total_games" elevation="2">
       <v-card-text class="text-center pa-8">
         <W3CIcon :size="64" style="opacity: 0.35" />
-        <div class="text-h6 text-grey mt-4 mb-2">No ladder games synced for {{ seasonName }}</div>
+        <div class="text-h6 text-medium-emphasis mt-4 mb-2">No ladder games synced for {{ seasonName }}</div>
         <p class="text-medium-emphasis mb-4">Sync the season to fetch its W3Champions matches</p>
         <v-btn
           variant="elevated"
@@ -208,7 +208,7 @@
             <template v-slot:[`item.name`]="{ item }">
               <PlayerName :player="item">
                 <span v-if="!item.synced_at" class="d-inline-flex">
-                  <v-icon size="x-small" color="amber-darken-2">mdi-sync-alert</v-icon>
+                  <v-icon size="x-small" color="warning">mdi-sync-alert</v-icon>
                   <v-tooltip activator="parent" location="top">not fully synced</v-tooltip>
                 </span>
               </PlayerName>

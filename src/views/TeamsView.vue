@@ -81,8 +81,8 @@
 
           <template #no-data>
             <div class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-1">mdi-shield-off</v-icon>
-              <div class="text-h6 mt-4 text-grey">No teams found</div>
+              <v-icon size="64" class="text-disabled">mdi-shield-off</v-icon>
+              <div class="text-h6 mt-4 text-medium-emphasis">No teams found</div>
               <v-btn
                 color="primary"
                 variant="tonal"
@@ -107,7 +107,7 @@
           {{ isEditing ? `Edit Team: ${selectedTeam?.name ?? ''}` : 'Add Team' }}
         </v-card-title>
 
-        <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="formError = ''">
+        <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="error" closable @click:close="formError = ''">
           {{ formError }}
         </v-alert>
 

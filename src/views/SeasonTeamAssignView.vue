@@ -84,7 +84,7 @@
                   <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.signup_race)">
                     <v-tooltip>
                       <template #activator="{ props }">
-                        <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
+                        <v-icon v-bind="props" small color="error">mdi-alert</v-icon>
                       </template>
                       <span>No W3C stats found for {{ item.signup_race }}</span>
                     </v-tooltip>
@@ -92,7 +92,7 @@
                   <template v-else-if="hasLowGamesTwoSeasons(item, currentW3CSeason, item.signup_race)">
                     <v-tooltip>
                       <template #activator="{ props }">
-                        <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
+                        <v-icon v-bind="props" small color="warning">mdi-alert</v-icon>
                       </template>
                       <span>Less than 20 games ({{ getW3CGamesCount(item, currentW3CSeason, item.signup_race) }} games) for {{ item.signup_race }}</span>
                     </v-tooltip>
@@ -101,12 +101,12 @@
                     <v-icon small class="text--secondary">mdi-sync</v-icon>
                   </template>
                   <template v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'success'">
-                    <v-icon small color="green">mdi-check-circle</v-icon>
+                    <v-icon small color="success">mdi-check-circle</v-icon>
                   </template>
                   <template v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'skipped'">
                     <v-tooltip>
                       <template #activator="{ props }">
-                        <v-icon v-bind="props" small color="grey">mdi-clock-outline</v-icon>
+                        <v-icon v-bind="props" small class="text-medium-emphasis">mdi-clock-outline</v-icon>
                       </template>
                       <span>Synced in the last 10 minutes</span>
                     </v-tooltip>
@@ -114,7 +114,7 @@
                   <template v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'error'">
                     <v-tooltip>
                       <template #activator="{ props }">
-                        <v-icon v-bind="props" small color="red">mdi-alert-circle</v-icon>
+                        <v-icon v-bind="props" small color="error">mdi-alert-circle</v-icon>
                       </template>
                       <span>{{ perPlayerSyncStatus[item.id].message || 'Sync failed' }}</span>
                     </v-tooltip>
@@ -271,7 +271,7 @@
                           <template v-if="!hasW3CStatsTwoSeasons(p, currentW3CSeason, p.signup_race)">
                             <v-tooltip>
                               <template #activator="{ props }">
-                                <v-icon v-bind="props" small color="red">mdi-alert</v-icon>
+                                <v-icon v-bind="props" small color="error">mdi-alert</v-icon>
                               </template>
                               <span>No W3C stats found for {{ p.signup_race }}</span>
                             </v-tooltip>
@@ -279,7 +279,7 @@
                           <template v-else-if="hasLowGamesTwoSeasons(p, currentW3CSeason, p.signup_race)">
                             <v-tooltip>
                               <template #activator="{ props }">
-                                <v-icon v-bind="props" small color="orange">mdi-alert</v-icon>
+                                <v-icon v-bind="props" small color="warning">mdi-alert</v-icon>
                               </template>
                               <span>Less than 20 games ({{ getW3CGamesCount(p, currentW3CSeason, p.signup_race) }} games) for {{ p.signup_race }}</span>
                             </v-tooltip>
@@ -288,12 +288,12 @@
                             <v-icon small class="text--secondary">mdi-sync</v-icon>
                           </template>
                           <template v-else-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'success'">
-                            <v-icon small color="green">mdi-check-circle</v-icon>
+                            <v-icon small color="success">mdi-check-circle</v-icon>
                           </template>
                           <template v-else-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'skipped'">
                             <v-tooltip>
                               <template #activator="{ props }">
-                                <v-icon v-bind="props" small color="grey">mdi-clock-outline</v-icon>
+                                <v-icon v-bind="props" small class="text-medium-emphasis">mdi-clock-outline</v-icon>
                               </template>
                               <span>Synced in the last 10 minutes</span>
                             </v-tooltip>
@@ -301,7 +301,7 @@
                           <template v-else-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'error'">
                             <v-tooltip>
                               <template #activator="{ props }">
-                                <v-icon v-bind="props" small color="red">mdi-alert-circle</v-icon>
+                                <v-icon v-bind="props" small color="error">mdi-alert-circle</v-icon>
                               </template>
                               <span>{{ perPlayerSyncStatus[p.id].message || 'Sync failed' }}</span>
                             </v-tooltip>
@@ -316,7 +316,7 @@
                             class="table-action ma-0 pa-0"
                             icon
                             density="compact"
-                            color="red"
+                            color="error"
                             @click.stop.prevent="removePlayerFromTeam(team.id, p.id)"
                             :disabled="isRemoveLoading(team.id, p.id)"
                             :loading="isRemoveLoading(team.id, p.id)"

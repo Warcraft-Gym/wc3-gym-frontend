@@ -134,10 +134,10 @@
               <AchievementChip :badges="row.achievements" />
             </td>
             <td class="text-right font-weight-bold">{{ row.points }}</td>
-            <td class="text-right text-green">{{ row.wins }}</td>
-            <td class="text-right text-red">{{ row.losses }}</td>
+            <td class="text-right text-win">{{ row.wins }}</td>
+            <td class="text-right text-loss">{{ row.losses }}</td>
             <td class="text-right">{{ row.mmr?.current ?? '\u2014' }}</td>
-            <td class="text-right d-none d-md-table-cell" :class="ladderMmrDiff(row) > 0 ? 'text-green' : ladderMmrDiff(row) < 0 ? 'text-red' : ''">
+            <td class="text-right d-none d-md-table-cell" :class="ladderMmrDiff(row) > 0 ? 'text-win' : ladderMmrDiff(row) < 0 ? 'text-loss' : ''">
               <span v-if="ladderMmrDiff(row) == null">&mdash;</span>
               <span v-else>{{ ladderMmrDiff(row) > 0 ? `+${ladderMmrDiff(row)}` : ladderMmrDiff(row) }}</span>
             </td>
@@ -237,8 +237,8 @@
 
       <!-- Enhanced Empty State -->
       <v-card-text v-else class="text-center pa-8">
-        <v-icon size="64" color="grey-lighten-1">mdi-account-off</v-icon>
-        <div class="text-h6 text-grey mt-4 mb-2">No players found</div>
+        <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
+        <div class="text-h6 text-medium-emphasis mt-4 mb-2">No players found</div>
         <p class="text-medium-emphasis mb-4">Add players to this team to get started</p>
         <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewPlayerModal = true">
           Add First Player

@@ -861,7 +861,7 @@ const dayTicks = computed(() => {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgba(var(--v-theme-on-surface), 0.6) !important;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity)) !important;
 }
 .standings-first {
   background: rgba(var(--v-theme-primary), 0.06);
@@ -903,7 +903,7 @@ const dayTicks = computed(() => {
   grid-template-columns: 46px repeat(7, minmax(0, 1fr));
   gap: 2px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 .heat-day {
   text-align: center;
@@ -925,7 +925,7 @@ const dayTicks = computed(() => {
   gap: 6px;
   margin-top: 10px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 .heat-swatch {
   display: inline-block;
@@ -949,7 +949,7 @@ const dayTicks = computed(() => {
   right: 0;
   top: 2px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
   background: rgb(var(--v-theme-surface));
   padding-left: 4px;
 }
@@ -970,7 +970,7 @@ const dayTicks = computed(() => {
   display: flex;
   margin-top: 6px;
   font-size: 0.6875rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
 
 /* ── Race cards ───────────────────────────────────────────────────────────── */

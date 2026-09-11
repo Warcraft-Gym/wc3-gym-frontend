@@ -1,3 +1,5 @@
+import { seasonAction } from './events.mjs';
+
 // Each flag the country picker offers, to its main zone; a multi-zone country takes its most populous one
 export const COUNTRY_ZONE = {
   AD: 'Europe/Andorra', AE: 'Asia/Dubai', AF: 'Asia/Kabul', AG: 'America/Antigua', AI: 'America/Anguilla',
@@ -67,10 +69,9 @@ export function startZone(browserZone, country) {
   return zone ? { zone, fallback: 'country' } : { zone: 'UTC', fallback: 'utc' };
 }
 
-// What /signup shows for the current season: signup, request, over or joined
-export function signupState(season, signedUp) {
-  if (season?.phase === 'complete') return 'over';
-  if (signedUp) return 'joined';
-  if (!season) return 'signup'; // no current season: the form saves the profile only
-  return season.phase === 'open' && (season.signups_open ?? true) ? 'signup' : 'request';
+// What /signup shows: the home page's action, joined, over, or a profile-only form for a member with no users row
+export function signupState(season, signedUp, hasProfile) {
+  const action = seasonAction(season);
+  if (action) return signedUp ? 'joined' : action;
+  return season?.phase === 'complete' && hasProfile ? 'over' : 'profile';
 }

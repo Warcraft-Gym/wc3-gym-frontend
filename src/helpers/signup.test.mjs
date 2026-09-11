@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { withExtras } from './countries.mjs';
+import { seasonAction } from './events.mjs';
 import { COUNTRY_ZONE, signupState, startZone } from './signup.mjs';
 
 const base = createRequire(import.meta.url)('country-code-info/data/countries.json');
@@ -35,17 +36,31 @@ test('every country the flag picker offers has a zone the browser accepts', () =
 });
 
 test('the season phase and its signups_open switch pick the state', () => {
-  assert.equal(signupState({ phase: 'open' }, false), 'signup'); // signups_open absent reads as true
-  assert.equal(signupState({ phase: 'open', signups_open: true }, false), 'signup');
-  assert.equal(signupState({ phase: 'open', signups_open: false }, false), 'request');
-  assert.equal(signupState({ phase: 'commenced', signups_open: true }, false), 'request');
-  assert.equal(signupState({ phase: 'overdue' }, false), 'request');
-  assert.equal(signupState({ phase: 'complete', signups_open: true }, false), 'over');
-  assert.equal(signupState(null, false), 'signup');
+  assert.equal(signupState({ phase: 'open' }, false, true), 'signup'); // signups_open absent reads as true
+  assert.equal(signupState({ phase: 'open', signups_open: true }, false, true), 'signup');
+  assert.equal(signupState({ phase: 'open', signups_open: false }, false, true), 'request');
+  assert.equal(signupState({ phase: 'commenced', signups_open: true }, false, true), 'request');
+  assert.equal(signupState({ phase: 'overdue' }, false, true), 'request');
+  assert.equal(signupState({ phase: 'complete', signups_open: true }, false, true), 'over');
+});
+
+test('a member with no users row can save a profile when no season takes a signup', () => {
+  assert.equal(signupState({ phase: 'complete' }, false, false), 'profile');
+  assert.equal(signupState(null, false, false), 'profile');
+  assert.equal(signupState(null, false, true), 'profile');
 });
 
 test('a signed-up player sees the entry until the season is over', () => {
-  assert.equal(signupState({ phase: 'open' }, true), 'joined');
-  assert.equal(signupState({ phase: 'commenced' }, true), 'joined');
-  assert.equal(signupState({ phase: 'complete' }, true), 'over');
+  assert.equal(signupState({ phase: 'open' }, true, true), 'joined');
+  assert.equal(signupState({ phase: 'commenced' }, true, true), 'joined');
+  assert.equal(signupState({ phase: 'complete' }, true, true), 'over');
+});
+
+test('/signup offers the same action as the home page for every season', () => {
+  const seasons = [{ phase: 'open' }, { phase: 'open', signups_open: false }, { phase: 'open', signups_open: true },
+    { phase: 'commenced', signups_open: false }, { phase: 'overdue' }, { phase: 'complete' }];
+  for (const season of seasons) {
+    const state = signupState(season, false, true);
+    assert.equal(seasonAction(season), ['signup', 'request'].includes(state) ? state : null, JSON.stringify(season));
+  }
 });

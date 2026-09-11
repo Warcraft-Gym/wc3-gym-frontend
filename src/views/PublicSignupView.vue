@@ -9,7 +9,7 @@
     <v-card elevation="2">
       <v-card-title class="bg-primary text-wrap">
         <v-icon class="mr-2">mdi-clipboard-account</v-icon>
-        {{ seasonName ? `Signup for Season: ${seasonName}` : 'Player Registration' }}
+        {{ seasonName && state !== 'profile' ? `Signup for Season: ${seasonName}` : 'Player Registration' }}
       </v-card-title>
       <v-card-text class="pt-4">
         <div v-if="loading">Loading...</div>
@@ -36,7 +36,6 @@
             <dd>{{ zoneLabel(entry.timezone) || '—' }}</dd>
           </dl>
           <v-btn variant="outlined" prepend-icon="mdi-pencil" @click="editing = true">Change my details</v-btn>
-          <v-alert v-if="saved" type="success" variant="tonal" density="compact" class="mt-4">Your details are saved.</v-alert>
           <v-card v-if="schedulingEnabled" variant="tonal" color="primary" class="mt-6" to="/player-dashboard">
             <v-card-item prepend-icon="mdi-calendar-remove" append-icon="mdi-chevron-right">
               <v-card-title class="text-wrap">Mark the rounds you cannot play</v-card-title>
@@ -146,6 +145,7 @@
           <v-alert type="warning" v-if="closedMessage" class="mt-4">{{ closedMessage }}</v-alert>
           <v-alert type="error" v-if="submitError" class="mt-4">Error: {{ submitError }}</v-alert>
         </div>
+        <v-alert v-if="saved" type="success" variant="tonal" density="compact" class="mt-4">Your details are saved.</v-alert>
       </v-card-text>
     </v-card>
   </v-container>
@@ -203,12 +203,12 @@ const { seasons } = storeToRefs(seasonStore);
 
 const season = computed(() => seasons.value.find(x => String(x.id) === String(selectedSignupSeasonId.value)) ?? null);
 const seasonName = computed(() => season.value?.name || '');
-const state = computed(() => signupState(season.value, !!me.value?.signed_up));
+const state = computed(() => signupState(season.value, !!me.value?.signed_up, !!me.value?.user));
 const schedulingEnabled = computed(() => season.value?.scheduling_enabled ?? true);
 const entry = computed(() => me.value?.user);
 const submitLabel = computed(() => {
   if (editing.value) return 'Save my details';
-  return state.value === 'request' ? 'Ask to join' : 'Complete signup';
+  return { request: 'Ask to join', profile: 'Save my profile' }[state.value] ?? 'Complete signup';
 });
 const raceName = (id) => raceWrapper.getRaceObject(id)?.name ?? id;
 
@@ -271,15 +271,15 @@ async function onSubmit() {
     };
     const created = await fetchWrapper.post(`${backendUrl}/signup`, payload);
 
-    // a signed-up player's edit is a profile save, whatever the season now takes
-    if (created?.signup === 'closed' && !me.value?.signed_up) {
+    // only a season action can be refused; an edit or a profile-only save is saved whatever the season takes
+    if (created?.signup === 'closed' && ['signup', 'request'].includes(state.value)) {
       success.value = true;
       closedMessage.value = created.message;
       return;
     }
-    // the fresh users row and signup turn the page into the signed-up view
-    saved.value = editing.value;
+    // the fresh users row and signup turn the page into the signed-up view, which confirms itself
     await authStore.fetchMe();
+    saved.value = editing.value || state.value !== 'joined';
     editing.value = false;
   } catch (err) {
     submitError.value = (err && err.message) || (err && err.error) || String(err);

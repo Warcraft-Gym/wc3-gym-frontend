@@ -103,18 +103,6 @@
 
                 <v-col cols="12" md="6">
                   <v-switch
-                    v-model="settingsMap.signups_enabled"
-                    color="primary"
-                    label="Player Signups Enabled"
-                    hint="Off closes signups for every season; a commenced season is closed anyway"
-                    hide-details="auto"
-                    true-value="true"
-                    false-value="false"
-                  ></v-switch>
-                </v-col>
-
-                <v-col cols="12" md="6">
-                  <v-switch
                     v-model="settingsMap.fantasy_team_creation_enabled"
                     color="primary"
                     label="Fantasy Team Creation Enabled"
@@ -370,7 +358,7 @@
           <v-card-text class="pt-4">
             <ul>
               <li><strong>Database Storage:</strong> Settings are stored in the database and persist across backend restarts.</li>
-              <li><strong>Public Access Toggles:</strong> Enable/disable player signups and fantasy team creation independently.</li>
+              <li><strong>Public Access Toggles:</strong> Enable/disable fantasy team creation. Player signups open and close per season on the Seasons page.</li>
               <li><strong>Discord IDs:</strong> Role and channel IDs can be found by enabling Developer Mode in Discord and right-clicking on roles/channels.</li>
               <li><strong>Current GNL Season:</strong> The current season is used for public player signups, fantasy team registration, and all league operations.</li>
               <li><strong>W3Champions:</strong> The W3C season and URL are used for fetching player statistics and MMR data.</li>
@@ -419,7 +407,6 @@ const settingsMap = ref({
   w3c_url: '',
   current_gnl_season: '',
   score_system: 'standard',
-  signups_enabled: 'false',
   fantasy_team_creation_enabled: 'false',
   fantasy_fixed_bet_points: 'false',
   fantasy_bet_points_value: '',
@@ -449,8 +436,7 @@ const fetchSettings = async () => {
           settingsMap.value[setting.key] = parseInt(setting.value, 10);
         } 
         // Keep boolean settings as strings "true"/"false" for v-switch
-        else if (setting.key === 'signups_enabled' || 
-                 setting.key === 'fantasy_team_creation_enabled' || 
+        else if (setting.key === 'fantasy_team_creation_enabled' ||
                  setting.key === 'fantasy_fixed_bet_points') {
           settingsMap.value[setting.key] = setting.value || 'false';
         }

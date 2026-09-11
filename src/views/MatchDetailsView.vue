@@ -12,6 +12,7 @@
   <div id="matchHeader">
     <v-parallax class="banner-image" :src="bannerImg" height="250">
       <div class="banner-overlay"></div>
+      <v-theme-provider theme="dark"><!-- the band is dark in both themes, so its chips read the dark tokens -->
       <v-container class="fill-height banner-content">
         <v-row align="center" class="fill-height">
           <!-- Match Info Column -->
@@ -54,6 +55,7 @@
           </v-col>
         </v-row>
       </v-container>
+      </v-theme-provider>
     </v-parallax>
   </div>
 

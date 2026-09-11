@@ -257,7 +257,7 @@ const applyCaptain = () => {
             </v-main>
         </v-defaults-provider>
         <v-footer v-if="showBar" class="justify-end text-caption py-1" color="transparent">
-            <RouterLink to="/credits" class="text-grey text-decoration-none">Credits</RouterLink>
+            <RouterLink to="/credits" class="text-medium-emphasis text-decoration-none">Credits</RouterLink>
         </v-footer>
     </v-app>
 </template>

@@ -43,7 +43,7 @@
           </template>
 
           <template #[`item.source`]="{ item }">
-            <v-chip :color="item.source === 'env' ? 'grey' : 'primary'" variant="tonal" size="small">
+            <v-chip :color="item.source === 'env' ? undefined : 'primary'" variant="tonal" size="small">
               {{ item.source === 'env' ? 'Environment' : 'App' }}
             </v-chip>
           </template>
@@ -56,8 +56,8 @@
 
           <template #no-data>
             <div class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-1">mdi-account-off-outline</v-icon>
-              <div class="text-h6 mt-4 text-grey">No admins granted yet</div>
+              <v-icon size="64" class="text-disabled">mdi-account-off-outline</v-icon>
+              <div class="text-h6 mt-4 text-medium-emphasis">No admins granted yet</div>
             </div>
           </template>
         </v-data-table>
@@ -71,7 +71,7 @@
           Add Admin
         </v-card-title>
 
-        <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="red" class="mx-4 my-2" closable @click:close="dialogError = null">
+        <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="dialogError = null">
           {{ dialogError }}
         </v-alert>
 

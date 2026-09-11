@@ -76,7 +76,7 @@ onMounted(() => {
           <span>Documentation</span>
         </div>
         <v-btn
-          color="white"
+          color="surface"
           variant="elevated"
           prepend-icon="mdi-refresh"
           @click="fetchMarkdown"
@@ -97,7 +97,6 @@ onMounted(() => {
 <style>
 /* GitHub Flavored Markdown Styles */
 .markdown-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   color: rgb(var(--v-theme-on-surface));

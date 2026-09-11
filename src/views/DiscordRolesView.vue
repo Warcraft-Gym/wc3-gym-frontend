@@ -139,7 +139,7 @@
           <span v-else class="text-medium-emphasis">&mdash;</span>
         </template>
         <template #[`item.members`]="{ item }">
-          <span :class="{ 'text-orange-darken-2 font-weight-medium': item.binding && item.binding.holders !== item.members }">{{ item.members }}</span>
+          <span :class="{ 'text-warning font-weight-medium': item.binding && item.binding.holders !== item.members }">{{ item.members }}</span>
         </template>
         <template #[`item.state`]="{ item }">
           <v-btn-toggle v-if="item.binding && !item.handManaged" :model-value="item.state" mandatory density="compact" variant="outlined" divided @update:model-value="setSynced(item.binding, $event === 'managed')">
@@ -194,8 +194,8 @@
 
           <template #no-data>
             <div class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-1">mdi-check-circle-outline</v-icon>
-              <div class="text-h6 mt-4 text-grey">Every account matches the database</div>
+              <v-icon size="64" class="text-disabled">mdi-check-circle-outline</v-icon>
+              <div class="text-h6 mt-4 text-medium-emphasis">Every account matches the database</div>
             </div>
           </template>
         </v-data-table>
@@ -211,7 +211,7 @@
           Who holds {{ picker.roleName }}?
         </v-card-title>
 
-        <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="red" class="mx-4 my-2" closable @click:close="dialogError = null">
+        <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="dialogError = null">
           {{ dialogError }}
         </v-alert>
 
@@ -437,7 +437,7 @@ const teamName = (id) => {
 const guildRole = (id) => guildRoles.value.find(r => r.id === id);
 const bindingFor = (id) => bindings.value.find(b => b.discord_role === id);
 const roleName = (id) => guildRole(id)?.name ?? id;
-const roleDot = (role) => (role.color ? (role.color.startsWith('#') ? role.color : `#${role.color}`) : '#9e9e9e');
+const roleDot = (role) => (role.color ? (role.color.startsWith('#') ? role.color : `#${role.color}`) : 'rgba(var(--v-theme-on-surface), var(--v-disabled-opacity))');
 // Within one season a group is unique by kind and team, so a binding that follows the current season still matches
 const groupKey = (group) => `${group.kind}:${group.team_id ?? ''}`;
 

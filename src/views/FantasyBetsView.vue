@@ -293,7 +293,7 @@
   <!-- Delete Confirmation Dialog -->
   <v-dialog v-model="deleteDialog" max-width="400px">
     <v-card>
-      <v-card-title class="bg-error text-white">
+      <v-card-title class="bg-error text-on-error">
         <v-icon class="mr-2">mdi-alert</v-icon>
         Confirm Delete
       </v-card-title>
@@ -462,10 +462,10 @@ const winnerRace = (bet) => {
 };
 
 const getBetResultColor = (result) => {
-  if (!result || result === 'PENDING') return 'grey';
+  if (!result || result === 'PENDING') return 'secondary';
   if (result === 'WIN') return 'win';
   if (result === 'LOSS') return 'loss';
-  return 'grey';
+  return 'secondary';
 };
 
 const fetchData = async () => {

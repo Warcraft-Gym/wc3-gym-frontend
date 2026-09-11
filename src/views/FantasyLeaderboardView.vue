@@ -10,7 +10,7 @@
       </v-col>
     </v-row>
 
-    <v-alert v-if="errorMessage" type="error" variant="tonal" border="start" border-color="red" class="mb-4" closable>
+    <v-alert v-if="errorMessage" type="error" variant="tonal" border="start" border-color="error" class="mb-4" closable>
       {{ errorMessage }}
     </v-alert>
 
@@ -252,8 +252,8 @@
   <!-- Delete Confirmation Dialog -->
   <v-dialog v-model="deleteDialog" max-width="500px">
     <v-card>
-      <v-card-title class="bg-error text-white">
-        <v-icon class="mr-2" color="white">mdi-alert</v-icon>
+      <v-card-title class="bg-error text-on-error">
+        <v-icon class="mr-2" color="on-error">mdi-alert</v-icon>
         Confirm Delete
       </v-card-title>
       <v-card-text class="pt-4">
@@ -389,10 +389,9 @@ const sortedTeams = computed(() => {
 });
 
 const getRankColor = (rank) => {
-  if (rank === 1) return 'gold';
-  if (rank === 2) return 'silver';
-  if (rank === 3) return '#CD7F32'; // bronze
-  return 'grey';
+  if (rank === 1) return 'primary';
+  if (rank <= 3) return 'secondary';
+  return undefined;
 };
 
 const fetchData = async () => {

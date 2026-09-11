@@ -7,7 +7,7 @@
         <strong>Team Points Details</strong>
         <span class="ml-2 text-medium-emphasis">{{ breakdown.team_breakdown.team_name }}</span>
         <v-spacer></v-spacer>
-        <v-chip color="red" size="small">{{ breakdown.totals.team_points }} points</v-chip>
+        <v-chip color="primary" size="small">{{ breakdown.totals.team_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <v-table density="compact" class="narrow">
@@ -43,7 +43,7 @@
         <strong>Grind Points Details</strong>
         <span class="ml-2 text-medium-emphasis">{{ breakdown.grind_breakdown.team_name }}</span>
         <v-spacer></v-spacer>
-        <v-chip color="teal" size="small">{{ breakdown.totals.grind_points }} points</v-chip>
+        <v-chip color="primary" size="small">{{ breakdown.totals.grind_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <v-table density="compact" class="narrow">
@@ -78,9 +78,9 @@
         <span class="mr-2 d-inline-flex"><RaceIcon :raceIdentifier="breakdown.race_breakdown.race" size="24" /></span>
         <strong>Race Points Details</strong>
         <span class="ml-2 text-medium-emphasis">{{ raceName }} · {{ breakdown.race_breakdown.season_stats.wins }}W - {{ breakdown.race_breakdown.season_stats.losses }}L</span>
-        <v-chip class="ml-2" size="x-small" variant="tonal" color="purple">#{{ raceRank }} of {{ raceRanking.length }}</v-chip>
+        <v-chip class="ml-2" size="x-small" variant="tonal" color="primary">#{{ raceRank }} of {{ raceRanking.length }}</v-chip>
         <v-spacer></v-spacer>
-        <v-chip color="purple" size="small">{{ breakdown.totals.race_points }} points</v-chip>
+        <v-chip color="primary" size="small">{{ breakdown.totals.race_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <v-table density="compact" class="narrow">
@@ -104,11 +104,11 @@
                 <v-chip v-if="week.rank" :color="week.rank === 1 ? 'success' : week.rank === 2 ? 'info' : 'warning'" size="x-small">
                   #{{ week.rank }}
                 </v-chip>
-                <span v-else class="text-grey">-</span>
+                <span v-else class="text-medium-emphasis">-</span>
               </td>
               <td class="text-right">
                 <strong v-if="week.points_awarded > 0">+{{ week.points_awarded }}</strong>
-                <span v-else class="text-grey">0</span>
+                <span v-else class="text-medium-emphasis">0</span>
               </td>
             </tr>
           </tbody>
@@ -119,11 +119,11 @@
     <!-- Player Points Breakdown: the drafted roster; a row opens the player's rounds -->
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon class="mr-2" color="blue">mdi-account-multiple</v-icon>
+        <v-icon class="mr-2" color="primary">mdi-account-multiple</v-icon>
         <strong>Player Points Details</strong>
         <v-spacer></v-spacer>
-        <v-chip color="blue" size="small">{{ breakdown.totals.player_points }} points</v-chip>
-        <v-chip color="orange-darken-2" size="small" class="ml-1">{{ breakdown.totals.bench_points }} bench points</v-chip>
+        <v-chip color="primary" size="small">{{ breakdown.totals.player_points }} points</v-chip>
+        <v-chip color="warning" size="small" class="ml-1">{{ breakdown.totals.bench_points }} bench points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <GroupedTable :columns="playerColumns" :groups="roster" empty="No drafted players">
@@ -133,7 +133,7 @@
             <td class="text-right">{{ row.mmr || 'N/A' }}</td>
             <td class="text-right">{{ row.record }}</td>
             <td class="text-right">{{ row.total }}</td>
-            <td class="text-right text-orange-darken-2">{{ row.bench ? `+${row.bench}` : 0 }}</td>
+            <td class="text-right text-warning">{{ row.bench ? `+${row.bench}` : 0 }}</td>
             <td class="text-right"><strong>{{ row.total + row.bench }}</strong></td>
           </template>
           <template #rows="{ group: row }">
@@ -157,17 +157,17 @@
                 <td></td>
                 <td>
                   <span class="week-label text-medium-emphasis">Round {{ week.week }}</span>
-                  <span v-if="week.bench_points > 0" class="text-orange-darken-2">
+                  <span v-if="week.bench_points > 0" class="text-warning">
                     <v-icon size="small">mdi-seat</v-icon> Benched
                   </span>
-                  <span v-else class="text-grey">No games</span>
+                  <span v-else class="text-medium-emphasis">No games</span>
                 </td>
                 <td></td>
                 <td></td>
                 <td></td>
                 <td class="text-right">
-                  <span v-if="week.bench_points > 0" class="text-orange-darken-2">+{{ week.bench_points }}</span>
-                  <span v-else class="text-grey">0</span>
+                  <span v-if="week.bench_points > 0" class="text-warning">+{{ week.bench_points }}</span>
+                  <span v-else class="text-medium-emphasis">0</span>
                 </td>
                 <td></td>
               </tr>
@@ -180,7 +180,7 @@
     <!-- Bet Points Breakdown -->
     <v-expansion-panel v-if="breakdown.bet_breakdown.length > 0">
       <v-expansion-panel-title>
-        <BetIcon size="24" class="mr-2 text-green" />
+        <BetIcon size="24" class="mr-2 text-primary" />
         <strong>Bet Points Details</strong>
         <v-spacer></v-spacer>
         <v-chip :color="breakdown.totals.bet_points >= 0 ? 'win' : 'loss'" size="small">{{ breakdown.totals.bet_points }} points</v-chip>
@@ -205,7 +205,7 @@
                     <span :class="{ winner: side === bet.actual_winner }">
                       <PlayerName :player="resolve(side)" :race="resolve(side).signup_race" />
                     </span>
-                    <BetIcon v-if="side === bet.bet_on" class="text-green" />
+                    <BetIcon v-if="side === bet.bet_on" class="text-primary" />
                   </template>
                 </div>
                 <span v-else>{{ bet.series }}</span>

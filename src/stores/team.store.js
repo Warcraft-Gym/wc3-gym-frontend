@@ -39,6 +39,9 @@ export const useTeamStore = defineStore({
         async getTeam(team_id) {
             return await fetchWrapper.get(`${backendUrl}/teams/${team_id}`);
         },
+        async getTeamsSeasonBasic(season_id) {
+            return await fetchWrapper.get(`${backendUrl}/teams/season/${season_id}/basic`);
+        },
         async getTeamDetailsSeason(team_id, season_id) {
             return await fetchWrapper.get(`${backendUrl}/teams/${team_id}/seasons/${season_id}`);
         },

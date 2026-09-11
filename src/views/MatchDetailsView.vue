@@ -610,7 +610,7 @@
               <v-col cols="12" sm="6">
                 <SimpleTimePicker
                   v-model="selectedTime"
-                  label="Scheduled Time"
+                  :label="`Scheduled Time (${adminZone})`"
                 />
               </v-col>
               <v-col cols="12" sm="6">
@@ -1059,6 +1059,7 @@ import { seasonSlug } from '@/helpers/season-slug.mjs';
 import { ref, onMounted, computed, provide } from 'vue';
 import { panelLinks } from '@/helpers/players';
 import { DateTime } from "luxon";
+import { pickedInstant, pickerParts, storedUtc, viewerZone, zoneLabel } from '@/helpers/timezone.mjs';
 import { useAuthStore, useAvailabilityStore, useMatchStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useDisplay } from 'vuetify';
@@ -1261,6 +1262,11 @@ const selectedSeries = ref(null);
 const hostPlayers = ref(null);
 const selectedDate = ref(null);
 const selectedTime = ref(null);
+// the admin's own zone, offset taken at the picked time
+const adminZone = computed(() => zoneLabel(
+  viewerZone(), viewerZone(),
+  selectedDate.value && selectedTime.value ? pickedInstant(selectedDate.value, selectedTime.value) : null,
+));
 const creationSeriesError = ref(null);
 const updateSeriesError = ref('');
 
@@ -1362,10 +1368,10 @@ const formateDate = ( dateToFormat ) => {
   if (!dateToFormat) {
     return dateToFormat;
   }
-  // Backend stores UTC, convert to ET for display
+  // stored UTC, read in the reader's zone; the season page carries the year
   const formatedDate = DateTime.fromISO(dateToFormat, { zone: 'UTC' })
-    .setZone('America/New_York')
-    .toLocaleString({ month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });  // the season page carries the year
+    .toLocal()
+    .toLocaleString({ month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'shortOffset' });
   return formatedDate
 }
 
@@ -1581,17 +1587,9 @@ const editSeries = async (seriesItem) => {
   updateSeriesError.value = '';
   selectedSeries.value = copy_series;
   if (copy_series.date_time) {
-    // Backend stores UTC, convert to ET for display in date picker
-    const initialDateTime = DateTime.fromISO(copy_series.date_time, { zone: 'UTC' })
-      .setZone('America/New_York');
-    
-    // Create date in local timezone but with ET date/time values (no conversion)
-    selectedDate.value = new Date(
-      initialDateTime.year,
-      initialDateTime.month - 1,
-      initialDateTime.day
-    );
-    selectedTime.value = initialDateTime.toFormat("HH:mm"); // Time only
+    const { date, time } = pickerParts(copy_series.date_time);
+    selectedDate.value = date;
+    selectedTime.value = time;
   }
 
   hostPlayers.value = [copy_series.player1, copy_series.player2];
@@ -1631,20 +1629,7 @@ const updateSeries = async () => {
   try{
     // Only process date/time if both are provided
     if (selectedDate.value && selectedTime.value) {
-      // Get date components from the local date picker (which shows ET values)
-      const year = selectedDate.value.getFullYear();
-      const month = selectedDate.value.getMonth() + 1; // getMonth() is 0-indexed
-      const day = selectedDate.value.getDate();
-      
-      // Parse user input as ET timezone, then convert to UTC for backend
-      const etDateTime = DateTime.fromISO(
-        `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${selectedTime.value}`, 
-        { zone: "America/New_York" }
-      );
-      
-      // Convert to UTC and format as ISO string without 'Z' (backend expects this format)
-      const utcDateTime = etDateTime.toUTC();
-      selectedSeries.value.date_time = utcDateTime.toFormat("yyyy-MM-dd'T'HH:mm:ss");
+      selectedSeries.value.date_time = storedUtc(selectedDate.value, selectedTime.value);
     } else {
       // If date/time not set, ensure it's null
       selectedSeries.value.date_time = null;

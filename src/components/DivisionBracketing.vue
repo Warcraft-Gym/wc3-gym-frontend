@@ -16,10 +16,10 @@
         y="16"
         text-anchor="middle"
         class="band-name"
-        :fill="colors[i]"
+        :style="fill(colors[i])"
       >{{ name }} · {{ counts[i] }}</text>
       <g v-for="(g, i) in ghosts" :key="`ghost-${i}`">
-        <rect :x="g.left" :y="top - 2" :width="g.width" :height="axisY - top + 2" :fill="g.color" fill-opacity="0.3" />
+        <rect :x="g.left" :y="top - 2" :width="g.width" :height="axisY - top + 2" :style="fill(g.color)" fill-opacity="0.3" />
         <line :x1="g.at" :x2="g.at" :y1="top - 2" :y2="axisY" class="ghost-line" />
       </g>
       <g ref="axisEl" class="axis" :transform="`translate(0,${axisY})`" />
@@ -29,7 +29,7 @@
         :cx="x(p.mmr)"
         :cy="p.cy"
         :r="R"
-        :fill="colors[p.band]"
+        :style="fill(colors[p.band])"
         :class="{ pinned: p.pinned }"
       >
         <title>{{ p.label }} · {{ p.mmr }}</title>
@@ -42,7 +42,7 @@
         :y="top - 7"
         text-anchor="middle"
         class="ghost-text"
-        :fill="g.color"
+        :style="fill(g.color)"
       >was {{ g.was }}</text>
       <g v-for="(c, i) in cuts" :key="i" class="cut">
         <rect v-if="!compact" :x="x(c) - GRAB" :y="boxY(i) + 24" :width="2 * GRAB" :height="axisY + 12 - boxY(i) - 24" class="grab" />
@@ -97,12 +97,13 @@ const props = defineProps({
   players: { type: Array, required: true }, // [{ id, label, mmr, band, pinned }]
   cuts: { type: Array, required: true }, // ascending, one per boundary
   names: { type: Array, required: true }, // one per band, ascending
-  colors: { type: Array, required: true }, // one per band, ascending
+  colors: { type: Array, required: true }, // theme colour names, one per band, ascending
   domain: { type: Array, required: true }, // [low, high] MMR
   stored: { type: Array, default: () => [] }, // the cuts the last Apply wrote, to show what moved
   disabled: { type: Boolean, default: false }, // the cuts are shown but cannot move
 });
 const emit = defineEmits(['update:cuts']);
+const fill = (name) => ({ fill: `rgb(var(--v-theme-${name}))` }); // svg fill takes no theme class
 
 const PAD = 28; // keeps the first and last axis label inside the svg
 const R = 4.4;

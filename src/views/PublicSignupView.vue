@@ -7,80 +7,99 @@
     </v-row>
 
     <v-card elevation="2">
-      <v-card-title class="bg-primary">
+      <v-card-title class="bg-primary text-wrap">
         <v-icon class="mr-2">mdi-clipboard-account</v-icon>
         {{ seasonName ? `Signup for Season: ${seasonName}` : 'Player Registration' }}
       </v-card-title>
       <v-card-text class="pt-4">
         <div v-if="loading">Loading...</div>
-        <div v-else>
-          <v-alert
-            v-if="alreadySignedUp"
-            type="warning"
-            variant="tonal"
-            border="start"
-            class="mb-4"
-            prominent
-          >
-            <strong>You are already signed up for this season.</strong>
-            You can update your details below and resubmit if you need to make changes.
+
+        <template v-else-if="state === 'over'">
+          <v-alert type="info" variant="tonal" border="start" class="mb-4" prominent>
+            <strong>{{ seasonName }} is over.</strong> It takes no signups and no requests.
           </v-alert>
-          <v-alert v-if="seasonClosed" type="warning" variant="tonal" border="start" class="mb-4" prominent>
+          <v-btn color="primary" variant="elevated" prepend-icon="mdi-home" to="/">Go to home</v-btn>
+        </template>
+
+        <template v-else-if="state === 'joined' && !editing">
+          <v-alert type="success" variant="tonal" border="start" class="mb-4" prominent>
+            <strong>You are signed up</strong> for {{ seasonName }}.
+          </v-alert>
+          <dl v-if="entry" class="entry mb-4">
+            <dt>Player</dt>
+            <dd><PlayerName :player="entry" /></dd>
+            <dt>BattleTag</dt>
+            <dd>{{ entry.battleTag }}</dd>
+            <dt>Race</dt>
+            <dd><RaceIcon :raceIdentifier="entry.race" size="1.2em" />{{ raceName(entry.race) }}</dd>
+            <dt>Timezone</dt>
+            <dd>{{ zoneLabel(entry.timezone) || '—' }}</dd>
+          </dl>
+          <v-btn variant="outlined" prepend-icon="mdi-pencil" @click="editing = true">Change my details</v-btn>
+          <v-alert v-if="saved" type="success" variant="tonal" density="compact" class="mt-4">Your details are saved.</v-alert>
+          <v-card v-if="schedulingEnabled" variant="tonal" color="primary" class="mt-6" to="/player-dashboard">
+            <v-card-item prepend-icon="mdi-calendar-remove" append-icon="mdi-chevron-right">
+              <v-card-title class="text-wrap">Mark the rounds you cannot play</v-card-title>
+              <v-card-subtitle>On your player dashboard</v-card-subtitle>
+            </v-card-item>
+          </v-card>
+        </template>
+
+        <div v-else>
+          <v-alert v-if="state === 'request'" type="warning" variant="tonal" border="start" class="mb-4" prominent>
             <strong>Signups for {{ seasonName }} are closed.</strong>
-            You can still save your profile. Adding you to the season is at the admins' discretion and is not guaranteed.
+            Your profile still saves, and an admin may add you. There is no guarantee.
           </v-alert>
 
           <v-alert type="info" variant="tonal" border="start" class="mb-4">
-            <div><strong>Name:</strong> The player name — choose freely (this is how players are shown in the UI).</div>
-            <div><strong>BattleTag:</strong> Your BattleNet / W3C ID in the format <code>Name#123456</code>. You can find it on your W3C profile — <a href="https://w3champions.com/" target="_blank" rel="noopener noreferrer">W3Champions</a>.</div>
-            <div><strong>Player Country:</strong> Country you live in — this helps with scheduling matches.</div>
-            <div><strong>Main race:</strong> The race you plan to play in the league. It can be changed until the league starts; after the draft changes require agreement from your team captain.</div>
-            <div><strong>Signup Race MMR:</strong> Current MMR for the selected race on W3Champions.</div>
+            Your BattleTag is your
+            <a href="https://w3champions.com/" target="_blank" rel="noopener noreferrer">W3Champions</a>
+            ID, as <code>Name#12345</code>.
           </v-alert>
           <v-form ref="formRef" @submit.prevent="onSubmit">
             <v-row :dense="true">
               <v-col cols="12" md="6">
-                <v-text-field 
-                  disabled 
-                  v-model="discordId" 
-                  label="Discord ID" 
+                <v-text-field
+                  disabled
+                  v-model="discordId"
+                  label="Discord ID"
                   variant="outlined"
                   required
                   prepend-inner-icon="mdi-identifier"
-                  readonly 
+                  readonly
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  disabled 
-                  v-model="discordTag" 
-                  label="Discord Tag" 
+                <v-text-field
+                  disabled
+                  v-model="discordTag"
+                  label="Discord Tag"
                   variant="outlined"
                   required
                   prepend-inner-icon="$discord"
-                  readonly 
+                  readonly
                 />
               </v-col>
             </v-row>
 
             <v-row :dense="true">
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="name" 
-                  label="Player name (EAShibby)" 
+                <v-text-field
+                  v-model="name"
+                  label="Player name (EAShibby)"
                   variant="outlined"
                   prepend-inner-icon="mdi-account"
-                  required 
+                  required
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field 
-                  v-model="battleTag" 
-                  label="Player BattleTag (EAShibby#12342)" 
+                <v-text-field
+                  v-model="battleTag"
+                  label="Player BattleTag (EAShibby#12342)"
                   variant="outlined"
                   prepend-inner-icon="mdi-pound"
                   :rules="battleTagRules"
-                  required 
+                  required
                 />
               </v-col>
             </v-row>
@@ -96,28 +115,35 @@
                 <v-autocomplete
                   v-model="timezone"
                   label="Timezone"
+                  prepend-inner-icon="mdi-earth"
                   :menu-props="{ scrollStrategy: 'close' }"
                   :items="timezones"
+                  :rules="[v => !!v || 'Timezone is required']"
                 />
               </v-col>
             </v-row>
 
+            <v-alert v-if="zoneWarning" type="warning" variant="tonal" density="compact" class="mb-4">
+              {{ zoneWarning }}
+            </v-alert>
+
             <v-row>
-              <v-col>
-                <v-btn 
-                  color="primary" 
+              <v-col class="d-flex align-center ga-2 flex-wrap">
+                <v-btn
+                  color="primary"
                   variant="elevated"
-                  prepend-icon="mdi-check"
-                  type="submit" 
+                  :prepend-icon="state === 'request' ? 'mdi-account-question' : 'mdi-check'"
+                  type="submit"
                   :disabled="submitting || success || !isFormValid"
                 >
-                  Complete signup
+                  {{ submitLabel }}
                 </v-btn>
-                <v-progress-circular v-if="submitting" indeterminate size="18" class="ml-2" />
+                <v-btn v-if="editing" variant="text" @click="editing = false">Cancel</v-btn>
+                <v-progress-circular v-if="submitting" indeterminate size="18" />
               </v-col>
             </v-row>
           </v-form>
-          <v-alert :type="closedMessage ? 'warning' : 'success'" v-if="success" class="mt-4">{{ closedMessage || 'Signup completed — thank you.' }}</v-alert>
+          <v-alert type="warning" v-if="closedMessage" class="mt-4">{{ closedMessage }}</v-alert>
           <v-alert type="error" v-if="submitError" class="mt-4">Error: {{ submitError }}</v-alert>
         </div>
       </v-card-text>
@@ -127,14 +153,14 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { useSeasonStore, useAuthStore } from '@/stores';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { storeToRefs } from 'pinia';
 import { findCountry } from '@/helpers/countries.js';
+import { raceWrapper } from '@/helpers/races.js';
+import { signupState, startZone } from '@/helpers/signup.mjs';
+import { viewerZone, zoneLabel } from '@/helpers/timezone.mjs';
 
-const route = useRoute();
-const router = useRouter();
 const loading = ref(true);
 
 // Form fields (match the create player dialog)
@@ -145,21 +171,46 @@ const battleTag = ref('');
 // the browser's region is the default country, e.g. en-US -> US; empty when it names no country
 const country = ref(findCountry(new Intl.Locale(navigator.language || 'en').region)?.a2 || '');
 const race = ref('');
-const timezones = Intl.supportedValuesOf('timeZone');
-const timezone = ref(Intl.DateTimeFormat().resolvedOptions().timeZone);
+// the player's own pick or saved zone; empty while the start zone applies
+const zonePick = ref('');
+const start = computed(() => startZone(viewerZone(), country.value));
+const timezone = computed({
+  get: () => zonePick.value || start.value.zone,
+  set: (zone) => { zonePick.value = zone || ''; },
+});
+const zoneWarning = computed(() => {
+  if (zonePick.value || !start.value.fallback) return '';
+  return start.value.fallback === 'country'
+    ? `Your browser gave no timezone. This is the main timezone of ${findCountry(country.value)?.name}. Check it.`
+    : 'Your browser gave no timezone and no country is chosen. This is UTC. Pick your timezone.';
+});
+// a fallback zone may be an alias the browser list does not carry, e.g. Asia/Kolkata in Chromium
+const timezones = computed(() => [...new Set([...Intl.supportedValuesOf('timeZone'), timezone.value])]);
 const selectedSignupSeasonId = ref(null);
 
 const submitting = ref(false);
 const success = ref(false);
+const saved = ref(false);
+const editing = ref(false);
 // The backend's answer when the season was not open: the profile is saved, the signup is not
 const closedMessage = ref('');
 const submitError = ref('');
-const seasonName = ref('');
-const seasonClosed = computed(() => {
-  const season = seasons.value.find(x => String(x.id) === String(selectedSignupSeasonId.value));
-  return !!season && season.phase !== 'open';
+
+const authStore = useAuthStore();
+const seasonStore = useSeasonStore();
+const { me } = storeToRefs(authStore);
+const { seasons } = storeToRefs(seasonStore);
+
+const season = computed(() => seasons.value.find(x => String(x.id) === String(selectedSignupSeasonId.value)) ?? null);
+const seasonName = computed(() => season.value?.name || '');
+const state = computed(() => signupState(season.value, !!me.value?.signed_up));
+const schedulingEnabled = computed(() => season.value?.scheduling_enabled ?? true);
+const entry = computed(() => me.value?.user);
+const submitLabel = computed(() => {
+  if (editing.value) return 'Save my details';
+  return state.value === 'request' ? 'Ask to join' : 'Complete signup';
 });
-const alreadySignedUp = ref(false);
+const raceName = (id) => raceWrapper.getRaceObject(id)?.name ?? id;
 
 const isFormValid = computed(() => {
   // require the session's discord fields and all user-provided fields
@@ -171,7 +222,7 @@ const isFormValid = computed(() => {
   const battleFormatOk = battleOk && battleTagRegex.test(String(battleTag.value));
   const countryOk = !!country.value && String(country.value).trim().length > 0;
   const raceOk = !!race.value && String(race.value).trim().length > 0;
-  return discordOk && nameOk && battleOk && countryOk && raceOk && battleFormatOk;
+  return discordOk && nameOk && battleOk && countryOk && raceOk && battleFormatOk && !!timezone.value;
 });
 
 // Vuetify field rules for immediate UI feedback
@@ -179,10 +230,6 @@ const battleTagRules = [
   v => (!!v && String(v).trim().length > 0) || 'BattleTag is required',
   v => (/^\S+#\d+$/.test(String(v || ''))) || 'BattleTag must be like Name#123456'
 ];
-
-const authStore = useAuthStore();
-const seasonStore = useSeasonStore();
-const { seasons } = storeToRefs(seasonStore);
 
 onMounted(async () => {
   loading.value = true;
@@ -196,17 +243,16 @@ onMounted(async () => {
     battleTag.value = existing.battleTag || '';
     country.value = existing.country || country.value;
     race.value = existing.race || '';
-    timezone.value = existing.timezone || timezone.value;
+    zonePick.value = existing.timezone || '';
   }
   selectedSignupSeasonId.value = authStore.me.season_id || null;
-  alreadySignedUp.value = !!authStore.me.signed_up;
   try { await seasonStore.fetchSeasons(); } catch (e) { /* ignore */ }
-  seasonName.value = seasons.value.find(x => x.id === selectedSignupSeasonId.value)?.name || '';
   loading.value = false;
 });
 
 async function onSubmit() {
   submitError.value = '';
+  saved.value = false;
   // basic client-side validation
   if (!isFormValid.value) {
     submitError.value = 'Please fill all required fields before submitting.';
@@ -215,7 +261,6 @@ async function onSubmit() {
 
   submitting.value = true;
   try {
-    // Build payload and call the new public signup endpoint which creates the user
     const payload = {
       name: name.value,
       battleTag: battleTag.value,
@@ -226,14 +271,16 @@ async function onSubmit() {
     };
     const created = await fetchWrapper.post(`${backendUrl}/signup`, payload);
 
-    // user created on backend — end-user flow is complete; they can close the page
-    success.value = true;
-    closedMessage.value = created?.signup === 'closed' ? created.message : '';
-    // the profile needs the fresh users row and signup before it can show the dashboard
-    if (!closedMessage.value) {
-      await authStore.fetchMe();
-      if (route.path === '/signup') router.push('/profile');
+    // a signed-up player's edit is a profile save, whatever the season now takes
+    if (created?.signup === 'closed' && !me.value?.signed_up) {
+      success.value = true;
+      closedMessage.value = created.message;
+      return;
     }
+    // the fresh users row and signup turn the page into the signed-up view
+    saved.value = editing.value;
+    await authStore.fetchMe();
+    editing.value = false;
   } catch (err) {
     submitError.value = (err && err.message) || (err && err.error) || String(err);
   } finally {
@@ -241,3 +288,20 @@ async function onSubmit() {
   }
 }
 </script>
+
+<style scoped>
+.entry {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 24px;
+  align-items: center;
+}
+.entry dt {
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}
+.entry dd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+</style>

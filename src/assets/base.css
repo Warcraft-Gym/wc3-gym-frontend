@@ -1,3 +1,19 @@
+/* Alegreya Sans for body and controls; numbers use lining, equal-width digits so columns line up. */
+html, body, .v-application,
+.text-subtitle-1, .text-subtitle-2, .text-body-1, .text-body-2,
+.text-button, .text-caption, .text-overline {
+  font-family: 'Alegreya Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Alegreya for titles and headings. */
+h1, h2, h3, h4, h5, h6, .v-card-title,
+.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6 {
+  font-family: Alegreya, Georgia, serif;
+  font-weight: 700;
+}
+h1, .text-h1, .text-h2, .text-h3 { font-weight: 800; }
+
 /* Show the sort icon of an unsorted sortable header at rest, not only on hover. */
 .v-data-table .v-table__wrapper > table > thead > tr > th:not(.v-data-table__th--sorted) .v-data-table-header__sort-icon,
 .v-data-table .v-table__wrapper > table tbody > tr > th:not(.v-data-table__th--sorted) .v-data-table-header__sort-icon {

@@ -60,14 +60,14 @@
   <div v-if="reportReady" id="season-report">
 
     <!-- ── Hero Header ── -->
-    <div class="report-hero">
+    <div class="report-hero on-band">
       <div class="report-hero-overlay" />
       <v-container class="report-hero-content">
-        <div class="text-overline text-on-band mb-1" style="opacity: 0.8;">Season Report</div>
-        <div class="text-h3 font-weight-bold text-on-band mb-6">{{ season.name }}</div>
+        <div class="text-overline mb-1" style="opacity: 0.8;">Season Report</div>
+        <div class="text-h3 font-weight-bold mb-6">{{ season.name }}</div>
         <div class="hero-stats-row">
           <div v-for="stat in headerStats" :key="stat.label" class="hero-stat-card">
-            <v-icon :icon="stat.icon" size="24" color="on-band" class="mb-1" style="opacity:0.9" />
+            <v-icon :icon="stat.icon" size="24" class="mb-1" style="opacity:0.9" />
             <div class="hero-stat-value">{{ stat.value }}</div>
             <div class="hero-stat-label">{{ stat.label }}</div>
           </div>

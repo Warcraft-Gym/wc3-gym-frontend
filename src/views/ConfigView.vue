@@ -233,7 +233,7 @@
                   ></v-text-field>
                 </v-col>
 
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.scheduling_channel_id"
                     label="Scheduling Channel ID"
@@ -243,13 +243,23 @@
                   ></v-text-field>
                 </v-col>
 
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.results_channel_id"
                     label="Results Channel ID"
                     hint="Where match results and replays are posted"
                     variant="outlined"
                     prepend-inner-icon="mdi-trophy-outline"
+                  ></v-text-field>
+                </v-col>
+
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="settingsMap.content_channel_id"
+                    label="Content Channel ID"
+                    hint="Where cast claims and stream reminders are posted"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-broadcast"
                   ></v-text-field>
                 </v-col>
 
@@ -421,6 +431,7 @@ const settingsMap = ref({
   dashboard_channel_id: '',
   scheduling_channel_id: '',
   results_channel_id: '',
+  content_channel_id: '',
   fantasy_dashboard_channel_id: ''
 });
 

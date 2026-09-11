@@ -1,13 +1,17 @@
-<!-- One trophy: the team's crest mounted over an engraved season plate, under a gold crown. -->
+<!-- One trophy: the team's crest, or a cup for a win with no team, over a plate that names the event, under a gold crown. -->
 <template>
-  <span class="trophy" :style="{ '--trophy-size': `${size}px` }" :title="trophy.title">
+  <span class="trophy" :style="{ '--trophy-size': `${size}px` }" :title="title">
     <v-icon class="trophy-crown" :size="Math.round(size * 0.55)">mdi-crown</v-icon>
     <img
+      v-if="trophy.team_id != null"
       class="trophy-crest"
       :src="teamImageUrl({ id: trophy.team_id, icon_url: trophy.team_icon_url })"
       :alt="trophy.team_name ?? ''"
       @error="showDefaultTeamImage"
     >
+    <span v-else class="trophy-crest trophy-cup">
+      <v-icon :size="Math.round(size * 0.62)">mdi-trophy</v-icon>
+    </span>
     <span v-if="plate" class="trophy-plate">{{ trophy.season_name }}</span>
   </span>
 </template>
@@ -23,6 +27,11 @@ const props = defineProps({
 
 // Below this the engraved season is too small to read, so the mark shows the crest alone
 const plate = computed(() => props.size >= 40);
+// e.g. "GNL S18 champion · CRIT"
+const title = computed(() => {
+  const event = `${props.trophy.season_name} champion`;
+  return props.trophy.team_name ? `${event} · ${props.trophy.team_name}` : event;
+});
 </script>
 
 <style scoped>
@@ -50,6 +59,12 @@ const plate = computed(() => props.size >= 40);
   /* most crests are dark art on black, so the rule is what gives the mark an edge */
   border: 1px solid var(--gold);
   border-bottom: 0;
+}
+.trophy-cup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
 }
 /* the crest keeps its own edge when no plate closes the object */
 .trophy:not(:has(.trophy-plate)) .trophy-crest {

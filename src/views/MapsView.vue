@@ -21,7 +21,7 @@
         <span>All maps</span>
       </v-card-title>
 
-      <v-card-text v-if="!errorMessage">
+      <v-card-text v-if="!errorMessage" class="pt-4">
         <div class="d-flex justify-end flex-wrap ga-2 mb-4">
           <v-btn variant="outlined" color="primary" @click="openImport">
             <template #prepend><W3CIcon :size="20" /></template>

@@ -116,11 +116,11 @@
         elevation="2"
         class="mb-5"
       >
-        <v-card-title class="bg-secondary d-flex align-center">
+        <v-card-title class="bg-primary d-flex align-center">
           <RaceIcon :raceIdentifier="raceIdMap[raceName]" class="mr-2" />
           <span>Playing as {{ raceName }}</span>
           <v-spacer />
-          <v-chip color="on-secondary" variant="tonal" size="small" class="mr-2">
+          <v-chip color="on-primary" variant="tonal" size="small" class="mr-2">
             {{ data.wins + data.losses }} games
           </v-chip>
           <v-chip color="win" size="small">

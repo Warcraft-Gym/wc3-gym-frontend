@@ -30,7 +30,7 @@
 
     <!-- Captain Selection Card -->
     <v-card elevation="2" class="mb-4">
-      <v-card-title class="bg-secondary d-flex align-center">
+      <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-shield-star</v-icon>
         <span>Team Captains</span>
       </v-card-title>

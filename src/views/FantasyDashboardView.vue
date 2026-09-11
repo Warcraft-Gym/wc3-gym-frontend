@@ -198,7 +198,7 @@
                     </v-card>
 
                     <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="bg-secondary text-on-secondary">
+                      <v-card-title class="bg-primary">
                         <v-icon start>mdi-account-multiple</v-icon>
                         Draft Players
                       </v-card-title>

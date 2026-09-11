@@ -63,6 +63,8 @@ const vuetify = new createVuetify ({
                     'primary-text': '#7C4912',
                     band: '#1C2420',
                     'on-band': '#F2F4ED',
+                    hero: '#1C2420',
+                    'on-hero': '#F2F4ED',
                     'band-muted': '#B9C4B6',
                     tag: '#DCE1D8',
                     'on-tag': '#3F4C43',
@@ -106,6 +108,8 @@ const vuetify = new createVuetify ({
                     'primary-text': '#E3A45F',
                     band: '#0E1210',
                     'on-band': '#F2F4ED',
+                    hero: '#332A1B',  // lighter than the page, so the hero stands out from it
+                    'on-hero': '#F2F4ED',
                     'band-muted': '#B9C4B6',
                     tag: '#2C362F',
                     'on-tag': '#C3CCC1',

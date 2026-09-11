@@ -60,7 +60,7 @@
   <div v-if="reportReady" id="season-report">
 
     <!-- ── Hero Header ── -->
-    <div class="report-hero text-on-band">
+    <div class="report-hero text-on-hero">
       <div class="report-hero-overlay" />
       <v-container class="report-hero-content">
         <div class="text-overline mb-1" style="opacity: 0.8;">Season Report</div>
@@ -794,14 +794,14 @@ const dayTicks = computed(() => {
 /* ── Hero header ──────────────────────────────────────────────────────────── */
 .report-hero {
   position: relative;
-  background: rgb(var(--v-theme-band));
+  background: rgb(var(--v-theme-hero));
   padding: 3rem 0 2.5rem;
   overflow: hidden;
 }
 .report-hero-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at top right, rgba(var(--v-theme-on-band), 0.08) 0%, transparent 60%);
+  background: radial-gradient(ellipse at top right, rgba(var(--v-theme-on-hero), 0.08) 0%, transparent 60%);
   pointer-events: none;
 }
 .report-hero-content {
@@ -816,8 +816,8 @@ const dayTicks = computed(() => {
   flex-wrap: wrap;
 }
 .hero-stat-card {
-  background: rgba(var(--v-theme-on-band), 0.12);
-  border: 1px solid rgba(var(--v-theme-on-band), 0.18);
+  background: rgba(var(--v-theme-on-hero), 0.12);
+  border: 1px solid rgba(var(--v-theme-on-hero), 0.18);
   border-radius: 12px;
   padding: 1rem 1.5rem;
   text-align: center;
@@ -827,7 +827,7 @@ const dayTicks = computed(() => {
 .hero-stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: rgb(var(--v-theme-on-band));
+  color: rgb(var(--v-theme-on-hero));
   line-height: 1;
   margin-bottom: 0.25rem;
 }

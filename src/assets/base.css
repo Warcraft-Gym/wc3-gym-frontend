@@ -100,6 +100,7 @@ h1, .text-h1, .text-h2, .text-h3 { font-weight: 800; }
 
 /* Vuetify 3.8 builds .text-X only for colours that are not on-*, so these on-* text colours need their own rule. */
 .text-on-band { color: rgb(var(--v-theme-on-band)) !important; }
+.text-on-hero { color: rgb(var(--v-theme-on-hero)) !important; }
 .text-on-primary { color: rgb(var(--v-theme-on-primary)) !important; }
 .text-on-error { color: rgb(var(--v-theme-on-error)) !important; }
 

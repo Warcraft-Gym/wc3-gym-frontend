@@ -22,7 +22,7 @@
                 </v-alert>
                 <v-btn
                     v-if="!isCallback && !isSignedIn"
-                    class="discord-btn text-none"
+                    class="discord-btn"
                     variant="flat"
                     block
                     size="large"

@@ -228,8 +228,8 @@
                       class="d-flex mb-3"
                       @update:model-value="setWinner(game, $event)"
                     >
-                      <v-btn value="A" class="flex-grow-1 text-none">{{ scoreSeries.player1_name }} won</v-btn>
-                      <v-btn value="B" class="flex-grow-1 text-none">{{ scoreSeries.player2_name }} won</v-btn>
+                      <v-btn value="A" class="flex-grow-1">{{ scoreSeries.player1_name }} won</v-btn>
+                      <v-btn value="B" class="flex-grow-1">{{ scoreSeries.player2_name }} won</v-btn>
                     </v-btn-toggle>
                     <v-select
                       :model-value="mapOf(game)"

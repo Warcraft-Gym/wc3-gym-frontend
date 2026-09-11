@@ -270,6 +270,12 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <v-switch v-model="selectedSeason.signups_open" label="Signups open" color="primary" density="comfortable" hide-details />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-switch v-model="selectedSeason.scheduling_enabled" label="Availability tools" color="primary" density="comfortable" hide-details />
+              </v-col>
+              <v-col cols="12" md="6">
                 <v-checkbox
                   v-model="selectedSeason.fantasy_grind"
                   label="Fantasy grind pick"
@@ -374,7 +380,7 @@ onMounted(async () => {
 });
 
 const addNewSeason = () => {
-  selectedSeason.value = { name: '', round_count: 0, pick_ban: '', series_per_round: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false };
+  selectedSeason.value = { name: '', round_count: 0, pick_ban: '', series_per_round: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true };
   selectedSeasonMapIds.value = [];
   formError.value = '';
   isEditing.value = false;

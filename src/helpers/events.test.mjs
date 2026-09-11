@@ -19,11 +19,22 @@ const kothEvents = [
 ];
 const view = (rows) => rows.map(({ key, action, joined }) => ({ key, action, joined }));
 
-test('the phase decides the action', () => {
-  assert.equal(seasonAction('open'), 'signup');
-  assert.equal(seasonAction('commenced'), 'request');
-  assert.equal(seasonAction('overdue'), null);
-  assert.equal(seasonAction('complete'), null);
+test('the phase and signups_open decide the action', () => {
+  assert.equal(seasonAction({ phase: 'open' }), 'signup');
+  assert.equal(seasonAction({ phase: 'open', signups_open: true }), 'signup');
+  assert.equal(seasonAction({ phase: 'open', signups_open: false }), 'request');
+  assert.equal(seasonAction({ phase: 'commenced' }), 'request');
+  assert.equal(seasonAction({ phase: 'overdue' }), 'request');
+  assert.equal(seasonAction({ phase: 'complete' }), null);
+  assert.equal(seasonAction(null), null);
+});
+
+test('the home page asks to join a current season an admin closed early or one that is overdue', () => {
+  const closed = seasons.map((season) => (season.id === 5 ? { ...season, signups_open: false } : season));
+  const rows = upcomingEvents({ seasons: closed, currentSeasonId: 5, now });
+  assert.equal(rows.find((row) => row.key === 'season:5').action, 'request');
+  assert.deepEqual(joinableEvents(rows), []);
+  assert.equal(upcomingEvents({ seasons, currentSeasonId: 7, now }).find((row) => row.key === 'season:7').action, 'request');
 });
 
 test('with S19 open as the current season, only S19 acts; S18 is information only', () => {

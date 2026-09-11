@@ -67,7 +67,7 @@
       <v-card elevation="2" class="mb-4">
         <v-card-title class="bg-primary d-flex align-center">
           <v-icon class="mr-2">mdi-trophy</v-icon>
-          <span>Team Standings</span>
+          <span>Team standings</span>
         </v-card-title>
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2" style="gap: 8px">
@@ -337,9 +337,9 @@ const allTableHeader = computed(() => [
   { title: 'Name', key: 'name', sortable: true },
   { mobile: false, title: 'Race', key: 'race', sortable: true, width: 64 },
   { mobile: false, title: 'Team', key: 'teamName', sortable: true },
-  { mobile: false, title: 'Ladder Points', key: 'ladder_points', sortable: true },
+  { mobile: false, title: 'Ladder points', key: 'ladder_points', sortable: true },
   { mobile: false, title: 'Achievements', key: 'badgePoints', sortable: true },
-  { title: 'Total Points', key: 'points', sortable: true },
+  { title: 'Total points', key: 'points', sortable: true },
   { mobile: false, title: 'Wins', key: 'wins', sortable: true },
   { mobile: false, title: 'Losses', key: 'losses', sortable: true },
   { mobile: false, title: 'MMR', key: 'mmr', sortable: true },

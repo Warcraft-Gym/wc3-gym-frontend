@@ -23,7 +23,7 @@
               <td></td>
               <td class="text-no-wrap">{{ timeOf(row.date_time) }}</td>
               <td class="text-no-wrap">
-                <RouterLink :to="`/match/${row.match_id}`">Wk {{ row.match?.playday ?? '?' }}</RouterLink>
+                <RouterLink :to="`/match/${row.match_id}`">Round {{ row.match?.playday ?? '?' }}</RouterLink>
                 <div class="text-caption text-medium-emphasis">{{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}</div>
               </td>
               <td><PlayerName :player="row.player1" :race="row.player1_race" /></td>
@@ -43,7 +43,7 @@
             <SeriesCard v-for="row in group.rows" :key="row.id" :series="row">
               <template #title>
                 {{ timeOf(row.date_time) }} ·
-                <RouterLink :to="`/match/${row.match_id}`">Wk {{ row.match?.playday ?? '?' }}</RouterLink>
+                <RouterLink :to="`/match/${row.match_id}`">Round {{ row.match?.playday ?? '?' }}</RouterLink>
               </template>
               <template #actions><CastChips :series="row" /></template>
               <template #side="{ n, won }">

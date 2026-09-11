@@ -11,7 +11,10 @@
           <div class="season-name">
             <div class="d-flex align-center flex-wrap ga-2 text-subtitle-1 font-weight-medium">
               {{ row.season.name }}
-              <v-chip size="x-small" variant="outlined" :color="STATE_COLOR[row.season.phase] ?? undefined">
+              <v-chip v-if="row.won" size="x-small" variant="outlined">
+                <v-icon start size="x-small" color="amber-darken-2">mdi-crown</v-icon>Champion
+              </v-chip>
+              <v-chip v-else size="x-small" variant="outlined" :color="STATE_COLOR[row.season.phase] ?? undefined">
                 <v-icon start size="x-small">mdi-circle</v-icon>{{ STATE[row.season.phase] ?? row.season.phase ?? '—' }}
               </v-chip>
             </div>
@@ -142,6 +145,7 @@ const rows = computed(() => {
         team: (teamStore.teams ?? []).find(t => t.id === stat?.team_id)?.name ?? null,
         series: byWeek(seriesBySeason.value[signup.id] ?? []),
         ladder: ladderBySeason.value[signup.id] ?? null,
+        won: (props.player.trophies ?? []).some(t => t.season_id === signup.id),
       };
     })
     .sort((a, b) => b.season.id - a.season.id);

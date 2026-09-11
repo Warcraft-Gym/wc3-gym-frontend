@@ -52,10 +52,9 @@
           <RaceMmrChips :player="playerData.player" :w3cSeason="currentW3CSeason" />
         </div>
         <div class="text-caption text-medium-emphasis mt-2">{{ syncCaption }}</div>
+        <PlayerTrophies :trophies="fullPlayer?.trophies" />
       </v-card-text>
     </v-card>
-
-    <PlayerTrophies v-if="!isLoading" :trophies="fullPlayer?.trophies" />
 
     <v-card v-if="!isLoading && fullPlayer" elevation="2" class="mb-6">
       <v-card-title class="bg-primary d-flex align-center">

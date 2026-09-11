@@ -4,21 +4,25 @@ import { seasonSlug } from './season-slug.mjs';
 export const seasonAction = (phase) => (phase === 'open' ? 'signup' : phase === 'commenced' ? 'request' : null);
 
 // Every event a player can still join or follow, soonest first; season and KOTH ids collide, so rows key on kind + id
-export function upcomingEvents({ seasons = [], joinedSeasonIds = [], kothEvents = [], now = new Date() }) {
+// /signup acts on /me's season only, so other seasons carry no action and an unknown (null) joined
+export function upcomingEvents({ seasons = [], currentSeasonId = null, signedUp = false, kothEvents = [], now = new Date() }) {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);  // the player's own midnight, so a KOTH night under way today stays
   const rows = [
-    ...seasons.filter((season) => seasonAction(season.phase)).map((season) => ({
-      key: `season:${season.id}`,
-      kind: 'season',
-      id: season.id,
-      name: season.name,
-      date: season.start_date ? new Date(`${season.start_date}T00:00:00Z`) : null,
-      phase: season.phase,
-      action: seasonAction(season.phase),
-      joined: joinedSeasonIds.includes(season.id),
-      slug: seasonSlug(season),
-    })),
+    ...seasons.filter((season) => seasonAction(season.phase)).map((season) => {
+      const current = season.id === currentSeasonId;
+      return {
+        key: `season:${season.id}`,
+        kind: 'season',
+        id: season.id,
+        name: season.name,
+        date: season.start_date ? new Date(`${season.start_date}T00:00:00Z`) : null,
+        phase: season.phase,
+        action: current ? seasonAction(season.phase) : null,
+        joined: current ? signedUp : null,
+        slug: seasonSlug(season),
+      };
+    }),
     ...kothEvents.filter((event) => event.is_active && new Date(event.event_date) >= today).map((event) => ({
       key: `koth:${event.id}`,
       kind: 'koth',

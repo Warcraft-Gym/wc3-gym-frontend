@@ -23,9 +23,8 @@ const { me, isAdmin } = storeToRefs(authStore);
 const isLoading = ref(true);
 const errorMessage = ref(null);
 
-// /me answers signed_up for the current season only
-const joinedSeasonIds = computed(() => (me.value?.signed_up ? [me.value.season_id] : []));
-const events = computed(() => upcomingEvents({ seasons: seasons.value, joinedSeasonIds: joinedSeasonIds.value, kothEvents: kothStore.events }));
+// /me answers signed_up for its season only, and /signup acts on that season only
+const events = computed(() => upcomingEvents({ seasons: seasons.value, currentSeasonId: me.value?.season_id, signedUp: !!me.value?.signed_up, kothEvents: kothStore.events }));
 const seasonRow = computed(() => events.value.find((row) => row.key === `season:${me.value?.season_id}`) || null);
 const currentSeason = computed(() => seasons.value.find((season) => season.id === me.value?.season_id) || null);
 const slug = computed(() => (currentSeason.value ? seasonStore.slugOf(currentSeason.value.id) : null));
@@ -170,7 +169,7 @@ onMounted(fetchHomeData);
                   <template #append>
                     <v-chip v-if="row.joined" color="success" variant="tonal" size="small" prepend-icon="mdi-check">Signed up</v-chip>
                     <v-btn v-else-if="row.action === 'signup'" color="primary" size="small" variant="tonal" :to="rowTarget(row)">Sign up</v-btn>
-                    <v-btn v-else size="small" variant="text" :to="rowTarget(row)">Ask to join</v-btn>
+                    <v-btn v-else-if="row.action === 'request'" size="small" variant="text" :to="rowTarget(row)">Ask to join</v-btn>
                   </template>
                 </v-list-item>
               </template>

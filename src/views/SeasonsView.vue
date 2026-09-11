@@ -34,7 +34,7 @@
                   />
                 </v-col>
                 <v-col cols="12" md="1" class="d-flex align-center justify-center">
-                  <span class="text-grey">OR</span>
+                  <span class="text-medium-emphasis">OR</span>
                 </v-col>
                 <v-col cols="12" md="2">
                   <v-text-field 
@@ -154,8 +154,8 @@
 
           <template #no-data>
             <div class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-1">mdi-trophy-broken</v-icon>
-              <div class="text-h6 mt-4 text-grey">No seasons found</div>
+              <v-icon size="64" class="text-disabled">mdi-trophy-broken</v-icon>
+              <div class="text-h6 mt-4 text-medium-emphasis">No seasons found</div>
               <v-btn 
                 color="primary" 
                 variant="tonal" 
@@ -180,7 +180,7 @@
           {{ isEditing ? `Edit Season: ${selectedSeason.name}` : 'Add New Season' }}
         </v-card-title>
 
-        <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="red" closable @click:close="formError = null">
+        <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="error" closable @click:close="formError = null">
           {{ formError }}
         </v-alert>
 

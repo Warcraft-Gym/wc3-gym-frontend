@@ -1,19 +1,21 @@
 <script setup>
+import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 
 import { useAuthStore } from '@/stores';
+import { profileState } from '@/helpers/profile.mjs';
 import DiscordJoinCard from '@/components/DiscordJoinCard.vue';
 import PlayerDashboardView from './PlayerDashboardView.vue';
 import PublicSignupView from './PublicSignupView.vue';
 
 const { me } = storeToRefs(useAuthStore());
+const state = computed(() => profileState(me.value));
 </script>
 
 <template>
-    <v-container v-if="me?.role === 'guest'" fluid class="pa-4 d-flex align-center justify-center" style="min-height: 80vh;">
+    <v-container v-if="state === 'guest'" fluid class="pa-4 d-flex align-center justify-center" style="min-height: 80vh;">
         <DiscordJoinCard />
     </v-container>
-    <!-- a member with no linked users row signs up before the dashboard has anything to show -->
-    <PublicSignupView v-else-if="me && !me.user" />
-    <PlayerDashboardView v-else-if="me" />
+    <PublicSignupView v-else-if="state === 'signup'" />
+    <PlayerDashboardView v-else-if="state === 'dashboard'" />
 </template>

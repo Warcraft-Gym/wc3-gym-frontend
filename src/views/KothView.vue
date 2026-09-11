@@ -117,7 +117,7 @@
       <v-row>
         <v-col v-for="bracket in [1, 2, 3]" :key="bracket" cols="12" md="4">
           <v-card elevation="2" class="bracket-card">
-            <v-card-title :class="`bg-${['secondary', 'info', 'primary'][bracket - 1]}`">
+            <v-card-title :class="`bg-${['hero', 'info', 'primary'][bracket - 1]}`">
               <v-icon class="mr-2">mdi-trophy</v-icon>
               Bracket {{ bracket }}
             </v-card-title>

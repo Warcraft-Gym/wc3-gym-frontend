@@ -36,6 +36,7 @@ authStore.useClerkAuth(clerk);
 // /me carries the role, name and avatar the nav draws
 watch([clerk.isLoaded, clerk.isSignedIn], async ([loaded, signedIn]) => {
     if (!loaded || authStore.user) return;  // the legacy admin token owns its own session
+    await router.isReady().catch(() => {});  // wait for the first navigation (route is the start location until then); a failed guard must not skip /me
     if (!signedIn) {
         authStore.clear();
         if (route.meta.role !== 'public') {

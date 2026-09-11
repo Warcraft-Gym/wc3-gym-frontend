@@ -576,26 +576,8 @@ async function deleteEvent() {
 
 async function setAsKing(signupId) {
   try {
-    // Find the signup to determine which bracket we're working with
-    const newKingSignup = signups.value.find(s => s.id === signupId);
-    if (!newKingSignup) return;
-    
-    const bracket = newKingSignup.bracket;
-    
-    // Find current king(s) in this bracket
-    const currentKings = signups.value.filter(s => s.bracket === bracket && s.is_king === 1);
-    
-    // Set the new king
     await kothStore.setKing(signupId);
-    
-    // Delete the previous king(s) from the bracket
-    for (const oldKing of currentKings) {
-      if (oldKing.id !== signupId) {
-        await kothStore.deleteSignup(oldKing.id);
-      }
-    }
-    
-    successMessage.value = 'Player set as King! Previous king removed from bracket.';
+    successMessage.value = 'Player set as King! The previous king is now inactive and can sign up again.';
     await loadEventData();
   } catch (error) {
     errorMessage.value = `Failed to set king: ${error.message}`;

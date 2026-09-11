@@ -237,20 +237,15 @@
             cols="12" sm="6" md="4"
           >
             <v-card class="race-card" elevation="2">
-              <div
-                class="race-card-header"
-                :style="{ background: getRaceColor(raceEntry.race) }"
-              >
+              <div class="race-stripe" :style="{ background: getRaceColor(raceEntry.race) }" />
+              <div class="race-card-header">
                 <div class="d-flex align-center">
                   <RaceIcon :raceIdentifier="raceEntry.race" class="mr-2" />
-                  <span class="text-white font-weight-bold text-subtitle-1">
+                  <span class="font-weight-bold text-subtitle-1">
                     {{ getRaceName(raceEntry.race) }}
                   </span>
                 </div>
-                <v-chip color="white" variant="flat" size="small" class="font-weight-bold"
-                  :style="{ color: getRaceColor(raceEntry.race) }">
-                  {{ raceEntry.players }} players
-                </v-chip>
+                <span class="text-caption text-medium-emphasis">{{ raceEntry.players }} players</span>
               </div>
               <v-card-text>
                 <div class="race-stat-row">
@@ -987,12 +982,16 @@ const dayTicks = computed(() => {
 }
 
 /* ── Race cards ───────────────────────────────────────────────────────────── */
+.race-stripe {
+  height: 4px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 .race-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-radius: 4px 4px 0 0;
 }
 .race-stat-row {
   display: flex;

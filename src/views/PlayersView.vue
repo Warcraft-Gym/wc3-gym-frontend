@@ -411,7 +411,9 @@ const clearFilters = () => {
   selectedFlags.value = [];
 };
 
-// ?season= carries the events filter across a reload and a link; no key shows every season
+// ?season= drives the events filter both ways; no key shows every season
+const readSeasonQuery = () => { selectedSeasonFilter.value = findSeason(seasons.value, route.query.season)?.id ?? null; };
+watch(() => route.query.season, readSeasonQuery);
 watch(selectedSeasonFilter, (id) => {
   const season = id ? seasonStore.slugOf(id) : undefined;
   if (route.query.season !== season) router.replace({ query: { ...route.query, season } });
@@ -424,7 +426,7 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to fetch seasons:', err);
   }
-  selectedSeasonFilter.value = findSeason(seasons.value, route.query.season)?.id ?? null;
+  readSeasonQuery();
   await load();
   currentW3CSeason.value = await resolveCurrentW3CSeason();
 });

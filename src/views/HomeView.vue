@@ -23,11 +23,8 @@ const { me, isAdmin } = storeToRefs(authStore);
 const isLoading = ref(true);
 const errorMessage = ref(null);
 
-// The seasons the player holds a signup for; /me answers the current one directly
-const joinedSeasonIds = computed(() => [
-  ...(me.value?.user?.signup_seasons || []).map((season) => season.id),
-  ...(me.value?.signed_up ? [me.value.season_id] : []),
-]);
+// /me answers signed_up for the current season only
+const joinedSeasonIds = computed(() => (me.value?.signed_up ? [me.value.season_id] : []));
 const events = computed(() => upcomingEvents({ seasons: seasons.value, joinedSeasonIds: joinedSeasonIds.value, kothEvents: kothStore.events }));
 const seasonRow = computed(() => events.value.find((row) => row.key === `season:${me.value?.season_id}`) || null);
 const currentSeason = computed(() => seasons.value.find((season) => season.id === me.value?.season_id) || null);

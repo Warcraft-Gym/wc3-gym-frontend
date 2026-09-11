@@ -6,7 +6,7 @@ export const seasonAction = (phase) => (phase === 'open' ? 'signup' : phase === 
 // Every event a player can still join or follow, soonest first; season and KOTH ids collide, so rows key on kind + id
 export function upcomingEvents({ seasons = [], joinedSeasonIds = [], kothEvents = [], now = new Date() }) {
   const today = new Date(now);
-  today.setUTCHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);  // the player's own midnight, so a KOTH night under way today stays
   const rows = [
     ...seasons.filter((season) => seasonAction(season.phase)).map((season) => ({
       key: `season:${season.id}`,

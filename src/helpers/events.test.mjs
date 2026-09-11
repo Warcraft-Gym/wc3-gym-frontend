@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import process from 'node:process';
 import { joinableEvents, seasonAction, upcomingEvents } from './events.mjs';
+
+process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
 const now = new Date('2026-09-11T12:00:00Z');
 const seasons = [
@@ -38,4 +41,13 @@ test('the popup offers only open signups the player has not taken', () => {
 test('a season with no start date sorts last', () => {
   const rows = upcomingEvents({ seasons: [{ id: 1, name: 'A', phase: 'open' }, seasons[1]], now });
   assert.deepEqual(rows.map((row) => row.id), [5, 1]);
+});
+
+test("a KOTH night keeps its row through the player's own day, not the UTC day", () => {
+  const early = new Date('2026-09-10T19:00:00Z');  // 05:00 on 11 Sep in Sydney
+  const nights = [
+    { id: 1, name: 'Last night', event_date: '2026-09-10T09:00:00Z', is_active: true },  // 19:00 on 10 Sep
+    { id: 2, name: 'Tonight so far', event_date: '2026-09-10T15:00:00Z', is_active: true },  // 01:00 on 11 Sep
+  ];
+  assert.deepEqual(upcomingEvents({ kothEvents: nights, now: early }).map((row) => row.key), ['koth:2']);
 });

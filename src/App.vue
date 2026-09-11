@@ -12,6 +12,7 @@ import w3cLogo from '@/assets/media/w3c-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 
 const authStore = useAuthStore();
+const seasonStore = useSeasonStore();
 const { me } = storeToRefs(authStore);
 const route = useRoute();
 const router = useRouter();
@@ -48,6 +49,7 @@ watch([clerk.isLoaded, clerk.isSignedIn], async ([loaded, signedIn]) => {
         await authStore.logout();
         return;
     }
+    seasonStore.ensureSeasons().catch(() => {});  // the menu links the current season by slug
     if (route.path === '/login') {
         router.push(takeReturnUrl(homePath(session.role)));
     }
@@ -85,7 +87,6 @@ const showBar = computed(() => route.meta.bar !== false && !isReadonly.value);
 const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.role);
 
 // one link tree drawn as the bar's menus on desktop and as the drawer on phones
-const seasonStore = useSeasonStore();
 const NAV = computed(() => [
     { title: 'Home', to: '/' },
     { title: 'GNL', to: '/report', items: [

@@ -182,7 +182,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="text-center pa-4 text-disabled">
+              <div v-else class="text-center pa-4 text-medium-emphasis">
                 <v-icon size="40">mdi-account-off</v-icon>
                 <div class="text-caption mt-2">No players signed up</div>
               </div>

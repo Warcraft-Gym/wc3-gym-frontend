@@ -93,7 +93,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="text-center py-4 text-disabled text-body-1">
+              <div v-else class="text-center py-4 text-medium-emphasis text-body-1">
                 No players signed up
               </div>
             </div>

@@ -7,11 +7,11 @@
     :title="opensPanel ? 'Opens in a side panel' : undefined"
     @click="opensPanel && openPlayer(player)"
   >
-    <RaceIcon v-if="race" :raceIdentifier="race" />
-    <span v-else-if="race !== undefined" class="fp race-gap" />
     <FlagIcon v-if="player.country" :countryIdentifier="player.country" />
     <span v-else class="fp" />
     <span class="name">{{ player.name }}</span>
+    <RaceIcon v-if="race" :raceIdentifier="race" />
+    <span v-else-if="race !== undefined" class="fp race-gap" />
     <v-icon v-if="opensPanel" class="panel-cue" size="16" aria-label="Opens in a side panel">mdi-dock-right</v-icon>
     <v-chip v-if="offRace" size="x-small" variant="tonal" color="warning" :title="offRaceHint">off-race</v-chip>
     <v-chip v-if="host" size="x-small" variant="tonal" color="primary">Host</v-chip>
@@ -60,7 +60,7 @@ const to = computed(() => (clickable.value && !inPanelMode ? playerPath(props.pl
   color: inherit;
   text-decoration: none;
 }
-/* A missing icon leaves an empty flag box (same size and baseline), so names line up in a column. */
+/* A missing icon leaves an empty box, so names line up in a left- or right-aligned column. */
 .race-gap { width: 1.4em; }
 .link {
   cursor: pointer;

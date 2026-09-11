@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 import { backendUrl, fetchWrapper, router } from '@/helpers';
+import { takeReturnUrl } from '@/helpers/return-url.mjs';
 
 if (!localStorage.getItem('me')) localStorage.removeItem('user');  // a pre-Clerk token has no me; it would shadow the Clerk session
 // a cached me belongs to one Clerk instance; a key change (dev to production) starts clean
@@ -19,8 +20,7 @@ export const useAuthStore = defineStore({
         user: JSON.parse(localStorage.getItem('user')),  // the legacy admin-token session only
         me: JSON.parse(localStorage.getItem('me')),
         viewAs: JSON.parse(localStorage.getItem('viewAs')),  // { role, teamId? }; an admin seeing the app as a lower role
-        loginError: null,  // why the last /me failed; the login page shows it
-        returnUrl: null
+        loginError: null  // why the last /me failed; the login page shows it
     }),
     getters: {
         isAdmin: (s) => s.me?.role === 'admin',
@@ -38,7 +38,7 @@ export const useAuthStore = defineStore({
             this.me = { role: 'admin', superadmin: true, name: 'Super Admin' };
             localStorage.setItem('user', JSON.stringify(this.user));
             localStorage.setItem('me', JSON.stringify(this.me));
-            router.push(this.returnUrl || '/');
+            router.push(takeReturnUrl('/'));
         },
         // the legacy token wins; every other session sends the Clerk session JWT
         async token() {

@@ -38,10 +38,9 @@
           <RaceMmrChips :player="player" :w3cSeason="currentW3CSeason" />
         </div>
         <div class="text-caption text-medium-emphasis mt-2">{{ syncCaption }}</div>
+        <PlayerTrophies :trophies="player.trophies" />
       </v-card-text>
     </v-card>
-
-    <PlayerTrophies :trophies="player.trophies" />
 
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">

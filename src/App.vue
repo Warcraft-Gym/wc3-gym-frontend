@@ -6,6 +6,7 @@ import { useAuth } from '@clerk/vue';
 import { useDisplay, useTheme } from 'vuetify';
 import { useAuthStore, useTeamStore } from '@/stores';
 import { canSeeRole, themeMode, setThemeMode, activeTheme } from '@/helpers';
+import { saveReturnUrl, takeReturnUrl } from '@/helpers/return-url.mjs';
 import PlayerPanel from '@/components/PlayerPanel.vue';
 import w3cLogo from '@/assets/media/w3c-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
@@ -36,7 +37,10 @@ watch([clerk.isLoaded, clerk.isSignedIn], async ([loaded, signedIn]) => {
     if (!loaded || authStore.user) return;  // the legacy admin token owns its own session
     if (!signedIn) {
         authStore.clear();
-        if (route.meta.role !== 'public') router.push('/login');
+        if (route.meta.role !== 'public') {
+            saveReturnUrl(route.fullPath);
+            router.push('/login');
+        }
         return;
     }
     const session = await authStore.fetchMe().catch((e) => { authStore.loginError = e.message; return null; });
@@ -45,7 +49,7 @@ watch([clerk.isLoaded, clerk.isSignedIn], async ([loaded, signedIn]) => {
         return;
     }
     if (route.path === '/login') {
-        router.push(session.role === 'admin' ? (authStore.returnUrl || '/') : '/profile');
+        router.push(takeReturnUrl(session.role === 'admin' ? '/' : '/profile'));
     }
 }, { immediate: true });
 

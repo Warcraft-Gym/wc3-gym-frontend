@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore, useSeasonStore } from '@/stores';
+import { saveReturnUrl, takeReturnUrl } from './return-url.mjs';
 import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
@@ -57,11 +58,11 @@ router.beforeEach(async (to) => {
     const auth = useAuthStore();
     // A season in the path is a slug; the page reads its id off the loaded list
     if (to.meta.season) await useSeasonStore().ensureSeasons();
-    if ((to.path === '/login' || to.path === '/admin-login') && auth.me) return auth.me.role === 'admin' ? '/' : '/profile';
+    if ((to.path === '/login' || to.path === '/admin-login') && auth.me) return takeReturnUrl(auth.me.role === 'admin' ? '/' : '/profile');
     if (to.meta.role === 'public') return;
 
     if (!auth.me) {
-        auth.returnUrl = to.fullPath;
+        saveReturnUrl(to.fullPath);
         return '/login';
     }
     if (!canSeeRole(auth.me.role, to.meta.role)) {

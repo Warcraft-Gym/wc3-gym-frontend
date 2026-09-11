@@ -4,8 +4,8 @@ import { storeToRefs } from 'pinia';
 import { onMounted, onUnmounted, computed, ref, watch, watchEffect } from 'vue';
 import { useAuth } from '@clerk/vue';
 import { useDisplay, useTheme } from 'vuetify';
-import { useAuthStore, useTeamStore } from '@/stores';
-import { canSeeRole, themeMode, setThemeMode, activeTheme } from '@/helpers';
+import { useAuthStore, useSeasonStore, useTeamStore } from '@/stores';
+import { canSeeRole, homePath, themeMode, setThemeMode, activeTheme } from '@/helpers';
 import { saveReturnUrl, takeReturnUrl } from '@/helpers/return-url.mjs';
 import PlayerPanel from '@/components/PlayerPanel.vue';
 import w3cLogo from '@/assets/media/w3c-logo.png';
@@ -49,7 +49,7 @@ watch([clerk.isLoaded, clerk.isSignedIn], async ([loaded, signedIn]) => {
         return;
     }
     if (route.path === '/login') {
-        router.push(takeReturnUrl(session.role === 'admin' ? '/' : '/profile'));
+        router.push(takeReturnUrl(homePath(session.role)));
     }
 }, { immediate: true });
 
@@ -85,14 +85,16 @@ const showBar = computed(() => route.meta.bar !== false && !isReadonly.value);
 const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.role);
 
 // one link tree drawn as the bar's menus on desktop and as the drawer on phones
-const NAV = [
+const seasonStore = useSeasonStore();
+const NAV = computed(() => [
     { title: 'Home', to: '/' },
     { title: 'GNL', to: '/report', items: [
         { title: 'Season Report', to: '/report' },
         { title: 'Upcoming', to: '/upcoming' },
         { title: 'Teams', to: '/teams' },
-        { title: 'Players', to: '/players' },
         { title: 'Ladder', to: '/ladder', mark: true },
+        { title: 'Players', to: '/players' },
+        ...(me.value?.season_id ? [{ title: 'Players (this season)', to: `/players?season=${seasonStore.slugOf(me.value.season_id)}` }] : []),
         { title: 'Seasons', to: '/seasons' },
         { title: '1v1 Maps', to: '/maps' },
     ] },
@@ -109,8 +111,8 @@ const NAV = [
         { title: 'Access', to: '/config/access' },
     ] },
     { title: 'User Guide', to: '/user-guide' },
-];
-const nav = computed(() => NAV.filter(g => canSee(g.to)).map(g => (g.items ? { ...g, items: g.items.filter(i => canSee(i.to)) } : g)));
+]);
+const nav = computed(() => NAV.value.filter(g => canSee(g.to)).map(g => (g.items ? { ...g, items: g.items.filter(i => canSee(i.to)) } : g)));
 const { smAndDown } = useDisplay();
 const drawer = ref(false);
 watch(() => route.path, () => { drawer.value = false; });
@@ -185,7 +187,7 @@ const applyCaptain = () => {
                         <v-list>
                             <v-list-item title="Player Dashboard" :subtitle="identity" prepend-icon="mdi-view-dashboard" :to="dashboardPath" />
                             <v-list-item v-if="canSee('/player-dashboard')" title="Edit Player Info" prepend-icon="mdi-pencil" :to="{ path: '/player-dashboard', query: { edit: 1 } }" />
-                            <!-- /me names a team for a captain only, so a plain member sees no item yet -->
+                            <!-- /me names the captain's team, or the roster team of this season; a player on no roster sees no item -->
                             <v-list-item v-if="me?.team" title="My Team" prepend-icon="mdi-shield-account" :to="`/team/${me.team.id}`" />
                             <template v-if="canViewAs">
                                 <v-divider />

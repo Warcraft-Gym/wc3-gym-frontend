@@ -255,8 +255,9 @@ import RowActions from '@/components/RowActions.vue';
 import { useAuthStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { usePlayerCareerStatsStore } from '@/stores/player_career_stats.store';
 import { storeToRefs } from 'pinia';
-import { onMounted, ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { findSeason } from '@/helpers/season-slug.mjs';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import SeasonSignupDialog from '@/components/SeasonSignupDialog.vue';
 import CareerStatsDialog from '@/components/CareerStatsDialog.vue';
@@ -292,6 +293,7 @@ const newPlayer = ref({
   race: '',
 });
 const router = useRouter();
+const route = useRoute();
 const playerStore = usePlayerStore();
 const careerStore = usePlayerCareerStatsStore();
 const seasonStore = useSeasonStore();
@@ -409,6 +411,12 @@ const clearFilters = () => {
   selectedFlags.value = [];
 };
 
+// ?season= carries the events filter across a reload and a link; no key shows every season
+watch(selectedSeasonFilter, (id) => {
+  const season = id ? seasonStore.slugOf(id) : undefined;
+  if (route.query.season !== season) router.replace({ query: { ...route.query, season } });
+});
+
 onMounted(async () => {
   // Seasons feed the events filter
   try {
@@ -416,6 +424,7 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to fetch seasons:', err);
   }
+  selectedSeasonFilter.value = findSeason(seasons.value, route.query.season)?.id ?? null;
   await load();
   currentW3CSeason.value = await resolveCurrentW3CSeason();
 });

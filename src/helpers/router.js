@@ -9,11 +9,13 @@ const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
 
 // a session with no role claim is a member, which is what the admin-token login mints
 export const canSeeRole = (role, need) => RANK[role || 'member'] >= RANK[need || 'public'];
+// where a login lands when no return path is saved
+export const homePath = (role) => (canSeeRole(role, 'member') ? '/' : '/profile');
 export const router = createRouter({
     history: createWebHistory(),
     linkActiveClass: 'active',
     routes: [
-        { path: '/', component: HomeView, meta: { role: 'admin' } },
+        { path: '/', component: HomeView, meta: { role: 'member' } },
         { path: '/login', component: LoginView, meta: { role: 'public' } },
         { path: '/sso-callback', component: LoginView, meta: { role: 'public', nav: false } },  // where Discord sends the browser back; the login page finishes the Clerk handshake
         { path: '/admin-login', component: AdminLoginView, meta: { role: 'public', nav: false } },
@@ -58,7 +60,7 @@ router.beforeEach(async (to) => {
     const auth = useAuthStore();
     // A season in the path is a slug; the page reads its id off the loaded list
     if (to.meta.season) await useSeasonStore().ensureSeasons();
-    if ((to.path === '/login' || to.path === '/admin-login') && auth.me) return takeReturnUrl(auth.me.role === 'admin' ? '/' : '/profile');
+    if ((to.path === '/login' || to.path === '/admin-login') && auth.me) return takeReturnUrl(homePath(auth.me.role));
     if (to.meta.role === 'public') return;
 
     if (!auth.me) {

@@ -106,8 +106,8 @@
       <v-table density="compact">
         <thead>
           <tr>
-            <th style="width: 64px">Race</th>
             <th>Name</th>
+            <th style="width: 64px">Race</th>
             <th class="text-right d-none d-md-table-cell">
               <ColumnNote title="Ladder Points" :note="LADDER_NOTE" />
             </th>
@@ -127,8 +127,8 @@
         </thead>
         <tbody>
           <tr v-for="row in ladderTeam.players" :key="row.id">
-            <td><RaceIcon v-if="row.race" :raceIdentifier="row.race" /></td>
             <td><PlayerName :player="row" /></td>
+            <td><RaceIcon v-if="row.race" :raceIdentifier="row.race" /></td>
             <td class="text-right d-none d-md-table-cell">{{ row.ladder_points }}</td>
             <td class="d-none d-md-table-cell">
               <AchievementChip :badges="row.achievements" />

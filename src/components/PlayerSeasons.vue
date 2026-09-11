@@ -28,7 +28,7 @@
           <div class="fact">
             <div class="text-caption text-medium-emphasis">Series</div>
             <div class="d-flex align-center ga-2">
-              <span><span class="text-green">{{ row.stat?.wins ?? 0 }}</span> – <span class="text-red">{{ row.stat?.losses ?? 0 }}</span></span>
+              <span><span class="text-win">{{ row.stat?.wins ?? 0 }}</span> – <span class="text-loss">{{ row.stat?.losses ?? 0 }}</span></span>
               <span v-if="row.season.round_count" class="weeks">
                 <span v-for="week in row.season.round_count" :key="week" class="week" :class="weekClass(row, week)" :title="weekTitle(row, week)" />
               </span>
@@ -43,8 +43,8 @@
             <div class="text-caption text-medium-emphasis"><W3CMmr /></div>
             <div v-if="row.ladder?.mmr?.current != null">
               {{ row.ladder.mmr.current }}
-              <span v-if="mmrDelta(row) > 0" class="text-green">▲ {{ mmrDelta(row) }}</span>
-              <span v-else-if="mmrDelta(row) < 0" class="text-red">▼ {{ -mmrDelta(row) }}</span>
+              <span v-if="mmrDelta(row) > 0" class="text-win">▲ {{ mmrDelta(row) }}</span>
+              <span v-else-if="mmrDelta(row) < 0" class="text-loss">▼ {{ -mmrDelta(row) }}</span>
             </div>
             <div v-else class="text-medium-emphasis">no games yet</div>
           </div>
@@ -190,7 +190,7 @@ const result = (series) => {
 const resultClass = (series) => {
   if (!scored(series)) return 'text-medium-emphasis font-weight-regular';
   const [me, them] = scores(series);
-  return me > them ? 'text-green' : me < them ? 'text-red' : '';
+  return me > them ? 'text-win' : me < them ? 'text-loss' : '';
 };
 const playedOn = (series) => (series.date_time ? DateTime.fromISO(series.date_time).toLocal().toFormat('LLL d') : '—');
 // One square per round: won, lost, mixed, still to play, or no series
@@ -265,9 +265,9 @@ watch(() => props.player, load, { immediate: true });
   background: rgba(var(--v-border-color), var(--v-border-opacity));
   box-sizing: border-box;
 }
-.week.won { background: rgb(var(--v-theme-success)); }
-.week.lost { background: rgb(var(--v-theme-error)); }
-.week.mixed { background: linear-gradient(90deg, rgb(var(--v-theme-success)) 50%, rgb(var(--v-theme-error)) 50%); }
+.week.won { background: rgb(var(--v-theme-win)); }
+.week.lost { background: rgb(var(--v-theme-loss)); }
+.week.mixed { background: linear-gradient(90deg, rgb(var(--v-theme-win)) 50%, rgb(var(--v-theme-loss)) 50%); }
 .week.pending { background: transparent; border: 1px dashed rgba(var(--v-theme-on-surface), 0.5); }
 @media (max-width: 959px) {
   .season-grid { display: flex; flex-wrap: wrap; gap: 4px 14px; }

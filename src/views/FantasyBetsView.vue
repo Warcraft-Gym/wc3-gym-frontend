@@ -463,8 +463,8 @@ const winnerRace = (bet) => {
 
 const getBetResultColor = (result) => {
   if (!result || result === 'PENDING') return 'grey';
-  if (result === 'WIN') return 'success';
-  if (result === 'LOSS') return 'error';
+  if (result === 'WIN') return 'win';
+  if (result === 'LOSS') return 'loss';
   return 'grey';
 };
 

@@ -1,6 +1,6 @@
 // The ladder charts: one entry per day of the season window, on one games scale for every player.
-export const WIN = '#1867C0';
-export const LOSS = '#F44336';
+export const WIN = 'rgb(var(--v-theme-win))';
+export const LOSS = 'rgb(var(--v-theme-loss))';
 export const RACES = ['HU', 'OC', 'NE', 'UD'];
 
 const DAY = 86400000;

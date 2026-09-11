@@ -126,8 +126,8 @@ const maps = (series) => {
 const myScore = (series) => (series.player1_id === props.player.id ? series.player1_score : series.player2_score) || 0;
 const theirScore = (series) => (series.player1_id === props.player.id ? series.player2_score : series.player1_score) || 0;
 const scoreColor = (series) => {
-  if (myScore(series) > theirScore(series)) return 'success';
-  if (myScore(series) < theirScore(series)) return 'error';
-  return 'warning';
+  if (myScore(series) > theirScore(series)) return 'win';
+  if (myScore(series) < theirScore(series)) return 'loss';
+  return 'draw';
 };
 </script>

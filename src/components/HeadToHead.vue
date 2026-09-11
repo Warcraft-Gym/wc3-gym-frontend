@@ -80,7 +80,7 @@ watch(() => props.playerId, async (id) => {
   opponents.value = id ? (await playerStore.playerHistory(id).catch(() => null))?.opponents ?? [] : [];
 }, { immediate: true });
 
-const recordColor = (won, lost) => (won > lost ? 'success' : won < lost ? 'error' : undefined);
+const recordColor = (won, lost) => (won > lost ? 'win' : won < lost ? 'loss' : undefined);
 
 const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `round ${opp.last_playday}` : null].filter(Boolean).join(', ');
 </script>

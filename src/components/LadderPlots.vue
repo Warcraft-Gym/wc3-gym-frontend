@@ -8,8 +8,8 @@
         <text x="-8" :y="t.y" dy="0.32em" text-anchor="end" class="tick">{{ t.v }}</text>
       </g>
       <template v-for="(d, i) in days" :key="d.d">
-        <rect v-if="d.w" :x="x(i)" :y="yG(d.w)" :width="x.bandwidth()" :height="yG(0) - yG(d.w)" :fill="WIN" />
-        <rect v-if="d.l" :x="x(i)" :y="yG(d.w + d.l)" :width="x.bandwidth()" :height="Math.max(1, yG(d.w) - yG(d.w + d.l) - (d.w ? 2 : 0))" :fill="LOSS" />
+        <rect v-if="d.w" :x="x(i)" :y="yG(d.w)" :width="x.bandwidth()" :height="yG(0) - yG(d.w)" :style="{ fill: WIN }" />
+        <rect v-if="d.l" :x="x(i)" :y="yG(d.w + d.l)" :width="x.bandwidth()" :height="Math.max(1, yG(d.w) - yG(d.w + d.l) - (d.w ? 2 : 0))" :style="{ fill: LOSS }" />
       </template>
       <line :x2="innerW" :y1="gH" :y2="gH" class="axis" />
     </g>

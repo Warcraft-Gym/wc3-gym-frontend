@@ -339,7 +339,7 @@
                       <template #item.result="{ item }">
                         <v-chip
                           v-if="item.myBet && isSeriesPlayed(item)"
-                          :color="item.myBet.bet_result === 'WIN' ? 'success' : item.myBet.bet_result === 'LOSS' ? 'error' : 'grey'"
+                          :color="item.myBet.bet_result === 'WIN' ? 'win' : item.myBet.bet_result === 'LOSS' ? 'loss' : 'grey'"
                           size="small"
                         >
                           {{ item.myBet.bet_result || 'PENDING' }}
@@ -972,8 +972,8 @@ const isSeriesPlayed = (series) => {
 
 const getBetResultColor = (bet) => {
   if (!bet || !bet.bet_result) return 'grey';
-  if (bet.bet_result === 'WIN') return 'success';
-  if (bet.bet_result === 'LOSS') return 'error';
+  if (bet.bet_result === 'WIN') return 'win';
+  if (bet.bet_result === 'LOSS') return 'loss';
   return 'grey';
 };
 
@@ -986,9 +986,9 @@ const getBetPlayerName = (series, bet) => {
 
 const getScoreColorForBet = (series) => {
   // For betting view, we don't care about the captain's score, just showing the result
-  if (series.player1_score > series.player2_score) return 'success';
-  if (series.player2_score > series.player1_score) return 'error';
-  return 'warning';
+  if (series.player1_score > series.player2_score) return 'win';
+  if (series.player2_score > series.player1_score) return 'loss';
+  return 'draw';
 };
 
 onMounted(async () => {

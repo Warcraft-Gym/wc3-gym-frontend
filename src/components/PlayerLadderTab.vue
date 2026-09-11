@@ -20,9 +20,9 @@
         <div>
           <div class="text-caption text-medium-emphasis">Record</div>
           <div class="text-h6">
-            <span class="text-green">{{ data?.wins ?? 0 }}</span>
+            <span class="text-win">{{ data?.wins ?? 0 }}</span>
             <span class="text-medium-emphasis"> – </span>
-            <span class="text-red">{{ data?.losses ?? 0 }}</span>
+            <span class="text-loss">{{ data?.losses ?? 0 }}</span>
           </div>
           <div class="text-caption text-medium-emphasis">{{ winrate }} of {{ data?.games ?? 0 }} games</div>
         </div>
@@ -37,7 +37,7 @@
             <tbody>
               <tr v-for="row in versusRaces" :key="row.code">
                 <td><div class="d-flex align-center ga-2"><RaceIcon :raceIdentifier="row.code" />{{ row.name }}</div></td>
-                <td class="text-right text-no-wrap"><span class="text-green">{{ row.w }}</span> – <span class="text-red">{{ row.l }}</span></td>
+                <td class="text-right text-no-wrap"><span class="text-win">{{ row.w }}</span> – <span class="text-loss">{{ row.l }}</span></td>
                 <td class="bar"><div class="meter"><div class="fill" :style="{ width: `${row.rate}%` }" /></div></td>
                 <td class="text-right text-medium-emphasis">{{ row.rate }}%</td>
               </tr>

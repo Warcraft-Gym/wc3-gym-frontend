@@ -183,7 +183,7 @@
         <BetIcon size="24" class="mr-2 text-green" />
         <strong>Bet Points Details</strong>
         <v-spacer></v-spacer>
-        <v-chip :color="breakdown.totals.bet_points >= 0 ? 'green' : 'red'" size="small">{{ breakdown.totals.bet_points }} points</v-chip>
+        <v-chip :color="breakdown.totals.bet_points >= 0 ? 'win' : 'loss'" size="small">{{ breakdown.totals.bet_points }} points</v-chip>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
         <GroupedTable :columns="betColumns" :groups="betWeeks" empty="No bets" class="narrow">
@@ -191,7 +191,7 @@
             <td>Round {{ week.week }}</td>
             <td class="text-medium-emphasis">{{ week.summary }}</td>
             <td class="text-right">
-              <strong :class="week.net >= 0 ? 'text-success' : 'text-error'">{{ week.net > 0 ? '+' : '' }}{{ week.net }}</strong>
+              <strong :class="week.net >= 0 ? 'text-win' : 'text-loss'">{{ week.net > 0 ? '+' : '' }}{{ week.net }}</strong>
             </td>
           </template>
           <template #rows="{ group: week }">
@@ -210,7 +210,7 @@
                 </div>
                 <span v-else>{{ bet.series }}</span>
               </td>
-              <td class="text-right" :class="bet.won ? 'text-success' : 'text-error'">
+              <td class="text-right" :class="bet.won ? 'text-win' : 'text-loss'">
                 {{ bet.result > 0 ? '+' : '' }}{{ bet.result }}
               </td>
             </tr>

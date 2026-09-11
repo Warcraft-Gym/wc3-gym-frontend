@@ -225,15 +225,15 @@
               <span class="font-weight-bold">{{ item.points }}</span>
             </template>
             <template v-slot:[`item.wins`]="{ item }">
-              <span class="text-green">{{ item.wins }}</span>
+              <span class="text-win">{{ item.wins }}</span>
             </template>
             <template v-slot:[`item.losses`]="{ item }">
-              <span class="text-red">{{ item.losses }}</span>
+              <span class="text-loss">{{ item.losses }}</span>
             </template>
             <template v-slot:[`item.mmr`]="{ item }">{{ item.mmr ?? '—' }}</template>
             <template v-slot:[`item.mmrDiff`]="{ item }">
               <span v-if="item.mmrDiff == null">—</span>
-              <span v-else :class="item.mmrDiff > 0 ? 'text-green' : item.mmrDiff < 0 ? 'text-red' : ''">
+              <span v-else :class="item.mmrDiff > 0 ? 'text-win' : item.mmrDiff < 0 ? 'text-loss' : ''">
                 {{ item.mmrDiff > 0 ? `+${item.mmrDiff}` : item.mmrDiff }}
               </span>
             </template>

@@ -253,13 +253,13 @@
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.gamesBarPct"
-                      :color="getRaceColor(raceEntry.race)"
+                      color="win"
                       height="10"
                       rounded
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value text-win font-weight-bold">{{ raceEntry.wins }}</span>
+                  <span class="race-stat-value font-weight-bold">{{ raceEntry.wins }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
                   <span class="text-caption text-medium-emphasis">Series Lost</span>
@@ -272,14 +272,14 @@
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value text-loss">{{ raceEntry.losses }}</span>
+                  <span class="race-stat-value">{{ raceEntry.losses }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
                   <span class="text-caption text-medium-emphasis">Total Points</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.pointsBarPct"
-                      :color="getRaceColor(raceEntry.race)"
+                      color="draw"
                       height="10"
                       rounded
                       bg-color="surface-light"
@@ -294,16 +294,11 @@
                     <div class="text-caption text-medium-emphasis">Played</div>
                   </div>
                   <div class="text-center">
-                    <div
-                      class="text-h6 font-weight-bold"
-                      :class="raceEntry.winRate >= 60 ? 'text-success' : raceEntry.winRate >= 40 ? 'text-warning' : 'text-error'"
-                    >
-                      {{ raceEntry.winRate }}%
-                    </div>
+                    <div class="text-h6 font-weight-bold">{{ raceEntry.winRate }}%</div>
                     <div class="text-caption text-medium-emphasis">Win Rate</div>
                   </div>
                   <div class="text-center">
-                    <div class="text-h6 font-weight-bold text-primary">{{ raceEntry.points }}</div>
+                    <div class="text-h6 font-weight-bold">{{ raceEntry.points }}</div>
                     <div class="text-caption text-medium-emphasis">Points</div>
                   </div>
                 </div>

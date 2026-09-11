@@ -21,7 +21,7 @@
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
                     <div class="text-h4 font-weight-bold primary--text">{{ season.round_count }}</div>
-                    <div class="text-subtitle-2 text-uppercase">Rounds</div>
+                    <div class="text-subtitle-2">Rounds</div>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -29,7 +29,7 @@
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
                     <div class="text-h4 font-weight-bold primary--text">{{ teams.length }}</div>
-                    <div class="text-subtitle-2 text-uppercase">Teams</div>
+                    <div class="text-subtitle-2">Teams</div>
                   </v-card-text>
                 </v-card>
               </v-col>

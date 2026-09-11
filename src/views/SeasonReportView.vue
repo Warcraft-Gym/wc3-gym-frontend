@@ -13,7 +13,7 @@
             :items="seasonItems"
             item-title="name"
             item-value="id"
-            label="Select Season"
+            label="Select season"
             variant="outlined"
             density="compact"
             hide-details
@@ -63,7 +63,7 @@
     <div class="report-hero text-on-hero">
       <div class="report-hero-overlay" />
       <v-container class="report-hero-content">
-        <div class="text-overline mb-1" style="opacity: 0.8;">Season Report</div>
+        <div class="text-subtitle-1 mb-1" style="opacity: 0.8;">Season report</div>
         <div class="text-h3 font-weight-bold mb-6">{{ season.name }}</div>
         <div class="hero-stats-row">
           <div v-for="stat in headerStats" :key="stat.label" class="hero-stat-card">
@@ -77,11 +77,11 @@
 
     <v-container fluid class="report-body pa-4">
 
-      <!-- ── Team Standings ── -->
+      <!-- ── Team standings ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('standings') }">
         <div class="section-title" @click="toggle('standings')">
           <v-icon color="primary" class="mr-2">mdi-trophy</v-icon>
-          Team Standings
+          Team standings
           <v-icon class="ml-2 no-print">{{ collapsed.has('standings') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
@@ -91,10 +91,10 @@
                 <th class="text-center" style="width:56px">#</th>
                 <th>Team</th>
                 <th class="text-center">Points</th>
-                <th class="text-center d-none d-md-table-cell">Points Available</th>
-                <th class="text-center d-none d-md-table-cell">Points Against</th>
+                <th class="text-center d-none d-md-table-cell">Points available</th>
+                <th class="text-center d-none d-md-table-cell">Points against</th>
                 <th class="text-center d-none d-md-table-cell">Players</th>
-                <th class="text-center">Win Rate</th>
+                <th class="text-center">Win rate</th>
               </tr>
             </thead>
             <tbody>
@@ -148,11 +148,11 @@
         </v-card>
       </div>
 
-      <!-- ── Player Leaderboard ── -->
+      <!-- ── Player leaderboard ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('leaderboard') }">
         <div class="section-title" @click="toggle('leaderboard')">
           <v-icon color="primary" class="mr-2">mdi-account-star</v-icon>
-          Player Leaderboard
+          Player leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('leaderboard') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
@@ -224,11 +224,11 @@
         </v-card>
       </div>
 
-      <!-- ── Race Performance ── -->
+      <!-- ── Race performance ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('races') }">
         <div class="section-title" @click="toggle('races')">
           <v-icon color="primary" class="mr-2">mdi-sword-cross</v-icon>
-          Race Performance
+          Race performance
           <v-icon class="ml-2 no-print">{{ collapsed.has('races') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-row>
@@ -250,7 +250,7 @@
               </div>
               <v-card-text>
                 <div class="race-stat-row">
-                  <span class="text-caption text-medium-emphasis">Series Won</span>
+                  <span class="text-caption text-medium-emphasis">Series won</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.gamesBarPct"
@@ -263,7 +263,7 @@
                   <span class="race-stat-value font-weight-bold">{{ raceEntry.wins }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
-                  <span class="text-caption text-medium-emphasis">Series Lost</span>
+                  <span class="text-caption text-medium-emphasis">Series lost</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.games > 0 ? Math.round((raceEntry.losses / raceEntry.games) * 100) : 0"
@@ -276,7 +276,7 @@
                   <span class="race-stat-value">{{ raceEntry.losses }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
-                  <span class="text-caption text-medium-emphasis">Total Points</span>
+                  <span class="text-caption text-medium-emphasis">Total points</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.pointsBarPct"
@@ -296,7 +296,7 @@
                   </div>
                   <div class="text-center">
                     <div class="text-h6 font-weight-bold">{{ raceEntry.winRate }}%</div>
-                    <div class="text-caption text-medium-emphasis">Win Rate</div>
+                    <div class="text-caption text-medium-emphasis">Win rate</div>
                   </div>
                   <div class="text-center">
                     <div class="text-h6 font-weight-bold">{{ raceEntry.points }}</div>
@@ -309,11 +309,11 @@
         </v-row>
       </div>
 
-      <!-- ── Ladder Activity ── -->
+      <!-- ── Ladder activity ── -->
       <div v-if="heatRows.length" class="report-section mb-6" :class="{ collapsed: collapsed.has('ladder') }">
         <div class="section-title" @click="toggle('ladder')">
           <v-icon color="primary" class="mr-2">mdi-podium</v-icon>
-          Ladder Activity
+          Ladder activity
           <v-icon class="ml-2 no-print">{{ collapsed.has('ladder') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-row>
@@ -382,7 +382,7 @@
       <div v-if="sortedFantasyTeams.length > 0" class="report-section mb-6" :class="{ collapsed: collapsed.has('fantasy') }">
         <div class="section-title" @click="toggle('fantasy')">
           <v-icon color="primary" class="mr-2">mdi-cards</v-icon>
-          Fantasy League Leaderboard
+          Fantasy league leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('fantasy') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </div>
         <v-card elevation="2">
@@ -390,10 +390,10 @@
             <thead>
               <tr class="table-header-row">
                 <th class="text-center" style="width:56px">#</th>
-                <th>Fantasy Team</th>
+                <th>Fantasy team</th>
                 <th class="text-center">Captain</th>
-                <th class="text-center d-none d-md-table-cell">Drafted Team</th>
-                <th class="text-center d-none d-md-table-cell">Drafted Race</th>
+                <th class="text-center d-none d-md-table-cell">Drafted team</th>
+                <th class="text-center d-none d-md-table-cell">Drafted race</th>
                 <th class="text-center d-none d-md-table-cell">Player pts</th>
                 <th class="text-center d-none d-md-table-cell">Team pts</th>
                 <th class="text-center d-none d-md-table-cell">Race pts</th>
@@ -453,7 +453,7 @@
       <div class="report-footer print-only">
         <v-divider class="mb-2" />
         <div class="text-caption text-center text-medium-emphasis">
-          GNL Admin &mdash; {{ season.name }} Season Report
+          GNL Admin &mdash; {{ season.name }} season report
         </div>
       </div>
 
@@ -623,7 +623,7 @@ const headerStats = computed(() => [
     { label: 'Rounds', value: season.value?.round_count ?? '–', icon: 'mdi-calendar-week' },
     { label: 'Teams', value: teams.value.length, icon: 'mdi-shield-outline' },
     { label: 'Players', value: allPlayers.value.length, icon: 'mdi-account-group' },
-    { label: 'Series Played', value: series.value.length, icon: 'mdi-sword-cross' },
+    { label: 'Series played', value: series.value.length, icon: 'mdi-sword-cross' },
 ]);
 
 // ─── Race display helpers ─────────────────────────────────────────────────────
@@ -826,8 +826,6 @@ const dayTicks = computed(() => {
 }
 .hero-stat-label {
   font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: rgb(var(--v-theme-band-muted));
 }
 
@@ -840,8 +838,6 @@ const dayTicks = computed(() => {
 .section-title {
   font-size: 1.15rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
@@ -865,8 +861,6 @@ const dayTicks = computed(() => {
 /* ── Standings table ──────────────────────────────────────────────────────── */
 .standings-table thead tr th {
   font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity)) !important;
 }
 .standings-first {

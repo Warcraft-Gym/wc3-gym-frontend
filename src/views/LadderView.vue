@@ -80,10 +80,10 @@
             <tr>
               <th>Team</th>
               <th class="text-center">
-                <ColumnNote title="Total Points" :note="SCORED_NOTE" />
+                <ColumnNote title="Total points" :note="SCORED_NOTE" />
               </th>
               <th class="text-center d-none d-sm-table-cell">
-                <ColumnNote title="Achievement Points" :note="TEAM_BADGES_NOTE" />
+                <ColumnNote title="Achievement points" :note="TEAM_BADGES_NOTE" />
               </th>
               <th class="text-center">Games</th>
               <th class="text-center d-none d-sm-table-cell">Players</th>
@@ -474,8 +474,6 @@ onMounted(async () => {
 }
 .standings-table thead tr th {
   font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: rgba(var(--v-theme-on-surface), 0.6) !important;
 }
 .standings-first {

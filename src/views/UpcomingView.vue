@@ -72,6 +72,7 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import { resolveCurrentSeason } from '@/helpers/current-season';
 import { local, scheduleDays } from '@/helpers/schedule.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
+import { gmt } from '@/helpers/timezone.mjs';
 import { useSeriesStore } from '@/stores';
 
 const columns = [
@@ -89,7 +90,10 @@ const series = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
-const timeOf = (value) => local(value).toFormat('HH:mm');
+const timeOf = (value) => {
+  const at = local(value);
+  return `${at.toFormat('HH:mm')} ${gmt(at.offset)}`;
+};
 const scoreOf = (row) => (isUnscored(row) ? '—' : `${row.player1_score}-${row.player2_score}`);
 
 const days = computed(() => scheduleDays(series.value));

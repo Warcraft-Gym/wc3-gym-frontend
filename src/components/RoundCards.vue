@@ -36,6 +36,7 @@
           You host and ban first
         </div>
         <div class="text-caption text-medium-emphasis">{{ formatDateTime(card.series.date_time) }}</div>
+        <div v-if="opponentZone(card.series)" class="text-caption text-medium-emphasis">{{ opponentZone(card.series) }}</div>
         <!-- The three maps of the series once the veto has decided them -->
         <div v-for="line in maps(card.series)" :key="line" class="text-caption text-medium-emphasis">
           {{ line }}
@@ -62,6 +63,7 @@ import { computed, ref, watch } from 'vue';
 import { useMatchStore } from '@/stores';
 import { formatDateTime } from '@/helpers/datetime';
 import { roundCards } from '@/helpers/rounds.mjs';
+import { viewerZone, zoneLabel } from '@/helpers/timezone.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import CastChips from '@/components/CastChips.vue';
 import PlayerName from '@/components/PlayerName.vue';
@@ -99,6 +101,9 @@ const opponent = (series) => {
   const mine = series.player1_id === props.player.id;
   return (mine ? series.player2 : series.player1) || { name: `Player ${mine ? series.player2_id : series.player1_id}` };
 };
+
+// the opponent's zone against the reader's, at the series time
+const opponentZone = (series) => zoneLabel(opponent(series).timezone, viewerZone(), series.date_time);
 
 // the race the opponent played in that series, not the one he signed the season up on
 const opponentRace = (series) =>

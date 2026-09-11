@@ -14,7 +14,7 @@ export const formatDateTime = (dateTimeStr) => {
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      timeZoneName: 'short'
+      timeZoneName: 'shortOffset'
     });
   } catch {
     return dateTimeStr;

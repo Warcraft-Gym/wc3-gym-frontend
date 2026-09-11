@@ -30,7 +30,7 @@
         <div class="d-flex flex-wrap align-center ga-2 mb-3">
           <v-chip color="secondary" prepend-icon="$discord">{{ player.discordTag }}</v-chip>
           <v-chip v-if="player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
-            {{ player.timezone }}
+            {{ zoneLabel(player.timezone) }}
           </v-chip>
         </div>
         <div class="d-flex flex-wrap align-center ga-2">
@@ -66,6 +66,7 @@ import { computed, ref, watch } from 'vue';
 import { usePlayerStore, useAuthStore } from '@/stores';
 import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
+import { zoneLabel } from '@/helpers/timezone.mjs';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';

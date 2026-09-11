@@ -82,12 +82,12 @@
               <th class="text-center">
                 <ColumnNote title="Total Points" :note="SCORED_NOTE" />
               </th>
-              <th class="text-center">
+              <th class="text-center d-none d-sm-table-cell">
                 <ColumnNote title="Achievement Points" :note="TEAM_BADGES_NOTE" />
               </th>
               <th class="text-center">Games</th>
-              <th class="text-center">Players</th>
-              <th>Team badges</th>
+              <th class="text-center d-none d-sm-table-cell">Players</th>
+              <th class="d-none d-sm-table-cell">Team badges</th>
             </tr>
           </thead>
           <tbody>
@@ -105,20 +105,20 @@
                 </div>
               </td>
               <td class="text-center font-weight-bold">{{ team.points }}</td>
-              <td class="text-center">{{ teamBadgePoints(team) }}</td>
+              <td class="text-center d-none d-sm-table-cell">{{ teamBadgePoints(team) }}</td>
               <td class="text-center">{{ team.games }}</td>
-              <td class="text-center">{{ team.players.length }}</td>
-              <td><AchievementChip :badges="team.achievements" :show-points="false" /></td>
+              <td class="text-center d-none d-sm-table-cell">{{ team.players.length }}</td>
+              <td class="d-none d-sm-table-cell"><AchievementChip :badges="team.achievements" :show-points="false" /></td>
             </tr>
           </tbody>
           <tfoot>
             <tr class="standings-total">
               <td class="text-medium-emphasis">{{ ladder.teams.length }} teams</td>
               <td class="text-center font-weight-bold">{{ seasonPoints }}</td>
-              <td class="text-center">{{ seasonBadgePoints }}</td>
+              <td class="text-center d-none d-sm-table-cell">{{ seasonBadgePoints }}</td>
               <td class="text-center">{{ ladder.total_games }}</td>
-              <td class="text-center">{{ seasonPlayers }}</td>
-              <td></td>
+              <td class="text-center d-none d-sm-table-cell">{{ seasonPlayers }}</td>
+              <td class="d-none d-sm-table-cell"></td>
             </tr>
           </tfoot>
         </v-table>

@@ -1,7 +1,10 @@
 import { seasonSlug } from './season-slug.mjs';
 
-// What a player can do with an event: sign up, ask an admin, or nothing
-export const seasonAction = (phase) => (phase === 'open' ? 'signup' : phase === 'commenced' ? 'request' : null);
+// What a player can do with a season: sign up, ask an admin, or nothing; an absent signups_open reads as open
+export function seasonAction(season) {
+  const action = { open: 'signup', commenced: 'request', overdue: 'request' }[season?.phase] ?? null;
+  return action === 'signup' && season.signups_open === false ? 'request' : action;
+}
 
 // Every event a player can still join or follow, soonest first; season and KOTH ids collide, so rows key on kind + id
 // /signup acts on /me's season only, so other seasons carry no action and an unknown (null) joined
@@ -9,7 +12,8 @@ export function upcomingEvents({ seasons = [], currentSeasonId = null, signedUp 
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);  // the player's own midnight, so a KOTH night under way today stays
   const rows = [
-    ...seasons.filter((season) => seasonAction(season.phase)).map((season) => {
+    // another season lists only while open or commenced, so an old season missing a result stays off the list
+    ...seasons.filter((season) => (season.id === currentSeasonId ? seasonAction(season) : ['open', 'commenced'].includes(season.phase))).map((season) => {
       const current = season.id === currentSeasonId;
       return {
         key: `season:${season.id}`,
@@ -18,7 +22,7 @@ export function upcomingEvents({ seasons = [], currentSeasonId = null, signedUp 
         name: season.name,
         date: season.start_date ? new Date(`${season.start_date}T00:00:00Z`) : null,
         phase: season.phase,
-        action: current ? seasonAction(season.phase) : null,
+        action: current ? seasonAction(season) : null,
         joined: current ? signedUp : null,
         slug: seasonSlug(season),
       };

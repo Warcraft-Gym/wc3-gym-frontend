@@ -98,6 +98,11 @@ h1, .text-h1, .text-h2, .text-h3 { font-weight: 800; }
   background-attachment: local, local, scroll, scroll;
 }
 
+/* Vuetify 3.8 builds .text-X only for colours that are not on-*, so these on-* text colours need their own rule. */
+.text-on-band { color: rgb(var(--v-theme-on-band)) !important; }
+.text-on-primary { color: rgb(var(--v-theme-on-primary)) !important; }
+.text-on-error { color: rgb(var(--v-theme-on-error)) !important; }
+
 /* A scrim dims what is behind it. Vuetify paints it in on-surface, which is white
    on the dark theme and washes the page out while it loads. */
 .v-theme--dark .v-overlay__scrim { background: rgb(var(--v-theme-background)); }

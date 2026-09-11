@@ -75,6 +75,6 @@ const shown = computed(() => (showAll.value ? tiles.value : tiles.value.slice(0,
 .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* One hue: the width is the share of players who earned it */
 .share { height: 4px; margin: 4px 0 2px; background: rgba(var(--v-theme-on-surface), 0.08); border-radius: 2px; }
-.fill { display: block; height: 100%; background: #ff8f00; border-radius: 0 2px 2px 0; min-width: 0; }
+.fill { display: block; height: 100%; background: rgb(var(--v-theme-warning)); border-radius: 0 2px 2px 0; min-width: 0; }
 .toggle { cursor: pointer; width: fit-content; }
 </style>

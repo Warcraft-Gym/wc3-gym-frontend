@@ -75,7 +75,7 @@ const toggleSkip = (row) => {
   display: block;
   width: 40px;
   height: 27px;
-  background: #263238;
+  background: rgb(var(--v-theme-band));
   border-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;

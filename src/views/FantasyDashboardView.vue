@@ -998,7 +998,7 @@ onMounted(async () => {
 
 <style scoped>
 .pick { accent-color: rgb(var(--v-theme-primary)); width: 18px; height: 18px; cursor: pointer; vertical-align: middle; }
-.picked > td { background: rgba(24, 103, 192, 0.06); }
+.picked > td { background: rgba(var(--v-theme-primary), 0.06); }
 .open-row { padding: 10px 12px 12px; background: rgba(var(--v-theme-on-surface), 0.02); }
 
 .team-icon {

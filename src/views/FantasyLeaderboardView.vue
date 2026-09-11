@@ -234,7 +234,7 @@
                 clearable
               >
                 <template v-slot:prepend-inner>
-                  <v-chip size="small" :color="getTierColor(tier)">T{{ tier }}</v-chip>
+                  <v-chip size="small" :color="tierColors[tier - 1]">T{{ tier }}</v-chip>
                 </template>
               </v-autocomplete>
             </v-col>
@@ -279,6 +279,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
+import { ALL_COLORS } from '@/helpers/tiers.mjs';
 
 
 const fantasyStore = useFantasyStore();
@@ -299,6 +300,7 @@ const tierCount = computed(() => pickedSeason.value?.fantasy_tiers);
 // The season also says whether a bettor picks a second team to grind
 const fantasyGrind = computed(() => !!pickedSeason.value?.fantasy_grind);
 const tiers = computed(() => Array.from({ length: tierCount.value || 0 }, (_, i) => i + 1));
+const tierColors = [...ALL_COLORS].reverse();
 const currentW3CSeason = ref(null);
 const editDialog = ref(false);
 const deleteDialog = ref(false);
@@ -327,7 +329,7 @@ const emptyTeam = (seasonId = null) => ({
   drafted_race: null,
   player_ids: []
 });
-const emptyTierSelection = () => ({ 1: null, 2: null, 3: null, 4: null, 5: null, 6: null });
+const emptyTierSelection = () => Object.fromEntries(tiers.value.map((tier) => [tier, null]));
 
 const editedTeam = ref(emptyTeam());
 const teamForm = ref(null);
@@ -391,18 +393,6 @@ const getRankColor = (rank) => {
   if (rank === 2) return 'silver';
   if (rank === 3) return '#CD7F32'; // bronze
   return 'grey';
-};
-
-const getTierColor = (tier) => {
-  const colors = {
-    1: 'purple',
-    2: 'blue',
-    3: 'green',
-    4: 'orange',
-    5: 'brown',
-    6: 'grey'
-  };
-  return colors[tier] || 'grey';
 };
 
 const fetchData = async () => {

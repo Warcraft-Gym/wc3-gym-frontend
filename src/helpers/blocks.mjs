@@ -29,6 +29,22 @@ export const dayLabel = (bits) => {
     .join(', ');
 };
 
+// A backend row as the editor's fields, and back. The editor adds its own `key`.
+const hhmm = (value) => String(value ?? '').slice(0, 5);
+const isoDay = (date) => (date instanceof Date
+  ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  : null);
+const asDate = (iso) => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(y, m - 1, d); };
+
+export const blockFields = (row) => ({ id: row?.id ?? null, label: row?.label ?? '', days: daysOf(row?.weekdays), start: hhmm(row?.start_local), end: hhmm(row?.end_local) });
+export const busyFields = (row) => ({ id: row?.id ?? null, label: row?.label ?? '', first: row ? asDate(row.first_day) : null, last: row ? asDate(row.last_day) : null });
+export const asBlock = (row) => ({ label: row.label || null, weekdays: bitsOf(row.days), start_local: row.start, end_local: row.end });
+export const asBusy = (row) => ({ label: row.label || null, first_day: isoDay(row.first), last_day: isoDay(row.last) });
+
+// A row remembers what the backend holds, so an untouched row shows no Save
+export const mark = (row, shape) => Object.assign(row, { saved: JSON.stringify(shape(row)) });
+export const dirty = (row, shape) => !row.id || JSON.stringify(shape(row)) !== row.saved;
+
 // "09:00:00" or "09:00" as minutes past local midnight
 const minutes = (value) => {
   const [hour, minute] = String(value ?? '').split(':').map(Number);

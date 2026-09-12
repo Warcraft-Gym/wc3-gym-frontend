@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bitsOf, blockLine, busyLine, commonHours, dayLabel, daysOf, freeLines, weekFree } from './blocks.mjs';
+import { asBlock, asBusy, bitsOf, blockFields, blockLine, busyFields, busyLine, commonHours, dayLabel, daysOf, dirty, freeLines, mark, weekFree } from './blocks.mjs';
 
 test('weekday bits read as ISO days, Monday first', () => {
   assert.deepEqual(daysOf(1), [1]);
@@ -45,6 +45,21 @@ test('the week preview is what the blocks leave open, spill included', () => {
 test('a fully blocked day and a free day each get their own line', () => {
   assert.equal(weekFree([{ weekdays: 1, start_local: '00:00:00', end_local: '00:00:00' }])[0].line, 'Nothing open');
   assert.equal(weekFree([])[3].line, 'All day');
+});
+
+test('a row saved round-trip stops asking to be saved', () => {
+  const row = mark({ ...blockFields(null), days: [1, 2, 3, 4, 5], start: '09:00', end: '17:00', label: 'Work' }, asBlock);
+  assert.equal(dirty(row, asBlock), true);  // no id yet, so the backend holds nothing
+  Object.assign(row, blockFields({ id: 7, label: 'Work', weekdays: 31, start_local: '09:00:00', end_local: '17:00:00' }));
+  mark(row, asBlock);
+  assert.equal(dirty(row, asBlock), false);
+  assert.deepEqual(asBlock(row), { label: 'Work', weekdays: 31, start_local: '09:00', end_local: '17:00' });
+
+  const away = mark(busyFields({ id: 3, label: null, first_day: '2026-09-13', last_day: '2026-09-19' }), asBusy);
+  assert.equal(dirty(away, asBusy), false);
+  assert.deepEqual(asBusy(away), { label: null, first_day: '2026-09-13', last_day: '2026-09-19' });
+  away.label = 'Trip';
+  assert.equal(dirty(away, asBusy), true);
 });
 
 test('shared ranges read in the viewer zone, a crossing range names both days', () => {

@@ -61,7 +61,7 @@
         Add repeating block
       </v-btn>
 
-      <div v-if="stored.length" class="mt-6">
+      <div v-if="preview.length" class="mt-6">
         <h4 class="text-subtitle-2 font-weight-medium mb-2">What a round leaves open</h4>
         <div v-for="day in week" :key="day.day" class="preview-row text-body-2">
           <span class="text-medium-emphasis">{{ day.name }}</span>
@@ -115,7 +115,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
-import { DAY_NAMES, bitsOf, blockLine, busyLine, daysOf, weekFree } from '@/helpers/blocks.mjs';
+import { DAY_NAMES, asBlock, asBusy, blockFields, blockLine, busyFields, busyLine, dirty, mark, weekFree } from '@/helpers/blocks.mjs';
 import { viewerZone } from '@/helpers/timezone.mjs';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
@@ -133,26 +133,17 @@ const zone = viewerZone();
 let nextKey = 0;
 const key = () => `row-${nextKey++}`;
 
-// The rows the backend holds, so the week preview and the dirty check read saved work only
-const stored = computed(() => blocks.value.filter(row => row.id).map(asBlock));
-const week = computed(() => weekFree(stored.value));
+// Every row that reads as a block, saved or not, so the preview follows what is on screen
+const preview = computed(() => blocks.value.filter(blockValid).map(asBlock));
+const week = computed(() => weekFree(preview.value));
 
-const clock = (value) => String(value ?? '').slice(0, 5);
-const isoDay = (date) => (date instanceof Date
-  ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  : null);
-const asDate = (iso) => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(y, m - 1, d); };
-
-const blockRow = (row) => ({ key: key(), id: row?.id ?? null, label: row?.label ?? '', days: daysOf(row?.weekdays), start: clock(row?.start_local), end: clock(row?.end_local) });
-const busyRow = (row) => ({ key: key(), id: row?.id ?? null, label: row?.label ?? '', first: row ? asDate(row.first_day) : null, last: row ? asDate(row.last_day) : null });
-
-const asBlock = (row) => ({ label: row.label || null, weekdays: bitsOf(row.days), start_local: row.start, end_local: row.end });
-const asBusy = (row) => ({ label: row.label || null, first_day: isoDay(row.first), last_day: isoDay(row.last) });
+const blockRow = (row) => ({ key: key(), ...blockFields(row) });
+const busyRow = (row) => ({ key: key(), ...busyFields(row) });
 
 const blockValid = (row) => row.days.length > 0 && !!row.start && !!row.end && row.start !== row.end;
-const busyValid = (row) => !!row.first && !!row.last && isoDay(row.last) >= isoDay(row.first);
-const blockDirty = (row) => !row.id || JSON.stringify(asBlock(row)) !== row.saved;
-const busyDirty = (row) => !row.id || JSON.stringify(asBusy(row)) !== row.saved;
+const busyValid = (row) => !!row.first && !!row.last && row.last >= row.first;
+const blockDirty = (row) => dirty(row, asBlock);
+const busyDirty = (row) => dirty(row, asBusy);
 
 const blockPreview = (row) => (blockValid(row) ? blockLine(asBlock(row)) : 'Pick the days and the hours.');
 const busyPreview = (row) => (busyValid(row) ? busyLine(asBusy(row)) : 'Pick the first and last day.');
@@ -160,9 +151,6 @@ const busyPreview = (row) => (busyValid(row) ? busyLine(asBusy(row)) : 'Pick the
 const toggleDay = (row, day) => {
   row.days = row.days.includes(day) ? row.days.filter(d => d !== day) : [...row.days, day].sort((a, b) => a - b);
 };
-
-// A row remembers what the backend holds, so an untouched row shows no Save
-const mark = (row, shape) => Object.assign(row, { saved: JSON.stringify(shape(row)) });
 
 const load = async () => {
   try {
@@ -178,15 +166,15 @@ const load = async () => {
 };
 
 // One write, then the row carries what the backend stored
-const write = async (row, url, body, list) => {
+const write = async (row, url, fields, shape) => {
   busyKey.value = row.key;
   errorMessage.value = null;
+  const body = shape(row);
   try {
     const saved = row.id
       ? await fetchWrapper.put(`${url}/${row.id}`, body)
       : await fetchWrapper.post(url, body);
-    const shape = list === blocks.value ? asBlock : asBusy;
-    Object.assign(row, list === blocks.value ? blockRow(saved) : busyRow(saved), { key: row.key });
+    Object.assign(row, fields(saved));
     mark(row, shape);
     emit('change', blocks.value.length + busy.value.length);
   } catch (error) {
@@ -196,8 +184,8 @@ const write = async (row, url, body, list) => {
   }
 };
 
-const saveBlock = (row) => write(row, `${backendUrl}/player-blocks/repeating`, asBlock(row), blocks);
-const saveBusy = (row) => write(row, `${backendUrl}/player-blocks/busy`, asBusy(row), busy);
+const saveBlock = (row) => write(row, `${backendUrl}/player-blocks/repeating`, blockFields, asBlock);
+const saveBusy = (row) => write(row, `${backendUrl}/player-blocks/busy`, busyFields, asBusy);
 
 // A row never written has nothing to delete on the backend
 const drop = async (list, index, path) => {

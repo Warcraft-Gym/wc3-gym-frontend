@@ -1,65 +1,23 @@
 <script setup>
-import { ref, onMounted } from 'vue';
 import { marked } from 'marked';
-import StatusAlert from '@/components/StatusAlert.vue';
+import guideMarkdown from '../../ADMIN_UI_USER_GUIDE.md?raw';
 
+// GitHub's heading slug, because the guide's table of contents links to #slug and marked emits no ids
+const slug = (text) => text.toLowerCase().trim().replace(/[^\w\- ]+/g, '').replace(/ /g, '-');
 
-const markdownContent = ref('');
-const htmlContent = ref('');
-const isLoading = ref(true);
-const errorMessage = ref(null);
-
-const handleClick = (event) => {
-  // Prevent all anchor navigation - just let users scroll manually
-  let target = event.target;
-  
-  // Walk up to find if we clicked on an anchor
-  while (target && target !== event.currentTarget) {
-    if (target.tagName === 'A') {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
+marked.use({
+  breaks: true,
+  renderer: {
+    heading({ tokens, depth }) {
+      return `<h${depth} id="${slug(this.parser.parseInline(tokens, this.parser.textRenderer))}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
     }
-    target = target.parentElement;
   }
-};
-
-const fetchMarkdown = async () => {
-  isLoading.value = true;
-  errorMessage.value = null;
-  
-  try {
-    // Fetch from the public raw GitHub URL
-    const response = await fetch('https://raw.githubusercontent.com/Warcraft-Gym/admin_frontend/Shibby_Dev/ADMIN_UI_USER_GUIDE.md');
-    
-    if (!response.ok) {
-      throw new Error('Failed to load user guide');
-    }
-    
-    markdownContent.value = await response.text();
-    
-    marked.use({ breaks: true });
-
-    // Convert markdown to HTML
-    htmlContent.value = marked.parse(markdownContent.value);
-  } catch (error) {
-    console.error('Error loading user guide:', error);
-    errorMessage.value = 'Failed to load user guide. Please try again later.';
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-onMounted(() => {
-  fetchMarkdown();
 });
+
+const htmlContent = marked.parse(guideMarkdown);
 </script>
 
 <template>
-  <v-overlay v-model="isLoading" class="align-center justify-center" persistent>
-    <v-progress-circular indeterminate size="64"></v-progress-circular>
-  </v-overlay>
-
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
@@ -67,28 +25,16 @@ onMounted(() => {
       </v-col>
     </v-row>
 
-    <StatusAlert v-model="errorMessage" />
-
     <v-card elevation="2">
-      <v-card-title class="bg-primary d-flex justify-space-between align-center">
-        <div class="d-flex align-center">
-          <v-icon class="mr-2">mdi-file-document</v-icon>
-          <span>Documentation</span>
-        </div>
-        <v-btn
-          color="surface"
-          variant="elevated"
-          prepend-icon="mdi-refresh"
-          @click="fetchMarkdown"
-        >
-          Refresh
-        </v-btn>
+      <v-card-title class="bg-primary d-flex align-center">
+        <v-icon class="mr-2">mdi-file-document</v-icon>
+        <span>Documentation</span>
       </v-card-title>
-      
+
       <v-divider></v-divider>
-      
+
       <v-card-text class="pa-6">
-        <div class="markdown-body" v-html="htmlContent" @click="handleClick"></div>
+        <div class="markdown-body" v-html="htmlContent"></div>
       </v-card-text>
     </v-card>
   </v-container>
@@ -182,6 +128,7 @@ onMounted(() => {
   background-color: rgba(var(--v-theme-on-surface), 0.08);
   border-radius: 3px;
   font-family: 'Courier New', Courier, monospace;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .markdown-body pre {

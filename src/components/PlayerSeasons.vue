@@ -223,7 +223,7 @@ const openId = computed(() => props.open
   ?? null);
 // A reader wants the season with ladder facts in it, which is rarely the one just opened
 const defaultOpen = computed(() => props.open
-  ?? rows.value.find(row => row.ladder?.games)?.season.id
+  ?? rows.value.find(row => row.stat && row.ladder?.games)?.season.id
   ?? openId.value);
 // it follows the ladder reads as they land, until the reader opens a season himself
 watch(defaultOpen, (id, was) => { if (opened.value == null || opened.value === was) opened.value = id; }, { immediate: true });

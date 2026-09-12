@@ -36,7 +36,7 @@
           <span class="text-h6">{{ mmr.current }}</span>
           <span v-if="mmrChange > 0" class="text-win">&#9650; {{ mmrChange }}</span>
           <span v-else-if="mmrChange < 0" class="text-loss">&#9660; {{ -mmrChange }}</span>
-          <span v-if="mmr.min != null" class="text-caption text-medium-emphasis">Low {{ mmr.min }} &middot; High {{ mmr.max }}</span>
+          <span v-if="mmr.min != null && mmr.max != null" class="text-caption text-medium-emphasis">Low {{ mmr.min }} &middot; High {{ mmr.max }}</span>
         </div>
         <div ref="plotBox">
           <LadderPlots v-if="plotWidth && mmrDays.length > 1" :days="mmrDays" :games="false" :width="plotWidth" />

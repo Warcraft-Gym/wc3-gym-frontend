@@ -61,8 +61,8 @@ export function homeCards({ me = null, seasons = [], kothEvents = [], now = new 
       joined: !!season.signed_up,
       primary: season.signed_up
         ? { title: 'Your series', to: myProfilePath(me), variant: 'elevated' }
-        // an account with no player row, such as the token admin, cannot sign up
-        : me?.user && ask && { title: ask, to: `/signup?season=${slug}`, variant: action === 'signup' ? 'elevated' : 'outlined' },
+        // the token admin holds no Discord account, so it cannot sign up
+        : !me?.superadmin && ask && { title: ask, to: `/signup?season=${slug}`, variant: action === 'signup' ? 'elevated' : 'outlined' },
       links: seasonLinks(season, slug),
       slug,
     };

@@ -97,12 +97,19 @@ test('an account with no seasons gets no cards', () => {
 });
 
 test('an admin without a player row gets cards without the sign-up ask', () => {
-  const open = { ...me, user: null, seasons: [{ ...me.seasons[1], signups_open: true }] };
+  const open = { ...me, user: null, superadmin: true, seasons: [{ ...me.seasons[1], signups_open: true }] };
   const cards = homeCards({ me: open, seasons, now });
   assert.equal(cards[0].status, 'Signups are open');
   assert.ok(!cards[0].primary);
   assert.deepEqual(cards[0].links.map((link) => link.title), ['Season report', 'Players']);
   assert.deepEqual(joinableEvents(cards), []);  // the popup button reads primary, so such a row stays out
+});
+
+test('a player with no row yet keeps the sign-up ask', () => {
+  const fresh = { ...me, user: null, superadmin: false, seasons: [{ ...me.seasons[1], signups_open: true }] };
+  const cards = homeCards({ me: fresh, seasons, now });
+  assert.deepEqual(cards[0].primary, { title: 'Sign up', to: '/signup?season=gnl-review-season-2', variant: 'elevated' });
+  assert.deepEqual(joinableEvents(cards).map((card) => card.key), ['season:5']);
 });
 
 test('a signed-up player of an open season reads the start, not the signups sentence', () => {

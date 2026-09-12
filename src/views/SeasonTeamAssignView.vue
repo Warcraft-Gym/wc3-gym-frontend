@@ -42,6 +42,7 @@
         </v-toolbar>
       </v-card-text>
       <v-card-text class="pt-4">
+        <StatusAlert v-model="errorMessage" />
         <FilterPanel
           v-model:searchName="searchName"
           v-model:searchRace="searchRace"
@@ -254,7 +255,7 @@
           <v-icon class="mr-2">mdi-shield-account</v-icon>
           Team Assignments
         </h2>
-        <div class="teams-grid" :style="{ gridTemplateColumns: `repeat(${colsCount}, 1fr)` }">
+        <div class="teams-grid">
           <div v-for="team in teams" :key="team.id" class="team-card-grid">
             <v-card elevation="2">
               <v-card-title class="bg-primary">
@@ -356,6 +357,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import FilterPanel from '@/components/FilterPanel.vue';
 import SyncProgress from '@/components/SyncProgress.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
 import { 
   getW3CMMR,
   getW3CGamesCount,
@@ -391,6 +393,9 @@ const { current_season } = storeToRefs(seasonStore);
 // Local state for signed up players
 const signedUpPlayersData = ref([]);
 
+// Every write on this page reports its failure here
+const errorMessage = ref(null);
+
 const searchName = ref('');
 const searchRace = ref(null);
 const rangeValues = ref([0, 3000]);
@@ -425,34 +430,31 @@ const roundSize = computed(() => teams.value?.length || 10);
 const rounds = computed(() => Array.from({ length: Math.ceil(orderedPlayers.value.length / roundSize.value) }, (_, i) => i + 1));
 const roundOf = (p) => Math.floor(positionOf.value.get(p.id) / roundSize.value) + 1;
 
-const setExcluded = async (player, draft_excluded) => {
+// The row moves at once and rolls back when the write is refused, so it never shows a value the server rejected
+const writeSignup = async (player, field, value, fields, message) => {
+  const before = player[field];
+  player[field] = value;
+  errorMessage.value = null;
   try {
-    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { draft_excluded });
-    player.draft_excluded = draft_excluded;
+    await seasonStore.updateSeasonSignup(seasonId.value, player.id, fields);
   } catch (error) {
-    console.error('Failed to change the pick list:', error);
+    console.error(message, error);
+    player[field] = before;
+    errorMessage.value = error.message;
   }
 };
 
-const setDraftPosition = async (player, draft_position) => {
-  try {
-    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { draft_position });
-    player.draft_position = draft_position;
-  } catch (error) {
-    console.error('Failed to move the player:', error);
-  }
-};
+const setExcluded = (player, draft_excluded) =>
+  writeSignup(player, 'draft_excluded', draft_excluded, { draft_excluded }, 'Failed to change the pick list:');
+
+const setDraftPosition = (player, draft_position) =>
+  writeSignup(player, 'draft_position', draft_position, { draft_position }, 'Failed to move the player:');
 const moveToRound = (player, round) => setDraftPosition(player, (round - 1) * roundSize.value);
 
 // The race the MMR, the icon and the race filters read
-const setSignupRace = async (player, race) => {
-  if (!race) return;
-  try {
-    await seasonStore.updateSeasonSignup(seasonId.value, player.id, { race });
-    player.signup_race = race;
-  } catch (error) {
-    console.error('Failed to set the race:', error);
-  }
+const setSignupRace = (player, race) => {
+  if (!race) return Promise.resolve();
+  return writeSignup(player, 'signup_race', race, { race }, 'Failed to set the race:');
 };
 
 const playerTableHeaders = computed(() => [
@@ -462,7 +464,8 @@ const playerTableHeaders = computed(() => [
   { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => positionOf.value.get(a.id) - positionOf.value.get(b.id) },
   { title: 'Race', value: 'race' },
   { title: 'Round', value: 'round', sortable: false },
-  { title: 'Team', value: 'team', sortable: false },
+  // the table lists players no team holds yet, so the picker is the whole column
+  ...(auth.isAdmin ? [{ title: 'Team', value: 'team', sortable: false }] : []),
   { title: '', value: 'actions', sortable: false, align: 'end' },
 ]);
 
@@ -489,16 +492,7 @@ const playersWithTeamSelected = computed(() => {
   return Object.values(playerTeamSelection.value).filter(teamId => teamId != null).length;
 });
 
-// columns for teams grid: if exactly 8 teams -> show 4 columns (will wrap to two rows);
-// otherwise show all teams side-by-side (one column per team)
-const { xs, smAndDown } = useDisplay();
-const colsCount = computed(() => {
-  if (xs.value) return 1;
-  if (smAndDown.value) return 2;
-  const n = (teams.value || []).length;
-  if (n === 8) return 4; // two rows of 4
-  return Math.max(1, n); // side-by-side for fewer than 8 teams
-});
+const { smAndDown } = useDisplay();
 
 // fetch data — prefer fetching teams for the specific season when seasonId is available
 const fetchData = async () => {
@@ -525,9 +519,7 @@ onMounted(async () => {
   fetchData();
 });
 
-const seasonName = computed(() => {
-  return current_season.name;
-});
+const seasonName = computed(() => current_season.value?.name || '');
 
 // players signed up for this season, in draft order
 const signedUpPlayers = orderedPlayers;
@@ -582,6 +574,7 @@ const isRemoveLoading = (teamId, playerId) => {
 
 const assignAllPlayers = async () => {
   assignAllLoading.value = true;
+  errorMessage.value = null;
   try {
     // Group players by team
     const playersByTeam = {};
@@ -606,12 +599,14 @@ const assignAllPlayers = async () => {
     await fetchData();
   } catch (err) {
     console.error('Failed to assign players to teams:', err);
+    errorMessage.value = err.message;
   } finally {
     assignAllLoading.value = false;
   }
 };
 
 const removePlayerFromTeam = async (teamId, playerId) => {
+  errorMessage.value = null;
   removeLoading.value = { ...removeLoading.value, [`${teamId}_${playerId}`]: true };
   try {
     if (teamStore.removePlayersFromTeamForSeason) {
@@ -620,6 +615,7 @@ const removePlayerFromTeam = async (teamId, playerId) => {
     await fetchData();
   } catch (err) {
     console.error('Failed to remove player from team:', err);
+    errorMessage.value = err.message;
   } finally {
     removeLoading.value = { ...removeLoading.value, [`${teamId}_${playerId}`]: false };
   }
@@ -628,6 +624,7 @@ const removePlayerFromTeam = async (teamId, playerId) => {
 // sync every player signed up to the season, one chunk of players per request
 const syncAllDraftPlayers = async () => {
   syncAllLoading.value = true;
+  errorMessage.value = null;
   const list = signedUpPlayers.value || [];
   perPlayerSyncStatus.value = Object.fromEntries(list.map(p => [p.id, { state: 'loading' }]));
   try {
@@ -641,6 +638,7 @@ const syncAllDraftPlayers = async () => {
     syncDialog.value = true;
   } catch (err) {
     console.error('Failed to sync season players:', err);
+    errorMessage.value = err.message;
     perPlayerSyncStatus.value = Object.fromEntries(list.map(p => [p.id, { state: 'error', message: err.message }]));
   } finally {
     await fetchData();
@@ -651,11 +649,13 @@ const syncAllDraftPlayers = async () => {
 const editPlayer = (player) => editPlayerDialog.value.open(player);
 
 const removeSignup = async (player) => {
+  errorMessage.value = null;
   try {
     await seasonStore.removeUserSignup(seasonId.value, [player.id]);
     await fetchData();
   } catch (error) {
     console.error('Failed to remove the signup:', error);
+    errorMessage.value = error.message;
   }
 };
 </script>
@@ -666,6 +666,8 @@ const removeSignup = async (player) => {
  .teams-grid {
    display: grid;
    gap: 12px;
+   /* as many team cards as fit the window, so the page never scrolls sideways */
+   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
  }
  .team-card-grid {
    display: block;

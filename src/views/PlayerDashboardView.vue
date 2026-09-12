@@ -431,6 +431,8 @@ const saveProfile = async () => {
     const body = { ...profileForm.value, twitch_url: twitchChannel.value.url, youtube_url: youtubeChannel.value.url };
     const { user } = await fetchWrapper.put(`${backendUrl}/user-info`, body);
     playerData.value = { ...playerData.value, player: { ...playerData.value.player, ...user } };
+    // the claim dialog reads the channels off the session payload, which only loads once per visit
+    if (authStore.me?.user) authStore.me.user = { ...authStore.me.user, ...user };
     editProfileOpen.value = false;
     successMessage.value = 'Profile saved.';
   } catch (error) {

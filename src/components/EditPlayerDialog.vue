@@ -72,6 +72,32 @@
           </v-col>
         </v-row>
         <v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="selectedPlayer.twitch_url"
+              label="Twitch channel"
+              hint="twitch.tv/you"
+              persistent-hint
+              variant="outlined"
+              prepend-inner-icon="mdi-twitch"
+              :error-messages="twitchChannel.error"
+              density="comfortable"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="selectedPlayer.youtube_url"
+              label="YouTube channel"
+              hint="youtube.com/@you"
+              persistent-hint
+              variant="outlined"
+              prepend-inner-icon="mdi-youtube"
+              :error-messages="youtubeChannel.error"
+              density="comfortable"
+            ></v-text-field>
+          </v-col>
+        </v-row>
+        <v-row>
           <v-col cols="12">
             <div class="text-subtitle-2 mb-1">Seasons</div>
             <div v-if="signupSeasons.length" class="d-flex flex-wrap ga-1">
@@ -88,7 +114,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn @click="cancelEdit">Cancel</v-btn>
-        <v-btn v-if="canSave" @click="updatePlayer" color="primary" variant="elevated" prepend-icon="mdi-content-save">
+        <v-btn v-if="canSave" @click="updatePlayer" color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!!(twitchChannel.error || youtubeChannel.error)">
           Save Changes
         </v-btn>
       </v-card-actions>
@@ -99,6 +125,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { usePlayerStore } from '@/stores';
+import { channelInput } from '@/helpers/casts.mjs';
 import RaceIcon from '@/components/RaceIcon.vue';
 
 const props = defineProps({
@@ -118,6 +145,10 @@ const signupSeasons = computed(() =>
   (selectedPlayer.value?.signup_seasons ?? []).slice().sort((a, b) => b.id - a.id)
 );
 
+// The stored channel is the URL the field normalised, so the admin saves what the profile shows
+const twitchChannel = computed(() => channelInput('twitch', selectedPlayer.value?.twitch_url));
+const youtubeChannel = computed(() => channelInput('youtube', selectedPlayer.value?.youtube_url));
+
 const open = (player) => {
   selectedPlayer.value = { ...player };
   updateError.value = '';
@@ -127,7 +158,11 @@ const open = (player) => {
 const updatePlayer = async () => {
   updateError.value = '';
   try {
-    await playerStore.updatePlayer(selectedPlayer.value);
+    await playerStore.updatePlayer({
+      ...selectedPlayer.value,
+      twitch_url: twitchChannel.value.url,
+      youtube_url: youtubeChannel.value.url,
+    });
     if (props.refresh) await props.refresh();
     cancelEdit();
   } catch (error) {

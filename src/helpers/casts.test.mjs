@@ -61,6 +61,7 @@ test('a video link is refused in a profile channel field', () => {
   assert.deepEqual(channelInput('youtube', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), { url: null, error: video });
   assert.deepEqual(channelInput('youtube', 'https://youtu.be/dQw4w9WgXcQ'), { url: null, error: video });
   assert.deepEqual(channelInput('youtube', 'youtube.com/live/dQw4w9WgXcQ'), { url: null, error: video });
+  assert.deepEqual(channelInput('twitch', 'https://youtube.com/watch?v=dQw4w9WgXcQ'), { url: null, error: video });
 });
 
 test('the wrong platform or a link that is no channel says what to paste', () => {
@@ -68,5 +69,6 @@ test('the wrong platform or a link that is no channel says what to paste', () =>
   assert.equal(channelInput('youtube', 'twitch.tv/grubby').error, 'Type your YouTube @handle, or paste a youtube.com channel link.');
   assert.equal(channelInput('twitch', 'kick.com/grubby').url, null);
   assert.equal(channelInput('youtube', 'youtube.com/feed/subscriptions').url, null);
-  assert.equal(channelInput('twitch', 'twitch.tv/grubby/about').url, null);
+  // A link copied from a channel sub-page still names the channel
+  assert.deepEqual(channelInput('twitch', 'twitch.tv/grubby/about'), { url: 'https://twitch.tv/grubby' });
 });

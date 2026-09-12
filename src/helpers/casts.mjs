@@ -65,11 +65,12 @@ export const channelInput = (platform, text) => {
     if (raw.includes('/') || !HANDLE[platform]?.test(handle)) return wrong;
     return { url: platform === 'twitch' ? `https://twitch.tv/${handle}` : `https://youtube.com/@${handle}` };
   }
-  if (typed !== platform) return wrong;
   const [host, path] = hostPath(raw);
   if (VIDEO_PATHS[host]?.test(path)) return { url: null, error: 'That link opens one video. Paste your channel page instead.' };
+  if (typed !== platform) return wrong;
   if (platform === 'twitch') {
-    const handle = path.match(/^\/(\w+)$/);
+    // The first path segment is the channel, so a sub-page link works the way the YouTube branch does
+    const handle = path.match(/^\/(\w+)(?:\/|$)/);
     return handle ? { url: `https://twitch.tv/${handle[1]}` } : wrong;
   }
   const at = path.match(/^\/@([\w.-]+)/);

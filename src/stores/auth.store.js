@@ -19,14 +19,15 @@ export const useAuthStore = defineStore({
     state: () => ({
         user: JSON.parse(localStorage.getItem('user')),  // the legacy admin-token session only
         me: JSON.parse(localStorage.getItem('me')),
-        viewAs: JSON.parse(localStorage.getItem('viewAs')),  // { role, teamId? }; an admin seeing the app as a lower role
+        viewAs: JSON.parse(localStorage.getItem('viewAs')),  // { role, seats? }; an admin seeing the app as a lower role
         loginError: null  // why the last /me failed; the login page shows it
     }),
     getters: {
         isAdmin: (s) => s.me?.role === 'admin',
         isCaptain: (s) => s.me?.role === 'captain' || s.me?.role === 'admin',
-        // /me names the team of every member, so only a captain's team grants captain rights
-        captainTeamId: (s) => (s.me?.role === 'captain' ? s.me?.team?.id ?? null : null)
+        // a captain writes for the (team, season) pairs /me lists as seats; an admin for every pair
+        isCaptainOf: (s) => (teamId, seasonId) => s.me?.role === 'admin'
+            || (s.me?.seats ?? []).some((seat) => Number(seat.team_id) === Number(teamId) && Number(seat.season_id) === Number(seasonId))
     },
     actions: {
         useClerkAuth(auth) {

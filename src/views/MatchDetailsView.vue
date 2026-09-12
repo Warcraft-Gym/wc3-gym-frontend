@@ -1176,8 +1176,8 @@ const tablePlayerHeader = computed(() => [
 const matchId = computed(() => router.currentRoute.value.params.id);
 
 // a captain writes the draft of the matches their own team plays; an admin any
-const canDraft = computed(() => auth.isAdmin || (auth.captainTeamId != null
-  && [matchStore.match?.team1_id, matchStore.match?.team2_id].includes(auth.captainTeamId)));
+const canDraft = computed(() => auth.isAdmin || [matchStore.match?.team1_id, matchStore.match?.team2_id]
+  .some((id) => id != null && auth.isCaptainOf(id, matchStore.match?.season_id)));
 
 // Component state
 const isLoading = ref(false);
@@ -1328,7 +1328,7 @@ const selectAvailable = () => { selectAvailableTeam1(); selectAvailableTeam2(); 
 // A captain reads their own team only, so the team they cannot read stays empty
 const fetchAvailability = async () => {
   const { team1_id, team2_id, season_id } = matchStore.match;
-  const read = (teamId) => (teamId && (auth.isAdmin || auth.captainTeamId === teamId)
+  const read = (teamId) => (teamId && auth.isCaptainOf(teamId, season_id)
     ? availabilityStore.fetchTeamAvailability(teamId, season_id).catch(() => [])
     : Promise.resolve([]));
   [availability1.value, availability2.value] = await Promise.all([read(team1_id), read(team2_id)]);

@@ -157,6 +157,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useSeasonStore, useAuthStore } from '@/stores';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { storeToRefs } from 'pinia';
@@ -165,6 +166,7 @@ import { raceWrapper } from '@/helpers/races.js';
 import { signupState, signupTitles, startZone } from '@/helpers/signup.mjs';
 import { viewerZone, zoneLabel } from '@/helpers/timezone.mjs';
 
+const route = useRoute();
 const loading = ref(true);
 
 // Form fields (match the create player dialog)
@@ -206,8 +208,10 @@ const { me } = storeToRefs(authStore);
 const { seasons } = storeToRefs(seasonStore);
 
 const season = computed(() => seasons.value.find(x => String(x.id) === String(selectedSignupSeasonId.value)) ?? null);
-const seasonName = computed(() => season.value?.name || '');
-const state = computed(() => signupState(season.value, !!me.value?.signed_up, !!me.value?.user));
+// /me answers per season, so the signed-up state follows the season the page acts on
+const mySeason = computed(() => me.value?.seasons?.find(x => x.id === selectedSignupSeasonId.value) ?? null);
+const seasonName = computed(() => mySeason.value?.name || season.value?.name || '');
+const state = computed(() => signupState(mySeason.value ?? season.value, !!(mySeason.value?.signed_up ?? me.value?.signed_up), !!me.value?.user));
 const titles = computed(() => signupTitles(state.value, seasonName.value));
 const schedulingEnabled = computed(() => season.value?.scheduling_enabled ?? true);
 const entry = computed(() => me.value?.user);
@@ -250,8 +254,9 @@ onMounted(async () => {
     race.value = existing.race || '';
     zonePick.value = existing.timezone || '';
   }
-  selectedSignupSeasonId.value = authStore.me.season_id || null;
   try { await seasonStore.fetchSeasons(); } catch (e) { /* ignore */ }
+  // ?season=<slug> names the season on the home card; /me's own season is the fallback
+  selectedSignupSeasonId.value = seasonStore.seasonIdOf(route.query.season) ?? authStore.me.season_id ?? null;
   loading.value = false;
 });
 

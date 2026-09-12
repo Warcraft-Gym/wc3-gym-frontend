@@ -121,7 +121,10 @@ const rounds = ref({});  // season id -> the /player-series payload
 
 const load = async (seasonId) => {
   const url = `${backendUrl}/player-series?${pageQuery({ limit: PAGE_LIMIT, offset: 0 })}&season_id=${seasonId}`;
-  const { items } = await fetchWrapper.getPage(url).catch(() => ({ items: null }));
+  const { items } = await fetchWrapper.getPage(url).catch(() => {
+    errorMessage.value = 'Could not load your rounds.';
+    return { items: null };
+  });
   rounds.value = { ...rounds.value, [seasonId]: items ?? {} };
 };
 
@@ -169,7 +172,7 @@ const setWeek = async (seasonId, playday, want) => {
   gap: 0.75rem;
   align-items: center;
   padding: 6px 0;
-  border-bottom: 1px solid rgb(var(--v-border-color), var(--v-border-opacity));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .answer {

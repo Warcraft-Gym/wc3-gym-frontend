@@ -142,8 +142,8 @@ const busyPreview = (row) => (busyValid(row) ? busyLine(asBusy(row)) : 'Pick the
 // A row opened for edit remembers what it looked like, so Cancel puts it back
 const edit = (row) => Object.assign(row, { was: { ...row }, editing: true });
 const cancel = (list, index) => {
-  const row = list.value[index];
-  if (!row.id) return void list.value.splice(index, 1);
+  const row = list[index];
+  if (!row.id) return void list.splice(index, 1);
   Object.assign(row, row.was, { editing: false });
 };
 
@@ -225,7 +225,7 @@ onMounted(load);
   gap: 0.75rem;
   align-items: center;
   padding: 4px 0;
-  border-bottom: 1px solid rgb(var(--v-border-color), var(--v-border-opacity));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .ops {

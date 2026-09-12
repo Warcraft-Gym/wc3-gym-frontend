@@ -17,7 +17,6 @@ export { default as TeamsView } from './TeamsView.vue';
 export { default as TeamView } from './TeamView.vue';
 export { default as PublicSignupView } from './PublicSignupView.vue';
 export { default as AvailabilityView } from './AvailabilityView.vue';
-export { default as PlayerDashboardView } from './PlayerDashboardView.vue';
 export { default as ConfigView } from './ConfigView.vue';
 export { default as DiscordRolesView } from './DiscordRolesView.vue';
 export { default as AccessView } from './AccessView.vue';

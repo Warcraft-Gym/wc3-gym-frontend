@@ -36,10 +36,10 @@
             <dd>{{ zoneLabel(entry.timezone) || '—' }}</dd>
           </dl>
           <v-btn variant="outlined" prepend-icon="mdi-pencil" @click="editing = true">Change my details</v-btn>
-          <v-card v-if="schedulingEnabled" variant="tonal" color="primary" class="mt-6" to="/player-dashboard">
+          <v-card v-if="schedulingEnabled" variant="tonal" color="primary" class="mt-6" to="/availability">
             <v-card-item prepend-icon="mdi-calendar-remove" append-icon="mdi-chevron-right">
               <v-card-title class="text-wrap">Mark the rounds you cannot play</v-card-title>
-              <v-card-subtitle>On your player dashboard</v-card-subtitle>
+              <v-card-subtitle>On your availability page</v-card-subtitle>
             </v-card-item>
           </v-card>
         </template>

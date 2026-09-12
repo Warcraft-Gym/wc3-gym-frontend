@@ -17,6 +17,7 @@ const seasons = [
 ];
 // /me: what the account is to each season that is not complete
 const me = {
+  user: { id: 7, battleTag: 'thanks#11187' },
   seats: [{ team_id: 2, season_id: 4 }],
   seasons: [
     { id: 4, name: 'GNL Review Season', phase: 'commenced', scheduling_enabled: true, start_date: '2026-09-01', signed_up: true, captain: true, team: { id: 2, name: 'GNLB' } },
@@ -50,7 +51,7 @@ test('the season the captain plays reads the round in play and carries every lin
   const [card] = homeCards({ me, seasons, now });
   assert.equal(card.status, 'Round 5 of 8 · 5 to 11 Oct');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Signed up', 'Captain · GNLB']);
-  assert.deepEqual(card.primary, { title: 'Your series', to: '/player-dashboard', variant: 'elevated' });
+  assert.deepEqual(card.primary, { title: 'Your series', to: '/player/thanks%2311187', variant: 'elevated' });
   assert.deepEqual(card.links.map((link) => link.title), ['GNLB', 'Season report', 'Upcoming series', 'Ladder', 'Players', 'My fantasy team', 'Availability']);
 });
 
@@ -100,5 +101,5 @@ test('a signed-up player of an open season reads the start, not the signups sent
   const [card] = homeCards({ me: early, seasons, now });
   assert.equal(card.status, 'Starts 2 Nov');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Signed up', 'Captain · GNLA']);
-  assert.deepEqual(card.primary, { title: 'Your series', to: '/player-dashboard', variant: 'elevated' });
+  assert.deepEqual(card.primary, { title: 'Your series', to: '/player/thanks%2311187', variant: 'elevated' });
 });

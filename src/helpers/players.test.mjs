@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSignupRace, kingPlayer, openPlayer, panelPlayerKey, playerPath, playersWithCareers } from './players.mjs';
+import { defaultSignupRace, kingPlayer, myProfilePath, openPlayer, panelPlayerKey, playerPath, playersWithCareers } from './players.mjs';
 
 // The panel and the page must address the same player, and a row without a
 // battle tag (a ladder opponent, a leaderboard row) still has to open.
@@ -73,4 +73,11 @@ test('a king shows his twitch name, else his battle tag', () => {
     kingPlayer({ twitch_username: '', battle_tag: 'Grubby#1234', country: null }),
     { name: 'Grubby#1234', country: null },
   );
+});
+
+test('the account menu points at the own player page, or the signup page', () => {
+  assert.equal(myProfilePath({ user: { id: 7, battleTag: 'thanks#11187' } }), '/player/thanks%2311187');
+  assert.equal(myProfilePath({ user: { id: 7 } }), '/player/7');
+  assert.equal(myProfilePath({ role: 'member' }), '/profile');
+  assert.equal(myProfilePath(null), '/profile');
 });

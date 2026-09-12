@@ -3,7 +3,7 @@
     <v-card v-if="selectedPlayer">
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-pencil</v-icon>
-        Edit Player: {{ selectedPlayer.name }}
+        {{ self ? 'Edit Profile' : `Edit Player: ${selectedPlayer.name}` }}
       </v-card-title>
 
       <v-alert
@@ -44,7 +44,10 @@
           <v-col cols="12" md="6">
             <CountrySelect v-model="selectedPlayer.country" />
           </v-col>
-          <v-col cols="12" md="6">
+          <v-col v-if="self" cols="12" md="6">
+            <v-autocomplete v-model="selectedPlayer.timezone" :items="timezones" label="Timezone" variant="outlined" prepend-inner-icon="mdi-clock-outline" density="comfortable" />
+          </v-col>
+          <v-col v-if="!self" cols="12" md="6">
             <v-text-field
               v-model="selectedPlayer.discordTag"
               label="Discord Tag"
@@ -54,7 +57,7 @@
             ></v-text-field>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row v-if="!self">
           <v-col cols="12" md="6">
             <v-text-field
               v-model="selectedPlayer.discordId"
@@ -124,17 +127,22 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { usePlayerStore } from '@/stores';
+import { backendUrl, fetchWrapper } from '@/helpers';
+import { useAuthStore, usePlayerStore } from '@/stores';
 import { channelInput } from '@/helpers/casts.mjs';
 import RaceIcon from '@/components/RaceIcon.vue';
 
 const props = defineProps({
+  // the player editing his own row: fewer fields, and his own route
+  self: Boolean,
   canSave: { type: Boolean, default: true },
   // Awaited after a successful save so the dialog closes once the caller's list is fresh
   refresh: { type: Function, default: null },
 });
 
+const auth = useAuthStore();
 const playerStore = usePlayerStore();
+const timezones = Intl.supportedValuesOf('timeZone');
 
 const show = ref(false);
 const selectedPlayer = ref(null);
@@ -157,12 +165,20 @@ const open = (player) => {
 
 const updatePlayer = async () => {
   updateError.value = '';
+  const edited = {
+    ...selectedPlayer.value,
+    twitch_url: twitchChannel.value.url,
+    youtube_url: youtubeChannel.value.url,
+  };
   try {
-    await playerStore.updatePlayer({
-      ...selectedPlayer.value,
-      twitch_url: twitchChannel.value.url,
-      youtube_url: youtubeChannel.value.url,
-    });
+    if (props.self) {
+      const { name, battleTag, race, country, timezone, twitch_url, youtube_url } = edited;
+      const { user } = await fetchWrapper.put(`${backendUrl}/user-info`, { name, battleTag, race, country, timezone, twitch_url, youtube_url });
+      // the cast dialog reads the channels off the session payload, which loads once per visit
+      if (auth.me?.user) auth.me.user = { ...auth.me.user, ...user };
+    } else {
+      await playerStore.updatePlayer(edited);
+    }
     if (props.refresh) await props.refresh();
     cancelEdit();
   } catch (error) {

@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 import { seasonSlug } from './season-slug.mjs';
 import { currentRound, roundLabel } from './rounds.mjs';
+import { myProfilePath } from './players.mjs';
 
 // What a player can do with a season: sign up, ask an admin, or nothing; an absent signups_open reads as open
 export function seasonAction(season) {
@@ -59,7 +60,7 @@ export function homeCards({ me = null, seasons = [], kothEvents = [], now = new 
       action,
       joined: !!season.signed_up,
       primary: season.signed_up
-        ? { title: 'Your series', to: '/player-dashboard', variant: 'elevated' }
+        ? { title: 'Your series', to: myProfilePath(me), variant: 'elevated' }
         : ask && { title: ask, to: `/signup?season=${slug}`, variant: action === 'signup' ? 'elevated' : 'outlined' },
       links: seasonLinks(season, slug),
       slug,

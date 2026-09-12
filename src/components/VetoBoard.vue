@@ -38,7 +38,7 @@
     <StatusAlert v-model="errorMessage" :retry="load" />
     <!-- A board that never loaded leaves the page with nothing but its message -->
     <div v-if="errorMessage && !board && !report" class="mb-4">
-      <v-btn variant="text" to="/player-dashboard">Back to your dashboard</v-btn>
+      <v-btn variant="text" :to="myProfilePath(auth.me)">Back to your profile</v-btn>
     </div>
 
     <div v-if="!board && !errorMessage" class="d-flex justify-center pa-8">
@@ -182,6 +182,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { DEFAULT_RULES } from '@/helpers/best-of.mjs';
 import { hideMissingImage } from '@/helpers/team-image';
+import { myProfilePath } from '@/helpers/players';
 import { useAuthStore, useMapStore } from '@/stores';
 import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';

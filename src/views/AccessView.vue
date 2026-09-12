@@ -30,7 +30,7 @@
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-spacer />
                 <v-col cols="12" sm="auto">
-                  <v-btn variant="elevated" color="success" prepend-icon="mdi-plus" @click="openAdd" block>
+                  <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openAdd" block>
                     Add Admin
                   </v-btn>
                 </v-col>
@@ -56,8 +56,8 @@
 
           <template #no-data>
             <div class="text-center pa-8">
-              <v-icon size="64" class="text-disabled">mdi-account-off-outline</v-icon>
-              <div class="text-h6 mt-4 text-medium-emphasis">No admins granted yet</div>
+              <v-icon size="64" class="text-disabled">{{ loadFailed ? 'mdi-alert-circle-outline' : 'mdi-account-off-outline' }}</v-icon>
+              <div class="text-h6 mt-4 text-medium-emphasis">{{ loadFailed ? 'Could not load the admins' : 'No admins granted yet' }}</div>
             </div>
           </template>
         </v-data-table>
@@ -132,6 +132,8 @@ const admins = ref([]);
 const isLoading = ref(false);
 const isSaving = ref(false);
 const errorMessage = ref(null);
+// True while the load failed, so an empty table does not read as "no admins"
+const loadFailed = ref(false);
 const successMessage = ref(null);
 const dialogError = ref(null);
 const addDialog = ref(false);
@@ -153,9 +155,11 @@ const canRemove = (row) => row.source === 'app' && row.discord_id !== authStore.
 const fetchAll = async () => {
   isLoading.value = true;
   errorMessage.value = null;
+  loadFailed.value = false;
   try {
     [admins.value] = await Promise.all([configStore.fetchAdmins(), playerStore.fetchPlayers()]);
   } catch (error) {
+    loadFailed.value = true;
     errorMessage.value = 'Failed to load the admins: ' + error.message;
   } finally {
     isLoading.value = false;

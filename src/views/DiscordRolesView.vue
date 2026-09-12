@@ -12,12 +12,12 @@
         </h1>
         <div v-if="view === 'columns'" class="text-body-2 text-medium-emphasis">Drag a card to a column, double-click it, or use its buttons.</div>
       </v-col>
-      <v-col cols="auto" class="d-flex align-center ga-3">
+      <v-col cols="12" sm="auto" class="d-flex align-center ga-3">
         <v-select v-if="view === 'columns'" v-model="sortKey" :items="SORTS" item-title="label" item-value="key" label="Sort" density="compact" variant="outlined" hide-details style="min-width: 170px" />
         <!-- Temporary: both layouts ship so admins can say which they prefer; one goes after that -->
         <v-btn-toggle v-model="view" mandatory density="compact" variant="outlined" divided>
-          <v-btn value="columns" icon="mdi-view-column"><v-tooltip activator="parent" location="top">Columns</v-tooltip></v-btn>
-          <v-btn value="table" icon="mdi-table"><v-tooltip activator="parent" location="top">Table</v-tooltip></v-btn>
+          <v-btn value="columns" icon="mdi-view-column" aria-label="Columns" />
+          <v-btn value="table" icon="mdi-table" aria-label="Table" />
         </v-btn-toggle>
       </v-col>
     </v-row>
@@ -53,7 +53,7 @@
             @drop.prevent="dropOn(column.key)"
           >
             <div v-if="!cards[column.key].length" class="text-body-2 text-medium-emphasis text-center pa-4">
-              {{ column.empty }}
+              {{ loadFailed ? 'Could not load the roles.' : column.empty }}
             </div>
 
             <v-card
@@ -194,8 +194,8 @@
 
           <template #no-data>
             <div class="text-center pa-8">
-              <v-icon size="64" class="text-disabled">mdi-check-circle-outline</v-icon>
-              <div class="text-h6 mt-4 text-medium-emphasis">Every account matches the database</div>
+              <v-icon size="64" class="text-disabled">{{ loadFailed ? 'mdi-alert-circle-outline' : 'mdi-check-circle-outline' }}</v-icon>
+              <div class="text-h6 mt-4 text-medium-emphasis">{{ loadFailed ? 'Could not load the comparison' : 'Every account matches the database' }}</div>
             </div>
           </template>
         </v-data-table>
@@ -405,6 +405,8 @@ const syncingUserId = ref(null);
 const applyingRoleId = ref(null);
 const isSavingBinding = ref(false);
 const errorMessage = ref(null);
+// True while any load failed, so no empty list reads as an all-clear
+const loadFailed = ref(false);
 const successMessage = ref(null);
 const dialogError = ref(null);
 const pickerDialog = ref(false);
@@ -538,12 +540,17 @@ const tableActions = (card) => {
   return cardActions(card).filter(a => a.label !== 'Manage' && a.label !== 'Ignore');
 };
 
+const addError = (message) => {
+  loadFailed.value = true;
+  errorMessage.value = errorMessage.value ? errorMessage.value + ' ' + message : message;
+};
+
 const fetchReport = async () => {
   isLoadingReport.value = true;
   try {
     report.value = await configStore.fetchDiscordRoleReport();
   } catch (error) {
-    errorMessage.value = 'Failed to load the out-of-sync accounts: ' + error.message;
+    addError('Failed to load the out-of-sync accounts: ' + error.message);
   } finally {
     isLoadingReport.value = false;
   }
@@ -552,6 +559,7 @@ const fetchReport = async () => {
 const fetchAll = async () => {
   isLoading.value = true;
   errorMessage.value = null;
+  loadFailed.value = false;
   // The report reads the guild, so the cards render before it lands
   const pending = fetchReport();
   try {
@@ -562,7 +570,7 @@ const fetchAll = async () => {
       seasonStore.fetchSeasons()
     ]);
   } catch (error) {
-    errorMessage.value = 'Failed to load the Discord roles: ' + error.message;
+    addError('Failed to load the Discord roles: ' + error.message);
   } finally {
     isLoading.value = false;
   }

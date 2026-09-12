@@ -52,14 +52,15 @@ export const router = createRouter({
         { path: '/report/:id', component: SeasonReportView, meta: { role: 'public', season: true } },
         { path: '/ladder', component: LadderView, meta: { role: 'member' } },
         { path: '/random-stats', component: RandomStatsView, meta: { role: 'public', nav: false, bar: false } },
-        { path: '/credits', component: CreditsView, meta: { role: 'public' } }
+        { path: '/credits', component: CreditsView, meta: { role: 'public' } },
+        { path: '/:pathMatch(.*)*', redirect: '/' }  // a stale Discord or website link lands on the home page, not a blank one
     ]
 });
 
 router.beforeEach(async (to) => {
     const auth = useAuthStore();
     // A season in the path is a slug; the page reads its id off the loaded list
-    if (to.meta.season) await useSeasonStore().ensureSeasons();
+    if (to.meta.season) await useSeasonStore().ensureSeasons().catch(() => {});  // a failed season list must not abort the navigation; the view shows its own error
     if ((to.path === '/login' || to.path === '/admin-login') && auth.me) return takeReturnUrl(homePath(auth.me.role));
     if (to.meta.role === 'public') return;
 

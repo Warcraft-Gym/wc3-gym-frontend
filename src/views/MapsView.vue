@@ -9,7 +9,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-map</v-icon>
-          1v1 Maps
+          1v1 maps
         </h1>
       </v-col>
     </v-row>
@@ -31,13 +31,18 @@
             <template #prepend><W3CIcon :size="20" /></template>
             Import W3C map pool
           </v-btn>
-          <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">Add New Map</v-btn>
+          <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">Add map</v-btn>
         </div>
         <v-row v-if="maps.length">
           <v-col v-for="item in maps" :key="item.id" cols="12" sm="6" md="4" lg="3">
             <v-card variant="outlined">
               <v-img :src="item.image" :aspect-ratio="3 / 2" cover class="bg-band">
                 <v-chip v-if="item.shortname" class="shortname" size="small" label>{{ item.shortname }}</v-chip>
+                <!-- v-img draws nothing without a src, so the empty band says it has no picture rather than reading as one still loading -->
+                <div v-if="!item.image" class="d-flex flex-column align-center justify-center fill-height text-on-band">
+                  <v-icon size="40">mdi-map-outline</v-icon>
+                  <span class="text-caption mt-1">No picture</span>
+                </div>
               </v-img>
               <v-card-item>
                 <div class="text-subtitle-1 font-weight-medium">{{ item.name }}</div>
@@ -58,7 +63,7 @@
           <div class="text-h6 text-medium-emphasis mt-4 mb-2">No maps found</div>
           <p class="text-medium-emphasis mb-4">Get started by adding your first map</p>
           <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">
-            Add First Map
+            Add the first map
           </v-btn>
         </div>
       </v-card-text>
@@ -69,7 +74,7 @@
       <v-card v-if="selectedMap">
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-map-plus' }}</v-icon>
-          {{ isEditing ? `Edit Map: ${selectedMap.name}` : 'Add New Map' }}
+          {{ isEditing ? `Edit map: ${selectedMap.name}` : 'Add map' }}
         </v-card-title>
 
         <v-alert v-if="formError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="formError = null">
@@ -81,7 +86,7 @@
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="selectedMap.name"
-                label="Map Name"
+                label="Map name"
                 variant="outlined"
                 prepend-inner-icon="mdi-map"
                 density="comfortable"
@@ -90,7 +95,7 @@
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="selectedMap.shortname"
-                label="Short Name"
+                label="Short name"
                 variant="outlined"
                 prepend-inner-icon="mdi-text-short"
                 density="comfortable"
@@ -117,7 +122,7 @@
           <v-spacer />
           <v-btn @click="closeMapDialog">Cancel</v-btn>
           <v-btn @click="isEditing ? updateMap() : createNewMap()" color="primary" variant="elevated" :prepend-icon="isEditing ? 'mdi-content-save' : 'mdi-plus'">
-            {{ isEditing ? 'Save Changes' : 'Add Map' }}
+            {{ isEditing ? 'Save changes' : 'Add map' }}
           </v-btn>
         </v-card-actions>
       </v-card>

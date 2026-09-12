@@ -279,7 +279,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
-import { ALL_COLORS } from '@/helpers/tiers.mjs';
+import { ALL_COLORS, tierSelectionError } from '@/helpers/tiers.mjs';
 
 
 const fantasyStore = useFantasyStore();
@@ -474,26 +474,15 @@ const saveTeam = async () => {
   const { valid } = await teamForm.value.validate();
   if (!valid) return;
 
-  // Validate every tier the season cuts is selected
-  const missingTiers = tiers.value.filter((tier) => !selectedTierPlayers.value[tier]);
-  
-  if (missingTiers.length > 0) {
-    dialogErrorMessage.value = `Please select players for tier(s): ${missingTiers.join(', ')}`;
-    return;
-  }
-
-  if (!tierCount.value) {
-    dialogErrorMessage.value = 'The player tiers for this season are not cut yet.';
+  // One player per tier the season cuts, and a season with no cut tiers takes no team
+  const selectionError = tierSelectionError(tierCount.value, selectedTierPlayers.value);
+  if (selectionError) {
+    dialogErrorMessage.value = selectionError;
     return;
   }
 
   // Build player_ids array from tier selections
   const playerIds = Object.values(selectedTierPlayers.value).filter(id => id !== null);
-  
-  if (playerIds.length !== tierCount.value) {
-    dialogErrorMessage.value = `You must select exactly ${tierCount.value} players (one from each tier)`;
-    return;
-  }
 
   isSaving.value = true;
   dialogErrorMessage.value = null;

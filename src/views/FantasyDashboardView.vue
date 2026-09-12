@@ -37,7 +37,7 @@
       <v-card-text class="pt-4">
                   
                   <!-- No team, and why the form is not here -->
-                  <v-alert v-if="!season && !existingTeam" type="info" variant="tonal" class="mb-4">
+                  <v-alert v-if="!season && !existingTeam && !isLoading" type="info" variant="tonal" class="mb-4">
                     The season did not load, so registration is unavailable. Please try again later.
                   </v-alert>
                   <v-alert v-else-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
@@ -467,7 +467,7 @@ const seriesStore = useSeriesStore();
 
 const { selectedSeasonId } = storeToRefs(seasonStore);
 
-const isLoading = ref(false);
+const isLoading = ref(true);  // the first fetch runs from onMounted, so the scrim is up before it starts
 const isSaving = ref(false);
 const isEditing = ref(false);
 const isBetSaving = ref(false);

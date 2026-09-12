@@ -104,9 +104,10 @@
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
+                <!-- An admin edits and deletes any bet, scored or not; the dialog says what that costs -->
                 <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit', disabled: isScored(item.series), onClick: () => editBet(item) },
-                  { icon: 'mdi-delete', label: 'Delete', color: 'error', disabled: isScored(item.series), onClick: () => confirmDeleteBet(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', onClick: () => editBet(item) },
+                  { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => confirmDeleteBet(item) },
                 ]" />
               </template>
             </v-data-table-server>
@@ -219,6 +220,9 @@
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
+        <v-alert v-if="isScored(editingBet?.series)" type="warning" variant="tonal" density="compact" class="mb-4">
+          This series is already scored; changing the bet changes the leaderboard.
+        </v-alert>
         <div v-if="editingBet && editingBet.series" class="mb-4">
           <div class="text-subtitle-1 mb-2">
             <strong>Series:</strong> {{ editingBet.series.player1?.name || 'Player 1' }} vs {{ editingBet.series.player2?.name || 'Player 2' }}
@@ -294,6 +298,9 @@
           <PlayerName v-if="getWinner(deletingBet)" :player="getWinner(deletingBet)" :race="winnerRace(deletingBet)" />
           <template v-else>N/A</template>
         </div>
+        <v-alert v-if="isScored(deletingBet?.series)" type="warning" variant="tonal" density="compact" class="mt-3">
+          This series is already scored; deleting the bet changes the leaderboard.
+        </v-alert>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>

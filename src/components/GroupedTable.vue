@@ -20,7 +20,17 @@
     <tbody>
       <template v-for="group in groups" :key="group.key">
         <tr class="group-row" @click="toggle(group.key)">
-          <td><v-icon size="small">{{ open.has(group.key) ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon></td>
+          <!-- the chevron is the keyboard route into the group; the row click stays for the mouse -->
+          <td>
+            <v-btn
+              variant="text"
+              size="small"
+              :icon="open.has(group.key) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              :aria-expanded="open.has(group.key)"
+              :aria-label="group.title || String(group.key)"
+              @click.stop="toggle(group.key)"
+            />
+          </td>
           <slot name="group" :group="group" :open="open.has(group.key)" />
         </tr>
         <template v-if="open.has(group.key)">

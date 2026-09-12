@@ -7,6 +7,8 @@
             <v-avatar
             v-bind="props"
             :image="currentRace.icon"
+            role="img"
+            :aria-label="currentRace.name"
             rounded="0"
             :size="size">
             </v-avatar>

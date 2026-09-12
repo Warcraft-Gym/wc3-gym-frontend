@@ -1,7 +1,8 @@
 <template>
   <component
-    :is="to ? RouterLink : 'span'"
+    :is="to ? RouterLink : (opensPanel ? 'button' : 'span')"
     :to="to"
+    :type="opensPanel ? 'button' : undefined"
     class="player-name"
     :class="{ link: !!$attrs.onClick || clickable, 'panel-link': opensPanel }"
     :title="opensPanel ? 'Opens in a side panel' : undefined"
@@ -12,7 +13,7 @@
     <span class="name">{{ player.name }}</span>
     <RaceIcon v-if="race" :raceIdentifier="race" />
     <span v-else-if="race !== undefined" class="fp race-gap" />
-    <v-icon v-if="opensPanel" class="panel-cue" size="16" aria-label="Opens in a side panel">mdi-dock-right</v-icon>
+    <v-icon v-if="opensPanel" class="panel-cue" size="16" aria-hidden="true">mdi-dock-right</v-icon>
     <v-chip v-if="offRace" size="x-small" variant="tonal" color="warning" :title="offRaceHint">off-race</v-chip>
     <v-chip v-if="host" size="x-small" variant="tonal" color="primary">Host</v-chip>
     <slot />
@@ -42,8 +43,8 @@ const offRaceHint = computed(
 )
 
 // The name links to the player page, unless the view handles the click. On a
-// drafting page and inside the panel it opens the panel instead, and the dock
-// icon says so before the click.
+// drafting page and inside the panel it is a button that opens the panel instead,
+// and the dock icon says so before the click.
 const attrs = useAttrs()
 const inPanelMode = inject(panelLinks, false)
 const clickable = computed(() => !props.plain && !attrs.onClick && props.player.id != null)
@@ -59,6 +60,11 @@ const to = computed(() => (clickable.value && !inPanelMode ? playerPath(props.pl
   white-space: nowrap;
   color: inherit;
   text-decoration: none;
+  /* the panel opener is a real button, so it takes focus and Enter; it must still read as text */
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
 }
 /* A missing icon leaves an empty box, so names line up in a left- or right-aligned column. */
 .race-gap { width: 1.4em; }

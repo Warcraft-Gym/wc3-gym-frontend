@@ -2,13 +2,13 @@ import { defineStore } from 'pinia';
 
 import { backendUrl, fetchWrapper, router } from '@/helpers';
 import { takeReturnUrl } from '@/helpers/return-url.mjs';
+import { clearSession } from '@/helpers/session-keys.mjs';
 
 if (!localStorage.getItem('me')) localStorage.removeItem('user');  // a pre-Clerk token has no me; it would shadow the Clerk session
 // a cached me belongs to one Clerk instance; a key change (dev to production) starts clean
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (localStorage.getItem('clerk_key') !== CLERK_KEY) {
-    localStorage.removeItem('me');
-    localStorage.removeItem('user');
+    clearSession();  // a view-as role left behind would follow the admin into the other instance
     localStorage.setItem('clerk_key', CLERK_KEY);
 }
 
@@ -61,9 +61,7 @@ export const useAuthStore = defineStore({
             this.user = null;
             this.me = null;
             this.viewAs = null;
-            localStorage.removeItem('user');
-            localStorage.removeItem('me');
-            localStorage.removeItem('viewAs');
+            clearSession();
         },
         async logout() {
             if (!this.user) await clerk?.signOut.value();  // the legacy token has no Clerk session

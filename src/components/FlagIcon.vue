@@ -4,7 +4,7 @@
         location="top"
         :text="currentCountry.name">
         <template v-slot:activator="{ props }">
-            <span v-bind="props" :class="'fp '+ currentCountry.a2.toLowerCase()"></span>
+            <span v-bind="props" role="img" :aria-label="currentCountry.name" :class="'fp '+ currentCountry.a2.toLowerCase()"></span>
         </template>
     </v-tooltip>
 </template>

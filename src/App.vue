@@ -80,7 +80,7 @@ onUnmounted(() => {
     resizeObserver?.disconnect();
 });
 
-// the nav is drawn for a session on any route that does not opt out with meta.nav
+// the nav links are drawn for a session on any route that does not opt out with meta.nav
 const showNavLinks = computed(() => !!me.value && route.meta.nav !== false);
 const showBar = computed(() => route.meta.bar !== false && !isReadonly.value);
 
@@ -149,60 +149,54 @@ const applyCaptain = () => {
 <template>
     <v-app> 
     <v-app-bar v-if="showBar">
-            <v-app-bar-nav-icon v-if="showNavLinks && smAndDown" @click="drawer = !drawer" />
+            <v-app-bar-nav-icon v-if="showNavLinks && smAndDown" aria-label="Menu" :aria-expanded="drawer" @click="drawer = !drawer" />
             <v-app-bar-title>
                 <RouterLink to="/report" class="app-title">GNL APP</RouterLink>
             </v-app-bar-title>
             <template v-slot:append>
-                <v-list v-show="showNavLinks" class="inline-nav" nav>
-                    <template v-if="!smAndDown">
-                        <template v-for="group in nav" :key="group.to">
-                            <v-menu v-if="group.items" offset-y>
-                                <template v-slot:activator="{ props }">
-                                    <v-list-item v-bind="props" class="nav-link-item">
-                                        <a class="nav-link">
-                                            {{ group.title }}
-                                            <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
-                                        </a>
-                                    </v-list-item>
-                                </template>
-                                <v-list class="nav-dropdown">
-                                    <v-list-item v-for="item in group.items" :key="item.to">
-                                        <RouterLink :to="item.to" :class="{ 'd-inline-flex align-baseline': item.mark }"><img v-if="item.mark" :src="w3cMark" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">{{ item.title }}</RouterLink>
-                                    </v-list-item>
-                                </v-list>
-                            </v-menu>
-                            <v-list-item v-else class="nav-link-item">
-                                <RouterLink :to="group.to" class="nav-link">{{ group.title }}</RouterLink>
-                            </v-list-item>
-                        </template>
-                    </template>
-                    <v-menu offset-y>
-                        <template v-slot:activator="{ props }">
-                            <v-list-item v-bind="props" class="nav-link-item">
-                                <v-avatar size="36" color="primary">
-                                    <v-img v-if="avatarUrl" :src="avatarUrl" alt="" />
-                                    <span v-else>{{ initials }}</span>
-                                </v-avatar>
-                            </v-list-item>
-                        </template>
-                        <v-list>
-                            <v-list-item title="Player Dashboard" :subtitle="identity" prepend-icon="mdi-view-dashboard" :to="dashboardPath" />
-                            <v-list-item v-if="canSee('/player-dashboard')" title="Edit Player Info" prepend-icon="mdi-pencil" :to="{ path: '/player-dashboard', query: { edit: 1 } }" />
-                            <!-- /me names the captain's team, or the roster team of this season; a player on no roster sees no item -->
-                            <v-list-item v-if="me?.team" title="My Team" prepend-icon="mdi-shield-account" :to="`/team/${me.team.id}`" />
-                            <template v-if="canViewAs">
-                                <v-divider />
-                                <v-list-subheader>View as</v-list-subheader>
-                                <v-list-item prepend-icon="mdi-eye-outline" title="Captain…" @click="pickCaptain" />
-                                <v-list-item prepend-icon="mdi-eye-outline" title="Member" @click="authStore.setViewAs({ role: 'member' })" />
-                                <v-list-item prepend-icon="mdi-eye-outline" title="Guest" @click="authStore.setViewAs({ role: 'guest' })" />
+                <nav v-if="showNavLinks && !smAndDown" class="inline-nav" aria-label="Main">
+                    <template v-for="group in nav" :key="group.to">
+                        <v-menu v-if="group.items" offset-y>
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" class="nav-link" variant="text" append-icon="mdi-chevron-down">{{ group.title }}</v-btn>
                             </template>
+                            <v-list class="nav-dropdown">
+                                <v-list-item v-for="item in group.items" :key="item.to">
+                                    <RouterLink :to="item.to" :class="{ 'd-inline-flex align-baseline': item.mark }"><img v-if="item.mark" :src="w3cMark" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">{{ item.title }}</RouterLink>
+                                </v-list-item>
+                            </v-list>
+                        </v-menu>
+                        <v-btn v-else :to="group.to" class="nav-link" variant="text">{{ group.title }}</v-btn>
+                    </template>
+                </nav>
+                <!-- the session menu sits outside the link tree, so a meta.nav route keeps it -->
+                <v-menu v-if="me" offset-y>
+                    <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props" icon variant="text" :aria-label="`Account menu, ${identity}`">
+                            <v-avatar size="36" color="primary">
+                                <v-img v-if="avatarUrl" :src="avatarUrl" alt="" />
+                                <span v-else>{{ initials }}</span>
+                            </v-avatar>
+                        </v-btn>
+                    </template>
+                    <v-list>
+                        <v-list-item :title="canSee('/player-dashboard') ? 'Player Dashboard' : 'My profile'" :subtitle="identity" prepend-icon="mdi-view-dashboard" :to="dashboardPath" />
+                        <v-list-item v-if="canSee('/player-dashboard')" title="Edit Player Info" prepend-icon="mdi-pencil" :to="{ path: '/player-dashboard', query: { edit: 1 } }" />
+                        <!-- /me names the captain's team, or the roster team of this season; a player on no roster sees no item -->
+                        <v-list-item v-if="me?.team" title="My Team" prepend-icon="mdi-shield-account" :to="`/team/${me.team.id}`" />
+                        <template v-if="canViewAs">
                             <v-divider />
-                            <v-list-item prepend-icon="mdi-logout" title="Logout" @click="authStore.logout()" />
-                        </v-list>
-                    </v-menu>
-                </v-list>
+                            <v-list-subheader>View as</v-list-subheader>
+                            <v-list-item prepend-icon="mdi-eye-outline" title="Captain…" @click="pickCaptain" />
+                            <v-list-item prepend-icon="mdi-eye-outline" title="Member" @click="authStore.setViewAs({ role: 'member' })" />
+                            <v-list-item prepend-icon="mdi-eye-outline" title="Guest" @click="authStore.setViewAs({ role: 'guest' })" />
+                        </template>
+                        <v-divider />
+                        <v-list-item prepend-icon="mdi-logout" title="Logout" @click="authStore.logout()" />
+                    </v-list>
+                </v-menu>
+                <!-- a signed-out visitor lands on the public pages; this is his way in -->
+                <v-btn v-if="!me" to="/login" variant="text">Sign in</v-btn>
                 <v-menu offset-y>
                     <template v-slot:activator="{ props }">
                         <v-btn v-bind="props" :icon="themeIcon" variant="text" aria-label="Theme" />
@@ -273,20 +267,10 @@ const applyCaptain = () => {
 
 .inline-nav {
     display: flex;
-}
-
-.inline-nav .v-list-item {
-    margin: 0 !important;
-}
-
-.nav-link-item {
-    cursor: pointer;
-}
-
-.nav-link-item .nav-link {
-    display: flex;
     align-items: center;
-    text-decoration: none;
+}
+
+.nav-link {
     color: rgb(var(--v-theme-primary));
 }
 

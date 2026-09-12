@@ -235,7 +235,7 @@
               </tr>
             </template>
           <template #no-data>
-            <div class="text-center pa-8">
+            <div v-if="!errorMessage" class="text-center pa-8">
               <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
               <div class="text-h6 text-medium-emphasis mt-4 mb-2">No players found</div>
               <p class="text-medium-emphasis mb-4">Add players to this team to get started</p>

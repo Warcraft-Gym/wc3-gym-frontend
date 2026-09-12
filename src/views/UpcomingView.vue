@@ -24,7 +24,7 @@
               <td class="text-no-wrap">{{ timeOf(row.date_time) }}</td>
               <td class="text-no-wrap">
                 <RouterLink :to="`/match/${row.match_id}`">Round {{ row.match?.playday ?? '?' }}</RouterLink>
-                <div class="text-caption text-medium-emphasis">{{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}</div>
+                <div v-if="row.match?.team1 && row.match?.team2" class="text-caption text-medium-emphasis">{{ row.match.team1.name }} vs {{ row.match.team2.name }}</div>
               </td>
               <td><PlayerName :player="row.player1" :race="row.player1_race" /></td>
               <td><PlayerName :player="row.player2" :race="row.player2_race" /></td>
@@ -44,7 +44,7 @@
               <template #title>
                 {{ timeOf(row.date_time) }} ·
                 <RouterLink :to="`/match/${row.match_id}`">Round {{ row.match?.playday ?? '?' }}</RouterLink>
-                · {{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}
+                <template v-if="row.match?.team1 && row.match?.team2">· {{ row.match.team1.name }} vs {{ row.match.team2.name }}</template>
               </template>
               <template #actions><CastChips :series="row" /></template>
               <template #side="{ n, won }">

@@ -1,4 +1,6 @@
 // The stone-and-bronze theme's colours, in one module so the contrast test can read them.
+// Every fill that carries text declares its own on-* ink; Vuetify's automatic pick is
+// white-biased (APCA) and lands under 4.5:1 on these mid-tone fills.
 export const themes = {
     light: {
         dark: false,
@@ -34,14 +36,22 @@ export const themes = {
             draw: '#5F6B61',
             'tier-1': '#4E9A2E',
             'tier-2': '#94481A',
-            'tier-3': '#4F78C4',
-            'tier-4': '#AE7C00',
-            'tier-5': '#008F99',
+            'tier-3': '#4770BB',
+            'tier-4': '#B3800E',
+            'tier-5': '#1997A2',
             'tier-6': '#8B48CF',
+            // A tier chip is a fill with a label on it, so each one names the ink that passes 4.5:1 on it
+            'on-tier-1': '#1A241E',
+            'on-tier-2': '#FBF7F1',
+            'on-tier-3': '#FBF7F1',
+            'on-tier-4': '#1A241E',
+            'on-tier-5': '#1A241E',
+            'on-tier-6': '#FBF7F1',
             'race-hu': '#1689A6',
             'race-oc': '#D06D69',
             'race-ne': '#086A12',
             'race-ud': '#7546BA',
+            // Medals name a metal: silver is grey and gold sits one step from the bronze primary, so the rank numeral carries the rank
             'medal-gold': '#8F6B00',
             'medal-silver': '#6E7881',
             'heat-1': '#D0A076',
@@ -113,6 +123,7 @@ export const themes = {
             'on-loss': '#1A241E',
             'on-draw': '#1A241E',
             'on-tier-1': '#1A241E',
+            'on-tier-2': '#FBF7F1',  // the one dark tier fill deep enough to need white; ink reads 3.19:1 on it
             'on-tier-3': '#1A241E',
             'on-tier-4': '#1A241E',
             'on-tier-5': '#1A241E',

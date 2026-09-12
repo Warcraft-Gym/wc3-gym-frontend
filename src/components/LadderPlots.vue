@@ -1,7 +1,8 @@
-<!-- Two plots on one date scale: games per day (wins under losses), then the MMR the player ended each day on -->
+<!-- Two plots on one date scale: games per day (wins under losses), then the MMR the
+     player ended each day on. Without `games` the MMR plot stands alone. -->
 <template>
   <svg :width="width" :height="height" class="ladder-plots d-block">
-    <g :transform="`translate(${M.left},${M.top})`">
+    <g v-if="games" :transform="`translate(${M.left},${M.top})`">
       <text x="0" y="-6" class="cap">Games per day</text>
       <g v-for="t in gTicks" :key="`g${t.v}`">
         <line :x2="innerW" :y1="t.y" :y2="t.y" class="grid" />
@@ -14,7 +15,7 @@
       <line :x2="innerW" :y1="gH" :y2="gH" class="axis" />
     </g>
     <g :transform="`translate(${M.left},${mTop})`">
-      <text x="0" y="-6" class="cap">MMR</text>
+      <text v-if="games" x="0" y="-6" class="cap">MMR</text>
       <g v-for="t in mTicks" :key="`m${t.v}`">
         <line :x2="innerW" :y1="t.y" :y2="t.y" class="grid" />
         <text x="-8" :y="t.y" dy="0.32em" text-anchor="end" class="tick">{{ t.v }}</text>
@@ -47,7 +48,8 @@ import { LOSS, WIN, dayTip } from '@/helpers/ladder-days.mjs';
 
 const props = defineProps({
   days: { type: Array, required: true }, // from fillDays
-  ymax: { type: Number, required: true },
+  ymax: { type: Number, default: 1 },
+  games: { type: Boolean, default: true }, // the games per day plot above the MMR one
   width: { type: Number, default: 760 },
 });
 
@@ -55,9 +57,10 @@ const M = { top: 18, right: 44, bottom: 22, left: 44 };
 const gH = 56; // games plot height
 const between = 26;
 const mH = 72; // MMR plot height
-const mTop = M.top + gH + between;
-const plotsH = gH + between + mH;
-const height = M.top + plotsH + M.bottom;
+// with no games plot the MMR one sits alone under the top margin
+const mTop = computed(() => (props.games ? M.top + gH + between : M.top));
+const plotsH = computed(() => (props.games ? gH + between : 0) + mH);
+const height = computed(() => M.top + plotsH.value + M.bottom);
 const innerW = computed(() => props.width - M.left - M.right);
 
 const x = computed(() => scaleBand().domain(range(props.days.length)).range([0, innerW.value]).paddingInner(0.4));

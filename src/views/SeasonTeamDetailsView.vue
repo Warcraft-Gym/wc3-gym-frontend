@@ -14,6 +14,8 @@
       </v-col>
     </v-row>
 
+    <StatusAlert v-model="errorMessage" />
+
     <!-- Team Overview -->
     <v-card v-if="team" elevation="2" class="mb-4">
       <v-card-title class="bg-primary d-flex align-center">
@@ -153,7 +155,7 @@
         <span>Team Players</span>
       </v-card-title>
 
-      <v-card-text v-if="!errorMessage" class="pa-0">
+      <v-card-text class="pa-0">
         <v-data-table
           :headers="tableHeader"
           :loading="isLoading"
@@ -232,17 +234,17 @@
                 </td>
               </tr>
             </template>
+          <template #no-data>
+            <div class="text-center pa-8">
+              <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
+              <div class="text-h6 text-medium-emphasis mt-4 mb-2">No players found</div>
+              <p class="text-medium-emphasis mb-4">Add players to this team to get started</p>
+              <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewPlayerModal = true">
+                Add First Player
+              </v-btn>
+            </div>
+          </template>
         </v-data-table>
-      </v-card-text>
-
-      <!-- Enhanced Empty State -->
-      <v-card-text v-else class="text-center pa-8">
-        <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
-        <div class="text-h6 text-medium-emphasis mt-4 mb-2">No players found</div>
-        <p class="text-medium-emphasis mb-4">Add players to this team to get started</p>
-        <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewPlayerModal = true">
-          Add First Player
-        </v-btn>
       </v-card-text>
     </v-card>
 
@@ -311,6 +313,7 @@ import FilterPanel from '@/components/FilterPanel.vue';
 import { getW3CMMR, syncedAgo, syncedAt, agoFromIso, localFromIso } from '@/helpers/w3c-stats';
 import { matchesPlayerSearch, filterByMmrRange, playerPath, playerRowProps } from '@/helpers/players';
 import W3CIcon from '@/components/W3CIcon.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import { useColumns } from '@/helpers/columns';
 
@@ -379,7 +382,8 @@ const ladderSyncCaption = computed(() => {
   const synced = players.filter(player => player.synced_at).length;
   if (!synced) return 'never synced';
   if (synced < players.length) return `partly synced · ${synced} of ${players.length} players`;
-  return `synced ${agoFromIso(seasonLadder.value?.season?.synced_at)}`;
+  const ago = agoFromIso(seasonLadder.value?.season?.synced_at);
+  return ago === 'never synced' ? ago : `synced ${ago}`;
 });
 
 // The teams of the answer are ordered by ladder points

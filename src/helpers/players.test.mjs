@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSignupRace, openPlayer, panelPlayerKey, playerPath, playersWithCareers } from './players.mjs';
+import { defaultSignupRace, kingPlayer, openPlayer, panelPlayerKey, playerPath, playersWithCareers } from './players.mjs';
 
 // The panel and the page must address the same player, and a row without a
 // battle tag (a ladder opponent, a leaderboard row) still has to open.
@@ -61,4 +61,16 @@ test('a career row joins its player, and a row no player claims stands alone', (
     ['c700', null, 'Dekker', 1539],
     ['c40', null, 'Gone', 600],
   ]);
+});
+
+// A Twitch signup carries no users row, so the name falls back to the battle tag.
+test('a king shows his twitch name, else his battle tag', () => {
+  assert.deepEqual(
+    kingPlayer({ twitch_username: 'grubby', battle_tag: 'Grubby#1234', country: 'NL' }),
+    { name: 'grubby', country: 'NL' },
+  );
+  assert.deepEqual(
+    kingPlayer({ twitch_username: '', battle_tag: 'Grubby#1234', country: null }),
+    { name: 'Grubby#1234', country: null },
+  );
 });

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { backendUrl, fetchWrapper } from '@/helpers';
+import { publicSignupBody } from '@/helpers/koth.mjs';
 
 export const useKothStore = defineStore({
     id: 'kothStore',
@@ -7,7 +8,6 @@ export const useKothStore = defineStore({
         events: [],
         activeEvent: null,
         signups: [],
-        kings: {},
         isLoading: false,
     }),
     actions: {
@@ -16,6 +16,19 @@ export const useKothStore = defineStore({
             try {
                 this.isLoading = true;
                 this.events = await fetchWrapper.get(`${backendUrl}/koth/events`);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        // The event every public write targets, with its signups; one read, so the
+        // page can never show one event while the POST and the DELETE hit another.
+        async fetchActiveEvent() {
+            try {
+                this.isLoading = true;
+                this.activeEvent = await fetchWrapper.get(`${backendUrl}/koth/events/active`);
+                this.signups = this.activeEvent.signups || [];
+                return this.activeEvent;
             } finally {
                 this.isLoading = false;
             }
@@ -87,11 +100,8 @@ export const useKothStore = defineStore({
 
         async createPublicSignup(signupData) {
             // the open signup POST; the Nightbot GET keeps its token
-            return await fetchWrapper.post(`${backendUrl}/koth/signups`, {
-                twitch_username: signupData.twitch_username,
-                battle_tag: signupData.battle_tag,
-                race: signupData.race || null,
-            });
+            const body = publicSignupBody({ event_id: this.activeEvent?.id, ...signupData });
+            return await fetchWrapper.post(`${backendUrl}/koth/signups`, body);
         },
 
         async deleteSignup(signupId) {
@@ -123,18 +133,12 @@ export const useKothStore = defineStore({
             return updatedSignup;
         },
 
-        // ============ Utility Actions ============
-        async fetchBracketKings(eventId) {
-            try {
-                this.kings = await fetchWrapper.get(`${backendUrl}/koth/events/${eventId}/kings`);
-                return this.kings;
-            } catch (error) {
-                this.kings = {};
-                throw error;
-            }
+        // ============ Helper Methods ============
+        // The same rule the backend's /kings route applies, on the signups already loaded
+        getBracketKings(bracket) {
+            return this.signups.filter(s => s.bracket === bracket && s.is_king === 1);
         },
 
-        // ============ Helper Methods ============
         getSignupsByBracket(bracket) {
             return this.signups
                 .filter(s => s.bracket === bracket && s.is_active === 1)

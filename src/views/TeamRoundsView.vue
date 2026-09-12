@@ -193,7 +193,7 @@ const outToLastRound = async (userId) => {
 };
 
 onMounted(async () => {
-  await seasonStore.ensureSeasons();  // the slug maps to an id only once the list is in
+  await seasonStore.ensureSeasons().catch(() => {});  // the slug maps to an id only once the list is in; a failed list fails the gate closed
   // same gate as the link that leads here: admins, or the captain of this team
   if (!auth.isCaptainOf(teamId.value, seasonId.value)) {
     router.replace('/profile');

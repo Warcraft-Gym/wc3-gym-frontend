@@ -83,7 +83,7 @@ export const themes = {
             secondary: '#C3CCC1',
             'secondary-darken-1': '#A7B1A4',
             'on-secondary': '#1A241E',
-            error: '#E8836A',
+            error: '#FFB4AB',  // loss #DE6E52 sits next to it, so error carries a lighter, pinker red
             warning: '#F0A04B',
             info: '#7FB0DA',
             success: '#6DB37A',

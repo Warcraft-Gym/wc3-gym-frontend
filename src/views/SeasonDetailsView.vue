@@ -10,8 +10,7 @@
 
   <!-- Enhanced Hero Section -->
   <div id="seasonHeader">
-    <v-parallax class="banner-image" :src="bannerImg" height="250">
-      <div class="banner-overlay"></div>
+    <div class="banner-band">
       <v-container class="fill-height">
         <v-row align="center" justify="center">
           <v-col cols="12" md="8" class="text-center">
@@ -20,7 +19,7 @@
               <v-col cols="auto">
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold primary--text">{{ season.round_count }}</div>
+                    <div class="text-h4 font-weight-bold text-primary-text">{{ season.round_count }}</div>
                     <div class="text-subtitle-2">Rounds</div>
                   </v-card-text>
                 </v-card>
@@ -28,7 +27,7 @@
               <v-col cols="auto">
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold primary--text">{{ teams.length }}</div>
+                    <div class="text-h4 font-weight-bold text-primary-text">{{ teams.length }}</div>
                     <div class="text-subtitle-2">Teams</div>
                   </v-card-text>
                 </v-card>
@@ -37,7 +36,7 @@
           </v-col>
         </v-row>
       </v-container>
-    </v-parallax>
+    </div>
   </div>
 
   <v-container fluid class="pa-4">
@@ -478,7 +477,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore, useSeriesStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import bannerImg from '@/assets/media/GNL_Banner.png';
   import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { isUnscored } from '@/helpers/season-phase.mjs';
@@ -798,22 +796,12 @@ onMounted(async () => {
     color: rgb(var(--v-theme-on-band));
   }
   
-  .banner-image {
-    position: relative;
-  }
-  
-  .banner-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(var(--v-theme-band), 0.3), rgba(var(--v-theme-band), 0.6));
-    z-index: 1;
+  .banner-band {
+    height: 250px;
+    background: rgb(var(--v-theme-band));
   }
 
   .season-title {
-    text-shadow: 2px 2px 8px rgba(var(--v-theme-band), 0.8);
     letter-spacing: 1px;
   }
 
@@ -903,8 +891,8 @@ onMounted(async () => {
   /* Responsive adjustments */
   /* On a phone the hero is a title alone, so it does not need 250px */
   @media (max-width: 599px) {
-    .banner-image {
-      height: 120px !important;
+    .banner-band {
+      height: 120px;
     }
   }
 

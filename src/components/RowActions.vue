@@ -2,7 +2,7 @@
   <div v-if="visible.length" class="d-flex justify-end" @click.stop>
     <v-menu v-if="!inline && visible.length >= 3">
       <template #activator="{ props: menu }">
-        <v-btn v-bind="menu" icon variant="text" size="small">
+        <v-btn v-bind="menu" icon variant="text" size="small" aria-label="Row actions">
           <v-icon>mdi-dots-vertical</v-icon>
         </v-btn>
       </template>
@@ -32,6 +32,7 @@
         :disabled="action.disabled"
         :loading="action.loading"
         :href="action.href"
+        :aria-label="action.label"
         @click="action.onClick?.()"
       >
         <v-icon>{{ action.icon }}</v-icon>

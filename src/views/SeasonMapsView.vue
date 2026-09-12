@@ -64,10 +64,10 @@
             </div>
           </v-expand-transition>
 
-          <v-list max-height="560" class="overflow-y-auto">
+          <v-list>
             <v-list-item v-for="(m, i) in pool" :key="m.id" class="py-2">
               <template #prepend>
-                <span class="map-thumb thumb-lg mr-4"><img v-if="m.image" :src="m.image" :alt="m.name" @error="hideMissingImage"></span>
+                <span class="map-thumb thumb-lg pool-thumb mr-4"><img v-if="m.image" :src="m.image" :alt="m.name" @error="hideMissingImage"></span>
               </template>
               <v-list-item-title class="font-weight-medium">{{ m.name }}</v-list-item-title>
               <template #append>
@@ -253,7 +253,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRoute } from 'vue-router';
+import { onBeforeRouteLeave, useRoute } from 'vue-router';
 
 import { useMapStore, useSeasonStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
@@ -422,13 +422,16 @@ const confirmImport = (names) => apply(async () => {
   importOpen.value = false;
 });
 
+onBeforeRouteLeave(() => !isDirty.value || window.confirm('The map rules and the pick and ban order are not saved. Leave the page?'));
+
 onMounted(async () => {
   isLoading.value = true;
   try {
     await refresh();
     rules.value = (season.value.map_rules || DEFAULT_RULES).split(',');
     order.value = season.value.pick_ban ? season.value.pick_ban.split('|') : [];
-    savedRules.value = season.value.map_rules || '';
+    // the default rules are what the page shows, so they are what "saved" compares against
+    savedRules.value = rules.value.join(',');
     savedOrder.value = season.value.pick_ban || '';
   } catch (err) {
     console.error('Failed to load the season maps', err);
@@ -463,6 +466,14 @@ onMounted(async () => {
 .thumb-lg {
   width: 100px;
   height: 64px;
+}
+
+/* On a phone the thumbnail gives the row's width back to the map name */
+@media (max-width: 599px) {
+  .pool-thumb {
+    width: 40px;
+    height: 27px;
+  }
 }
 
 .add-panel {

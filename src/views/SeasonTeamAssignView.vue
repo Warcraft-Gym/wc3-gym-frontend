@@ -5,7 +5,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-account-multiple-check</v-icon>
-          Draft Players for Season
+          Draft players for season
         </h1>
       </v-col>
       <v-col cols="auto">
@@ -19,7 +19,7 @@
         <v-icon class="mr-2">mdi-account-multiple</v-icon>
         <span>{{ seasonName }}</span>
       </v-card-title>
-      <v-card-text class="pa-0">
+      <v-card-text v-if="auth.isAdmin" class="pa-0">
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2">
             <v-spacer />
@@ -99,7 +99,7 @@
                     </v-tooltip>
                   </template>
                   <template v-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'loading'">
-                    <v-icon small class="text--secondary">mdi-sync</v-icon>
+                    <v-icon small class="text-medium-emphasis">mdi-sync</v-icon>
                   </template>
                   <template v-else-if="perPlayerSyncStatus[item.id] && perPlayerSyncStatus[item.id].state === 'success'">
                     <v-icon small color="success">mdi-check-circle</v-icon>
@@ -231,7 +231,7 @@
           :loading="assignAllLoading"
           :disabled="assignAllLoading || playersWithTeamSelected === 0"
         >
-          Assign {{ playersWithTeamSelected }} Player{{ playersWithTeamSelected !== 1 ? 's' : '' }} to Teams
+          Assign {{ playersWithTeamSelected }} player{{ playersWithTeamSelected !== 1 ? 's' : '' }} to teams
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -253,7 +253,7 @@
       <v-col cols="12">
         <h2 class="mb-4">
           <v-icon class="mr-2">mdi-shield-account</v-icon>
-          Team Assignments
+          Team assignments
         </h2>
         <div class="teams-grid">
           <div v-for="team in teams" :key="team.id" class="team-card-grid">
@@ -286,7 +286,7 @@
                             </v-tooltip>
                           </template>
                           <template v-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'loading'">
-                            <v-icon small class="text--secondary">mdi-sync</v-icon>
+                            <v-icon small class="text-medium-emphasis">mdi-sync</v-icon>
                           </template>
                           <template v-else-if="perPlayerSyncStatus[p.id] && perPlayerSyncStatus[p.id].state === 'success'">
                             <v-icon small color="success">mdi-check-circle</v-icon>
@@ -308,7 +308,7 @@
                             </v-tooltip>
                           </template>
                         </div>
-                        <div class="text--secondary">{{ getW3CMMR(p, currentW3CSeason, p.signup_race) ?? 'N/A' }} — <RaceIcon v-if="p.signup_race" :raceIdentifier="p.signup_race" /></div>
+                        <div class="text-medium-emphasis">{{ getW3CMMR(p, currentW3CSeason, p.signup_race) ?? 'N/A' }}<template v-if="p.signup_race"> — <RaceIcon :raceIdentifier="p.signup_race" /></template></div>
                         <div class="text-caption text-medium-emphasis">{{ syncedAgo(p) }}<v-tooltip activator="parent" location="top">{{ syncedAt(p) }}</v-tooltip></div>
                       </div>
                       <div style="display:flex;align-items:center;gap:6px;">

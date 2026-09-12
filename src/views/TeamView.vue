@@ -150,7 +150,7 @@ const stats = computed(() => {
   return [
     { label: 'Rank', value: rank.value ? `${rank.value.rank} of ${rank.value.of}` : '—' },
     { label: 'Series', value: `${wins}–${losses}` },
-    { label: 'Final score', value: seasonInfo.value?.final_score ?? '—' },
+    { label: 'Points', value: seasonInfo.value?.final_score ?? '—' },
     { label: 'Points against', value: seasonInfo.value?.points_against ?? '—' },
     { label: 'Points available', value: seasonInfo.value?.points_available ?? '—' },
   ];

@@ -4,7 +4,7 @@
       <v-col>
         <h1 class="text-h5 text-md-h3 font-weight-bold">
           <v-icon class="mr-2" size="large">mdi-shield-account</v-icon>
-          Teams Information
+          Teams
         </h1>
       </v-col>
     </v-row>
@@ -20,7 +20,7 @@
 
     <div v-if="auth.isAdmin" class="d-flex justify-end mb-4">
       <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="createTeam()">
-        Add New Team
+        Add team
       </v-btn>
     </div>
 
@@ -36,6 +36,7 @@
           :headers="tableHeader"
           :items="group.items"
           :loading="isLoading"
+          :hide-default-footer="group.items.length <= 10"
           hover
           density="comfortable"
           @click:row="openTeam"
@@ -73,8 +74,8 @@
           <template #[`item.actions`]="{ item }">
             <div @click.stop>
               <RowActions :actions="[
-                { icon: 'mdi-pencil', label: 'Edit Team', onClick: () => editTeam(item) },
-                { icon: 'mdi-delete', label: 'Delete Team', color: 'error', onClick: () => openDeleteDialog(item.id, removeTeam) },
+                { icon: 'mdi-pencil', label: 'Edit team', onClick: () => editTeam(item) },
+                { icon: 'mdi-delete', label: 'Delete team', color: 'error', onClick: () => openDeleteDialog(item.id, removeTeam) },
               ]" />
             </div>
           </template>
@@ -91,7 +92,7 @@
                 v-if="auth.isAdmin"
                 @click="createTeam"
               >
-                Create First Team
+                Create first team
               </v-btn>
             </div>
           </template>
@@ -104,7 +105,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
-          {{ isEditing ? `Edit Team: ${selectedTeam?.name ?? ''}` : 'Add Team' }}
+          {{ isEditing ? `Edit team: ${selectedTeam?.name ?? ''}` : 'Add team' }}
         </v-card-title>
 
         <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="error" closable @click:close="formError = ''">
@@ -116,7 +117,7 @@
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="selectedTeam.name"
-                label="Team Name"
+                label="Team name"
                 variant="outlined"
                 density="comfortable"
                 prepend-inner-icon="mdi-shield"
@@ -125,7 +126,7 @@
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="selectedTeam.long_name"
-                label="Team Long Name"
+                label="Team long name"
                 variant="outlined"
                 density="comfortable"
                 prepend-inner-icon="mdi-text"
@@ -134,7 +135,7 @@
             <v-col cols="12" md="6">
               <v-file-input
                 v-model="file"
-                label="Team Icon"
+                label="Team icon"
                 accept=".png,.jpg"
                 variant="outlined"
                 density="comfortable"
@@ -202,7 +203,7 @@ const file = ref(null);
 
 const allTableHeader = computed(() => [
   { title:'', value: 'icon'},
-  { title: 'Long Name', value: 'long_name', sortable: true },
+  { title: 'Long name', value: 'long_name', sortable: true },
   { title: 'Handle', value: 'name', sortable: true },
   { mobile: false, title: 'Seasons', value: 'seasons', sortable: false },
   ...(auth.isAdmin ? [{ title: '', value: 'actions', align: 'end', sortable: false }] : []),
@@ -224,10 +225,10 @@ const playsCurrentSeason = (team) =>
   (team.seasons_info || []).some((info) => info.season_id === currentSeasonId.value);
 
 const groups = computed(() => {
-  if (!currentSeasonId.value) return [{ title: 'All Teams', items: teams.value }];
+  if (!currentSeasonId.value) return [{ title: 'All teams', items: teams.value }];
   return [
     { title: currentSeasonName.value || 'Current season', items: teams.value.filter(playsCurrentSeason) },
-    { title: 'Past Teams', items: teams.value.filter((team) => !playsCurrentSeason(team)) },
+    { title: 'Past teams', items: teams.value.filter((team) => !playsCurrentSeason(team)) },
   ];
 });
 

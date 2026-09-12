@@ -444,6 +444,8 @@ const editSeason = (season) => {
 
 const updateSeason = async () => {
   formError.value = '';
+  // a cleared number field holds an empty string; the column takes a number or null
+  if (selectedSeason.value.checkin_days === '') selectedSeason.value.checkin_days = null;
   try {
     await seasonStore.updateSeason(selectedSeason.value);
     

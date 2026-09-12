@@ -49,7 +49,7 @@
       <!-- the check-in belongs to the player himself; a visitor reads the state -->
       <div v-else-if="card.over || !asks || !card.open" class="mt-2">
         <v-chip size="small" variant="tonal" :color="card.answer === false ? 'error' : undefined">
-          {{ stateChip(card) }}
+          {{ roundStateChip(card, asks) }}
         </v-chip>
       </div>
 
@@ -63,7 +63,7 @@
 import { computed, ref, useSlots, watch } from 'vue';
 import { useMatchStore } from '@/stores';
 import { formatDateTime } from '@/helpers/datetime';
-import { roundCards } from '@/helpers/rounds.mjs';
+import { roundCards, roundStateChip } from '@/helpers/rounds.mjs';
 import { viewerZone, zoneLabel } from '@/helpers/timezone.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import CastChips from '@/components/CastChips.vue';
@@ -101,13 +101,6 @@ const asks = computed(() => !!slots.question && props.season?.scheduling_enabled
 // The check-in is open on a round with no series that is not over
 const asking = computed(() => cards.value.filter(card => !card.series && !card.over && card.open));
 const answered = computed(() => asking.value.filter(card => card.answer !== null).length);
-
-// A round with no series reads its answer, the day its check-in opens, or the pairing state
-const stateChip = (card) => {
-  if (card.answer === false) return 'Out';
-  if (!card.open) return card.answer === true ? 'Checked in' : `Check-in opens ${card.opens.toFormat('d LLL')}`;
-  return card.over ? 'Not paired' : 'Not paired yet';
-};
 
 // the other side of a series; the id is the fallback when the payload carries no player row
 const opponent = (series) => {

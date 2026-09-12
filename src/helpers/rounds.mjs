@@ -55,6 +55,15 @@ export const roundCards = (
   });
 };
 
+// The chip of a round card with no series: the answer given, the pairing state, or
+// the day the check-in opens, which is of use only to the player who checks in.
+export const roundStateChip = (card, asks = true) => {
+  if (card.answer === false) return 'Out';
+  if (card.over) return 'Not paired';
+  if (asks && !card.open) return card.answer === true ? 'Checked in' : `Check-in opens ${card.opens.toFormat('d LLL')}`;
+  return 'Not paired yet';
+};
+
 const opponentName = (series, playerId) =>
   (series.player1_id === playerId ? series.player2 : series.player1)?.name ?? 'your opponent';
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { currentRound, roundCards, roundLabel, roundLine, roundOver, waitingLines } from './rounds.mjs';
+import { currentRound, roundCards, roundLabel, roundLine, roundOver, roundStateChip, waitingLines } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -162,4 +162,17 @@ test('an answered round drops out of the check-in lines', () => {
 
 test('a season without checkin_days asks the round in play, as before', () => {
   assert.deepEqual(checkinLines('2026-09-22T10:00', null), ['Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep']);
+});
+
+test('the state chip reads the round before it reads the window', () => {
+  // 1 Oct: round 1 is over and unpaired, round 2 is open, and both carry a window
+  const [past, open] = windowCards('2026-10-01T10:00');
+  assert.equal(roundStateChip(past), 'Not paired');
+  assert.equal(roundStateChip(open), 'Not paired yet');
+  // before its window a round names the day it opens, but only to the player who checks in
+  const [ahead] = windowCards('2026-09-15T10:00');
+  assert.equal(roundStateChip(ahead), 'Check-in opens 17 Sep');
+  assert.equal(roundStateChip(ahead, false), 'Not paired yet');
+  assert.equal(roundStateChip({ ...ahead, answer: true }), 'Checked in');
+  assert.equal(roundStateChip({ ...ahead, answer: false }), 'Out');
 });

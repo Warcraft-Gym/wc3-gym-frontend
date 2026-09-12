@@ -92,7 +92,7 @@
 
               <template v-slot:[`item.actions`]="{ item }">
                 <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit', public: !!myUserId && item.captain_id === myUserId && pickedSeason?.phase === 'open', onClick: () => openEditDialog(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', public: canEditOwn(item), onClick: () => openEditDialog(item) },
                   { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item) },
                 ]" />
               </template>
@@ -244,7 +244,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="closeEditDialog" :disabled="isSaving">Cancel</v-btn>
-        <v-btn v-if="auth.isAdmin || (isEditing && editedTeam.captain_id === myUserId)" color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
+        <v-btn v-if="auth.isAdmin || (isEditing && canEditOwn(editedTeam))" color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -362,12 +362,14 @@ const allHeaders = computed(() => [
   { mobile: false, title: 'Bet Points', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
   // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team
-  ...(auth.isAdmin || teams.value.some((t) => t.captain_id === myUserId.value)
+  ...(auth.isAdmin || teams.value.some(canEditOwn)
     ? [{ title: '', value: 'actions', sortable: false, align: 'center' }] : []),
 ]);
 const headers = useColumns(allHeaders);
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
+// A bettor edits their own team only while the season is open; the draft freezes when it commences
+const canEditOwn = (team) => !!myUserId.value && team.captain_id === myUserId.value && pickedSeason.value?.phase === 'open';
 
 // An expanded row shows the breakdown, fetched once per team and season
 watch(expanded, async (ids) => {

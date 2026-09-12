@@ -268,6 +268,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore, useLadderStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
+import { roundLabel } from '@/helpers/rounds.mjs';
 import W3CIcon from '@/components/W3CIcon.vue';
 import w3championsLogo from '@/assets/media/w3champions-logo.png';
 import w3championsLogoWhite from '@/assets/media/w3champions-logo-white.png';
@@ -348,9 +349,10 @@ const seasonName = computed(() =>
   seasons.value.find(s => s.id === selectedSeasonId.value)?.name ?? ''
 );
 
+// The round label formats a start/end pair exactly as every other date on the page reads
 const seasonDates = computed(() => {
   const season = ladder.value?.season;
-  return season?.start_date && season?.end_date ? `${season.start_date} to ${season.end_date}` : '';
+  return season?.start_date && season?.end_date ? roundLabel(season) : '';
 });
 
 const seasonPoints = computed(() =>
@@ -366,16 +368,22 @@ const seasonPlayers = computed(() =>
   (ladder.value?.teams ?? []).reduce((sum, team) => sum + team.players.length, 0)
 );
 
+// The backend leaves the season stamp null until every signup is stamped, so the
+// newest player stamp is what the caption and its tooltip read
+const newestSync = computed(() =>
+  allPlayers.value.map(player => player.synced_at).filter(Boolean).sort().at(-1) ?? null
+);
+
 // A season counts as synced only while every player of it carries a stamp
 const syncCaption = computed(() => {
   const players = allPlayers.value;
   const synced = players.filter(player => player.synced_at).length;
   if (!synced) return 'never synced';
   if (synced < players.length) return `partly synced \u00b7 ${synced} of ${players.length} players`;
-  return `synced ${agoFromIso(ladder.value?.season?.synced_at)}`;
+  return `synced ${agoFromIso(newestSync.value)}`;
 });
 
-const syncStamp = computed(() => localFromIso(ladder.value?.season?.synced_at));
+const syncStamp = computed(() => localFromIso(newestSync.value));
 
 const teamOptions = computed(() =>
   (ladder.value?.teams ?? []).map(team => ({ id: team.id, name: team.name }))

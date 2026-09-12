@@ -25,11 +25,26 @@
         <h2 class="text-h6 mb-3">Waiting for you</h2>
         <div v-for="row in waiting" :key="row.key" class="waiting d-flex flex-wrap align-center ga-3">
           <div class="flex-grow-1 min-w-0">{{ row.text }}</div>
+          <!-- Until the series time has passed the job is to agree a time, so Schedule leads -->
           <div v-if="row.kind === 'series'" class="d-flex flex-wrap ga-2">
-            <v-btn color="primary" variant="elevated" size="small" prepend-icon="mdi-trophy" @click="reportDialog.open(row.series)">
+            <v-btn
+              :color="row.played ? 'primary' : undefined"
+              :variant="row.played ? 'elevated' : 'text'"
+              :style="{ order: row.played ? 0 : 1 }"
+              size="small"
+              prepend-icon="mdi-trophy"
+              @click="reportDialog.open(row.series)"
+            >
               Report result
             </v-btn>
-            <v-btn variant="text" size="small" prepend-icon="mdi-calendar-edit" @click="scheduleDialog.open(row.series)">
+            <v-btn
+              :color="row.played ? undefined : 'primary'"
+              :variant="row.played ? 'text' : 'elevated'"
+              :style="{ order: row.played ? 1 : 0 }"
+              size="small"
+              prepend-icon="mdi-calendar-edit"
+              @click="scheduleDialog.open(row.series)"
+            >
               Schedule
             </v-btn>
           </div>
@@ -79,15 +94,15 @@
                 <v-btn
                   v-if="isUnscored(item)"
                   color="primary"
-                  variant="elevated"
+                  variant="outlined"
                   size="small"
                   prepend-icon="mdi-calendar-edit"
                   @click="scheduleDialog.open(item)"
                 >
-                  Edit Schedule
+                  Edit schedule
                 </v-btn>
-                <v-btn color="success" variant="elevated" size="small" prepend-icon="mdi-trophy" @click="reportDialog.open(item)">
-                  {{ isUnscored(item) ? 'Report Result' : 'Edit result' }}
+                <v-btn color="primary" variant="elevated" size="small" prepend-icon="mdi-trophy" @click="reportDialog.open(item)">
+                  {{ isUnscored(item) ? 'Report result' : 'Edit result' }}
                 </v-btn>
                 <v-btn
                   color="primary"

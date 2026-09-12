@@ -116,7 +116,7 @@
         elevation="2"
         class="mb-5"
       >
-        <v-card-title class="bg-primary d-flex align-center">
+        <v-card-title class="bg-primary d-flex align-center flex-wrap ga-1">
           <RaceIcon :raceIdentifier="raceIdMap[raceName]" class="mr-2" />
           <span>Playing as {{ raceName }}</span>
           <v-spacer />

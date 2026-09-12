@@ -330,12 +330,16 @@ const say = (error, fallback) => (error?.message === 'not_authorized_for_this_se
   ? 'This veto belongs to a series that is not yours.'
   : error?.message || fallback);
 
+// a read that keeps failing stops the poll until Try again reads the board
+let fails = 0;
 const load = async () => {
   try {
     board.value = await fetchWrapper.get(vetoUrl);
+    fails = 0;
     errorMessage.value = null;
     emit('change', board.value);
   } catch (error) {
+    fails += 1;
     errorMessage.value = say(error, 'Error loading the map veto.');
   }
 };
@@ -371,7 +375,7 @@ const send = (body) => {
 // a recorder polls on their own turn too, since the other side may be entering the same veto
 let timer = null;
 const poll = () => {
-  if (document.hidden || pending.value || board.value?.complete) return;
+  if (document.hidden || pending.value || fails >= 3 || board.value?.complete) return;
   if (board.value?.on_turn && !recording.value) return;
   load();
 };

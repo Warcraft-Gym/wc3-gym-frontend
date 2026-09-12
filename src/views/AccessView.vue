@@ -20,7 +20,7 @@
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-account-key</v-icon>
-        <span>Gym Admins</span>
+        <span>Gym admins</span>
       </v-card-title>
 
       <v-card-text class="pa-0">
@@ -31,15 +31,20 @@
                 <v-spacer />
                 <v-col cols="12" sm="auto">
                   <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openAdd" block>
-                    Add Admin
+                    Add admin
                   </v-btn>
                 </v-col>
               </v-row>
             </v-toolbar>
           </template>
 
+          <template #[`item.name`]="{ item }">
+            <PlayerName v-if="playerOf(item)" :player="playerOf(item)" />
+            <template v-else>{{ item.name }}</template>
+          </template>
+
           <template #[`item.granted_at`]="{ item }">
-            {{ item.granted_at ? new Date(item.granted_at).toLocaleDateString() : '' }}
+            {{ formatDateTime(item.granted_at) }}
           </template>
 
           <template #[`item.source`]="{ item }">
@@ -50,7 +55,7 @@
 
           <template #[`item.actions`]="{ item }">
             <RowActions v-if="canRemove(item)" :actions="[
-              { icon: 'mdi-delete', label: 'Remove Admin', color: 'error', onClick: () => openDeleteDialog(item) },
+              { icon: 'mdi-delete', label: 'Remove admin', color: 'error', onClick: () => openDeleteDialog(item) },
             ]" />
           </template>
 
@@ -68,7 +73,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-plus-circle</v-icon>
-          Add Admin
+          Add admin
         </v-card-title>
 
         <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="dialogError = null">
@@ -99,7 +104,7 @@
           <v-spacer />
           <v-btn variant="text" @click="addDialog = false">Cancel</v-btn>
           <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" @click="saveAdmin" :loading="isSaving" :disabled="!picked">
-            Add Admin
+            Add admin
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -121,6 +126,8 @@ import { useAuthStore, useConfigStore, usePlayerStore } from '@/stores';
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import StatusAlert from '@/components/StatusAlert.vue';
+import PlayerName from '@/components/PlayerName.vue';
+import { formatDateTime } from '@/helpers/datetime';
 import { useColumns } from '@/helpers/columns';
 
 const authStore = useAuthStore();
@@ -148,6 +155,9 @@ const headers = useColumns([
   { title: 'Source', value: 'source', sortable: true },
   { title: '', value: 'actions', align: 'end', sortable: false }
 ]);
+
+// An admin is usually a player, so the name carries the flag and the link the rest of the app gives it
+const playerOf = (row) => players.value.find(p => String(p.discordId) === String(row.discord_id));
 
 // env rows are granted outside the app, and an admin cannot remove themself
 const canRemove = (row) => row.source === 'app' && row.discord_id !== authStore.me?.discord_id;

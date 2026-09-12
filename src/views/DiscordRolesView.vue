@@ -158,7 +158,7 @@
     <v-card elevation="2" :class="{ 'order-first': view === 'columns' }">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-account-sync</v-icon>
-        <span>Accounts Out of Sync</span>
+        <span>Accounts out of sync</span>
       </v-card-title>
 
       <v-card-text class="pa-0">
@@ -801,10 +801,12 @@ onMounted(fetchAll);
 </script>
 
 <style scoped>
-/* The three columns share one viewport-tied height, so their headers stay aligned and each list scrolls on its own */
-.role-column {
-  height: calc(100vh - 320px);
-  min-height: 360px;
+/* Side by side from md up, the three columns share one viewport-tied height, so their headers stay aligned and each list scrolls on its own */
+@media (min-width: 960px) {
+  .role-column {
+    height: calc(100vh - 320px);
+    min-height: 360px;
+  }
 }
 /* The zone fills the rest of the column card, so a drop below the last card still lands */
 .drop-zone {

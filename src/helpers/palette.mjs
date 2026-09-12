@@ -22,7 +22,7 @@ export const themes = {
             error: '#8C3B2A',
             warning: '#A65200',
             info: '#2F6690',
-            success: '#3D7A4A',
+            success: '#2A6B36',  // dark enough to carry AA as text on every light ground; #3D7A4A read 4.00:1 on surface-light
             'primary-text': '#7C4912',
             band: '#1C2420',
             'on-band': '#F2F4ED',
@@ -86,7 +86,7 @@ export const themes = {
             error: '#FFB4AB',  // loss #DE6E52 sits next to it, so error carries a lighter, pinker red
             warning: '#F0A04B',
             info: '#7FB0DA',
-            success: '#6DB37A',
+            success: '#5FA870',  // inside the dark lightness band the chart-mark validator checks, still 4.62:1 or more as text
             'primary-text': '#E3A45F',
             band: '#0E1210',
             'on-band': '#F2F4ED',

@@ -11,7 +11,7 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1><v-icon class="mr-2">mdi-cog</v-icon> Configuration Management</h1>
+        <h1><v-icon class="mr-2">mdi-cog</v-icon> Settings</h1>
       </v-col>
     </v-row>
     
@@ -27,9 +27,9 @@
         <v-card elevation="2">
           <v-card-title class="bg-primary">
             <v-icon class="mr-2">mdi-cog</v-icon>
-            Application Settings
+            Application settings
           </v-card-title>
-          <v-card-subtitle class="mt-2">
+          <v-card-subtitle class="mt-2 text-wrap">
             Manage application configuration settings stored in the database.
           </v-card-subtitle>
           
@@ -38,15 +38,16 @@
               <v-row>
                 <!-- W3Champions Settings -->
                 <v-col cols="12">
-                  <h3 class="text-h6 mb-2">Warcraft 3 Champions Integration</h3>
+                  <h3 class="text-h6 mb-2">Warcraft 3 Champions integration</h3>
                 </v-col>
                 
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.current_w3c_season"
-                    label="Current W3C Season"
+                    label="Current W3C season"
                     :placeholder="w3cSeasonPlaceholder"
                     hint="Leave blank to follow the latest W3Champions season."
+                    persistent-hint
                     persistent-placeholder
                     variant="outlined"
                     prepend-inner-icon="mdi-trophy"
@@ -60,6 +61,7 @@
                     label="W3Champions API URL"
                     :placeholder="w3cUrlPlaceholder"
                     hint="Base URL for W3Champions API. Leave blank to use the default."
+                    persistent-hint
                     persistent-placeholder
                     variant="outlined"
                     prepend-inner-icon="mdi-api"
@@ -68,7 +70,7 @@
 
                 <!-- GNL Settings -->
                 <v-col cols="12" class="mt-4">
-                  <h3 class="text-h6 mb-2">GNL League Settings</h3>
+                  <h3 class="text-h6 mb-2">GNL league settings</h3>
                 </v-col>
 
                 <v-col cols="12" md="6">
@@ -77,7 +79,7 @@
                     :items="seasons"
                     item-title="name"
                     item-value="id"
-                    label="Current GNL Season"
+                    label="Current GNL season"
                     hint="Active league season"
                     variant="outlined"
                     prepend-inner-icon="mdi-calendar"
@@ -87,14 +89,14 @@
 
                 <!-- Public Access Settings -->
                 <v-col cols="12" class="mt-4">
-                  <h3 class="text-h6 mb-2">Public Access Settings</h3>
+                  <h3 class="text-h6 mb-2">Public access settings</h3>
                 </v-col>
 
                 <v-col cols="12" md="6">
                   <v-switch
                     v-model="settingsMap.fantasy_team_creation_enabled"
                     color="primary"
-                    label="Fantasy Team Creation Enabled"
+                    label="Fantasy team creation enabled"
                     hint="Off closes team creation for every season; a commenced season is closed anyway"
                     hide-details="auto"
                     true-value="true"
@@ -104,14 +106,14 @@
 
                 <!-- Fantasy Betting Settings -->
                 <v-col cols="12" class="mt-4">
-                  <h3 class="text-h6 mb-2">Fantasy Betting Settings</h3>
+                  <h3 class="text-h6 mb-2">Fantasy betting settings</h3>
                 </v-col>
 
                 <v-col cols="12" md="6">
                   <v-switch
                     v-model="settingsMap.fantasy_fixed_bet_points"
                     color="primary"
-                    label="Use Fixed Bet Points"
+                    label="Use fixed bet points"
                     hint="If enabled, all bets use a fixed point value instead of user input"
                     hide-details="auto"
                     true-value="true"
@@ -122,8 +124,9 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.fantasy_bet_points_value"
-                    label="Fixed Bet Points Value"
+                    label="Fixed bet points value"
                     hint="Point value for bets when using fixed bet points"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-numeric"
                     type="number"
@@ -134,8 +137,9 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.fantasy_min_bet_points"
-                    label="Minimum Bet Points"
+                    label="Minimum bet points"
                     hint="Minimum point value allowed when using custom bet points"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-arrow-down"
                     type="number"
@@ -146,8 +150,9 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.fantasy_max_bet_points"
-                    label="Maximum Bet Points"
+                    label="Maximum bet points"
                     hint="Maximum point value allowed when using custom bet points"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-arrow-up"
                     type="number"
@@ -157,14 +162,15 @@
 
                 <!-- Discord Settings -->
                 <v-col cols="12" class="mt-4">
-                  <h3 class="text-h6 mb-2">Discord Bot Settings</h3>
+                  <h3 class="text-h6 mb-2">Discord bot settings</h3>
                 </v-col>
 
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.discord_invite_url"
-                    label="Discord Invite URL"
+                    label="Discord invite URL"
                     hint="The invite the join card offers a signed-in visitor who is not in the server"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-link-variant"
                   ></v-text-field>
@@ -173,8 +179,9 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.captain_coach_role"
-                    label="Captain/Coach Role ID"
+                    label="Captain/coach role ID"
                     hint="Discord role ID for team captains and coaches"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-account-star"
                   ></v-text-field>
@@ -183,8 +190,9 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.admin_role"
-                    label="Admin Role ID"
+                    label="Admin role ID"
                     hint="Discord role ID for bot commands"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-shield-account"
                   ></v-text-field>
@@ -193,8 +201,9 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.signup_channel_id"
-                    label="Signup Channel ID"
+                    label="Signup channel ID"
                     hint="Discord channel for player signup button"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-account-plus"
                   ></v-text-field>
@@ -203,8 +212,9 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.dashboard_channel_id"
-                    label="Player Dashboard Channel ID"
-                    hint="Discord channel for player dashboard button"
+                    label="Player profile channel ID"
+                    hint="Discord channel for the player profile button"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-view-dashboard"
                   ></v-text-field>
@@ -213,8 +223,9 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.fantasy_dashboard_channel_id"
-                    label="Fantasy Dashboard Channel ID"
+                    label="Fantasy dashboard channel ID"
                     hint="Discord channel for fantasy league dashboard button"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-dice-multiple"
                   ></v-text-field>
@@ -223,8 +234,9 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.scheduling_channel_id"
-                    label="Scheduling Channel ID"
+                    label="Scheduling channel ID"
                     hint="Where match scheduling notifications are posted"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-calendar-clock"
                   ></v-text-field>
@@ -233,8 +245,9 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.results_channel_id"
-                    label="Results Channel ID"
+                    label="Results channel ID"
                     hint="Where match results and replays are posted"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-trophy-outline"
                   ></v-text-field>
@@ -243,8 +256,9 @@
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="settingsMap.content_channel_id"
-                    label="Content Channel ID"
+                    label="Content channel ID"
                     hint="Where cast claims and stream reminders are posted"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-broadcast"
                   ></v-text-field>
@@ -252,7 +266,7 @@
 
                 <!-- KOTH Integration Settings -->
                 <v-col cols="12" class="mt-4">
-                  <h3 class="text-h6 mb-2">KOTH Nightbot Integration</h3>
+                  <h3 class="text-h6 mb-2">KOTH Nightbot integration</h3>
                 </v-col>
 
                 <v-col cols="12">
@@ -261,7 +275,7 @@
                       <v-col cols="12">
                         <div class="d-flex align-center mb-2">
                           <v-icon color="primary" class="mr-2">mdi-robot</v-icon>
-                          <span class="text-subtitle-1 font-weight-medium">Nightbot Signup Token</span>
+                          <span class="text-subtitle-1 font-weight-medium">Nightbot signup token</span>
                         </div>
                         <p class="text-body-2 text-medium-emphasis mb-4">
                           This token authenticates Nightbot signup commands. Generate a new token if the current one is compromised.
@@ -271,7 +285,7 @@
                       <v-col cols="12" md="8">
                         <v-text-field
                           v-model="kothNightbotToken"
-                          label="Current Token"
+                          label="Current token"
                           variant="outlined"
                           readonly
                           prepend-inner-icon="mdi-key"
@@ -302,14 +316,14 @@
                           :loading="isGeneratingKothToken"
                           block
                         >
-                          Generate New Token
+                          Generate new token
                         </v-btn>
                       </v-col>
 
                       <v-col cols="12" v-if="kothNightbotToken">
                         <v-alert type="info" variant="tonal" density="compact">
                           <div class="text-body-2">
-                            <strong>Nightbot Command Example:</strong><br>
+                            <strong>Nightbot command example:</strong><br>
                             <code class="mt-1 d-inline-block">!addcom !kothsignup $(urlfetch $(eval const token='{{kothNightbotToken}}'; const twitch='$(user)'; const race='$(query)'; `https://backend.warcraft-gym.com/koth/signup?token=${token}&twitch=${twitch}&battletag=$(query)${race ? '&race='+race : ''}`; ))</code>
                           </div>
                         </v-alert>
@@ -330,7 +344,7 @@
               :loading="isSaving"
               :disabled="isSaving || !loadedSettings"
             >
-              Save Settings
+              Save settings
             </v-btn>
 
             <v-btn
@@ -352,19 +366,19 @@
         <v-card elevation="2">
           <v-card-title class="bg-primary">
             <v-icon class="mr-2">mdi-information</v-icon>
-            About Settings
+            About settings
           </v-card-title>
           <v-card-text class="pt-4">
             <ul>
-              <li><strong>Database Storage:</strong> Settings are stored in the database and persist across backend restarts.</li>
-              <li><strong>Public Access Toggles:</strong> Enable/disable fantasy team creation. Player signups open and close per season on the Seasons page.</li>
+              <li><strong>Database storage:</strong> Settings are stored in the database and persist across backend restarts.</li>
+              <li><strong>Public access toggles:</strong> Enable/disable fantasy team creation. Player signups open and close per season on the Seasons page.</li>
               <li><strong>Discord IDs:</strong> Role and channel IDs can be found by enabling Developer Mode in Discord and right-clicking on roles/channels.</li>
-              <li><strong>Current GNL Season:</strong> The current season is used for public player signups, fantasy team registration, and all league operations.</li>
+              <li><strong>Current GNL season:</strong> The current season is used for public player signups, fantasy team registration, and all league operations.</li>
               <li><strong>W3Champions:</strong> The W3C season and URL are used for fetching player statistics and MMR data.</li>
-              <li><strong>Player Dashboard Channel:</strong> The channel where the player dashboard button is posted for users to access their dashboard.</li>
-              <li><strong>Scheduling Channel:</strong> Where scheduling notifications are posted when players schedule their matches via the dashboard.</li>
-              <li><strong>Results Channel:</strong> Where score update notifications and replay files are posted when players submit results via the dashboard.</li>
-              <li><strong>Fantasy Dashboard Channel:</strong> The channel where the fantasy league dashboard button is posted.</li>
+              <li><strong>Player profile channel:</strong> The channel where the button that opens a player's own profile is posted.</li>
+              <li><strong>Scheduling channel:</strong> Where scheduling notifications are posted when players schedule their matches from their profile.</li>
+              <li><strong>Results channel:</strong> Where score update notifications and replay files are posted when players submit results from their profile.</li>
+              <li><strong>Fantasy dashboard channel:</strong> The channel where the fantasy league dashboard button is posted.</li>
             </ul>
           </v-card-text>
         </v-card>

@@ -44,6 +44,24 @@ export const useEventStore = defineStore({
         async saveDivisions(event_id, divisions) {
             return await fetchWrapper.put(`${backendUrl}/events/${event_id}/divisions`, { divisions });
         },
+        // The standings of a stage are computed by the backend from its series, points and ranking rule
+        async fetchStageStandings(event_id, stage_id) {
+            return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/standings`);
+        },
+        // One series with its sides, games, veto steps and casts
+        async fetchSeries(event_id, series_id) {
+            return await fetchWrapper.get(`${backendUrl}/events/${event_id}/series/${series_id}`);
+        },
+        // The caller acts on his own entrant row: he signs up, withdraws, and checks in
+        async signUp(event_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants`, { channel: 'web' });
+        },
+        async withdraw(event_id) {
+            await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/me`);
+        },
+        async checkIn(event_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/me/check-in`);
+        },
         async fetchStageSeries(event_id, stage_id) {
             return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`);
         },

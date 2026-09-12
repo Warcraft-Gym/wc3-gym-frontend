@@ -6,9 +6,11 @@
         <template v-slot:activator="{ props }">
             <v-avatar
             v-bind="props"
-            :image="currentRace.icon"
             rounded="0"
             :size="size">
+            <!-- eager: the icon is a bundled file, and a lazy one stays blank inside a
+                 scrolling container until the reader scrolls -->
+            <v-img :src="currentRace.icon" :alt="currentRace.name" eager />
             </v-avatar>
         </template>
     </v-tooltip>

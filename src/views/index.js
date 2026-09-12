@@ -33,3 +33,7 @@ export { default as RandomStatsView } from './RandomStatsView.vue';
 export { default as VetoBoardView } from './VetoBoardView.vue';
 export { default as CreditsView } from './CreditsView.vue';
 export { default as UpcomingView } from './UpcomingView.vue';
+export { default as LeaguesView } from './LeaguesView.vue';
+export { default as LeagueView } from './LeagueView.vue';
+export { default as EventWizardView } from './EventWizardView.vue';
+export { default as EventAdminView } from './EventAdminView.vue';

@@ -98,6 +98,7 @@ const NAV = computed(() => [
         { title: 'Players', to: '/players' },
         ...(me.value?.season_id ? [{ title: 'Players (this season)', to: `/players?season=${seasonStore.slugOf(me.value.season_id)}` }] : []),
         { title: 'Seasons', to: '/seasons' },
+        { title: 'Events', to: '/leagues' },
         { title: '1v1 Maps', to: '/maps' },
     ] },
     { title: 'Fantasy', to: '/fantasy', items: [

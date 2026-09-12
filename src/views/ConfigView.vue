@@ -85,17 +85,6 @@
                   ></v-select>
                 </v-col>
 
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="settingsMap.score_system"
-                    :items="scoreSystemOptions"
-                    label="Score System"
-                    hint="Series points: the winner takes the top of the scale minus the loser's maps, the loser keeps theirs"
-                    variant="outlined"
-                    prepend-inner-icon="mdi-trophy-variant"
-                  ></v-select>
-                </v-col>
-
                 <!-- Public Access Settings -->
                 <v-col cols="12" class="mt-4">
                   <h3 class="text-h6 mb-2">Public Access Settings</h3>
@@ -169,6 +158,16 @@
                 <!-- Discord Settings -->
                 <v-col cols="12" class="mt-4">
                   <h3 class="text-h6 mb-2">Discord Bot Settings</h3>
+                </v-col>
+
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="settingsMap.discord_invite_url"
+                    label="Discord Invite URL"
+                    hint="The invite the join card offers a signed-in visitor who is not in the server"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-link-variant"
+                  ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="6">
@@ -377,6 +376,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useConfigStore, useSeasonStore } from '@/stores';
+import { changedSettings } from '@/helpers/settings-diff.mjs';
 import { storeToRefs } from 'pinia';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -395,23 +395,17 @@ const kothNightbotToken = ref('');
 const kothTokenVisible = ref(false);
 const isGeneratingKothToken = ref(false);
 
-// Score system options
-const scoreSystemOptions = [
-  { title: 'Standard', value: 'standard' },
-  { title: 'Helpstone', value: 'helpstone' }
-];
-
 // Map of setting keys to values
 const settingsMap = ref({
   current_wc3_season: '',
   w3c_url: '',
   current_gnl_season: '',
-  score_system: 'standard',
   fantasy_team_creation_enabled: 'false',
   fantasy_fixed_bet_points: 'false',
   fantasy_bet_points_value: '',
   fantasy_min_bet_points: '',
   fantasy_max_bet_points: '',
+  discord_invite_url: '',
   captain_coach_role: '',
   admin_role: '',
   signup_channel_id: '',
@@ -421,6 +415,9 @@ const settingsMap = ref({
   content_channel_id: '',
   fantasy_dashboard_channel_id: ''
 });
+
+// What the last successful load held, and null while no load has succeeded
+const loadedSettings = ref(null);
 
 // Fetch settings on mount
 const fetchSettings = async () => {
@@ -445,6 +442,7 @@ const fetchSettings = async () => {
         }
       }
     });
+    loadedSettings.value = { ...settingsMap.value };
   } catch (error) {
     errorMessage.value = 'Failed to load settings: ' + error.message;
   } finally {
@@ -476,15 +474,14 @@ const saveSettings = async () => {
   errorMessage.value = null;
   successMessage.value = null;
   try {
-    // Convert empty strings to null for cleaner database storage
-    const settingsToSave = {};
-    Object.keys(settingsMap.value).forEach(key => {
-      const value = settingsMap.value[key];
-      settingsToSave[key] = (value === '' || value === null) ? null : String(value);
-    });
-
+    const settingsToSave = changedSettings(loadedSettings.value, settingsMap.value);
+    if (!Object.keys(settingsToSave).length) {
+      successMessage.value = 'Nothing to save.';
+      return;
+    }
     await configStore.updateSettings(settingsToSave);
-    successMessage.value = 'Settings saved successfully!';
+    loadedSettings.value = { ...settingsMap.value };
+    successMessage.value = 'Settings saved.';
   } catch (error) {
     errorMessage.value = 'Failed to save settings: ' + error.message;
   } finally {
@@ -507,6 +504,7 @@ const fetchKothToken = async () => {
   } catch (error) {
     console.error('Failed to fetch KOTH token:', error);
     kothNightbotToken.value = '';
+    errorMessage.value = 'Could not read the current token.';
   }
 };
 
@@ -522,7 +520,7 @@ const generateKothToken = async () => {
   try {
     const response = await configStore.generateKothNightbotToken();
     kothNightbotToken.value = response.token;
-    successMessage.value = 'New KOTH Nightbot token generated successfully!';
+    successMessage.value = 'Token generated.';
     kothTokenVisible.value = true; // Show the new token
   } catch (error) {
     errorMessage.value = 'Failed to generate KOTH token: ' + error.message;
@@ -535,7 +533,7 @@ const generateKothToken = async () => {
 const copyKothToken = async () => {
   try {
     await navigator.clipboard.writeText(kothNightbotToken.value);
-    successMessage.value = 'Token copied to clipboard!';
+    successMessage.value = 'Token copied.';
   } catch (error) {
     errorMessage.value = 'Failed to copy token to clipboard';
   }

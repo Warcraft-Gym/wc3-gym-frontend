@@ -47,7 +47,7 @@
             <span>When can't you play? Blocked times show your opponent the hours you are open.</span>
             <div class="d-flex ga-2">
               <v-btn class="blocks-btn" variant="text" @click="dismissBlocks">Not now</v-btn>
-              <v-btn class="blocks-btn" color="primary" variant="elevated" @click="blocksOpen = true">Set blocked times</v-btn>
+              <v-btn class="blocks-btn" color="primary" variant="elevated" to="/availability">Availability</v-btn>
             </div>
           </div>
         </v-alert>
@@ -58,8 +58,8 @@
           <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
             {{ zoneLabel(playerData.player.timezone, userTimezone) }}
           </v-chip>
-          <v-btn v-if="schedulingOn" class="blocks-btn" variant="text" prepend-icon="mdi-calendar-remove" @click="blocksOpen = true">
-            Blocked times
+          <v-btn v-if="schedulingOn" class="blocks-btn" variant="text" prepend-icon="mdi-calendar-remove" to="/availability">
+            Availability
           </v-btn>
         </div>
         <div class="d-flex flex-wrap align-center ga-2">
@@ -202,23 +202,6 @@
         <v-spacer />
         <v-btn variant="text" @click="closeSchedule" :disabled="scheduleSavingId === scheduleSeries.id">Cancel</v-btn>
         <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isScheduleValid || scheduleSavingId === scheduleSeries.id" :loading="scheduleSavingId === scheduleSeries.id" @click="saveSchedule">Save</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <!-- Blocked times -->
-  <v-dialog v-model="blocksOpen" max-width="720px" scrollable>
-    <v-card>
-      <v-card-title class="bg-primary">
-        <v-icon class="mr-2">mdi-calendar-remove</v-icon>
-        When can't you play?
-      </v-card-title>
-      <v-card-text class="pt-4">
-        <BlockedTimesEditor v-if="blocksOpen" :zone="playerData?.player?.timezone" @change="count => blockCount = count" @zone="setPlayerZone" />
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn color="primary" variant="elevated" @click="blocksOpen = false">Done</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -388,7 +371,6 @@ import { pickedInstant, pickerParts, viewerZone, zoneLabel } from '@/helpers/tim
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
 import VetoBoard from '@/components/VetoBoard.vue';
-import BlockedTimesEditor from '@/components/BlockedTimesEditor.vue';
 import { commonHours, freeLines } from '@/helpers/blocks.mjs';
 
 
@@ -462,18 +444,12 @@ const needsSignup = computed(() => authStore.me?.signed_up === false && !!authSt
 const currentSeason = computed(() => seasonStore.seasons.find(s => s.id === authStore.me?.season_id) ?? null);
 const seasonLabel = computed(() => currentSeason.value?.name || `GNL Season ${authStore.me?.season_id}`);
 
-// Blocked times: only where the player is in the season and the season runs the scheduling tools
-const blocksOpen = ref(false);
+// The blocked-times prompt: only where the player is in the season and the season runs the scheduling tools
 const blockCount = ref(null);
 const blocksDismissed = ref(false);
 const dismissKey = computed(() => `blocks_dismissed_${authStore.me?.user?.id ?? 'me'}`);
 const schedulingOn = computed(() => !!authStore.me?.signed_up && !!currentSeason.value?.scheduling_enabled);
 const showBlockPrompt = computed(() => schedulingOn.value && blockCount.value === 0 && !blocksDismissed.value);
-
-// the editor writes the browser zone when the profile has none, so the page shows the same zone
-const setPlayerZone = (timezone) => {
-  playerData.value = { ...playerData.value, player: { ...playerData.value.player, timezone } };
-};
 
 const dismissBlocks = () => {
   blocksDismissed.value = true;

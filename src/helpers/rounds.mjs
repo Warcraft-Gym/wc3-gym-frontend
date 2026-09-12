@@ -44,3 +44,16 @@ export const roundCards = ({ rounds = [], series = [], matches = [], teamId = nu
     };
   });
 };
+
+// The read-only line of one round card, read from the player's side. Null while
+// the round is still open, which is where the Can play question belongs.
+export const roundLine = (card, playerId, when = '') => {
+  const series = card?.series;
+  if (!series) return card?.over ? 'Not paired' : null;
+  const mine = series.player1_id === playerId;
+  const name = (mine ? series.player2 : series.player1)?.name ?? 'your opponent';
+  if (isUnscored(series)) return [`vs ${name}`, when].filter(Boolean).join(' · ');
+  const my = (mine ? series.player1_score : series.player2_score) ?? 0;
+  const theirs = (mine ? series.player2_score : series.player1_score) ?? 0;
+  return `Played · ${my > theirs ? 'won' : my < theirs ? 'lost' : 'drew'} vs ${name}`;
+};

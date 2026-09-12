@@ -482,7 +482,7 @@ import bannerImg from '@/assets/media/GNL_Banner.png';
   import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { isUnscored } from '@/helpers/season-phase.mjs';
-import { roundLabel } from '@/helpers/rounds.mjs';
+import { currentRound, roundLabel } from '@/helpers/rounds.mjs';
 import { fixedMapOf, rulesOf } from '@/helpers/map-order.mjs';
 import { formatDateTime } from '@/helpers/datetime';
 
@@ -757,17 +757,18 @@ onMounted(async () => {
   isInitLoading.value = true;
   isLoading.value = true;
   try {
-    const roundFromHash = route.hash && route.hash.includes('#round-') 
-      ? parseInt(route.hash.replace('#round-', ''), 10) 
-      : 1;
+    const roundFromHash = route.hash && route.hash.includes('#round-')
+      ? parseInt(route.hash.replace('#round-', ''), 10)
+      : null;
 
-    // Set the selected week before fetching
-    selectedWeek.value = roundFromHash;
+    // The rounds decide which tab opens, so the season is read before the matches
+    await fetchSeasonDetails();
+    const round = roundFromHash ?? currentRound(season.value?.rounds)?.playday ?? 1;
+    selectedWeek.value = round;
 
     await Promise.all([
-      fetchSeasonDetails(),
       fetchTeams(),
-      fetchMatches(roundFromHash),
+      fetchMatches(round),
       fetchMaps(),
       unscoredOnly.value && fetchUnscoredSeries()
     ]);

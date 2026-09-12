@@ -43,8 +43,8 @@
                 
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="settingsMap.current_wc3_season"
-                    label="Current WC3 Season"
+                    v-model="settingsMap.current_w3c_season"
+                    label="Current W3C Season"
                     :placeholder="w3cSeasonPlaceholder"
                     hint="Leave blank to follow the latest W3Champions season."
                     persistent-placeholder
@@ -397,7 +397,7 @@ const isGeneratingKothToken = ref(false);
 
 // Map of setting keys to values
 const settingsMap = ref({
-  current_wc3_season: '',
+  current_w3c_season: '',
   w3c_url: '',
   current_gnl_season: '',
   fantasy_team_creation_enabled: 'false',

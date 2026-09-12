@@ -2,14 +2,14 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1><v-icon class="mr-2">mdi-account-plus</v-icon> Player Signup</h1>
+        <h1><v-icon class="mr-2">mdi-account-plus</v-icon> {{ titles.heading }}</h1>
       </v-col>
     </v-row>
 
     <v-card elevation="2">
       <v-card-title class="bg-primary text-wrap">
         <v-icon class="mr-2">mdi-clipboard-account</v-icon>
-        {{ seasonName && state !== 'profile' ? `Signup for Season: ${seasonName}` : 'Player Registration' }}
+        {{ titles.card }}
       </v-card-title>
       <v-card-text class="pt-4">
         <div v-if="loading">Loading...</div>
@@ -18,7 +18,7 @@
           <v-alert type="info" variant="tonal" border="start" class="mb-4" prominent>
             <strong>{{ seasonName }} is over.</strong> It takes no signups and no requests.
           </v-alert>
-          <v-btn color="primary" variant="elevated" prepend-icon="mdi-home" to="/">Go to home</v-btn>
+          <v-btn color="primary" variant="elevated" prepend-icon="mdi-calendar-star" to="/">See upcoming events</v-btn>
         </template>
 
         <template v-else-if="state === 'joined' && !editing">
@@ -45,6 +45,10 @@
         </template>
 
         <div v-else>
+          <v-alert v-if="state === 'profile'" type="info" variant="tonal" border="start" class="mb-4" prominent>
+            No season is taking signups right now. Your profile is saved for the next one.
+          </v-alert>
+
           <v-alert v-if="state === 'request'" type="warning" variant="tonal" border="start" class="mb-4" prominent>
             <strong>Signups for {{ seasonName }} are closed.</strong>
             Your profile still saves, and an admin may add you. There is no guarantee.
@@ -88,7 +92,7 @@
                   label="Player name (EAShibby)"
                   variant="outlined"
                   prepend-inner-icon="mdi-account"
-                  required
+                  :rules="[v => !!v || 'Player name is required']"
                 />
               </v-col>
               <v-col cols="12" md="6">
@@ -105,10 +109,10 @@
 
             <v-row :dense="true">
               <v-col cols="12" md="4">
-                <CountrySelect v-model="country" required />
+                <CountrySelect v-model="country" :rules="[v => !!v || 'Player country is required']" />
               </v-col>
               <v-col cols="12" md="4">
-                <RaceSelect v-model="race" label="Main race" required />
+                <RaceSelect v-model="race" label="Main race" :rules="[v => !!v || 'Main race is required']" />
               </v-col>
               <v-col cols="12" md="4">
                 <v-autocomplete
@@ -133,7 +137,7 @@
                   variant="elevated"
                   :prepend-icon="state === 'request' ? 'mdi-account-question' : 'mdi-check'"
                   type="submit"
-                  :disabled="submitting || success || !isFormValid"
+                  :disabled="submitting || success"
                 >
                   {{ submitLabel }}
                 </v-btn>
@@ -158,7 +162,7 @@ import { backendUrl, fetchWrapper } from '@/helpers';
 import { storeToRefs } from 'pinia';
 import { findCountry } from '@/helpers/countries.js';
 import { raceWrapper } from '@/helpers/races.js';
-import { signupState, startZone } from '@/helpers/signup.mjs';
+import { signupState, signupTitles, startZone } from '@/helpers/signup.mjs';
 import { viewerZone, zoneLabel } from '@/helpers/timezone.mjs';
 
 const loading = ref(true);
@@ -204,6 +208,7 @@ const { seasons } = storeToRefs(seasonStore);
 const season = computed(() => seasons.value.find(x => String(x.id) === String(selectedSignupSeasonId.value)) ?? null);
 const seasonName = computed(() => season.value?.name || '');
 const state = computed(() => signupState(season.value, !!me.value?.signed_up, !!me.value?.user));
+const titles = computed(() => signupTitles(state.value, seasonName.value));
 const schedulingEnabled = computed(() => season.value?.scheduling_enabled ?? true);
 const entry = computed(() => me.value?.user);
 const submitLabel = computed(() => {

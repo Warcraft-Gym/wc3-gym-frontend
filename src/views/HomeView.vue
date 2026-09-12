@@ -97,7 +97,7 @@ const fetchHomeData = async () => {
     openPopupOnce();
   } catch (error) {
     console.error('Error loading the home page:', error);
-    errorMessage.value = 'Failed to load the home page. Please try again later.';
+    errorMessage.value = error.message || 'Failed to load the home page.';
   } finally {
     isLoading.value = false;
   }

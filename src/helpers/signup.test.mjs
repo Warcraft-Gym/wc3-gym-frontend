@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { withExtras } from './countries.mjs';
 import { seasonAction } from './events.mjs';
-import { COUNTRY_ZONE, signupState, startZone } from './signup.mjs';
+import { COUNTRY_ZONE, signupState, signupTitles, startZone } from './signup.mjs';
 
 const base = createRequire(import.meta.url)('country-code-info/data/countries.json');
 
@@ -62,5 +62,22 @@ test('/signup offers the same action as the home page for every season', () => {
   for (const season of seasons) {
     const state = signupState(season, false, true);
     assert.equal(seasonAction(season), ['signup', 'request'].includes(state) ? state : null, JSON.stringify(season));
+  }
+});
+
+test('only a state that still takes a signup names the season', () => {
+  assert.equal(signupTitles('signup', 'GNL S18').card, 'Signup for Season: GNL S18');
+  assert.equal(signupTitles('request', 'GNL S18').card, 'Signup for Season: GNL S18');
+  assert.equal(signupTitles('joined', 'GNL S18').card, 'Signup for Season: GNL S18');
+  // the over state says the season is over right below the title, so the title must not offer a signup
+  assert.equal(signupTitles('over', 'GNL S18').card, 'Player Registration');
+  assert.equal(signupTitles('profile', 'GNL S18').card, 'Player Registration');
+  assert.equal(signupTitles('signup', '').card, 'Player Registration');
+});
+
+test('the heading follows the state: a profile-only form is not a signup', () => {
+  assert.equal(signupTitles('profile', '').heading, 'Player Profile');
+  for (const state of ['signup', 'request', 'joined', 'over']) {
+    assert.equal(signupTitles(state, 'GNL S18').heading, 'Player Signup', state);
   }
 });

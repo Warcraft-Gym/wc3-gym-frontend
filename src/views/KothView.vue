@@ -4,7 +4,10 @@
       <v-col>
         <h1 class="text-h5 text-md-h3 font-weight-bold">
           <v-icon class="mr-2" size="large">mdi-crown</v-icon>
-          King of the Hill Management
+          King of the Hill<span v-if="selectedEvent"> — {{ selectedEvent.name }}</span>
+          <v-chip v-if="selectedEvent" class="ml-3" size="small" :color="selectedEvent.is_active ? 'success' : undefined">
+            {{ selectedEvent.is_active ? 'Active' : 'Inactive' }}
+          </v-chip>
         </h1>
       </v-col>
     </v-row>
@@ -117,7 +120,7 @@
       <v-row>
         <v-col v-for="bracket in [1, 2, 3]" :key="bracket" cols="12" md="4">
           <v-card elevation="2" class="bracket-card">
-            <v-card-title :class="`bg-${['hero', 'info', 'primary'][bracket - 1]}`">
+            <v-card-title class="bg-primary">
               <v-icon class="mr-2">mdi-trophy</v-icon>
               Bracket {{ bracket }}
             </v-card-title>
@@ -130,15 +133,15 @@
             
             <v-card-text class="pa-3">
               <!-- Kings Section -->
-              <div v-if="kings[bracket] && kings[bracket].length > 0" class="mb-4 pa-3 king-section">
+              <div v-if="kothStore.getBracketKings(bracket).length > 0" class="mb-4 pa-3 king-section">
                 <div class="d-flex align-center mb-2">
                   <v-icon color="primary" class="mr-2">mdi-crown</v-icon>
-                  <span class="text-subtitle-2 font-weight-bold">King{{ kings[bracket].length > 1 ? 's' : '' }}</span>
+                  <span class="text-subtitle-2 font-weight-bold">King{{ kothStore.getBracketKings(bracket).length > 1 ? 's' : '' }}</span>
                 </div>
-                <div v-for="king in kings[bracket]" :key="king.id" class="king-item pa-2 mb-2">
+                <div v-for="king in kothStore.getBracketKings(bracket)" :key="king.id" class="king-item pa-2 mb-2">
                   <div class="d-flex align-center justify-space-between">
                     <div class="flex-grow-1">
-                      <PlayerName class="font-weight-bold" :player="{ name: king.twitch_username || king.battle_tag, country: king.country }" :race="king.race" />
+                      <PlayerName class="font-weight-bold" :player="kingPlayer(king)" :race="king.race" />
                       <div class="text-caption text-medium-emphasis">{{ king.mmr }} MMR</div>
                     </div>
                     <v-btn size="small" variant="tonal" color="error" @click="removeKing(king.id)" title="Remove King">
@@ -377,11 +380,12 @@
 import { DateTime } from 'luxon';
 import { ref, computed, onMounted } from 'vue';
 import { useKothStore } from '@/stores';
+import { kingPlayer } from '@/helpers/players.mjs';
 import { storeToRefs } from 'pinia';
 
 
 const kothStore = useKothStore();
-const { events, signups, kings, isLoading } = storeToRefs(kothStore);
+const { events, signups, isLoading } = storeToRefs(kothStore);
 
 const errorMessage = ref(null);
 const successMessage = ref(null);
@@ -427,12 +431,12 @@ async function loadEvents() {
     errorMessage.value = null;
     await kothStore.fetchAllEvents();
     
-    // Auto-select active event if exists
+    // The active event is only the default; a selection already made survives a reload
     const activeEvent = events.value.find(e => e.is_active);
-    if (activeEvent) {
+    if (!selectedEventId.value && activeEvent) {
       selectedEventId.value = activeEvent.id;
-      await loadEventData();
     }
+    await loadEventData();
   } catch (error) {
     errorMessage.value = `Failed to load events: ${error.message}`;
   }
@@ -443,10 +447,7 @@ async function loadEventData() {
   
   try {
     errorMessage.value = null;
-    await Promise.all([
-      kothStore.fetchSignups(selectedEventId.value),
-      kothStore.fetchBracketKings(selectedEventId.value),
-    ]);
+    await kothStore.fetchSignups(selectedEventId.value);
   } catch (error) {
     errorMessage.value = `Failed to load event data: ${error.message}`;
   }
@@ -521,10 +522,6 @@ async function saveEvent() {
     }
     closeEventDialog();
     await loadEvents();
-    
-    if (selectedEventId.value) {
-      await loadEventData();
-    }
   } catch (error) {
     errorMessage.value = `Failed to save event: ${error.message}`;
   }
@@ -642,7 +639,8 @@ async function saveSignup() {
     await kothStore.createSignup({
       event_id: selectedEventId.value,
       battle_tag: signupForm.value.battle_tag,
-      twitch_username: signupForm.value.twitch_username || null,
+      // the admin may leave the Twitch name blank; the body takes a string, never null
+      twitch_username: signupForm.value.twitch_username || '',
       races: signupForm.value.races,
     });
     closeAddSignupDialog();

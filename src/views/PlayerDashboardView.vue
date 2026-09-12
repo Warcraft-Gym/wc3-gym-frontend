@@ -24,7 +24,10 @@
       </v-col>
     </v-row>
 
-    <StatusAlert v-model="errorMessage" />
+    <StatusAlert v-model="errorMessage" :retry="fetchPlayerData" />
+    <div v-if="noPlayerRow" class="mb-4">
+      <v-btn color="primary" variant="elevated" @click="router.push('/signup')">Sign up</v-btn>
+    </div>
 
     <StatusAlert v-model="successMessage" type="success" />
     <v-card v-if="!isLoading && playerData" elevation="2" class="mb-6">
@@ -74,7 +77,7 @@
         Events
       </v-card-title>
       <!-- The current season opens onto its rounds; a series replaces the availability question -->
-      <PlayerSeasons :player="fullPlayer" :open="Number(playerData.season_id)">
+      <PlayerSeasons :player="fullPlayer" :open="playerData.season_id ? Number(playerData.season_id) : undefined">
         <template #current="{ row }">
           <RoundCards
             :player="playerData.player"
@@ -89,6 +92,7 @@
                   color="primary"
                   variant="elevated"
                   size="small"
+                  v-if="isUnscored(item)"
                   prepend-icon="mdi-calendar-edit"
                   @click="editSchedule(item)"
                   :loading="scheduleSavingId === item.id"
@@ -105,7 +109,7 @@
                   :loading="scoreSavingId === item.id"
                   :disabled="scoreSavingId === item.id || scheduleSavingId === item.id"
                 >
-                  Report Result
+                  {{ isUnscored(item) ? 'Report Result' : 'Edit result' }}
                 </v-btn>
                 <v-btn
                   color="primary"
@@ -158,6 +162,7 @@
         Edit Schedule
       </v-card-title>
       <v-card-text class="pt-4">
+        <StatusAlert v-model="errorMessage" />
         <v-alert type="info" variant="tonal" density="compact" class="mb-4">
           Enter time in your local timezone ({{ zoneLabel(userTimezone, userTimezone, chosen) }}).
         </v-alert>
@@ -226,6 +231,7 @@
         Report Result
       </v-card-title>
       <v-card-text class="pt-4">
+        <StatusAlert v-model="errorMessage" />
         <v-alert
           v-if="scoreVeto"
           :type="scoreVeto.complete ? 'success' : 'warning'"
@@ -233,7 +239,7 @@
           density="compact"
           class="mb-2"
         >
-          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below, or report without it.' }}
+          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below, or report without it. Each step is saved when you tap it.' }}
         </v-alert>
         <VetoBoard v-if="scoreSeries.id" :key="scoreSeries.id" :series-id="scoreSeries.id" report class="mb-4" @change="board => scoreVeto = board" />
         <v-form ref="scoreForm" v-model="scoreFormValid">
@@ -321,7 +327,7 @@
       </v-card-text>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="closeScore" :disabled="scoreSavingId === scoreSeries.id">Cancel</v-btn>
+        <v-btn variant="text" @click="closeScore" :disabled="scoreSavingId === scoreSeries.id">Close</v-btn>
         <v-btn :color="vetoMissing ? 'warning' : 'primary'" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isScoreValid || scoreSavingId === scoreSeries.id" :loading="scoreSavingId === scoreSeries.id" @click="saveResult">{{ vetoMissing ? 'Report without a veto' : 'Save Result' }}</v-btn>
       </v-card-actions>
     </v-card>
@@ -363,6 +369,7 @@ import { syncedAgo, w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from '@/helpers/map-order.mjs';
 import { readReplay, matchMap, isOtherSeries } from '@/helpers/w3g.mjs';
+import { isUnscored } from '@/helpers/season-phase.mjs';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
@@ -426,6 +433,7 @@ const saveProfile = async () => {
 
 const playerData = ref(null);
 const series = ref([]);
+const noPlayerRow = ref(false);  // the session has no player row at all
 
 // the avatar menu asks for the dialog with ?edit=1; the form needs the loaded player,
 // and the flag is dropped once used so a later save does not reopen it
@@ -485,7 +493,7 @@ const scheduleSeries = ref({});
 const scoreSeries = ref({ replays: {}, races: {}, winners: [], maps: {} });
 // a result carries its veto, so the dialog holds the board above the scores
 const scoreVeto = ref(null);
-const vetoMissing = computed(() => !scoreVeto.value?.complete);
+const vetoMissing = computed(() => scoreVeto.value !== null && !scoreVeto.value.complete);
 // Per-series saving state (store id of series currently being saved)
 const scheduleSavingId = ref(null);
 const scoreSavingId = ref(null);
@@ -530,6 +538,7 @@ const rules = {
 const fetchPlayerData = async () => {
   isLoading.value = true;
   errorMessage.value = null;
+  noPlayerRow.value = false;
   
   try {
     // the backend reads the member off the session bearer
@@ -557,10 +566,11 @@ const fetchPlayerData = async () => {
 
   } catch (error) {
     console.error('Error fetching player data:', error);
-    if (error?.message?.includes('player_not_found')) {
-      errorMessage.value = 'Player not found. Please make sure you have signed up first.';
+    noPlayerRow.value = !!error?.message?.includes('player_not_found');
+    if (noPlayerRow.value) {
+      errorMessage.value = 'You are not signed up yet, so there is nothing to show here.';
     } else {
-      errorMessage.value = 'Error loading player dashboard. Please try again.';
+      errorMessage.value = 'Could not load your dashboard.';
     }
   } finally {
     isLoading.value = false;
@@ -578,7 +588,10 @@ const savingWeek = ref(null);
 // the dashboard player is the reduced one; the full player names the team of each season
 const fullPlayer = ref(null);
 const fetchFullPlayer = async () => {
-  fullPlayer.value = await playerStore.getPlayer(playerData.value.player.id).catch(() => null);
+  fullPlayer.value = await playerStore.getPlayer(playerData.value.player.id).catch(() => {
+    errorMessage.value = 'Could not load your seasons. Your rounds are not shown.';
+    return null;
+  });
 };
 
 const rowOfWeek = (week) => playerData.value?.availability?.find(row => row.playday === week);
@@ -586,8 +599,8 @@ const answerFor = (week) => rowOfWeek(week)?.available ?? null;
 
 const setByLine = (week) => {
   const row = rowOfWeek(week);
-  if (!row) return 'No answer';
-  return `Set by ${row.set_by_user_id === playerData.value?.player?.id ? 'You' : row.set_by_name}`;
+  if (!row || row.available == null) return 'No answer';
+  return `Set by ${row.set_by_user_id === playerData.value?.player?.id ? 'You' : row.set_by_name} · tap again to clear`;
 };
 
 // a second click on the state already set clears the week back to no answer
@@ -608,6 +621,7 @@ const setWeek = async (week, want) => {
 
 // Edit schedule handlers
 const editSchedule = (item) => {
+  errorMessage.value = null;
   const mine = item.player1_id === playerData.value.player.id;
   scheduleSeries.value = {
     id: item.id,
@@ -659,6 +673,7 @@ const saveSchedule = async () => {
 
 // Report result handlers
 const reportResult = (item) => {
+  errorMessage.value = null;
   scoreSeries.value = {
     id: item.id,
     player1_name: item.player1?.name || `Player ${item.player1_id}`,

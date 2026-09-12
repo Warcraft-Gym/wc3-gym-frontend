@@ -2,7 +2,7 @@
      series of that round. The player's own page fills the slots with his actions,
      a visitor reads the same facts without them. -->
 <template>
-  <v-chip v-if="$slots.question && asking.length" size="small" variant="tonal" color="primary" class="mb-3">
+  <v-chip v-if="asks && asking.length" size="small" variant="tonal" color="primary" class="mb-3">
     {{ answered }} of {{ asking.length }} answered
   </v-chip>
   <div v-if="cards.length" class="d-flex flex-wrap ga-3">
@@ -42,11 +42,12 @@
           {{ line }}
         </div>
         <CastChips :series="card.series" class="mt-1" />
-        <slot v-if="isUnscored(card.series)" name="series-actions" :series="card.series" />
+        <!-- A scored series keeps its actions: the backend takes a second report -->
+        <slot name="series-actions" :series="card.series" />
       </template>
 
       <!-- the question belongs to the player himself; a visitor reads the state -->
-      <div v-else-if="card.over || !$slots.question" class="mt-2">
+      <div v-else-if="card.over || !asks" class="mt-2">
         <v-chip size="small" variant="tonal" :color="card.answer === false ? 'error' : undefined">
           {{ card.answer === false ? 'Out' : card.over ? 'Not paired' : 'Not paired yet' }}
         </v-chip>
@@ -59,7 +60,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, useSlots, watch } from 'vue';
 import { useMatchStore } from '@/stores';
 import { formatDateTime } from '@/helpers/datetime';
 import { roundCards } from '@/helpers/rounds.mjs';
@@ -76,6 +77,7 @@ const props = defineProps({
   answers: { type: Array, default: () => [] },  // availability, the player's own page only
 });
 
+const slots = useSlots();
 const matchStore = useMatchStore();
 const matches = ref([]);
 
@@ -91,6 +93,9 @@ const cards = computed(() => roundCards({
   teamId: props.teamId,
   answers: props.answers,
 }));
+
+// The question belongs to the player himself, and only while the season runs the scheduling tools
+const asks = computed(() => !!slots.question && props.season?.scheduling_enabled !== false);
 
 // The question is open on a round with no series that is not over
 const asking = computed(() => cards.value.filter(card => !card.series && !card.over));

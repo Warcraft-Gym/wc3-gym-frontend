@@ -35,7 +35,11 @@
       </v-col>
     </v-row>
 
-    <StatusAlert v-model="errorMessage" />
+    <StatusAlert v-model="errorMessage" :retry="load" />
+    <!-- A board that never loaded leaves the page with nothing but its message -->
+    <div v-if="errorMessage && !board && !report" class="mb-4">
+      <v-btn variant="text" to="/player-dashboard">Back to your dashboard</v-btn>
+    </div>
 
     <div v-if="!board && !errorMessage" class="d-flex justify-center pa-8">
       <v-progress-circular color="primary" indeterminate size="64" />
@@ -321,13 +325,22 @@ const picks = computed(() => ['A', 'B'].map((side) => {
   return { side, who: sideName(side), mapId: step?.map_id, map: step ? mapName(step.map_id) : null };
 }));
 
+// The backend answers this one in code; everything else it sends is already a sentence
+const say = (error, fallback) => (error?.message === 'not_authorized_for_this_series'
+  ? 'This veto belongs to a series that is not yours.'
+  : error?.message || fallback);
+
+// a read that keeps failing stops the poll until Try again reads the board
+let fails = 0;
 const load = async () => {
   try {
     board.value = await fetchWrapper.get(vetoUrl);
+    fails = 0;
     errorMessage.value = null;
     emit('change', board.value);
   } catch (error) {
-    errorMessage.value = error.message || 'Error loading the map veto.';
+    fails += 1;
+    errorMessage.value = say(error, 'Error loading the map veto.');
   }
 };
 
@@ -349,7 +362,7 @@ const send = (body) => {
       errorMessage.value = null;
       emit('change', board.value);
     } catch (error) {
-      errorMessage.value = error.message || 'Error saving the step.';
+      errorMessage.value = say(error, 'Error saving the step.');
       await load();
     } finally {
       pending.value -= 1;
@@ -362,8 +375,8 @@ const send = (body) => {
 // a recorder polls on their own turn too, since the other side may be entering the same veto
 let timer = null;
 const poll = () => {
-  if (document.hidden || pending.value || !board.value || board.value.complete) return;
-  if (board.value.on_turn && !recording.value) return;
+  if (document.hidden || pending.value || fails >= 3 || board.value?.complete) return;
+  if (board.value?.on_turn && !recording.value) return;
   load();
 };
 

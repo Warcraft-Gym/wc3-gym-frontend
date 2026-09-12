@@ -349,11 +349,13 @@
         <RaceSelect v-model="profileForm.race" label="Main race" />
         <CountrySelect v-model="profileForm.country" />
         <v-autocomplete v-model="profileForm.timezone" :items="timezones" label="Timezone" variant="outlined" density="comfortable" />
+        <v-text-field v-model="profileForm.twitch_url" label="Twitch channel" placeholder="twitch.tv/you" prepend-inner-icon="mdi-twitch" :error-messages="twitchChannel.error" variant="outlined" density="comfortable" class="mb-2" />
+        <v-text-field v-model="profileForm.youtube_url" label="YouTube channel" placeholder="youtube.com/@you" prepend-inner-icon="mdi-youtube" :error-messages="youtubeChannel.error" variant="outlined" density="comfortable" />
       </v-card-text>
       <v-card-actions class="px-4 py-3">
         <v-spacer />
         <v-btn variant="text" @click="editProfileOpen = false">Cancel</v-btn>
-        <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" :loading="isSavingProfile" @click="saveProfile">Save</v-btn>
+        <v-btn color="primary" variant="elevated" prepend-icon="mdi-check" :loading="isSavingProfile" :disabled="!!(twitchChannel.error || youtubeChannel.error)" @click="saveProfile">Save</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -370,6 +372,7 @@ import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from '@/helpers/map-order.mjs';
 import { readReplay, matchMap, isOtherSeries } from '@/helpers/w3g.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
+import { channelInput } from '@/helpers/casts.mjs';
 import HeadToHead from '@/components/HeadToHead.vue';
 import PlayerSeasons from '@/components/PlayerSeasons.vue';
 import RaceMmrChips from '@/components/RaceMmrChips.vue';
@@ -411,16 +414,22 @@ const openEditProfile = () => {
   const p = playerData.value?.player || {};
   profileForm.value = {
     name: p.name, battleTag: p.battleTag, race: p.race, country: p.country, timezone: p.timezone,
+    twitch_url: p.twitch_url, youtube_url: p.youtube_url,
   };
   editProfileError.value = null;
   editProfileOpen.value = true;
 };
 
+// The stored channel is the URL the field normalised, so the profile shows what was saved
+const twitchChannel = computed(() => channelInput('twitch', profileForm.value.twitch_url));
+const youtubeChannel = computed(() => channelInput('youtube', profileForm.value.youtube_url));
+
 const saveProfile = async () => {
   isSavingProfile.value = true;
   editProfileError.value = null;
   try {
-    const { user } = await fetchWrapper.put(`${backendUrl}/user-info`, profileForm.value);
+    const body = { ...profileForm.value, twitch_url: twitchChannel.value.url, youtube_url: youtubeChannel.value.url };
+    const { user } = await fetchWrapper.put(`${backendUrl}/user-info`, body);
     playerData.value = { ...playerData.value, player: { ...playerData.value.player, ...user } };
     editProfileOpen.value = false;
     successMessage.value = 'Profile saved.';

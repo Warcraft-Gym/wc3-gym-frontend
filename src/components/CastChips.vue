@@ -39,6 +39,10 @@
             autofocus
             @keydown.enter.prevent="save"
           />
+          <!-- The channels off the profile, one tap each, so a regular caster types nothing -->
+          <div v-if="field === 'channel' && myChannels.length" class="d-flex ga-2 mt-3">
+            <v-btn v-for="c in myChannels" :key="c.platform" size="x-small" variant="tonal" :prepend-icon="PLATFORM_ICONS[c.platform]" @click="url = c.url">{{ PLATFORM_NAMES[c.platform] }}</v-btn>
+          </div>
         </v-card-text>
         <v-card-actions class="px-6 pb-4">
           <v-spacer />
@@ -54,7 +58,7 @@
 import { computed, ref, watch } from 'vue';
 
 import { useAuthStore, useSeriesStore } from '@/stores';
-import { PLATFORM_ICONS, linkAdvice, onNow, platformOf } from '@/helpers/casts.mjs';
+import { PLATFORM_ICONS, PLATFORM_NAMES, linkAdvice, onNow, platformOf } from '@/helpers/casts.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 
 const CHANNEL_LABEL = 'Channel or stream link';
@@ -93,6 +97,12 @@ const canClaim = computed(() => myId.value && auth.me?.role !== 'guest' && !cast
 // A series with a result has nothing left to stream, so it takes a VOD instead of a claim
 const scored = computed(() => !isUnscored(props.series));
 const canEdit = (cast) => auth.isAdmin || cast.user_id === myId.value;
+
+// The session's own channels, in the order the profile asks for them
+const myChannels = computed(() =>
+  [['twitch', auth.me?.user?.twitch_url], ['youtube', auth.me?.user?.youtube_url]]
+    .filter(([, url]) => url)
+    .map(([platform, url]) => ({ platform, url })));
 
 const dialog = ref(false);
 const editing = ref(null); // the cast being edited; null on a claim

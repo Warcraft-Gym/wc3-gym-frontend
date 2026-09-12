@@ -43,7 +43,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { AuthenticateWithRedirectCallback, useAuth, useSignIn } from '@clerk/vue';
 import { storeToRefs } from 'pinia';
 
@@ -57,6 +58,13 @@ const { isLoaded, isSignedIn } = useAuth();
 const onCallbackPath = () => window.location.pathname === '/sso-callback';
 const isCallback = ref(onCallbackPath());
 window.addEventListener('popstate', () => { isCallback.value = onCallbackPath(); });
+// Only a handshake in flight belongs on /sso-callback. The Back button after a sign-in
+// lands here with the session already live, and Clerk then sends the browser to its own
+// hosted portal, off the app; the login page takes it from here instead.
+const router = useRouter();
+watch([isCallback, isLoaded, isSignedIn], ([callback, loaded, signedIn]) => {
+    if (callback && loaded && signedIn) router.replace('/login');
+}, { immediate: true });
 const isRedirecting = ref(false);  // stays on until the browser leaves for Discord
 const error = ref(null);
 const REDIRECT_TIMEOUT = 15000;  // Discord not reached by then is a failure, not a slow network

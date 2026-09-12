@@ -6,11 +6,12 @@
         <template v-slot:activator="{ props }">
             <v-avatar
             v-bind="props"
-            :image="currentRace.icon"
             role="img"
             :aria-label="currentRace.name"
             rounded="0"
             :size="size">
+                <!-- eager: v-avatar's own image prop waits for an intersection, so the printed report loses the icons -->
+                <v-img :src="currentRace.icon" alt="" cover eager />
             </v-avatar>
         </template>
     </v-tooltip>

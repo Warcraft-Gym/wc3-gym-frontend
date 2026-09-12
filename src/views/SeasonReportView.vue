@@ -135,13 +135,13 @@
                 <td class="text-center">
                   <div class="win-rate-cell">
                     <v-progress-linear
-                      :model-value="team.winRate"
+                      :model-value="team.winRate ?? 0"
                       color="win"
                       height="8"
                       rounded
                       class="win-rate-bar"
                     />
-                    <span class="text-caption ml-2">{{ team.winRate }}%</span>
+                    <span class="text-caption ml-2">{{ team.winRate != null ? `${team.winRate}%` : '–' }}</span>
                   </div>
                 </td>
               </tr>
@@ -173,20 +173,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="(player, idx) in [...allPlayers]
-                  .map(p => ({
-                    ...p,
-                    wins: p.seasonStats?.wins || 0,
-                    losses: p.seasonStats?.losses || 0,
-                    games: p.seasonStats?.games || 0,
-                    winRate: (p.seasonStats?.games || 0) > 0
-                      ? Math.round(((p.seasonStats?.wins || 0) / p.seasonStats?.games) * 100)
-                      : 0,
-                    totalPoints: series
-                      .filter(s => s.player1_id === p.id || s.player2_id === p.id)
-                      .reduce((sum, s) => sum + (s.player1_id === p.id ? (s.player1_points || 0) : (s.player2_points || 0)), 0),
-                  }))
-                  .sort((a, b) => b.totalPoints - a.totalPoints || b.winRate - a.winRate || b.wins - a.wins)"
+                v-for="(player, idx) in leaderboard"
                 :key="player.id"
                 :class="{ 'player-row': mayOpenPlayer }"
                 @click="mayOpenPlayer && router.push(playerPath(player))"
@@ -208,11 +195,10 @@
                   <span v-else class="text-caption">–</span>
                 </td>
                 <td class="text-center">{{ player.wins }}-{{ player.losses }}</td>
-                <td class="text-center d-none d-md-table-cell">{{ player.games }}</td>
+                <td class="text-center d-none d-md-table-cell">{{ player.played }}</td>
                 <td class="text-center d-none d-md-table-cell">
-                  <span>
-                    {{ player.winRate }}%
-                  </span>
+                  <span v-if="player.winRate != null">{{ player.winRate }}%</span>
+                  <span v-else class="text-caption text-medium-emphasis">–</span>
                 </td>
                 <td class="text-center">
                   <v-chip v-if="player.totalPoints > 0" color="primary" size="x-small">
@@ -252,30 +238,30 @@
               </div>
               <v-card-text>
                 <div class="race-stat-row">
-                  <span class="text-caption text-medium-emphasis">Series won</span>
+                  <span class="text-caption text-medium-emphasis">Win rate</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
-                      :model-value="raceEntry.winRate"
+                      :model-value="raceEntry.winRate ?? 0"
                       color="win"
                       height="10"
                       rounded
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value font-weight-bold">{{ raceEntry.wins }}</span>
+                  <span class="race-stat-value font-weight-bold">{{ raceEntry.winRate != null ? `${raceEntry.winRate}%` : '–' }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
-                  <span class="text-caption text-medium-emphasis">Series lost</span>
+                  <span class="text-caption text-medium-emphasis">Loss rate</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
-                      :model-value="raceEntry.games > 0 ? Math.round((raceEntry.losses / raceEntry.games) * 100) : 0"
+                      :model-value="raceEntry.lossRate ?? 0"
                       color="loss"
                       height="10"
                       rounded
                       bg-color="surface-light"
                     />
                   </div>
-                  <span class="race-stat-value">{{ raceEntry.losses }}</span>
+                  <span class="race-stat-value">{{ raceEntry.lossRate != null ? `${raceEntry.lossRate}%` : '–' }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
                   <span class="text-caption text-medium-emphasis">Points vs top race</span>
@@ -293,12 +279,12 @@
                 <v-divider class="my-3" />
                 <div class="d-flex justify-space-between">
                   <div class="text-center">
-                    <div class="text-h6 font-weight-bold">{{ raceEntry.games }}</div>
+                    <div class="text-h6 font-weight-bold">{{ raceEntry.played }}</div>
                     <div class="text-caption text-medium-emphasis">Played</div>
                   </div>
                   <div class="text-center">
-                    <div class="text-h6 font-weight-bold">{{ raceEntry.winRate }}%</div>
-                    <div class="text-caption text-medium-emphasis">Win rate</div>
+                    <div class="text-h6 font-weight-bold">{{ raceEntry.wins }}-{{ raceEntry.losses }}</div>
+                    <div class="text-caption text-medium-emphasis">W-L</div>
                   </div>
                   <div class="text-center">
                     <div class="text-h6 font-weight-bold">{{ raceEntry.points }}</div>
@@ -479,7 +465,8 @@ import { playerPath } from '@/helpers/players';
 import { canSeeRole } from '@/helpers';
 import { useAuthStore } from '@/stores';
 import { themeMode } from '@/helpers/theme';
-import { gamesBarHeight } from '@/helpers/ladder-days.mjs';
+import { gamesBarHeight, winRate } from '@/helpers/ladder-days.mjs';
+import { isUnscored } from '@/helpers/season-phase.mjs';
 import { scaleQuantize } from 'd3-scale';
 
 
@@ -546,6 +533,25 @@ const allPlayers = computed(() => {
     return result;
 });
 
+// ─── Player leaderboard ───────────────────────────────────────────────────────
+// Played counts the scored series a player stood in; the rate divides by the decided ones
+const leaderboard = computed(() => allPlayers.value
+    .map((p) => {
+        const own = series.value.filter(s => s.player1_id === p.id || s.player2_id === p.id);
+        const wins = p.seasonStats?.wins || 0;
+        const losses = p.seasonStats?.losses || 0;
+        return {
+            ...p,
+            wins,
+            losses,
+            played: own.filter(s => !isUnscored(s)).length,
+            winRate: winRate(wins, losses),
+            totalPoints: own.reduce((sum, s) => sum + (s.player1_id === p.id ? (s.player1_points || 0) : (s.player2_points || 0)), 0),
+        };
+    })
+    .sort((a, b) => b.totalPoints - a.totalPoints || (b.winRate ?? -1) - (a.winRate ?? -1) || b.wins - a.wins)
+);
+
 // ─── Team standings (sorted by final_score desc) ──────────────────────────────
 const teamStandings = computed(() => {
     return teams.value
@@ -559,9 +565,9 @@ const teamStandings = computed(() => {
                 const stats = p.gnl_stats?.find(s => s.season_id === season.value?.id);
                 return sum + (stats?.wins || 0);
             }, 0);
-            const totalGames = players.reduce((sum, p) => {
+            const totalLosses = players.reduce((sum, p) => {
                 const stats = p.gnl_stats?.find(s => s.season_id === season.value?.id);
-                return sum + (stats?.games || 0);
+                return sum + (stats?.losses || 0);
             }, 0);
             return {
                 id: team.id,
@@ -572,7 +578,7 @@ const teamStandings = computed(() => {
                 pointsAgainst: info.points_against || 0,
                 playerCount: players.length,
                 totalWins,
-                winRate: totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0,
+                winRate: winRate(totalWins, totalLosses),
             };
         })
         .sort((a, b) => b.finalScore - a.finalScore);
@@ -582,16 +588,14 @@ const teamStandings = computed(() => {
 const raceBreakdown = computed(() => {
     const raceMap = {};
 
-    for (const player of allPlayers.value) {
+    for (const player of leaderboard.value) {
         if (!player.signup_race) continue; // unsigned players have no race to tally, same as the points loop below
         const race = player.signup_race;
-        if (!raceMap[race]) raceMap[race] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
+        if (!raceMap[race]) raceMap[race] = { wins: 0, losses: 0, played: 0, players: 0, points: 0 };
         raceMap[race].players++;
-        if (player.seasonStats) {
-            raceMap[race].wins += player.seasonStats.wins || 0;
-            raceMap[race].losses += player.seasonStats.losses || 0;
-            raceMap[race].games += player.seasonStats.games || 0;
-        }
+        raceMap[race].wins += player.wins;
+        raceMap[race].losses += player.losses;
+        raceMap[race].played += player.played;
     }
 
     // Points go to the race the side played, which is his signup race unless
@@ -599,12 +603,12 @@ const raceBreakdown = computed(() => {
     for (const s of series.value) {
         if (s.player1_race && s.player1_points != null) {
             const r = s.player1_race;
-            if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
+            if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, played: 0, players: 0, points: 0 };
             raceMap[r].points += s.player1_points;
         }
         if (s.player2_race && s.player2_points != null) {
             const r = s.player2_race;
-            if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, games: 0, players: 0, points: 0 };
+            if (!raceMap[r]) raceMap[r] = { wins: 0, losses: 0, played: 0, players: 0, points: 0 };
             raceMap[r].points += s.player2_points;
         }
     }
@@ -615,7 +619,8 @@ const raceBreakdown = computed(() => {
         .map(([race, stats]) => ({
             race,
             ...stats,
-            winRate: stats.games > 0 ? Math.round((stats.wins / stats.games) * 100) : 0,
+            winRate: winRate(stats.wins, stats.losses),
+            lossRate: winRate(stats.losses, stats.wins),
             pointsBarPct: Math.round((stats.points / maxPoints) * 100),
         }))
         .sort((a, b) => b.points - a.points);
@@ -631,7 +636,7 @@ const headerStats = computed(() => [
     { label: 'Rounds', value: season.value?.round_count ?? '–', icon: 'mdi-calendar-week' },
     { label: 'Teams', value: teams.value.length, icon: 'mdi-shield-outline' },
     { label: 'Players', value: allPlayers.value.length, icon: 'mdi-account-group' },
-    { label: 'Series played', value: series.value.length, icon: 'mdi-sword-cross' },
+    { label: 'Series played', value: series.value.filter(s => !isUnscored(s)).length, icon: 'mdi-sword-cross' },
 ]);
 
 // ─── Race display helpers ─────────────────────────────────────────────────────

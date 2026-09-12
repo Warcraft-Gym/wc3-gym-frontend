@@ -9,7 +9,7 @@
       <v-col>
         <h1>
           <BetIcon size="24" class="mr-2" />
-          Fantasy Bets
+          Fantasy bets
         </h1>
       </v-col>
     </v-row>
@@ -17,10 +17,6 @@
     <StatusAlert v-model="errorMessage" />
 
     <v-card elevation="2">
-      <v-card-title class="bg-primary d-flex align-center">
-        <BetIcon size="24" class="mr-2" />
-        <span>Bets Management</span>
-      </v-card-title>
       <v-card-text class="pa-0">
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2">
@@ -30,20 +26,18 @@
             <v-spacer />
             <v-col cols="12" sm="auto">
               <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openAddBetDialog" block>
-                Add Bet
+                Add bet
               </v-btn>
             </v-col>
           </v-row>
         </v-toolbar>
       </v-card-text>
           <v-card-text class="px-0 px-md-4">
-            <v-alert v-if="enrichedBets.length === 0 && !isLoading" type="info" variant="tonal" class="mb-4 mx-2 mx-md-0">
-              No fantasy bets found. Bets will appear here once bettors place them.
-            </v-alert>
             <v-data-table-server
               :headers="headers"
               :items="enrichedBets"
               :items-length="totalBets"
+              no-data-text="No bets in this season yet. Bets appear here once bettors place them."
               v-model:page="page"
               v-model:items-per-page="itemsPerPage"
               :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"

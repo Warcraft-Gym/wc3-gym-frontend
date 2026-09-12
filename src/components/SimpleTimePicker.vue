@@ -8,8 +8,6 @@
       :rules="timeRules"
       :error-messages="errorMessage"
       @blur="validateAndFormat"
-      hint="24-hour format (e.g., 14:30)"
-      persistent-hint
     >
       <template v-slot:append-inner>
         <v-icon>mdi-clock-outline</v-icon>

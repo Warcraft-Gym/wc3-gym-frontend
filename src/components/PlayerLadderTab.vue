@@ -1,7 +1,7 @@
-<!-- One player's ladder record in one season: points, record, versus race and
+<!-- One player's ladder record in one season: points, record, MMR, versus race and
      achievements. The matches themselves stay on W3Champions, linked beside the tiles -->
 <template>
-  <div>
+  <div class="ladder-tab">
     <StatusAlert v-model="errorMessage" />
 
     <section class="section">
@@ -30,10 +30,32 @@
         <a v-if="player?.battleTag" :href="w3cStatsUrl" target="_blank" class="text-caption d-inline-flex align-center align-self-start"><W3CIcon :size="14" class="mr-1" />W3Champions</a>
       </div>
 
+      <div v-if="mmr.current != null" class="mb-4">
+        <div class="sub"><W3CMmr /></div>
+        <div class="d-flex align-center flex-wrap ga-3">
+          <span class="text-h6">{{ mmr.current }}</span>
+          <span v-if="mmrChange > 0" class="text-win">&#9650; {{ mmrChange }}</span>
+          <span v-else-if="mmrChange < 0" class="text-loss">&#9660; {{ -mmrChange }}</span>
+          <span v-if="mmr.min != null && mmr.max != null" class="text-caption text-medium-emphasis">Low {{ mmr.min }} &middot; High {{ mmr.max }}</span>
+        </div>
+        <div ref="plotBox">
+          <LadderPlots v-if="plotWidth && mmrDays.length > 1" :days="mmrDays" :games="false" :width="plotWidth" />
+        </div>
+      </div>
+
       <div class="split">
         <div>
-          <div class="text-caption text-medium-emphasis mb-1">Versus race</div>
+          <div class="sub">Versus race</div>
           <v-table density="compact" class="versus">
+            <thead v-if="versusRaces.length">
+              <tr>
+                <th>Race</th>
+                <th class="text-right">Record</th>
+                <th></th>
+                <th class="text-right">Rate</th>
+                <th class="text-right">Games</th>
+              </tr>
+            </thead>
             <tbody>
               <tr v-if="!versusRaces.length"><td class="text-caption text-medium-emphasis">No ladder games yet.</td></tr>
               <tr v-for="row in versusRaces" :key="row.code">
@@ -41,12 +63,13 @@
                 <td class="text-right text-no-wrap"><span class="text-win">{{ row.w }}</span> – <span class="text-loss">{{ row.l }}</span></td>
                 <td class="bar"><div class="meter"><div class="fill" :style="{ width: `${row.rate}%` }" /></div></td>
                 <td class="text-right text-medium-emphasis">{{ row.rate }}%</td>
+                <td class="text-right text-medium-emphasis">{{ row.total }}</td>
               </tr>
             </tbody>
           </v-table>
         </div>
         <div>
-          <div class="text-caption text-medium-emphasis mb-1">Achievements</div>
+          <div class="sub">Achievements</div>
           <div v-for="badge in earned" :key="badge.id" class="d-flex align-center badge-row">
             <AchievementIcon :id="badge.id" class="mr-3 text-primary" />
             <span class="text-body-2 font-weight-medium mr-3">{{ badge.name }}</span>
@@ -79,13 +102,16 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { DateTime } from 'luxon';
 import { useDisplay } from 'vuetify';
 import { useLadderStore } from '@/stores';
+import LadderPlots from '@/components/LadderPlots.vue';
 import RaceIcon from '@/components/RaceIcon.vue';
+import W3CMmr from '@/components/W3CMmr.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 import { achievementPoints, SCORED_NOTE } from '@/helpers/achievements';
+import { dayWindow, fillDays } from '@/helpers/ladder-days.mjs';
 import { raceWrapper } from '@/helpers/races';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import AchievementIcon from '@/components/AchievementIcon.vue';
@@ -111,6 +137,24 @@ const winrate = computed(() => {
   const games = data.value?.games ?? 0;
   return games ? `${Math.round((data.value.wins / games) * 100)}%` : '0%';
 });
+
+// Where his MMR opened, its range and where it stands; absent until he plays
+const mmr = computed(() => data.value?.mmr ?? {});
+const mmrChange = computed(() =>
+  (mmr.value.current != null && mmr.value.start != null ? mmr.value.current - mmr.value.start : 0));
+
+// One slot per day between his first and last ladder game, so the line reads as a calendar
+const mmrDays = computed(() => {
+  const window = dayWindow(data.value?.per_day);
+  return window ? fillDays(data.value.per_day, window.start, window.end) : [];
+});
+
+// The MMR line fills whatever width the block has, on the page and in the side panel alike
+const plotBox = ref(null);
+const plotWidth = ref(0);
+const observer = new ResizeObserver(([entry]) => { plotWidth.value = Math.floor(entry.contentRect.width); });
+watch(plotBox, (el) => { observer.disconnect(); if (el) observer.observe(el); });
+onBeforeUnmount(() => observer.disconnect());
 
 // The earned rules come with the player, the whole catalogue with the season
 const earned = computed(() => data.value?.achievements ?? []);
@@ -154,8 +198,17 @@ watch(() => [props.player, props.seasonId], load, { immediate: true });
 </script>
 
 <style scoped>
+.ladder-tab { container-type: inline-size; }
 .section { padding-bottom: 16px; }
 .section h4 { margin-bottom: 8px; }
+/* the one subtitle of a sub block: MMR, versus race, achievements */
+.sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.0333em;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  margin-bottom: 4px;
+}
 .tiles { display: flex; flex-wrap: wrap; gap: 12px 40px; align-items: flex-start; margin-bottom: 12px; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .versus .bar { width: 120px; }
@@ -169,7 +222,8 @@ watch(() => [props.player, props.seasonId], load, { immediate: true });
   cursor: pointer;
   width: fit-content;
 }
-@media (max-width: 959px) {
+/* the block's own width, not the window's: the side panel is narrow on a wide screen */
+@container (max-width: 700px) {
   .split { grid-template-columns: 1fr; gap: 12px; }
   .versus .bar { width: 72px; }
   .tiles { gap: 12px 24px; }

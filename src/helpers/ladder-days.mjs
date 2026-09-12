@@ -23,6 +23,12 @@ export function fillDays(perDay, start, end) {
 export const maxGamesPerDay = (players) =>
   Math.max(1, ...players.flatMap((p) => (p.per_day || []).map((d) => d.w + d.l)));
 
+// The first and last day the rows carry, so a chart needs no season dates
+export const dayWindow = (perDay) => {
+  const days = (perDay || []).map((d) => d.d).sort();
+  return days.length ? { start: days[0], end: days[days.length - 1] } : null;
+};
+
 // The last day with a game, or null
 export const lastPlayed = (perDay) => (perDay || []).reduce((last, d) => (d.w + d.l ? d.d : last), null);
 

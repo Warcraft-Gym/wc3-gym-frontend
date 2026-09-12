@@ -4,12 +4,12 @@
      season named by `open` draws the `current` slot instead of the series table. -->
 <template>
   <StatusAlert v-model="errorMessage" />
-  <v-expansion-panels v-if="rows.length" v-model="opened" variant="accordion" flat>
+  <v-expansion-panels v-if="rows.length" v-model="opened" class="season-panels" variant="accordion" flat>
     <v-expansion-panel v-for="row in rows" :key="row.season.id" :value="row.season.id">
       <v-expansion-panel-title class="season-head">
         <div class="season-grid">
           <div class="season-name">
-            <div class="d-flex align-center flex-wrap ga-2 text-subtitle-1 font-weight-medium">
+            <div class="d-flex align-center flex-wrap ga-2 text-h6">
               {{ row.season.name }}
               <v-chip v-if="row.won" size="x-small" variant="outlined">
                 <v-icon start size="x-small" color="primary">mdi-crown</v-icon>Champion
@@ -88,7 +88,10 @@
             </tbody>
           </v-table>
         </section>
-        <PlayerLadderTab v-if="row.stat" :player="player" :seasonId="row.season.id" />
+        <template v-if="row.stat">
+          <v-divider class="mb-4" />
+          <PlayerLadderTab :player="player" :seasonId="row.season.id" />
+        </template>
       </v-expansion-panel-text>
     </v-expansion-panel>
   </v-expansion-panels>
@@ -218,7 +221,12 @@ const mmrDelta = (row) => {
 const openId = computed(() => props.open
   ?? rows.value.find(row => row.season.phase && row.season.phase !== 'complete')?.season.id
   ?? null);
-watch(openId, (id) => { if (opened.value == null) opened.value = id; }, { immediate: true });
+// A reader wants the season with ladder facts in it, which is rarely the one just opened
+const defaultOpen = computed(() => props.open
+  ?? rows.value.find(row => row.stat && row.ladder?.games)?.season.id
+  ?? openId.value);
+// it follows the ladder reads as they land, until the reader opens a season himself
+watch(defaultOpen, (id, was) => { if (opened.value == null || opened.value === was) opened.value = id; }, { immediate: true });
 
 // The season list and the team names once; one series read and one ladder
 // read per season, for the row's own facts
@@ -247,6 +255,7 @@ watch(() => props.player, load, { immediate: true });
 
 <style scoped>
 .season-head :deep(.v-expansion-panel-title__overlay) { opacity: 0; }
+.season-panels { container-type: inline-size; }
 .season-grid {
   display: grid;
   grid-template-columns: minmax(200px, 1.4fr) 1fr 1fr 1.2fr 1.1fr 1.1fr;
@@ -269,7 +278,8 @@ watch(() => props.player, load, { immediate: true });
 .week.lost { background: rgb(var(--v-theme-loss)); }
 .week.mixed { background: linear-gradient(90deg, rgb(var(--v-theme-win)) 50%, rgb(var(--v-theme-loss)) 50%); }
 .week.pending { background: transparent; border: 1px dashed rgba(var(--v-theme-on-surface), 0.5); }
-@media (max-width: 959px) {
+/* the panels' own width, not the window's: the side panel is narrow on a wide screen */
+@container (max-width: 959px) {
   .season-grid { display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .season-name { width: 100%; }
   .fact { display: flex; align-items: center; gap: 6px; }

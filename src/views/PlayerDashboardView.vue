@@ -92,8 +92,8 @@
                   color="primary"
                   variant="elevated"
                   size="small"
-                  prepend-icon="mdi-calendar-edit"
                   v-if="isUnscored(item)"
+                  prepend-icon="mdi-calendar-edit"
                   @click="editSchedule(item)"
                   :loading="scheduleSavingId === item.id"
                   :disabled="scheduleSavingId === item.id || scoreSavingId === item.id"
@@ -621,6 +621,7 @@ const setWeek = async (week, want) => {
 
 // Edit schedule handlers
 const editSchedule = (item) => {
+  errorMessage.value = null;
   const mine = item.player1_id === playerData.value.player.id;
   scheduleSeries.value = {
     id: item.id,
@@ -672,6 +673,7 @@ const saveSchedule = async () => {
 
 // Report result handlers
 const reportResult = (item) => {
+  errorMessage.value = null;
   scoreSeries.value = {
     id: item.id,
     player1_name: item.player1?.name || `Player ${item.player1_id}`,

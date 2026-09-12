@@ -349,8 +349,8 @@
         <RaceSelect v-model="profileForm.race" label="Main race" />
         <CountrySelect v-model="profileForm.country" />
         <v-autocomplete v-model="profileForm.timezone" :items="timezones" label="Timezone" variant="outlined" density="comfortable" />
-        <v-text-field v-model="profileForm.twitch_url" label="Twitch channel" placeholder="twitch.tv/you" prepend-inner-icon="mdi-twitch" :error-messages="twitchChannel.error" variant="outlined" density="comfortable" class="mb-2" />
-        <v-text-field v-model="profileForm.youtube_url" label="YouTube channel" placeholder="youtube.com/@you" prepend-inner-icon="mdi-youtube" :error-messages="youtubeChannel.error" variant="outlined" density="comfortable" />
+        <v-text-field v-model="profileForm.twitch_url" label="Twitch channel" hint="twitch.tv/you" persistent-hint prepend-inner-icon="mdi-twitch" :error-messages="twitchChannel.error" variant="outlined" density="comfortable" class="mb-2" />
+        <v-text-field v-model="profileForm.youtube_url" label="YouTube channel" hint="youtube.com/@you" persistent-hint prepend-inner-icon="mdi-youtube" :error-messages="youtubeChannel.error" variant="outlined" density="comfortable" />
       </v-card-text>
       <v-card-actions class="px-4 py-3">
         <v-spacer />

@@ -40,7 +40,7 @@
             @keydown.enter.prevent="save"
           />
           <!-- The channels off the profile, one tap each, so a regular caster types nothing -->
-          <div v-if="field === 'channel' && myChannels.length" class="d-flex ga-2 mt-3">
+          <div v-if="!editing && field === 'channel' && myChannels.length" class="d-flex ga-2 mt-3">
             <v-btn v-for="c in myChannels" :key="c.platform" size="x-small" variant="tonal" :prepend-icon="PLATFORM_ICONS[c.platform]" @click="url = c.url">{{ PLATFORM_NAMES[c.platform] }}</v-btn>
           </div>
         </v-card-text>

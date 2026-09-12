@@ -52,6 +52,8 @@ const CHANNEL_ERROR = {
   youtube: 'Type your YouTube @handle, or paste a youtube.com channel link.',
 };
 const YOUTUBE_CHANNEL_PATH = /^\/(channel|c|user)\/[\w.-]+/;
+// A Twitch handle holds letters, digits and underscores; a YouTube handle also takes a dot or a dash
+const HANDLE = { twitch: /^\w+$/, youtube: /^[\w.-]+$/ };
 
 export const channelInput = (platform, text) => {
   const raw = (text || '').trim();
@@ -60,14 +62,14 @@ export const channelInput = (platform, text) => {
   const typed = platformOf(raw);
   if (!typed) {  // a bare handle, with or without the @ YouTube writes
     const handle = raw.replace(/^@/, '');
-    if (raw.includes('/') || !/^[\w.-]+$/.test(handle)) return wrong;
+    if (raw.includes('/') || !HANDLE[platform]?.test(handle)) return wrong;
     return { url: platform === 'twitch' ? `https://twitch.tv/${handle}` : `https://youtube.com/@${handle}` };
   }
   if (typed !== platform) return wrong;
   const [host, path] = hostPath(raw);
   if (VIDEO_PATHS[host]?.test(path)) return { url: null, error: 'That link opens one video. Paste your channel page instead.' };
   if (platform === 'twitch') {
-    const handle = path.match(/^\/([\w-]+)$/);
+    const handle = path.match(/^\/(\w+)$/);
     return handle ? { url: `https://twitch.tv/${handle[1]}` } : wrong;
   }
   const at = path.match(/^\/@([\w.-]+)/);

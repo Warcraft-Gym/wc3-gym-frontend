@@ -43,6 +43,10 @@ test('a profile channel takes a handle or a channel link and answers one URL', (
   assert.deepEqual(channelInput('youtube', 'https://youtube.com/channel/UCabc-123'), { url: 'https://youtube.com/channel/UCabc-123' });
   assert.deepEqual(channelInput('youtube', 'youtube.com/c/Grubby'), { url: 'https://youtube.com/c/Grubby' });
   assert.deepEqual(channelInput('youtube', 'youtube.com/user/Grubby'), { url: 'https://youtube.com/user/Grubby' });
+  // A dot belongs to a YouTube handle, not a Twitch one, typed or pasted
+  assert.deepEqual(channelInput('youtube', 'some.name'), { url: 'https://youtube.com/@some.name' });
+  assert.equal(channelInput('twitch', 'some.name').url, null);
+  assert.equal(channelInput('twitch', 'twitch.tv/some.name').url, null);
 });
 
 test('an empty profile channel clears the stored URL', () => {

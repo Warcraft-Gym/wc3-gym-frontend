@@ -6,7 +6,7 @@
     border="start"
     :border-color="type === 'error' ? 'error' : 'success'"
     class="mb-4"
-    closable
+    :closable="!retry"
     @click:close="emit('update:modelValue', null)"
   >
     {{ modelValue }}

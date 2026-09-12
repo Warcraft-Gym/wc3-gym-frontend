@@ -63,7 +63,7 @@ export const themes = {
         variables: {
             'border-color': '#1A241E',
             'border-opacity': 0.2,
-            'medium-emphasis-opacity': 0.7,
+            'medium-emphasis-opacity': 0.78,  // 0.7 put every field label under 4.5:1 on the light surface
         },
     },
     dark: {

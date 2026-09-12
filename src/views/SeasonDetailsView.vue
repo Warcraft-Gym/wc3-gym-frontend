@@ -56,7 +56,14 @@
             </td>
           </template>
           <template #rows="{ group }">
-            <tr v-for="row in group.rows" :key="row.id" class="detail-row unscored-row" @click="router.push(`/match/${row.match_id}`)">
+            <tr
+              v-for="row in group.rows"
+              :key="row.id"
+              class="detail-row unscored-row"
+              tabindex="0"
+              @click="router.push(`/match/${row.match_id}`)"
+              @keyup.enter="router.push(`/match/${row.match_id}`)"
+            >
               <td></td>
               <td class="text-no-wrap">{{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}</td>
               <td><PlayerName :player="row.player1" :race="row.player1_race" /></td>
@@ -349,6 +356,9 @@
         <v-icon class="mr-2">mdi-calendar-plus</v-icon>
         Create Match - Round {{ selectedWeek }}
       </v-card-title>
+      <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
+        {{ matchError }}
+      </v-alert>
       <v-card-text class="pt-4">
         <v-row>
           <v-col v-if="usesFixedMap" cols="12">
@@ -402,6 +412,9 @@
         <v-icon class="mr-2">mdi-pencil</v-icon>
         Edit Match
       </v-card-title>
+      <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
+        {{ matchError }}
+      </v-alert>
       <v-card-text class="pt-4">
         <v-row>
           <v-col v-if="usesFixedMap" cols="12">
@@ -556,6 +569,14 @@ const editMatchDialogOpen = ref(false);
 // Match state
 const selectedMatch = ref(null);
 const newMatch = ref(null);
+const matchError = ref(null);
+
+// Why a match cannot be created, or null
+const matchProblem = (match) => {
+  if (!match?.team1_id || !match?.team2_id) return 'Pick both teams.';
+  if (match.team1_id === match.team2_id) return 'A team cannot play itself.';
+  return null;
+};
 
 // Team state
 const allTeams = ref(null);
@@ -621,11 +642,13 @@ const closeTeamSelectionModal = () => {
         season_id:seasonId,
         playday: selectedWeek.value
       }
+      matchError.value = null;
       isModalOpen.value = true;
     };
 
     const closeMatchCreationModal = () => {
       isModalOpen.value = false;
+      matchError.value = null;
       selectedTeam1.value = null;
       selectedTeam2.value = null;
     };
@@ -645,10 +668,13 @@ const closeTeamSelectionModal = () => {
 
     const editMatch = (match) => {
       selectedMatch.value = { ...match }; // Clone the user object to avoid modifying the original object directly
+      matchError.value = null;
       editMatchDialogOpen.value = true;
     };
 
     const updateMatch = async () => {
+      matchError.value = matchProblem(selectedMatch.value);
+      if (matchError.value) return;
       try {
         await matchStore.updateMatch(selectedMatch.value);
         // Update the local state after a successful PUT request
@@ -656,6 +682,7 @@ const closeTeamSelectionModal = () => {
         cancelEdit(); // Reset the form
       } catch (error) {
         console.error('Error updating match:', error);
+        matchError.value = error.message || 'Failed to save the match.';
       }
     };
 
@@ -670,18 +697,22 @@ const closeTeamSelectionModal = () => {
 
     const cancelEdit = () => {
       editMatchDialogOpen.value = false;
+      matchError.value = null;
       selectedMatch.value = null; // Clear the selected user
     };
 
     
     const confirmSelection = async () => {
+      matchError.value = matchProblem(newMatch.value);
+      if (matchError.value) return;
       isLoading.value = true;
       try {
-        await matchStore.createMatch(newMatch.value); // Assuming a createMatch method exists
+        await matchStore.createMatch(newMatch.value);
         await fetchMatches(selectedWeek.value); // Refresh matches for the week
         closeMatchCreationModal();
       } catch (error) {
         console.error("Failed to add match:", error);
+        matchError.value = error.message || 'Failed to add the match.';
       } finally {
         isLoading.value = false;
       }

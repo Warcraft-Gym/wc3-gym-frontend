@@ -416,8 +416,14 @@ const addNewSeason = () => {
   seasonDialogOpen.value = true;
 };
 
+// a cleared number field holds an empty string; the column takes a number or null
+const normalizeCheckin = () => {
+  if (selectedSeason.value.checkin_days === '') selectedSeason.value.checkin_days = null;
+};
+
 const createNewSeason = async () => {
   formError.value = '';
+  normalizeCheckin();
   try {
     const createdSeason = await seasonStore.createSeason(selectedSeason.value);
 
@@ -444,8 +450,7 @@ const editSeason = (season) => {
 
 const updateSeason = async () => {
   formError.value = '';
-  // a cleared number field holds an empty string; the column takes a number or null
-  if (selectedSeason.value.checkin_days === '') selectedSeason.value.checkin_days = null;
+  normalizeCheckin();
   try {
     await seasonStore.updateSeason(selectedSeason.value);
     

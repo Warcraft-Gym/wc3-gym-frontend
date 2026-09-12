@@ -49,9 +49,11 @@
   </div>
 
   <!-- Empty state -->
-  <div v-if="!reportReady && !isLoading" class="empty-state">
+  <div v-if="!reportReady && !isLoading && !errorMessage" class="empty-state">
     <v-icon size="80" class="text-disabled">mdi-chart-box-outline</v-icon>
-    <p class="text-medium-emphasis mt-4 text-h6">Select a season to generate the report</p>
+    <p class="text-medium-emphasis mt-4 text-h6">
+      {{ selectedSeasonId ? `${season?.name ?? 'This season'} has no teams yet — the report starts when the draft is done.` : 'Select a season to generate the report' }}
+    </p>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -79,11 +81,11 @@
 
       <!-- ── Team standings ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('standings') }">
-        <div class="section-title" @click="toggle('standings')">
+        <button type="button" class="section-title" :aria-expanded="!collapsed.has('standings')" @click="toggle('standings')">
           <v-icon color="primary" class="mr-2">mdi-trophy</v-icon>
           Team standings
           <v-icon class="ml-2 no-print">{{ collapsed.has('standings') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </div>
+        </button>
         <v-card elevation="2">
           <v-table density="comfortable" class="standings-table">
             <thead>
@@ -150,11 +152,11 @@
 
       <!-- ── Player leaderboard ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('leaderboard') }">
-        <div class="section-title" @click="toggle('leaderboard')">
+        <button type="button" class="section-title" :aria-expanded="!collapsed.has('leaderboard')" @click="toggle('leaderboard')">
           <v-icon color="primary" class="mr-2">mdi-account-star</v-icon>
           Player leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('leaderboard') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </div>
+        </button>
         <v-card elevation="2">
           <v-table density="compact" class="standings-table">
             <thead>
@@ -186,11 +188,11 @@
                   }))
                   .sort((a, b) => b.totalPoints - a.totalPoints || b.winRate - a.winRate || b.wins - a.wins)"
                 :key="player.id"
-                class="player-row"
-                @click="router.push(playerPath(player))"
+                :class="{ 'player-row': mayOpenPlayer }"
+                @click="mayOpenPlayer && router.push(playerPath(player))"
               >
                 <td class="text-center text-caption text-medium-emphasis">{{ idx + 1 }}</td>
-                <td><PlayerName :player="player" /></td>
+                <td><PlayerName :player="player" :plain="!mayOpenPlayer" /></td>
                 <td class="text-center">
                   <RaceIcon v-if="player.signup_race" :raceIdentifier="player.signup_race" />
                   <span v-else class="text-caption">–</span>
@@ -226,11 +228,11 @@
 
       <!-- ── Race performance ── -->
       <div class="report-section mb-6" :class="{ collapsed: collapsed.has('races') }">
-        <div class="section-title" @click="toggle('races')">
+        <button type="button" class="section-title" :aria-expanded="!collapsed.has('races')" @click="toggle('races')">
           <v-icon color="primary" class="mr-2">mdi-sword-cross</v-icon>
           Race performance
           <v-icon class="ml-2 no-print">{{ collapsed.has('races') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </div>
+        </button>
         <v-row>
           <v-col
             v-for="raceEntry in raceBreakdown"
@@ -253,7 +255,7 @@
                   <span class="text-caption text-medium-emphasis">Series won</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
-                      :model-value="raceEntry.gamesBarPct"
+                      :model-value="raceEntry.winRate"
                       color="win"
                       height="10"
                       rounded
@@ -276,7 +278,7 @@
                   <span class="race-stat-value">{{ raceEntry.losses }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
-                  <span class="text-caption text-medium-emphasis">Total points</span>
+                  <span class="text-caption text-medium-emphasis">Points vs top race</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
                       :model-value="raceEntry.pointsBarPct"
@@ -311,11 +313,11 @@
 
       <!-- ── Ladder activity ── -->
       <div v-if="heatRows.length" class="report-section mb-6" :class="{ collapsed: collapsed.has('ladder') }">
-        <div class="section-title" @click="toggle('ladder')">
+        <button type="button" class="section-title" :aria-expanded="!collapsed.has('ladder')" @click="toggle('ladder')">
           <v-icon color="primary" class="mr-2">mdi-podium</v-icon>
           Ladder activity
           <v-icon class="ml-2 no-print">{{ collapsed.has('ladder') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </div>
+        </button>
         <v-row>
           <v-col cols="12" md="6">
             <v-card elevation="2" class="fill-height">
@@ -370,7 +372,7 @@
                   </div>
                 </div>
                 <div class="day-ticks">
-                  <span v-for="tick in dayTicks" :key="tick.d" :style="{ width: tick.width }">{{ tick.label }}</span>
+                  <span v-for="tick in dayTicks" :key="tick.d" :class="{ end: tick.end }">{{ tick.label }}</span>
                 </div>
               </v-card-text>
             </v-card>
@@ -380,11 +382,11 @@
 
       <!-- ── Fantasy Leaderboard ── -->
       <div v-if="sortedFantasyTeams.length > 0" class="report-section mb-6" :class="{ collapsed: collapsed.has('fantasy') }">
-        <div class="section-title" @click="toggle('fantasy')">
+        <button type="button" class="section-title" :aria-expanded="!collapsed.has('fantasy')" @click="toggle('fantasy')">
           <v-icon color="primary" class="mr-2">mdi-cards</v-icon>
           Fantasy league leaderboard
           <v-icon class="ml-2 no-print">{{ collapsed.has('fantasy') ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-        </div>
+        </button>
         <v-card elevation="2">
           <v-table density="comfortable" class="standings-table">
             <thead>
@@ -462,7 +464,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute, useRouter } from 'vue-router';
 import { useSeasonStore } from '@/stores/season.store';
@@ -474,6 +476,10 @@ import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
 import { playerPath } from '@/helpers/players';
+import { canSeeRole } from '@/helpers';
+import { useAuthStore } from '@/stores';
+import { themeMode } from '@/helpers/theme';
+import { gamesBarHeight } from '@/helpers/ladder-days.mjs';
 import { scaleQuantize } from 'd3-scale';
 
 
@@ -486,6 +492,7 @@ const seriesStore = useSeriesStore();
 const fantasyStore = useFantasyStore();
 const ladderStore = useLadderStore();
 
+const { me } = storeToRefs(useAuthStore());
 const { seasons, current_season, selectedSeasonId } = storeToRefs(seasonStore);
 const { teams } = storeToRefs(teamStore);
 const { series } = storeToRefs(seriesStore);
@@ -499,6 +506,9 @@ const currentSeasonId = ref(null);
 const seasonItems = computed(() => seasons.value.slice().sort((a, b) =>
     (b.id === currentSeasonId.value) - (a.id === currentSeasonId.value) || b.id - a.id
 ));
+
+// /report is public; only a reader who may open /player/:id gets a clickable row or a name link
+const mayOpenPlayer = computed(() => !!me.value && canSeeRole(me.value.role, 'member'));
 
 // Every section starts open, so the report still prints and embeds whole
 const collapsed = ref(new Set());
@@ -599,7 +609,6 @@ const raceBreakdown = computed(() => {
         }
     }
 
-    const maxGames = Math.max(...Object.values(raceMap).map(r => r.games), 1);
     const maxPoints = Math.max(...Object.values(raceMap).map(r => r.points), 1);
 
     return Object.entries(raceMap)
@@ -607,7 +616,6 @@ const raceBreakdown = computed(() => {
             race,
             ...stats,
             winRate: stats.games > 0 ? Math.round((stats.wins / stats.games) * 100) : 0,
-            gamesBarPct: Math.round((stats.games / maxGames) * 100),
             pointsBarPct: Math.round((stats.points / maxPoints) * 100),
         }))
         .sort((a, b) => b.points - a.points);
@@ -699,7 +707,15 @@ const loadReport = async () => {
     }
 };
 
-const printReport = () => window.print();
+// The report is a light document: print it light and give the admin his theme back. The
+// light is never stored, so a browser that skips afterprint leaves his saved theme alone.
+const printReport = async () => {
+    const previous = themeMode.value;
+    themeMode.value = 'light';
+    window.addEventListener('afterprint', () => { themeMode.value = previous; }, { once: true });
+    await nextTick();
+    window.print();
+};
 
 /* ── Ladder activity ──────────────────────────────────────────────────────── */
 
@@ -737,10 +753,10 @@ const heatRows = computed(() => {
 
 const heatLegend = computed(() => {
     const step = heatStep.value;
-    return Array.from({ length: 5 }, (_, i) => ({
+    return [{ color: heatColor(0), label: '0' }, ...Array.from({ length: 5 }, (_, i) => ({
         color: `rgb(var(--v-theme-heat-${i + 1}))`,
         label: i === 4 ? `${step * 4 + 1}+` : `${i * step + 1}-${(i + 1) * step}`,
-    }));
+    }))];
 });
 
 // One entry per season day, as the answer serves it, and they add up to total_games
@@ -750,13 +766,15 @@ const dayMax = computed(() => Math.max(1, ...ladderDays.value.map(day => day.g))
 
 const dayBars = computed(() => ladderDays.value.map(day => ({
     d: day.d,
-    height: `${Math.max(2, Math.round((day.g / dayMax.value) * 100))}%`,
+    height: gamesBarHeight(day.g, dayMax.value),
     title: `${monthDay(day.d)} \u00b7 ${day.g} games`,
 })));
 
+// One tick slot per day in the same flex row as the bars, labelled every 7th, so a
+// label always sits under the day it names
 const dayTicks = computed(() => {
-    const weeks = ladderDays.value.filter((_, i) => i % 7 === 0);
-    return weeks.map(day => ({ d: day.d, label: monthDay(day.d), width: `${100 / weeks.length}%` }));
+    const lastLabel = Math.floor((ladderDays.value.length - 1) / 7) * 7;
+    return ladderDays.value.map((day, i) => ({ d: day.d, label: i % 7 ? '' : monthDay(day.d), end: i === lastLabel }));
 });
 </script>
 
@@ -836,6 +854,11 @@ const dayTicks = computed(() => {
   padding-top: 1.5rem !important;
 }
 .section-title {
+  width: 100%;
+  background: none;
+  border: 0;
+  color: inherit;
+  font-family: inherit;
   font-size: 1.15rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
@@ -931,6 +954,8 @@ const dayTicks = computed(() => {
   width: 14px;
   height: 10px;
   border-radius: 2px;
+  /* the 0-games step is the page's own surface, so every swatch carries a hairline */
+  box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.12);
 }
 .day-chart {
   position: relative;
@@ -966,9 +991,21 @@ const dayTicks = computed(() => {
 }
 .day-ticks {
   display: flex;
+  gap: 2px;
   margin-top: 6px;
   font-size: 0.6875rem;
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}
+/* A tick slot matches its bar: same flex row, same gap, same minimum. The label
+   is wider than its slot and overflows it, so it starts at its own bar */
+.day-ticks span {
+  flex: 1;
+  min-width: 4px;
+  white-space: nowrap;
+}
+/* the last label would overflow the card, so it ends at its own slot */
+.day-ticks span.end {
+  text-align: right;
 }
 
 /* ── Race cards ───────────────────────────────────────────────────────────── */

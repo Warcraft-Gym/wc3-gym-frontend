@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fillDays, lastPlayed, maxGamesPerDay, winRate } from './ladder-days.mjs';
+import { dayTip, fillDays, gamesBarHeight, lastPlayed, maxGamesPerDay, winRate } from './ladder-days.mjs';
 
 const perDay = [{ d: '2026-09-03', w: 2, l: 1, mmr: 1510 }];
 
@@ -21,4 +21,16 @@ test('last played and win rate', () => {
   assert.equal(lastPlayed([]), null);
   assert.equal(winRate(2, 1), 67);
   assert.equal(winRate(0, 0), null);
+});
+
+test('a day with no games draws no bar, the smallest played day keeps a stub', () => {
+  assert.equal(gamesBarHeight(0, 50), '0%');
+  assert.equal(gamesBarHeight(1, 50), '2%');
+  assert.equal(gamesBarHeight(25, 50), '50%');
+  assert.equal(gamesBarHeight(50, 50), '100%');
+});
+
+test('a day names itself, its record and its MMR', () => {
+  assert.equal(dayTip({ d: '2026-09-03', w: 2, l: 1, mmr: 1510 }), '3 Sep · 2–1 · 1510 MMR');
+  assert.equal(dayTip({ d: '2026-09-04', w: 0, l: 0, mmr: null }), '4 Sep · 0–0');
 });

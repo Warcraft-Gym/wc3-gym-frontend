@@ -44,21 +44,23 @@ const props = defineProps({
 defineEmits(['open-player']);
 
 const badgePoints = (p) => p.points - p.ladder_points;
+// A segment worth nothing is left out, so min-width never paints a stub for 0 points
+const segments = (...list) => list.filter((seg) => seg.value > 0);
 const rank = (value) =>
   props.players.filter(p => p.games > 0 && value(p) > 0).sort((a, b) => value(b) - value(a)).slice(0, props.top);
 
 const boards = computed(() => {
   const grind = rank(p => p.points).map(p => ({
     ...p, value: p.points, caption: `${p.ladder_points} + ${badgePoints(p)}`,
-    segments: [{ key: 'ladder', value: p.ladder_points }, { key: 'badge', value: badgePoints(p) }],
+    segments: segments({ key: 'ladder', value: p.ladder_points }, { key: 'badge', value: badgePoints(p) }),
   }));
   const badges = rank(badgePoints).map(p => ({
     ...p, value: badgePoints(p), caption: `${p.achievements.length} badges`,
-    segments: [{ key: 'badge', value: badgePoints(p) }],
+    segments: segments({ key: 'badge', value: badgePoints(p) }),
   }));
   const ladder = rank(p => p.ladder_points).map(p => ({
     ...p, value: p.ladder_points, caption: `${p.wins}-${p.losses}`,
-    segments: [{ key: 'ladder', value: p.ladder_points }],
+    segments: segments({ key: 'ladder', value: p.ladder_points }),
   }));
   // One scale per list: its own leader fills the bar
   const max = rows => Math.max(1, ...rows.map(r => r.value));
@@ -97,6 +99,6 @@ const boards = computed(() => {
 /* The data end is rounded, the baseline end square */
 .seg { display: block; border-radius: 0 4px 4px 0; min-width: 2px; }
 .seg.ladder, .swatch.ladder { background: rgb(var(--v-theme-primary)); }
-.seg.badge, .swatch.badge { background: rgb(var(--v-theme-warning)); }
+.seg.badge, .swatch.badge { background: rgb(var(--v-theme-tier-5)); }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 </style>

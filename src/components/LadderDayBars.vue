@@ -6,6 +6,10 @@
       <rect v-if="d.l" :x="x(i)" :y="y(d.w + d.l)" :width="x.bandwidth()" :height="Math.max(1, y(d.w) - y(d.w + d.l) - (d.w ? gap : 0))" :style="{ fill: LOSS }" />
     </template>
     <line x1="0" :x2="width" :y1="height - 0.5" :y2="height - 0.5" class="axis" />
+    <!-- One hit target per day, wider than the bar, so every day names itself on hover -->
+    <rect v-for="(d, i) in days" :key="`hit${d.d}`" :x="x(i) - x.step() * 0.15" y="0" :width="x.step()" :height="height" fill="transparent">
+      <title>{{ dayTip(d) }}</title>
+    </rect>
   </svg>
 </template>
 
@@ -13,7 +17,7 @@
 import { computed } from 'vue';
 import { range } from 'd3-array';
 import { scaleBand, scaleLinear } from 'd3-scale';
-import { LOSS, WIN } from '@/helpers/ladder-days.mjs';
+import { LOSS, WIN, dayTip } from '@/helpers/ladder-days.mjs';
 
 const props = defineProps({
   days: { type: Array, required: true }, // from fillDays

@@ -35,6 +35,7 @@
           <div class="text-caption text-medium-emphasis mb-1">Versus race</div>
           <v-table density="compact" class="versus">
             <tbody>
+              <tr v-if="!versusRaces.length"><td class="text-caption text-medium-emphasis">No ladder games yet.</td></tr>
               <tr v-for="row in versusRaces" :key="row.code">
                 <td><div class="d-flex align-center ga-2"><RaceIcon :raceIdentifier="row.code" />{{ row.name }}</div></td>
                 <td class="text-right text-no-wrap"><span class="text-win">{{ row.w }}</span> – <span class="text-loss">{{ row.l }}</span></td>
@@ -130,6 +131,7 @@ const versusRaces = computed(() => {
       const total = w + l;
       return { code, name: raceWrapper.getRaceObject(code).name, w, l, total, rate: total ? Math.round((w / total) * 100) : 0 };
     })
+    .filter(row => row.total > 0)
     .sort((a, b) => b.total - a.total);
 });
 
@@ -157,7 +159,7 @@ watch(() => [props.player, props.seasonId], load, { immediate: true });
 .tiles { display: flex; flex-wrap: wrap; gap: 12px 40px; align-items: flex-start; margin-bottom: 12px; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .versus .bar { width: 120px; }
-.meter { height: 6px; border-radius: 3px; background: rgba(var(--v-theme-win), 0.18); overflow: hidden; }
+.meter { height: 6px; border-radius: 3px; background: rgba(var(--v-theme-on-surface), 0.12); overflow: hidden; }
 .fill { height: 100%; background: rgb(var(--v-theme-win)); border-radius: 3px; }
 .badge-row {
   padding: 4px 0;

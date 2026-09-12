@@ -28,7 +28,7 @@
         When you can't play
       </v-card-title>
       <v-card-text class="pt-4">
-        <BlockedTimesEditor :zone="zone" @zone="value => zone = value" />
+        <BlockedTimesEditor :zone="profileZone" @zone="onZone" />
       </v-card-text>
     </v-card>
 
@@ -42,7 +42,7 @@
         <p v-if="!seasons.length" class="text-body-2 text-medium-emphasis">No rounds to answer yet.</p>
         <section v-for="season in seasons" :key="season.id" class="mb-6">
           <h2 class="text-subtitle-1 font-weight-medium mb-2">{{ season.name }}</h2>
-          <p v-if="!cards(season.id).length" class="text-body-2 text-medium-emphasis">No rounds to answer yet.</p>
+          <p v-if="!cards(season.id).length && !errorMessage" class="text-body-2 text-medium-emphasis">No rounds to answer yet.</p>
           <div v-for="card in cards(season.id)" :key="card.playday" class="round">
             <span class="text-medium-emphasis">Round {{ card.playday }}</span>
             <span class="text-medium-emphasis">{{ card.label }}</span>
@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { PAGE_LIMIT, backendUrl, fetchWrapper, pageQuery } from '@/helpers';
 import { formatDateTime } from '@/helpers/datetime';
 import { roundCards, roundLine } from '@/helpers/rounds.mjs';
@@ -97,9 +97,16 @@ const zoneError = ref(null);
 const savingZone = ref(false);
 const saving = ref(null);  // the "<season>-<round>" answer a write is out for
 
-// The profile zone is what the backend reads the blocks against; a profile with none starts on the browser's
-const zone = ref(authStore.me?.user?.timezone || viewerZone());
+// The backend reads the blocks against the profile zone; the editor writes it when the profile carries none
+const profileZone = computed(() => authStore.me?.user?.timezone ?? null);
+const zone = ref(profileZone.value || viewerZone());
 const zones = computed(() => [...new Set([...Intl.supportedValuesOf('timeZone'), zone.value])]);
+
+// The editor wrote the browser zone, so the field and the profile follow it
+const onZone = (timezone) => {
+  zone.value = timezone;
+  if (authStore.me?.user) authStore.me.user = { ...authStore.me.user, timezone };
+};
 
 const saveZone = async (timezone) => {
   savingZone.value = true;
@@ -120,6 +127,7 @@ const seasons = computed(() => (authStore.me?.seasons ?? []).filter(s => s.signe
 const rounds = ref({});  // season id -> the /player-series payload
 
 const load = async (seasonId) => {
+  rounds.value = { ...rounds.value, [seasonId]: null };  // claims the season, so a second /me does not read it again
   const url = `${backendUrl}/player-series?${pageQuery({ limit: PAGE_LIMIT, offset: 0 })}&season_id=${seasonId}`;
   const { items } = await fetchWrapper.getPage(url).catch(() => {
     errorMessage.value = 'Could not load your rounds.';
@@ -128,7 +136,8 @@ const load = async (seasonId) => {
   rounds.value = { ...rounds.value, [seasonId]: items ?? {} };
 };
 
-seasons.value.forEach(season => load(season.id));
+// A fresh /me can land after the view mounts, so every new season reads its rounds then
+watch(seasons, list => list.forEach(s => { if (!(s.id in rounds.value)) load(s.id); }), { immediate: true });
 
 const cards = (seasonId) => {
   const data = rounds.value[seasonId];
@@ -136,7 +145,7 @@ const cards = (seasonId) => {
   return roundCards({ rounds: data.rounds, series: data.series ?? [], answers: data.availability ?? [] });
 };
 
-const line = (seasonId, card) => roundLine(card, rounds.value[seasonId]?.player?.id, formatDateTime(card.series?.date_time));
+const line = (seasonId, card) => roundLine(card, rounds.value[seasonId]?.player?.id, card.series?.date_time ? formatDateTime(card.series.date_time) : '');
 
 const rowOf = (seasonId, playday) => rounds.value[seasonId]?.availability?.find(row => row.playday === playday);
 

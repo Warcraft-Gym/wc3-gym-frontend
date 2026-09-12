@@ -44,6 +44,13 @@ export const playersWithCareers = (players, careers) => {
   ];
 };
 
+// A KOTH king as PlayerName wants him: the Twitch name a chat signup carries,
+// else his battle tag. Both KOTH views read the same fallback.
+export const kingPlayer = (king) => ({
+  name: king.twitch_username || king.battle_tag,
+  country: king.country,
+});
+
 // The player page path. The battle tag is the key, like w3champions; the id
 // serves rows that carry none, and old links.
 export const playerPath = (player) =>

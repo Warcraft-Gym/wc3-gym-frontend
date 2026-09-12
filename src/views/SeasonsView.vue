@@ -288,6 +288,17 @@
                 <v-switch v-model="selectedSeason.scheduling_enabled" label="Availability tools" color="primary" density="comfortable" hide-details />
               </v-col>
               <v-col cols="12" md="6">
+                <v-text-field
+                  v-model.number="selectedSeason.checkin_days"
+                  label="Check-in opens (days before a round)"
+                  type="number"
+                  min="0"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-calendar-clock"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
                 <v-checkbox
                   v-model="selectedSeason.fantasy_grind"
                   label="Fantasy grind pick"
@@ -398,7 +409,7 @@ onMounted(async () => {
 });
 
 const addNewSeason = () => {
-  selectedSeason.value = { name: '', round_count: 0, pick_ban: '', series_per_round: 0, score_system: 'standard', discordRole: '', start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true };
+  selectedSeason.value = { name: '', round_count: 0, pick_ban: '', series_per_round: 0, score_system: 'standard', discordRole: '', start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_days: 3 };
   selectedSeasonMapIds.value = [];
   formError.value = '';
   isEditing.value = false;

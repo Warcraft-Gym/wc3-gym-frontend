@@ -42,7 +42,7 @@
               :disabled="savingWeek !== null"
               @click="setWeek(row.seasonId, row.playday, true)"
             >
-              Can play
+              Check in
             </v-btn>
             <v-btn
               color="error"
@@ -110,7 +110,7 @@
                   :disabled="savingWeek !== null"
                   @click="setWeek(row.season.id, card.playday, true)"
                 >
-                  Can play
+                  Check in
                 </v-btn>
                 <v-btn
                   color="error"
@@ -119,7 +119,7 @@
                   :disabled="savingWeek !== null"
                   @click="setWeek(row.season.id, card.playday, false)"
                 >
-                  Cannot play
+                  Can't play
                 </v-btn>
               </div>
               <div class="text-caption text-medium-emphasis mt-2">{{ setByLine(row.season.id, card.playday) }}</div>
@@ -224,11 +224,16 @@ const waiting = computed(() => waitingLines(openSeasons.value.map((season) => {
   return {
     season,
     asks: full.scheduling_enabled !== false,
-    cards: roundCards({ rounds: answer.rounds ?? [], series: answer.series ?? [], answers: answer.availability ?? [] }),
+    cards: roundCards({
+      rounds: answer.rounds ?? [],
+      series: answer.series ?? [],
+      answers: answer.availability ?? [],
+      checkinDays: full.checkin_days ?? season.checkin_days ?? null,
+    }),
   };
 }).filter(Boolean), player.value?.id));
 
-// The availability question, from the waiting card and from the round cards alike
+// The check-in, from the waiting card and from the round cards alike
 const savingWeek = ref(null);
 const weekKey = (seasonId, week) => `${seasonId}-${week}`;
 const rowOfWeek = (seasonId, week) => answersOf(seasonId).find(row => row.playday === week);

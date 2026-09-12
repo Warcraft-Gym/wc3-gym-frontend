@@ -43,8 +43,8 @@
           <div class="d-flex align-center justify-space-between flex-wrap ga-2">
             <span>When can't you play? Blocked times show your opponent the hours you are open.</span>
             <div class="d-flex ga-2">
-              <v-btn variant="text" size="small" @click="dismissBlocks">Not now</v-btn>
-              <v-btn color="primary" variant="elevated" size="small" @click="blocksOpen = true">Set blocked times</v-btn>
+              <v-btn class="blocks-btn" variant="text" @click="dismissBlocks">Not now</v-btn>
+              <v-btn class="blocks-btn" color="primary" variant="elevated" @click="blocksOpen = true">Set blocked times</v-btn>
             </div>
           </div>
         </v-alert>
@@ -55,7 +55,7 @@
           <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
             {{ zoneLabel(playerData.player.timezone, userTimezone) }}
           </v-chip>
-          <v-btn v-if="schedulingOn" variant="text" size="small" prepend-icon="mdi-calendar-remove" @click="blocksOpen = true">
+          <v-btn v-if="schedulingOn" class="blocks-btn" variant="text" prepend-icon="mdi-calendar-remove" @click="blocksOpen = true">
             Blocked times
           </v-btn>
         </div>
@@ -209,7 +209,7 @@
         When can't you play?
       </v-card-title>
       <v-card-text class="pt-4">
-        <BlockedTimesEditor v-if="blocksOpen" @change="count => blockCount = count" />
+        <BlockedTimesEditor v-if="blocksOpen" :zone="playerData?.player?.timezone" @change="count => blockCount = count" />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -886,6 +886,11 @@ onMounted(async () => {
 <style scoped>
 .v-chip {
   margin: 2px;
+}
+
+/* Phone: the blocked-times buttons meet the 48 px minimum */
+@media (max-width: 600px) {
+  .blocks-btn { min-height: 48px; }
 }
 
 

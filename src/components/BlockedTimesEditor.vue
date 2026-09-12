@@ -11,25 +11,20 @@
 
     <section class="mb-8">
       <h3 class="text-subtitle-1 font-weight-medium mb-1">Repeating</h3>
-      <p class="text-caption text-medium-emphasis mb-3">Hours you cannot play, every round, in {{ zone }}.</p>
+      <div class="mb-3">
+        <p class="text-caption text-medium-emphasis">Hours you cannot play, every round, in {{ props.zone ? 'your profile timezone' : 'your timezone' }} ({{ zone }}).</p>
+        <p v-if="zone !== browserZone" class="text-caption text-medium-emphasis">Your browser is in {{ browserZone }}.</p>
+      </div>
 
       <p v-if="!isLoading && !blocks.length" class="text-body-2 text-medium-emphasis mb-3">No repeating blocks yet.</p>
 
       <v-card v-for="(row, index) in blocks" :key="row.key" variant="outlined" class="mb-3">
         <v-card-text class="pb-2">
-          <div class="d-flex flex-wrap ga-2 mb-3">
-            <v-chip
-              v-for="(name, day) in DAY_NAMES"
-              :key="name"
-              class="day-chip"
-              size="large"
-              :color="row.days.includes(day + 1) ? 'primary' : undefined"
-              :variant="row.days.includes(day + 1) ? 'flat' : 'outlined'"
-              @click="toggleDay(row, day + 1)"
-            >
+          <v-chip-group v-model="row.days" multiple filter column class="mb-3">
+            <v-chip v-for="(name, day) in DAY_NAMES" :key="name" class="day-chip" size="large" :value="day + 1" color="primary" variant="outlined">
               {{ name }}
             </v-chip>
-          </div>
+          </v-chip-group>
           <v-row dense>
             <v-col cols="6" md="3"><SimpleTimePicker v-model="row.start" label="From" /></v-col>
             <v-col cols="6" md="3"><SimpleTimePicker v-model="row.end" label="To" /></v-col>
@@ -121,6 +116,7 @@ import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
+const props = defineProps({ zone: { type: String, default: null } });  // the profile zone the backend resolves blocks against
 const emit = defineEmits(['change']);
 
 const isLoading = ref(true);
@@ -128,7 +124,8 @@ const errorMessage = ref(null);
 const blocks = ref([]);
 const busy = ref([]);
 const busyKey = ref(null);  // the row a save or delete is out for
-const zone = viewerZone();
+const browserZone = viewerZone();
+const zone = computed(() => props.zone || browserZone);
 
 let nextKey = 0;
 const key = () => `row-${nextKey++}`;
@@ -147,10 +144,6 @@ const busyDirty = (row) => dirty(row, asBusy);
 
 const blockPreview = (row) => (blockValid(row) ? blockLine(asBlock(row)) : 'Pick the days and the hours.');
 const busyPreview = (row) => (busyValid(row) ? busyLine(asBusy(row)) : 'Pick the first and last day.');
-
-const toggleDay = (row, day) => {
-  row.days = row.days.includes(day) ? row.days.filter(d => d !== day) : [...row.days, day].sort((a, b) => a - b);
-};
 
 const load = async () => {
   try {

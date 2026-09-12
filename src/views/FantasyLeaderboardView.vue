@@ -92,7 +92,7 @@
 
               <template v-slot:[`item.actions`]="{ item }">
                 <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit', public: !!myUserId && item.captain_id === myUserId, onClick: () => openEditDialog(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', public: !!myUserId && item.captain_id === myUserId && pickedSeason?.phase === 'open', onClick: () => openEditDialog(item) },
                   { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item) },
                 ]" />
               </template>
@@ -319,6 +319,8 @@ const races = ref([
   { title: 'Undead', value: 'UD' },
   { title: 'Random', value: 'RANDOM' }
 ]);
+// A drafted player is UserPublic, which carries its id under one of these names
+const draftedId = (player) => player.user_id || player.id || player.player_id;
 const emptyTeam = (seasonId = null) => ({
   id: null,
   name: '',
@@ -434,7 +436,7 @@ const openEditDialog = async (team) => {
     drafted_team_id: team.drafted_team_id,
     grind_team_id: team.grind_team_id ?? null,
     drafted_race: team.drafted_race,
-    player_ids: team.drafted_players?.map(p => p.user_id) || []
+    player_ids: team.drafted_players?.map(draftedId).filter(Boolean) || []
   };
   
   // Load the teams first so the drafted-team picker is populated
@@ -446,8 +448,7 @@ const openEditDialog = async (team) => {
   // Populate tier selections from existing players AFTER players are loaded
   if (team.drafted_players && team.drafted_players.length > 0) {
     team.drafted_players.forEach(dp => {
-      // Try different possible property names
-      const playerId = dp.user_id || dp.id || dp.player_id;
+      const playerId = draftedId(dp);
       const player = players.value.find(p => p.id === playerId);
       // A tier above the season's count has no picker, so it lands in no slot
       if (player && player.fantasy_tier >= 1 && player.fantasy_tier <= tierCount.value) {
@@ -479,6 +480,11 @@ const saveTeam = async () => {
     return;
   }
 
+  if (!tierCount.value) {
+    dialogErrorMessage.value = 'The player tiers for this season are not cut yet.';
+    return;
+  }
+
   // Build player_ids array from tier selections
   const playerIds = Object.values(selectedTierPlayers.value).filter(id => id !== null);
   
@@ -506,7 +512,7 @@ const saveTeam = async () => {
       // Update players if changed
       const team = teams.value.find(t => t.id === editedTeam.value.id);
       // Get current player IDs - use the same property lookup as in openEditDialog
-      const currentPlayerIds = team.drafted_players?.map(p => p.user_id || p.id || p.player_id).filter(id => id) || [];
+      const currentPlayerIds = team.drafted_players?.map(draftedId).filter(Boolean) || [];
       
       const playersToAdd = playerIds.filter(id => !currentPlayerIds.includes(id));
       const playersToRemove = currentPlayerIds.filter(id => !playerIds.includes(id));

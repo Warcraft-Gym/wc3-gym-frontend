@@ -61,7 +61,8 @@ export function homeCards({ me = null, seasons = [], kothEvents = [], now = new 
       joined: !!season.signed_up,
       primary: season.signed_up
         ? { title: 'Your series', to: myProfilePath(me), variant: 'elevated' }
-        : ask && { title: ask, to: `/signup?season=${slug}`, variant: action === 'signup' ? 'elevated' : 'outlined' },
+        // the token admin holds no Discord account, so it cannot sign up
+        : !me?.superadmin && ask && { title: ask, to: `/signup?season=${slug}`, variant: action === 'signup' ? 'elevated' : 'outlined' },
       links: seasonLinks(season, slug),
       slug,
     };
@@ -88,5 +89,5 @@ export function homeCards({ me = null, seasons = [], kothEvents = [], now = new 
   return [...cards, ...nights];
 }
 
-// The rows the landing popup offers: open signups the player has not taken
-export const joinableEvents = (rows) => rows.filter((row) => row.action === 'signup' && row.joined === false);
+// The rows the landing popup offers: open signups the player has not taken, each with its own button
+export const joinableEvents = (rows) => rows.filter((row) => row.action === 'signup' && row.joined === false && row.primary);

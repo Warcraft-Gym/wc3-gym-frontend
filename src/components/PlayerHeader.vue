@@ -87,6 +87,14 @@ const emit = defineEmits(['edit']);
 const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 
+// The visitor's chips read the seasons and the teams, so the header loads both itself and does
+// not wait on a sibling. The teams stay in a local list, so a season-scoped page keeps its own.
+const teams = ref([]);
+if (!props.owner) {
+  seasonStore.ensureSeasons().catch(() => {});
+  teamStore.getTeamsBasic().then((rows) => { teams.value = rows; }).catch(() => {});
+}
+
 // a picture Discord no longer serves falls back to the initials
 const avatarBroken = ref(false);
 const avatar = computed(() => (avatarBroken.value ? null : props.player.avatar_url));
@@ -111,7 +119,7 @@ const seasonChips = computed(() => {
     .sort((a, b) => b.id - a.id)
     .map((season) => {
       const teamId = (props.player.gnl_stats ?? []).find(stat => stat.season_id === season.id)?.team_id;
-      const team = teamStore.teams.find(t => t.id === teamId);
+      const team = teams.value.find(t => t.id === teamId);
       return team && { key: season.id, captain: false, text: chipText(false, team.name, season.name) };
     })
     .filter(Boolean);

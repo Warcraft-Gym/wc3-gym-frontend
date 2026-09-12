@@ -121,11 +121,7 @@ watch(() => route.path, () => { drawer.value = false; });
 
 const avatarUrl = computed(() => me.value?.avatar || null); // /me already answers the CDN URL
 const initials = computed(() => (me.value?.name || '?').slice(0, 2).toUpperCase());
-const roleLabel = computed(() => {
-    if (me.value?.superadmin) return 'Super Admin';
-    const role = me.value?.role?.replace(/^./, c => c.toUpperCase());
-    return me.value?.team ? `${role} · ${me.value.team.name}` : role;  // a captain is named with the team
-});
+const roleLabel = computed(() => (me.value?.superadmin ? 'Super Admin' : me.value?.role?.replace(/^./, c => c.toUpperCase())));
 
 // a guest reaches no dashboard, so his menu item stays on /profile
 const dashboardPath = computed(() => (canSee('/player-dashboard') ? '/player-dashboard' : '/profile'));
@@ -133,17 +129,45 @@ const identity = computed(() => [me.value?.name, roleLabel.value].filter(Boolean
 
 // view-as: an admin sees the app as a lower role; the legacy token session cannot
 const canViewAs = computed(() => me.value?.actual_role === 'admin' && !authStore.user);
-const teamDialog = ref(false);
-const teams = ref([]);
-const chosenTeam = ref(null);
-const pickCaptain = async () => {
-    teams.value = await useTeamStore().getTeamsBasic();
-    teamDialog.value = true;
+const viewDialog = ref(false);
+const viewRole = ref('member');
+const viewSeats = ref([]);  // "<teamId>:<seasonId>" per chosen seat, the shape the header sends
+const seatItems = ref([]);
+// every team of every season /me lists, so an admin can hold a seat in more than one season
+const openViewAs = async () => {
+    viewDialog.value = true;
+    viewRole.value = authStore.viewAs?.role ?? 'member';  // the dialog opens on the view in force
+    viewSeats.value = (authStore.viewAs?.seats ?? []).map(seat => `${seat.teamId}:${seat.seasonId}`);
+    const teamStore = useTeamStore();
+    const seasons = me.value?.seasons ?? [];
+    const rosters = await Promise.all(seasons.map(season => teamStore.getTeamsSeasonBasic(season.id).catch(() => [])));
+    seatItems.value = seasons.flatMap((season, i) => rosters[i].map((team, j) => ({
+        title: `${team.name} · ${season.name}`,
+        value: `${team.id}:${season.id}`,
+        team: team.name,
+        season: season.name,
+        first: j === 0,
+    })));
 };
-const applyCaptain = () => {
-    teamDialog.value = false;
-    authStore.setViewAs({ role: 'captain', teamId: chosenTeam.value });
+const applyViewAs = () => {
+    viewDialog.value = false;
+    const seats = viewSeats.value.map(seat => {
+        const item = seatItems.value.find(row => row.value === seat);
+        const [teamId, seasonId] = seat.split(':');
+        return { teamId: Number(teamId), seasonId: Number(seasonId), team: item?.team, season: item?.season };
+    });
+    authStore.setViewAs(viewRole.value === 'captain' ? { role: 'captain', seats } : { role: viewRole.value });
 };
+// the banner names each seat the admin chose; a seat stored before this shape falls back to /me
+const viewAsLabel = computed(() => {
+    const role = authStore.viewAs?.role?.replace(/^./, c => c.toUpperCase()) ?? '';
+    const seats = (authStore.viewAs?.seats ?? []).map(seat => {
+        const entry = me.value?.seasons?.find(season => Number(season.id) === seat.seasonId);
+        const team = seat.team ?? entry?.team?.name;
+        return team && `${team} (${seat.season ?? entry?.name})`;
+    }).filter(Boolean);
+    return seats.length ? `${role} · ${seats.join(', ')}` : role;
+});
 </script>
 
 <template>
@@ -180,16 +204,21 @@ const applyCaptain = () => {
                         </v-btn>
                     </template>
                     <v-list>
-                        <v-list-item :title="canSee('/player-dashboard') ? 'Player Dashboard' : 'My profile'" :subtitle="identity" prepend-icon="mdi-view-dashboard" :to="dashboardPath" />
+                        <v-list-item :title="me.name" :subtitle="roleLabel">
+                            <template v-slot:prepend>
+                                <v-avatar size="36" color="primary" class="mr-3">
+                                    <v-img v-if="avatarUrl" :src="avatarUrl" alt="" />
+                                    <span v-else>{{ initials }}</span>
+                                </v-avatar>
+                            </template>
+                        </v-list-item>
+                        <v-divider />
+                        <v-list-item title="Profile" prepend-icon="mdi-account" :to="dashboardPath" />
                         <v-list-item v-if="canSee('/player-dashboard')" title="Edit Player Info" prepend-icon="mdi-pencil" :to="{ path: '/player-dashboard', query: { edit: 1 } }" />
-                        <!-- /me names the captain's team, or the roster team of this season; a player on no roster sees no item -->
-                        <v-list-item v-if="me?.team" title="My Team" prepend-icon="mdi-shield-account" :to="`/team/${me.team.id}`" />
+                        <v-list-item v-if="canSee('/player-dashboard')" title="Availability" prepend-icon="mdi-calendar-month" to="/availability" />
                         <template v-if="canViewAs">
                             <v-divider />
-                            <v-list-subheader>View as</v-list-subheader>
-                            <v-list-item prepend-icon="mdi-eye-outline" title="Captain…" @click="pickCaptain" />
-                            <v-list-item prepend-icon="mdi-eye-outline" title="Member" @click="authStore.setViewAs({ role: 'member' })" />
-                            <v-list-item prepend-icon="mdi-eye-outline" title="Guest" @click="authStore.setViewAs({ role: 'guest' })" />
+                            <v-list-item prepend-icon="mdi-eye-outline" title="View as…" @click="openViewAs" />
                         </template>
                         <v-divider />
                         <v-list-item prepend-icon="mdi-logout" title="Logout" @click="authStore.logout()" />
@@ -227,20 +256,30 @@ const applyCaptain = () => {
         <v-defaults-provider :defaults="{ VDialog: { fullscreen: smAndDown } }">
             <v-main>
                 <v-alert v-if="authStore.viewAs" type="warning" density="compact" class="ma-2">
-                    Viewing as {{ roleLabel }}
+                    Viewing as {{ viewAsLabel }}
                     <template v-slot:append>
                         <v-btn size="small" variant="outlined" @click="authStore.setViewAs(null)">Exit</v-btn>
                     </template>
                 </v-alert>
-                <v-dialog v-model="teamDialog" max-width="400">
-                    <v-card title="View as captain">
-                        <v-card-text>
-                            <v-select v-model="chosenTeam" :items="teams" item-title="name" item-value="id" label="Team" />
+                <v-dialog v-model="viewDialog" max-width="400">
+                    <v-card title="View as">
+                        <v-card-text class="d-flex flex-column ga-4">
+                            <v-btn-toggle v-model="viewRole" mandatory variant="outlined" color="primary" divided class="w-100">
+                                <v-btn value="guest" class="flex-grow-1">Guest</v-btn>
+                                <v-btn value="member" class="flex-grow-1">Member</v-btn>
+                                <v-btn value="captain" class="flex-grow-1">Captain</v-btn>
+                            </v-btn-toggle>
+                            <v-select v-if="viewRole === 'captain'" v-model="viewSeats" :items="seatItems" multiple chips variant="outlined" label="Seats" hide-details>
+                                <template v-slot:item="{ props, item }">
+                                    <v-list-subheader v-if="item.raw.first">{{ item.raw.season }}</v-list-subheader>
+                                    <v-list-item v-bind="props" />
+                                </template>
+                            </v-select>
                         </v-card-text>
                         <v-card-actions>
                             <v-spacer />
-                            <v-btn @click="teamDialog = false">Cancel</v-btn>
-                            <v-btn color="primary" :disabled="!chosenTeam" @click="applyCaptain">Apply</v-btn>
+                            <v-btn @click="viewDialog = false">Cancel</v-btn>
+                            <v-btn color="primary" :disabled="viewRole === 'captain' && !viewSeats.length" @click="applyViewAs">View</v-btn>
                         </v-card-actions>
                     </v-card>
                 </v-dialog>

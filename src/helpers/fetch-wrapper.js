@@ -112,7 +112,7 @@ export async function authHeader(method, url) {
     const headers = { Authorization: `Bearer ${token}` };
     if (store.viewAs) {  // the backend lowers an admin's role for this request
         headers['X-View-As'] = store.viewAs.role;
-        if (store.viewAs.teamId) headers['X-View-Team'] = String(store.viewAs.teamId);
+        if (store.viewAs.seats?.length) headers['X-View-Seats'] = store.viewAs.seats.map((seat) => `${seat.teamId}:${seat.seasonId}`).join(',');
     }
     return headers;
 }

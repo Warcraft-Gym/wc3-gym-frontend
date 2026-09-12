@@ -16,8 +16,8 @@
               {{ playerData.player.battleTag }} <W3CIcon :size="16" />
             </a>
           </PlayerName>
-          <v-chip v-if="authStore.captainTeamId" color="primary" variant="tonal" size="small" prepend-icon="mdi-shield-star">
-            Captain · {{ authStore.me.team.name }}
+          <v-chip v-for="seat in captainSeats" :key="seat.id" color="primary" variant="tonal" size="small" prepend-icon="mdi-shield-star">
+            Captain · {{ seat.team.name }} · {{ seat.name }}
           </v-chip>
         </h1>
         <h1 v-else>Player Dashboard</h1>
@@ -440,6 +440,8 @@ const mapStore = useMapStore();
 
 // /me answers whether the session has a signup for the current GNL season
 const seasonStore = useSeasonStore();
+// one chip per season this account captains
+const captainSeats = computed(() => (authStore.me?.seasons ?? []).filter(season => season.captain && season.team));
 const needsSignup = computed(() => authStore.me?.signed_up === false && !!authStore.me?.season_id);
 const currentSeason = computed(() => seasonStore.seasons.find(s => s.id === authStore.me?.season_id) ?? null);
 const seasonLabel = computed(() => currentSeason.value?.name || `GNL Season ${authStore.me?.season_id}`);

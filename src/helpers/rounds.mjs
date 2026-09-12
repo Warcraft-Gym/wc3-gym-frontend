@@ -62,7 +62,7 @@ export const roundLine = (card, playerId, when = '') => {
 };
 
 // What the player still owes, over every season he is in: a series with no result,
-// and an open round he has not answered. One line each, in the order the rounds run.
+// and the round in play if he has not answered it. One line each, in round order.
 // `asks` is false for a season that does not run the availability question.
 export const waitingLines = (seasons = [], playerId = null) =>
   seasons.flatMap(({ season, cards = [], asks = true }) => cards.flatMap((card) => {
@@ -76,7 +76,7 @@ export const waitingLines = (seasons = [], playerId = null) =>
           }]
         : [];
     }
-    if (card.over || card.answer !== null || !asks) return [];
+    if (card.over || !card.current || card.answer !== null || !asks) return [];
     return [{
       key: `r${season.id}-${card.playday}`,
       kind: 'round',

@@ -34,6 +34,8 @@
             <v-text-field
               v-model="selectedPlayer.battleTag"
               label="BattleTag"
+              hint="Checked against W3Champions"
+              persistent-hint
               variant="outlined"
               prepend-inner-icon="mdi-shield-account"
               density="comfortable"

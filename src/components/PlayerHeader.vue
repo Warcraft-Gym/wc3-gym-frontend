@@ -9,7 +9,7 @@
     </v-avatar>
     <div class="flex-grow-1 min-w-0">
       <div class="text-h5">
-        <PlayerName :player="player" :race="signupRace" />
+        <PlayerName :player="player" :race="signupRace" plain />
       </div>
       <a
         v-if="player.battleTag"

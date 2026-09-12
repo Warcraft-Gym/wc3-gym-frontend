@@ -87,22 +87,31 @@ test('a round line reads the result, the fixture, or nothing while the question 
 // The "Waiting for you" card: one line per job the player still owes, over every season
 const CARDS = [
   { playday: 1, label: '1 to 7 Sep', over: true, answer: true, series: { id: 11, player1_id: ME, player2: { name: 'Markoo' }, player1_score: 2, player2_score: 0 } },
-  { playday: 2, label: '8 to 14 Sep', over: false, answer: null, series: { id: 12, player2_id: ME, player1: { name: 'Peterian' }, player1_score: null, player2_score: null } },
+  { playday: 2, label: '8 to 14 Sep', over: false, current: true, answer: null, series: { id: 12, player2_id: ME, player1: { name: 'Peterian' }, player1_score: null, player2_score: null } },
   { playday: 3, label: '15 to 21 Sep', over: false, answer: null, series: null },
   { playday: 4, label: '22 to 28 Sep', over: false, answer: false, series: null },
   { playday: 5, label: '1 to 7 Aug', over: true, answer: null, series: null },
 ];
 
-test('the waiting lines name the unscored series and the unanswered open rounds', () => {
-  const lines = waitingLines([{ season: { id: 4, name: 'GNL Review Season' }, cards: CARDS }], ME);
+// A season whose round in play is not paired yet: only that round asks the question
+const ASK_CARDS = [
+  { playday: 2, label: '8 to 14 Sep', over: false, current: true, answer: null, series: null },
+  { playday: 3, label: '15 to 21 Sep', over: false, answer: null, series: null },
+];
+
+test('the waiting lines name the unscored series and the round in play', () => {
+  const lines = waitingLines([
+    { season: { id: 4, name: 'GNL Review Season' }, cards: CARDS },
+    { season: { id: 5, name: 'GNL Ladder Season' }, cards: ASK_CARDS },
+  ], ME);
   assert.deepEqual(lines.map(row => row.text), [
     'Round 2 · GNL Review Season · vs Peterian',
-    'Round 3 · GNL Review Season · Can you play 15 to 21 Sep?',
+    'Round 2 · GNL Ladder Season · Can you play 8 to 14 Sep?',
   ]);
   assert.deepEqual(lines.map(row => row.kind), ['series', 'round']);
   assert.equal(lines[0].series.id, 12);
-  assert.equal(lines[1].seasonId, 4);
-  assert.equal(lines[1].playday, 3);
+  assert.equal(lines[1].seasonId, 5);
+  assert.equal(lines[1].playday, 2);
 });
 
 test('a season that asks nothing still shows its unscored series', () => {

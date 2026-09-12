@@ -5,14 +5,14 @@
     <div class="d-flex align-center mb-6">
       <v-icon size="x-large" color="primary" class="mr-3">mdi-dice-multiple</v-icon>
       <div>
-        <div class="text-h5 font-weight-bold">Random Stats Helper</div>
+        <div class="text-h5 font-weight-bold">Random stats helper</div>
         <div class="text-body-2 text-medium-emphasis">Breakdown of drawn race vs opponent race for Random games only</div>
       </div>
     </div>
 
     <!-- Search form -->
     <v-card elevation="2" class="mb-6">
-      <v-card-title class="bg-primary">Player &amp; Seasons</v-card-title>
+      <v-card-title class="bg-primary">Player &amp; seasons</v-card-title>
       <v-card-text class="pt-4">
         <v-row align="start">
           <v-col cols="12" md="5">
@@ -32,7 +32,7 @@
             <v-select
               v-model="selectedSeasons"
               :items="seasonOptions"
-              label="W3C Seasons"
+              label="W3C seasons"
               variant="outlined"
               density="comfortable"
               multiple
@@ -116,22 +116,23 @@
         elevation="2"
         class="mb-5"
       >
-        <v-card-title class="bg-primary d-flex align-center">
+        <v-card-title class="bg-primary d-flex align-center flex-wrap ga-1">
           <RaceIcon :raceIdentifier="raceIdMap[raceName]" class="mr-2" />
           <span>Playing as {{ raceName }}</span>
           <v-spacer />
-          <v-chip color="on-primary" variant="tonal" size="small" class="mr-2">
+          <!-- outlined, not tonal: a tonal wash over the bronze band leaves its own text at 4.02:1 -->
+          <v-chip color="on-primary" variant="outlined" size="small" class="mr-2">
             {{ data.wins + data.losses }} games
           </v-chip>
-          <v-chip color="win" size="small">
+          <v-chip color="on-primary" variant="outlined" size="small">
             {{ Math.round(data.wins / (data.wins + data.losses) * 100) }}% WR
           </v-chip>
         </v-card-title>
 
         <v-table density="comfortable">
           <thead>
-            <tr class="bg-surface-variant">
-              <th class="text-left">Opponent Race</th>
+            <tr>
+              <th class="text-left">Opponent race</th>
               <th class="text-right text-win">Wins</th>
               <th class="text-right text-loss">Losses</th>
               <th class="text-right">Total</th>
@@ -155,7 +156,6 @@
               <td class="text-right">
                 <v-chip
                   size="small"
-                  color="win"
                   variant="tonal"
                 >
                   {{ Math.round(matchup.wins / (matchup.wins + matchup.losses) * 100) }}%
@@ -171,10 +171,7 @@
               <td class="text-right font-weight-bold text-loss">{{ data.losses }}</td>
               <td class="text-right font-weight-bold">{{ data.wins + data.losses }}</td>
               <td class="text-right">
-                <v-chip
-                  size="small"
-                  color="win"
-                >
+                <v-chip size="small">
                   {{ Math.round(data.wins / (data.wins + data.losses) * 100) }}%
                 </v-chip>
               </td>

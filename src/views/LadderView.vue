@@ -32,7 +32,7 @@
           v-if="auth.isAdmin"
           @click="syncLadder"
         >
-          <span class="d-inline-flex align-baseline">Sync<img :src="w3cLogoWhite" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="ml-1"></span>
+          <span class="d-inline-flex align-baseline">Sync<img :src="syncMark" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="ml-1"></span>
           <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
         </v-btn>
       </v-col>
@@ -55,7 +55,7 @@
           v-if="auth.isAdmin"
           @click="syncLadder"
         >
-          <span class="d-inline-flex align-baseline">Sync<img :src="w3cLogoWhite" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="ml-1"></span>
+          <span class="d-inline-flex align-baseline">Sync<img :src="syncMark" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="ml-1"></span>
           <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
         </v-btn>
         <SyncProgress class="mt-4 mx-auto" style="max-width: 320px" />
@@ -224,18 +224,12 @@
             <template v-slot:[`item.points`]="{ item }">
               <span class="font-weight-bold">{{ item.points }}</span>
             </template>
-            <template v-slot:[`item.wins`]="{ item }">
-              <span class="text-win">{{ item.wins }}</span>
-            </template>
-            <template v-slot:[`item.losses`]="{ item }">
-              <span class="text-loss">{{ item.losses }}</span>
-            </template>
+            <template v-slot:[`item.wins`]="{ item }">{{ item.wins }}</template>
+            <template v-slot:[`item.losses`]="{ item }">{{ item.losses }}</template>
             <template v-slot:[`item.mmr`]="{ item }">{{ item.mmr ?? '—' }}</template>
             <template v-slot:[`item.mmrDiff`]="{ item }">
               <span v-if="item.mmrDiff == null">—</span>
-              <span v-else :class="item.mmrDiff > 0 ? 'text-win' : item.mmrDiff < 0 ? 'text-loss' : ''">
-                {{ item.mmrDiff > 0 ? `+${item.mmrDiff}` : item.mmrDiff }}
-              </span>
+              <span v-else>{{ item.mmrDiff > 0 ? `+${item.mmrDiff}` : item.mmrDiff }}</span>
             </template>
             <template v-slot:expanded-row="{ columns, item }">
               <tr>
@@ -277,6 +271,7 @@ import { agoFromIso, localFromIso } from '@/helpers/w3c-stats';
 import W3CIcon from '@/components/W3CIcon.vue';
 import w3championsLogo from '@/assets/media/w3champions-logo.png';
 import w3championsLogoWhite from '@/assets/media/w3champions-logo-white.png';
+import w3cLogo from '@/assets/media/w3c-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, TEAM_BADGES_NOTE, achievementPoints } from '@/helpers/achievements';
@@ -296,6 +291,8 @@ import { useColumns } from '@/helpers/columns';
 // The dark-ink wordmark is made for the light theme; the dark theme takes the white original.
 const ladderTheme = useTheme();
 const wordmark = computed(() => (ladderTheme.global.current.value.dark ? w3championsLogoWhite : w3championsLogo));
+// The Sync button is a primary fill, so its mark follows on-primary: the inverse of the surface rule
+const syncMark = computed(() => (ladderTheme.global.current.value.dark ? w3cLogo : w3cLogoWhite));
 
 const ladderStore = useLadderStore();
 const seasonStore = useSeasonStore();
@@ -474,7 +471,7 @@ onMounted(async () => {
 }
 .standings-table thead tr th {
   font-size: 0.75rem;
-  color: rgba(var(--v-theme-on-surface), 0.6) !important;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity)) !important;
 }
 .standings-first {
   background: rgba(var(--v-theme-primary), 0.06);

@@ -104,6 +104,28 @@ h1, .text-h1, .text-h2, .text-h3 { font-weight: 800; }
 .text-on-primary { color: rgb(var(--v-theme-on-primary)) !important; }
 .text-on-error { color: rgb(var(--v-theme-on-error)) !important; }
 
+/* Bootstrap 4.5 (index.html) paints every plain link #007bff and every <code> #e83e8c, both under
+   4.5:1 on the stone grounds. The :not() list costs a class, so this rule sits at (0,1,1) and a
+   one-class rule of its own does not outrank it: a link that paints itself is named here instead.
+   Vuetify's own components are matched on the class prefix. */
+a:not([class^="v-"], [class*=" v-"], .app-title) { color: rgb(var(--v-theme-primary-text)); }
+a:not([class^="v-"], [class*=" v-"], .app-title):hover { color: rgb(var(--v-theme-primary)); }
+code, kbd { color: rgb(var(--v-theme-primary-text)); }
+
+/* Bootstrap's `button.bg-X:hover` and `:focus` rules outrank Vuetify's own `.bg-X`, so a filled
+   button repaints as soon as it is hovered or focused. One rule per Vuetify colour Bootstrap also
+   names: measured on a probe button, `error` is the one filled colour Bootstrap leaves alone. */
+.v-btn.bg-primary:hover, .v-btn.bg-primary:focus { background-color: rgb(var(--v-theme-primary)) !important; }
+.v-btn.bg-secondary:hover, .v-btn.bg-secondary:focus { background-color: rgb(var(--v-theme-secondary)) !important; }
+.v-btn.bg-success:hover, .v-btn.bg-success:focus { background-color: rgb(var(--v-theme-success)) !important; }
+.v-btn.bg-warning:hover, .v-btn.bg-warning:focus { background-color: rgb(var(--v-theme-warning)) !important; }
+
+/* A bronze text button or tab sits on the surface-light ground, where primary is 4.21:1.
+   Tied to the light grounds: primary-text is 2.13:1 on the dark band a bare .v-btn would also catch. */
+.v-tab.text-primary,
+.v-toolbar .v-btn.text-primary,
+.v-card-actions .v-btn.text-primary { color: rgb(var(--v-theme-primary-text)) !important; }
+
 /* A scrim dims what is behind it. Vuetify paints it in on-surface, which is white
    on the dark theme and washes the page out while it loads. */
 .v-theme--dark .v-overlay__scrim { background: rgb(var(--v-theme-background)); }

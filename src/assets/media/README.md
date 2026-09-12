@@ -18,8 +18,11 @@ baseline-aligned with the text next to it and sized in `em` so it scales
 with that text.
 
 `w3c-logo-white.png` is `medium-logo.png` byte for byte, white letters as
-published. The ladder page's "Sync W3C" button uses it on its blue fill. The
-dark theme uses it wherever the light theme uses `w3c-logo.png`.
+published. The dark theme uses it wherever the light theme uses
+`w3c-logo.png`. The ladder page's "Sync W3C" button is the one place that
+turns that around: the button is a bronze primary fill, so its mark follows
+on-primary — the white letters on the light theme, the dark-letter file on
+the dark theme.
 
 `w3champions-logo.png` is their full "W3Champions" wordmark with crown,
 `public/assets/logos/medium-logotype.png` of the same repo, recoloured dark

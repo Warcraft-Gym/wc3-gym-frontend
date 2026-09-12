@@ -209,7 +209,7 @@ const { seasons } = storeToRefs(seasonStore);
 
 const season = computed(() => seasons.value.find(x => String(x.id) === String(selectedSignupSeasonId.value)) ?? null);
 // /me answers per season, so the signed-up state follows the season the page acts on
-const mySeason = computed(() => me.value?.seasons?.find(x => x.id === selectedSignupSeasonId.value) ?? null);
+const mySeason = computed(() => me.value?.seasons?.find(x => String(x.id) === String(selectedSignupSeasonId.value)) ?? null);
 const seasonName = computed(() => mySeason.value?.name || season.value?.name || '');
 const state = computed(() => signupState(mySeason.value ?? season.value, !!(mySeason.value?.signed_up ?? me.value?.signed_up), !!me.value?.user));
 const titles = computed(() => signupTitles(state.value, seasonName.value));

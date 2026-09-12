@@ -16,7 +16,7 @@ export const platformOf = (url) => {
 };
 
 export const PLATFORM_ICONS = { twitch: 'mdi-twitch', youtube: 'mdi-youtube' };
-const PLATFORM_NAMES = { twitch: 'Twitch', youtube: 'YouTube' };
+export const PLATFORM_NAMES = { twitch: 'Twitch', youtube: 'YouTube' };
 
 // One video rather than a channel. The backend decides the stored VOD; this only writes the advice
 const VIDEO_PATHS = { 'twitch.tv': /^\/videos\/\d+$/, 'youtube.com': /^(\/watch|\/live\/[\w-]+)$/, 'youtu.be': /^\/[\w-]+$/ };
@@ -43,6 +43,40 @@ export const linkAdvice = (url, wantVideo) => {
   if (isVideo) return 'Viewers open this Twitch video.';
   if (YOUTUBE_LIVE_PAGE.test(path)) return 'Viewers open your live page. Add the video link as the VOD afterwards.';
   return `Viewers open your ${PLATFORM_NAMES[platform]} channel. Add the video link as the VOD afterwards.`;
+};
+
+// A profile channel, typed as a handle or pasted as a link, normalised to what gets stored.
+// A video link is refused here: a profile holds the channel, a cast holds the video
+const CHANNEL_ERROR = {
+  twitch: 'Type your Twitch handle, or paste a twitch.tv channel link.',
+  youtube: 'Type your YouTube @handle, or paste a youtube.com channel link.',
+};
+const YOUTUBE_CHANNEL_PATH = /^\/(channel|c|user)\/[\w.-]+/;
+// A Twitch handle holds letters, digits and underscores; a YouTube handle also takes a dot or a dash
+const HANDLE = { twitch: /^\w+$/, youtube: /^[\w.-]+$/ };
+
+export const channelInput = (platform, text) => {
+  const raw = (text || '').trim();
+  if (!raw) return { url: null };
+  const wrong = { url: null, error: CHANNEL_ERROR[platform] };
+  const typed = platformOf(raw);
+  if (!typed) {  // a bare handle, with or without the @ YouTube writes
+    const handle = raw.replace(/^@/, '');
+    if (raw.includes('/') || !HANDLE[platform]?.test(handle)) return wrong;
+    return { url: platform === 'twitch' ? `https://twitch.tv/${handle}` : `https://youtube.com/@${handle}` };
+  }
+  const [host, path] = hostPath(raw);
+  if (VIDEO_PATHS[host]?.test(path)) return { url: null, error: 'That link opens one video. Paste your channel page instead.' };
+  if (typed !== platform) return wrong;
+  if (platform === 'twitch') {
+    // The first path segment is the channel, so a sub-page link works the way the YouTube branch does
+    const handle = path.match(/^\/(\w+)(?:\/|$)/);
+    return handle ? { url: `https://twitch.tv/${handle[1]}` } : wrong;
+  }
+  const at = path.match(/^\/@([\w.-]+)/);
+  if (at) return { url: `https://youtube.com/@${at[1]}` };
+  const channel = path.match(YOUTUBE_CHANNEL_PATH);
+  return channel ? { url: `https://youtube.com${channel[0]}` } : wrong;
 };
 
 // A cast series counts as on now from half an hour before its time to four hours after

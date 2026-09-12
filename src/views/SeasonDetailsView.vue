@@ -204,8 +204,11 @@
             <v-divider class="my-3"></v-divider>
             <v-row align="center" dense>
               <v-col>
-                <v-chip size="small" prepend-icon="mdi-map" variant="text" v-if="match.fixed_map">
-                  {{ getMapName(match.fixed_map_id) }}
+                <v-chip v-if="roundMapId(match.playday)" size="small" prepend-icon="mdi-map" variant="text">
+                  {{ getMapName(roundMapId(match.playday)) }}
+                </v-chip>
+                <v-chip v-else-if="usesFixedMap" size="small" prepend-icon="mdi-map-marker-alert" variant="text" color="warning">
+                  Round {{ match.playday }} has no fixed map
                 </v-chip>
               </v-col>
               <v-col cols="auto">
@@ -349,18 +352,12 @@
       </v-card-title>
       <v-card-text class="pt-4">
         <v-row>
-          <v-col cols="12">
-            <v-select
-              :items="maps"
-              item-title="name"
-              item-value="id"
-              label="Fixed Map (Optional)"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-map"
-              clearable
-              v-model="newMatch.fixed_map_id"
-            ></v-select>
+          <v-col v-if="usesFixedMap" cols="12">
+            <div class="d-flex align-center flex-wrap ga-2">
+              <v-icon size="small" :color="roundMapId(selectedWeek) ? undefined : 'warning'">mdi-map</v-icon>
+              <span class="text-body-2">Fixed map: {{ roundMapId(selectedWeek) ? getMapName(roundMapId(selectedWeek)) : 'not set for this round' }}</span>
+              <v-btn size="small" variant="text" color="primary" :to="`/seasons/${route.params.id}/maps`">Set on Series maps</v-btn>
+            </div>
           </v-col>
           <v-col cols="12" md="6">
             <v-select
@@ -408,18 +405,12 @@
       </v-card-title>
       <v-card-text class="pt-4">
         <v-row>
-          <v-col cols="12">
-            <v-select
-              :items="maps"
-              item-title="name"
-              item-value="id"
-              label="Fixed Map (Optional)"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-map"
-              clearable
-              v-model="selectedMatch.fixed_map_id"
-            ></v-select>
+          <v-col v-if="usesFixedMap" cols="12">
+            <div class="d-flex align-center flex-wrap ga-2">
+              <v-icon size="small" :color="roundMapId(selectedMatch.playday) ? undefined : 'warning'">mdi-map</v-icon>
+              <span class="text-body-2">Fixed map: {{ roundMapId(selectedMatch.playday) ? getMapName(roundMapId(selectedMatch.playday)) : 'not set for this round' }}</span>
+              <v-btn size="small" variant="text" color="primary" :to="`/seasons/${route.params.id}/maps`">Set on Series maps</v-btn>
+            </div>
           </v-col>
           <v-col cols="12" md="6">
             <v-select
@@ -492,6 +483,7 @@ import bannerImg from '@/assets/media/GNL_Banner.png';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import { roundLabel } from '@/helpers/rounds.mjs';
+import { fixedMapOf, rulesOf } from '@/helpers/map-order.mjs';
 import { formatDateTime } from '@/helpers/datetime';
 
 
@@ -599,6 +591,10 @@ const getScoreColor = (score, opponentScore) => {
   return 'draw';
 };
 
+// The fixed map of a round: season_rounds.map_id, the column the veto and the game offers read
+const usesFixedMap = computed(() => rulesOf(season.value?.map_rules).includes('fixed'));
+const roundMapId = (playday) => fixedMapOf(season.value?.map_rules, roundOf(playday));
+
 // Helper to get map name
 const getMapName = (mapId) => {
   const map = maps.value.find(m => m.id === mapId);
@@ -622,7 +618,6 @@ const closeTeamSelectionModal = () => {
 
     const openMatchCreationModal = () => {
       newMatch.value = {
-        fixed_map_id:null,
         team1_id:null,
         team2_id:null,
         season_id:seasonId,

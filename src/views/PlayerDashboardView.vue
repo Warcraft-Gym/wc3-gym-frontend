@@ -39,6 +39,15 @@
             <v-btn color="primary" variant="elevated" size="small" @click="router.push('/signup')">Sign up</v-btn>
           </div>
         </v-alert>
+        <v-alert v-if="showBlockPrompt" type="info" variant="tonal" border="start" class="mb-4">
+          <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+            <span>When can't you play? Blocked times show your opponent the hours you are open.</span>
+            <div class="d-flex ga-2">
+              <v-btn class="blocks-btn" variant="text" @click="dismissBlocks">Not now</v-btn>
+              <v-btn class="blocks-btn" color="primary" variant="elevated" @click="blocksOpen = true">Set blocked times</v-btn>
+            </div>
+          </div>
+        </v-alert>
         <div class="d-flex flex-wrap align-center ga-2 mb-3">
           <v-chip color="secondary" prepend-icon="$discord">
             {{ playerData.discord_tag }}
@@ -46,6 +55,9 @@
           <v-chip v-if="playerData.player.timezone" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
             {{ zoneLabel(playerData.player.timezone, userTimezone) }}
           </v-chip>
+          <v-btn v-if="schedulingOn" class="blocks-btn" variant="text" prepend-icon="mdi-calendar-remove" @click="blocksOpen = true">
+            Blocked times
+          </v-btn>
         </div>
         <div class="d-flex flex-wrap align-center ga-2">
           <strong><W3CMmr /></strong>
@@ -168,6 +180,16 @@
                 <div class="text-caption text-medium-emphasis">{{ opponentZone }}</div>
               </v-col>
             </v-row>
+            <v-row v-if="freeTime">
+              <v-col cols="12" class="pt-0">
+                <div class="text-body-2 font-weight-medium">{{ commonHours(freeTime.hours) }}</div>
+                <div v-for="line in sharedLines" :key="line" class="text-caption text-medium-emphasis">{{ line }}</div>
+                <div v-if="moreLines" class="text-caption text-medium-emphasis">+{{ moreLines }} more</div>
+                <div class="text-caption text-medium-emphasis mt-2">
+                  Open hours are a starting point, not a promise. Agree the time with your opponent.
+                </div>
+              </v-col>
+            </v-row>
           </v-container>
         </v-form>
       </v-card-text>
@@ -175,6 +197,23 @@
         <v-spacer />
         <v-btn variant="text" @click="closeSchedule" :disabled="scheduleSavingId === scheduleSeries.id">Cancel</v-btn>
         <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save" :disabled="!isScheduleValid || scheduleSavingId === scheduleSeries.id" :loading="scheduleSavingId === scheduleSeries.id" @click="saveSchedule">Save</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Blocked times -->
+  <v-dialog v-model="blocksOpen" max-width="720px" scrollable>
+    <v-card>
+      <v-card-title class="bg-primary">
+        <v-icon class="mr-2">mdi-calendar-remove</v-icon>
+        When can't you play?
+      </v-card-title>
+      <v-card-text class="pt-4">
+        <BlockedTimesEditor v-if="blocksOpen" :zone="playerData?.player?.timezone" @change="count => blockCount = count" />
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn color="primary" variant="elevated" @click="blocksOpen = false">Done</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -339,6 +378,8 @@ import { pickedInstant, pickerParts, viewerZone, zoneLabel } from '@/helpers/tim
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import StatusAlert from '@/components/StatusAlert.vue';
 import VetoBoard from '@/components/VetoBoard.vue';
+import BlockedTimesEditor from '@/components/BlockedTimesEditor.vue';
+import { commonHours, freeLines } from '@/helpers/blocks.mjs';
 
 
 const router = useRouter();
@@ -399,9 +440,33 @@ const mapStore = useMapStore();
 // /me answers whether the session has a signup for the current GNL season
 const seasonStore = useSeasonStore();
 const needsSignup = computed(() => authStore.me?.signed_up === false && !!authStore.me?.season_id);
-const seasonLabel = computed(() =>
-  seasonStore.seasons.find(s => s.id === authStore.me?.season_id)?.name || `GNL Season ${authStore.me?.season_id}`
-);
+const currentSeason = computed(() => seasonStore.seasons.find(s => s.id === authStore.me?.season_id) ?? null);
+const seasonLabel = computed(() => currentSeason.value?.name || `GNL Season ${authStore.me?.season_id}`);
+
+// Blocked times: only where the player is in the season and the season runs the scheduling tools
+const blocksOpen = ref(false);
+const blockCount = ref(null);
+const blocksDismissed = ref(false);
+const dismissKey = computed(() => `blocks_dismissed_${authStore.me?.user?.id ?? 'me'}`);
+const schedulingOn = computed(() => !!authStore.me?.signed_up && !!currentSeason.value?.scheduling_enabled);
+const showBlockPrompt = computed(() => schedulingOn.value && blockCount.value === 0 && !blocksDismissed.value);
+
+const dismissBlocks = () => {
+  blocksDismissed.value = true;
+  localStorage.setItem(dismissKey.value, '1');
+};
+
+// The prompt asks once; a player who already has a block, or said not now, never sees it
+const readBlockCount = async () => {
+  if (!schedulingOn.value) return;
+  blocksDismissed.value = localStorage.getItem(dismissKey.value) === '1';
+  if (blocksDismissed.value) return;
+  const blocks = await fetchWrapper.get(`${backendUrl}/player-blocks`).catch(() => null);
+  if (blocks) blockCount.value = (blocks.repeating?.length ?? 0) + (blocks.busy?.length ?? 0);
+};
+
+// The season list lands after the page, so the read waits for the gate to answer
+watch(schedulingOn, (on) => { if (on && blockCount.value === null) readBlockCount(); }, { immediate: true });
 
 // e.g. "synced 2 hours ago"; syncedAgo already words the never case
 const syncCaption = computed(() => {
@@ -426,6 +491,19 @@ const scheduleSavingId = ref(null);
 const scoreSavingId = ref(null);
 
 const userTimezone = viewerZone();
+
+// The hours both players are open this round; a hint only, and never a reason to block Save
+const freeTime = ref(null);
+const HINT_LINES = 6;
+const sharedLines = computed(() => freeLines(freeTime.value?.ranges ?? [], userTimezone).slice(0, HINT_LINES));
+const moreLines = computed(() => Math.max((freeTime.value?.ranges?.length ?? 0) - HINT_LINES, 0));
+
+// A season with the tools off, or a series the backend will not answer for, shows nothing
+const readFreeTime = async (seriesId) => {
+  if (!schedulingOn.value) return;
+  const found = await fetchWrapper.get(`${backendUrl}/player-series/${seriesId}/free-time`).catch(() => null);
+  if (scheduleSeries.value.id === seriesId) freeTime.value = found;
+};
 
 // the instant the dialog's date and time name, read in the player's zone
 const chosen = computed(() => {
@@ -536,12 +614,15 @@ const editSchedule = (item) => {
     ...(item.date_time ? pickerParts(item.date_time, userTimezone) : { date: null, time: '' }),
     opponent: mine ? item.player2 : item.player1,
   };
+  freeTime.value = null;
   scheduleDialog.value = true;
+  readFreeTime(item.id);
 };
 
 const closeSchedule = () => {
   scheduleDialog.value = false;
   scheduleSeries.value = {};
+  freeTime.value = null;
 };
 
 const saveSchedule = async () => {
@@ -805,6 +886,11 @@ onMounted(async () => {
 <style scoped>
 .v-chip {
   margin: 2px;
+}
+
+/* Phone: the blocked-times buttons meet the 48 px minimum */
+@media (max-width: 600px) {
+  .blocks-btn { min-height: 48px; }
 }
 
 

@@ -278,6 +278,8 @@ const advance = (stage) => run(stageBusy(stage), async () => {
   await Promise.all((event.value.stages || []).map(loadSeries));
 }, 'Stage advanced');
 
+// ponytail: PUT /series/{id} validates the result against match.season.map_rules, and an event
+// series carries no match, so a non-Bo3 stage stores nothing until the backend reads the stage's rules
 const saveSeries = (row, stage) => run(seriesBusy(row), async () => {
   await seriesStore.updateSeries({ ...row, player1_score: score(row.player1_score), player2_score: score(row.player2_score) });
   await loadSeries(stage);

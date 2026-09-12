@@ -43,7 +43,11 @@ test('the week preview is what the blocks leave open, spill included', () => {
 });
 
 test('a fully blocked day and a free day each get their own line', () => {
-  assert.equal(weekFree([{ weekdays: 1, start_local: '00:00:00', end_local: '00:00:00' }])[0].line, 'Nothing open');
+  const allDay = [
+    { weekdays: 1, start_local: '00:00:00', end_local: '12:00:00' },
+    { weekdays: 1, start_local: '12:00:00', end_local: '00:00:00' },
+  ];
+  assert.equal(weekFree(allDay)[0].line, 'Nothing open');
   assert.equal(weekFree([])[3].line, 'All day');
 });
 
@@ -75,5 +79,5 @@ test('hours in common are worded, and zero says so', () => {
   assert.equal(commonHours(14), '14 h in common this round');
   assert.equal(commonHours(13.5), '13.5 h in common this round');
   assert.equal(commonHours(0.5), '30 min in common this round');
-  assert.equal(commonHours(0), 'No hours in common this round');
+  assert.equal(commonHours(0), 'No hours in common in this round');
 });

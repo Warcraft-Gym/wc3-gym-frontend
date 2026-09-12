@@ -112,7 +112,7 @@ export const freeLines = (ranges = [], zone = viewerZone()) => ranges.map(({ sta
 
 // "14 h in common this round"; under an hour counts in minutes
 export const commonHours = (hours) => {
-  if (!hours) return 'No hours in common this round';
+  if (!hours) return 'No hours in common in this round';
   if (hours < 1) return `${Math.round(hours * 60)} min in common this round`;
   return `${Number(hours.toFixed(1))} h in common this round`;
 };

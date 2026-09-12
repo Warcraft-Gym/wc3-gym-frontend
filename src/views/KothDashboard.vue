@@ -6,8 +6,9 @@
       </v-overlay>
 
       <!-- No event, or the load failed: this page has no app bar, so it must say so -->
-      <div v-if="loadError || (!event && !initialLoad)" class="text-center py-8 text-body-1 text-medium-emphasis">
-        {{ loadError || 'No King of the Hill night is running right now.' }}
+      <div v-if="loadError || (!event && !initialLoad)" class="text-center py-12 text-medium-emphasis">
+        <v-icon size="64" class="text-disabled">mdi-crown-outline</v-icon>
+        <div class="text-h6 mt-3">{{ loadError || 'No King of the Hill night is running right now.' }}</div>
       </div>
 
       <!-- Event Header -->

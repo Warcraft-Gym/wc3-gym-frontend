@@ -12,7 +12,7 @@
                 <div v-if="isCallback || isSignedIn" class="text-center py-4">
                     <v-progress-circular indeterminate color="primary" class="mb-3" />
                     <div>Signing you in…</div>
-                    <AuthenticateWithRedirectCallback v-if="isCallback" sign-in-fallback-redirect-url="/login" sign-up-fallback-redirect-url="/login" />
+                    <AuthenticateWithRedirectCallback v-if="isCallback && !isSignedIn" sign-in-fallback-redirect-url="/login" sign-up-fallback-redirect-url="/login" />
                 </div>
                 <v-alert v-else-if="error || loginError" type="error" variant="tonal" border="start" class="mb-4">
                     {{ error || loginError }}
@@ -43,8 +43,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { AuthenticateWithRedirectCallback, useAuth, useSignIn } from '@clerk/vue';
 import { storeToRefs } from 'pinia';
 
@@ -55,9 +55,9 @@ const authStore = useAuthStore();
 const { me, loginError } = storeToRefs(authStore);
 const { signIn } = useSignIn();
 const { isLoaded, isSignedIn } = useAuth();
-const onCallbackPath = () => window.location.pathname === '/sso-callback';
-const isCallback = ref(onCallbackPath());
-window.addEventListener('popstate', () => { isCallback.value = onCallbackPath(); });
+// /login and /sso-callback share this component, so the route says which one is mounted
+const route = useRoute();
+const isCallback = computed(() => route.path === '/sso-callback');
 // Only a handshake in flight belongs on /sso-callback. The Back button after a sign-in
 // lands here with the session already live, and Clerk then sends the browser to its own
 // hosted portal, off the app; the login page takes it from here instead.

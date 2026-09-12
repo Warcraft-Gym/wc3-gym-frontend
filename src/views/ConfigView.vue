@@ -160,7 +160,7 @@
                   <h3 class="text-h6 mb-2">Discord Bot Settings</h3>
                 </v-col>
 
-                <v-col cols="12">
+                <v-col cols="12" md="6">
                   <v-text-field
                     v-model="settingsMap.discord_invite_url"
                     label="Discord Invite URL"
@@ -328,7 +328,7 @@
               prepend-icon="mdi-content-save"
               @click="saveSettings"
               :loading="isSaving"
-              :disabled="isSaving"
+              :disabled="isSaving || !loadedSettings"
             >
               Save Settings
             </v-btn>
@@ -419,6 +419,11 @@ const settingsMap = ref({
 // What the last successful load held, and null while no load has succeeded
 const loadedSettings = ref(null);
 
+// Both loads write this one alert, so the later failure must not hide the earlier
+const addError = (message) => {
+  errorMessage.value = errorMessage.value ? errorMessage.value + ' ' + message : message;
+};
+
 // Fetch settings on mount
 const fetchSettings = async () => {
   isLoading.value = true;
@@ -444,7 +449,7 @@ const fetchSettings = async () => {
     });
     loadedSettings.value = { ...settingsMap.value };
   } catch (error) {
-    errorMessage.value = 'Failed to load settings: ' + error.message;
+    addError('Failed to load settings: ' + error.message);
   } finally {
     isLoading.value = false;
   }
@@ -493,7 +498,6 @@ const saveSettings = async () => {
 const resetSettings = async () => {
   await fetchSettings();
   successMessage.value = null;
-  errorMessage.value = null;
 };
 
 // Fetch KOTH Nightbot token
@@ -504,7 +508,7 @@ const fetchKothToken = async () => {
   } catch (error) {
     console.error('Failed to fetch KOTH token:', error);
     kothNightbotToken.value = '';
-    errorMessage.value = 'Could not read the current token.';
+    addError('Could not read the current token.');
   }
 };
 

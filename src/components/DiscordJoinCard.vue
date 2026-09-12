@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 
 import { useAuthStore, useConfigStore } from '@/stores';
 
-const NO_MEMBERSHIP = 'No valid WC3 Gym server membership found for user';
+const NO_MEMBERSHIP = 'You are signed in, but not a member of the WC3 Gym Discord server yet.';
 
 const authStore = useAuthStore();
 const inviteUrl = ref(null);
@@ -34,7 +34,7 @@ const checkAgain = async () => {
     <v-card elevation="2" max-width="500" width="100%">
         <v-card-title class="bg-primary">Join the WC3 Gym Discord</v-card-title>
         <v-card-text class="pt-6">
-            <v-alert v-if="message" type="error" variant="tonal" border="start">{{ message }}</v-alert>
+            <v-alert v-if="message" :type="message === NO_MEMBERSHIP ? 'info' : 'error'" variant="tonal" border="start">{{ message }}</v-alert>
             <v-btn v-if="inviteUrl" :href="inviteUrl" target="_blank" color="#5865F2" class="text-white mt-4 mr-2">Join the Discord</v-btn>
             <v-btn color="primary" variant="text" class="mt-4" :loading="checking" @click="checkAgain">Check again</v-btn>
         </v-card-text>

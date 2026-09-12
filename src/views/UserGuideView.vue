@@ -1,15 +1,13 @@
 <script setup>
 import { marked } from 'marked';
 import guideMarkdown from '../../ADMIN_UI_USER_GUIDE.md?raw';
-
-// GitHub's heading slug, because the guide's table of contents links to #slug and marked emits no ids
-const slug = (text) => text.toLowerCase().trim().replace(/[^\w\- ]+/g, '').replace(/ /g, '-');
+import { headingSlug } from '@/helpers/heading-slug.mjs';
 
 marked.use({
   breaks: true,
   renderer: {
     heading({ tokens, depth }) {
-      return `<h${depth} id="${slug(this.parser.parseInline(tokens, this.parser.textRenderer))}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
+      return `<h${depth} id="${headingSlug(this.parser.parseInline(tokens, this.parser.textRenderer))}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
     }
   }
 });

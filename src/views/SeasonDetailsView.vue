@@ -60,9 +60,11 @@
               v-for="row in group.rows"
               :key="row.id"
               class="detail-row unscored-row"
+              role="button"
               tabindex="0"
               @click="router.push(`/match/${row.match_id}`)"
               @keyup.enter="router.push(`/match/${row.match_id}`)"
+              @keydown.space.prevent="router.push(`/match/${row.match_id}`)"
             >
               <td></td>
               <td class="text-no-wrap">{{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}</td>
@@ -213,7 +215,7 @@
                 <v-chip v-if="roundMapId(match.playday)" size="small" prepend-icon="mdi-map" variant="text">
                   {{ getMapName(roundMapId(match.playday)) }}
                 </v-chip>
-                <v-chip v-else-if="usesFixedMap" size="small" prepend-icon="mdi-map-marker-alert" variant="text" color="warning">
+                <v-chip v-else-if="usesFixedMap && !matchPlayed(match)" size="small" prepend-icon="mdi-map-marker-alert" variant="text" color="warning">
                   Round {{ match.playday }} has no fixed map
                 </v-chip>
               </v-col>
@@ -495,6 +497,7 @@ import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import { currentRound, roundLabel } from '@/helpers/rounds.mjs';
 import { fixedMapOf, rulesOf } from '@/helpers/map-order.mjs';
+import { matchProblem } from '@/helpers/match.mjs';
 import { formatDateTime } from '@/helpers/datetime';
 
 
@@ -571,13 +574,6 @@ const selectedMatch = ref(null);
 const newMatch = ref(null);
 const matchError = ref(null);
 
-// Why a match cannot be created, or null
-const matchProblem = (match) => {
-  if (!match?.team1_id || !match?.team2_id) return 'Pick both teams.';
-  if (match.team1_id === match.team2_id) return 'A team cannot play itself.';
-  return null;
-};
-
 // Team state
 const allTeams = ref(null);
 const selectedTeams = ref(null);
@@ -613,6 +609,9 @@ const getScoreColor = (score, opponentScore) => {
 // The fixed map of a round: season_rounds.map_id, the column the veto and the game offers read
 const usesFixedMap = computed(() => rulesOf(season.value?.map_rules).includes('fixed'));
 const roundMapId = (playday) => fixedMapOf(season.value?.map_rules, roundOf(playday));
+
+// A match with a score is done, so a missing round map is no longer worth warning about
+const matchPlayed = (match) => !!(match?.team1_score || match?.team2_score);
 
 // Helper to get map name
 const getMapName = (mapId) => {

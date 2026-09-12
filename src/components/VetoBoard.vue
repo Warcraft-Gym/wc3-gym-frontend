@@ -50,7 +50,7 @@
         <v-card elevation="2">
           <v-card-title class="bg-primary">
             <v-icon class="mr-2">mdi-map</v-icon>
-            Map Pool
+            Map pool
           </v-card-title>
           <v-card-text class="d-flex flex-wrap ga-3 pt-4">
             <v-sheet

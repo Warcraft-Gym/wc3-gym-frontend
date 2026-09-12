@@ -102,9 +102,9 @@
     <v-card class="mb-4" elevation="1">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-trophy</v-icon>
-        Round {{ selectedWeek }} Matches
+        Round {{ selectedWeek }} matches
       </v-card-title>
-      <v-card-text class="pa-0">
+      <v-card-text v-if="auth.isAdmin" class="pa-0">
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2">
             <v-spacer />
@@ -117,7 +117,7 @@
                 variant="outlined"
                 block
               >
-                Series Maps
+                Series maps
               </v-btn>
             </v-col>
             <v-col cols="12" sm="auto">
@@ -141,7 +141,7 @@
                 variant="elevated"
                 block
               >
-                Add Match
+                Add match
               </v-btn>
             </v-col>
           </v-row>
@@ -186,7 +186,7 @@
               <v-col cols="2" class="text-center">
                 <div class="vs-section">
                   <v-icon size="40" color="primary">mdi-sword-cross</v-icon>
-                  <div class="text-caption mt-2 text-medium-emphasis">{{ roundLabel(roundOf(match.playday)) }}</div>
+                  <div class="text-caption mt-2 text-medium-emphasis text-no-wrap">{{ roundLabel(roundOf(match.playday)) }}</div>
                 </div>
               </v-col>
 
@@ -252,7 +252,7 @@
       <v-expansion-panel>
         <v-expansion-panel-title class="text-h6">
           <v-icon class="mr-2">mdi-shield-account</v-icon>
-          Season Teams ({{ teams.length }})
+          Season teams ({{ teams.length }})
           <template v-slot:actions="{ expanded }">
             <v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"></v-icon>
           </template>

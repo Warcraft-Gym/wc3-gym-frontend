@@ -1,6 +1,7 @@
 // A player's soft blocks: the weekday bits the backend stores, the lines that
 // read them back, and the free time two players of a series share.
 import { DateTime } from 'luxon';
+import { dayDate, dayIso } from './date-input.mjs';
 import { roundLabel } from './rounds.mjs';
 import { viewerZone } from './timezone.mjs';
 
@@ -31,13 +32,10 @@ export const dayLabel = (bits) => {
 
 // A backend row as the editor's fields, and back. The editor adds its own `key`.
 const hhmm = (value) => String(value ?? '').slice(0, 5);
-const isoDay = (date) => (date instanceof Date
-  ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  : null);
-const asDate = (iso) => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(y, m - 1, d); };
+const isoDay = (date) => dayIso(date) || null;
 
 export const blockFields = (row) => ({ id: row?.id ?? null, label: row?.label ?? '', days: daysOf(row?.weekdays), start: hhmm(row?.start_local), end: hhmm(row?.end_local) });
-export const busyFields = (row) => ({ id: row?.id ?? null, label: row?.label ?? '', first: row ? asDate(row.first_day) : null, last: row ? asDate(row.last_day) : null });
+export const busyFields = (row) => ({ id: row?.id ?? null, label: row?.label ?? '', first: dayDate(row?.first_day), last: dayDate(row?.last_day) });
 export const asBlock = (row) => ({ label: row.label || null, weekdays: bitsOf(row.days), start_local: row.start, end_local: row.end });
 export const asBusy = (row) => ({ label: row.label || null, first_day: isoDay(row.first), last_day: isoDay(row.last) });
 

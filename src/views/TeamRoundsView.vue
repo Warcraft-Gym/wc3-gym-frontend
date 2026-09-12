@@ -11,6 +11,9 @@
           Team Rounds
         </h1>
       </v-col>
+      <v-col cols="auto" class="d-flex align-center">
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/team/${teamId}/season/${$route.params.season_id}`">Back to team</v-btn>
+      </v-col>
     </v-row>
 
     <StatusAlert v-model="errorMessage" />

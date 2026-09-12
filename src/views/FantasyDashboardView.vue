@@ -37,7 +37,10 @@
       <v-card-text class="pt-4">
                   
                   <!-- No team, and why the form is not here -->
-                  <v-alert v-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
+                  <v-alert v-if="!season" type="info" variant="tonal" class="mb-4">
+                    The season did not load, so registration is unavailable. Please try again later.
+                  </v-alert>
+                  <v-alert v-else-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
                     You had no fantasy team in {{ seasonName }}.
                   </v-alert>
                   <v-alert v-else-if="phase !== 'open' && !existingTeam" type="info" variant="tonal" class="mb-4">

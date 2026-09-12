@@ -16,7 +16,7 @@
       <v-card-text class="pt-4">
         <div class="text-medium-emphasis mb-3">
           <RouterLink :to="`/events/${eventId}`">{{ series.event_name || 'Event' }}</RouterLink>
-          <template v-if="series.stage"> · {{ series.stage.name }} · Bo{{ gamesOf(series.stage.map_rules) }}</template>
+          <template v-if="series.stage"> · {{ series.stage.name }} · Bo{{ bestOf }}</template>
           <template v-if="series.date_time"> · {{ timeText }}</template>
         </div>
         <div v-for="side in [0, 1]" :key="side" class="side" :class="{ won: winner === side }">
@@ -30,52 +30,32 @@
       </v-card-text>
     </v-card>
 
-    <v-row v-if="series">
-      <v-col cols="12" md="6">
-        <v-card elevation="2" class="mb-4">
-          <v-card-title class="bg-primary d-flex align-center">
-            <v-icon class="mr-2">mdi-gamepad-variant</v-icon>
-            Games
-          </v-card-title>
-          <v-card-text class="pa-0">
-            <v-table v-if="(series.games || []).length" density="comfortable">
-              <tbody>
-                <tr v-for="game in series.games" :key="game.game_no">
-                  <td>Game {{ game.game_no }}</td>
-                  <td>{{ game.map_name || '—' }}</td>
-                  <td>{{ game.winner_side ? `${player(game.winner_side === 'A' ? 0 : 1).name} won` : 'Not reported' }}</td>
-                  <td class="text-right">
-                    <a v-if="game.replay_url" :href="game.replay_url" target="_blank" rel="noopener">Replay</a>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
-            <div v-else class="text-medium-emphasis pa-4">No game has been reported yet.</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
+    <v-card v-if="series" elevation="2" class="mb-4">
+      <v-card-title class="bg-primary d-flex align-center">
+        <v-icon class="mr-2">mdi-gamepad-variant</v-icon>
+        Games
+      </v-card-title>
+      <v-card-text class="pa-0">
+        <v-table v-if="(series.games || []).length" density="comfortable">
+          <tbody>
+            <tr v-for="game in series.games" :key="game.game_no">
+              <td>Game {{ game.game_no }}</td>
+              <td>{{ mapName(game.map_id) }}</td>
+              <td>{{ game.winner_side ? `${player(game.winner_side === 'A' ? 0 : 1).name} won` : 'Not reported' }}</td>
+              <td class="text-right">
+                <a v-if="game.replay_url" :href="game.replay_url" target="_blank" rel="noopener">Replay</a>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+        <div v-else class="text-medium-emphasis pa-4">No game has been reported yet.</div>
+      </v-card-text>
+    </v-card>
 
-      <v-col cols="12" md="6">
-        <v-card elevation="2" class="mb-4">
-          <v-card-title class="bg-primary d-flex align-center">
-            <v-icon class="mr-2">mdi-map-marker-path</v-icon>
-            Veto
-          </v-card-title>
-          <v-card-text class="pa-0">
-            <v-table v-if="vetoSteps.length" density="comfortable">
-              <tbody>
-                <tr v-for="step in vetoSteps" :key="step.step_no">
-                  <td class="text-capitalize">{{ step.action }}</td>
-                  <td>{{ player(step.side === 'A' ? 0 : 1).name }}</td>
-                  <td>{{ step.map_name || `Map ${step.map_id}` }}</td>
-                </tr>
-              </tbody>
-            </v-table>
-            <div v-else class="text-medium-emphasis pa-4">No veto was recorded.</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- The veto board of the player pages draws this record and names the maps from the pool -->
+    <VetoBoard v-if="series" :series-id="seriesId">
+      <strong>Veto</strong>
+    </VetoBoard>
 
     <ReportResultDialog
       v-model="reporting"
@@ -94,14 +74,16 @@ import CastChips from '@/components/CastChips.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import ReportResultDialog from '@/components/ReportResultDialog.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { gamesOf } from '@/helpers/best-of.mjs';
+import VetoBoard from '@/components/VetoBoard.vue';
+import { gamesOf, rulesFor } from '@/helpers/best-of.mjs';
 import { roundLabel, seriesState } from '@/helpers/events-public.mjs';
 import { local } from '@/helpers/schedule.mjs';
 import { gmt } from '@/helpers/timezone.mjs';
-import { useEventStore } from '@/stores';
+import { useEventStore, useMapStore } from '@/stores';
 
 const route = useRoute();
 const store = useEventStore();
+const mapStore = useMapStore();
 const eventId = Number(route.params.id);
 const seriesId = Number(route.params.sid);
 
@@ -124,15 +106,21 @@ const timeText = computed(() => {
   const at = local(series.value.date_time);
   return `${at.toFormat('ccc d LLL, HH:mm')} ${gmt(at.offset)}`;
 });
-const vetoSteps = computed(() => [...(series.value?.veto?.steps || [])].sort((a, b) => a.step_no - b.step_no));
-// The report dialog reads the best-of off the map rules, which a series takes from its stage
-const reportSeries = computed(() => (series.value ? { ...series.value, map_rules: series.value.stage?.map_rules } : null));
+// A round may play a shorter best-of than its stage, and the games follow the round
+const bestOf = computed(() => series.value?.round?.best_of ?? series.value?.stage?.best_of ?? gamesOf(series.value?.stage?.map_rules));
+// The report dialog counts its game rows off the map rules, cut to the best-of that applies
+const reportSeries = computed(() => (series.value
+  ? { ...series.value, map_rules: rulesFor(series.value.stage?.map_rules, bestOf.value) }
+  : null));
+// A game names its map by id; the pool carries the names
+const mapName = (id) => mapStore.maps.find((map) => map.id === id)?.name || '—';
 
 const load = async () => {
   series.value = await store.fetchSeries(eventId, seriesId);
 };
 
 onMounted(async () => {
+  if (!mapStore.maps.length) mapStore.fetchMaps().catch(() => {});  // the game rows name their maps
   try {
     await load();
   } catch (e) {

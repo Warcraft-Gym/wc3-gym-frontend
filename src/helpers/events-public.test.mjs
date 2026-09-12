@@ -8,7 +8,8 @@ test('the caller signs up while signups are open, then withdraws, then checks in
   assert.equal(callerAction({ phase: 'signups', signups_open: false }, null), null);
   assert.equal(callerAction({ phase: 'signups' }, { id: 1 }), 'withdraw');
   assert.equal(callerAction({ phase: 'checkin' }, { id: 1 }), 'checkin');
-  assert.equal(callerAction({ phase: 'checkin' }, { id: 1, checked_in_at: 'now' }), null);
+  // an entrant who has checked in still gets out while the window runs
+  assert.equal(callerAction({ phase: 'checkin' }, { id: 1, checked_in_at: 'now' }), 'withdraw');
   // a withdrawn entrant may sign up again while signups are open
   assert.equal(callerAction({ phase: 'signups' }, { id: 1, withdrawn_at: 'then' }), 'signup');
   assert.equal(callerAction({ phase: 'running' }, { id: 1 }), null);
@@ -32,7 +33,7 @@ test('a round with every result is complete, one with none is pending', () => {
 
 test('the bracket holds one box in the last round and twice as many in each round before', () => {
   const rounds = [{ id: 1, number: 1 }, { id: 2, number: 2, name: 'Semifinals' }, { id: 3, number: 3, name: 'Final' }];
-  const columns = bracketColumns(rounds, [{ id: 9, round_id: 2, bracket_position: 1, player1_score: 2, player2_score: 0 }]);
+  const columns = bracketColumns(rounds, [{ id: 9, round_id: 2, bracket_order: 1, player1_score: 2, player2_score: 0 }]);
   assert.deepEqual(columns.map((c) => c.boxes.length), [4, 2, 1]);
   assert.equal(columns[2].boxes[0].series, null);
   // an empty box names the two boxes that feed it
@@ -40,11 +41,25 @@ test('the bracket holds one box in the last round and twice as many in each roun
   assert.equal(columns[1].boxes[1].series.id, 9);
 });
 
+test('a bracket short of a full round places its series on their own slots', () => {
+  // six entrants: round 1 plays slots 0 and 2, the other two slots are byes
+  const rounds = [{ id: 1, number: 1 }, { id: 2, number: 2, name: 'Semifinals' }, { id: 3, number: 3, name: 'Final' }];
+  const series = [
+    { id: 1, round_id: 1, bracket_order: 0, player1_score: 2, player2_score: 0 },
+    { id: 2, round_id: 1, bracket_order: 2, player1_score: null, player2_score: null },
+  ];
+  const columns = bracketColumns(rounds, series);
+  assert.deepEqual(columns.map((c) => c.boxes.map((b) => b.series?.id ?? null)), [[1, null, 2, null], [null, null], [null]]);
+  assert.deepEqual(columns[0].boxes[1].feeders, ['Bye', 'Bye']);
+  assert.deepEqual(columns[1].boxes[0].feeders, ['Winner of Round 1, series 1', 'Bye']);
+  assert.deepEqual(columns[1].boxes[1].feeders, ['Winner of Round 1, series 3', 'Bye']);
+});
+
 test('a spoiler-free board blinds the side whose feeder result is held back', () => {
   const rounds = [{ id: 1, number: 1 }, { id: 2, number: 2, name: 'Final' }];
   const series = [
-    { id: 1, round_id: 1, bracket_position: 0, player1_score: 2, player2_score: 0 },
-    { id: 2, round_id: 2, bracket_position: 0, player1_score: null, player2_score: null },
+    { id: 1, round_id: 1, bracket_order: 0, player1_score: 2, player2_score: 0 },
+    { id: 2, round_id: 2, bracket_order: 0, player1_score: null, player2_score: null },
   ];
   const columns = bracketColumns(rounds, series, (row) => row.id === 1);
   assert.deepEqual(columns[1].boxes[0].blind, [true, false]);

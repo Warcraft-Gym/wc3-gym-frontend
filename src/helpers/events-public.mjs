@@ -6,7 +6,8 @@ import { isUnscored } from './season-phase.mjs';
 export const callerAction = (event, entrant) => {
   if (!event) return null;
   if (entrant && !entrant.withdrawn_at) {
-    if (event.phase === 'checkin') return entrant.checked_in_at ? null : 'checkin';
+    // checking in comes first while the window runs; an entrant who has checked in may still withdraw
+    if (event.phase === 'checkin' && !entrant.checked_in_at) return 'checkin';
     return ['signups', 'checkin'].includes(event.phase) ? 'withdraw' : null;
   }
   return event.phase === 'signups' && event.signups_open !== false ? 'signup' : null;
@@ -40,12 +41,14 @@ export const roundGroups = (rounds = [], series = []) => [...rounds]
 
 // A single-elimination tree, one column per round. The last round holds one box, so a round
 // n places back holds 2^n; a box with no series names the two boxes that feed it (NE-10).
+// A series sits at `bracket_order`, its 0-based slot inside the round's full 2^n slots, so a
+// round short of series (byes are not series) still places the ones it has on the right slots.
 // `hidden` answers whether a series' result is held back, so a spoiler-free board blinds
 // the sides a revealed-elsewhere result would give away.
 export const bracketColumns = (rounds = [], series = [], hidden = () => false) => {
   const ordered = [...rounds].sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
   if (!ordered.length) return [];
-  const at = new Map(series.map((row) => [`${roundKey(row.round ?? { id: row.round_id })}:${row.bracket_position ?? 0}`, row]));
+  const at = new Map(series.map((row) => [`${roundKey(row.round ?? { id: row.round_id })}:${row.bracket_order ?? 0}`, row]));
 
   const columns = ordered.map((round, index) => ({
     round,
@@ -62,9 +65,11 @@ export const bracketColumns = (rounds = [], series = [], hidden = () => false) =
     ...column,
     boxes: column.boxes.map((box) => ({
       ...box,
-      feeders: index === 0 ? ['To be decided', 'To be decided'] : [
-        feederLabel(columns[index - 1], box.position * 2),
-        feederLabel(columns[index - 1], box.position * 2 + 1),
+      // an empty slot of a drawn first round is a bye; before the draw nobody is known yet
+      feeders: index === 0 ? (box.series || !column.boxes.some((other) => other.series)
+        ? ['To be decided', 'To be decided'] : ['Bye', 'Bye']) : [
+        feederLabel(columns[index - 1], box.position * 2, index === 1),
+        feederLabel(columns[index - 1], box.position * 2 + 1, index === 1),
       ],
       // A side whose feeder result is held back is named "Winner of" instead, or the box
       // would spoil the series the viewer has not revealed
@@ -76,9 +81,13 @@ export const bracketColumns = (rounds = [], series = [], hidden = () => false) =
   }));
 };
 
-// "Winner of Semifinals, series 2"; a round with one box names no series
-const feederLabel = (column, position) =>
-  `Winner of ${column.label}${column.boxes.length > 1 ? `, series ${position + 1}` : ''}`;
+// "Winner of Semifinals, series 2", counting the slot, not the series that exist. An empty slot
+// of a drawn first round is a bye: nobody plays it and its entrant is already through. A later
+// round's empty slot only waits for its feeders, so it names them instead.
+const feederLabel = (column, position, first) => {
+  if (first && !column.boxes[position]?.series && column.boxes.some((box) => box.series)) return 'Bye';
+  return `Winner of ${column.label}${column.boxes.length > 1 ? `, series ${position + 1}` : ''}`;
+};
 
 // The viewer's own spoiler choice, on this device only: one switch and the series he revealed
 export const SPOILER_KEY = 'eventSpoiler';

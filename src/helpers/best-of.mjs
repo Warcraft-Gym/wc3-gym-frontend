@@ -4,6 +4,14 @@ export const DEFAULT_RULES = 'fixed,loser,loser';
 // A season's best-of is the number of maps its rules list: "veto,veto,veto" is a Bo3
 export const gamesOf = (mapRules) => (mapRules || '').split(',').filter((rule) => rule.trim()).length || 3;
 
+// A stage or round that names its own best-of wins over the rule list: keep that many rules,
+// repeating the last one when the list is shorter than the best-of
+export const rulesFor = (mapRules, bestOf) => {
+  const rules = (mapRules || DEFAULT_RULES).split(',').map((rule) => rule.trim()).filter(Boolean);
+  if (!bestOf || bestOf === rules.length) return rules.join(',');
+  return Array.from({ length: bestOf }, (_, index) => rules[index] ?? rules[rules.length - 1]).join(',');
+};
+
 export const winsOf = (mapRules) => Math.floor(gamesOf(mapRules) / 2) + 1;
 
 // A result stands when the winner has every win the series needs and the loser fewer

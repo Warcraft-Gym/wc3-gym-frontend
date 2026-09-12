@@ -6,7 +6,7 @@
       <v-icon class="mr-2">mdi-tournament</v-icon>
       {{ stage.name }}
       <v-chip size="small" variant="tonal" color="on-primary">{{ formatTitle(stage.format) }}</v-chip>
-      <v-chip size="small" variant="tonal" color="on-primary">Bo{{ gamesOf(stage.map_rules) }}</v-chip>
+      <v-chip size="small" variant="tonal" color="on-primary">Bo{{ bestOf }}</v-chip>
       <v-chip v-if="stage.advance_count" size="small" variant="outlined" color="on-primary">Top {{ stage.advance_count }} advance</v-chip>
     </v-card-title>
     <v-card-text class="pa-4">
@@ -22,9 +22,12 @@
             :key="box.key"
             class="box"
             :class="{ clickable: !!box.series }"
+            :role="box.series ? 'button' : undefined"
+            :aria-label="boxLabel(box)"
             :tabindex="box.series ? 0 : undefined"
             @click="openSeries(box.series)"
             @keydown.enter="openSeries(box.series)"
+            @keydown.space.prevent="openSeries(box.series)"
           >
             <div v-for="side in [0, 1]" :key="side" class="side" :class="{ won: winner(box.series) === side }">
               <PlayerName v-if="box.series && !box.blind[side]" :player="player(box.series, side)" :race="race(box.series, side)" plain />
@@ -79,7 +82,7 @@
           <div class="d-flex align-center ga-2">
             <strong>{{ group.label }}</strong>
             <v-chip size="x-small" variant="tonal" :color="STATE_COLOR[group.state]">{{ STATE_LABEL[group.state] }}</v-chip>
-            <span class="text-medium-emphasis text-caption">{{ group.rows.length }} {{ group.rows.length === 1 ? 'series' : 'series' }}</span>
+            <span class="text-medium-emphasis text-caption">{{ group.rows.length }} series</span>
           </div>
           <div v-for="row in group.rows" :key="row.id" class="series-row" tabindex="0" @click="openSeries(row)" @keydown.enter="openSeries(row)">
             <PlayerName :player="player(row, 0)" :race="race(row, 0)" plain :class="{ 'font-weight-bold': winner(row) === 0 }" />
@@ -87,7 +90,7 @@
             <PlayerName :player="player(row, 1)" :race="race(row, 1)" plain :class="{ 'font-weight-bold': winner(row) === 1 }" />
             <v-spacer />
             <v-btn v-if="hidden(row)" size="x-small" variant="text" prepend-icon="mdi-eye" @click.stop="emit('reveal', row.id)">Reveal</v-btn>
-            <span v-else-if="seriesState(row) === 'complete'" class="font-weight-medium">{{ row.player1_score }} – {{ row.player2_score }}</span>
+            <span v-else-if="seriesState(row) === 'complete'" class="font-weight-medium score">{{ row.player1_score }} – {{ row.player2_score }}</span>
             <span v-else class="text-medium-emphasis">{{ STATE_LABEL[seriesState(row)].toLowerCase() }}</span>
             <CastChips :series="row" class="ml-2" />
           </div>
@@ -131,6 +134,8 @@ const loading = ref(true);
 const error = ref(null);
 const showStandings = ref(false);
 
+// A stage names its own best-of; the rule list only counts the maps when it does not
+const bestOf = computed(() => props.stage.best_of ?? gamesOf(props.stage.map_rules));
 const isBracket = computed(() => props.stage.format === 'single_elimination');
 const rounds = computed(() => props.stage.rounds || []);
 const hidden = (row) => isHidden(props.spoiler, props.eventId, row);
@@ -148,6 +153,10 @@ const scoreText = (row, side) => {
   if (!row || hidden(row) || seriesState(row) !== 'complete') return '';
   return side ? row.player2_score : row.player1_score;
 };
+// A bracket box is a button for a reader who tabs to it, so it says which pairing it opens
+const boxLabel = (box) => (box.series
+  ? `${player(box.series, 0).name} v ${player(box.series, 1).name}`
+  : box.feeders.join(' v '));
 const openSeries = (row) => row && router.push(`/events/${props.eventId}/series/${row.id}`);
 
 onMounted(async () => {
@@ -202,6 +211,7 @@ onMounted(async () => {
 .score {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .box-foot {
   display: flex;

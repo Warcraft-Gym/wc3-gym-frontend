@@ -40,7 +40,7 @@
           </v-card-actions>
         </v-card>
         <div v-else class="row text-body-2">
-          <span class="text-medium-emphasis">{{ row.label || 'Repeating' }}</span>
+          <span class="text-medium-emphasis">{{ row.label || 'Recurring' }}</span>
           <span>{{ blockLine(asBlock(row)) }}</span>
           <span class="ops">
             <v-btn icon="mdi-pencil" variant="text" size="small" aria-label="Edit" @click="edit(row)" />
@@ -78,7 +78,7 @@
           </v-card-actions>
         </v-card>
         <div v-else class="row text-body-2">
-          <span class="text-medium-emphasis">{{ row.label || 'Away' }}</span>
+          <span class="text-medium-emphasis">{{ row.label || 'Once-off' }}</span>
           <span>{{ busyLine(asBusy(row)) }}</span>
           <span class="ops">
             <v-btn icon="mdi-pencil" variant="text" size="small" aria-label="Edit" @click="edit(row)" />
@@ -89,8 +89,8 @@
     </div>
 
     <div class="d-flex flex-wrap ga-2 mt-3">
-      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBlock">Repeating hours</v-btn>
-      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBusy">Days away</v-btn>
+      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBlock">Recurring</v-btn>
+      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBusy">Once-off</v-btn>
     </div>
 
     <div v-if="preview.length" class="mt-6">
@@ -113,7 +113,7 @@ import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 const props = defineProps({ zone: { type: String, default: null } });  // the profile zone the backend resolves blocks against
-const emit = defineEmits(['change', 'zone']);
+const emit = defineEmits(['zone']);
 
 const isLoading = ref(true);
 const errorMessage = ref(null);
@@ -152,7 +152,6 @@ const load = async () => {
     const data = await fetchWrapper.get(`${backendUrl}/player-blocks`);
     blocks.value = (data.repeating || []).map(row => mark(blockRow(row), asBlock));
     busy.value = (data.busy || []).map(row => mark(busyRow(row), asBusy));
-    emit('change', blocks.value.length + busy.value.length);
   } catch {
     errorMessage.value = 'Could not load your blocked times.';
   } finally {
@@ -181,7 +180,6 @@ const write = async (row, url, fields, shape) => {
       : await fetchWrapper.post(url, body);
     Object.assign(row, fields(saved), { editing: false });
     mark(row, shape);
-    emit('change', blocks.value.length + busy.value.length);
   } catch (error) {
     errorMessage.value = error.message || 'Could not save the block.';
   } finally {
@@ -201,7 +199,6 @@ const drop = async (list, index, path) => {
   try {
     await fetchWrapper.delete(`${backendUrl}/player-blocks/${path}/${row.id}`);
     list.value.splice(index, 1);
-    emit('change', blocks.value.length + busy.value.length);
   } catch (error) {
     errorMessage.value = error.message || 'Could not delete the block.';
   } finally {

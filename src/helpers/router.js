@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore, useSeasonStore } from '@/stores';
 import { saveReturnUrl, takeReturnUrl } from './return-url.mjs';
-import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView, LeaguesView, LeagueView, EventWizardView, EventAdminView } from '@/views';
+import { HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView, LeaguesView, LeagueView, EventWizardView, EventAdminView, EventsView, EventView, EventSeriesView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -39,7 +39,10 @@ export const router = createRouter({
         { path: '/maps', component: MapsView, meta: { role: 'admin' } },
         { path: '/leagues', component: LeaguesView, meta: { role: 'admin' } },
         { path: '/leagues/:id', component: LeagueView, meta: { role: 'admin' } },
+        { path: '/events', component: EventsView, meta: { role: 'member' } },
         { path: '/events/new', component: EventWizardView, meta: { role: 'admin' } },
+        { path: '/events/:id', component: EventView, meta: { role: 'member' } },
+        { path: '/events/:id/series/:sid', component: EventSeriesView, meta: { role: 'member' } },
         { path: '/events/:id/admin', component: EventAdminView, meta: { role: 'admin' } },
         { path: '/teams', component: TeamsView, meta: { role: 'member' } },
         { path: '/config', component: ConfigView, meta: { role: 'admin' } },

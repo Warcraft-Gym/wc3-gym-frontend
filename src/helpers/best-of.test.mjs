@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gamesOf, winsOf, isValidResult, replaysNeeded, resultProblem, neverPlayed } from './best-of.mjs';
+import { gamesOf, rulesFor, winsOf, isValidResult, replaysNeeded, resultProblem, neverPlayed } from './best-of.mjs';
 
 test('the games are the rules a season lists', () => {
   assert.equal(gamesOf('veto,veto,veto'), 3);
@@ -55,4 +55,13 @@ test('0-0 is a result, a series that was never played', () => {
   assert.equal(resultProblem(0, 0, 'veto,veto,veto,veto,veto'), null);
   // a player reports through isValidResult, which never admits 0-0
   assert.equal(isValidResult(0, 0, 2), false);
+});
+
+test('a best-of override cuts the rule list, or repeats its last rule', () => {
+  assert.equal(rulesFor('fixed,loser,loser', 1), 'fixed');
+  assert.equal(rulesFor('veto,veto,veto', 5), 'veto,veto,veto,veto,veto');
+  assert.equal(rulesFor('veto,veto,veto', 3), 'veto,veto,veto');
+  // no override keeps the stage's own rules, and no rules at all play the GNL default
+  assert.equal(rulesFor('fixed,loser,loser', null), 'fixed,loser,loser');
+  assert.equal(rulesFor(null, 1), 'fixed');
 });

@@ -31,6 +31,7 @@ const slug = computed(() => (currentSeason.value ? seasonStore.slugOf(currentSea
 
 const quickLinks = computed(() => [
   { title: 'My dashboard', icon: 'mdi-view-dashboard', to: '/player-dashboard' },
+  { title: 'All events', icon: 'mdi-calendar-star', to: '/events' },
   ...(me.value?.team ? [{ title: me.value.team.name, icon: 'mdi-shield-account', to: `/team/${me.value.team.id}` }] : []),
   ...(slug.value ? [
     { title: 'Season report', icon: 'mdi-trophy-outline', to: `/report/${slug.value}` },
@@ -152,7 +153,11 @@ onMounted(fetchHomeData);
 
       <v-row>
         <v-col cols="12" md="7">
-          <h2 class="text-h6 mb-2">Upcoming events</h2>
+          <div class="d-flex align-center mb-2">
+            <h2 class="text-h6">Upcoming events</h2>
+            <v-spacer />
+            <v-btn variant="text" size="small" append-icon="mdi-chevron-right" to="/events">All events</v-btn>
+          </div>
           <v-card elevation="1">
             <v-list v-if="events.length" lines="two" class="py-0">
               <template v-for="(row, i) in events" :key="row.key">

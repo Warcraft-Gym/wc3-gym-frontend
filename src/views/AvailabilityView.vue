@@ -42,7 +42,7 @@
         <p v-if="!seasons.length" class="text-body-2 text-medium-emphasis">No rounds to answer yet.</p>
         <section v-for="season in seasons" :key="season.id" class="mb-6">
           <h2 class="text-subtitle-1 font-weight-medium mb-2">{{ season.name }}</h2>
-          <p v-if="!cards(season.id).length && !errorMessage" class="text-body-2 text-medium-emphasis">No rounds to answer yet.</p>
+          <p v-if="rounds[season.id] && !cards(season.id).length && !errorMessage" class="text-body-2 text-medium-emphasis">No rounds to answer yet.</p>
           <div v-for="card in cards(season.id)" :key="card.playday" class="round">
             <span class="text-medium-emphasis">Round {{ card.playday }}</span>
             <span class="text-medium-emphasis">{{ card.label }}</span>
@@ -54,7 +54,7 @@
                   size="small"
                   :variant="card.answer === true ? 'flat' : 'outlined'"
                   :loading="saving === `${season.id}-${card.playday}`"
-                  :disabled="saving !== null"
+                  :disabled="saving !== null && saving !== `${season.id}-${card.playday}`"
                   @click="setWeek(season.id, card.playday, true)"
                 >
                   Can play
@@ -64,7 +64,7 @@
                   size="small"
                   :variant="card.answer === false ? 'flat' : 'outlined'"
                   :loading="saving === `${season.id}-${card.playday}`"
-                  :disabled="saving !== null"
+                  :disabled="saving !== null && saving !== `${season.id}-${card.playday}`"
                   @click="setWeek(season.id, card.playday, false)"
                 >
                   Can't play

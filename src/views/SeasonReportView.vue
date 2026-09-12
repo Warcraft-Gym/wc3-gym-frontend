@@ -372,7 +372,7 @@
                   </div>
                 </div>
                 <div class="day-ticks">
-                  <span v-for="tick in dayTicks" :key="tick.d">{{ tick.label }}</span>
+                  <span v-for="tick in dayTicks" :key="tick.d" :class="{ end: tick.end }">{{ tick.label }}</span>
                 </div>
               </v-card-text>
             </v-card>
@@ -773,8 +773,10 @@ const dayBars = computed(() => ladderDays.value.map(day => ({
 
 // One tick slot per day in the same flex row as the bars, labelled every 7th, so a
 // label always sits under the day it names
-const dayTicks = computed(() =>
-    ladderDays.value.map((day, i) => ({ d: day.d, label: i % 7 ? '' : monthDay(day.d) })));
+const dayTicks = computed(() => {
+    const lastLabel = Math.floor((ladderDays.value.length - 1) / 7) * 7;
+    return ladderDays.value.map((day, i) => ({ d: day.d, label: i % 7 ? '' : monthDay(day.d), end: i === lastLabel }));
+});
 </script>
 
 <style scoped>
@@ -995,10 +997,16 @@ const dayTicks = computed(() =>
   font-size: 0.6875rem;
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
 }
-/* A tick slot matches its bar: same flex row, same gap, same minimum */
+/* A tick slot matches its bar: same flex row, same gap, same minimum. The label
+   is wider than its slot and overflows it, so it starts at its own bar */
 .day-ticks span {
   flex: 1;
   min-width: 4px;
+  white-space: nowrap;
+}
+/* the last label would overflow the card, so it ends at its own slot */
+.day-ticks span.end {
+  text-align: right;
 }
 
 /* ── Race cards ───────────────────────────────────────────────────────────── */

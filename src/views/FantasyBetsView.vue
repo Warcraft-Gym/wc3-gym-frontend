@@ -99,14 +99,14 @@
               </template>
 
               <template v-slot:[`item.is_locked`]="{ item }">
-                <v-icon v-if="isSeriesPlayed(item.series)" color="error">mdi-lock</v-icon>
+                <v-icon v-if="isScored(item.series)" color="error">mdi-lock</v-icon>
                 <v-icon v-else color="success">mdi-lock-open</v-icon>
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
                 <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit', disabled: isSeriesPlayed(item.series), onClick: () => editBet(item) },
-                  { icon: 'mdi-delete', label: 'Delete', color: 'error', disabled: isSeriesPlayed(item.series), onClick: () => confirmDeleteBet(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', disabled: isScored(item.series), onClick: () => editBet(item) },
+                  { icon: 'mdi-delete', label: 'Delete', color: 'error', disabled: isScored(item.series), onClick: () => confirmDeleteBet(item) },
                 ]" />
               </template>
             </v-data-table-server>
@@ -127,7 +127,7 @@
             v-model="newBet.captain_id"
             :items="fantasyTeams"
             item-value="captain_id"
-            item-title="captain.name"
+            :item-title="(team) => team.captain?.name || 'N/A'"
             label="Select Bettor"
             variant="outlined"
             density="comfortable"
@@ -315,7 +315,7 @@ import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from 
 import { storeToRefs } from 'pinia';
 import { useDisplay } from 'vuetify';
 import SeasonSelect from '@/components/SeasonSelect.vue';
-import { sides, validateBetPoints as checkBetPoints } from '@/helpers/bets';
+import { isScored, sides, validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
 
@@ -403,7 +403,7 @@ const availableSeries = computed(() => {
   // 3. Captain doesn't have a bet on them yet
   return allSeries.value.filter(s => {
     const isFantasy = s.is_fantasy_match === true;
-    const notPlayed = !isSeriesPlayed(s);
+    const notPlayed = !isScored(s);
     const noBetYet = !captainBetSeriesIds.value.includes(s.id);
     
     return isFantasy && notPlayed && noBetYet;
@@ -430,13 +430,6 @@ watch(() => newBet.value.captain_id, async (captainId) => {
 const validateBetPoints = (points) => checkBetPoints(points, minBetPoints.value, maxBetPoints.value);
 
 const mmrOf = (player) => ladderById.value.get(player?.id)?.mmr?.current ?? null;
-
-const isSeriesPlayed = (series) => {
-  if (!series) return false;
-  const p1 = series.player1_score || 0;
-  const p2 = series.player2_score || 0;
-  return p1 > 0 || p2 > 0;
-};
 
 const getWinner = (bet) => {
   if (!bet.series) return null;

@@ -37,7 +37,7 @@
       <v-card-text class="pt-4">
                   
                   <!-- No team, and why the form is not here -->
-                  <v-alert v-if="!season" type="info" variant="tonal" class="mb-4">
+                  <v-alert v-if="!season && !existingTeam" type="info" variant="tonal" class="mb-4">
                     The season did not load, so registration is unavailable. Please try again later.
                   </v-alert>
                   <v-alert v-else-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
@@ -330,7 +330,7 @@
 
                       <template #item.score="{ item }">
                         <v-chip
-                          v-if="isSeriesPlayed(item)"
+                          v-if="isScored(item)"
                           :color="getScoreColorForBet(item)"
                           variant="outlined"
                           size="small"
@@ -342,13 +342,13 @@
 
                       <template #item.result="{ item }">
                         <v-chip
-                          v-if="item.myBet && isSeriesPlayed(item)"
+                          v-if="item.myBet && isScored(item)"
                           :color="item.myBet.bet_result === 'WIN' ? 'win' : item.myBet.bet_result === 'LOSS' ? 'loss' : 'secondary'"
                           size="small"
                         >
                           {{ item.myBet.bet_result || 'PENDING' }}
                         </v-chip>
-                        <span v-else-if="!isSeriesPlayed(item)" class="text-medium-emphasis">-</span>
+                        <span v-else-if="!isScored(item)" class="text-medium-emphasis">-</span>
                         <span v-else class="text-medium-emphasis">No bet</span>
                       </template>
 
@@ -449,7 +449,7 @@ import PlayerLadderPanel from '@/components/PlayerLadderPanel.vue';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
-import { betsOpen, validateBetPoints as checkBetPoints } from '@/helpers/bets';
+import { betsOpen, isScored, validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { ALL_COLORS, ALL_NAMES } from '@/helpers/tiers.mjs';
 import { fillDays, maxGamesPerDay, winRate } from '@/helpers/ladder-days.mjs';
 import { DateTime } from 'luxon';
@@ -955,28 +955,6 @@ const deleteBet = async () => {
 };
 
 // Helper functions for betting display
-
-const isSeriesPlayed = (series) => {
-  // A series is considered played if:
-  // 1. Either player has a non-zero score, OR
-  // 2. Both scores are set and at least one is non-zero
-  // This prevents treating 0:0 (unplayed) as a completed match
-  const score1 = series.player1_score;
-  const score2 = series.player2_score;
-  
-  // If either score is null/undefined, not played yet
-  if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) {
-    return false;
-  }
-  
-  // If both scores are 0, consider it not played (default/initial state)
-  if (score1 === 0 && score2 === 0) {
-    return false;
-  }
-  
-  // Otherwise, at least one score is non-zero, so it's been played
-  return true;
-};
 
 const getBetResultColor = (bet) => {
   if (!bet || !bet.bet_result) return 'secondary';

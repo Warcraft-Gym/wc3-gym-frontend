@@ -20,6 +20,10 @@ export const sides = (series) => [
   { player: series.player2, race: series.player2_race, vsRace: series.player1_race },
 ];
 
-// A bet closes once its series starts, the rule the API applies; a bare time is UTC
+// A series is scored once a side holds a non-zero score; 0:0 is the unplayed default
+export const isScored = (series) =>
+  (series?.player1_score || 0) > 0 || (series?.player2_score || 0) > 0;
+
+// A bet closes once its series is scored or starts, the rule the API applies; a bare time is UTC
 export const betsOpen = (series, now = DateTime.utc()) =>
-  !series?.date_time || DateTime.fromISO(series.date_time, { zone: 'UTC' }) > now;
+  !isScored(series) && (!series?.date_time || DateTime.fromISO(series.date_time, { zone: 'UTC' }) > now);

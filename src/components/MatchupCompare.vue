@@ -24,12 +24,18 @@
     <div class="d-flex justify-end"><LadderDayBars v-if="daysA" :days="daysA" :ymax="ymax" /><span v-else class="text-disabled">—</span></div>
     <div class="label">ladder</div>
     <div><LadderDayBars v-if="daysB" :days="daysB" :ymax="ymax" /><span v-else class="text-disabled">—</span></div>
+
+    <div class="foot">
+      <span class="d-inline-flex align-center ga-1"><span class="swatch" :style="{ background: WIN }" />wins</span>
+      <span class="d-inline-flex align-center ga-1"><span class="swatch" :style="{ background: LOSS }" />losses</span>
+      <span>both columns scale to {{ ymax }} games a day</span>
+    </div>
   </div>
 </template>
 
 <script setup>
 import LadderDayBars from '@/components/LadderDayBars.vue';
-import { winRate } from '@/helpers/ladder-days.mjs';
+import { LOSS, WIN, winRate } from '@/helpers/ladder-days.mjs';
 
 defineProps({
   a: { type: Object, required: true }, // series.player1
@@ -65,5 +71,15 @@ const gnl = (g) => (g && g.games ? `${g.wins ?? 0}–${g.losses ?? 0}` : '—');
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
+.foot {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}
+.swatch { width: 10px; height: 10px; display: inline-block; }
 .label { text-align: center; font-size: 0.75rem; color: rgba(var(--v-theme-on-surface), 0.38); }
 </style>

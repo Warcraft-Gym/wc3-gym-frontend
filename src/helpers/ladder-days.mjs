@@ -1,4 +1,5 @@
 // The ladder charts: one entry per day of the season window, on one games scale for every player.
+import { timeFormat } from 'd3-time-format';
 export const WIN = 'rgb(var(--v-theme-win))';
 export const LOSS = 'rgb(var(--v-theme-loss))';
 export const RACES = ['HU', 'OC', 'NE', 'UD'];
@@ -27,3 +28,11 @@ export const lastPlayed = (perDay) => (perDay || []).reduce((last, d) => (d.w + 
 
 // Whole-number win rate, null with no games
 export const winRate = (w, l) => (w + l ? Math.round((100 * w) / (w + l)) : null);
+
+// The hover text of one day, shared by every day chart
+const fmtDay = timeFormat('%-d %b');
+export const dayTip = (d) =>
+  `${fmtDay(new Date(`${d.d}T00:00:00`))} · ${d.w}–${d.l}${d.mmr != null ? ` · ${d.mmr} MMR` : ''}`;
+
+// A games-per-day bar as a percentage of the tallest day; a day with no games draws nothing
+export const gamesBarHeight = (games, max) => (games ? `${Math.max(2, Math.round((100 * games) / max))}%` : '0%');

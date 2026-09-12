@@ -31,7 +31,7 @@
     </g>
     <g :transform="`translate(${M.left},${M.top})`">
       <rect v-for="(d, i) in days" :key="`hit${d.d}`" :x="x(i) - x.step() * 0.2" y="0" :width="x.step()" :height="plotsH" fill="transparent">
-        <title>{{ tip(d) }}</title>
+        <title>{{ dayTip(d) }}</title>
       </rect>
     </g>
   </svg>
@@ -43,7 +43,7 @@ import { extent, range } from 'd3-array';
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { area, curveMonotoneX, line } from 'd3-shape';
 import { timeFormat } from 'd3-time-format';
-import { LOSS, WIN } from '@/helpers/ladder-days.mjs';
+import { LOSS, WIN, dayTip } from '@/helpers/ladder-days.mjs';
 
 const props = defineProps({
   days: { type: Array, required: true }, // from fillDays
@@ -74,7 +74,6 @@ const mTicks = computed(() => yM.value.ticks(3).map((v) => ({ v, y: yM.value(v) 
 const fmt = timeFormat('%-d %b');
 const dateOf = (d) => new Date(`${d.d}T00:00:00`);
 const xTicks = computed(() => range(0, props.days.length, 7).map((i) => ({ i, x: cx(i), label: fmt(dateOf(props.days[i])) })));
-const tip = (d) => `${fmt(dateOf(d))} · ${d.w}–${d.l}${d.mmr != null ? ` · ${d.mmr} MMR` : ''}`;
 </script>
 
 <style scoped>

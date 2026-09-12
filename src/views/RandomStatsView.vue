@@ -5,14 +5,14 @@
     <div class="d-flex align-center mb-6">
       <v-icon size="x-large" color="primary" class="mr-3">mdi-dice-multiple</v-icon>
       <div>
-        <div class="text-h5 font-weight-bold">Random Stats Helper</div>
+        <div class="text-h5 font-weight-bold">Random stats helper</div>
         <div class="text-body-2 text-medium-emphasis">Breakdown of drawn race vs opponent race for Random games only</div>
       </div>
     </div>
 
     <!-- Search form -->
     <v-card elevation="2" class="mb-6">
-      <v-card-title class="bg-primary">Player &amp; Seasons</v-card-title>
+      <v-card-title class="bg-primary">Player &amp; seasons</v-card-title>
       <v-card-text class="pt-4">
         <v-row align="start">
           <v-col cols="12" md="5">
@@ -32,7 +32,7 @@
             <v-select
               v-model="selectedSeasons"
               :items="seasonOptions"
-              label="W3C Seasons"
+              label="W3C seasons"
               variant="outlined"
               density="comfortable"
               multiple
@@ -132,7 +132,7 @@
         <v-table density="comfortable">
           <thead>
             <tr>
-              <th class="text-left">Opponent Race</th>
+              <th class="text-left">Opponent race</th>
               <th class="text-right text-win">Wins</th>
               <th class="text-right text-loss">Losses</th>
               <th class="text-right">Total</th>

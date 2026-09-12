@@ -214,7 +214,7 @@
         When can't you play?
       </v-card-title>
       <v-card-text class="pt-4">
-        <BlockedTimesEditor v-if="blocksOpen" :zone="playerData?.player?.timezone" @change="count => blockCount = count" />
+        <BlockedTimesEditor v-if="blocksOpen" :zone="playerData?.player?.timezone" @change="count => blockCount = count" @zone="setPlayerZone" />
       </v-card-text>
       <v-card-actions>
         <v-spacer />
@@ -458,6 +458,11 @@ const blocksDismissed = ref(false);
 const dismissKey = computed(() => `blocks_dismissed_${authStore.me?.user?.id ?? 'me'}`);
 const schedulingOn = computed(() => !!authStore.me?.signed_up && !!currentSeason.value?.scheduling_enabled);
 const showBlockPrompt = computed(() => schedulingOn.value && blockCount.value === 0 && !blocksDismissed.value);
+
+// the editor writes the browser zone when the profile has none, so the page shows the same zone
+const setPlayerZone = (timezone) => {
+  playerData.value = { ...playerData.value, player: { ...playerData.value.player, timezone } };
+};
 
 const dismissBlocks = () => {
   blocksDismissed.value = true;

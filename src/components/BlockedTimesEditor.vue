@@ -12,7 +12,10 @@
     <section class="mb-8">
       <h3 class="text-subtitle-1 font-weight-medium mb-1">Repeating</h3>
       <div class="mb-3">
-        <p class="text-caption text-medium-emphasis">Hours you cannot play, every round, in {{ props.zone ? 'your profile timezone' : 'your timezone' }} ({{ zone }}).</p>
+        <p class="text-caption text-medium-emphasis">
+          Times are in {{ zone }}.
+          <router-link :to="{ path: '/player-dashboard', query: { edit: 1 } }">Change</router-link>
+        </p>
         <p v-if="zone !== browserZone" class="text-caption text-medium-emphasis">Your browser is in {{ browserZone }}.</p>
       </div>
 
@@ -67,7 +70,7 @@
 
     <section>
       <h3 class="text-subtitle-1 font-weight-medium mb-1">Busy days</h3>
-      <p class="text-caption text-medium-emphasis mb-3">Whole days you are away. Both ends count.</p>
+      <p class="text-caption text-medium-emphasis mb-3">Days you are away, first to last.</p>
 
       <p v-if="!isLoading && !busy.length" class="text-body-2 text-medium-emphasis mb-3">No busy days yet.</p>
 
@@ -110,14 +113,14 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
-import { DAY_NAMES, asBlock, asBusy, blockFields, blockLine, busyFields, busyLine, dirty, mark, weekFree } from '@/helpers/blocks.mjs';
+import { DAY_NAMES, asBlock, asBusy, blockFields, blockLine, busyFields, busyLine, dirty, mark, weekFree, zoneBody } from '@/helpers/blocks.mjs';
 import { viewerZone } from '@/helpers/timezone.mjs';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 const props = defineProps({ zone: { type: String, default: null } });  // the profile zone the backend resolves blocks against
-const emit = defineEmits(['change']);
+const emit = defineEmits(['change', 'zone']);
 
 const isLoading = ref(true);
 const errorMessage = ref(null);
@@ -125,7 +128,8 @@ const blocks = ref([]);
 const busy = ref([]);
 const busyKey = ref(null);  // the row a save or delete is out for
 const browserZone = viewerZone();
-const zone = computed(() => props.zone || browserZone);
+const wroteZone = ref(null);  // the zone this editor wrote, before the dashboard reads the player again
+const zone = computed(() => props.zone || wroteZone.value || browserZone);
 
 let nextKey = 0;
 const key = () => `row-${nextKey++}`;
@@ -158,12 +162,22 @@ const load = async () => {
   }
 };
 
+// The backend refuses every block while the profile has no zone, so the browser zone goes first
+const ensureZone = async () => {
+  const body = zoneBody(props.zone || wroteZone.value, browserZone);
+  if (!body) return;
+  const { user } = await fetchWrapper.put(`${backendUrl}/user-info`, body);
+  wroteZone.value = user?.timezone || browserZone;
+  emit('zone', wroteZone.value);
+};
+
 // One write, then the row carries what the backend stored
 const write = async (row, url, fields, shape) => {
   busyKey.value = row.key;
   errorMessage.value = null;
   const body = shape(row);
   try {
+    await ensureZone();
     const saved = row.id
       ? await fetchWrapper.put(`${url}/${row.id}`, body)
       : await fetchWrapper.post(url, body);

@@ -45,15 +45,43 @@ export const roundCards = ({ rounds = [], series = [], matches = [], teamId = nu
   });
 };
 
+const opponentName = (series, playerId) =>
+  (series.player1_id === playerId ? series.player2 : series.player1)?.name ?? 'your opponent';
+
 // The read-only line of one round card, read from the player's side. Null while
 // the round is still open, which is where the Can play question belongs.
 export const roundLine = (card, playerId, when = '') => {
   const series = card?.series;
   if (!series) return card?.over ? 'Not paired' : null;
   const mine = series.player1_id === playerId;
-  const name = (mine ? series.player2 : series.player1)?.name ?? 'your opponent';
+  const name = opponentName(series, playerId);
   if (isUnscored(series)) return [`vs ${name}`, when].filter(Boolean).join(' · ');
   const my = (mine ? series.player1_score : series.player2_score) ?? 0;
   const theirs = (mine ? series.player2_score : series.player1_score) ?? 0;
   return `Played · ${my > theirs ? 'won' : my < theirs ? 'lost' : 'drew'} vs ${name}`;
 };
+
+// What the player still owes, over every season he is in: a series with no result,
+// and the round in play if he has not answered it. One line each, in round order.
+// `asks` is false for a season that does not run the availability question.
+export const waitingLines = (seasons = [], playerId = null) =>
+  seasons.flatMap(({ season, cards = [], asks = true }) => cards.flatMap((card) => {
+    if (card.series) {
+      return isUnscored(card.series)
+        ? [{
+            key: `s${card.series.id}`,
+            kind: 'series',
+            series: card.series,
+            text: `Round ${card.playday} · ${season.name} · vs ${opponentName(card.series, playerId)}`,
+          }]
+        : [];
+    }
+    if (card.over || !card.current || card.answer !== null || !asks) return [];
+    return [{
+      key: `r${season.id}-${card.playday}`,
+      kind: 'round',
+      seasonId: season.id,
+      playday: card.playday,
+      text: `Round ${card.playday} · ${season.name} · Can you play ${card.label}?`,
+    }];
+  }));

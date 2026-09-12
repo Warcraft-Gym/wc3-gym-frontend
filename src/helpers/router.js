@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import { useAuthStore, useSeasonStore } from '@/stores';
 import { saveReturnUrl, takeReturnUrl } from './return-url.mjs';
-import { AvailabilityView, HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, PlayerDashboardView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
+import { playerPath } from './players.mjs';
+import { AvailabilityView, HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -22,7 +23,12 @@ export const router = createRouter({
         { path: '/profile', component: ProfileView, meta: { role: 'guest' } },  // the only guest route, and the fallback below lands there: it shows the join-the-Discord card
         { path: '/seasons', component: SeasonsView, meta: { role: 'admin' } },  // the list holds admin data only; a member reads a season through /report
         { path: '/signup', component: PublicSignupView, meta: { role: 'member' } },
-        { path: '/player-dashboard', component: PlayerDashboardView, meta: { role: 'member' } },
+        // the dashboard folded into the player page; an old link lands on the player's own profile,
+        // and /profile sends a viewer whose session has not loaded yet to the right body
+        { path: '/player-dashboard', redirect: () => {
+            const me = useAuthStore().me;
+            return me?.user ? playerPath(me.user) : '/profile';
+        } },
         { path: '/availability', component: AvailabilityView, meta: { role: 'member' } },
         { path: '/player-series/:id/veto', component: VetoBoardView, meta: { role: 'member' } },
         { path: '/fantasy-registration', component: FantasyDashboardView, meta: { role: 'member' } },

@@ -83,3 +83,7 @@ export const defaultSignupRace = (player, gamesOf) => {
     .sort((a, b) => b.games - a.games)[0];
   return played && played.games > 0 ? played.race : null;
 };
+
+// Where the account's own profile lives. A member with no player row has only
+// the /profile page, which offers him the signup.
+export const myProfilePath = (me) => (me?.user ? playerPath(me.user) : '/profile');

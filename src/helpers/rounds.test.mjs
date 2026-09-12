@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { currentRound, roundCards, roundLabel, roundLine, roundOver } from './rounds.mjs';
+import { currentRound, roundCards, roundLabel, roundLine, roundOver, waitingLines } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -82,4 +82,44 @@ test('a round line reads the result, the fixture, or nothing while the question 
   assert.equal(line({ player1_id: ME, player2: { name: 'Markoo' }, player1_score: null, player2_score: null }), 'vs Markoo · Sat 4 Oct, 20:00');
   assert.equal(roundLine({ series: null, over: true }, ME), 'Not paired');
   assert.equal(roundLine({ series: null, over: false }, ME), null);
+});
+
+// The "Waiting for you" card: one line per job the player still owes, over every season
+const CARDS = [
+  { playday: 1, label: '1 to 7 Sep', over: true, answer: true, series: { id: 11, player1_id: ME, player2: { name: 'Markoo' }, player1_score: 2, player2_score: 0 } },
+  { playday: 2, label: '8 to 14 Sep', over: false, current: true, answer: null, series: { id: 12, player2_id: ME, player1: { name: 'Peterian' }, player1_score: null, player2_score: null } },
+  { playday: 3, label: '15 to 21 Sep', over: false, answer: null, series: null },
+  { playday: 4, label: '22 to 28 Sep', over: false, answer: false, series: null },
+  { playday: 5, label: '1 to 7 Aug', over: true, answer: null, series: null },
+];
+
+// A season whose round in play is not paired yet: only that round asks the question
+const ASK_CARDS = [
+  { playday: 2, label: '8 to 14 Sep', over: false, current: true, answer: null, series: null },
+  { playday: 3, label: '15 to 21 Sep', over: false, answer: null, series: null },
+];
+
+test('the waiting lines name the unscored series and the round in play', () => {
+  const lines = waitingLines([
+    { season: { id: 4, name: 'GNL Review Season' }, cards: CARDS },
+    { season: { id: 5, name: 'GNL Ladder Season' }, cards: ASK_CARDS },
+  ], ME);
+  assert.deepEqual(lines.map(row => row.text), [
+    'Round 2 · GNL Review Season · vs Peterian',
+    'Round 2 · GNL Ladder Season · Can you play 8 to 14 Sep?',
+  ]);
+  assert.deepEqual(lines.map(row => row.kind), ['series', 'round']);
+  assert.equal(lines[0].series.id, 12);
+  assert.equal(lines[1].seasonId, 5);
+  assert.equal(lines[1].playday, 2);
+});
+
+test('a season that asks nothing still shows its unscored series', () => {
+  const lines = waitingLines([{ season: { id: 4, name: 'GNL S18' }, cards: CARDS, asks: false }], ME);
+  assert.deepEqual(lines.map(row => row.kind), ['series']);
+});
+
+test('nothing waits when every series is played and every open round is answered', () => {
+  assert.deepEqual(waitingLines([{ season: { id: 4, name: 'GNL S18' }, cards: [CARDS[0], CARDS[3]] }], ME), []);
+  assert.deepEqual(waitingLines([], ME), []);
 });

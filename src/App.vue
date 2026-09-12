@@ -7,6 +7,7 @@ import { useDisplay, useTheme } from 'vuetify';
 import { useAuthStore, useSeasonStore, useTeamStore } from '@/stores';
 import { canSeeRole, homePath, themeMode, setThemeMode, activeTheme } from '@/helpers';
 import { saveReturnUrl, takeReturnUrl } from '@/helpers/return-url.mjs';
+import { myProfilePath } from '@/helpers/players';
 import PlayerPanel from '@/components/PlayerPanel.vue';
 import w3cLogo from '@/assets/media/w3c-logo.png';
 import w3cLogoWhite from '@/assets/media/w3c-logo-white.png';
@@ -123,8 +124,8 @@ const avatarUrl = computed(() => me.value?.avatar || null); // /me already answe
 const initials = computed(() => (me.value?.name || '?').slice(0, 2).toUpperCase());
 const roleLabel = computed(() => (me.value?.superadmin ? 'Super Admin' : me.value?.role?.replace(/^./, c => c.toUpperCase())));
 
-// a guest reaches no dashboard, so his menu item stays on /profile
-const dashboardPath = computed(() => (canSee('/player-dashboard') ? '/player-dashboard' : '/profile'));
+// a guest has no player page, so his menu item stays on /profile
+const profileTo = computed(() => myProfilePath(me.value));
 const identity = computed(() => [me.value?.name, roleLabel.value].filter(Boolean).join(' · '));
 
 // view-as: an admin sees the app as a lower role; the legacy token session cannot
@@ -213,9 +214,8 @@ const viewAsLabel = computed(() => {
                             </template>
                         </v-list-item>
                         <v-divider />
-                        <v-list-item title="Profile" prepend-icon="mdi-account" :to="dashboardPath" />
-                        <v-list-item v-if="canSee('/player-dashboard')" title="Edit Player Info" prepend-icon="mdi-pencil" :to="{ path: '/player-dashboard', query: { edit: 1 } }" />
-                        <v-list-item v-if="canSee('/player-dashboard')" title="Availability" prepend-icon="mdi-calendar-month" to="/availability" />
+                        <v-list-item title="Profile" prepend-icon="mdi-account" :to="profileTo" />
+                        <v-list-item v-if="me?.user" title="Availability" prepend-icon="mdi-calendar-month" to="/availability" />
                         <template v-if="canViewAs">
                             <v-divider />
                             <v-list-item prepend-icon="mdi-eye-outline" title="View as…" @click="openViewAs" />

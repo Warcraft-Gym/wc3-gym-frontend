@@ -6,7 +6,7 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1><v-icon class="mr-2">mdi-trophy</v-icon> Fantasy Teams Leaderboard</h1>
+        <h1><v-icon class="mr-2">mdi-trophy</v-icon> Fantasy teams leaderboard</h1>
       </v-col>
     </v-row>
 
@@ -17,10 +17,6 @@
     <v-row>
       <v-col cols="12">
         <v-card elevation="2">
-          <v-card-title class="bg-primary d-flex align-center">
-            <v-icon class="mr-2">mdi-chart-bar</v-icon>
-            <span>Season Leaderboard</span>
-          </v-card-title>
           <v-card-text class="pa-0">
             <v-toolbar flat height="auto">
               <v-row align="center" class="flex-wrap ma-0 pa-2">
@@ -30,7 +26,7 @@
                 <v-spacer />
                 <v-col cols="12" sm="auto">
                   <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" block>
-                    Create Team
+                    Create team
                   </v-btn>
                 </v-col>
               </v-row>
@@ -40,6 +36,7 @@
               :headers="headers"
               :items="sortedTeams"
               :items-per-page="25"
+              :no-data-text="auth.isAdmin ? 'No fantasy teams in this season yet. Create the first one.' : 'No fantasy teams in this season yet.'"
               item-value="id"
               show-expand
               expand-on-click

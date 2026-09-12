@@ -8,7 +8,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-trophy-variant</v-icon>
-          Fantasy Dashboard
+          Fantasy dashboard
         </h1>
       </v-col>
       <v-col cols="12" sm="auto">
@@ -24,13 +24,13 @@
 
     <!-- Fantasy Team Card -->
     <v-card elevation="2" class="mb-6">
-      <v-card-title class="bg-primary">
-        <v-icon class="mr-2">mdi-account-group</v-icon>
-        Fantasy Team
-        <v-chip v-if="existingTeam" class="ml-3" size="small" color="on-primary" variant="outlined">
+      <v-card-title class="bg-primary d-flex flex-wrap align-center ga-2">
+        <v-icon>mdi-account-group</v-icon>
+        <span>Fantasy team</span>
+        <v-chip v-if="existingTeam" size="small" color="on-primary" variant="outlined">
           Registered
         </v-chip>
-        <v-chip v-if="phase !== 'open'" class="ml-3" size="small" color="on-primary" variant="outlined">
+        <v-chip v-if="phase !== 'open'" size="small" color="on-primary" variant="outlined">
           {{ seasonName }} has {{ ended ? 'ended' : 'commenced' }}
         </v-chip>
       </v-card-title>
@@ -47,7 +47,7 @@
                     {{ seasonName }} has commenced. Fantasy team creation closed when its first series started.
                   </v-alert>
                   <v-alert v-else-if="!isCreationEnabled && !existingTeam" type="warning" variant="tonal" class="mb-4">
-                    <v-alert-title>Team Creation Currently Closed</v-alert-title>
+                    <v-alert-title>Team creation is closed</v-alert-title>
                     Fantasy team creation is not currently enabled. Please check back later or contact an administrator.
                   </v-alert>
                   <v-alert v-else-if="!tierCount && !existingTeam" type="info" variant="tonal" class="mb-4">
@@ -264,7 +264,7 @@
       <v-card-title class="bg-primary d-flex justify-space-between align-center">
         <div class="d-flex align-center">
           <v-icon class="mr-2">mdi-crystal-ball</v-icon>
-          <span>Fantasy Bets</span>
+          <span>Fantasy bets</span>
         </div>
         <v-chip v-if="existingTeam" color="on-primary" variant="outlined">
           {{ fantasyBets.length }} bets
@@ -274,8 +274,11 @@
                   <v-alert v-if="!existingTeam && ended" type="info" variant="tonal">
                     No team in {{ seasonName }}, so no bets.
                   </v-alert>
+                  <v-alert v-else-if="!existingTeam && phase !== 'open'" type="info" variant="tonal">
+                    No team in {{ seasonName }}, so no bets. Registration closed when its first series started.
+                  </v-alert>
                   <v-alert v-else-if="!existingTeam" type="info" variant="tonal">
-                    <v-alert-title>Register a Team First</v-alert-title>
+                    <v-alert-title>Register a team first</v-alert-title>
                     You need to register a fantasy team before you can place bets on matches.
                   </v-alert>
 
@@ -283,8 +286,8 @@
                   <div v-else>
                     <!-- No Fantasy Series Message -->
                     <v-alert v-if="fantasySeries.length === 0" type="info" variant="tonal" class="mb-4">
-                      <v-alert-title>No Fantasy Matches Available</v-alert-title>
-                      There are currently no fantasy matches scheduled for betting. Check back later!
+                      <v-alert-title>No fantasy matches yet</v-alert-title>
+                      No fantasy matches are scheduled for betting. They appear once the round is drawn.
                     </v-alert>
 
                     <v-data-table

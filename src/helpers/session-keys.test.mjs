@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SESSION_KEYS, clearSession } from './session-keys.mjs';
+import { clearSession } from './session-keys.mjs';
 
 const memoryStore = () => {
   const data = new Map();
@@ -19,7 +19,9 @@ test('clearing a session drops the view-as role with me and user', () => {
   store.setItem('viewAs', '{"role":"guest"}');
   store.setItem('clerk_key', 'pk_test_1');
   clearSession(store);
-  for (const key of SESSION_KEYS) assert.equal(store.getItem(key), null, key);
+  assert.equal(store.getItem('viewAs'), null);
+  assert.equal(store.getItem('me'), null);
+  assert.equal(store.getItem('user'), null);
 });
 
 test('the Clerk key itself survives, so the next load compares against it', () => {

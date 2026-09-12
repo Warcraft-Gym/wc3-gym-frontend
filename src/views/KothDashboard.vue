@@ -5,6 +5,11 @@
         <v-progress-circular indeterminate size="64" width="8" color="primary" />
       </v-overlay>
 
+      <!-- No event, or the load failed: this page has no app bar, so it must say so -->
+      <div v-if="loadError || (!event && !initialLoad)" class="text-center py-8 text-body-1 text-medium-emphasis">
+        {{ loadError || 'No King of the Hill night is running right now.' }}
+      </div>
+
       <!-- Event Header -->
       <div v-if="event" class="text-center mb-8">
         <h1 class="text-h5 text-md-h2 font-weight-bold mb-2">
@@ -53,16 +58,16 @@
           
           <v-card-text class="pa-4">
             <!-- Kings Section -->
-            <div v-if="kings[bracket] && kings[bracket].length > 0" class="mb-4">
+            <div v-if="kothStore.getBracketKings(bracket).length > 0" class="mb-4">
               <v-card 
-                v-for="king in kings[bracket]" 
+                v-for="king in kothStore.getBracketKings(bracket)" 
                 :key="king.id" 
                 variant="outlined" 
                 class="king-card mb-3 pa-4"
               >
                 <v-row align="center" no-gutters>
                   <v-col>
-                    <PlayerName class="text-h5 font-weight-bold" :player="{ name: king.twitch_username || king.battle_tag, country: king.country }" :race="king.race" />
+                    <PlayerName class="text-h5 font-weight-bold" :player="kingPlayer(king)" :race="king.race" />
                     <div class="text-subtitle-1 text-medium-emphasis">{{ king.mmr }} MMR</div>
                   </v-col>
                   <v-col cols="auto">
@@ -197,6 +202,7 @@ import { useKothStore } from '@/stores';
 import { useAuthStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
+import { kingPlayer } from '@/helpers/players.mjs';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bracketSilverIcon from '@/assets/media/bracket-silver.png';
 import bracketGoldIcon from '@/assets/media/bracket-gold.png';
@@ -208,7 +214,7 @@ const isCleanMode = computed(() => route.query.mode === 'clean');
 
 const kothStore = useKothStore();
 const authStore = useAuthStore();
-const { events, kings } = storeToRefs(kothStore);
+const { activeEvent: event } = storeToRefs(kothStore);
 
 // A logged-in player whose row carries a battle tag signs up from his profile
 const profileBattleTag = computed(() => authStore.me?.user?.battleTag || null);
@@ -234,7 +240,6 @@ async function withdraw() {
   }
 }
 
-const event = ref(null);
 const showSignupDialog = ref(false);
 const signupError = ref(null);
 const signupSuccess = ref(null);
@@ -246,6 +251,7 @@ const signupForm = ref({
 });
 let refreshInterval = null;
 const initialLoad = ref(true);
+const loadError = ref(null);
 
 onMounted(async () => {
   await loadDashboardData();
@@ -262,22 +268,14 @@ onUnmounted(() => {
 
 async function loadDashboardData() {
   try {
-    // Fetch all events using store
-    await kothStore.fetchAllEvents();
-    
-    // Find the newest event (highest ID or most recent date)
-    if (events.value && events.value.length > 0) {
-      // Sort by ID descending to get newest
-      const sortedEvents = [...events.value].sort((a, b) => b.id - a.id);
-      event.value = sortedEvents[0];
-      
-      // Load data for this event using store methods
-      await Promise.all([
-        kothStore.fetchSignups(event.value.id),
-        kothStore.fetchBracketKings(event.value.id),
-      ]);
-    }
+    // The active event is the one the signup and the withdraw write to
+    await kothStore.fetchActiveEvent();
+    loadError.value = null;
   } catch (error) {
+    // 404 means no event is active; anything else is a failure the 30 s retry may clear
+    const noEvent = error.status === 404;
+    loadError.value = noEvent ? null : 'Could not load the event — retrying.';
+    if (noEvent) kothStore.$patch({ activeEvent: null, signups: [] });
     console.error('Failed to load dashboard data:', error);
   }
 }

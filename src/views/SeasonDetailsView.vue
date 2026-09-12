@@ -10,8 +10,7 @@
 
   <!-- Enhanced Hero Section -->
   <div id="seasonHeader">
-    <v-parallax class="banner-image" :src="bannerImg" height="250">
-      <div class="banner-overlay"></div>
+    <div class="banner-band">
       <v-container class="fill-height">
         <v-row align="center" justify="center">
           <v-col cols="12" md="8" class="text-center">
@@ -20,7 +19,7 @@
               <v-col cols="auto">
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold primary--text">{{ season.round_count }}</div>
+                    <div class="text-h4 font-weight-bold text-primary-text">{{ season.round_count }}</div>
                     <div class="text-subtitle-2">Rounds</div>
                   </v-card-text>
                 </v-card>
@@ -28,7 +27,7 @@
               <v-col cols="auto">
                 <v-card class="stat-card" elevation="8">
                   <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold primary--text">{{ teams.length }}</div>
+                    <div class="text-h4 font-weight-bold text-primary-text">{{ teams.length }}</div>
                     <div class="text-subtitle-2">Teams</div>
                   </v-card-text>
                 </v-card>
@@ -37,7 +36,7 @@
           </v-col>
         </v-row>
       </v-container>
-    </v-parallax>
+    </div>
   </div>
 
   <v-container fluid class="pa-4">
@@ -57,7 +56,16 @@
             </td>
           </template>
           <template #rows="{ group }">
-            <tr v-for="row in group.rows" :key="row.id" class="detail-row unscored-row" @click="router.push(`/match/${row.match_id}`)">
+            <tr
+              v-for="row in group.rows"
+              :key="row.id"
+              class="detail-row unscored-row"
+              role="button"
+              tabindex="0"
+              @click="router.push(`/match/${row.match_id}`)"
+              @keyup.enter="router.push(`/match/${row.match_id}`)"
+              @keydown.space.prevent="router.push(`/match/${row.match_id}`)"
+            >
               <td></td>
               <td class="text-no-wrap">{{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}</td>
               <td><PlayerName :player="row.player1" :race="row.player1_race" /></td>
@@ -204,8 +212,11 @@
             <v-divider class="my-3"></v-divider>
             <v-row align="center" dense>
               <v-col>
-                <v-chip size="small" prepend-icon="mdi-map" variant="text" v-if="match.fixed_map">
-                  {{ getMapName(match.fixed_map_id) }}
+                <v-chip v-if="roundMapId(match.playday)" size="small" prepend-icon="mdi-map" variant="text">
+                  {{ getMapName(roundMapId(match.playday)) }}
+                </v-chip>
+                <v-chip v-else-if="usesFixedMap && !matchPlayed(match)" size="small" prepend-icon="mdi-map-marker-alert" variant="text" color="warning">
+                  Round {{ match.playday }} has no fixed map
                 </v-chip>
               </v-col>
               <v-col cols="auto">
@@ -347,20 +358,17 @@
         <v-icon class="mr-2">mdi-calendar-plus</v-icon>
         Create Match - Round {{ selectedWeek }}
       </v-card-title>
+      <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
+        {{ matchError }}
+      </v-alert>
       <v-card-text class="pt-4">
         <v-row>
-          <v-col cols="12">
-            <v-select
-              :items="maps"
-              item-title="name"
-              item-value="id"
-              label="Fixed Map (Optional)"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-map"
-              clearable
-              v-model="newMatch.fixed_map_id"
-            ></v-select>
+          <v-col v-if="usesFixedMap" cols="12">
+            <div class="d-flex align-center flex-wrap ga-2">
+              <v-icon size="small" :color="roundMapId(selectedWeek) ? undefined : 'warning'">mdi-map</v-icon>
+              <span class="text-body-2">Fixed map: {{ roundMapId(selectedWeek) ? getMapName(roundMapId(selectedWeek)) : 'not set for this round' }}</span>
+              <v-btn size="small" variant="text" color="primary" :to="`/seasons/${route.params.id}/maps`">Set on Series maps</v-btn>
+            </div>
           </v-col>
           <v-col cols="12" md="6">
             <v-select
@@ -406,20 +414,17 @@
         <v-icon class="mr-2">mdi-pencil</v-icon>
         Edit Match
       </v-card-title>
+      <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
+        {{ matchError }}
+      </v-alert>
       <v-card-text class="pt-4">
         <v-row>
-          <v-col cols="12">
-            <v-select
-              :items="maps"
-              item-title="name"
-              item-value="id"
-              label="Fixed Map (Optional)"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-map"
-              clearable
-              v-model="selectedMatch.fixed_map_id"
-            ></v-select>
+          <v-col v-if="usesFixedMap" cols="12">
+            <div class="d-flex align-center flex-wrap ga-2">
+              <v-icon size="small" :color="roundMapId(selectedMatch.playday) ? undefined : 'warning'">mdi-map</v-icon>
+              <span class="text-body-2">Fixed map: {{ roundMapId(selectedMatch.playday) ? getMapName(roundMapId(selectedMatch.playday)) : 'not set for this round' }}</span>
+              <v-btn size="small" variant="text" color="primary" :to="`/seasons/${route.params.id}/maps`">Set on Series maps</v-btn>
+            </div>
           </v-col>
           <v-col cols="12" md="6">
             <v-select
@@ -487,11 +492,12 @@ import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore, useSeriesStore } from '@/stores';
 import { storeToRefs } from 'pinia';
-import bannerImg from '@/assets/media/GNL_Banner.png';
   import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { isUnscored } from '@/helpers/season-phase.mjs';
-import { roundLabel } from '@/helpers/rounds.mjs';
+import { currentRound, roundLabel } from '@/helpers/rounds.mjs';
+import { fixedMapOf, rulesOf } from '@/helpers/map-order.mjs';
+import { matchProblem } from '@/helpers/match.mjs';
 import { formatDateTime } from '@/helpers/datetime';
 
 
@@ -566,6 +572,7 @@ const editMatchDialogOpen = ref(false);
 // Match state
 const selectedMatch = ref(null);
 const newMatch = ref(null);
+const matchError = ref(null);
 
 // Team state
 const allTeams = ref(null);
@@ -599,6 +606,13 @@ const getScoreColor = (score, opponentScore) => {
   return 'draw';
 };
 
+// The fixed map of a round: season_rounds.map_id, the column the veto and the game offers read
+const usesFixedMap = computed(() => rulesOf(season.value?.map_rules).includes('fixed'));
+const roundMapId = (playday) => fixedMapOf(season.value?.map_rules, roundOf(playday));
+
+// A match with a score is done, so a missing round map is no longer worth warning about
+const matchPlayed = (match) => !!(match?.team1_score || match?.team2_score);
+
 // Helper to get map name
 const getMapName = (mapId) => {
   const map = maps.value.find(m => m.id === mapId);
@@ -622,17 +636,18 @@ const closeTeamSelectionModal = () => {
 
     const openMatchCreationModal = () => {
       newMatch.value = {
-        fixed_map_id:null,
         team1_id:null,
         team2_id:null,
         season_id:seasonId,
         playday: selectedWeek.value
       }
+      matchError.value = null;
       isModalOpen.value = true;
     };
 
     const closeMatchCreationModal = () => {
       isModalOpen.value = false;
+      matchError.value = null;
       selectedTeam1.value = null;
       selectedTeam2.value = null;
     };
@@ -652,10 +667,13 @@ const closeTeamSelectionModal = () => {
 
     const editMatch = (match) => {
       selectedMatch.value = { ...match }; // Clone the user object to avoid modifying the original object directly
+      matchError.value = null;
       editMatchDialogOpen.value = true;
     };
 
     const updateMatch = async () => {
+      matchError.value = matchProblem(selectedMatch.value);
+      if (matchError.value) return;
       try {
         await matchStore.updateMatch(selectedMatch.value);
         // Update the local state after a successful PUT request
@@ -663,6 +681,7 @@ const closeTeamSelectionModal = () => {
         cancelEdit(); // Reset the form
       } catch (error) {
         console.error('Error updating match:', error);
+        matchError.value = error.message || 'Failed to save the match.';
       }
     };
 
@@ -677,18 +696,22 @@ const closeTeamSelectionModal = () => {
 
     const cancelEdit = () => {
       editMatchDialogOpen.value = false;
+      matchError.value = null;
       selectedMatch.value = null; // Clear the selected user
     };
 
     
     const confirmSelection = async () => {
+      matchError.value = matchProblem(newMatch.value);
+      if (matchError.value) return;
       isLoading.value = true;
       try {
-        await matchStore.createMatch(newMatch.value); // Assuming a createMatch method exists
+        await matchStore.createMatch(newMatch.value);
         await fetchMatches(selectedWeek.value); // Refresh matches for the week
         closeMatchCreationModal();
       } catch (error) {
         console.error("Failed to add match:", error);
+        matchError.value = error.message || 'Failed to add the match.';
       } finally {
         isLoading.value = false;
       }
@@ -762,17 +785,18 @@ onMounted(async () => {
   isInitLoading.value = true;
   isLoading.value = true;
   try {
-    const roundFromHash = route.hash && route.hash.includes('#round-') 
-      ? parseInt(route.hash.replace('#round-', ''), 10) 
-      : 1;
+    const roundFromHash = route.hash && route.hash.includes('#round-')
+      ? parseInt(route.hash.replace('#round-', ''), 10)
+      : null;
 
-    // Set the selected week before fetching
-    selectedWeek.value = roundFromHash;
+    // The rounds decide which tab opens, so the season is read before the matches
+    await fetchSeasonDetails();
+    const round = roundFromHash ?? currentRound(season.value?.rounds)?.playday ?? 1;
+    selectedWeek.value = round;
 
     await Promise.all([
-      fetchSeasonDetails(),
       fetchTeams(),
-      fetchMatches(roundFromHash),
+      fetchMatches(round),
       fetchMaps(),
       unscoredOnly.value && fetchUnscoredSeries()
     ]);
@@ -802,22 +826,12 @@ onMounted(async () => {
     color: rgb(var(--v-theme-on-band));
   }
   
-  .banner-image {
-    position: relative;
-  }
-  
-  .banner-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(var(--v-theme-band), 0.3), rgba(var(--v-theme-band), 0.6));
-    z-index: 1;
+  .banner-band {
+    height: 250px;
+    background: rgb(var(--v-theme-band));
   }
 
   .season-title {
-    text-shadow: 2px 2px 8px rgba(var(--v-theme-band), 0.8);
     letter-spacing: 1px;
   }
 
@@ -907,8 +921,8 @@ onMounted(async () => {
   /* Responsive adjustments */
   /* On a phone the hero is a title alone, so it does not need 250px */
   @media (max-width: 599px) {
-    .banner-image {
-      height: 120px !important;
+    .banner-band {
+      height: 120px;
     }
   }
 

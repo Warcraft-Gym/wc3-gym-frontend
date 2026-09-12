@@ -226,6 +226,18 @@
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <v-select
+                  v-model="selectedSeason.score_system"
+                  :items="SCORE_SYSTEMS"
+                  item-title="label"
+                  item-value="value"
+                  label="Score system"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-scale-balance"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
                 <v-text-field
                   v-model="selectedSeason.discordRole"
                   label="Discord Role ID"
@@ -316,6 +328,12 @@ import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { useColumns } from '@/helpers/columns';
 
 
+// The scale the series points use, as the backend stores it
+const SCORE_SYSTEMS = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'helpstone', label: 'Helpstone' },
+];
+
 const seasonStore = useSeasonStore();
 const mapStore = useMapStore();
 const auth = useAuthStore();
@@ -380,7 +398,7 @@ onMounted(async () => {
 });
 
 const addNewSeason = () => {
-  selectedSeason.value = { name: '', round_count: 0, pick_ban: '', series_per_round: 0, discordRole: '', start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true };
+  selectedSeason.value = { name: '', round_count: 0, pick_ban: '', series_per_round: 0, score_system: 'standard', discordRole: '', start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true };
   selectedSeasonMapIds.value = [];
   formError.value = '';
   isEditing.value = false;

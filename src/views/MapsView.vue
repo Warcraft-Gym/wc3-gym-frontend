@@ -14,6 +14,10 @@
       </v-col>
     </v-row>
 
+    <v-alert v-if="errorMessage" type="error" variant="tonal" class="mb-4" closable @click:close="errorMessage = null">
+      {{ errorMessage }}
+    </v-alert>
+
     <!-- Main Card -->
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
@@ -21,7 +25,7 @@
         <span>All maps</span>
       </v-card-title>
 
-      <v-card-text v-if="!errorMessage" class="pt-4">
+      <v-card-text class="pt-4">
         <div class="d-flex justify-end flex-wrap ga-2 mb-4">
           <v-btn variant="outlined" color="primary" @click="openImport">
             <template #prepend><W3CIcon :size="20" /></template>
@@ -29,7 +33,7 @@
           </v-btn>
           <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">Add New Map</v-btn>
         </div>
-        <v-row>
+        <v-row v-if="maps.length">
           <v-col v-for="item in maps" :key="item.id" cols="12" sm="6" md="4" lg="3">
             <v-card variant="outlined">
               <v-img :src="item.image" :aspect-ratio="3 / 2" cover class="bg-band">
@@ -47,16 +51,16 @@
             </v-card>
           </v-col>
         </v-row>
-      </v-card-text>
 
-      <!-- Enhanced Empty State -->
-      <v-card-text v-else class="text-center pa-8">
-        <v-icon size="64" class="text-disabled">mdi-map-outline</v-icon>
-        <div class="text-h6 text-medium-emphasis mt-4 mb-2">No maps found</div>
-        <p class="text-medium-emphasis mb-4">Get started by adding your first map</p>
-        <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">
-          Add First Map
-        </v-btn>
+        <!-- Empty State: only a read that worked proves the pool is empty -->
+        <div v-else-if="!errorMessage" class="text-center pa-8">
+          <v-icon size="64" class="text-disabled">mdi-map-outline</v-icon>
+          <div class="text-h6 text-medium-emphasis mt-4 mb-2">No maps found</div>
+          <p class="text-medium-emphasis mb-4">Get started by adding your first map</p>
+          <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateMap">
+            Add First Map
+          </v-btn>
+        </div>
       </v-card-text>
     </v-card>
 
@@ -168,10 +172,8 @@ const fetchMaps = async () => {
   errorMessage.value = null;
   try {
     await mapStore.fetchMaps();
-    if (maps.value.length === 0) {
-      errorMessage.value = 'No maps found.';
-    }
   } catch (error) {
+    console.error('Failed to fetch maps', error);
     errorMessage.value = 'Failed to load maps. Please try again later.';
   } finally {
     isLoading.value = false;

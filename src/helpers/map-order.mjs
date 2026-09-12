@@ -53,3 +53,6 @@ export const gamesReported = (winners, mapOf) =>
     winner_side: side,
     map_id: mapOf(index + 1) || null,
   }));
+
+// The map a fixed game plays: the round's map, the one column the veto reads
+export const fixedMapOf = (mapRules, round) => (rulesOf(mapRules).includes('fixed') ? round?.map_id ?? null : null);

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from './map-order.mjs';
+import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported, fixedMapOf } from './map-order.mjs';
 
 const PICKS = { A: 11, B: 22 };
 
@@ -56,4 +56,15 @@ test('the report names one game per map played', () => {
   ]);
   // a game with no map named is reported without one
   assert.deepEqual(gamesReported(['B'], () => undefined), [{ game_no: 1, winner_side: 'B', map_id: null }]);
+});
+
+test('a fixed game takes the round map, and nothing else does', () => {
+  assert.equal(fixedMapOf('fixed,loser,loser', { playday: 1, map_id: 7 }), 7);
+  // the round is the only source: a round with no map leaves the game empty
+  assert.equal(fixedMapOf('fixed,loser,loser', { playday: 1, map_id: null }), null);
+  assert.equal(fixedMapOf('fixed,loser,loser', undefined), null);
+  // no fixed rule, so the round map is not played
+  assert.equal(fixedMapOf('veto,veto,veto', { playday: 1, map_id: 7 }), null);
+  // no rules at all means the GNL default, which starts on the fixed map
+  assert.equal(fixedMapOf(null, { playday: 1, map_id: 7 }), 7);
 });

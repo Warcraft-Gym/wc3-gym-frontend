@@ -51,7 +51,7 @@ export const themes = {
             'race-oc': '#D06D69',
             'race-ne': '#086A12',
             'race-ud': '#7546BA',
-            // Medals name a metal: silver is grey and gold sits one step from the bronze primary, so the rank numeral carries the rank
+            // Medals name a metal, so gold stays gold: at dE 4.9 from the bronze primary it misses the validator's 10, and the rank numeral carries the rank
             'medal-gold': '#8F6B00',
             'medal-silver': '#6E7881',
             'heat-1': '#D0A076',

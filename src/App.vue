@@ -154,21 +154,19 @@ const applyCaptain = () => {
                 <RouterLink to="/report" class="app-title">GNL APP</RouterLink>
             </v-app-bar-title>
             <template v-slot:append>
-                <nav v-show="showNavLinks" class="inline-nav" aria-label="Main">
-                    <template v-if="!smAndDown">
-                        <template v-for="group in nav" :key="group.to">
-                            <v-menu v-if="group.items" offset-y>
-                                <template v-slot:activator="{ props }">
-                                    <v-btn v-bind="props" class="nav-link" variant="text" append-icon="mdi-chevron-down">{{ group.title }}</v-btn>
-                                </template>
-                                <v-list class="nav-dropdown">
-                                    <v-list-item v-for="item in group.items" :key="item.to">
-                                        <RouterLink :to="item.to" :class="{ 'd-inline-flex align-baseline': item.mark }"><img v-if="item.mark" :src="w3cMark" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">{{ item.title }}</RouterLink>
-                                    </v-list-item>
-                                </v-list>
-                            </v-menu>
-                            <v-btn v-else :to="group.to" class="nav-link" variant="text">{{ group.title }}</v-btn>
-                        </template>
+                <nav v-if="showNavLinks && !smAndDown" class="inline-nav" aria-label="Main">
+                    <template v-for="group in nav" :key="group.to">
+                        <v-menu v-if="group.items" offset-y>
+                            <template v-slot:activator="{ props }">
+                                <v-btn v-bind="props" class="nav-link" variant="text" append-icon="mdi-chevron-down">{{ group.title }}</v-btn>
+                            </template>
+                            <v-list class="nav-dropdown">
+                                <v-list-item v-for="item in group.items" :key="item.to">
+                                    <RouterLink :to="item.to" :class="{ 'd-inline-flex align-baseline': item.mark }"><img v-if="item.mark" :src="w3cMark" style="height: 1.4em; transform: translateY(3%)" alt="W3C" class="mr-1">{{ item.title }}</RouterLink>
+                                </v-list-item>
+                            </v-list>
+                        </v-menu>
+                        <v-btn v-else :to="group.to" class="nav-link" variant="text">{{ group.title }}</v-btn>
                     </template>
                 </nav>
                 <!-- the session menu sits outside the link tree, so a meta.nav route keeps it -->

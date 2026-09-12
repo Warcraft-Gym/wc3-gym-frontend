@@ -30,8 +30,8 @@ export const router = createRouter({
         { path: '/player/:id', component: PlayerView, meta: { role: 'member', season: true } },
         { path: '/seasons/:id', component: SeasonDetailsView, meta: { role: 'member', season: true } },
         { path: '/seasons/:id/assign', component: SeasonTeamAssignView, meta: { role: 'captain', season: true } },  // captains read it; the view gates every write to admins
-        { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', season: true } },
-        { path: '/seasons/:id/achievements', component: SeasonAchievementsView, meta: { role: 'admin', season: true } },
+        { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false, season: true } },
+        { path: '/seasons/:id/achievements', component: SeasonAchievementsView, meta: { role: 'admin', nav: false, season: true } },
         { path: '/match/:id', component: MatchDetailsView, meta: { role: 'member' } },
         { path: '/team/:id', component: TeamView, meta: { role: 'member' } },
         { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'member', season: true } },

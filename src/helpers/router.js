@@ -23,10 +23,11 @@ export const router = createRouter({
         { path: '/profile', component: ProfileView, meta: { role: 'guest' } },  // the only guest route, and the fallback below lands there: it shows the join-the-Discord card
         { path: '/seasons', component: SeasonsView, meta: { role: 'admin' } },  // the list holds admin data only; a member reads a season through /report
         { path: '/signup', component: PublicSignupView, meta: { role: 'member' } },
-        // the dashboard folded into the player page; an old link lands on the player's own profile
+        // the dashboard folded into the player page; an old link lands on the player's own profile,
+        // and /profile sends a viewer whose session has not loaded yet to the right body
         { path: '/player-dashboard', redirect: () => {
             const me = useAuthStore().me;
-            return me?.user ? playerPath(me.user) : '/signup';
+            return me?.user ? playerPath(me.user) : '/profile';
         } },
         { path: '/availability', component: AvailabilityView, meta: { role: 'member' } },
         { path: '/player-series/:id/veto', component: VetoBoardView, meta: { role: 'member' } },

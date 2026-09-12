@@ -20,7 +20,7 @@
       </v-card-text>
     </v-card>
 
-    <v-card v-if="waiting.length" elevation="2" class="mb-6">
+    <v-card v-if="owner && waiting.length" elevation="2" class="mb-6">
       <v-card-text class="pa-4">
         <h2 class="text-h6 mb-3">Waiting for you</h2>
         <div v-for="row in waiting" :key="row.key" class="waiting d-flex flex-wrap align-center ga-3">
@@ -210,7 +210,8 @@ const loadSeasons = async () => {
   seasonData.value = Object.fromEntries(
     openSeasons.value.map((season, i) => [season.id, answers[i]]).filter(([, answer]) => answer));
 };
-watch(owner, (isOwner) => { if (isOwner) loadSeasons(); }, { immediate: true });
+// a visitor's page must never read the last owner's series, so the cache drops first
+watch(owner, (isOwner) => { seasonData.value = {}; if (isOwner) loadSeasons(); }, { immediate: true });
 
 const seriesOf = (row) => seasonData.value[row.season.id]?.series ?? row.series;
 const answersOf = (seasonId) => seasonData.value[seasonId]?.availability ?? [];

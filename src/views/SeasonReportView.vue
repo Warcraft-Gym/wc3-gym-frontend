@@ -192,7 +192,7 @@
                 @click="mayOpenPlayer && router.push(playerPath(player))"
               >
                 <td class="text-center text-caption text-medium-emphasis">{{ idx + 1 }}</td>
-                <td><PlayerName :player="player" /></td>
+                <td><PlayerName :player="player" :plain="!mayOpenPlayer" /></td>
                 <td class="text-center">
                   <RaceIcon v-if="player.signup_race" :raceIdentifier="player.signup_race" />
                   <span v-else class="text-caption">–</span>
@@ -478,7 +478,7 @@ import { resolveCurrentSeasonId } from '@/helpers/current-season';
 import { playerPath } from '@/helpers/players';
 import { canSeeRole } from '@/helpers';
 import { useAuthStore } from '@/stores';
-import { setThemeMode, themeMode } from '@/helpers/theme';
+import { themeMode } from '@/helpers/theme';
 import { gamesBarHeight } from '@/helpers/ladder-days.mjs';
 import { scaleQuantize } from 'd3-scale';
 
@@ -492,6 +492,7 @@ const seriesStore = useSeriesStore();
 const fantasyStore = useFantasyStore();
 const ladderStore = useLadderStore();
 
+const { me } = storeToRefs(useAuthStore());
 const { seasons, current_season, selectedSeasonId } = storeToRefs(seasonStore);
 const { teams } = storeToRefs(teamStore);
 const { series } = storeToRefs(seriesStore);
@@ -506,13 +507,10 @@ const seasonItems = computed(() => seasons.value.slice().sort((a, b) =>
     (b.id === currentSeasonId.value) - (a.id === currentSeasonId.value) || b.id - a.id
 ));
 
-// Every section starts open, so the report still prints and embeds whole
-// /report is public; only a reader who may open /player/:id gets a clickable row
-const mayOpenPlayer = computed(() => {
-    const me = useAuthStore().me;
-    return !!me && canSeeRole(me.role, 'member');
-});
+// /report is public; only a reader who may open /player/:id gets a clickable row or a name link
+const mayOpenPlayer = computed(() => !!me.value && canSeeRole(me.value.role, 'member'));
 
+// Every section starts open, so the report still prints and embeds whole
 const collapsed = ref(new Set());
 const toggle = (key) => {
     collapsed.value.has(key) ? collapsed.value.delete(key) : collapsed.value.add(key);
@@ -709,11 +707,12 @@ const loadReport = async () => {
     }
 };
 
-// The report is a light document: print it light and give the admin his theme back
+// The report is a light document: print it light and give the admin his theme back. The
+// light is never stored, so a browser that skips afterprint leaves his saved theme alone.
 const printReport = async () => {
     const previous = themeMode.value;
-    setThemeMode('light');
-    window.addEventListener('afterprint', () => setThemeMode(previous), { once: true });
+    themeMode.value = 'light';
+    window.addEventListener('afterprint', () => { themeMode.value = previous; }, { once: true });
     await nextTick();
     window.print();
 };

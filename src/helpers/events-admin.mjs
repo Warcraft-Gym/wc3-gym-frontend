@@ -26,6 +26,13 @@ export const PHASE_COLOR = {
   finished: 'draw',
 };
 
+// How an entrant reached the event
+export const CHANNEL_LABEL = {
+  web: 'The website',
+  bot: 'The Discord bot',
+  twitch: 'Twitch',
+};
+
 export const ENTRANT_KINDS = [
   { value: 'solo', title: 'Solo players' },
   { value: 'drafted_teams', title: 'Drafted teams' },
@@ -79,14 +86,39 @@ export const newStage = (position = 1) => ({
 export const formatTitle = (value) => FORMATS.find((f) => f.value === value)?.title || value;
 export const isBuiltFormat = (value) => !!FORMATS.find((f) => f.value === value)?.built;
 
-// The maps of the W3C 1v1 pool the maps table already holds: a preview row names the
-// map it matched, and a row that matched nothing has nothing to put in the pool
-export const ladderPoolMapIds = (maps, rows) => {
-  const byName = new Map((maps || []).map((map) => [map.name, map.id]));
-  return (rows || [])
-    .filter((row) => row.status !== 'no_match' && row.status !== 'off_ladder')
-    .map((row) => byName.get(row.matched_name))
-    .filter((id) => id !== undefined);
+// A trailing version word: "v2", "2.0", "v1.3"
+const VERSION = /^v?\d+(?:\.\d+)*$/;
+
+// A map name folded to its lineage the way the backend folds it: case, spacing and
+// the version word dropped, so "Autumn Leaves v2" and "autumnleaves" are one map
+const foldedBase = (name) => {
+  const words = String(name || '').toLowerCase().replace(/[^a-z0-9.]+/g, ' ').trim().split(' ').filter(Boolean);
+  if (words.length && VERSION.test(words[words.length - 1])) words.pop();
+  return words.join('');
+};
+
+// The W3C 1v1 pool against the maps table: the ids it holds, and the ladder names it
+// does not. A preview row names both the warcraft3.info name and the W3C one, and the
+// app may hold the map under either, or under an older name of the same lineage.
+export const ladderPool = (maps, rows) => {
+  const byName = new Map();
+  const byBase = new Map();
+  for (const map of maps || []) {
+    if (!map.name) continue;
+    byName.set(map.name.toLowerCase(), map.id);
+    if (!byBase.has(foldedBase(map.name))) byBase.set(foldedBase(map.name), map.id);
+  }
+  const find = (name) => (name ? byName.get(name.toLowerCase()) ?? byBase.get(foldedBase(name)) : undefined);
+
+  const ids = [];
+  const missing = [];
+  for (const row of rows || []) {
+    if (row.status === 'off_ladder') continue;  // the app already holds it off the ladder
+    const id = find(row.matched_name) ?? find(row.w3c_name);
+    if (id === undefined) missing.push(row.w3c_name || row.matched_name);
+    else if (!ids.includes(id)) ids.push(id);
+  }
+  return { ids, missing };
 };
 
 // The division an MMR falls in: the last one whose lower bound it reaches. A division
@@ -129,8 +161,8 @@ export const moveSeed = (entrants, id, delta) => {
 // A blank number field is no value at all, which Number() would read as a zero
 const number = (value) => (value === null || value === undefined || value === '' ? null : Number(value));
 const text = (value) => (value ? String(value).trim() : null) || null;
-// A "datetime-local" field is wall time in the browser's zone
-const instant = (value) => (value ? new Date(value).toISOString() : null);
+// A "datetime-local" field is wall time in the browser's zone, stored as naive UTC like starts_at
+const instant = (value) => (value ? DateTime.fromISO(value).toUTC().toFormat("yyyy-MM-dd'T'HH:mm:ss") : null);
 
 // The body POST /events takes: the event, its stages in order and its map pool
 export const eventPayload = (form) => ({

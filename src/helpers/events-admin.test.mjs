@@ -1,18 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { assignFromMmr, divisionOf, eventPayload, ladderPoolMapIds, moveSeed, wizardProblem } from './events-admin.mjs';
+import { assignFromMmr, divisionOf, eventPayload, ladderPool, moveSeed, wizardProblem } from './events-admin.mjs';
 
-const MAPS = [{ id: 1, name: 'Amazonia' }, { id: 2, name: 'Concealed Hill' }];
+const MAPS = [{ id: 1, name: 'Amazonia' }, { id: 2, name: 'Concealed Hill' }, { id: 3, name: 'Autumn Leaves v1' }];
 
-test('the ladder import takes the matched maps and leaves the rest out', () => {
+test('the ladder import matches on either name or the lineage, and names what it could not', () => {
   const rows = [
     { w3c_name: 'Amazonia', matched_name: 'Amazonia', status: 'new' },
-    { w3c_name: 'Concealed Hill', matched_name: 'Concealed Hill', status: 'known' },
+    { w3c_name: 'concealed hill', matched_name: 'Concealed Hill', status: 'known' },
+    // the app holds this one under an older version of the same lineage
+    { w3c_name: 'Autumn Leaves v2', matched_name: 'Autumn Leaves v2', status: 'known' },
     { w3c_name: 'Twisted Meadows', matched_name: null, status: 'no_match' },
     { w3c_name: 'Turtle Rock', matched_name: 'Turtle Rock', status: 'off_ladder' },
   ];
-  assert.deepEqual(ladderPoolMapIds(MAPS, rows), [1, 2]);
+  assert.deepEqual(ladderPool(MAPS, rows), { ids: [1, 2, 3], missing: ['Twisted Meadows'] });
 });
 
 test('an MMR falls in the last division it reaches, and no MMR in the lowest', () => {

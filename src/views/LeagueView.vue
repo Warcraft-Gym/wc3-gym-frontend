@@ -31,7 +31,8 @@
           <tbody>
             <tr v-for="event in events" :key="event.id" class="event-row" @click="$router.push(`/events/${event.id}/admin`)">
               <td class="py-3">
-                <strong>{{ event.name }}</strong>
+                <!-- the link carries the keyboard path the row click has not -->
+                <RouterLink :to="`/events/${event.id}/admin`" class="text-high-emphasis" @click.stop><strong>{{ event.name }}</strong></RouterLink>
                 <!-- a phone drops the date columns, so the start date rides under the name -->
                 <div v-if="!mdAndUp" class="text-caption text-medium-emphasis">{{ kindTitle(event.kind) }} · {{ dateText(event.start_date) }}</div>
               </td>
@@ -87,7 +88,7 @@ onMounted(async () => {
     league.value = (leagues || []).find((row) => row.id === leagueId) || null;
     events.value = rows || [];
   } catch (e) {
-    error.value = `Failed to load the league: ${e.error || e.message}`;
+    error.value = `Failed to load the league: ${e.message}`;
   } finally {
     loading.value = false;
   }
@@ -97,8 +98,5 @@ onMounted(async () => {
 <style scoped>
 .event-row {
   cursor: pointer;
-}
-.event-row td {
-  min-height: 48px;
 }
 </style>

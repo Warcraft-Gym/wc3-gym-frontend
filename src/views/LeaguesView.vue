@@ -24,7 +24,8 @@
           <tbody>
             <tr v-for="league in leagues" :key="league.id" class="league-row" @click="$router.push(`/leagues/${league.id}`)">
               <td class="py-3">
-                <strong>{{ league.name }}</strong>
+                <!-- the link carries the keyboard path the row click has not -->
+                <RouterLink :to="`/leagues/${league.id}`" class="text-high-emphasis" @click.stop><strong>{{ league.name }}</strong></RouterLink>
                 <!-- a phone drops the last three columns, so their words ride under the name -->
                 <div v-if="!mdAndUp" class="text-caption text-medium-emphasis">{{ [league.short_name, entrantKind(league.entrant_kind)].filter(Boolean).join(' · ') }}</div>
               </td>
@@ -106,7 +107,7 @@ const load = async () => {
   try {
     leagues.value = (await store.fetchLeagues()) || [];
   } catch (e) {
-    error.value = `Failed to load the leagues: ${e.error || e.message}`;
+    error.value = `Failed to load the leagues: ${e.message}`;
   } finally {
     loading.value = false;
   }
@@ -126,7 +127,7 @@ const save = async () => {
     dialog.value = false;
     await load();
   } catch (e) {
-    formError.value = `Failed to create the league: ${e.error || e.message}`;
+    formError.value = `Failed to create the league: ${e.message}`;
   } finally {
     saving.value = false;
   }
@@ -138,8 +139,5 @@ onMounted(load);
 <style scoped>
 .league-row {
   cursor: pointer;
-}
-.league-row td {
-  min-height: 48px;
 }
 </style>

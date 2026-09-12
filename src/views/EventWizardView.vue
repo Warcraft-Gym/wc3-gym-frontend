@@ -9,6 +9,7 @@
       </v-card-title>
       <v-card-text class="pa-0">
         <StatusAlert v-model="error" class="ma-4" />
+        <StatusAlert v-model="notice" type="success" class="ma-4" />
         <v-stepper v-model="step" :items="STEPS" flat hide-actions>
           <!-- Basics -->
           <template #item.1>
@@ -79,7 +80,7 @@
                   <v-chip size="small" class="ml-2" variant="tonal">Bo{{ gamesOf(stage.map_rules) }}</v-chip>
                   <v-chip v-if="!isBuiltFormat(stage.format)" size="small" class="ml-2" color="warning" variant="tonal">Not generated yet</v-chip>
                   <v-spacer />
-                  <v-btn v-if="form.stages.length > 1" icon="mdi-delete" variant="text" size="small" aria-label="Remove stage" @click="form.stages.splice(index, 1)" />
+                  <v-btn v-if="form.stages.length > 1" icon="mdi-delete" variant="text" size="small" class="tap" aria-label="Remove stage" @click="form.stages.splice(index, 1)" />
                 </v-card-title>
                 <v-card-text>
                   <v-row dense>
@@ -188,7 +189,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import { gamesOf } from '@/helpers/best-of.mjs';
 import {
   dateText, EVENT_KINDS, eventPayload, FORMATS, formatTitle, isBuiltFormat,
-  ladderPoolMapIds, MAP_RULE_PRESETS, newStage, SCHEDULING_MODES, wizardProblem,
+  ladderPool, MAP_RULE_PRESETS, newStage, SCHEDULING_MODES, wizardProblem,
 } from '@/helpers/events-admin.mjs';
 import { viewerZone } from '@/helpers/timezone.mjs';
 import { useEventStore, useMapStore } from '@/stores';
@@ -204,6 +205,7 @@ const step = ref(1);
 const leagues = ref([]);
 const maps = ref([]);
 const error = ref(null);
+const notice = ref(null);
 const saving = ref(false);
 const importing = ref(false);
 const zoneHint = `Times are ${viewerZone()}`;
@@ -237,12 +239,16 @@ const kindTitle = computed(() => EVENT_KINDS.find((kind) => kind.value === form.
 // The ladder pool the maps table already holds; a map the app does not know is imported on /maps first
 const importLadderPool = async () => {
   importing.value = true;
+  notice.value = null;
   try {
     const rows = await mapStore.fetchLadderMapImport();
-    const ids = ladderPoolMapIds(maps.value, rows);
+    const { ids, missing } = ladderPool(maps.value, rows);
     form.value.map_ids = [...new Set([...form.value.map_ids, ...ids])];
+    notice.value = missing.length
+      ? `${ids.length} maps imported, ${missing.length} not in the maps table yet — add them on /maps first: ${missing.join(', ')}`
+      : `${ids.length} maps imported`;
   } catch (e) {
-    error.value = `Failed to read the ladder pool: ${e.error || e.message}`;
+    error.value = `Failed to read the ladder pool: ${e.message}`;
   } finally {
     importing.value = false;
   }
@@ -253,10 +259,12 @@ const create = async () => {
   error.value = null;
   try {
     const event = await store.createEvent(eventPayload(form.value));
-    if (form.value.discord_post) await store.postToDiscord(event.id).catch(() => {});
-    router.push(`/events/${event.id}/admin`);
+    // The event is made either way; a failed announcement is carried to its page, which can retry
+    let announced = true;
+    if (form.value.discord_post) await store.postToDiscord(event.id).catch(() => { announced = false; });
+    router.push({ path: `/events/${event.id}/admin`, query: announced ? {} : { discord: 'failed' } });
   } catch (e) {
-    error.value = `Failed to create the event: ${e.error || e.message}`;
+    error.value = `Failed to create the event: ${e.message}`;
   } finally {
     saving.value = false;
   }
@@ -268,7 +276,17 @@ onMounted(async () => {
     await mapStore.fetchMaps();
     maps.value = mapStore.maps || [];
   } catch (e) {
-    error.value = `Failed to load the leagues and maps: ${e.error || e.message}`;
+    error.value = `Failed to load the leagues and maps: ${e.message}`;
   }
 });
 </script>
+
+<style scoped>
+/* A finger needs a bigger target than a mouse */
+@media (max-width: 600px) {
+  .tap {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+</style>

@@ -30,6 +30,9 @@ export const dayLabel = (bits) => {
     .join(', ');
 };
 
+// The backend refuses a block while the profile has no zone, so the first save writes one
+export const zoneBody = (profileZone, browserZone = viewerZone()) => (profileZone ? null : { timezone: browserZone });
+
 // A backend row as the editor's fields, and back. The editor adds its own `key`.
 const hhmm = (value) => String(value ?? '').slice(0, 5);
 const isoDay = (date) => dayIso(date) || null;

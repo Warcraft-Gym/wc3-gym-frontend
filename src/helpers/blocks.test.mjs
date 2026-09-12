@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { asBlock, asBusy, bitsOf, blockFields, blockLine, busyFields, busyLine, commonHours, dayLabel, daysOf, dirty, freeLines, mark, weekFree } from './blocks.mjs';
+import { asBlock, asBusy, bitsOf, blockFields, blockLine, busyFields, busyLine, commonHours, dayLabel, daysOf, dirty, freeLines, mark, weekFree, zoneBody } from './blocks.mjs';
 
 test('weekday bits read as ISO days, Monday first', () => {
   assert.deepEqual(daysOf(1), [1]);
@@ -80,4 +80,10 @@ test('hours in common are worded, and zero says so', () => {
   assert.equal(commonHours(13.5), '13.5 h in common this round');
   assert.equal(commonHours(0.5), '30 min in common this round');
   assert.equal(commonHours(0), 'No hours in common in this round');
+});
+
+test('a profile with no zone saves the browser zone first', () => {
+  assert.deepEqual(zoneBody(null, 'Europe/Berlin'), { timezone: 'Europe/Berlin' });
+  assert.deepEqual(zoneBody('', 'Europe/Berlin'), { timezone: 'Europe/Berlin' });
+  assert.equal(zoneBody('Europe/Paris', 'Europe/Berlin'), null);  // the profile zone stands, browser or not
 });

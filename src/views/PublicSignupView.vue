@@ -36,10 +36,9 @@
             <dd>{{ zoneLabel(entry.timezone) || '—' }}</dd>
           </dl>
           <v-btn variant="outlined" prepend-icon="mdi-pencil" @click="editing = true">Change my details</v-btn>
-          <v-card v-if="schedulingEnabled" variant="tonal" color="primary" class="mt-6" to="/availability">
-            <v-card-item prepend-icon="mdi-calendar-remove" append-icon="mdi-chevron-right">
-              <v-card-title class="text-wrap">Mark the rounds you cannot play</v-card-title>
-              <v-card-subtitle>On your availability page</v-card-subtitle>
+          <v-card v-if="schedulingEnabled" variant="tonal" color="primary" class="mt-6" :to="myProfilePath(me)">
+            <v-card-item prepend-icon="mdi-calendar-check" append-icon="mdi-chevron-right">
+              <v-card-title class="text-wrap">Check in for each round on your profile</v-card-title>
             </v-card-item>
           </v-card>
         </template>
@@ -159,6 +158,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useSeasonStore, useAuthStore } from '@/stores';
+import { myProfilePath } from '@/helpers/players';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { storeToRefs } from 'pinia';
 import { findCountry } from '@/helpers/countries.js';

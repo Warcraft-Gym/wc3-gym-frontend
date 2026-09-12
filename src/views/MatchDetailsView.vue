@@ -60,6 +60,7 @@
   </div>
 
   <v-container fluid class="pa-4">
+    <StatusAlert v-model="errorMessage" />
     <!-- Week Navigation Panel -->
     <v-card class="mb-4" elevation="2">
       <v-card-text class="pa-3">
@@ -148,14 +149,14 @@
 
     <!-- Series Management Card -->
     <v-card class="mb-4" elevation="2">
-      <v-card-title class="d-flex align-center bg-primary">
+      <v-card-title class="d-flex align-center flex-wrap ga-2 bg-primary text-wrap">
         <v-icon class="mr-2">mdi-trophy-variant</v-icon>
         Series Management
         <v-spacer></v-spacer>
-        <v-chip class="mr-2" size="small" color="on-primary" variant="outlined">
+        <v-chip size="small" color="on-primary" variant="outlined">
           {{ series?.length || 0 }} Published
         </v-chip>
-        <v-chip v-if="auth.isCaptain" class="mr-2" size="small" color="on-primary" variant="outlined">
+        <v-chip v-if="auth.isCaptain" size="small" color="on-primary" variant="outlined">
           {{ draftSeries?.length || 0 }} Drafts
         </v-chip>
         <v-btn
@@ -223,7 +224,7 @@
                   <td class="py-1">
                     <PlayerName :player="item.player1" :race="item.player1_race" :host="item.host_player_id === item.player1.id" />
                     <div class="d-flex align-center ga-2">
-                      <v-chip size="small" color="info">{{ getW3CMMR(item.player1, null, item.player1_race) ?? 'N/A' }}</v-chip>
+                      <v-chip size="small" color="info">{{ mmrOf(item.player1, item.player1_race) ?? 'N/A' }}</v-chip>
                       <span class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></span>
                     </div>
                   </td>
@@ -240,7 +241,7 @@
                   <td class="py-1">
                     <PlayerName :player="item.player2" :race="item.player2_race" :host="item.host_player_id === item.player2.id" />
                     <div class="d-flex align-center ga-2">
-                      <v-chip size="small" color="info">{{ getW3CMMR(item.player2, null, item.player2_race) ?? 'N/A' }}</v-chip>
+                      <v-chip size="small" color="info">{{ mmrOf(item.player2, item.player2_race) ?? 'N/A' }}</v-chip>
                       <span class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></span>
                     </div>
                   </td>
@@ -353,7 +354,7 @@
                   <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player1.id)" :race="item.player2_race" /></td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player1, null, item.player1_race) || '—' }}
+                      {{ mmrOf(item.player1, item.player1_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
                   </td>
@@ -378,7 +379,7 @@
                   <td class="d-none d-md-table-cell"><VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1_race" /></td>
                   <td class="d-none d-md-table-cell text-end">
                     <v-chip size="small" color="info">
-                      {{ getW3CMMR(item.player2, null, item.player2_race) || '—' }}
+                      {{ mmrOf(item.player2, item.player2_race) || '—' }}
                     </v-chip>
                     <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
                   </td>
@@ -404,7 +405,7 @@
                 </template>
                 <template #actions><RowActions v-if="canDraft" :actions="draftActions(item)" /></template>
                 <template #side="{ player, race }">
-                  <v-chip size="small" color="info">{{ getW3CMMR(player, null, race) || '—' }}</v-chip>
+                  <v-chip size="small" color="info">{{ mmrOf(player, race) || '—' }}</v-chip>
                 </template>
               </SeriesCard>
             </div>
@@ -507,11 +508,8 @@
                   show-select
                   class="flex-grow-1"
                 >
-                  <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
-                  </template>
-                  <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                    <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                  <template v-slot:[`header.w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                    <W3CMmr :suffix="mmrSuffix" :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
                   </template>
                   <template v-slot:loading>
                     <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
@@ -522,11 +520,9 @@
                     </PlayerName>
                   </template>
                   <template v-slot:[`item.w3c_mmr`]="{ item }">
-                    <td>
-                      {{ getW3CMMR(item, currentW3CSeason, item.signup_race) || 'N/A' }}
-                      <span v-if="mmrSeasonLabel(item, currentW3CSeason, item.signup_race)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason, item.signup_race) }}</span>
-                      <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
-                    </td>
+                    {{ mmrOf(item, item.signup_race) || 'N/A' }}
+                    <span v-if="mmrSeasonLabel(item, currentW3CSeason, item.signup_race)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason, item.signup_race) }}</span>
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                   </template>
                 </v-data-table>
               </v-card>
@@ -727,7 +723,7 @@
           <v-row>
             <v-col cols="12" md="6">
               <v-card elevation="2">
-                <v-card-title class="bg-primary d-flex align-center">
+                <v-card-title class="bg-primary d-flex align-center flex-wrap ga-2 text-wrap">
                   <v-avatar size="28" class="mr-2"><img v-if="team1.id" class="team-icon" :src="teamImageUrl(team1)" @error="showDefaultTeamImage"></v-avatar>
                   {{ team1.name }}
                   <v-chip size="small" class="ml-2" color="on-primary" variant="outlined">
@@ -749,11 +745,8 @@
                     hover
                     show-select
                   >
-                    <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
-                    </template>
-                    <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                    <template v-slot:[`header.w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                      <W3CMmr :suffix="mmrSuffix" :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
                     </template>
                     <template v-slot:loading>
                       <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
@@ -783,8 +776,9 @@
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
-                        {{ getW3CMMR(item, null, item.signup_race) ?? 'N/A' }}
+                        {{ mmrOf(item, item.signup_race) ?? 'N/A' }}
                       </v-chip>
+                      <span v-if="mmrSeasonLabel(item, currentW3CSeason, item.signup_race)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason, item.signup_race) }}</span>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </template>
                   </v-data-table>
@@ -794,7 +788,7 @@
 
             <v-col cols="12" md="6">
               <v-card elevation="2">
-                <v-card-title class="bg-primary d-flex align-center">
+                <v-card-title class="bg-primary d-flex align-center flex-wrap ga-2 text-wrap">
                   <v-avatar size="28" class="mr-2"><img v-if="team2.id" class="team-icon" :src="teamImageUrl(team2)" @error="showDefaultTeamImage"></v-avatar>
                   {{ team2.name }}
                   <v-chip size="small" class="ml-2" color="on-primary" variant="outlined">
@@ -816,11 +810,8 @@
                     hover
                     show-select
                   >
-                    <template v-slot:[`header.p1_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
-                    </template>
-                    <template v-slot:[`header.p2_w3c_mmr`]="{ column, isSorted, getSortIcon }">
-                      <W3CMmr :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
+                    <template v-slot:[`header.w3c_mmr`]="{ column, isSorted, getSortIcon }">
+                      <W3CMmr :suffix="mmrSuffix" :sort-icon="isSorted(column) ? getSortIcon(column) : null" />
                     </template>
                     <template v-slot:loading>
                       <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
@@ -850,8 +841,9 @@
                     </template>
                     <template v-slot:[`item.w3c_mmr`]="{ item }">
                       <v-chip size="small" color="info">
-                        {{ getW3CMMR(item, null, item.signup_race) ?? 'N/A' }}
+                        {{ mmrOf(item, item.signup_race) ?? 'N/A' }}
                       </v-chip>
+                      <span v-if="mmrSeasonLabel(item, currentW3CSeason, item.signup_race)" class="text-caption text-medium-emphasis ml-1">{{ mmrSeasonLabel(item, currentW3CSeason, item.signup_race) }}</span>
                       <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
                     </template>
                   </v-data-table>
@@ -875,6 +867,7 @@
         <v-icon class="mr-2">mdi-lightbulb-on</v-icon>
         Proposed Series
       </v-card-title>
+      <StatusAlert v-model="errorMessage" class="mx-4 mt-4" />
       <v-card-subtitle class="pa-3">
         <v-row align="center" justify="center">
           <v-col cols="5" class="text-center">
@@ -974,20 +967,18 @@
                 <VsRaces :player="ladderById.get(item.player2.id)" :race="item.player1_race" />
               </template>
               <template v-slot:[`item.p1_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player1, null, item.player1_race) ?? 'N/A' }}
-                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
-                  </td>
+                  {{ mmrOf(item.player1, item.player1_race) ?? 'N/A' }}
+                  <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player1) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player1) }}</v-tooltip></div>
               </template>
               <template v-slot:[`item.p1_w3c_high_mmr`]="{ item }">
-                  <td>{{ getHighestW3CMMR(item.player1) ?? 'N/A' }}</td>
+                  {{ getHighestW3CMMR(item.player1) ?? 'N/A' }}
               </template>
               <template v-slot:[`item.p2_w3c_mmr`]="{ item }">
-                  <td>{{ getW3CMMR(item.player2, null, item.player2_race) ?? 'N/A' }}
-                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
-                  </td>
+                  {{ mmrOf(item.player2, item.player2_race) ?? 'N/A' }}
+                  <div class="text-caption text-medium-emphasis">{{ syncedAgo(item.player2) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item.player2) }}</v-tooltip></div>
               </template>
               <template v-slot:[`item.p2_w3c_high_mmr`]="{ item }">
-                  <td>{{ getHighestW3CMMR(item.player2) ?? 'N/A' }}</td>
+                  {{ getHighestW3CMMR(item.player2) ?? 'N/A' }}
               </template>
           <template v-slot:[`item.actions`]="{ item }">
             <v-btn 
@@ -1047,6 +1038,7 @@ import RowActions from '@/components/RowActions.vue';
 import SeriesCard from '@/components/SeriesCard.vue';
 import CastChips from '@/components/CastChips.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
 import bannerImg from '@/assets/media/match-banner.jpg'
 import { useRouter } from 'vue-router';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
@@ -1112,8 +1104,8 @@ const allDraftSeriesTableHeader = computed(() => [
   { mobile: false, title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { mobile: false, title: 'vs race', key: 'p1_vs_race', sortable: false },
   { mobile: false, title: 'Current MMR', value: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, currentW3CSeason.value, a?.player1_race) || 0;
-    let bValue = getW3CMMR(b?.player1, currentW3CSeason.value, b?.player1_race) || 0;
+    let aValue = mmrOf(a?.player1, a?.player1_race) || 0;
+    let bValue = mmrOf(b?.player1, b?.player1_race) || 0;
     return aValue - bValue;
   } },
   { mobile: false, title: 'Highest MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1125,8 +1117,8 @@ const allDraftSeriesTableHeader = computed(() => [
   { mobile: false, title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { mobile: false, title: 'vs race', key: 'p2_vs_race', sortable: false },
   { mobile: false, title: 'Current MMR', value: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, currentW3CSeason.value, a?.player2_race) || 0;
-    let bValue = getW3CMMR(b?.player2, currentW3CSeason.value, b?.player2_race) || 0;
+    let aValue = mmrOf(a?.player2, a?.player2_race) || 0;
+    let bValue = mmrOf(b?.player2, b?.player2_race) || 0;
     return aValue - bValue;
   }},
   { mobile: false, title: 'Highest MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1144,8 +1136,8 @@ const proposedSeriesTableHeader = [
   { title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { title: 'vs race', key: 'p1_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p1_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player1, null, a?.player1_race) || 0;
-    let bValue = getW3CMMR(b?.player1, null, b?.player1_race) || 0;
+    let aValue = mmrOf(a?.player1, a?.player1_race) || 0;
+    let bValue = mmrOf(b?.player1, b?.player1_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Highest Race MMR', key: 'p1_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1157,8 +1149,8 @@ const proposedSeriesTableHeader = [
   { title: 'Faced Races', key: 'p2_matchup_history', sortable: false },
   { title: 'vs race', key: 'p2_vs_race', sortable: false },
   { title: 'Current MMR', key: 'p2_w3c_mmr', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a?.player2, null, a?.player2_race) || 0;
-    let bValue = getW3CMMR(b?.player2, null, b?.player2_race) || 0;
+    let aValue = mmrOf(a?.player2, a?.player2_race) || 0;
+    let bValue = mmrOf(b?.player2, b?.player2_race) || 0;
     return aValue - bValue;
   }},
   { title: 'Highest Race MMR', key: 'p2_w3c_high_mmr', sortable: true, sortRaw: (a, b) => {
@@ -1173,8 +1165,8 @@ const proposedSeriesTableHeader = [
 const tablePlayerHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
   { title: currentW3CSeason.value ? `MMR (S${currentW3CSeason.value})` : 'MMR', key: 'w3c_mmr', value: 'item', sortable: true, sortRaw: (a, b) => {
-    let aValue = getW3CMMR(a, currentW3CSeason.value, a?.signup_race) || 0;
-    let bValue = getW3CMMR(b, currentW3CSeason.value, b?.signup_race) || 0;
+    let aValue = mmrOf(a, a?.signup_race) || 0;
+    let bValue = mmrOf(b, b?.signup_race) || 0;
     return aValue - bValue;
   }
 },
@@ -1252,6 +1244,8 @@ const adminZone = computed(() => zoneLabel(
 ));
 const creationSeriesError = ref(null);
 const updateSeriesError = ref('');
+// Every write that has no dialog of its own reports its failure here
+const errorMessage = ref(null);
 
 // UI state
 const teamRostersPanel = ref(null);
@@ -1280,6 +1274,9 @@ const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } 
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);
+// Every MMR on this page reads the same season, so a sort never contradicts the number beside it
+const mmrOf = (player, race) => getW3CMMR(player, currentW3CSeason.value, race);
+const mmrSuffix = computed(() => (currentW3CSeason.value ? ` (S${currentW3CSeason.value})` : ''));
 
 // Helper to get highest MMR across all races, preferring current season with fallback to previous
 const getHighestW3CMMR = (player) => {
@@ -1466,6 +1463,7 @@ const fetchSeasonMatches = async () => {
 
 const fetchMatchDetails = async () => {
   isLoading.value = true;
+  errorMessage.value = null;
   try {
     await matchStore.fetchMatchDetails(matchId.value);
     // The rosters, the series rows and the season navigation do not depend on each other
@@ -1540,6 +1538,7 @@ const fetchSeriesRows = () => Promise.all([
 
 const fetchMatchSeries = async () => {
   isLoading.value = true;
+  errorMessage.value = null;
   try {
     await fetchSeriesRows();
     await loadMissingSeriesPlayers();
@@ -1561,6 +1560,7 @@ const seriesActions = (item) => [
 const resultColor = (own, other) => ((own || 0) > (other || 0) ? 'win' : (own || 0) < (other || 0) ? 'loss' : 'draw');
 
 const draftActions = (item) => [
+  { icon: 'mdi-pencil', label: 'Edit draft', public: canDraft.value, onClick: () => editSeries(item) },
   { icon: item.is_fantasy_match ? 'mdi-star-off' : 'mdi-star', label: item.is_fantasy_match ? 'Remove from Fantasy' : 'Mark as Fantasy Match', color: item.is_fantasy_match ? 'warning' : 'primary', onClick: () => toggleDraftFantasyMatch(item) },
   { icon: 'mdi-publish', label: 'Publish Series', color: 'success', onClick: () => publishDraftSeries(item) },
   { icon: 'mdi-delete', label: 'Delete Draft', color: 'error', public: canDraft.value, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
@@ -1611,13 +1611,10 @@ const updateSeries = async () => {
   isLoading.value = true;
   updateSeriesError.value = '';
   try{
-    // Only process date/time if both are provided
-    if (selectedDate.value && selectedTime.value) {
-      selectedSeries.value.date_time = storedUtc(selectedDate.value, selectedTime.value);
-    } else {
-      // If date/time not set, ensure it's null
-      selectedSeries.value.date_time = null;
-    }
+    // A date with no time is still a scheduled series: it takes midnight in the admin's zone
+    selectedSeries.value.date_time = selectedDate.value
+      ? storedUtc(selectedDate.value, selectedTime.value || '00:00')
+      : null;
     
     // Update either draft or published series depending on type
     if (selectedSeries.value.isDraft) {
@@ -1688,7 +1685,7 @@ const proposeSeries = async () => {
 
     for(let i = 0; i< t1_player.length; i++) {
       let p1 = t1_player[i];
-      let p1_mmr = getW3CMMR(p1, null, p1.signup_race) || 0;
+      let p1_mmr = mmrOf(p1, p1.signup_race) || 0;
       
       for(let k=0;k< t2_player.length; k++) {
         let p2_mmr = 0;
@@ -1706,7 +1703,7 @@ const proposeSeries = async () => {
           continue;
         }
 
-        p2_mmr = getW3CMMR(p2, null, p2.signup_race) || 0;
+        p2_mmr = mmrOf(p2, p2.signup_race) || 0;
         
         let mmr_diff = p1_mmr - p2_mmr;
         if (mmr_diff<0){
@@ -1774,6 +1771,7 @@ const createSelectedProposedSeries = async (isDraft = false) => {
     cancelProposeSeries();
   } catch (error) {
     console.error('Failed to create series:', error);
+    errorMessage.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1809,6 +1807,7 @@ const createSeries = async () => {
     cancelCreateSeries();
   } catch (error) {
     console.error('Failed to create series:', error);
+    creationSeriesError.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1821,6 +1820,7 @@ const removeSeries = async (seriesId) => {
     await fetchMatchDetails(); // Refresh match details after removal
   } catch (error) {
     console.error('Failed to remove series:', error);
+    errorMessage.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1833,6 +1833,7 @@ const removeDraftSeries = async (draftSeriesId) => {
     await fetchMatchSeries(); // Refresh after removal
   } catch (error) {
     console.error('Failed to remove draft series:', error);
+    errorMessage.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1845,6 +1846,7 @@ const removeAllSeries = async () => {
     await fetchMatchDetails(); // Refresh match details after removal
   } catch (error) {
     console.error('Failed to remove series:', error);
+    errorMessage.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1857,6 +1859,7 @@ const removeAllDraftSeries = async () => {
     await fetchMatchSeries(); // Refresh after removal
   } catch (error) {
     console.error('Failed to remove draft series:', error);
+    errorMessage.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1880,6 +1883,7 @@ const publishDraftSeries = async (draftSeriesItem) => {
     await fetchMatchSeries(); // Refresh to show updated status
   } catch (error) {
     console.error('Failed to publish draft series:', error);
+    errorMessage.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1904,6 +1908,8 @@ const publishAllDraftSeries = async () => {
     await fetchMatchSeries();
   } catch (error) {
     console.error('Failed to publish all draft series:', error);
+    await fetchMatchSeries();  // the drafts promoted before the failure must leave the list
+    errorMessage.value = `${error.message}. The drafts still listed were not published.`;
   } finally {
     isLoading.value = false;
   }
@@ -1921,6 +1927,7 @@ const toggleDraftFantasyMatch = async (draftSeriesItem) => {
     await fetchMatchSeries(); // Refresh to show updated status
   } catch (error) {
     console.error('Failed to toggle fantasy match:', error);
+    errorMessage.value = error.message;
   } finally {
     isLoading.value = false;
   }
@@ -1943,7 +1950,7 @@ onMounted(async () => {
 
 #matchHeader {
   position: relative;
-  color: white;
+  color: rgb(var(--v-theme-on-band));
   min-height: 300px;
   height: 300px;
 }

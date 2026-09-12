@@ -21,9 +21,12 @@
 
 <script setup>
 import { computed, inject, useAttrs } from 'vue'
+import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
+import { canSeeRole } from '@/helpers'
 import { openPlayer, panelLinks, playerPath } from '@/helpers/players'
 import { raceWrapper } from '@/helpers/races.js'
+import { useAuthStore } from '@/stores'
 
 const props = defineProps({
   player: { type: Object, required: true }, // needs name, country
@@ -43,10 +46,14 @@ const offRaceHint = computed(
 
 // The name links to the player page, unless the view handles the click. On a
 // drafting page and inside the panel it opens the panel instead, and the dock
-// icon says so before the click.
+// icon says so before the click. The player page is member-only, so on a public
+// page (the season report) a guest reads a plain name instead of being sent to
+// the join card.
 const attrs = useAttrs()
+const { me } = storeToRefs(useAuthStore())
 const inPanelMode = inject(panelLinks, false)
-const clickable = computed(() => !props.plain && !attrs.onClick && props.player.id != null)
+const mayOpenPlayer = computed(() => !!me.value && canSeeRole(me.value.role, 'member'))
+const clickable = computed(() => !props.plain && !attrs.onClick && props.player.id != null && mayOpenPlayer.value)
 const opensPanel = computed(() => clickable.value && inPanelMode)
 const to = computed(() => (clickable.value && !inPanelMode ? playerPath(props.player) : null))
 </script>

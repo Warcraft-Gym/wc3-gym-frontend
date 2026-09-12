@@ -1,7 +1,7 @@
 <!-- Every opponent this player has met in the GNL, and every meeting behind the record -->
 <template>
   <v-card v-if="opponents.length" elevation="2" class="mt-6">
-    <v-card-title class="bg-primary d-flex justify-space-between align-center">
+    <v-card-title class="bg-primary d-flex flex-wrap ga-2 justify-space-between align-center">
       <div class="d-flex align-center">
         <v-icon class="mr-2">mdi-sword-cross</v-icon>
         <span>Head to Head, Lifetime</span>

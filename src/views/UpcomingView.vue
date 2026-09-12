@@ -44,6 +44,7 @@
               <template #title>
                 {{ timeOf(row.date_time) }} ·
                 <RouterLink :to="`/match/${row.match_id}`">Round {{ row.match?.playday ?? '?' }}</RouterLink>
+                · {{ row.match?.team1?.name }} vs {{ row.match?.team2?.name }}
               </template>
               <template #actions><CastChips :series="row" /></template>
               <template #side="{ n, won }">

@@ -1,7 +1,7 @@
 <!-- One series on a phone: a title line, then one line per player with a value at the right -->
 <template>
   <div class="series-card">
-    <div class="d-flex align-center justify-space-between text-caption text-medium-emphasis">
+    <div class="title-row d-flex align-center justify-space-between text-caption text-medium-emphasis">
       <span><slot name="title" /></span>
       <slot name="actions" />
     </div>
@@ -36,5 +36,10 @@ const winner = computed(() => {
 }
 .series-card :deep(.player-name) {
   white-space: normal;
+}
+/* the caption-sized title link is the only way into the match on a phone */
+.title-row :deep(a) {
+  display: inline-block;
+  padding-block: 6px;
 }
 </style>

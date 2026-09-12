@@ -28,7 +28,7 @@ and drops your edits.
 
 ### W3Champions integration
 
-- **Current WC3 season**: leave blank to follow the latest W3Champions season.
+- **Current W3C season**: leave blank to follow the latest W3Champions season.
 - **W3Champions API URL**: leave blank to use the backend default.
 
 ### GNL league settings

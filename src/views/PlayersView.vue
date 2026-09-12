@@ -72,7 +72,7 @@
         <template #item="{ item }">
           <tr class="text-no-wrap" :class="{ 'player-row': item.id != null }" @click="go(item)">
             <td>
-              <PlayerName v-if="item.id != null" :player="item" @click.stop="go(item)">
+              <PlayerName v-if="item.id != null" :player="item">
                 <template v-if="!hasW3CStatsTwoSeasons(item, currentW3CSeason, item.race)">
                   <v-tooltip>
                     <template #activator="{ props }">

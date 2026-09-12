@@ -46,12 +46,12 @@
 
           <template #[`item.icon`]="{ item }">
             <v-avatar size="40">
-              <img class="team-icon" :src="teamImageUrl(item)" @error="showDefaultTeamImage">
+              <img class="team-icon" alt="" :src="teamImageUrl(item)" @error="showDefaultTeamImage">
             </v-avatar>
           </template>
 
           <template #[`item.long_name`]="{ item }">
-            <strong>{{ item.long_name || item.name }}</strong>
+            <RouterLink :to="`/team/${item.id}`"><strong>{{ item.long_name || item.name }}</strong></RouterLink>
           </template>
 
           <template #[`item.seasons`]="{ item }">

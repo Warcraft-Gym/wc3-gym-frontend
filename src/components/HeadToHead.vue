@@ -1,7 +1,7 @@
 <!-- Every opponent this player has met in the GNL, and every meeting behind the record -->
 <template>
   <v-card v-if="opponents.length" elevation="2" class="mt-6">
-    <v-card-title class="bg-primary d-flex justify-space-between align-center">
+    <v-card-title class="bg-primary d-flex flex-wrap ga-2 justify-space-between align-center">
       <div class="d-flex align-center">
         <v-icon class="mr-2">mdi-sword-cross</v-icon>
         <span>Head to Head, Lifetime</span>
@@ -20,7 +20,7 @@
       </thead>
       <tbody>
         <template v-for="opp in opponents" :key="opp.id">
-          <tr class="opponent-row" @click="openOpponent = openOpponent === opp.id ? null : opp.id">
+          <tr class="opponent-row" @click="toggle(opp.id)">
             <!-- no race here: the row spans every season, and a player is not one race -->
             <td>
               <PlayerName :player="opp" />
@@ -32,7 +32,14 @@
               </v-chip>
             </td>
             <td class="text-right">
-              <v-icon size="small">{{ openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+              <v-btn
+                variant="text"
+                size="small"
+                :icon="openOpponent === opp.id ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                :aria-label="`${openOpponent === opp.id ? 'Hide' : 'Show'} meetings with ${opp.name}`"
+                :aria-expanded="openOpponent === opp.id"
+                @click.stop="toggle(opp.id)"
+              />
             </td>
           </tr>
           <tr
@@ -79,6 +86,8 @@ watch(() => props.playerId, async (id) => {
   openOpponent.value = null;
   opponents.value = id ? (await playerStore.playerHistory(id).catch(() => null))?.opponents ?? [] : [];
 }, { immediate: true });
+
+const toggle = (id) => { openOpponent.value = openOpponent.value === id ? null : id };
 
 const recordColor = (won, lost) => (won > lost ? 'win' : won < lost ? 'loss' : undefined);
 

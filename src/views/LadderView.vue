@@ -45,7 +45,7 @@
       <v-card-text class="text-center pa-8">
         <W3CIcon :size="64" style="opacity: 0.35" />
         <div class="text-h6 text-medium-emphasis mt-4 mb-2">No ladder games synced for {{ seasonName }}</div>
-        <p class="text-medium-emphasis mb-4">Sync the season to fetch its W3Champions matches</p>
+        <p class="text-medium-emphasis mb-4">{{ auth.isAdmin ? 'Sync the season to fetch its W3Champions matches' : 'An admin syncs the season from W3Champions.' }}</p>
         <v-btn
           variant="elevated"
           color="primary"

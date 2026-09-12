@@ -11,6 +11,9 @@
           Team Rounds
         </h1>
       </v-col>
+      <v-col cols="auto" class="d-flex align-center">
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="`/team/${teamId}/season/${$route.params.season_id}`">Back to team</v-btn>
+      </v-col>
     </v-row>
 
     <StatusAlert v-model="errorMessage" />
@@ -21,8 +24,8 @@
         <span>{{ team?.name }}</span>
       </v-card-title>
 
-      <v-select v-if="smAndDown" v-model="shownRound" :items="rounds" label="Round" density="compact" hide-details class="ma-2" />
-      <v-table density="compact">
+      <v-select v-if="smAndDown && loaded" v-model="shownRound" :items="roundItems" label="Round" density="compact" hide-details class="ma-2" />
+      <v-table v-if="loaded" density="compact">
         <thead>
           <tr>
             <th>Player</th>
@@ -39,16 +42,18 @@
           <tr v-for="player in players" :key="player.id">
             <td>
               <PlayerName :player="player" :race="player.signup_race" />
-              <v-btn v-if="smAndDown" size="x-small" variant="text" class="d-block px-0" :disabled="!!saving || !rounds.length" @click="outToLastRound(player.id)">
+              <v-btn v-if="smAndDown" size="small" variant="outlined" class="d-block mt-1" :disabled="!!saving || !rounds.length" @click="outToLastRound(player.id)">
                 Out to round {{ rounds.length }}
               </v-btn>
             </td>
             <td v-for="round in shownRounds" :key="round" class="text-center">
-              <div class="d-flex ga-1 justify-center">
+              <div class="d-flex ga-2 justify-center">
                 <v-btn
                   icon="mdi-check"
-                  size="x-small"
+                  :size="smAndDown ? 'default' : 'x-small'"
                   color="success"
+                  :aria-label="`${player.name} can play round ${round}`"
+                  :aria-pressed="answerFor(player.id, round) === true"
                   :variant="answerFor(player.id, round) === true ? 'flat' : 'outlined'"
                   :loading="saving === `${player.id}|${round}`"
                   :disabled="!!saving"
@@ -56,8 +61,10 @@
                 ></v-btn>
                 <v-btn
                   icon="mdi-close"
-                  size="x-small"
+                  :size="smAndDown ? 'default' : 'x-small'"
                   color="error"
+                  :aria-label="`${player.name} cannot play round ${round}`"
+                  :aria-pressed="answerFor(player.id, round) === false"
                   :variant="answerFor(player.id, round) === false ? 'flat' : 'outlined'"
                   :loading="saving === `${player.id}|${round}`"
                   :disabled="!!saving"
@@ -80,7 +87,7 @@
         </tbody>
       </v-table>
 
-      <v-card-text v-if="!players.length && !isLoading" class="text-center pa-8">
+      <v-card-text v-if="loaded && !players.length && !isLoading" class="text-center pa-8">
         <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
         <div class="text-h6 text-medium-emphasis mt-4">No players on this team this season</div>
       </v-card-text>
@@ -114,6 +121,8 @@ const seasonId = computed(() => seasonStore.seasonIdOf(router.currentRoute.value
 const isLoading = ref(false);
 const errorMessage = ref(null);
 const rows = ref([]);
+// The grid speaks for the answers it read: without them every cell would read 'No answer' and stay writable
+const loaded = ref(false);
 // The round labels: the season's round gives the dates, the team's match names the opponent (#33)
 const roundOf = (round) => season.value?.rounds?.find(r => r.playday === round) || { playday: round };
 const matches = ref([]);
@@ -127,6 +136,8 @@ const rounds = computed(() => Array.from({ length: season.value?.round_count || 
 const { smAndDown } = useDisplay();
 const shownRound = ref(1);
 const shownRounds = computed(() => smAndDown.value ? rounds.value.filter(w => w === shownRound.value) : rounds.value);
+// the picker names each round the way the column header does
+const roundItems = computed(() => rounds.value.map(round => ({ value: round, title: `Round ${round} · ${roundLabel(roundOf(round))}` })));
 
 const rowFor = (userId, round) => rows.value.find(row => row.user_id === userId && row.playday === round);
 const answerFor = (userId, round) => rowFor(userId, round)?.available ?? null;
@@ -197,6 +208,7 @@ onMounted(async () => {
     ]);
     rows.value = answered;
     matches.value = seasonMatches;
+    loaded.value = true;
   } catch (error) {
     console.error(error);
     errorMessage.value = error.message || 'Failed to load the team rounds.';

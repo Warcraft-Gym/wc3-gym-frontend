@@ -12,7 +12,7 @@
     <v-card v-if="team" elevation="2" class="mb-4">
       <v-card-title class="bg-primary d-flex align-center ga-3">
         <v-avatar size="40">
-          <img class="team-icon" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
+          <img class="team-icon" alt="" :src="teamImageUrl(team)" @error="showDefaultTeamImage">
         </v-avatar>
         <div>
           <div>{{ team.long_name || team.name }}</div>
@@ -26,6 +26,13 @@
           <v-icon v-if="season.id === currentSeasonId" size="small" class="ml-1" title="Current season">mdi-star</v-icon>
         </v-tab>
       </v-tabs>
+
+      <!-- The season team page carries the roster and the captain's Team Rounds button -->
+      <v-card-text v-if="seasonSlug" class="pb-0">
+        <v-btn size="small" variant="outlined" prepend-icon="mdi-shield-account" :to="`/team/${teamId}/season/${seasonSlug}`">
+          Season team page
+        </v-btn>
+      </v-card-text>
 
       <v-card-text v-if="seasonInfo" class="season-stats">
         <div v-for="stat in stats" :key="stat.label" class="text-right">
@@ -55,12 +62,12 @@
             <td>
               <div class="d-flex align-center ga-2">
                 <v-avatar size="24" rounded="sm">
-                  <img class="team-icon" :src="teamImageUrl(row.opponent)" @error="showDefaultTeamImage">
+                  <img class="team-icon" alt="" :src="teamImageUrl(row.opponent)" @error="showDefaultTeamImage">
                 </v-avatar>
                 {{ row.opponent?.long_name || row.opponent?.name }}
               </div>
             </td>
-            <td class="text-right text-no-wrap stat-value">{{ row.wins }}–{{ row.losses }}</td>
+            <td class="text-right text-no-wrap stat-value">{{ row.wins }}–{{ row.losses }}<span v-if="row.toPlay" class="text-medium-emphasis"> of {{ row.wins + row.losses + row.toPlay }}</span></td>
             <td class="text-right text-no-wrap stat-value" :class="{ 'font-weight-bold': row.pointsFor > row.pointsAgainst }">{{ row.pointsFor }}–{{ row.pointsAgainst }}</td>
           </tr>
         </tbody>
@@ -137,6 +144,7 @@ const members = computed(() => seasonTeam.value?.player_by_season?.[seasonId.val
 
 const rank = computed(() => seasonRank(standings.value, teamId, seasonId.value));
 const rounds = computed(() => roundResults(seasonSeries.value, teamId));
+const seasonSlug = computed(() => (seasonId.value ? seasonStore.slugOf(seasonId.value) : null));
 const stats = computed(() => {
   const { wins, losses } = seriesRecord(rounds.value);
   return [

@@ -13,24 +13,28 @@ export const seasonRank = (teams = [], teamId, seasonId) => {
   return index < 0 ? null : { rank: index + 1, of: order.length };
 };
 
-// One row per match with a scored series: the opponent, series won and lost, points for and against
+// One row per match: the opponent, series won, lost and still to play, points for and against
 export const roundResults = (series = [], teamId) => {
   const byMatch = new Map();
   for (const s of series) {
     const match = s.match;
-    if (!match || ![match.team1_id, match.team2_id].includes(teamId) || isUnscored(s)) continue;
+    if (!match || ![match.team1_id, match.team2_id].includes(teamId)) continue;
     const home = match.team1_id === teamId;
     const row = byMatch.get(s.match_id) ?? {
       matchId: s.match_id,
       playday: match.playday,
       opponent: home ? match.team2 : match.team1,
-      wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0,
+      wins: 0, losses: 0, toPlay: 0, pointsFor: 0, pointsAgainst: 0,
     };
-    const [own, opp] = home ? [s.player1_score, s.player2_score] : [s.player2_score, s.player1_score];
-    if (own > opp) row.wins++;
-    if (own < opp) row.losses++;
-    row.pointsFor += (home ? s.player1_points : s.player2_points) ?? 0;
-    row.pointsAgainst += (home ? s.player2_points : s.player1_points) ?? 0;
+    if (isUnscored(s)) {
+      row.toPlay++;
+    } else {
+      const [own, opp] = home ? [s.player1_score, s.player2_score] : [s.player2_score, s.player1_score];
+      if (own > opp) row.wins++;
+      if (own < opp) row.losses++;
+      row.pointsFor += (home ? s.player1_points : s.player2_points) ?? 0;
+      row.pointsAgainst += (home ? s.player2_points : s.player1_points) ?? 0;
+    }
     byMatch.set(s.match_id, row);
   }
   return [...byMatch.values()].sort((a, b) => a.playday - b.playday);

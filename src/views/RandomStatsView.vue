@@ -120,17 +120,18 @@
           <RaceIcon :raceIdentifier="raceIdMap[raceName]" class="mr-2" />
           <span>Playing as {{ raceName }}</span>
           <v-spacer />
-          <v-chip color="on-primary" variant="tonal" size="small" class="mr-2">
+          <!-- outlined, not tonal: a tonal wash over the bronze band leaves its own text at 4.02:1 -->
+          <v-chip color="on-primary" variant="outlined" size="small" class="mr-2">
             {{ data.wins + data.losses }} games
           </v-chip>
-          <v-chip color="win" size="small">
+          <v-chip color="on-primary" variant="outlined" size="small">
             {{ Math.round(data.wins / (data.wins + data.losses) * 100) }}% WR
           </v-chip>
         </v-card-title>
 
         <v-table density="comfortable">
           <thead>
-            <tr class="bg-surface-variant">
+            <tr>
               <th class="text-left">Opponent Race</th>
               <th class="text-right text-win">Wins</th>
               <th class="text-right text-loss">Losses</th>
@@ -155,7 +156,6 @@
               <td class="text-right">
                 <v-chip
                   size="small"
-                  color="win"
                   variant="tonal"
                 >
                   {{ Math.round(matchup.wins / (matchup.wins + matchup.losses) * 100) }}%
@@ -171,10 +171,7 @@
               <td class="text-right font-weight-bold text-loss">{{ data.losses }}</td>
               <td class="text-right font-weight-bold">{{ data.wins + data.losses }}</td>
               <td class="text-right">
-                <v-chip
-                  size="small"
-                  color="win"
-                >
+                <v-chip size="small">
                   {{ Math.round(data.wins / (data.wins + data.losses) * 100) }}%
                 </v-chip>
               </td>

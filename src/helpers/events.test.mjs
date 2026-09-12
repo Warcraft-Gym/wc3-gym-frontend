@@ -94,3 +94,11 @@ test('an account with no seasons gets no cards', () => {
   assert.deepEqual(homeCards({ me: { seasons: [] }, seasons, now }), []);
   assert.deepEqual(homeCards({ me: null, seasons, now }), []);
 });
+
+test('a signed-up player of an open season reads the start, not the signups sentence', () => {
+  const early = { ...me, seasons: [{ ...me.seasons[1], signed_up: true, captain: true, team: { id: 3, name: 'GNLA' } }] };
+  const [card] = homeCards({ me: early, seasons, now });
+  assert.equal(card.status, 'Starts 2 Nov');
+  assert.deepEqual(card.chips.map((chip) => chip.title), ['Signed up', 'Captain · GNLA']);
+  assert.deepEqual(card.primary, { title: 'Your series', to: '/player-dashboard', variant: 'elevated' });
+});

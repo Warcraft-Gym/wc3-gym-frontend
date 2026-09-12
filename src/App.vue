@@ -136,28 +136,36 @@ const seatItems = ref([]);
 // every team of every season /me lists, so an admin can hold a seat in more than one season
 const openViewAs = async () => {
     viewDialog.value = true;
+    viewRole.value = authStore.viewAs?.role ?? 'member';  // the dialog opens on the view in force
+    viewSeats.value = (authStore.viewAs?.seats ?? []).map(seat => `${seat.teamId}:${seat.seasonId}`);
     const teamStore = useTeamStore();
     const seasons = me.value?.seasons ?? [];
     const rosters = await Promise.all(seasons.map(season => teamStore.getTeamsSeasonBasic(season.id).catch(() => [])));
     seatItems.value = seasons.flatMap((season, i) => rosters[i].map((team, j) => ({
         title: `${team.name} · ${season.name}`,
         value: `${team.id}:${season.id}`,
+        team: team.name,
         season: season.name,
         first: j === 0,
     })));
 };
 const applyViewAs = () => {
     viewDialog.value = false;
-    const seats = viewSeats.value.map(seat => ({ teamId: Number(seat.split(':')[0]), seasonId: Number(seat.split(':')[1]) }));
+    const seats = viewSeats.value.map(seat => {
+        const item = seatItems.value.find(row => row.value === seat);
+        const [teamId, seasonId] = seat.split(':');
+        return { teamId: Number(teamId), seasonId: Number(seasonId), team: item?.team, season: item?.season };
+    });
     authStore.setViewAs(viewRole.value === 'captain' ? { role: 'captain', seats } : { role: viewRole.value });
 };
-// the banner names each seat; /me answers with the seat's team once the view is on
+// the banner names each seat the admin chose; a seat stored before this shape falls back to /me
 const viewAsLabel = computed(() => {
     const role = authStore.viewAs?.role?.replace(/^./, c => c.toUpperCase()) ?? '';
-    const seats = (authStore.viewAs?.seats ?? [])
-        .map(seat => me.value?.seasons?.find(season => Number(season.id) === seat.seasonId))
-        .filter(season => season?.team)
-        .map(season => `${season.team.name} (${season.name})`);
+    const seats = (authStore.viewAs?.seats ?? []).map(seat => {
+        const entry = me.value?.seasons?.find(season => Number(season.id) === seat.seasonId);
+        const team = seat.team ?? entry?.team?.name;
+        return team && `${team} (${seat.season ?? entry?.name})`;
+    }).filter(Boolean);
     return seats.length ? `${role} · ${seats.join(', ')}` : role;
 });
 </script>

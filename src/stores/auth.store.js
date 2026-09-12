@@ -12,6 +12,9 @@ if (localStorage.getItem('clerk_key') !== CLERK_KEY) {
     localStorage.setItem('clerk_key', CLERK_KEY);
 }
 
+// a captain view stored by the build before seats names no seat, so it reaches nothing; drop it
+const staleView = (v) => (v?.role === 'captain' && !v.seats?.length ? (localStorage.removeItem('viewAs'), null) : v);
+
 let clerk = null;  // Clerk's useAuth(), handed over by App.vue where composables are legal
 
 export const useAuthStore = defineStore({
@@ -19,7 +22,7 @@ export const useAuthStore = defineStore({
     state: () => ({
         user: JSON.parse(localStorage.getItem('user')),  // the legacy admin-token session only
         me: JSON.parse(localStorage.getItem('me')),
-        viewAs: JSON.parse(localStorage.getItem('viewAs')),  // { role, seats? }; an admin seeing the app as a lower role
+        viewAs: staleView(JSON.parse(localStorage.getItem('viewAs'))),  // { role, seats? }; an admin seeing the app as a lower role
         loginError: null  // why the last /me failed; the login page shows it
     }),
     getters: {

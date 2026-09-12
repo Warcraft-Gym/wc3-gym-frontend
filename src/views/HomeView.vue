@@ -105,7 +105,7 @@ onMounted(fetchHomeData);
             </div>
             <div class="flex-grow-1 min-w-0">
               <h2 class="text-h5 font-weight-bold">{{ card.name }}</h2>
-              <div class="text-body-2 text-medium-emphasis">{{ card.status }}</div>
+              <div v-if="card.status" class="text-body-2 text-medium-emphasis">{{ card.status }}</div>
               <div v-if="card.chips.length" class="d-flex flex-wrap ga-2 mt-2">
                 <v-chip v-for="chip in card.chips" :key="chip.title" :color="chip.color" :prepend-icon="chip.icon" variant="tonal" size="small">{{ chip.title }}</v-chip>
               </div>

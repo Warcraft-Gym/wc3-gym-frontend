@@ -8,10 +8,12 @@ export function seasonAction(season) {
   return action === 'signup' && season.signups_open === false ? 'request' : action;
 }
 
-// The line under a season name: the round in play for a player who is in, else where the signups stand
+// The line under a season name: the round in play for a player who is in, the start
+// date while his season has no round yet, else where the signups stand
 function seasonStatus(season, round) {
   if (round) return `Round ${round.playday} of ${season.round_count ?? season.rounds.length} · ${roundLabel(round)}`;
   if (season.phase !== 'open') return 'In progress';
+  if (season.signed_up) return season.start_date ? `Starts ${roundLabel({ start_date: season.start_date })}` : '';
   return season.signups_open === false ? 'Signups are closed. An admin may add you.' : 'Signups are open';
 }
 

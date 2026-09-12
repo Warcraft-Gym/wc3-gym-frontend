@@ -237,7 +237,9 @@ const applyTiers = async () => {
   const allocation = {};
   for (const row of rows.value) if (row.id in moves.value) allocation[row.id] = tierOf(moves.value[row.id]);
   const pinned = Object.keys(allocation).length;
-  if (!confirm(`Write ${tierCount.value} tiers, ${pinned} set by hand? Every other player follows their W3C MMR as of today.`)) return;
+  // A commenced season's drafted rosters follow the tiers, so the confirm says so
+  const commenced = phase.value !== 'open' ? ' This season has started: tiers already drafted against will move.' : '';
+  if (!confirm(`Write ${tierCount.value} tiers, ${pinned} set by hand? Every other player follows their W3C MMR as of today.${commenced}`)) return;
 
   isSaving.value = true;
   errorMessage.value = null;

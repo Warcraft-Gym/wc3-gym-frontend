@@ -16,3 +16,12 @@ export function tierChanges(cuts, stored, names, pins, storedPins) {
   if (moved) out.push(`${moved} ${moved === 1 ? 'player' : 'players'} moved by hand`);
   return out;
 }
+
+// Why a fantasy team cannot be saved yet, or null when its tier slots are filled.
+// `selected` maps a tier number to the player id picked for it.
+export function tierSelectionError(tierCount, selected) {
+  if (!tierCount) return 'The player tiers for this season are not cut yet.';
+  const missing = Array.from({ length: tierCount }, (_, i) => i + 1).filter((tier) => !selected[tier]);
+  if (missing.length) return `Please select players for tier(s): ${missing.join(', ')}`;
+  return null;
+}

@@ -37,7 +37,10 @@
       <v-card-text class="pt-4">
                   
                   <!-- No team, and why the form is not here -->
-                  <v-alert v-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
+                  <v-alert v-if="!season && !existingTeam && !isLoading" type="info" variant="tonal" class="mb-4">
+                    The season did not load, so registration is unavailable. Please try again later.
+                  </v-alert>
+                  <v-alert v-else-if="ended && !existingTeam" type="info" variant="tonal" class="mb-4">
                     You had no fantasy team in {{ seasonName }}.
                   </v-alert>
                   <v-alert v-else-if="phase !== 'open' && !existingTeam" type="info" variant="tonal" class="mb-4">
@@ -86,6 +89,7 @@
                               Bench Points: {{ existingTeam.bench_points || 0 }}<br>
                               Team Points: {{ existingTeam.team_points || 0 }}<br>
                               Race Points: {{ existingTeam.race_points || 0 }}<br>
+                              <span v-if="season?.fantasy_grind">Grind Points: {{ existingTeam.grind_points || 0 }}<br></span>
                               Bet Points: {{ existingTeam.bet_points || 0 }}
                             </div>
                           </v-col>
@@ -204,7 +208,7 @@
                       </v-card-title>
                       <v-card-text class="pt-4">
                         <v-alert type="info" variant="tonal" class="mb-4">
-                          Pick one player from each tier. Records and games are W3C ladder, {{ windowLabel }}.
+                          Pick one player from each tier. Records and games are W3C ladder{{ windowLabel ? `, ${windowLabel}` : '' }}.
                         </v-alert>
 
                         <GroupedTable :columns="draftColumns" :groups="draftGroups" default-open empty="No players tiered this season">
@@ -218,7 +222,7 @@
                           <template #rows="{ group }">
                             <template v-for="row in group.rows" :key="row.id">
                               <tr class="detail-row" :class="{ picked: tierSelections[group.tier] === row.id }">
-                                <td><input v-model="tierSelections[group.tier]" type="radio" class="pick" :name="`tier-${group.tier}`" :value="row.id" :disabled="!canDraft"></td>
+                                <td><input v-model="tierSelections[group.tier]" type="radio" class="pick" :name="`tier-${group.tier}`" :value="row.id" :aria-label="row.name" :disabled="!canDraft"></td>
                                 <td><PlayerName :player="row" :race="row.signup_race" /></td>
                                 <td class="d-none d-md-table-cell text-medium-emphasis">{{ row.ladder?.team ?? '' }}</td>
                                 <td class="text-right">{{ row.ladder?.mmr?.current ?? '—' }}</td>
@@ -326,7 +330,7 @@
 
                       <template #item.score="{ item }">
                         <v-chip
-                          v-if="isSeriesPlayed(item)"
+                          v-if="isScored(item)"
                           :color="getScoreColorForBet(item)"
                           variant="outlined"
                           size="small"
@@ -338,19 +342,19 @@
 
                       <template #item.result="{ item }">
                         <v-chip
-                          v-if="item.myBet && isSeriesPlayed(item)"
+                          v-if="item.myBet && isScored(item)"
                           :color="item.myBet.bet_result === 'WIN' ? 'win' : item.myBet.bet_result === 'LOSS' ? 'loss' : 'secondary'"
                           size="small"
                         >
                           {{ item.myBet.bet_result || 'PENDING' }}
                         </v-chip>
-                        <span v-else-if="!isSeriesPlayed(item)" class="text-medium-emphasis">-</span>
+                        <span v-else-if="!isScored(item)" class="text-medium-emphasis">-</span>
                         <span v-else class="text-medium-emphasis">No bet</span>
                       </template>
 
                       <template #item.actions="{ item }">
                         <v-btn
-                          v-if="!isSeriesPlayed(item) && !ended"
+                          v-if="!ended && betsOpen(item)"
                           color="primary"
                           variant="outlined"
                           size="small"
@@ -372,6 +376,7 @@
     <v-card>
       <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
       <v-card-text>
+        <StatusAlert v-model="betError" />
         <div class="mb-4">
           <PlayerName v-if="betSeries.player1" :player="betSeries.player1" :race="betSeries.player1_race" plain />
           vs
@@ -444,7 +449,7 @@ import PlayerLadderPanel from '@/components/PlayerLadderPanel.vue';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
-import { validateBetPoints as checkBetPoints } from '@/helpers/bets';
+import { betsOpen, isScored, validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { ALL_COLORS, ALL_NAMES } from '@/helpers/tiers.mjs';
 import { fillDays, maxGamesPerDay, winRate } from '@/helpers/ladder-days.mjs';
 import { DateTime } from 'luxon';
@@ -462,7 +467,7 @@ const seriesStore = useSeriesStore();
 
 const { selectedSeasonId } = storeToRefs(seasonStore);
 
-const isLoading = ref(false);
+const isLoading = ref(true);  // the first fetch runs from onMounted, so the scrim is up before it starts
 const isSaving = ref(false);
 const isEditing = ref(false);
 const isBetSaving = ref(false);
@@ -481,7 +486,7 @@ const season = ref(null);
 const seasonName = computed(() => season.value?.name ?? 'this season');
 const phase = computed(() => season.value?.phase ?? 'open');
 const ended = computed(() => phase.value === 'complete');
-const canDraft = computed(() => isCreationEnabled.value && phase.value === 'open' && tierCount.value > 0);
+const canDraft = computed(() => !!season.value && isCreationEnabled.value && phase.value === 'open' && tierCount.value > 0);
 
 // Tier selections. The season says how many tiers it cuts; tier 1 is always Diamond,
 // so a shorter season drops the names off the bottom.
@@ -518,7 +523,7 @@ const allDraftColumns = computed(() => [
   { key: 'mmr', title: 'W3C MMR', align: 'right' },
   { mobile: false, key: 'record', title: 'Record', align: 'right' },
   { key: 'rate', title: 'Win %', align: 'right' },
-  { mobile: false, key: 'ladder', title: `Ladder · ${windowLabel.value}` },
+  { mobile: false, key: 'ladder', title: windowLabel.value ? `Ladder · ${windowLabel.value}` : 'Ladder' },
   { key: 'open', title: '' },
 ]);
 const draftColumns = useColumns(allDraftColumns);
@@ -547,6 +552,7 @@ const fixedBetPointsValue = ref(0);
 const minBetPoints = ref(null);
 const maxBetPoints = ref(null);
 const betPointsError = ref(null);
+const betError = ref(null);
 
 const teamForm = ref({
   name: '',
@@ -886,11 +892,13 @@ const placeBet = (series) => {
   selectedBetWinnerId.value = series.myBet?.winner_id || null;
   betPoints.value = series.myBet?.bet_points || null;
   betPointsError.value = null;
+  betError.value = null;
   betDialog.value = true;
 };
 
 const closeBet = () => {
   betDialog.value = false;
+  betError.value = null;
   betSeries.value = {};
   selectedBetWinnerId.value = null;
   betPoints.value = null;
@@ -923,7 +931,7 @@ const saveBet = async () => {
     await fetchFantasyData(); // Refresh fantasy data
   } catch (error) {
     console.error('Error saving bet:', error);
-    errorMessage.value = error.message || 'Error saving bet. Please try again.';
+    betError.value = error.message || 'Error saving bet. Please try again.';
   } finally {
     isBetSaving.value = false;
   }
@@ -940,35 +948,13 @@ const deleteBet = async () => {
     await fetchFantasyData(); // Refresh fantasy data
   } catch (error) {
     console.error('Error deleting bet:', error);
-    errorMessage.value = error.message || 'Error deleting bet. Please try again.';
+    betError.value = error.message || 'Error deleting bet. Please try again.';
   } finally {
     isBetSaving.value = false;
   }
 };
 
 // Helper functions for betting display
-
-const isSeriesPlayed = (series) => {
-  // A series is considered played if:
-  // 1. Either player has a non-zero score, OR
-  // 2. Both scores are set and at least one is non-zero
-  // This prevents treating 0:0 (unplayed) as a completed match
-  const score1 = series.player1_score;
-  const score2 = series.player2_score;
-  
-  // If either score is null/undefined, not played yet
-  if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) {
-    return false;
-  }
-  
-  // If both scores are 0, consider it not played (default/initial state)
-  if (score1 === 0 && score2 === 0) {
-    return false;
-  }
-  
-  // Otherwise, at least one score is non-zero, so it's been played
-  return true;
-};
 
 const getBetResultColor = (bet) => {
   if (!bet || !bet.bet_result) return 'secondary';

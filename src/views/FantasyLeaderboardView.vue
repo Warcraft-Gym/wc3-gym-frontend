@@ -92,7 +92,7 @@
 
               <template v-slot:[`item.actions`]="{ item }">
                 <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit', public: !!myUserId && item.captain_id === myUserId, onClick: () => openEditDialog(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', public: canEditOwn(item), onClick: () => openEditDialog(item) },
                   { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => openDeleteDialog(item) },
                 ]" />
               </template>
@@ -244,7 +244,7 @@
       <v-card-actions>
         <v-spacer />
         <v-btn variant="text" @click="closeEditDialog" :disabled="isSaving">Cancel</v-btn>
-        <v-btn v-if="auth.isAdmin || (isEditing && editedTeam.captain_id === myUserId)" color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
+        <v-btn v-if="auth.isAdmin || (isEditing && canEditOwn(editedTeam))" color="primary" variant="elevated" @click="saveTeam" :loading="isSaving">{{ isEditing ? 'Update' : 'Create' }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -279,7 +279,7 @@ import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
-import { ALL_COLORS } from '@/helpers/tiers.mjs';
+import { ALL_COLORS, tierSelectionError } from '@/helpers/tiers.mjs';
 
 
 const fantasyStore = useFantasyStore();
@@ -319,6 +319,8 @@ const races = ref([
   { title: 'Undead', value: 'UD' },
   { title: 'Random', value: 'RANDOM' }
 ]);
+// A drafted player is UserPublic, which carries its id under one of these names
+const draftedId = (player) => player.user_id || player.id || player.player_id;
 const emptyTeam = (seasonId = null) => ({
   id: null,
   name: '',
@@ -360,12 +362,14 @@ const allHeaders = computed(() => [
   { mobile: false, title: 'Bet Points', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
   // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team
-  ...(auth.isAdmin || teams.value.some((t) => t.captain_id === myUserId.value)
+  ...(auth.isAdmin || teams.value.some(canEditOwn)
     ? [{ title: '', value: 'actions', sortable: false, align: 'center' }] : []),
 ]);
 const headers = useColumns(allHeaders);
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
+// A bettor edits their own team only while the season is open; the draft freezes when it commences
+const canEditOwn = (team) => !!myUserId.value && team.captain_id === myUserId.value && pickedSeason.value?.phase === 'open';
 
 // An expanded row shows the breakdown, fetched once per team and season
 watch(expanded, async (ids) => {
@@ -434,7 +438,7 @@ const openEditDialog = async (team) => {
     drafted_team_id: team.drafted_team_id,
     grind_team_id: team.grind_team_id ?? null,
     drafted_race: team.drafted_race,
-    player_ids: team.drafted_players?.map(p => p.user_id) || []
+    player_ids: team.drafted_players?.map(draftedId).filter(Boolean) || []
   };
   
   // Load the teams first so the drafted-team picker is populated
@@ -446,8 +450,7 @@ const openEditDialog = async (team) => {
   // Populate tier selections from existing players AFTER players are loaded
   if (team.drafted_players && team.drafted_players.length > 0) {
     team.drafted_players.forEach(dp => {
-      // Try different possible property names
-      const playerId = dp.user_id || dp.id || dp.player_id;
+      const playerId = draftedId(dp);
       const player = players.value.find(p => p.id === playerId);
       // A tier above the season's count has no picker, so it lands in no slot
       if (player && player.fantasy_tier >= 1 && player.fantasy_tier <= tierCount.value) {
@@ -471,21 +474,15 @@ const saveTeam = async () => {
   const { valid } = await teamForm.value.validate();
   if (!valid) return;
 
-  // Validate every tier the season cuts is selected
-  const missingTiers = tiers.value.filter((tier) => !selectedTierPlayers.value[tier]);
-  
-  if (missingTiers.length > 0) {
-    dialogErrorMessage.value = `Please select players for tier(s): ${missingTiers.join(', ')}`;
+  // One player per tier the season cuts, and a season with no cut tiers takes no team
+  const selectionError = tierSelectionError(tierCount.value, selectedTierPlayers.value);
+  if (selectionError) {
+    dialogErrorMessage.value = selectionError;
     return;
   }
 
   // Build player_ids array from tier selections
   const playerIds = Object.values(selectedTierPlayers.value).filter(id => id !== null);
-  
-  if (playerIds.length !== tierCount.value) {
-    dialogErrorMessage.value = `You must select exactly ${tierCount.value} players (one from each tier)`;
-    return;
-  }
 
   isSaving.value = true;
   dialogErrorMessage.value = null;
@@ -506,7 +503,7 @@ const saveTeam = async () => {
       // Update players if changed
       const team = teams.value.find(t => t.id === editedTeam.value.id);
       // Get current player IDs - use the same property lookup as in openEditDialog
-      const currentPlayerIds = team.drafted_players?.map(p => p.user_id || p.id || p.player_id).filter(id => id) || [];
+      const currentPlayerIds = team.drafted_players?.map(draftedId).filter(Boolean) || [];
       
       const playersToAdd = playerIds.filter(id => !currentPlayerIds.includes(id));
       const playersToRemove = currentPlayerIds.filter(id => !playerIds.includes(id));

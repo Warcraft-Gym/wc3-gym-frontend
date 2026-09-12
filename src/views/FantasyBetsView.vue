@@ -99,13 +99,14 @@
               </template>
 
               <template v-slot:[`item.is_locked`]="{ item }">
-                <v-icon v-if="isSeriesPlayed(item.series)" color="error">mdi-lock</v-icon>
+                <v-icon v-if="isScored(item.series)" color="error">mdi-lock</v-icon>
                 <v-icon v-else color="success">mdi-lock-open</v-icon>
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
+                <!-- An admin edits and deletes any bet, scored or not; the dialog says what that costs -->
                 <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit', disabled: isSeriesPlayed(item.series), onClick: () => editBet(item) },
+                  { icon: 'mdi-pencil', label: 'Edit', onClick: () => editBet(item) },
                   { icon: 'mdi-delete', label: 'Delete', color: 'error', onClick: () => confirmDeleteBet(item) },
                 ]" />
               </template>
@@ -121,11 +122,13 @@
         Add New Fantasy Bet
       </v-card-title>
       <v-card-text class="pt-4">
+        <StatusAlert v-model="dialogError" />
         <v-form ref="addBetForm">
           <v-autocomplete
             v-model="newBet.captain_id"
             :items="fantasyTeams"
             item-value="captain_id"
+            :item-title="(team) => team.captain?.name || 'N/A'"
             label="Select Bettor"
             variant="outlined"
             density="comfortable"
@@ -141,15 +144,13 @@
                 <v-list-item-subtitle>Team: {{ item.raw.drafted_team?.name || 'N/A' }}</v-list-item-subtitle>
               </v-list-item>
             </template>
-            <template v-slot:selection="{ item }">
-              {{ item.raw.captain?.name || 'N/A' }}
-            </template>
           </v-autocomplete>
 
           <v-autocomplete
             v-model="newBet.series_id"
             :items="availableSeries"
             item-value="id"
+            :item-title="seriesTitle"
             label="Select Series"
             variant="outlined"
             density="comfortable"
@@ -160,19 +161,6 @@
             persistent-hint
             @update:modelValue="onSeriesSelected"
           >
-            <template v-slot:item="{ props, item }">
-              <v-list-item
-                :value="props.value"
-                @click="props.onClick"
-              >
-                <v-list-item-title>
-                  {{ item.raw.player1?.name || 'Player 1' }} vs {{ item.raw.player2?.name || 'Player 2' }}
-                </v-list-item-title>
-              </v-list-item>
-            </template>
-            <template v-slot:selection="{ item }">
-              {{ item.raw.player1?.name || 'Player 1' }} vs {{ item.raw.player2?.name || 'Player 2' }}
-            </template>
           </v-autocomplete>
 
           <v-radio-group v-model="newBet.winner_id" label="Select Winner:" v-if="selectedSeriesForNew">
@@ -231,6 +219,10 @@
         Edit Fantasy Bet
       </v-card-title>
       <v-card-text class="pt-4">
+        <StatusAlert v-model="dialogError" />
+        <v-alert v-if="isScored(editingBet?.series)" type="warning" variant="tonal" density="compact" class="mb-4">
+          This series is already scored; changing the bet changes the leaderboard.
+        </v-alert>
         <div v-if="editingBet && editingBet.series" class="mb-4">
           <div class="text-subtitle-1 mb-2">
             <strong>Series:</strong> {{ editingBet.series.player1?.name || 'Player 1' }} vs {{ editingBet.series.player2?.name || 'Player 2' }}
@@ -298,6 +290,7 @@
         Confirm Delete
       </v-card-title>
       <v-card-text class="pt-4">
+        <StatusAlert v-model="dialogError" />
         Are you sure you want to delete this bet?
         <div v-if="deletingBet" class="mt-2">
           <strong>Captain:</strong> {{ deletingBet.user?.name }}<br>
@@ -305,6 +298,9 @@
           <PlayerName v-if="getWinner(deletingBet)" :player="getWinner(deletingBet)" :race="winnerRace(deletingBet)" />
           <template v-else>N/A</template>
         </div>
+        <v-alert v-if="isScored(deletingBet?.series)" type="warning" variant="tonal" density="compact" class="mt-3">
+          This series is already scored; deleting the bet changes the leaderboard.
+        </v-alert>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -326,7 +322,7 @@ import { useFantasyStore, useSeriesStore, useConfigStore, useSeasonStore } from 
 import { storeToRefs } from 'pinia';
 import { useDisplay } from 'vuetify';
 import SeasonSelect from '@/components/SeasonSelect.vue';
-import { sides, validateBetPoints as checkBetPoints } from '@/helpers/bets';
+import { isScored, sides, validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { useColumns } from '@/helpers/columns';
 
@@ -364,6 +360,7 @@ const minBetPoints = ref(null);
 const maxBetPoints = ref(null);
 const betPointsError = ref(null);
 const editBetPointsError = ref(null);
+const dialogError = ref(null);  // the open dialog's own error, so a refused write is read where it happened
 const newBet = ref({
   captain_id: null,
   series_id: null,
@@ -371,10 +368,12 @@ const newBet = ref({
   bet_points: null
 });
 const selectedSeriesForNew = ref(null);
+// The picker filters on the title it shows, so both sides of the series belong in it
+const seriesTitle = (series) => `${series.player1?.name || 'Player 1'} vs ${series.player2?.name || 'Player 2'}`;
 
 // The server sorts the columns it stores; the columns joined in the browser stay unsorted
 const allHeaders = [
-  { mobile: false, title: 'ID', value: 'id', width: '70px', sortable: true },
+  { title: 'ID', value: 'id', width: '70px', sortable: true },
   { title: 'Captain', value: 'captain', sortable: true },
   { title: 'Series', value: 'series', sortable: false },
   { title: 'Bet On', value: 'bet_on', sortable: false },
@@ -411,7 +410,7 @@ const availableSeries = computed(() => {
   // 3. Captain doesn't have a bet on them yet
   return allSeries.value.filter(s => {
     const isFantasy = s.is_fantasy_match === true;
-    const notPlayed = !isSeriesPlayed(s);
+    const notPlayed = !isScored(s);
     const noBetYet = !captainBetSeriesIds.value.includes(s.id);
     
     return isFantasy && notPlayed && noBetYet;
@@ -438,13 +437,6 @@ watch(() => newBet.value.captain_id, async (captainId) => {
 const validateBetPoints = (points) => checkBetPoints(points, minBetPoints.value, maxBetPoints.value);
 
 const mmrOf = (player) => ladderById.value.get(player?.id)?.mmr?.current ?? null;
-
-const isSeriesPlayed = (series) => {
-  if (!series) return false;
-  const p1 = series.player1_score || 0;
-  const p2 = series.player2_score || 0;
-  return p1 > 0 || p2 > 0;
-};
 
 const getWinner = (bet) => {
   if (!bet.series) return null;
@@ -551,11 +543,13 @@ const openAddBetDialog = () => {
   };
   selectedSeriesForNew.value = null;
   betPointsError.value = null;
+  dialogError.value = null;
   addBetDialog.value = true;
 };
 
 const closeAddBetDialog = () => {
   addBetDialog.value = false;
+  dialogError.value = null;
   newBet.value = {
     captain_id: null,
     series_id: null,
@@ -577,12 +571,12 @@ const onSeriesSelected = () => {
 
 const createNewBet = async () => {
   if (!newBet.value.captain_id || !newBet.value.series_id || !newBet.value.winner_id) {
-    errorMessage.value = 'Please fill in all fields.';
+    dialogError.value = 'Please fill in all fields.';
     return;
   }
 
   isBetSaving.value = true;
-  errorMessage.value = null;
+  dialogError.value = null;
 
   try {
     const betData = {
@@ -598,7 +592,7 @@ const createNewBet = async () => {
     closeAddBetDialog();
   } catch (error) {
     console.error('Failed to create bet:', error);
-    errorMessage.value = 'Failed to create bet. Please try again.';
+    dialogError.value = error.message || 'Failed to create bet. Please try again.';
   } finally {
     isBetSaving.value = false;
   }
@@ -609,11 +603,13 @@ const editBet = (bet) => {
   selectedWinnerId.value = bet.winner_id;
   selectedBetPoints.value = bet.bet_points;
   editBetPointsError.value = validateBetPoints(bet.bet_points);
+  dialogError.value = null;
   betDialog.value = true;
 };
 
 const closeBetDialog = () => {
   betDialog.value = false;
+  dialogError.value = null;
   editingBet.value = null;
   selectedWinnerId.value = null;
   selectedBetPoints.value = null;
@@ -622,12 +618,12 @@ const closeBetDialog = () => {
 
 const saveBet = async () => {
   if (!editingBet.value || !selectedWinnerId.value) {
-    errorMessage.value = 'Please select a winner.';
+    dialogError.value = 'Please select a winner.';
     return;
   }
 
   isBetSaving.value = true;
-  errorMessage.value = null;
+  dialogError.value = null;
 
   try {
     const updatedBet = {
@@ -641,7 +637,7 @@ const saveBet = async () => {
     closeBetDialog();
   } catch (error) {
     console.error('Failed to update bet:', error);
-    errorMessage.value = 'Failed to update bet. Please try again.';
+    dialogError.value = error.message || 'Failed to update bet. Please try again.';
   } finally {
     isBetSaving.value = false;
   }
@@ -649,6 +645,7 @@ const saveBet = async () => {
 
 const confirmDeleteBet = (bet) => {
   deletingBet.value = bet;
+  dialogError.value = null;
   deleteDialog.value = true;
 };
 
@@ -656,7 +653,7 @@ const deleteBet = async () => {
   if (!deletingBet.value) return;
 
   isDeleting.value = true;
-  errorMessage.value = null;
+  dialogError.value = null;
 
   try {
     await fantasyStore.deleteBet(deletingBet.value.id);
@@ -665,7 +662,7 @@ const deleteBet = async () => {
     deletingBet.value = null;
   } catch (error) {
     console.error('Failed to delete bet:', error);
-    errorMessage.value = 'Failed to delete bet. Please try again.';
+    dialogError.value = error.message || 'Failed to delete bet. Please try again.';
   } finally {
     isDeleting.value = false;
   }

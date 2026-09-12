@@ -87,6 +87,10 @@ const emit = defineEmits(['edit']);
 const seasonStore = useSeasonStore();
 const teamStore = useTeamStore();
 
+// The season chips read both lists, so the header loads them and does not wait on a sibling.
+seasonStore.ensureSeasons().catch(() => {});
+if (!teamStore.teams.length) teamStore.fetchTeams().catch(() => {});
+
 // a picture Discord no longer serves falls back to the initials
 const avatarBroken = ref(false);
 const avatar = computed(() => (avatarBroken.value ? null : props.player.avatar_url));

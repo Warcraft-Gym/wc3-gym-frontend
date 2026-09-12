@@ -39,9 +39,8 @@ export const useAuthStore = defineStore({
         // the admin-token login at /admin-login; a super admin session with no Discord account
         async login(token) {
             this.user = await fetchWrapper.post(`${backendUrl}/login`, { token });
-            this.me = { role: 'admin', superadmin: true, name: 'Super Admin' };
             localStorage.setItem('user', JSON.stringify(this.user));
-            localStorage.setItem('me', JSON.stringify(this.me));
+            await this.fetchMe();  // /me answers the legacy token: the name, the role and the running seasons
             router.push(takeReturnUrl('/'));
         },
         // the legacy token wins; every other session sends the Clerk session JWT

@@ -1,4 +1,4 @@
-<!-- Every opponent this player has met in the GNL, and every meeting behind the record -->
+<!-- Every opponent this player has met, in events of every kind, and every meeting behind the record -->
 <template>
   <v-card elevation="2" class="mt-6">
     <v-card-title class="bg-primary d-flex flex-wrap ga-2 justify-space-between align-center">
@@ -7,7 +7,8 @@
         <span>Head to head</span>
       </div>
       <v-chip v-if="opponents.length" color="on-primary" variant="outlined">
-        {{ opponents.length }} players faced, lifetime
+        {{ opponents.length }} player{{ opponents.length === 1 ? '' : 's' }} faced in
+        {{ eventCount }} event{{ eventCount === 1 ? '' : 's' }}, lifetime
       </v-chip>
     </v-card-title>
     <v-progress-linear v-if="loading" indeterminate />
@@ -44,8 +45,15 @@
         </td>
         <td class="d-none d-md-table-cell">
           <div class="d-flex flex-wrap ga-1">
-            <v-chip v-for="season in group.row.seasons" :key="season.id" size="x-small" variant="outlined">
-              {{ season.name }}<template v-if="season.count > 1">&nbsp;&times;{{ season.count }}</template>
+            <v-chip
+              v-for="event in group.row.events"
+              :key="event.id"
+              size="x-small"
+              variant="outlined"
+              :prepend-icon="KIND_ICON[event.kind]"
+              :title="titleOf(EVENT_KINDS, event.kind)"
+            >
+              {{ event.name }}<template v-if="event.count > 1">&nbsp;&times;{{ event.count }}</template>
             </v-chip>
           </div>
         </td>
@@ -55,6 +63,8 @@
         <tr v-for="meeting in group.row.opponent.meetings" :key="meeting.series_id" class="detail-row">
           <td></td>
           <td class="text-caption">
+            <v-icon v-if="KIND_ICON[meeting.kind]" size="x-small" class="mr-1"
+              :title="titleOf(EVENT_KINDS, meeting.kind)">{{ KIND_ICON[meeting.kind] }}</v-icon>
             {{ eventLabel(meeting) }}<template v-if="meeting.playday">, round {{ meeting.playday }}</template>
           </td>
           <td>
@@ -89,7 +99,7 @@
 import { computed, ref, watch } from 'vue';
 import { usePlayerStore } from '@/stores';
 import { formatDateTime } from '@/helpers/datetime';
-import { eventLabel } from '@/helpers/event-labels.mjs';
+import { eventLabel, EVENT_KINDS, titleOf } from '@/helpers/event-labels.mjs';
 import { opponentRows } from '@/helpers/head-to-head';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
@@ -100,13 +110,16 @@ const props = defineProps({
   playerId: { type: Number, required: true },
 });
 
-// games and seasons cost the most width, so a phone drops them first
+// A GNL season needs no mark; every other kind of event wears its own
+const KIND_ICON = { cup: 'mdi-tournament', koth: 'mdi-crown', signup: 'mdi-clipboard-text-outline' };
+
+// games and events cost the most width, so a phone drops them first
 const columns = [
   { key: 'opponent', title: 'Opponent' },
   { key: 'record', title: 'Series', width: '200px' },
   { key: 'games', title: 'Games', phone: false, width: '80px' },
   { key: 'matchups', title: 'Matchups' },
-  { key: 'seasons', title: 'Seasons', phone: false },
+  { key: 'events', title: 'Events', phone: false },
   { key: 'when', title: 'Last met' },
 ];
 
@@ -117,6 +130,11 @@ const errorMessage = ref(null);
 
 const groups = computed(() => opponentRows(opponents.value)
   .map((row) => ({ key: row.opponent.id, label: `Meetings with ${row.opponent.name}`, row })));
+
+// Every event of every kind the player met anyone in
+const eventCount = computed(() => new Set(
+  opponents.value.flatMap((o) => (o.meetings ?? []).map((m) => m.season_id)),
+).size);
 
 // read once per player; a failed read says so rather than leaving an empty card
 watch(() => props.playerId, async (id) => {

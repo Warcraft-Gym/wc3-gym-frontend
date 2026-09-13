@@ -9,7 +9,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-map</v-icon>
-          1v1 maps
+          1v1 Maps
         </h1>
       </v-col>
     </v-row>
@@ -74,7 +74,7 @@
       <v-card v-if="selectedMap">
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-map-plus' }}</v-icon>
-          {{ isEditing ? `Edit map: ${selectedMap.name}` : 'Add map' }}
+          {{ isEditing ? `Edit Map: ${selectedMap.name}` : 'Add Map' }}
         </v-card-title>
 
         <v-alert v-if="formError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="formError = null">

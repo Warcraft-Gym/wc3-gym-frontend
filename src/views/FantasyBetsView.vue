@@ -9,7 +9,7 @@
       <v-col>
         <h1>
           <BetIcon size="24" class="mr-2" />
-          Fantasy bets
+          Fantasy Bets
         </h1>
       </v-col>
     </v-row>
@@ -37,7 +37,7 @@
               :headers="headers"
               :items="enrichedBets"
               :items-length="totalBets"
-              no-data-text="No bets in this season yet. Bets appear here once bettors place them."
+              no-data-text="No bets in this season yet. Bets appear here once Fantasy Captains place them."
               v-model:page="page"
               v-model:items-per-page="itemsPerPage"
               :items-per-page-options="[10, 25, 50, 100, { value: -1, title: 'All' }]"
@@ -49,7 +49,7 @@
               mobile-breakpoint="sm"
             >
               <template v-slot:[`item.captain`]="{ item }">
-                <!-- no race: the bettor bets, they don't play -->
+                <!-- no race: the fantasy captain bets, they don't play -->
                 <PlayerName v-if="item.user" :player="item.user" />
                 <template v-else>N/A</template>
               </template>
@@ -113,7 +113,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-plus</v-icon>
-        Add new fantasy bet
+        Add New Fantasy Bet
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -123,7 +123,7 @@
             :items="fantasyTeams"
             item-value="captain_id"
             :item-title="(team) => team.captain?.name || 'N/A'"
-            label="Select bettor"
+            label="Fantasy Captain"
             variant="outlined"
             density="comfortable"
             class="mb-4"
@@ -151,7 +151,7 @@
             class="mb-4"
             required
             :disabled="!newBet.captain_id"
-            :hint="!newBet.captain_id ? 'Please select a bettor first' : ''"
+            :hint="!newBet.captain_id ? 'Pick a Fantasy Captain first' : ''"
             persistent-hint
             @update:modelValue="onSeriesSelected"
           >
@@ -210,7 +210,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-pencil</v-icon>
-        Edit fantasy bet
+        Edit Fantasy Bet
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -281,7 +281,7 @@
     <v-card>
       <v-card-title class="bg-error text-on-error">
         <v-icon class="mr-2">mdi-alert</v-icon>
-        Confirm delete
+        Confirm Delete
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -368,7 +368,7 @@ const seriesTitle = (series) => `${series.player1?.name || 'Player 1'} vs ${seri
 // The server sorts the columns it stores; the columns joined in the browser stay unsorted
 const allHeaders = [
   { title: 'ID', value: 'id', width: '70px', sortable: true },
-  { title: 'Captain', value: 'captain', sortable: true },
+  { title: 'Fantasy Captain', value: 'captain', sortable: true },
   { title: 'Series', value: 'series', sortable: false },
   { title: 'Bet on', value: 'bet_on', sortable: false },
   { mobile: false, title: 'Score', value: 'score', sortable: false, align: 'center' },

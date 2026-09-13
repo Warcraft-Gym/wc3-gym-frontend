@@ -3,7 +3,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-account-check</v-icon>
-        Add signup
+        Add Signup
       </v-card-title>
 
       <v-alert

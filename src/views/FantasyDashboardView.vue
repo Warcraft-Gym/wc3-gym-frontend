@@ -8,7 +8,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-trophy-variant</v-icon>
-          Fantasy dashboard
+          Fantasy Dashboard
         </h1>
       </v-col>
       <v-col cols="12" sm="auto">
@@ -377,7 +377,7 @@
   <!-- Place Bet Dialog -->
   <v-dialog v-model="betDialog" max-width="500px">
     <v-card>
-      <v-card-title class="text-h5">Place fantasy bet</v-card-title>
+      <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
       <v-card-text>
         <StatusAlert v-model="betError" />
         <div class="mb-4">

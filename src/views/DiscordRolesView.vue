@@ -8,7 +8,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">$discord</v-icon>
-          Discord roles
+          Discord Roles
         </h1>
         <div v-if="view === 'columns'" class="text-body-2 text-medium-emphasis">Drag a card to a column, double-click it, or use its buttons.</div>
       </v-col>
@@ -208,7 +208,7 @@
       <v-card v-if="picker">
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-account-group</v-icon>
-          Who holds {{ picker.roleName }}?
+          Who Holds {{ picker.roleName }}?
         </v-card-title>
 
         <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="dialogError = null">
@@ -368,7 +368,7 @@ const SCOPES = {
   champion: ['season'],
   admin: ['current']
 };
-const KIND_LABEL = { team: 'Team', captain: 'Captains', gnl_participant: 'Players', fantasy: 'Bettors', champion: 'Champions', admin: 'Gym Admin' };
+const KIND_LABEL = { team: 'Team', captain: 'Captains', gnl_participant: 'Players', fantasy: 'Fantasy Captains', champion: 'Champions', admin: 'Gym Admin' };
 
 // Temporary: which of the two layouts an admin last chose
 const view = ref(localStorage.getItem('discordRolesView') ?? 'columns');

@@ -303,7 +303,7 @@
                   v-model="selectedSeason.fantasy_grind"
                   label="Fantasy grind pick"
                   density="comfortable"
-                  hint="Bettors pick a team and its achievement points pay by rank."
+                  hint="Fantasy Captains pick a team and its achievement points pay by rank."
                   persistent-hint
                 />
               </v-col>

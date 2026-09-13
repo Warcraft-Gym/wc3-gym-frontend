@@ -40,7 +40,7 @@
           </v-card-actions>
         </v-card>
         <div v-else class="row text-body-2">
-          <span class="text-medium-emphasis">{{ row.label || 'Recurring' }}</span>
+          <span class="text-medium-emphasis">{{ row.label || 'Weekly' }}</span>
           <span>{{ blockLine(asBlock(row)) }}</span>
           <span class="ops">
             <v-btn icon="mdi-pencil" variant="text" size="small" aria-label="Edit" @click="edit(row)" />
@@ -78,7 +78,7 @@
           </v-card-actions>
         </v-card>
         <div v-else class="row text-body-2">
-          <span class="text-medium-emphasis">{{ row.label || 'Once-off' }}</span>
+          <span class="text-medium-emphasis">{{ row.label || 'Dates' }}</span>
           <span>{{ busyLine(asBusy(row)) }}</span>
           <span class="ops">
             <v-btn icon="mdi-pencil" variant="text" size="small" aria-label="Edit" @click="edit(row)" />
@@ -92,8 +92,8 @@
     </div>
 
     <div class="d-flex flex-wrap ga-2 mt-3">
-      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBlock">Recurring</v-btn>
-      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBusy">Once-off</v-btn>
+      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBlock">Weekly</v-btn>
+      <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBusy">Dates</v-btn>
     </div>
 
     <div v-if="!isLoading && !errorMessage" class="mt-6">

@@ -76,8 +76,8 @@ test('only a state that still takes a signup names the season', () => {
 });
 
 test('the heading follows the state: a profile-only form is not a signup', () => {
-  assert.equal(signupTitles('profile', '').heading, 'Your profile');
+  assert.equal(signupTitles('profile', '').heading, 'Your Profile');
   for (const state of ['signup', 'request', 'joined', 'over']) {
-    assert.equal(signupTitles(state, 'GNL S18').heading, 'Your signup', state);
+    assert.equal(signupTitles(state, 'GNL S18').heading, 'Your Signup', state);
   }
 });

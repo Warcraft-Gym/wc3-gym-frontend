@@ -325,7 +325,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-shield-plus</v-icon>
-        Add teams to the season
+        Add Teams to the Season
       </v-card-title>
       <v-card-text class="pa-0">
         <v-data-table v-if="availableTeams"
@@ -356,7 +356,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-calendar-plus</v-icon>
-        Create a match in round {{ selectedWeek }}
+        Create a Match in Round {{ selectedWeek }}
       </v-card-title>
       <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
         {{ matchError }}
@@ -412,7 +412,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-pencil</v-icon>
-        Edit match
+        Edit Match
       </v-card-title>
       <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
         {{ matchError }}

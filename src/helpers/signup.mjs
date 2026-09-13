@@ -72,7 +72,7 @@ export function startZone(browserZone, country) {
 // The page heading and the card title for a state: only a state that still takes a signup names the season
 export function signupTitles(state, seasonName) {
   return {
-    heading: state === 'profile' ? 'Your profile' : 'Your signup',
+    heading: state === 'profile' ? 'Your Profile' : 'Your Signup',
     card: seasonName && !['profile', 'over'].includes(state) ? `Sign up for ${seasonName}` : 'Your details',
   };
 }

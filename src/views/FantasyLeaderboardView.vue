@@ -6,7 +6,7 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1><v-icon class="mr-2">mdi-trophy</v-icon> Fantasy teams leaderboard</h1>
+        <h1><v-icon class="mr-2">mdi-trophy</v-icon> Fantasy Teams Leaderboard</h1>
       </v-col>
     </v-row>
 
@@ -127,7 +127,7 @@
     <v-card>
       <v-card-title class="text-h5 bg-primary">
         <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
-        {{ isEditing ? 'Edit fantasy team' : 'Create fantasy team' }}
+        {{ isEditing ? 'Edit Fantasy Team' : 'Create Fantasy Team' }}
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogErrorMessage" />
@@ -163,12 +163,12 @@
                 :items="players"
                 item-title="name"
                 item-value="id"
-                label="Bettor *"
+                label="Fantasy Captain *"
                 variant="outlined"
                 prepend-inner-icon="mdi-account-star"
                 density="comfortable"
                 :disabled="!auth.isAdmin"
-                :rules="[v => !!v || 'Bettor is required']"
+                :rules="[v => !!v || 'Fantasy Captain is required']"
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" md="6">
@@ -251,7 +251,7 @@
     <v-card>
       <v-card-title class="bg-error text-on-error">
         <v-icon class="mr-2" color="on-error">mdi-alert</v-icon>
-        Confirm delete
+        Confirm Delete
       </v-card-title>
       <v-card-text class="pt-4">
         <p>Are you sure you want to delete the fantasy team "{{ teamToDelete?.name }}"?</p>
@@ -294,7 +294,7 @@ const errorMessage = ref(null);
 const pickedSeason = computed(() => seasonStore.seasons.find((season) => season.id === selectedSeasonId.value));
 // The season the picker is on says how many tiers it cuts; tier 1 is always Diamond
 const tierCount = computed(() => pickedSeason.value?.fantasy_tiers);
-// The season also says whether a bettor picks a second team to grind
+// The season also says whether a fantasy captain picks a second team to grind
 const fantasyGrind = computed(() => !!pickedSeason.value?.fantasy_grind);
 const tiers = computed(() => Array.from({ length: tierCount.value || 0 }, (_, i) => i + 1));
 const tierColors = [...ALL_COLORS].reverse();
@@ -349,7 +349,7 @@ const allHeaders = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: '48px' },
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
   { title: 'Fantasy team', value: 'name', sortable: false },
-  { mobile: false, title: 'Bettor', value: 'captain', sortable: false },
+  { mobile: false, title: 'Fantasy Captain', value: 'captain', sortable: false },
   // the order the breakdown panels open in, so a column and its panel line up
   { mobile: false, title: 'Team points', value: 'team_points', align: 'end' },
   ...(fantasyGrind.value ? [{ mobile: false, title: 'Grind points', value: 'grind_points', align: 'end' }] : []),
@@ -365,7 +365,7 @@ const allHeaders = computed(() => [
 const headers = useColumns(allHeaders);
 
 const myUserId = computed(() => auth.me?.user?.id ?? null);
-// A bettor edits their own team only while the season is open; the draft freezes when it commences
+// A fantasy captain edits their own team only while the season is open; the draft freezes when it commences
 const canEditOwn = (team) => !!myUserId.value && team.captain_id === myUserId.value && pickedSeason.value?.phase === 'open';
 
 // An expanded row shows the breakdown, fetched once per team and season

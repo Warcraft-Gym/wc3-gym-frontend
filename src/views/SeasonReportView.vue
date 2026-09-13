@@ -234,7 +234,7 @@
                     {{ getRaceName(raceEntry.race) }}
                   </span>
                 </div>
-                <span class="text-caption text-medium-emphasis">{{ raceEntry.players }} players</span>
+                <span class="text-caption text-medium-emphasis">{{ raceEntry.players }} {{ raceEntry.players === 1 ? 'player' : 'players' }}</span>
               </div>
               <v-card-text>
                 <div class="race-stat-row">

@@ -98,7 +98,7 @@
                     v-model="settingsMap.fantasy_team_creation_enabled"
                     color="primary"
                     label="Fantasy team creation enabled"
-                    hint="Off closes team creation for every season; a commenced season is closed anyway"
+                    hint="Off closes team creation for every season"
                     persistent-hint
                     true-value="true"
                     false-value="false"
@@ -170,7 +170,7 @@
                   <v-text-field
                     v-model="settingsMap.discord_invite_url"
                     label="Discord invite URL"
-                    hint="The invite the join card offers a signed-in visitor who is not in the server"
+                    hint="Offered to a signed-in visitor not in the server"
                     persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-link-variant"
@@ -279,7 +279,7 @@
                           <span class="text-subtitle-1 font-weight-medium">Nightbot signup token</span>
                         </div>
                         <p class="text-body-2 text-medium-emphasis mb-4">
-                          This token authenticates Nightbot signup commands. Generate a new token if the current one is compromised.
+                          Generate a new token if this one leaks.
                         </p>
                       </v-col>
 

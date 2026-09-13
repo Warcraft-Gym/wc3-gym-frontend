@@ -211,7 +211,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-map-plus</v-icon>
-          New Map
+          New map
         </v-card-title>
         <v-card-text class="pt-4">
           <v-row>

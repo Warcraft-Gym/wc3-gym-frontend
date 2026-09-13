@@ -3,7 +3,7 @@
     <v-card>
       <v-card-title class="bg-error">
         <v-icon class="mr-2">mdi-alert</v-icon>
-        Confirm Deletion
+        Confirm deletion
       </v-card-title>
       <v-card-text class="pt-4">{{ message }}</v-card-text>
       <v-card-actions>

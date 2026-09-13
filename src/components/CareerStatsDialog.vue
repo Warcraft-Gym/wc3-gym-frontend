@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="show" max-width="800px">
     <v-card v-if="stat">
-      <v-card-title class="text-h5">Career Stats: {{ stat.player_name }}</v-card-title>
+      <v-card-title class="text-h5">Career stats: {{ stat.player_name }}</v-card-title>
       <v-card-text>
         <v-alert v-if="error" type="error" variant="tonal" class="mb-4" closable @click:close="error = null">
           {{ error }}

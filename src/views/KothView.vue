@@ -209,7 +209,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">{{ editingEvent ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
-          {{ editingEvent ? 'Edit Event' : 'Create Event' }}
+          {{ editingEvent ? 'Edit event' : 'Create event' }}
         </v-card-title>
         
         <v-card-text class="pt-4">
@@ -285,7 +285,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-account-plus</v-icon>
-          Add Player Signup
+          Add player signup
         </v-card-title>
         
         <v-card-text class="pt-4">
@@ -343,7 +343,7 @@
       <v-card>
         <v-card-title class="bg-error text-on-error">
           <v-icon class="mr-2">mdi-alert</v-icon>
-          Confirm Delete Event
+          Confirm delete event
         </v-card-title>
         
         <v-card-text class="pt-4">

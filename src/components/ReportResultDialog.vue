@@ -5,7 +5,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-trophy</v-icon>
-        Report Result
+        Report result
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="errorMessage" />
@@ -16,7 +16,7 @@
           density="compact"
           class="mb-2"
         >
-          {{ scoreVeto.complete ? 'Map veto complete' : 'The map veto is not complete. Enter it below, or report without it. Each step is saved when you tap it.' }}
+          {{ scoreVeto.complete ? 'Map veto complete' : 'Enter the map veto below, or report without it.' }}
         </v-alert>
         <VetoBoard v-if="series.id" :key="series.id" :series-id="series.id" report class="mb-4" @change="board => scoreVeto = board" />
         <v-form ref="scoreForm" v-model="scoreFormValid">

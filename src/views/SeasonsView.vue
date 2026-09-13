@@ -123,7 +123,6 @@
 
           <template #item="{ item }">
             <tr @click="$router.push(`/seasons/${seasonSlug(item)}`)" class="season-row">
-              <td class="d-none d-md-table-cell">{{ item.id }}</td>
               <td><strong>{{ item.name }}</strong></td>
               <td class="d-none d-md-table-cell">{{ item.round_count }}</td>
               <td class="d-none d-md-table-cell">{{ item.pick_ban }}</td>
@@ -177,7 +176,7 @@
       <v-card v-if="selectedSeason">
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
-          {{ isEditing ? `Edit Season: ${selectedSeason.name}` : 'Add New Season' }}
+          {{ isEditing ? `Edit season: ${selectedSeason.name}` : 'Add new season' }}
         </v-card-title>
 
         <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="error" closable @click:close="formError = null">
@@ -296,7 +295,7 @@
                   variant="outlined"
                   density="comfortable"
                   prepend-inner-icon="mdi-calendar-clock"
-                  hint="Days before a round the check-in opens. Blank keeps it open all season."
+                  hint="Blank keeps check-in open all season."
                   persistent-hint
                 />
               </v-col>
@@ -370,7 +369,6 @@ const formError = ref(null);
 const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
 const allTableHeader = computed(() => [
-  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },
   { mobile: false, title: 'Rounds', value: 'round_count', sortable: true },
   { mobile: false, title: 'Pick Ban', value: 'pick_ban', sortable: false },

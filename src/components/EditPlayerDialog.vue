@@ -3,7 +3,7 @@
     <v-card v-if="selectedPlayer">
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-pencil</v-icon>
-        {{ self ? 'Edit Profile' : `Edit Player: ${selectedPlayer.name}` }}
+        {{ self ? 'Edit profile' : `Edit player: ${selectedPlayer.name}` }}
       </v-card-title>
 
       <v-alert

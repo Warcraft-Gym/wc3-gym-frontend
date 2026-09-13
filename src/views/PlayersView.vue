@@ -142,7 +142,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-account-plus</v-icon>
-          Add New Player
+          Add new player
         </v-card-title>
 
         <v-alert

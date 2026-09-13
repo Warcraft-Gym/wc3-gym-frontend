@@ -52,6 +52,7 @@
                 <!-- no race: the fantasy captain bets, they don't play -->
                 <PlayerName v-if="item.user" :player="item.user" />
                 <template v-else>N/A</template>
+                <div class="text-caption text-medium-emphasis">{{ teamNameByCaptain.get(item.user_id) ?? 'No team' }}</div>
               </template>
 
               <template v-slot:[`item.series`]="{ item }">
@@ -113,7 +114,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-plus</v-icon>
-        Add New Fantasy Bet
+        Add new fantasy bet
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -210,7 +211,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-pencil</v-icon>
-        Edit Fantasy Bet
+        Edit fantasy bet
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -281,7 +282,7 @@
     <v-card>
       <v-card-title class="bg-error text-on-error">
         <v-icon class="mr-2">mdi-alert</v-icon>
-        Confirm Delete
+        Confirm delete
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -346,7 +347,7 @@ const fantasyTeams = ref([]);
 const ladderById = ref(new Map());
 const page = ref(1);
 const itemsPerPage = ref(25);
-const sortBy = ref([{ key: 'id', order: 'asc' }]);  // the order the server pages by
+const sortBy = ref([{ key: 'id', order: 'asc' }]);  // a hidden sort key: the order the server pages by
 const captainBetSeriesIds = ref([]);
 const useFixedBetPoints = ref(false);
 const fixedBetPointsValue = ref(0);
@@ -367,7 +368,6 @@ const seriesTitle = (series) => `${series.player1?.name || 'Player 1'} vs ${seri
 
 // The server sorts the columns it stores; the columns joined in the browser stay unsorted
 const allHeaders = [
-  { title: 'ID', value: 'id', width: '70px', sortable: true },
   { title: 'Fantasy Captain', value: 'captain', sortable: true },
   { title: 'Series', value: 'series', sortable: false },
   { title: 'Bet on', value: 'bet_on', sortable: false },
@@ -379,6 +379,9 @@ const allHeaders = [
 ];
 const headers = useColumns(allHeaders);
 const { smAndDown } = useDisplay();
+
+// A bet row carries the captain, not their fantasy team; the season's teams supply the name
+const teamNameByCaptain = computed(() => new Map(fantasyTeams.value.map(t => [t.captain_id, t.name])));
 
 // Enrich bets with series data
 const enrichedBets = computed(() => {

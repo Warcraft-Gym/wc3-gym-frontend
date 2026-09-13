@@ -213,7 +213,6 @@
 
               <template v-slot:item="{ item }">
                 <tr class="series-row">
-                  <td class="d-none d-md-table-cell">{{ item.id }}</td>
                   <td class="py-1">
                     <div class="text-no-wrap">
                       <span v-if="item.date_time">{{ formateDate(item.date_time) }}</span>
@@ -307,7 +306,7 @@
               <v-row align="center" class="flex-wrap ma-0 pa-2">
                 <v-alert type="info" variant="tonal" density="compact" class="ma-2" border="start">
                   <v-icon start>mdi-information</v-icon>
-                  Draft series won't appear on the website or affect calculations until an admin publishes them.
+                  Draft series show on the site once published.
                 </v-alert>
                 <v-spacer />
                 <v-col cols="12" sm="auto">
@@ -337,7 +336,6 @@
 
               <template v-slot:item="{ item }">
                 <tr class="series-row draft-series-row">
-                  <td class="d-none d-md-table-cell">{{ item.id }}</td>
                   <td>
                     <PlayerName :player="item.player1" :race="item.player1_race" :host="item.host_player_id === item.player1.id" />
                   </td>
@@ -455,7 +453,7 @@
       <v-card class="d-flex flex-column h-100" :style="smAndDown ? null : 'height: 90vh'">
         <v-card-title class="bg-primary flex-shrink-0">
           <v-icon class="mr-2">mdi-plus-circle</v-icon>
-          Add New Series
+          Add new series
         </v-card-title>
         
         <v-alert
@@ -587,7 +585,7 @@
         >
           {{ updateSeriesError }}
         </v-alert>
-        <v-card-title>Edit Series</v-card-title>
+        <v-card-title>Edit series</v-card-title>
         <v-card-text>
           <v-form>
             <v-row dense>
@@ -623,7 +621,7 @@
                 <v-checkbox
                   v-model="editNotPlayed"
                   label="Not played"
-                  hint="Stores 0-0. The series counts as a result and pays neither team."
+                  hint="Stores 0-0 and pays neither team."
                   persistent-hint
                   density="compact"
                   hide-details="auto"
@@ -865,7 +863,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-lightbulb-on</v-icon>
-        Proposed Series
+        Proposed series
       </v-card-title>
       <StatusAlert v-model="errorMessage" class="mx-4 mt-4" />
       <v-card-subtitle class="pa-3">
@@ -1087,7 +1085,6 @@ const matchesByRound = ref([]);
 
 const allSeriesTableHeader = computed(() => [
 
-  { mobile: false, title: 'ID', value: 'id', sortable: true },
   { title: 'Date/Time'},
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { title: 'P1 Score' },
@@ -1099,7 +1096,6 @@ const allSeriesTableHeader = computed(() => [
 const seriesTableHeader = useColumns(allSeriesTableHeader);
 
 const allDraftSeriesTableHeader = computed(() => [
-  { mobile: false, title: 'ID', value: 'id', sortable: true },  
   { title: 'Player 1', value: 'player1.name', sortable: true },
   { mobile: false, title: 'Faced Races', key: 'p1_matchup_history', sortable: false },
   { mobile: false, title: 'vs race', key: 'p1_vs_race', sortable: false },

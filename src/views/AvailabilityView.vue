@@ -19,7 +19,7 @@
       persistent-placeholder
       :placeholder="browserZone"
       :persistent-hint="!profileZone"
-      :hint="profileZone ? '' : `Not saved yet. ${browserZone} comes from your browser, and is saved with your first block.`"
+      :hint="profileZone ? '' : 'Saved with your first block.'"
       :items="zones"
       :menu-props="{ scrollStrategy: 'close' }"
       :loading="savingZone"

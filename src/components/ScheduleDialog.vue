@@ -5,7 +5,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-calendar-edit</v-icon>
-        Edit Schedule
+        Edit schedule
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="errorMessage" />

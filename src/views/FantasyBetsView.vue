@@ -199,7 +199,7 @@
           :loading="isBetSaving"
           :disabled="!newBet.captain_id || !newBet.series_id || !newBet.winner_id || (!useFixedBetPoints && (betPointsError || !newBet.bet_points))"
         >
-          Create Bet
+          Create bet
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -270,7 +270,7 @@
           :loading="isBetSaving"
           :disabled="!selectedWinnerId || (!useFixedBetPoints && (editBetPointsError || !selectedBetPoints))"
         >
-          Save Changes
+          Save changes
         </v-btn>
       </v-card-actions>
     </v-card>

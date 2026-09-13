@@ -113,7 +113,7 @@
                         <v-spacer></v-spacer>
                         <v-btn color="primary" @click="startEditing">
                           <v-icon start>mdi-pencil</v-icon>
-                          Edit Team
+                          Edit team
                         </v-btn>
                       </v-card-actions>
                       <v-card-actions v-else-if="!ended">
@@ -251,7 +251,7 @@
                         </v-btn>
                         <v-btn color="success" type="submit" size="large" :loading="isSaving">
                           <v-icon start>{{ isEditing ? 'mdi-content-save' : 'mdi-check-circle' }}</v-icon>
-                        {{ isEditing ? 'Update Team' : 'Register Team' }}
+                        {{ isEditing ? 'Update team' : 'Register team' }}
                       </v-btn>
                     </v-col>
                   </v-row>
@@ -364,7 +364,7 @@
                           @click="placeBet(item)"
                           :disabled="isBetSaving"
                         >
-                          {{ item.myBet ? 'Change Bet' : 'Place Bet' }}
+                          {{ item.myBet ? 'Change bet' : 'Place bet' }}
                         </v-btn>
                         <v-chip v-else size="small" color="secondary">Locked</v-chip>
                       </template>
@@ -423,7 +423,7 @@
           @click="deleteBet" 
           :disabled="isBetSaving"
         >
-          Delete Bet
+          Delete bet
         </v-btn>
         <v-spacer />
         <v-btn color="secondary" variant="text" @click="closeBet" :disabled="isBetSaving">Cancel</v-btn>
@@ -433,7 +433,7 @@
           :loading="isBetSaving" 
           @click="saveBet"
         >
-          Save Bet
+          Save bet
         </v-btn>
       </v-card-actions>
     </v-card>

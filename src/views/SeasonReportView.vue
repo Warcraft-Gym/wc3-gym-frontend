@@ -251,19 +251,6 @@
                   <span class="race-stat-value font-weight-bold">{{ raceEntry.winRate != null ? `${raceEntry.winRate}%` : '–' }}</span>
                 </div>
                 <div class="race-stat-row mt-2">
-                  <span class="text-caption text-medium-emphasis">Loss rate</span>
-                  <div class="race-stat-bar-wrap">
-                    <v-progress-linear
-                      :model-value="raceEntry.lossRate ?? 0"
-                      color="loss"
-                      height="10"
-                      rounded
-                      bg-color="surface-light"
-                    />
-                  </div>
-                  <span class="race-stat-value">{{ raceEntry.lossRate != null ? `${raceEntry.lossRate}%` : '–' }}</span>
-                </div>
-                <div class="race-stat-row mt-2">
                   <span class="text-caption text-medium-emphasis">Points vs top race</span>
                   <div class="race-stat-bar-wrap">
                     <v-progress-linear
@@ -620,7 +607,6 @@ const raceBreakdown = computed(() => {
             race,
             ...stats,
             winRate: winRate(stats.wins, stats.losses),
-            lossRate: winRate(stats.losses, stats.wins),
             pointsBarPct: Math.round((stats.points / maxPoints) * 100),
         }))
         .sort((a, b) => b.points - a.points);

@@ -2,9 +2,6 @@
 // is, the state it is in, and how a stage plays. Lifted from the overnight admin branch.
 import { DateTime } from 'luxon';
 
-import { dayIso } from './date-input.mjs';
-import { storedUtc } from './timezone.mjs';
-
 // A stored day, as a reader wants it; nothing shows a dash
 export const dateText = (value) => (value ? DateTime.fromISO(value).toFormat('d LLL yyyy') : '—');
 
@@ -51,7 +48,14 @@ export const LEAGUE_KINDS = [
 
 export const ENTRANT_KINDS = [
   { value: 'solo', title: 'Solo players' },
+  { value: 'team', title: 'Pre-made teams' },
   { value: 'drafted_teams', title: 'Drafted teams' },
+];
+
+// Who may sign up for one event
+export const SIGNUP_POLICIES = [
+  { value: 'members', title: 'Discord members with an account' },
+  { value: 'anyone', title: 'Anyone with a battle tag' },
 ];
 
 export const EVENT_KINDS = [
@@ -76,11 +80,19 @@ export const SCHEDULING_MODES = [
   { value: 'immediate', title: 'Played straight away' },
 ];
 
+// One rule per game of a series; a stage repeats its rule for every game of its best-of
+export const MAP_RULES = [
+  { value: 'veto', title: 'Veto' },
+  { value: 'loser', title: 'Loser picks' },
+  { value: 'host', title: 'Host picks' },
+  { value: 'fixed', title: 'Fixed map' },
+];
+
 // The word for a stored value, or the value itself when the list does not name it
 export const titleOf = (items, value) => items.find((item) => item.value === value)?.title || value || '—';
 
 // A blank text field is no value at all, and a blank number field is not a zero
-const text = (value) => (value ? String(value).trim() : '') || null;
+export const text = (value) => (value ? String(value).trim() : '') || null;
 
 // The body POST and PUT /leagues take
 export const leaguePayload = (form) => ({
@@ -91,17 +103,11 @@ export const leaguePayload = (form) => ({
   page_url: text(form.page_url),
 });
 
-// The body POST and PUT /events take. The pickers hand over Dates and "HH:mm" typed in
-// the viewer's zone, so a start time is stored as the UTC instant it names.
-export const eventPayload = (form) => ({
-  league_id: form.league_id ?? null,
-  name: (form.name || '').trim(),
-  kind: form.kind,
-  description: text(form.description),
-  start_date: form.start_date ? dayIso(form.start_date) : null,
-  end_date: form.end_date ? dayIso(form.end_date) : null,
-  starts_at: form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null,
-  page_url: text(form.page_url),
-  stream_url: text(form.stream_url),
-  checkin_enabled: !!form.checkin_enabled,
-});
+// The league word a header puts before an event name, empty when the name already opens
+// with it: "GNL · Season 18" but plain "GNL S18"
+export const leaguePrefix = (event, league) => {
+  const name = (event?.name || '').toLowerCase();
+  const opens = (word) => !!word && name.startsWith(String(word).toLowerCase());
+  if (opens(league?.short_name) || opens(league?.name)) return '';
+  return league?.short_name || league?.name || '';
+};

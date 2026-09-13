@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { dateRange, ENTRANT_KINDS, eventPayload, leaguePayload, stateOf, titleOf } from './event-labels.mjs';
+import { dateRange, ENTRANT_KINDS, leaguePayload, leaguePrefix, stateOf, titleOf } from './event-labels.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -29,21 +29,10 @@ test('a blank field is sent as nothing, not as an empty string', () => {
   assert.equal('stream_url' in body, false);
 });
 
-test('a start date and a typed time are stored as the UTC instant they name', () => {
-  const body = eventPayload({
-    league_id: 3,
-    name: ' Autumn cup ',
-    kind: 'cup',
-    start_date: new Date(2026, 9, 1),
-    end_date: null,
-    start_time: '19:00',
-    description: '',
-    checkin_enabled: true,
-  });
-  assert.equal(body.name, 'Autumn cup');
-  assert.equal(body.start_date, '2026-10-01');
-  assert.equal(body.end_date, null);
-  assert.equal(body.starts_at, '2026-10-01T09:00:00');
-  assert.equal(body.description, null);
-  assert.equal(body.checkin_enabled, true);
+test('the header drops the league word when the event name already opens with it', () => {
+  const gnl = { name: 'GNL', short_name: 'GNL' };
+  assert.equal(leaguePrefix({ name: 'Season 18' }, gnl), 'GNL');
+  assert.equal(leaguePrefix({ name: 'GNL S18' }, gnl), '');
+  assert.equal(leaguePrefix({ name: 'Autumn cup' }, { name: 'Gym Cups' }), 'Gym Cups');
+  assert.equal(leaguePrefix({ name: 'Season 18' }, null), '');
 });

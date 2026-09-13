@@ -394,7 +394,11 @@ const load = async () => {
   isLoading.value = true;
   errorMessage.value = null;
   try {
-    await Promise.all([playerStore.fetchPlayers(), careerStore.fetchAll()]);
+    const [, , w3cSeason] = await Promise.all([
+      playerStore.fetchPlayers(), careerStore.fetchAll(), resolveCurrentW3CSeason(),
+    ]);
+    // the season gates every W3C stat on the table, so it lands before the rows do
+    currentW3CSeason.value = w3cSeason;
   } catch (error) {
     console.error('Failed to load players:', error);
     errorMessage.value = 'Failed to load players. Please try again later.';
@@ -428,7 +432,6 @@ onMounted(async () => {
   }
   readSeasonQuery();
   await load();
-  currentW3CSeason.value = await resolveCurrentW3CSeason();
 });
 
 // per-player sync status map: { [playerId]: { state: 'loading'|'success'|'error', message?: string } }
@@ -522,7 +525,9 @@ const cancelAddNewPlayer = () => {
 .event-chip {
   max-width: 120px;
 }
+/* Vuetify lays the chip content out as a flex row, where text-overflow does nothing */
 .event-chip :deep(.v-chip__content) {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
 }

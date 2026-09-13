@@ -5,7 +5,7 @@
     <v-card elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-calendar-clock</v-icon>
-        Upcoming games
+        Upcoming series
         <v-chip v-if="season?.name" class="ml-3" size="small" color="on-primary" variant="outlined">{{ season.name }}</v-chip>
       </v-card-title>
       <v-card-text class="pa-0">

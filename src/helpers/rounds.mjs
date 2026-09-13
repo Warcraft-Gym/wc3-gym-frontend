@@ -80,10 +80,14 @@ export const roundLine = (card, playerId, when = '') => {
   return `Played · ${my > theirs ? 'won' : my < theirs ? 'lost' : 'drew'} vs ${name}`;
 };
 
+// A series is played once its scheduled time has passed; one with no time never is
+const seriesPlayed = (series, today) =>
+  !!series.date_time && DateTime.fromISO(series.date_time, { zone: 'utc' }) <= today;
+
 // What the player still owes, over every season he is in: a series with no result,
 // and every round whose check-in window is open and unanswered. One line each, in
 // round order. `asks` is false for a season that does not run the check-in.
-export const waitingLines = (seasons = [], playerId = null) =>
+export const waitingLines = (seasons = [], playerId = null, today = DateTime.now()) =>
   seasons.flatMap(({ season, cards = [], asks = true }) => cards.flatMap((card) => {
     if (card.series) {
       return isUnscored(card.series)
@@ -91,6 +95,8 @@ export const waitingLines = (seasons = [], playerId = null) =>
             key: `s${card.series.id}`,
             kind: 'series',
             series: card.series,
+            // Only a series whose time has passed owes a result; before that it owes a time
+            played: seriesPlayed(card.series, today),
             text: `Round ${card.playday} · ${season.name} · vs ${opponentName(card.series, playerId)}`,
           }]
         : [];

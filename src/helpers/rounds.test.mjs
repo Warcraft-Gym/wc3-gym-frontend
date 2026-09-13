@@ -114,6 +114,19 @@ test('the waiting lines name the unscored series and the round in play', () => {
   assert.equal(lines[1].playday, 2);
 });
 
+test('a waiting series owes a result only once its time has passed', () => {
+  const card = (date_time) => ({
+    playday: 2, label: '8 to 14 Sep', over: false, current: true, answer: null,
+    series: { id: 12, player2_id: ME, player1: { name: 'Peterian' }, player1_score: null, player2_score: null, date_time },
+  });
+  const played = (date_time) => waitingLines(
+    [{ season: { id: 4, name: 'GNL Review Season' }, cards: [card(date_time)] }], ME, DateTime.fromISO('2026-09-13T10:00Z'),
+  )[0].played;
+  assert.equal(played('2026-09-29T18:00:00Z'), false);
+  assert.equal(played('2026-09-13T09:00:00Z'), true);
+  assert.equal(played(null), false);
+});
+
 test('a season that asks nothing still shows its unscored series', () => {
   const lines = waitingLines([{ season: { id: 4, name: 'GNL S18' }, cards: CARDS, asks: false }], ME);
   assert.deepEqual(lines.map(row => row.kind), ['series']);

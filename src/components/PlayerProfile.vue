@@ -26,11 +26,16 @@
         <div v-for="row in waiting" :key="row.key" class="waiting d-flex flex-wrap align-center ga-3">
           <div class="flex-grow-1 min-w-0">{{ row.text }}</div>
           <div v-if="row.kind === 'series'" class="d-flex flex-wrap ga-2">
-            <v-btn color="primary" variant="elevated" size="small" prepend-icon="mdi-trophy" @click="reportDialog.open(row.series)">
-              Report result
-            </v-btn>
-            <v-btn variant="text" size="small" prepend-icon="mdi-calendar-edit" @click="scheduleDialog.open(row.series)">
-              Schedule
+            <v-btn
+              v-for="action in seriesActions(row)"
+              :key="action.label"
+              :color="action.lead ? 'primary' : undefined"
+              :variant="action.lead ? 'elevated' : 'text'"
+              size="small"
+              :prepend-icon="action.icon"
+              @click="action.open(row.series)"
+            >
+              {{ action.label }}
             </v-btn>
           </div>
           <div v-else class="d-flex ga-2">
@@ -79,15 +84,15 @@
                 <v-btn
                   v-if="isUnscored(item)"
                   color="primary"
-                  variant="elevated"
+                  variant="outlined"
                   size="small"
                   prepend-icon="mdi-calendar-edit"
                   @click="scheduleDialog.open(item)"
                 >
-                  Edit Schedule
+                  Edit schedule
                 </v-btn>
-                <v-btn color="success" variant="elevated" size="small" prepend-icon="mdi-trophy" @click="reportDialog.open(item)">
-                  {{ isUnscored(item) ? 'Report Result' : 'Edit result' }}
+                <v-btn color="primary" variant="elevated" size="small" prepend-icon="mdi-trophy" @click="reportDialog.open(item)">
+                  {{ isUnscored(item) ? 'Report result' : 'Edit result' }}
                 </v-btn>
                 <v-btn
                   color="primary"
@@ -179,6 +184,13 @@ const scheduleDialog = ref(null);
 const reportDialog = ref(null);
 const errorMessage = ref(null);
 const successMessage = ref(null);
+
+// Until the series time has passed the job is to agree a time, so Schedule leads
+const seriesActions = (row) => {
+  const schedule = { label: 'Schedule', icon: 'mdi-calendar-edit', lead: !row.played, open: (series) => scheduleDialog.value.open(series) };
+  const report = { label: 'Report result', icon: 'mdi-trophy', lead: row.played, open: (series) => reportDialog.value.open(series) };
+  return row.played ? [report, schedule] : [schedule, report];
+};
 
 // The side panel reads a profile over another page, so it never carries the owner's
 // actions: a click there would take his unsaved work with it.

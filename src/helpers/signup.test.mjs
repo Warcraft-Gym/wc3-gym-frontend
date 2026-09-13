@@ -66,18 +66,18 @@ test('/signup offers the same action as the home page for every season', () => {
 });
 
 test('only a state that still takes a signup names the season', () => {
-  assert.equal(signupTitles('signup', 'GNL S18').card, 'Signup for Season: GNL S18');
-  assert.equal(signupTitles('request', 'GNL S18').card, 'Signup for Season: GNL S18');
-  assert.equal(signupTitles('joined', 'GNL S18').card, 'Signup for Season: GNL S18');
+  assert.equal(signupTitles('signup', 'GNL S18').card, 'Sign up for GNL S18');
+  assert.equal(signupTitles('request', 'GNL S18').card, 'Sign up for GNL S18');
+  assert.equal(signupTitles('joined', 'GNL S18').card, 'Sign up for GNL S18');
   // the over state says the season is over right below the title, so the title must not offer a signup
-  assert.equal(signupTitles('over', 'GNL S18').card, 'Player Registration');
-  assert.equal(signupTitles('profile', 'GNL S18').card, 'Player Registration');
-  assert.equal(signupTitles('signup', '').card, 'Player Registration');
+  assert.equal(signupTitles('over', 'GNL S18').card, 'Your details');
+  assert.equal(signupTitles('profile', 'GNL S18').card, 'Your details');
+  assert.equal(signupTitles('signup', '').card, 'Your details');
 });
 
 test('the heading follows the state: a profile-only form is not a signup', () => {
-  assert.equal(signupTitles('profile', '').heading, 'Player Profile');
+  assert.equal(signupTitles('profile', '').heading, 'Your profile');
   for (const state of ['signup', 'request', 'joined', 'over']) {
-    assert.equal(signupTitles(state, 'GNL S18').heading, 'Player Signup', state);
+    assert.equal(signupTitles(state, 'GNL S18').heading, 'Your signup', state);
   }
 });

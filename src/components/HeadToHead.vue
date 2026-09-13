@@ -12,7 +12,7 @@
     </v-card-title>
     <v-progress-linear v-if="loading" indeterminate />
     <StatusAlert v-model="errorMessage" />
-    <!-- no race on the summary row: it spans every season, and a player is not one race -->
+    <!-- no race beside the name: a player is not one race, the matchups column carries the races per meeting -->
     <GroupedTable v-if="!errorMessage && !loading" :columns="columns" :groups="groups" empty="No series played yet.">
       <template #group="{ group }">
         <td>
@@ -20,7 +20,7 @@
         </td>
         <td>
           <div class="d-flex align-center ga-2">
-            <span class="record-bar" aria-hidden="true">
+            <span class="record-bar d-none d-md-flex" aria-hidden="true">
               <span v-if="group.row.record.won" class="record-seg won" :style="{ flexGrow: group.row.record.won }" />
               <span v-if="group.row.record.lost" class="record-seg lost" :style="{ flexGrow: group.row.record.lost }" />
             </span>
@@ -138,7 +138,6 @@ const recordColor = (won, lost) => (won > lost ? 'win' : won < lost ? 'loss' : u
 <style scoped>
 /* one thin stacked bar per opponent: won, a surface gap, then lost */
 .record-bar {
-  display: flex;
   gap: 2px;
   width: 120px;
   max-width: 120px;
@@ -162,11 +161,5 @@ const recordColor = (won, lost) => (won > lost ? 'win' : won < lost ? 'loss' : u
   display: inline-flex;
   align-items: center;
   gap: 3px;
-}
-/* the bar has no room beside a name on a phone, the label carries the record there */
-@media (max-width: 959px) {
-  .record-bar {
-    display: none;
-  }
 }
 </style>

@@ -55,6 +55,13 @@
           </tbody>
         </v-table>
       </v-card>
+
+      <!-- The stages read the same drawing the run page shows, with no admin control on it -->
+      <template v-for="stage in drawn" :key="stage.id">
+        <h2 class="text-h6 mt-6 mb-2">{{ stage.name || `Stage ${stage.position}` }}</h2>
+        <StageView readonly :stage="stage" :series="stage.series" :rounds="stage.rounds"
+          :divisions="event.divisions" :standings="stage.standings" />
+      </template>
     </template>
   </v-container>
 </template>
@@ -64,6 +71,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import EventHeader from '@/components/EventHeader.vue';
+import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { FORMATS, SCHEDULING_MODES, titleOf } from '@/helpers/event-labels.mjs';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
@@ -74,6 +82,7 @@ const store = useEventStore();
 const event = ref(null);
 const leagues = ref([]);
 const loading = ref(true);
+const stageData = ref({});
 // the wizard lands here when the event was written but its divisions were not
 const error = ref(route.query.divisions === 'unsaved'
   ? 'The event was created, but its divisions were not saved.' : null);
@@ -81,12 +90,25 @@ const error = ref(route.query.divisions === 'unsaved'
 const league = computed(() => leagues.value.find((row) => row.id === event.value?.league_id) || null);
 const stages = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position));
 
+// Only the stages that hold series are drawn; the table above lists every stage
+const drawn = computed(() => stages.value
+  .map((stage) => ({ ...stage, ...(stageData.value[stage.id] || {}) }))
+  .filter((stage) => stage.series?.length));
+
 onMounted(async () => {
   try {
     [event.value, leagues.value] = await Promise.all([
       store.fetchEvent(route.params.id),
       store.fetchLeagues(),
     ]);
+    await Promise.all(stages.value.map(async (stage) => {
+      // A stage nobody has generated answers nothing, and its drawing stays off the page
+      const [rows, table] = await Promise.all([
+        store.fetchStage(event.value.id, stage.id).catch(() => null),
+        store.fetchStandings(event.value.id, stage.id).catch(() => []),
+      ]);
+      if (rows) stageData.value[stage.id] = { ...rows, standings: table };
+    }));
   } catch (e) {
     error.value = `The event did not load: ${e.message}`;
   } finally {

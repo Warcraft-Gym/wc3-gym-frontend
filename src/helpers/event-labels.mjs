@@ -74,6 +74,15 @@ export const FORMATS = [
   { value: 'ffa', title: 'Free for all' },
 ];
 
+export const SEED_SOURCES = [
+  { value: 'mmr', title: 'MMR' },
+  { value: 'manual', title: 'a manual seed order' },
+  { value: 'random', title: 'a random draw' },
+  { value: 'previous_stage', title: 'the previous stage' },
+  { value: 'qualifier', title: 'a qualifier' },
+  { value: 'invitation', title: 'invitation' },
+];
+
 export const SCHEDULING_MODES = [
   { value: 'assigned', title: 'An admin sets the time' },
   { value: 'agreed', title: 'The two sides agree a time' },

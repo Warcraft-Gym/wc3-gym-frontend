@@ -44,11 +44,10 @@
                     You had no fantasy team in {{ seasonName }}.
                   </v-alert>
                   <v-alert v-else-if="phase !== 'open' && !existingTeam" type="info" variant="tonal" class="mb-4">
-                    {{ seasonName }} has commenced. Fantasy team creation closed when its first series started.
+                    Team creation closed when {{ seasonName }} started.
                   </v-alert>
                   <v-alert v-else-if="!isCreationEnabled && !existingTeam" type="warning" variant="tonal" class="mb-4">
                     <v-alert-title>Team creation is closed</v-alert-title>
-                    Fantasy team creation is not currently enabled. Please check back later or contact an administrator.
                   </v-alert>
                   <v-alert v-else-if="!tierCount && !existingTeam" type="info" variant="tonal" class="mb-4">
                     The player tiers for {{ seasonName }} are not cut yet. Registration opens once they are.
@@ -271,11 +270,8 @@
         </v-chip>
       </v-card-title>
       <v-card-text class="pt-4">                  <!-- No Team Message -->
-                  <v-alert v-if="!existingTeam && ended" type="info" variant="tonal">
+                  <v-alert v-if="!existingTeam && (ended || phase !== 'open')" type="info" variant="tonal">
                     No team in {{ seasonName }}, so no bets.
-                  </v-alert>
-                  <v-alert v-else-if="!existingTeam && phase !== 'open'" type="info" variant="tonal">
-                    No team in {{ seasonName }}, so no bets. Registration closed when its first series started.
                   </v-alert>
                   <v-alert v-else-if="!existingTeam" type="info" variant="tonal">
                     <v-alert-title>Register a team first</v-alert-title>
@@ -377,7 +373,7 @@
   <!-- Place Bet Dialog -->
   <v-dialog v-model="betDialog" max-width="500px">
     <v-card>
-      <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
+      <v-card-title class="text-h5">Place fantasy bet</v-card-title>
       <v-card-text>
         <StatusAlert v-model="betError" />
         <div class="mb-4">

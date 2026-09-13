@@ -202,7 +202,6 @@
 
             <template v-slot:item="{ item }">
               <tr class="text-no-wrap">
-                <td class="d-none d-md-table-cell">{{ item.id }}</td>
                 <td><PlayerName :player="item" /></td>
                 <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
                 <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
@@ -241,7 +240,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>
-        Select Players to Add
+        Select players to add
       </v-card-title>
 
       <v-card-text class="pt-4">
@@ -407,7 +406,6 @@ const rangeValues = ref([0, 3000]);
 
 // Table configuration
 const allTableHeader = [
-  { mobile: false, title: 'ID', value: 'id', align: 'start', sortable: true },
   { title: 'Name', value: 'name', sortable: true },  
   { mobile: false, title: 'Battletag', value: 'battleTag', sortable: true },    
   { mobile: false, title: 'Discord name', value: 'discordTag', sortable: true }, 

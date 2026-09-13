@@ -3,7 +3,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-sync</v-icon>
-        W3C Sync Results
+        W3C sync results
       </v-card-title>
       <v-card-text class="pt-4">
         <div v-for="(entry, i) in entries" :key="i" class="mb-3">

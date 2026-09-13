@@ -73,7 +73,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-plus-circle</v-icon>
-          Add Admin
+          Add admin
         </v-card-title>
 
         <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="dialogError = null">

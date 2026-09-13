@@ -208,7 +208,7 @@
       <v-card v-if="picker">
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-account-group</v-icon>
-          Who Holds {{ picker.roleName }}?
+          Who holds {{ picker.roleName }}?
         </v-card-title>
 
         <v-alert v-if="dialogError" type="error" variant="tonal" border="start" border-color="error" class="mx-4 my-2" closable @click:close="dialogError = null">

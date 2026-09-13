@@ -132,7 +132,7 @@ onMounted(fetchHomeData);
 
     <v-dialog v-model="popup" max-width="560" :fullscreen="false">
       <v-card>
-        <v-card-title class="text-h6 pt-4">Upcoming Events</v-card-title>
+        <v-card-title class="text-h6 pt-4">Upcoming events</v-card-title>
         <v-list lines="two" class="py-0">
           <v-list-item v-for="row in popupRows" :key="row.key">
             <template #prepend>

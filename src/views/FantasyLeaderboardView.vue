@@ -127,7 +127,7 @@
     <v-card>
       <v-card-title class="text-h5 bg-primary">
         <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
-        {{ isEditing ? 'Edit Fantasy Team' : 'Create Fantasy Team' }}
+        {{ isEditing ? 'Edit fantasy team' : 'Create fantasy team' }}
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogErrorMessage" />
@@ -251,7 +251,7 @@
     <v-card>
       <v-card-title class="bg-error text-on-error">
         <v-icon class="mr-2" color="on-error">mdi-alert</v-icon>
-        Confirm Delete
+        Confirm delete
       </v-card-title>
       <v-card-text class="pt-4">
         <p>Are you sure you want to delete the fantasy team "{{ teamToDelete?.name }}"?</p>

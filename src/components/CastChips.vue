@@ -67,10 +67,10 @@ const VIDEO_LABEL = 'Video link';
 const VIDEO_PLACEHOLDER = 'twitch.tv/videos/123456789';
 // The title names the action and the button repeats it; neither says "Save" alone
 const COPY = {
-  claim: { title: 'Cast This Series', confirm: 'Cast series', label: CHANNEL_LABEL, placeholder: CHANNEL_PLACEHOLDER },
-  channel: { title: 'Change Your Channel', confirm: 'Save channel', label: CHANNEL_LABEL, placeholder: CHANNEL_PLACEHOLDER },
-  vod: { title: 'Change Your VOD', confirm: 'Save VOD', label: VIDEO_LABEL, placeholder: VIDEO_PLACEHOLDER },
-  addVod: { title: 'Add Your VOD', confirm: 'Add VOD', label: VIDEO_LABEL, placeholder: VIDEO_PLACEHOLDER },
+  claim: { title: 'Cast this series', confirm: 'Cast series', label: CHANNEL_LABEL, placeholder: CHANNEL_PLACEHOLDER },
+  channel: { title: 'Change your channel', confirm: 'Save channel', label: CHANNEL_LABEL, placeholder: CHANNEL_PLACEHOLDER },
+  vod: { title: 'Change your VOD', confirm: 'Save VOD', label: VIDEO_LABEL, placeholder: VIDEO_PLACEHOLDER },
+  addVod: { title: 'Add your VOD', confirm: 'Add VOD', label: VIDEO_LABEL, placeholder: VIDEO_PLACEHOLDER },
 };
 
 const props = defineProps({

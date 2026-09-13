@@ -120,7 +120,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-account-plus</v-icon>
-          Sign Up for {{ event?.name }}
+          Sign up for {{ event?.name }}
         </v-card-title>
         
         <v-card-text class="pt-4">

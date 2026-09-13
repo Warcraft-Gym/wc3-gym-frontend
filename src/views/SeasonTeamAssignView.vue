@@ -370,8 +370,6 @@ import { matchesPlayerSearch, filterByMmrRange, panelLinks } from '@/helpers/pla
 import { draftOrder } from '@/helpers/draft.mjs';
 import { raceWrapper } from '@/helpers/races';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
-import { useDisplay } from 'vuetify';
-
 
 const router = useRouter();
 provide(panelLinks, true); // a drafting page: a name opens the panel, so the roster ticks survive
@@ -458,7 +456,6 @@ const setSignupRace = (player, race) => {
 };
 
 const playerTableHeaders = computed(() => [
-  ...(smAndDown.value ? [] : [{ title: 'ID', value: 'id' }]),
   { title: 'Name', value: 'name' },
   // The draft order, so a reversed sort keeps the moved players in place
   { title: 'MMR', key: 'w3c_mmr', sortable: true, sortRaw: (a, b) => positionOf.value.get(a.id) - positionOf.value.get(b.id) },
@@ -491,8 +488,6 @@ const availablePlayers = computed(() => {
 const playersWithTeamSelected = computed(() => {
   return Object.values(playerTeamSelection.value).filter(teamId => teamId != null).length;
 });
-
-const { smAndDown } = useDisplay();
 
 // fetch data — prefer fetching teams for the specific season when seasonId is available
 const fetchData = async () => {

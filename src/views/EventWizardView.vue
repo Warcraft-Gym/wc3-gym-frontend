@@ -1,5 +1,5 @@
-<!-- Creating one event: the five steps an admin answers, then the three writes that make
-     the event, its stages and its divisions. -->
+<!-- Creating one event: the five steps an admin answers, then the write that makes the
+     event with its stages, and the second write that adds its divisions. -->
 <template>
   <v-container fluid class="pa-4">
     <h1 class="text-h5 text-md-h3 font-weight-bold mb-4">
@@ -198,7 +198,7 @@ import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { dateRange, dateText, FORMATS, MAP_RULES, SCHEDULING_MODES, SIGNUP_POLICIES, titleOf } from '@/helpers/event-labels.mjs';
 import {
-  BEST_OF, blankForm, blankStage, divisionsPayload, eventPayload, stagesPayload, stepProblem, STEPS,
+  BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload, stepProblem, STEPS,
   WIZARD_ENTRANT_KINDS, WIZARD_KINDS,
 } from '@/helpers/event-wizard.mjs';
 import { useEventStore } from '@/stores';
@@ -300,16 +300,19 @@ const review = computed(() => {
 const create = async () => {
   saving.value = true;
   error.value = null;
+  let id = null;
+  let divisions = null;
   try {
-    const event = await store.createEvent(eventPayload(form.value));
-    await store.setStages(event.id, stagesPayload(form.value));
-    if (form.value.division_count) await store.setDivisions(event.id, divisionsPayload(form.value));
-    await router.push(`/events/${event.id}`);
+    id = (await store.createEvent(createPayload(form.value))).id;
+    if (form.value.division_count) await store.setDivisions(id, divisionsPayload(form.value));
   } catch (e) {
-    error.value = `The event was not created: ${e.message}`;
+    // an event that is already written is read, not created again
+    if (id) divisions = 'unsaved';
+    else error.value = `The event was not created: ${e.message}`;
   } finally {
     saving.value = false;
   }
+  if (id) await router.push({ path: `/events/${id}`, query: divisions ? { divisions } : {} });
 };
 
 onMounted(async () => {

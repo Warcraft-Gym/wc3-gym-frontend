@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { blankForm, divisionsPayload, eventPayload, stagesPayload, stepProblem, wizardProblem } from './event-wizard.mjs';
+import { blankForm, createPayload, divisionsPayload, eventPayload, stagesPayload, stepProblem, wizardProblem } from './event-wizard.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -93,4 +93,12 @@ test('a step names what it still needs', () => {
   assert.equal(stepProblem(named, 'review'), null);
   assert.equal(wizardProblem(named), null);
   assert.equal(wizardProblem(form), 'Pick the league this event runs in.');
+});
+
+test('the create body carries the stages, so one write makes the whole event', () => {
+  const body = createPayload({ ...blankForm({ id: 2 }), name: 'Autumn cup' });
+  assert.equal(body.name, 'Autumn cup');
+  assert.equal(body.league_id, 2);
+  assert.equal(body.stages.length, 1);
+  assert.equal(body.stages[0].position, 1);
 });

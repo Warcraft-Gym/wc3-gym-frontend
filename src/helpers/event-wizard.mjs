@@ -97,6 +97,10 @@ export const stagesPayload = (form) => (form.stages || []).map((stage, index) =>
   group_advance: null,
 }));
 
+// The body POST /events takes: the event and its stages in one write, so a later failure
+// cannot leave an event that has no stage
+export const createPayload = (form) => ({ ...eventPayload(form), stages: stagesPayload(form) });
+
 // The body PUT /events/{id}/divisions takes; the MMR bounds are cut on the entrants page later
 export const divisionsPayload = (form) => Array.from({ length: form.division_count || 0 }, (unused, index) => ({
   position: index + 1,

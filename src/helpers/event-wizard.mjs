@@ -24,6 +24,7 @@ export const blankStage = () => ({
   format: 'single_elimination',
   best_of: 3,
   map_rule: 'veto',
+  series_per_entrant_per_round: 1,
   scheduling_mode: 'agreed',
   advance_count: '',
   auto_advance: false,
@@ -47,7 +48,6 @@ export const blankForm = (league = null) => ({
   entrant_cap: '',
   mmr_max: '',
   min_games: '',
-  min_games_seasons: 1,
   checkin_enabled: false,
   checkin_days: 3,
   division_count: 0,
@@ -57,6 +57,11 @@ export const blankForm = (league = null) => ({
 
 // A blank number field is no value at all, not a zero
 const count = (value) => (value === '' || value === null || value === undefined ? null : Number(value));
+
+// Only a round robin plays more than one series an entrant a round; every other format plays one
+export const seriesPerRound = (stage) => (stage.format === 'round_robin'
+  ? Math.max(1, Number(stage.series_per_entrant_per_round) || 1)
+  : 1);
 
 // The body POST and PUT /events take. The pickers hand over Dates and "HH:mm" typed in
 // the viewer's zone, so a start time is stored as the UTC instant it names.
@@ -77,19 +82,26 @@ export const eventPayload = (form) => ({
   entrant_cap: count(form.entrant_cap),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
-  min_games_seasons: count(form.min_games) ? count(form.min_games_seasons) : null,
   checkin_enabled: !!form.checkin_enabled,
   checkin_days: form.checkin_enabled ? count(form.checkin_days) : null,
 });
 
-// The body PUT /events/{id}/stages takes: the positions must run 1..n. One map rule stands
-// for every game of the best-of, and the group settings are cut on the stage page later.
+// One word per game of the best-of, as the veto engine reads it. A veto runs once for the
+// series, so it names game 1 and the loser picks the rest; every other rule repeats.
+export const gameRules = (rule, bestOf) => Array.from(
+  { length: Math.max(1, Number(bestOf) || 1) },
+  (unused, index) => (rule === 'veto' && index ? 'loser' : rule),
+).join(',');
+
+// The body PUT /events/{id}/stages takes: the positions must run 1..n, and the group
+// settings are cut on the stage page later.
 export const stagesPayload = (form) => (form.stages || []).map((stage, index) => ({
   position: index + 1,
   name: text(stage.name),
   format: stage.format,
   best_of: Number(stage.best_of),
-  map_rules: Array(Number(stage.best_of)).fill(stage.map_rule).join(','),
+  series_per_entrant_per_round: seriesPerRound(stage),
+  map_rules: gameRules(stage.map_rule, stage.best_of),
   scheduling_mode: stage.scheduling_mode,
   advance_count: count(stage.advance_count),
   auto_advance: !!stage.auto_advance,

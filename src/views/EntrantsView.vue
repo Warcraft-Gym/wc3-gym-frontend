@@ -180,6 +180,7 @@
           </v-card>
           <p v-if="!group.rows.length" class="text-medium-emphasis">Nobody is in this division.</p>
         </div>
+        <p v-if="!groups.length" class="text-medium-emphasis">Nobody has entered yet.</p>
       </div>
     </template>
 
@@ -312,7 +313,7 @@ const stages = computed(() => [...(event.value?.stages || [])]
 const stage = computed(() => stages.value.find((row) => row.id === stageId.value) || null);
 const seedsLocked = computed(() => !!stage.value?.seeds_locked_at);
 const canReorder = computed(() => isAdmin.value && !seedsLocked.value);
-const takesTeams = computed(() => event.value?.entrant_kind !== 'solo');
+const takesTeams = computed(() => event.value?.entrant_kind === 'team');
 
 const columns = computed(() => [
   { key: 'player', title: 'Entrant' },

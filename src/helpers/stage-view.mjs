@@ -89,6 +89,33 @@ export function layout(cols, { boxH = 88, gap = 12, colW = 244, boxW = 208 } = {
   };
 }
 
+// A double elimination bracket runs two ladders and a final that joins them. Drawn as
+// one row of columns it is wider than a screen and its feeder lines cross the columns
+// between, so the columns are split into blocks that are drawn one under the other.
+// A column belongs to the lower ladder when every series in it takes a beaten side, or
+// when it feeds only from lower columns; a block is a run of columns on the same side.
+export function blocks(cols) {
+  const columnOf = new Map();
+  cols.forEach((column, index) => column.series.forEach((row) => columnOf.set(row.id, index)));
+  const lower = new Set();
+  cols.forEach((column, index) => {
+    const beaten = column.series.every((row) => row.slot1_takes_loser || row.slot2_takes_loser);
+    const feeders = column.series
+      .flatMap((row) => [row.slot1_from_series_id, row.slot2_from_series_id])
+      .filter((id) => id != null);
+    const below = feeders.length > 0 && feeders.every((id) => lower.has(columnOf.get(id)));
+    if (beaten || below) lower.add(index);
+  });
+  const made = [];
+  cols.forEach((column, index) => {
+    const side = lower.has(index) ? 'lower' : 'upper';
+    const last = made.at(-1);
+    if (last?.side === side) last.columns.push(column);
+    else made.push({ key: `${side}-${index}`, side, columns: [column] });
+  });
+  return made;
+}
+
 // A KOTH chain in play order: the first series, then whichever takes its winner, and on.
 // A series the chain never reaches is appended, so nothing is dropped from the screen.
 export function chainOrder(series) {
@@ -111,7 +138,7 @@ export function standingsGroups(standings = [], divisions = []) {
     .sort((a, b) => (order.get(a.division_id) ?? 0) - (order.get(b.division_id) ?? 0))
     .map((group) => ({
       key: group.division_id ?? 'all',
-      label: group.division_name || 'Standings',
+      label: group.division_name || 'All entrants',
       division_id: group.division_id ?? null,
       rows: group.rows || [],
     }));

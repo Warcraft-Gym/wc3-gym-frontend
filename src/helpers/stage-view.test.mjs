@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import test from 'node:test';
 
 import {
-  advancingRows, chainOrder, columns, generateFields, inDivision, isBye, isByeSide,
+  advancingRows, blocks, chainOrder, columns, generateFields, inDivision, isBye, isByeSide,
   layout, seriesState, standingsGroups, winnerSide, winsFor,
 } from './stage-view.mjs';
 
@@ -101,6 +101,26 @@ test('double elimination of 8 runs upper, lower and the grand final', () => {
   assert.strictEqual(grand.column, 7);
   assert.strictEqual(grand.cy, (drawn.boxes.find((b) => b.row.id === 7).cy
     + drawn.boxes.find((b) => b.row.id === 13).cy) / 2);
+});
+
+test('a double elimination draws the upper ladder, the lower ladder and the final apart', () => {
+  const made = blocks(columns(DE8, DE8_ROUNDS));
+  assert.deepStrictEqual(made.map((block) => block.side), ['upper', 'lower', 'upper']);
+  assert.deepStrictEqual(made.map((block) => block.columns.map((column) => column.name)), [
+    ['Upper bracket round 1', 'Upper bracket round 2', 'Upper bracket final'],
+    ['Lower bracket round 1', 'Lower bracket round 2', 'Lower bracket round 3', 'Lower bracket final'],
+    ['Grand final'],
+  ]);
+  // every block fits a 1136 px card, so no column of the bracket sits off the screen
+  assert.ok(made.every((block) => layout(block.columns).width <= 1136));
+  // a line is drawn inside a block only, so none of them crosses the column between
+  assert.deepStrictEqual(made.map((block) => layout(block.columns).lines.length), [6, 5, 0]);
+});
+
+test('a single elimination is one block, third place included', () => {
+  const withThird = [...SE9, S(9, 4, 2, ['l', 6], ['l', 7])];
+  assert.strictEqual(blocks(columns(SE9, SE9_ROUNDS)).length, 1);
+  assert.strictEqual(blocks(columns(withThird, SE9_ROUNDS)).length, 1);
 });
 
 test('a chain of 4 reads in play order whatever order it arrives in', () => {

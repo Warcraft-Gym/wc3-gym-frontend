@@ -10,27 +10,29 @@
     <section v-for="group in groups" :key="group.key" class="mb-6" style="order: 1">
       <h2 v-if="groups.length > 1" class="text-h6 mb-2">{{ group.name }}</h2>
 
-      <!-- a bracket on a wide screen: the boxes sit on the feeder lines they follow -->
+      <!-- a bracket on a wide screen: the boxes sit on the feeder lines they follow, and
+           the lower ladder of a double elimination is drawn under the upper one -->
       <div v-if="isBracket && !stacked" class="bracket-scroll">
-        <div class="bracket" :style="{ width: `${group.drawn.width}px`, height: `${group.drawn.height + 28}px` }">
-          <div v-for="(column, index) in group.columns" :key="column.key" class="column-name text-caption text-medium-emphasis"
-            :style="{ left: `${index * 244}px`, width: `${group.drawn.boxW}px` }">
+        <div v-for="block in group.blocks" :key="block.key" class="bracket mb-5"
+          :style="{ width: `${block.drawn.width}px`, height: `${block.drawn.height + 28}px` }">
+          <div v-for="(column, index) in block.columns" :key="column.key" class="column-name text-caption text-medium-emphasis"
+            :style="{ left: `${index * 244}px`, width: `${block.drawn.boxW}px` }">
             {{ column.name }}
           </div>
-          <svg class="lines" :width="group.drawn.width" :height="group.drawn.height" aria-hidden="true">
-            <path v-for="line in group.drawn.lines" :key="line.key" :d="line.d" fill="none" />
+          <svg class="lines" :width="block.drawn.width" :height="block.drawn.height" aria-hidden="true">
+            <path v-for="line in block.drawn.lines" :key="line.key" :d="line.d" fill="none" />
           </svg>
-          <div v-for="box in group.drawn.boxes" :key="box.key" class="box"
-            :style="{ left: `${box.x}px`, top: `${box.cy - group.drawn.boxH / 2 + 28}px`, width: `${group.drawn.boxW}px` }">
+          <div v-for="box in block.drawn.boxes" :key="box.key" class="box"
+            :style="{ left: `${box.x}px`, top: `${box.cy - block.drawn.boxH / 2 + 28}px`, width: `${block.drawn.boxW}px` }">
             <SeriesBox :series="box.row" :readonly="readonly"
-              :label="thirdPlace(group.columns[box.column], box.row)" @open="open" />
+              :label="thirdPlace(block.columns[box.column], box.row)" @open="open" />
           </div>
         </div>
       </div>
 
       <!-- a phone, a round robin and a KOTH chain all read as one list per round -->
       <template v-else>
-        <v-card v-for="column in group.columns" :key="column.key" elevation="1" class="mb-3">
+        <v-card v-for="column in group.columns" :key="column.key" elevation="1" class="mb-3 round-card">
           <v-card-title class="text-subtitle-1">{{ column.name }}</v-card-title>
           <div class="rows">
             <SeriesBox v-for="(row, index) in column.series" :key="row.id" :series="row" flat
@@ -81,7 +83,7 @@ import { useDisplay } from 'vuetify';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import SeriesBox from '@/components/SeriesBox.vue';
-import { chainOrder, columns, inDivision, layout, standingsGroups } from '@/helpers/stage-view.mjs';
+import { blocks, chainOrder, columns, inDivision, layout, standingsGroups } from '@/helpers/stage-view.mjs';
 
 const props = defineProps({
   stage: { type: Object, required: true },
@@ -122,7 +124,9 @@ const groups = computed(() => {
       key: band.id ?? 'all',
       name: band.name || `Division ${band.position}`,
       columns: cols.map((column, index) => ({ ...column, index })),
-      drawn: layout(cols),
+      blocks: isBracket.value
+        ? blocks(cols).map((block) => ({ ...block, drawn: layout(block.columns) }))
+        : [],
     };
   }).filter((group) => group.columns.length);
 });
@@ -147,8 +151,8 @@ const open = (row) => emit('open-series', row);
 .lines path { stroke: rgba(var(--v-theme-on-surface), 0.28); stroke-width: 2; }
 .box { position: absolute; }
 
-/* A list row keeps its score beside the names instead of at the far edge of a wide card */
-.rows { max-width: 560px; }
+/* A round of a list reads as one narrow card, so the score stays beside the names */
+.round-card { max-width: 560px; }
 .rows > .list-row { border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
 .rows > .list-row.first { border-top: none; }
 

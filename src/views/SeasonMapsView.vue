@@ -9,7 +9,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-map-outline</v-icon>
-          Series maps
+          Series Maps
         </h1>
         <div class="text-subtitle-1 text-medium-emphasis">{{ season.name }}</div>
       </v-col>

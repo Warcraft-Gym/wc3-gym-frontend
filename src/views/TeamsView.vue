@@ -105,7 +105,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
-          {{ isEditing ? `Edit team: ${selectedTeam?.name ?? ''}` : 'Add team' }}
+          {{ isEditing ? `Edit Team: ${selectedTeam?.name ?? ''}` : 'Add Team' }}
         </v-card-title>
 
         <v-alert v-if="formError" type="error" variant="tonal" class="mx-4 mt-4 mb-2" border="start" border-color="error" closable @click:close="formError = ''">

@@ -5,7 +5,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-account-multiple-check</v-icon>
-          Draft players for season
+          Draft Players for Season
         </h1>
       </v-col>
       <v-col cols="auto">

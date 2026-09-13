@@ -9,7 +9,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-shield-account</v-icon>
-          Team details
+          Team Details
         </h1>
       </v-col>
     </v-row>
@@ -242,7 +242,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>
-        Select players to add
+        Select Players to Add
       </v-card-title>
 
       <v-card-text class="pt-4">

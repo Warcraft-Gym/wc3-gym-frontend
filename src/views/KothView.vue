@@ -4,7 +4,7 @@
       <v-col>
         <h1 class="text-h5 text-md-h3 font-weight-bold">
           <v-icon class="mr-2" size="large">mdi-crown</v-icon>
-          King of the Hill<span v-if="selectedEvent"> — {{ selectedEvent.name }}</span>
+          King of the Hill<span v-if="selectedEvent"> — {{ eventLabel(selectedEvent) }}</span>
           <v-chip v-if="selectedEvent" class="ml-3" size="small" :color="selectedEvent.is_active ? 'success' : undefined">
             {{ selectedEvent.is_active ? 'Active' : 'Inactive' }}
           </v-chip>
@@ -352,7 +352,7 @@
             This will permanently delete:
           </p>
           <ul class="text-body-2 text-medium-emphasis mt-2">
-            <li>Event: <strong>{{ selectedEvent?.name }}</strong></li>
+            <li>Event: <strong>{{ eventLabel(selectedEvent) }}</strong></li>
             <li>All signups ({{ activeSignups.length }})</li>
           </ul>
           <v-alert type="warning" variant="tonal" class="mt-4">
@@ -380,6 +380,7 @@
 import { DateTime } from 'luxon';
 import { ref, computed, onMounted } from 'vue';
 import { useKothStore } from '@/stores';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { kingPlayer } from '@/helpers/players.mjs';
 import { storeToRefs } from 'pinia';
 

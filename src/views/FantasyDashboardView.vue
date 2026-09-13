@@ -66,7 +66,7 @@
                               <template v-else>{{ playerData?.discord_tag || 'N/A' }}</template>
                             </div>
                             <div class="mb-2">
-                              <strong>Season:</strong> {{ existingTeam.season?.name || 'N/A' }}
+                              <strong>Season:</strong> {{ eventLabel(existingTeam.season) || 'N/A' }}
                             </div>
                             <div class="mb-2">
                               <strong>Drafted team:</strong> {{ existingTeam.drafted_team?.name || 'N/A' }}
@@ -448,6 +448,7 @@ import PlayerLadderPanel from '@/components/PlayerLadderPanel.vue';
 import SeasonSelect from '@/components/SeasonSelect.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { formatDateTime } from '@/helpers/datetime';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { betsOpen, isScored, validateBetPoints as checkBetPoints } from '@/helpers/bets';
 import { ALL_COLORS, ALL_NAMES } from '@/helpers/tiers.mjs';
 import { fillDays, maxGamesPerDay, winRate } from '@/helpers/ladder-days.mjs';
@@ -482,7 +483,7 @@ const availablePlayers = ref([]);
 
 // The picked season; a team is drafted while it is open, a complete one is read-only
 const season = ref(null);
-const seasonName = computed(() => season.value?.name ?? 'this season');
+const seasonName = computed(() => eventLabel(season.value) || 'this season');
 const phase = computed(() => season.value?.phase ?? 'open');
 const ended = computed(() => phase.value === 'complete');
 const canDraft = computed(() => !!season.value && isCreationEnabled.value && phase.value === 'open' && tierCount.value > 0);

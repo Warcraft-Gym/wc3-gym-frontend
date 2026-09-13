@@ -2,7 +2,7 @@
   <v-select
     v-model="selectedSeasonId"
     :items="seasonStore.seasons"
-    item-title="name"
+    :item-title="(season) => eventLabel(season)"
     item-value="id"
     label="Season"
     variant="outlined"
@@ -18,6 +18,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useSeasonStore } from '@/stores';
 import { loadSeasons, resolveCurrentSeasonId } from '@/helpers/current-season';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { findSeason } from '@/helpers/season-slug.mjs';
 
 // One pick for every page that shows a season: the store carries it between routes, ?season= across a reload

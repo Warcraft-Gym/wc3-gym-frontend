@@ -6,7 +6,7 @@
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-calendar-clock</v-icon>
         Upcoming series
-        <v-chip v-if="season?.name" class="ml-3" size="small" color="on-primary" variant="outlined">{{ season.name }}</v-chip>
+        <v-chip v-if="season?.name" class="ml-3" size="small" color="on-primary" variant="outlined">{{ eventLabel(season) }}</v-chip>
       </v-card-title>
       <v-card-text class="pa-0">
         <v-progress-linear v-if="loading" indeterminate />
@@ -71,6 +71,7 @@ import PlayerName from '@/components/PlayerName.vue';
 import SeriesCard from '@/components/SeriesCard.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { resolveCurrentSeason } from '@/helpers/current-season';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { local, scheduleDays } from '@/helpers/schedule.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import { gmt } from '@/helpers/timezone.mjs';

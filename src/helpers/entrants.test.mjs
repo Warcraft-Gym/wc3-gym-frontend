@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bySeed, cutsOf, divisionsPayload, entrantName, groupByDivision, seedPayload, warningLabel } from './entrants.mjs';
+import { bandNames, bySeed, cutsOf, divisionsPayload, entrantName, groupByDivision, mergeSeeds, seedPayload, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -44,6 +44,20 @@ test('a division that holds nobody stays, and no group is added when every entra
 
 test('the manual seed body names every entrant, division by division', () => {
   assert.deepEqual(seedPayload(groupByDivision(rows, DIVISIONS)), { source: 'manual', order: [2, 1, 3, 4] });
+});
+
+test('the manual seed body leaves a withdrawn entrant out of the order', () => {
+  const withDrawn = [...rows, { id: 5, seed: null, mmr: 1550, division_id: 9, withdrawn_at: '2026-09-13T00:00:00Z', user: { name: 'Gone' } }];
+  assert.deepEqual(seedPayload(groupByDivision(withDrawn, DIVISIONS)), { source: 'manual', order: [2, 1, 3, 4] });
+});
+
+test('the seed answer merges in, so a withdrawn entrant keeps its row and loses its seed', () => {
+  const withDrawn = [...rows, { id: 5, seed: 3, mmr: 1550, division_id: 9, withdrawn_at: '2026-09-13T00:00:00Z', user: { name: 'Gone' } }];
+  const seeded = [{ id: 1, seed: 1 }, { id: 2, seed: 2 }, { id: 3, seed: 1 }, { id: 4, seed: 1 }];
+  const merged = mergeSeeds(withDrawn, seeded);
+  assert.deepEqual(merged.map((row) => row.id), [1, 2, 3, 4, 5]);
+  assert.deepEqual(merged.map((row) => row.seed), [1, 2, 1, 1, null]);
+  assert.equal(merged[4].user.name, 'Gone');
 });
 
 test('the ascending cuts write divisions strongest first, the weakest without a bound', () => {

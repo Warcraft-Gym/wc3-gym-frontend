@@ -262,7 +262,7 @@ import RowActions from '@/components/RowActions.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts } from '@/helpers/divisions.mjs';
-import { bandNames, cutsOf, divisionsPayload, groupByDivision, seedPayload, warningLabel } from '@/helpers/entrants.mjs';
+import { bandNames, cutsOf, divisionsPayload, groupByDivision, mergeSeeds, seedPayload, warningLabel } from '@/helpers/entrants.mjs';
 import { leaguePrefix, timeText, titleOf, FORMATS } from '@/helpers/event-labels.mjs';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { useAuthStore, useEventStore, usePlayerStore, useTeamStore } from '@/stores';
@@ -389,7 +389,7 @@ const assign = () => run('assign', async () => {
 }, 'The entrants are cut into their divisions.');
 
 const seedBy = (source) => run(source, async () => {
-  entrants.value = await store.setSeeds(eventId, stageId.value, { source });
+  entrants.value = mergeSeeds(entrants.value, await store.setSeeds(eventId, stageId.value, { source }));
 }, source === 'mmr' ? 'Seeded by MMR.' : 'The seeds are shuffled.');
 
 const lock = () => run('lock', async () => {
@@ -408,7 +408,7 @@ const drop = (group, target) => {
   const byId = new Map(entrants.value.map((row) => [row.id, row]));
   ids.forEach((id, index) => { byId.get(id).seed = index + 1; });
   run('order', async () => {
-    entrants.value = await store.setSeeds(eventId, stageId.value, seedPayload(groups.value));
+    entrants.value = mergeSeeds(entrants.value, await store.setSeeds(eventId, stageId.value, seedPayload(groups.value)));
   }, 'The seed order is saved.');
 };
 

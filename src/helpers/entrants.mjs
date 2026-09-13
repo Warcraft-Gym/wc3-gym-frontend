@@ -34,12 +34,20 @@ export function groupByDivision(rows, divisions = []) {
   return none.length ? [...groups, { key: 'none', id: null, title: 'No division', rows: none }] : groups;
 }
 
-// The body PUT .../seeds takes once an admin ordered the rows by hand: every entrant of
-// every division, because the stage numbers them 1..n inside each one.
+// The body PUT .../seeds takes once an admin ordered the rows by hand: every live entrant
+// of every division, because the stage numbers them 1..n inside each one. A withdrawn
+// entrant is left out; the stage refuses an id it does not seed.
 export const seedPayload = (groups) => ({
   source: 'manual',
-  order: groups.flatMap((group) => group.rows.map((row) => row.id)),
+  order: groups.flatMap((group) => group.rows.filter((row) => !row.withdrawn_at).map((row) => row.id)),
 });
+
+// The seed answer holds the live entrants alone, so it merges into the list instead of
+// replacing it: a withdrawn entrant keeps its row and loses its seed.
+export function mergeSeeds(entrants, seeded) {
+  const byId = new Map(seeded.map((row) => [row.id, row]));
+  return entrants.map((row) => byId.get(row.id) ?? { ...row, seed: null });
+}
 
 // The body PUT /events/{id}/divisions takes, read off the ascending strip: the highest cut
 // is the lower bound of the strongest division and the weakest one opens at no bound.

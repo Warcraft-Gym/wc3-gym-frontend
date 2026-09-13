@@ -368,7 +368,7 @@ const seriesTitle = (series) => `${series.player1?.name || 'Player 1'} vs ${seri
 // The server sorts the columns it stores; the columns joined in the browser stay unsorted
 const allHeaders = [
   { title: 'ID', value: 'id', width: '70px', sortable: true },
-  { title: 'Captain', value: 'captain', sortable: true },
+  { title: 'Fantasy Captain', value: 'captain', sortable: true },
   { title: 'Series', value: 'series', sortable: false },
   { title: 'Bet on', value: 'bet_on', sortable: false },
   { mobile: false, title: 'Score', value: 'score', sortable: false, align: 'center' },

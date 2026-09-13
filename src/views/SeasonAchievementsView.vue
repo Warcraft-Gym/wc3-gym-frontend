@@ -43,7 +43,7 @@
         <v-card elevation="2">
           <v-card-title class="bg-primary d-flex align-center">
             <v-icon class="mr-2">{{ card.icon }}</v-icon>
-            <span class="card-title-text text-truncate">{{ card.title }}</span>
+            <span class="card-title-text text-truncate" :title="card.title">{{ card.title }}</span>
             <v-spacer />
             <v-chip size="small" variant="outlined" class="mr-2 flex-shrink-0">{{ rowsOf(card.team).length }} rules</v-chip>
             <v-btn size="small" variant="outlined" @click="addOpen[card.key] = !addOpen[card.key]">Add</v-btn>

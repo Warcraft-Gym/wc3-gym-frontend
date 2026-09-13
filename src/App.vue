@@ -102,6 +102,10 @@ const NAV = computed(() => [
         { title: 'Seasons', to: '/seasons' },
         { title: '1v1 Maps', to: '/maps' },
     ] },
+    { title: 'Events', to: '/events', items: [
+        { title: 'Leagues', to: '/leagues' },
+        { title: 'Events', to: '/events' },
+    ] },
     { title: 'Fantasy', to: '/fantasy', items: [
         { title: 'Leaderboard', to: '/fantasy' },
         { title: 'My Fantasy Team', to: '/fantasy-registration' },

@@ -51,5 +51,32 @@ export const useEventStore = defineStore({
         async setDivisions(event_id, divisions) {
             return await fetchWrapper.put(`${backendUrl}/events/${event_id}/divisions`, divisions);
         },
+        async fetchEntrants(event_id) {
+            return await fetchWrapper.get(`${backendUrl}/events/${event_id}/entrants`);
+        },
+        // The rounds and the series of one stage, with the feeder graph the bracket draws
+        async fetchStage(event_id, stage_id) {
+            return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`);
+        },
+        async fetchStandings(event_id, stage_id) {
+            return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/standings`);
+        },
+        // Writes every series of the stage from its locked seeds, per division
+        async generateStage(event_id, stage_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/generate`);
+        },
+        // Moves the top entrants of a finished stage into the next stage
+        async advanceStage(event_id, stage_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/advance`);
+        },
+        // A cleared score reopens the bracket below; force allows it past a later result
+        async scoreSeries(series_id, scores, force = false) {
+            const query = force ? '?force=true' : '';
+            return await fetchWrapper.put(`${backendUrl}/series/${series_id}${query}`, scores);
+        },
+        // A series no game was played for: a walkover or a forfeit, with the side that takes it
+        async awardSeries(series_id, result_kind, winner) {
+            return await fetchWrapper.put(`${backendUrl}/series/${series_id}/result-kind`, { result_kind, winner });
+        },
     }
 });

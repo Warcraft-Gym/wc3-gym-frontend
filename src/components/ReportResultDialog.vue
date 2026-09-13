@@ -154,7 +154,8 @@ const open = (item) => {
     player2_name: item.player2?.name || `Player ${item.player2_id}`,
     // the tags name the sides in a replay, which carries no player id of ours
     tags: [item.player1?.battleTag, item.player2?.battleTag],
-    map_rules: item.match?.season?.map_rules,
+    // the rules of this series, which the backend resolves with or without a fixture
+    map_rules: item.rules?.map_rules,
     // the race each side played; the panel opens by itself when one is an exception
     races: { player1: item.player1_race, player2: item.player2_race },
     raceOpen: !!(item.player1_off_race || item.player2_off_race),

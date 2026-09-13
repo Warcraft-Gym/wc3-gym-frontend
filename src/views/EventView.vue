@@ -60,8 +60,9 @@
       <!-- The stages read the same drawing the run page shows, with no admin control on it -->
       <template v-for="stage in drawn" :key="stage.id">
         <h2 class="text-h6 mt-6 mb-2">{{ stage.name || `Stage ${stage.position}` }}</h2>
-        <StageView readonly :stage="stage" :series="stage.series" :rounds="stage.rounds"
-          :divisions="event.divisions" :standings="stage.standings" />
+        <StageView :stage="stage" :series="stage.series" :rounds="stage.rounds"
+          :divisions="event.divisions" :standings="stage.standings"
+          @open-series="row => router.push(`/series/${row.id}`)" />
       </template>
     </template>
   </v-container>
@@ -69,7 +70,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import EventHeader from '@/components/EventHeader.vue';
 import StageView from '@/components/StageView.vue';
@@ -79,6 +80,7 @@ import { seasonSlug } from '@/helpers/season-slug.mjs';
 import { useEventStore } from '@/stores';
 
 const route = useRoute();
+const router = useRouter();
 const store = useEventStore();
 const event = ref(null);
 const leagues = ref([]);

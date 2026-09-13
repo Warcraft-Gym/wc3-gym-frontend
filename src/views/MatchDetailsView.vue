@@ -1548,6 +1548,7 @@ const fetchMatchSeries = async () => {
 const seriesActions = (item) => [
   ...replays.value.filter((r) => r.series_id === item.id).map((r) => (
     { icon: 'mdi-download', label: `Replay game ${r.game_no}`, href: r.url, public: true })),
+  { icon: 'mdi-open-in-new', label: 'Open series', public: true, onClick: () => router.push(`/series/${item.id}`) },
   { icon: 'mdi-pencil', label: 'Edit Series', onClick: () => editSeries(item) },
   { icon: 'mdi-map-outline', label: 'Map veto', onClick: () => router.push(`/player-series/${item.id}/veto`) },
   { icon: 'mdi-delete', label: 'Delete Series', color: 'error', onClick: () => openDeleteDialog(item.id, removeSeries) },

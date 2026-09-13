@@ -14,8 +14,12 @@
       prepend-inner-icon="mdi-clock-outline"
       density="compact"
       variant="outlined"
-      hide-details
+      hide-details="auto"
       class="zone-field mb-6"
+      persistent-placeholder
+      :placeholder="browserZone"
+      :persistent-hint="!profileZone"
+      :hint="profileZone ? '' : `Not saved yet. ${browserZone} comes from your browser, and is saved with your first block.`"
       :items="zones"
       :menu-props="{ scrollStrategy: 'close' }"
       :loading="savingZone"
@@ -35,7 +39,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { viewerZone } from '@/helpers/timezone.mjs';
 import { useAuthStore } from '@/stores';
@@ -49,8 +53,12 @@ const savingZone = ref(false);
 
 // The backend reads the blocks against the profile zone; the editor writes it when the profile carries none
 const profileZone = computed(() => authStore.me?.user?.timezone ?? null);
-const zone = ref(profileZone.value || viewerZone());
-const zones = computed(() => [...new Set([...Intl.supportedValuesOf('timeZone'), zone.value])]);
+const browserZone = viewerZone();
+// The field shows what is stored, so an empty field reads as the unsaved zone it is
+const zone = ref(profileZone.value);
+const zones = computed(() => [...new Set([...Intl.supportedValuesOf('timeZone'), zone.value].filter(Boolean))]);
+// /me may answer after the page renders, and every write lands back on the profile
+watch(profileZone, (value) => { zone.value = value; });
 
 // The editor wrote the browser zone, so the field and the profile follow it
 const onZone = (timezone) => {

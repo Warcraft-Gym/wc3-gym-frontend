@@ -46,27 +46,9 @@ const openPopupOnce = () => {
 };
 
 const stats = computed(() => ({
-  teams: {
-    total: teams.value.length,
-    label: 'Active Teams',
-    description: 'Manage team rosters and standings',
-    icon: 'mdi-account-group',
-    route: '/teams'
-  },
-  seasons: {
-    total: seasons.value.length,
-    label: 'Total Seasons',
-    description: 'View and manage league seasons',
-    icon: 'mdi-trophy',
-    route: '/seasons'
-  },
-  players: {
-    total: players.value.length,
-    label: 'Registered Players',
-    description: 'Player profiles and statistics',
-    icon: 'mdi-account',
-    route: '/players'
-  }
+  teams: { total: teams.value.length, icon: 'mdi-account-group', route: '/teams' },
+  seasons: { total: seasons.value.length, icon: 'mdi-trophy', route: '/seasons' },
+  players: { total: players.value.length, icon: 'mdi-account', route: '/players' },
 }));
 
 const fetchHomeData = async () => {
@@ -140,9 +122,7 @@ onMounted(fetchHomeData);
                 {{ key.charAt(0).toUpperCase() + key.slice(1) }}
               </v-card-title>
               <v-card-text class="pt-6 text-center">
-                <div class="text-h2 mb-3 text-primary">{{ isLoading ? '–' : stat.total }}</div>
-                <div class="text-h6 mb-2 font-weight-medium">{{ stat.label }}</div>
-                <div class="text-body-2 text-medium-emphasis">{{ stat.description }}</div>
+                <div class="text-h2 text-primary">{{ isLoading ? '–' : stat.total }}</div>
               </v-card-text>
             </v-card>
           </v-hover>

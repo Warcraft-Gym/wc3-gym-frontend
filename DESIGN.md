@@ -147,11 +147,13 @@ Use these instead of drawing the same thing again.
 | `ColumnNote` | A column title with a help note. |
 | `StatusAlert` | A load or save message. It offers a retry when the page can load again. |
 | `EventHeader`, `PlayerHeader` | The top of an event page and of a player page. |
+| `TeamRoster` | The captains and the members of one team in one event, as two cards. A page that edits the roster fills its slots. |
 
 ## Events
 
 The events module names things the same way on every page. A league is what repeats. An event is one run of it that people sign up for: a GNL season, a KOTH night, a cup. A stage is one format over the entrants. A round is a dated window of series. A fixture pairs two teams in a round and holds series. A series has one opponent per side and a best-of. A game is one map. A division is a band of entrants that runs the whole event on its own and never merges. Never "week", never "team series", never "match" for a series; "match" stays only on the GNL fixture pages until they are redrawn.
 
+- The team page tabs one event per row of `seasons_info`, each named with `eventLabel`, and links that name to the event page beside the season team page link. Both team pages read the roster of the tab from `GET /teams/{id}/seasons/{event_id}` and draw it with `TeamRoster`.
 - An event named outside its own pages carries its league: "GNL · Season 18". `eventLabel(event)` in `src/helpers/event-labels.mjs` prints it, and prints the name alone when the event has no league or the name already starts with the league's short name. It reads the league off `league_short_name`, or off a league row passed as a second argument, and off `season_name` for the flat trophy and head-to-head rows. A GNL season page wears the same `EventHeader` as every other event, so its `h1` is that label too, and the rounds and teams counts sit under it as small chips. The season team page keeps a plain `h1` of the team name with the same label under it.
 - The event state is computed, never stored, and shows as one small tonal chip: signups open in `success`, check-in in `info`, seeded in `secondary`, running in `primary`, finished in `draw`, a draft with no colour. A GNL season answers its own four phases under `phase` instead: open in `success`, commenced in `primary`, overdue in `warning`, complete in `draw`. `STATE_LABEL` and `STATE_COLOR` in `src/helpers/event-labels.mjs` are the one source for both; `STATE_ITEMS`, the filter on the events list, holds the six event states alone.
 - The event page lists every stage with its format, its best-of and its scheduling. Only a round robin plays more than one series an entrant a round, so its series count reads on that row and every other format reads an em dash.

@@ -30,69 +30,6 @@
       </v-card-text>
     </v-card>
 
-    <!-- Captain Selection Card -->
-    <v-card elevation="2" class="mb-4">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-shield-star</v-icon>
-        <span>Team captains</span>
-      </v-card-title>
-      <v-card-text v-if="auth.isAdmin" class="pa-0">
-        <v-toolbar flat height="auto">
-          <v-row align="center" class="flex-wrap ma-0 pa-2">
-            <v-spacer />
-            <v-col cols="12" sm="auto">
-              <v-btn variant="elevated" color="success" prepend-icon="mdi-content-save" @click="saveCaptains" :loading="isSavingCaptains" :disabled="isSavingCaptains" block>
-                Save captains
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-toolbar>
-      </v-card-text>
-      <v-card-text>
-        <div v-if="!auth.isAdmin" class="d-flex flex-wrap ga-3">
-          <PlayerName v-for="captain in seasonCaptains" :key="captain.id" :player="captain" />
-          <span v-if="!seasonCaptains.length" class="text-medium-emphasis">No captains recorded for this season.</span>
-        </div>
-
-        <template v-else>
-          <p class="text-subtitle-2 mb-3">Assign the captains of this season:</p>
-
-          <v-autocomplete
-            v-model="captainIds"
-            :items="allAvailableUsers"
-            item-title="name"
-            item-value="id"
-            label="Captains"
-            placeholder="Start typing to search..."
-            multiple
-            chips
-            closable-chips
-            clearable
-            auto-select-first
-            hint="Any number of captains"
-            persistent-hint
-          >
-            <template v-slot:prepend-inner>
-              <v-icon color="primary">mdi-shield-star</v-icon>
-            </template>
-          </v-autocomplete>
-        </template>
-
-        <!-- Save captains answers the accounts the guild has not granted the role yet -->
-        <v-chip
-          v-for="captain in missingRoleCaptains"
-          :key="captain.id"
-          color="warning"
-          variant="tonal"
-          size="small"
-          prepend-icon="mdi-alert"
-          class="mr-2 mt-4"
-        >
-          {{ captain.name }} — role missing in Discord
-        </v-chip>
-      </v-card-text>
-    </v-card>
-
     <!-- Ladder -->
     <v-card v-if="ladderTeam" elevation="2" class="mb-4">
       <v-card-title class="bg-primary d-flex align-center">
@@ -154,87 +91,143 @@
       </v-table>
     </v-card>
 
-    <!-- Players -->
-    <v-card elevation="2">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-account-multiple</v-icon>
-        <span>Team players</span>
-      </v-card-title>
+    <!-- The roster of this season: the captains an admin sets, then the players -->
+    <TeamRoster :captains="seasonCaptains" :members="players">
+      <template #captains-actions>
+        <v-card-text v-if="auth.isAdmin" class="pa-0">
+          <v-toolbar flat height="auto">
+            <v-row align="center" class="flex-wrap ma-0 pa-2">
+              <v-spacer />
+              <v-col cols="12" sm="auto">
+                <v-btn variant="elevated" color="success" prepend-icon="mdi-content-save" @click="saveCaptains" :loading="isSavingCaptains" :disabled="isSavingCaptains" block>
+                  Save captains
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-toolbar>
+        </v-card-text>
+      </template>
 
-      <v-card-text class="pa-0">
-        <v-data-table
-          :headers="tableHeader"
-          :loading="isLoading"
-          :items="players"
-          :hide-default-footer="players.length <= 10"
-          :row-props="playerRowProps"
-          fixed-header
-          hover
-        >
-          <template v-slot:[`header.mmr`]><W3CMmr /></template>
-          <template v-slot:loading>
-            <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
-          </template>
+      <template #captains="{ captains }">
+        <div v-if="!auth.isAdmin" class="d-flex flex-wrap ga-3">
+          <PlayerName v-for="captain in captains" :key="captain.id" :player="captain" />
+          <span v-if="!captains.length" class="text-medium-emphasis">No captains recorded for this season.</span>
+        </div>
 
-          <template #top>
-            <v-toolbar v-if="auth.isAdmin || canSetRounds" flat height="auto">
-              <v-row align="center" class="flex-wrap ma-0 pa-2">
-                <v-spacer />
-                <v-col cols="12" sm="auto">
-                  <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" @click="syncW3CTeam" :loading="isLoading" :disabled="isLoading" block>
-                    <template #prepend><W3CIcon :size="18" /></template>
-                    Sync W3C
-                    <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
-                  </v-btn>
-                </v-col>
-                <v-col cols="12" sm="auto">
-                  <v-btn v-if="canSetRounds" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${$route.params.season_id}/rounds`" block>
-                    Team rounds
-                  </v-btn>
-                </v-col>
-                <v-col cols="12" sm="auto">
-                  <v-btn v-if="auth.isAdmin" variant="elevated" color="success" prepend-icon="mdi-plus" @click="showNewPlayerModal = true" block>
-                    Add player
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-toolbar>
-          </template>
+        <template v-else>
+          <p class="text-subtitle-2 mb-3">Assign the captains of this season:</p>
 
-            <template v-slot:item="{ item }">
-              <tr class="text-no-wrap">
-                <td><PlayerName :player="item" /></td>
-                <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
-                <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
-                <td>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}
-                  <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
-                </td>
-                <td>
-                  <div v-if="item.signup_race">
-                    <RaceIcon :raceIdentifier="item.signup_race" />
-                  </div>
-                </td>     
-                <td>
-                  <RowActions :actions="[
-                    { icon: 'mdi-chart-box', label: 'View player stats', public: true, onClick: () => router.push(playerPath(item)) },
-                    { icon: 'mdi-account-minus', label: 'Remove from team', color: 'error', onClick: () => removePlayerFromTeam(item.id) },
-                  ]" />
-                </td>
-              </tr>
+          <v-autocomplete
+            v-model="captainIds"
+            :items="allAvailableUsers"
+            item-title="name"
+            item-value="id"
+            label="Captains"
+            placeholder="Start typing to search..."
+            multiple
+            chips
+            closable-chips
+            clearable
+            auto-select-first
+            hint="Any number of captains"
+            persistent-hint
+          >
+            <template v-slot:prepend-inner>
+              <v-icon color="primary">mdi-shield-star</v-icon>
             </template>
-          <template #no-data>
-            <div v-if="!errorMessage" class="text-center pa-8">
-              <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
-              <div class="text-h6 text-medium-emphasis mt-4 mb-2">No players found</div>
-              <p class="text-medium-emphasis mb-4">Add players to this team to get started</p>
-              <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewPlayerModal = true">
-                Add first player
-              </v-btn>
-            </div>
-          </template>
-        </v-data-table>
-      </v-card-text>
-    </v-card>
+          </v-autocomplete>
+        </template>
+
+        <!-- Save captains answers the accounts the guild has not granted the role yet -->
+        <v-chip
+          v-for="captain in missingRoleCaptains"
+          :key="captain.id"
+          color="warning"
+          variant="tonal"
+          size="small"
+          prepend-icon="mdi-alert"
+          class="mr-2 mt-4"
+        >
+          {{ captain.name }} — role missing in Discord
+        </v-chip>
+      </template>
+
+      <template #members="{ members }">
+        <v-card-text class="pa-0">
+          <v-data-table
+            :headers="tableHeader"
+            :loading="isLoading"
+            :items="members"
+            :hide-default-footer="members.length <= 10"
+            :row-props="playerRowProps"
+            fixed-header
+            hover
+          >
+            <template v-slot:[`header.mmr`]><W3CMmr /></template>
+            <template v-slot:loading>
+              <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
+            </template>
+
+            <template #top>
+              <v-toolbar v-if="auth.isAdmin || canSetRounds" flat height="auto">
+                <v-row align="center" class="flex-wrap ma-0 pa-2">
+                  <v-spacer />
+                  <v-col cols="12" sm="auto">
+                    <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" @click="syncW3CTeam" :loading="isLoading" :disabled="isLoading" block>
+                      <template #prepend><W3CIcon :size="18" /></template>
+                      Sync W3C
+                      <v-tooltip activator="parent" location="top">MMR and ladder matches</v-tooltip>
+                    </v-btn>
+                  </v-col>
+                  <v-col cols="12" sm="auto">
+                    <v-btn v-if="canSetRounds" variant="elevated" color="primary" prepend-icon="mdi-calendar-account" :to="`/team/${teamId}/season/${$route.params.season_id}/rounds`" block>
+                      Team rounds
+                    </v-btn>
+                  </v-col>
+                  <v-col cols="12" sm="auto">
+                    <v-btn v-if="auth.isAdmin" variant="elevated" color="success" prepend-icon="mdi-plus" @click="showNewPlayerModal = true" block>
+                      Add player
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-toolbar>
+            </template>
+
+              <template v-slot:item="{ item }">
+                <tr class="text-no-wrap">
+                  <td><PlayerName :player="item" /></td>
+                  <td class="d-none d-md-table-cell">{{ item.battleTag }}</td>
+                  <td class="d-none d-md-table-cell">{{ item.discordTag }}</td>
+                  <td>{{ getW3CMMR(item, currentW3CSeason, item.signup_race) ?? 'N/A' }}
+                    <div class="text-caption text-medium-emphasis">{{ syncedAgo(item) }}<v-tooltip activator="parent" location="top">{{ syncedAt(item) }}</v-tooltip></div>
+                  </td>
+                  <td>
+                    <div v-if="item.signup_race">
+                      <RaceIcon :raceIdentifier="item.signup_race" />
+                    </div>
+                  </td>     
+                  <td>
+                    <RowActions :actions="[
+                      { icon: 'mdi-chart-box', label: 'View player stats', public: true, onClick: () => router.push(playerPath(item)) },
+                      { icon: 'mdi-account-minus', label: 'Remove from team', color: 'error', onClick: () => removePlayerFromTeam(item.id) },
+                    ]" />
+                  </td>
+                </tr>
+              </template>
+            <template #no-data>
+              <div v-if="!errorMessage" class="text-center pa-8">
+                <v-icon size="64" class="text-disabled">mdi-account-off</v-icon>
+                <div class="text-h6 text-medium-emphasis mt-4 mb-2">No players found</div>
+                <p class="text-medium-emphasis mb-4">Add players to this team to get started</p>
+                <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="showNewPlayerModal = true">
+                  Add first player
+                </v-btn>
+              </div>
+            </template>
+          </v-data-table>
+        </v-card-text>
+      </template>
+    </TeamRoster>
 
   <!-- Add New Player Modal -->
   <v-dialog v-model="showNewPlayerModal" persistent max-width="900">
@@ -305,6 +298,8 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import { useColumns } from '@/helpers/columns';
 import { eventLabel } from '@/helpers/event-labels.mjs';
+import { rosterOf } from '@/helpers/team-roster.mjs';
+import TeamRoster from '@/components/TeamRoster.vue';
 
 
 // Router and store setup
@@ -359,11 +354,10 @@ const discordRoleMissing = ref([]);
 const isSavingCaptains = ref(false);
 const allAvailableUsers = ref([]);
 
-const seasonCaptains = computed(() => team.value?.captains_by_season?.[seasonId.value] || []);
+const seasonCaptains = computed(() => rosterOf(team.value, seasonId.value).captains);
 
 const missingRoleCaptains = computed(() =>
-  (team.value?.captains_by_season?.[seasonId.value] || [])
-    .filter(captain => discordRoleMissing.value.includes(captain.discordId))
+  seasonCaptains.value.filter(captain => discordRoleMissing.value.includes(captain.discordId))
 );
 
 // Ladder card state
@@ -452,7 +446,7 @@ const fetchTeam = async () => {
     if (!team.value) {
       errorMessage.value = 'No team information found.';
     }
-    players.value = team.value.player_by_season[seasonId.value] || [];
+    players.value = rosterOf(team.value, seasonId.value).members;
     
     // Load ALL users for captain selection (captains can be anyone, not just season players)
     await playerStore.fetchPlayers();
@@ -460,7 +454,7 @@ const fetchTeam = async () => {
     allAvailableUsers.value = playerStore.players || [];
     
     // Initialize captain selections based on current captains (order is preserved)
-    captainIds.value = (team.value.captains_by_season?.[seasonId.value] || []).map(captain => captain.id);
+    captainIds.value = seasonCaptains.value.map(captain => captain.id);
   } catch (error) {
     console.error(error);
     errorMessage.value = 'Failed to load team. Please try again later.';

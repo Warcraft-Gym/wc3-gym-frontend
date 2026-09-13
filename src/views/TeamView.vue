@@ -1,6 +1,6 @@
-<!-- One page per team, across every season it played. The tabs pick the season;
-     the captains and the scores come from the team route, the roster, rank and
-     round results from that season's team and series routes. -->
+<!-- One page per team, across every event it played. The tabs name the event and
+     its league from the team route, which also carries the scores; the roster, the
+     rank and the round results come from that event's team and series routes. -->
 <template>
   <v-overlay v-model="isLoading" persistent contained class="align-center justify-center">
     <v-progress-circular indeterminate size="64" width="8" color="primary" />
@@ -21,15 +21,19 @@
       </v-card-title>
 
       <v-tabs v-model="seasonId" bg-color="surface" show-arrows>
-        <v-tab v-for="season in seasons" :key="season.id" :value="season.id">
-          {{ season.name }}
-          <v-icon v-if="season.id === currentSeasonId" size="small" class="ml-1" title="Current season">mdi-star</v-icon>
+        <v-tab v-for="tab in seasonTabs" :key="tab.id" :value="tab.id">
+          {{ tab.label }}
+          <v-icon v-if="tab.id === currentSeasonId" size="small" class="ml-1" title="Current season">mdi-star</v-icon>
         </v-tab>
       </v-tabs>
 
-      <!-- The season team page carries the roster and the captain's Team Rounds button -->
-      <v-card-text v-if="seasonSlug" class="pb-0">
-        <v-btn size="small" variant="outlined" prepend-icon="mdi-shield-account" :to="`/team/${teamId}/season/${seasonSlug}`">
+      <!-- The event page holds the stages; the season team page holds the roster and
+           the captain's Team rounds button -->
+      <v-card-text v-if="seasonId" class="pb-0 d-flex flex-wrap ga-2">
+        <v-btn size="small" variant="outlined" prepend-icon="mdi-trophy-variant" :to="`/events/${seasonId}`">
+          {{ seasonLabel }}
+        </v-btn>
+        <v-btn v-if="seasonSlug" size="small" variant="outlined" prepend-icon="mdi-shield-account" :to="`/team/${teamId}/season/${seasonSlug}`">
           Season team page
         </v-btn>
       </v-card-text>
@@ -77,31 +81,7 @@
       </v-table>
     </v-card>
 
-    <v-card v-if="team" elevation="2" class="mb-4">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-shield-star</v-icon>
-        Captains
-      </v-card-title>
-      <v-card-text>
-        <div v-if="captains.length" class="d-flex flex-wrap ga-3">
-          <PlayerName v-for="captain in captains" :key="captain.id" :player="captain" />
-        </div>
-        <div v-else class="text-medium-emphasis">No captains recorded for this season.</div>
-      </v-card-text>
-    </v-card>
-
-    <v-card v-if="team" elevation="2">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-account-group</v-icon>
-        Members
-      </v-card-title>
-      <v-card-text>
-        <div v-if="members.length" class="d-flex flex-wrap ga-3">
-          <PlayerName v-for="member in members" :key="member.id" :player="member" :race="member.signup_race" />
-        </div>
-        <div v-else class="text-medium-emphasis">No members recorded for this season.</div>
-      </v-card-text>
-    </v-card>
+    <TeamRoster v-if="team" :captains="captains" :members="members" />
   </v-container>
 </template>
 
@@ -113,9 +93,11 @@ import { resolveCurrentSeasonId, loadSeasons } from '@/helpers/current-season';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { seasonRank, roundResults, seriesRecord } from '@/helpers/team-record.mjs';
 import { POINTS_NOTES } from '@/helpers/achievements';
+import { eventLabel } from '@/helpers/event-labels.mjs';
+import { rosterOf } from '@/helpers/team-roster.mjs';
 import ColumnNote from '@/components/ColumnNote.vue';
-import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
+import TeamRoster from '@/components/TeamRoster.vue';
 
 const route = useRoute();
 const teamStore = useTeamStore();
@@ -132,20 +114,20 @@ const currentSeasonId = ref(null);
 const isLoading = ref(true);
 const errorMessage = ref(null);
 
-// The team route carries one row per season the team played, newest first
-const seasons = computed(() => {
-  const played = new Set((team.value?.seasons_info || []).map((info) => info.season_id));
-  return (seasonStore.seasons || [])
-    .filter((season) => played.has(season.id))
-    .slice()
-    .sort((a, b) => b.id - a.id);
-});
+// The team route carries one row per event the team played, with its league; newest first
+const seasonTabs = computed(() => (team.value?.seasons_info || [])
+  .filter((info) => info.season_id != null)
+  .slice()
+  .sort((a, b) => b.season_id - a.season_id)
+  .map((info) => ({ id: info.season_id, label: eventLabel(info) })));
 
 const seasonInfo = computed(() =>
   (team.value?.seasons_info || []).find((info) => info.season_id === seasonId.value) || null
 );
-const captains = computed(() => team.value?.captains_by_season?.[seasonId.value] || []);
-const members = computed(() => seasonTeam.value?.player_by_season?.[seasonId.value] || []);
+const seasonLabel = computed(() => seasonTabs.value.find((tab) => tab.id === seasonId.value)?.label || '');
+// The roster of the tab comes from the per-event read, captains and members alike
+const captains = computed(() => rosterOf(seasonTeam.value, seasonId.value).captains);
+const members = computed(() => rosterOf(seasonTeam.value, seasonId.value).members);
 
 const rank = computed(() => seasonRank(standings.value, teamId, seasonId.value));
 const rounds = computed(() => roundResults(seasonSeries.value, teamId));
@@ -182,7 +164,7 @@ const load = async () => {
     const [loaded] = await Promise.all([teamStore.getTeam(teamId), loadSeasons()]);
     team.value = loaded;
     currentSeasonId.value = await resolveCurrentSeasonId();
-    const ids = seasons.value.map((season) => season.id);
+    const ids = seasonTabs.value.map((tab) => tab.id);
     seasonId.value = ids.includes(currentSeasonId.value) ? currentSeasonId.value : ids[0] ?? null;
   } catch (error) {
     errorMessage.value = error.message || 'Failed to load the team.';

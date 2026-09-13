@@ -8,7 +8,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-trophy-variant</v-icon>
-          Fantasy Dashboard
+          Fantasy dashboard
         </h1>
       </v-col>
       <v-col cols="12" sm="auto">
@@ -24,13 +24,13 @@
 
     <!-- Fantasy Team Card -->
     <v-card elevation="2" class="mb-6">
-      <v-card-title class="bg-primary">
-        <v-icon class="mr-2">mdi-account-group</v-icon>
-        Fantasy Team
-        <v-chip v-if="existingTeam" class="ml-3" size="small" color="on-primary" variant="outlined">
+      <v-card-title class="bg-primary d-flex flex-wrap align-center ga-2">
+        <v-icon>mdi-account-group</v-icon>
+        <span>Fantasy team</span>
+        <v-chip v-if="existingTeam" size="small" color="on-primary" variant="outlined">
           Registered
         </v-chip>
-        <v-chip v-if="phase !== 'open'" class="ml-3" size="small" color="on-primary" variant="outlined">
+        <v-chip v-if="phase !== 'open'" size="small" color="on-primary" variant="outlined">
           {{ seasonName }} has {{ ended ? 'ended' : 'commenced' }}
         </v-chip>
       </v-card-title>
@@ -47,7 +47,7 @@
                     {{ seasonName }} has commenced. Fantasy team creation closed when its first series started.
                   </v-alert>
                   <v-alert v-else-if="!isCreationEnabled && !existingTeam" type="warning" variant="tonal" class="mb-4">
-                    <v-alert-title>Team Creation Currently Closed</v-alert-title>
+                    <v-alert-title>Team creation is closed</v-alert-title>
                     Fantasy team creation is not currently enabled. Please check back later or contact an administrator.
                   </v-alert>
                   <v-alert v-else-if="!tierCount && !existingTeam" type="info" variant="tonal" class="mb-4">
@@ -70,27 +70,27 @@
                               <strong>Season:</strong> {{ existingTeam.season?.name || 'N/A' }}
                             </div>
                             <div class="mb-2">
-                              <strong>Drafted Team:</strong> {{ existingTeam.drafted_team?.name || 'N/A' }}
+                              <strong>Drafted team:</strong> {{ existingTeam.drafted_team?.name || 'N/A' }}
                             </div>
                             <div v-if="season?.fantasy_grind" class="mb-2">
-                              <strong>Grind Team:</strong> {{ grindTeamName || 'N/A' }}
+                              <strong>Grind team:</strong> {{ grindTeamName || 'N/A' }}
                             </div>
                             <div class="mb-2">
-                              <strong>Drafted Race:</strong>
+                              <strong>Drafted race:</strong>
                               <RaceIcon v-if="existingTeam.drafted_race" :raceIdentifier="existingTeam.drafted_race" />
                             </div>
                           </v-col>
                           <v-col cols="12" md="6">
                             <div class="mb-2">
-                              <strong>Total Points:</strong> {{ existingTeam.total_points || 0 }}
+                              <strong>Total points:</strong> {{ existingTeam.total_points || 0 }}
                             </div>
                             <div class="text-caption">
-                              Player Points: {{ existingTeam.player_points || 0 }}<br>
-                              Bench Points: {{ existingTeam.bench_points || 0 }}<br>
-                              Team Points: {{ existingTeam.team_points || 0 }}<br>
-                              Race Points: {{ existingTeam.race_points || 0 }}<br>
-                              <span v-if="season?.fantasy_grind">Grind Points: {{ existingTeam.grind_points || 0 }}<br></span>
-                              Bet Points: {{ existingTeam.bet_points || 0 }}
+                              Player points: {{ existingTeam.player_points || 0 }}<br>
+                              Bench points: {{ existingTeam.bench_points || 0 }}<br>
+                              Team points: {{ existingTeam.team_points || 0 }}<br>
+                              Race points: {{ existingTeam.race_points || 0 }}<br>
+                              <span v-if="season?.fantasy_grind">Grind points: {{ existingTeam.grind_points || 0 }}<br></span>
+                              Bet points: {{ existingTeam.bet_points || 0 }}
                             </div>
                           </v-col>
                         </v-row>
@@ -98,7 +98,7 @@
                         <v-divider class="my-4"></v-divider>
 
                         <div>
-                          <strong class="mb-2 d-block">Drafted Players:</strong>
+                          <strong class="mb-2 d-block">Drafted players:</strong>
                           <v-chip-group>
                             <v-chip v-for="player in existingTeam.drafted_players" :key="player.id" size="small">
                               {{ player.name }}
@@ -113,7 +113,7 @@
                         <v-spacer></v-spacer>
                         <v-btn color="primary" @click="startEditing">
                           <v-icon start>mdi-pencil</v-icon>
-                          Edit Team
+                          Edit team
                         </v-btn>
                       </v-card-actions>
                       <v-card-actions v-else-if="!ended">
@@ -130,14 +130,14 @@
                     <v-card variant="outlined" class="mb-4">
                       <v-card-title class="bg-primary text-on-primary">
                         <v-icon start>mdi-account-group</v-icon>
-                        Team Details
+                        Team details
                       </v-card-title>
                       <v-card-text class="pt-4">
                         <v-row>
                           <v-col cols="12">
                             <v-text-field
                               v-model="teamForm.name"
-                              label="Fantasy Team Name *"
+                              label="Fantasy team name *"
                               variant="outlined"
                               density="comfortable"
                               required
@@ -150,7 +150,7 @@
                               :items="teams"
                               :item-title="teamTitle"
                               item-value="id"
-                              label="Draft a Team *"
+                              label="Draft a team *"
                               variant="outlined"
                               density="comfortable"
                               required
@@ -169,7 +169,7 @@
                           <v-col cols="12" md="6">
                             <RaceSelect
                               v-model="teamForm.drafted_race"
-                              label="Draft a Race *"
+                              label="Draft a race *"
                               variant="outlined"
                               density="comfortable"
                               required
@@ -181,7 +181,7 @@
                               :items="teams"
                               :item-title="teamTitle"
                               item-value="id"
-                              label="Grind Team"
+                              label="Grind team"
                               variant="outlined"
                               density="comfortable"
                               clearable
@@ -204,7 +204,7 @@
                     <v-card variant="outlined" class="mb-4">
                       <v-card-title class="bg-primary">
                         <v-icon start>mdi-account-multiple</v-icon>
-                        Draft Players
+                        Draft players
                       </v-card-title>
                       <v-card-text class="pt-4">
                         <v-alert type="info" variant="tonal" class="mb-4">
@@ -251,7 +251,7 @@
                         </v-btn>
                         <v-btn color="success" type="submit" size="large" :loading="isSaving">
                           <v-icon start>{{ isEditing ? 'mdi-content-save' : 'mdi-check-circle' }}</v-icon>
-                        {{ isEditing ? 'Update Team' : 'Register Team' }}
+                        {{ isEditing ? 'Update team' : 'Register team' }}
                       </v-btn>
                     </v-col>
                   </v-row>
@@ -264,7 +264,7 @@
       <v-card-title class="bg-primary d-flex justify-space-between align-center">
         <div class="d-flex align-center">
           <v-icon class="mr-2">mdi-crystal-ball</v-icon>
-          <span>Fantasy Bets</span>
+          <span>Fantasy bets</span>
         </div>
         <v-chip v-if="existingTeam" color="on-primary" variant="outlined">
           {{ fantasyBets.length }} bets
@@ -274,8 +274,11 @@
                   <v-alert v-if="!existingTeam && ended" type="info" variant="tonal">
                     No team in {{ seasonName }}, so no bets.
                   </v-alert>
+                  <v-alert v-else-if="!existingTeam && phase !== 'open'" type="info" variant="tonal">
+                    No team in {{ seasonName }}, so no bets. Registration closed when its first series started.
+                  </v-alert>
                   <v-alert v-else-if="!existingTeam" type="info" variant="tonal">
-                    <v-alert-title>Register a Team First</v-alert-title>
+                    <v-alert-title>Register a team first</v-alert-title>
                     You need to register a fantasy team before you can place bets on matches.
                   </v-alert>
 
@@ -283,8 +286,8 @@
                   <div v-else>
                     <!-- No Fantasy Series Message -->
                     <v-alert v-if="fantasySeries.length === 0" type="info" variant="tonal" class="mb-4">
-                      <v-alert-title>No Fantasy Matches Available</v-alert-title>
-                      There are currently no fantasy matches scheduled for betting. Check back later!
+                      <v-alert-title>No fantasy matches yet</v-alert-title>
+                      No fantasy matches are scheduled for betting. They appear once the round is drawn.
                     </v-alert>
 
                     <v-data-table
@@ -361,7 +364,7 @@
                           @click="placeBet(item)"
                           :disabled="isBetSaving"
                         >
-                          {{ item.myBet ? 'Change Bet' : 'Place Bet' }}
+                          {{ item.myBet ? 'Change bet' : 'Place bet' }}
                         </v-btn>
                         <v-chip v-else size="small" color="secondary">Locked</v-chip>
                       </template>
@@ -374,7 +377,7 @@
   <!-- Place Bet Dialog -->
   <v-dialog v-model="betDialog" max-width="500px">
     <v-card>
-      <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
+      <v-card-title class="text-h5">Place fantasy bet</v-card-title>
       <v-card-text>
         <StatusAlert v-model="betError" />
         <div class="mb-4">
@@ -398,7 +401,7 @@
         <v-text-field
           v-if="!useFixedBetPoints"
           v-model.number="betPoints"
-          label="Bet Points"
+          label="Bet points"
           type="number"
           :min="minBetPoints || 1"
           :max="maxBetPoints"
@@ -420,7 +423,7 @@
           @click="deleteBet" 
           :disabled="isBetSaving"
         >
-          Delete Bet
+          Delete bet
         </v-btn>
         <v-spacer />
         <v-btn color="secondary" variant="text" @click="closeBet" :disabled="isBetSaving">Cancel</v-btn>
@@ -430,7 +433,7 @@
           :loading="isBetSaving" 
           @click="saveBet"
         >
-          Save Bet
+          Save bet
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -571,8 +574,8 @@ const grindTeamName = computed(
 // Table headers for betting
 const allFantasyHeaders = [
   { title: 'Match', key: 'players', sortable: false },
-  { title: 'Date & Time', key: 'date_time', sortable: true },
-  { title: 'My Bet', key: 'my_bet', sortable: false },
+  { title: 'Date & time', key: 'date_time', sortable: true },
+  { title: 'My bet', key: 'my_bet', sortable: false },
   { mobile: false, title: 'Score', key: 'score', sortable: false },
   { title: 'Result', key: 'result', sortable: false },
   { title: '', key: 'actions', sortable: false }
@@ -795,7 +798,7 @@ const cancelEditing = () => {
 const submitTeam = async () => {
   // Validate all required fields
   if (!teamForm.value.name || !teamForm.value.season_id || !teamForm.value.drafted_team_id || !teamForm.value.drafted_race) {
-    errorMessage.value = 'Please fill in all required fields (Team Name, Draft a Team, Draft a Race).';
+    errorMessage.value = 'Please fill in all required fields (Fantasy team name, Draft a team, Draft a race).';
     return;
   }
 

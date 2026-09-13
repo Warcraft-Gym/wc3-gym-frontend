@@ -6,7 +6,7 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-2" align="center">
       <v-col>
-        <h1><v-icon class="mr-2">mdi-trophy-variant</v-icon> Fantasy Player Tiers</h1>
+        <h1><v-icon class="mr-2">mdi-trophy-variant</v-icon> Fantasy player tiers</h1>
         <p class="text-medium-emphasis">Cut the {{ seasonName }} roster into {{ tierCount }} tiers by <W3CMmr /></p>
       </v-col>
       <v-col cols="12" md="auto" class="d-flex flex-wrap ga-2 align-center">
@@ -21,19 +21,15 @@
           class="tier-count"
           :disabled="locked"
         />
+        <v-btn v-if="phase !== 'open'" variant="outlined" :prepend-icon="locked ? 'mdi-lock-open-variant' : 'mdi-lock'" @click="locked = !locked">{{ locked ? 'Unlock' : 'Lock' }}</v-btn>
         <v-btn variant="outlined" prepend-icon="mdi-scale-balance" :disabled="locked || !rows.length" @click="evenSplit">Even split</v-btn>
         <v-btn color="primary" prepend-icon="mdi-content-save" :loading="isSaving" :disabled="locked || isSaving || !rows.length" @click="applyTiers">Apply tiers</v-btn>
       </v-col>
     </v-row>
 
-    <v-alert v-if="phase !== 'open'" type="info" variant="tonal" density="compact" class="mb-4">
-      <div class="d-flex align-center justify-space-between ga-4">
-        <span>{{ seasonName }} has {{ phase === 'complete' ? 'ended' : 'commenced' }}. Its tiers are {{ locked ? 'locked' : 'unlocked' }}.</span>
-        <v-btn size="small" variant="text" :prepend-icon="locked ? 'mdi-lock-open-variant' : 'mdi-lock'" @click="locked = !locked">{{ locked ? 'Unlock' : 'Lock' }}</v-btn>
-      </div>
-    </v-alert>
-    <v-alert v-if="tierState" :type="tierState.type" variant="tonal" density="compact" class="mb-4">
-      {{ tierState.text }}
+    <!-- One alert carries both the season's lock state and the stored-tier state; the lock itself sits with the other controls -->
+    <v-alert v-if="tierState || phase !== 'open'" :type="tierState?.type ?? 'info'" variant="tonal" density="compact" class="mb-4">
+      <template v-if="phase !== 'open'">{{ seasonName }} has {{ phase === 'complete' ? 'ended' : 'commenced' }}, so its tiers are {{ locked ? 'locked' : 'unlocked' }}. </template>{{ tierState?.text }}
     </v-alert>
     <StatusAlert v-model="errorMessage" />
     <StatusAlert v-model="successMessage" type="success" />

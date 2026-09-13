@@ -6,7 +6,7 @@
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
       <v-col>
-        <h1><v-icon class="mr-2">mdi-trophy</v-icon> Fantasy Teams Leaderboard</h1>
+        <h1><v-icon class="mr-2">mdi-trophy</v-icon> Fantasy teams leaderboard</h1>
       </v-col>
     </v-row>
 
@@ -17,10 +17,6 @@
     <v-row>
       <v-col cols="12">
         <v-card elevation="2">
-          <v-card-title class="bg-primary d-flex align-center">
-            <v-icon class="mr-2">mdi-chart-bar</v-icon>
-            <span>Season Leaderboard</span>
-          </v-card-title>
           <v-card-text class="pa-0">
             <v-toolbar flat height="auto">
               <v-row align="center" class="flex-wrap ma-0 pa-2">
@@ -30,7 +26,7 @@
                 <v-spacer />
                 <v-col cols="12" sm="auto">
                   <v-btn v-if="auth.isAdmin" variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" block>
-                    Create Team
+                    Create team
                   </v-btn>
                 </v-col>
               </v-row>
@@ -40,6 +36,7 @@
               :headers="headers"
               :items="sortedTeams"
               :items-per-page="25"
+              :no-data-text="auth.isAdmin ? 'No fantasy teams in this season yet. Create the first one.' : 'No fantasy teams in this season yet.'"
               item-value="id"
               show-expand
               expand-on-click
@@ -102,7 +99,7 @@
                   <td :colspan="columns.length" class="pa-0">
                     <!-- sticky: stays in view when the summary row scrolls sideways on a narrow window -->
                     <div class="pa-4 expanded-breakdown">
-                      <div class="text-h6 mb-2">Score Breakdown</div>
+                      <div class="text-h6 mb-2">Score breakdown</div>
                       <div v-if="!breakdowns[item.id]" class="text-center pa-4">
                         <v-progress-circular indeterminate color="primary" />
                       </div>
@@ -130,7 +127,7 @@
     <v-card>
       <v-card-title class="text-h5 bg-primary">
         <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
-        {{ isEditing ? 'Edit Fantasy Team' : 'Create Fantasy Team' }}
+        {{ isEditing ? 'Edit fantasy team' : 'Create fantasy team' }}
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogErrorMessage" />
@@ -139,7 +136,7 @@
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="editedTeam.name"
-                label="Team Name *"
+                label="Team name *"
                 variant="outlined"
                 prepend-inner-icon="mdi-account-group"
                 density="comfortable"
@@ -180,7 +177,7 @@
                 :items="gnlTeams"
                 item-title="name"
                 item-value="id"
-                label="Drafted Team *"
+                label="Drafted team *"
                 variant="outlined"
                 prepend-inner-icon="mdi-shield"
                 density="comfortable"
@@ -193,7 +190,7 @@
                 :items="gnlTeams"
                 item-title="name"
                 item-value="id"
-                label="Grind Team"
+                label="Grind team"
                 variant="outlined"
                 prepend-inner-icon="mdi-shield-star"
                 density="comfortable"
@@ -204,7 +201,7 @@
               <v-select
                 v-model="editedTeam.drafted_race"
                 :items="races"
-                label="Drafted Race *"
+                label="Drafted race *"
                 variant="outlined"
                 prepend-inner-icon="mdi-sword"
                 density="comfortable"
@@ -216,7 +213,7 @@
           <v-row>
             <v-col cols="12">
               <v-divider class="my-2"></v-divider>
-              <h3 class="text-h6 mb-3">Drafted Players (Select 1 per Tier) *</h3>
+              <h3 class="text-h6 mb-3">Drafted players (select 1 per tier) *</h3>
               <v-alert type="info" variant="tonal" density="compact" class="mb-3">
                 You must select exactly one player from each tier (1-{{ tierCount }})
               </v-alert>
@@ -227,7 +224,7 @@
                 :items="tierPlayers[tier]"
                 item-title="name"
                 item-value="id"
-                :label="`Tier ${tier} Player *`"
+                :label="`Tier ${tier} player *`"
                 variant="outlined"
                 density="comfortable"
                 :rules="[v => !!v || `Tier ${tier} player is required`]"
@@ -254,7 +251,7 @@
     <v-card>
       <v-card-title class="bg-error text-on-error">
         <v-icon class="mr-2" color="on-error">mdi-alert</v-icon>
-        Confirm Delete
+        Confirm delete
       </v-card-title>
       <v-card-text class="pt-4">
         <p>Are you sure you want to delete the fantasy team "{{ teamToDelete?.name }}"?</p>
@@ -351,15 +348,15 @@ const selectedTierPlayers = ref(emptyTierSelection());
 const allHeaders = computed(() => [
   { title: '', key: 'data-table-expand', sortable: false, width: '48px' },
   { title: 'Rank', value: 'rank', sortable: false, width: '80px' },
-  { title: 'Fantasy Team', value: 'name', sortable: false },
+  { title: 'Fantasy team', value: 'name', sortable: false },
   { mobile: false, title: 'Bettor', value: 'captain', sortable: false },
   // the order the breakdown panels open in, so a column and its panel line up
-  { mobile: false, title: 'Team Points', value: 'team_points', align: 'end' },
-  ...(fantasyGrind.value ? [{ mobile: false, title: 'Grind Points', value: 'grind_points', align: 'end' }] : []),
-  { mobile: false, title: 'Race Points', value: 'race_points', align: 'end' },
-  { mobile: false, title: 'Player Points', value: 'player_points', align: 'end' },
-  { mobile: false, title: 'Bench Points', value: 'bench_points', align: 'end' },
-  { mobile: false, title: 'Bet Points', value: 'bet_points', align: 'end' },
+  { mobile: false, title: 'Team points', value: 'team_points', align: 'end' },
+  ...(fantasyGrind.value ? [{ mobile: false, title: 'Grind points', value: 'grind_points', align: 'end' }] : []),
+  { mobile: false, title: 'Race points', value: 'race_points', align: 'end' },
+  { mobile: false, title: 'Player points', value: 'player_points', align: 'end' },
+  { mobile: false, title: 'Bench points', value: 'bench_points', align: 'end' },
+  { mobile: false, title: 'Bet points', value: 'bet_points', align: 'end' },
   { title: 'Total', value: 'total_points', align: 'end' },
   // the column exists only for viewers with at least one visible row action: admin, or captain of a listed team
   ...(auth.isAdmin || teams.value.some(canEditOwn)

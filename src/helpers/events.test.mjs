@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { homeCards, joinableEvents, seasonAction } from './events.mjs';
+import { dismissKoth, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction } from './events.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
@@ -89,6 +89,35 @@ test("a KOTH night keeps its card through the player's own day, not the UTC day"
     { id: 2, name: 'Tonight so far', event_date: '2026-09-10T15:00:00Z', is_active: true },  // 01:00 on 11 Sep
   ];
   assert.deepEqual(homeCards({ kothEvents: nights, now: early }).map((card) => card.key), ['koth:2']);
+});
+
+// localStorage over a Map, so the test never needs a browser
+const mapStore = () => {
+  const rows = new Map();
+  return { getItem: (key) => rows.get(key) ?? null, setItem: (key, value) => rows.set(key, value) };
+};
+
+test('a dismissed night is written once and read back, and a broken store answers no', () => {
+  const store = mapStore();
+  assert.equal(kothDismissed(4, store), false);
+  dismissKoth(4, store);
+  assert.equal(kothDismissed(4, store), true);
+  assert.equal(kothDismissed(7, store), false);
+  assert.equal(kothDismissed(4, null), false);  // storage blocked
+  assert.doesNotThrow(() => dismissKoth(4, null));
+});
+
+test('a dismissed night drops out of kothCards and out of homeCards', () => {
+  const store = mapStore();
+  assert.deepEqual(kothCards({ kothEvents, now, store }).map((card) => card.key), ['koth:4']);
+  dismissKoth(4, store);
+  assert.deepEqual(kothCards({ kothEvents, now, store }), []);
+  globalThis.localStorage = store;
+  try {
+    assert.deepEqual(homeCards({ me, seasons, kothEvents, now }).map((card) => card.key), ['season:4', 'season:5']);
+  } finally {
+    delete globalThis.localStorage;
+  }
 });
 
 test('an account with no seasons gets no cards', () => {

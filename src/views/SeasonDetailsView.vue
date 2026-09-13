@@ -536,7 +536,7 @@ const unscoredGroups = computed(() => {
   const weeks = new Map();
   for (const series of unscoredSeries.value) {
     const week = series.match?.playday ?? 0;
-    if (!weeks.has(week)) weeks.set(week, { key: week, rows: [] });
+    if (!weeks.has(week)) weeks.set(week, { key: week, label: `Round ${week}`, rows: [] });
     weeks.get(week).rows.push(series);
   }
   return [...weeks.values()].sort((a, b) => a.key - b.key);

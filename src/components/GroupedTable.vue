@@ -1,7 +1,8 @@
 <!-- The shared grouped table: one tinted, clickable header row per group opens its
      detail rows. Detail rows share the column grid, so their numbers line up under
      the header's and visibly sum to it. `#group` fills the header cells, `#rows`
-     yields whole `<tr class="detail-row">` rows; `#head.<key>` replaces a title. -->
+     yields whole `<tr class="detail-row">` rows; `#head.<key>` replaces a title.
+     A column with `phone: false` hides under md; the slot cell needs the same class. -->
 <template>
   <v-table density="compact" class="grouped-table">
     <thead>
@@ -10,7 +11,7 @@
         <th
           v-for="col in columns"
           :key="col.key"
-          :class="{ 'text-right': col.align === 'right' }"
+          :class="{ 'text-right': col.align === 'right', 'd-none d-md-table-cell': col.phone === false }"
           :style="col.width ? { width: col.width } : {}"
         >
           <slot :name="`head.${col.key}`">{{ col.title }}</slot>
@@ -27,7 +28,7 @@
               size="small"
               :icon="open.has(group.key) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
               :aria-expanded="open.has(group.key)"
-              :aria-label="group.title || String(group.key)"
+              :aria-label="group.label || group.title || String(group.key)"
               @click.stop="toggle(group.key)"
             />
           </td>
@@ -48,8 +49,8 @@
 import { ref, watch } from 'vue';
 
 const props = defineProps({
-  columns: { type: Array, required: true }, // [{ key, title, align?: 'right', width? }]
-  groups: { type: Array, required: true }, // each needs a unique `key`
+  columns: { type: Array, required: true }, // [{ key, title, align?: 'right', width?, phone?: false hides it under md }]
+  groups: { type: Array, required: true }, // each needs a unique `key`, and a `label` for the chevron
   empty: { type: String, default: 'No data' },
   defaultOpen: Boolean, // every group starts open, later groups too
 });

@@ -46,7 +46,7 @@ test('a meeting that carries no race adds no matchup', () => {
   assert.deepEqual(row.matchups, [{ mine: 'HU', theirs: 'OC', count: 1 }]);
 });
 
-test('seasons keep the season id order and carry their count', () => {
+test('events keep the event id order and carry their count', () => {
   const [row] = opponentRows([{
     meetings: [
       meeting(4, 'GNL S19', 2, 0, 'HU', 'OC'),
@@ -54,9 +54,9 @@ test('seasons keep the season id order and carry their count', () => {
       meeting(4, 'GNL S19', 2, 1, 'NE', 'OC'),
     ],
   }]);
-  assert.deepEqual(row.seasons, [
-    { id: 3, name: 'GNL S18', count: 1 },
-    { id: 4, name: 'GNL S19', count: 2 },
+  assert.deepEqual(row.events, [
+    { id: 3, name: 'GNL S18', kind: 'gnl', count: 1 },
+    { id: 4, name: 'GNL S19', kind: 'gnl', count: 2 },
   ]);
 });
 
@@ -65,7 +65,7 @@ test('an opponent with no meeting reads as an empty row', () => {
   assert.deepEqual(row.record, { won: 0, lost: 0 });
   assert.deepEqual(row.games, { mine: 0, theirs: 0 });
   assert.deepEqual(row.matchups, []);
-  assert.deepEqual(row.seasons, []);
+  assert.deepEqual(row.events, []);
   assert.equal(row.lastMet, '');
 });
 
@@ -75,6 +75,29 @@ test('the chips and the last-met line print the league beside the event', () => 
     id: 52, name: 'Peterian', last_season_name: 'Season 19', last_playday: 4,
     meetings: [met(4, 'Season 19'), met(3, 'Season 18')],
   }]);
-  assert.deepEqual(row.seasons.map((s) => s.name), ['GNL · Season 18', 'GNL · Season 19']);
+  assert.deepEqual(row.events.map((e) => e.name), ['GNL · Season 18', 'GNL · Season 19']);
   assert.equal(row.lastMet, 'GNL · Season 19, round 4');
+});
+
+test('a mixed list counts a cup and a KOTH beside the season', () => {
+  const [row] = opponentRows([{
+    id: 52, name: 'Peterian', meetings: [
+      { ...meeting(7, 'Autumn Cup', 2, 1, 'HU', 'OC'), kind: 'cup' },
+      { ...meeting(6, 'Friday KOTH', 1, 2, 'HU', 'UD'), kind: 'koth' },
+      { ...meeting(4, 'Season 19', 2, 0, 'HU', 'OC'), kind: 'gnl', league_short_name: 'GNL' },
+    ],
+  }]);
+  assert.deepEqual(row.record, { won: 2, lost: 1 });
+  assert.deepEqual(row.games, { mine: 5, theirs: 3 });
+  assert.deepEqual(row.events, [
+    { id: 4, name: 'GNL · Season 19', kind: 'gnl', count: 1 },
+    { id: 6, name: 'Friday KOTH', kind: 'koth', count: 1 },
+    { id: 7, name: 'Autumn Cup', kind: 'cup', count: 1 },
+  ]);
+  assert.equal(row.lastMet, 'Autumn Cup');
+});
+
+test('a meeting with no kind reads as a GNL season', () => {
+  const [row] = opponentRows([{ meetings: [meeting(4, 'GNL S19', 2, 0, 'HU', 'OC')] }]);
+  assert.deepEqual(row.events, [{ id: 4, name: 'GNL S19', kind: 'gnl', count: 1 }]);
 });

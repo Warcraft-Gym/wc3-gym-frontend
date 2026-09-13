@@ -151,7 +151,7 @@
         <v-card-actions class="px-4 py-3">
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="closeTeamDialog">Cancel</v-btn>
-          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="isEditing ? updateTeam() : createNewTeam()">{{ isEditing ? 'Save Changes' : 'Create Team' }}</v-btn>
+          <v-btn v-if="auth.isAdmin" color="primary" prepend-icon="mdi-check" @click="isEditing ? updateTeam() : createNewTeam()">{{ isEditing ? 'Save changes' : 'Create team' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

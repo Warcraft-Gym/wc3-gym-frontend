@@ -166,6 +166,7 @@
           :headers="tableHeader"
           :loading="isLoading"
           :items="players"
+          :hide-default-footer="players.length <= 10"
           :row-props="playerRowProps"
           fixed-header
           hover

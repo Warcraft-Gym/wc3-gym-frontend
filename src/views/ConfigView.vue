@@ -81,6 +81,7 @@
                     item-value="id"
                     label="Current GNL season"
                     hint="Active league season"
+                    persistent-hint
                     variant="outlined"
                     prepend-inner-icon="mdi-calendar"
                     clearable
@@ -98,7 +99,7 @@
                     color="primary"
                     label="Fantasy team creation enabled"
                     hint="Off closes team creation for every season; a commenced season is closed anyway"
-                    hide-details="auto"
+                    persistent-hint
                     true-value="true"
                     false-value="false"
                   ></v-switch>
@@ -115,7 +116,7 @@
                     color="primary"
                     label="Use fixed bet points"
                     hint="If enabled, all bets use a fixed point value instead of user input"
-                    hide-details="auto"
+                    persistent-hint
                     true-value="true"
                     false-value="false"
                   ></v-switch>

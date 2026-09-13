@@ -130,6 +130,9 @@ Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 - Buttons show their label as written. `base.css` turns off Vuetify's capitals.
 - A column title is a short noun. It has no legend in brackets. On a wide screen it stays on one line.
 - Right-align numeric columns, the title and the cells.
+- No table shows a database id. A row is named by its name; the id stays in the link.
+- A hint is one short instruction, or nothing. It never explains how the code works.
+- A table that would clip on a phone hides its columns by priority or becomes cards. A clipped row is a bug.
 
 ## Shared components
 
@@ -144,6 +147,16 @@ Use these instead of drawing the same thing again.
 | `ColumnNote` | A column title with a help note. |
 | `StatusAlert` | A load or save message. It offers a retry when the page can load again. |
 | `EventHeader`, `PlayerHeader` | The top of an event page and of a player page. |
+
+## Events
+
+The events module names things the same way on every page. A league is what repeats. An event is one run of it that people sign up for: a GNL season, a KOTH night, a cup. A stage is one format over the entrants. A round is a dated window of series. A fixture pairs two teams in a round and holds series. A series has one opponent per side and a best-of. A game is one map. A division is a band of entrants that runs the whole event on its own and never merges. Never "week", never "team series", never "match" for a series; "match" stays only on the GNL fixture pages until they are redrawn.
+
+- An event named outside its own pages carries its league: "GNL · Season 18". `eventLabel(event)` in `src/helpers/event-label.mjs` prints it, and prints the name alone when the event has no league or the name already starts with the league's short name. Inside a GNL season's own pages, under the GNL menu, the `h1` is the plain name.
+- The event state is computed, never stored, and shows as one small tonal chip: signups open in `success`, check-in in `info`, seeded in `secondary`, running in `primary`, finished in `draw`, a draft with no colour. `STATE_LABEL` and `STATE_COLOR` in `src/helpers/event-labels.mjs` are the one source.
+- `StageView` draws one stage per division. An elimination stage is columns, one per round, boxes joined by feeder lines in `on-surface` at a low opacity; the winner side of a played series wears the `win` token; a bye passes through; the grand final and a third place are labelled. A round robin is a `GroupedTable` of standings in the ranking order, then the rounds. A KOTH night is a chain: the king's box, marked with `mdi-crown`, then each challenger in sequence. Every box shows each side through `PlayerName` with its race, the score, and the state as a word: pending, open, played, walkover, forfeit. A phone stacks the columns into one list per round. A screen reader gets the same series as a list.
+- The entrants list is a `GroupedTable` grouped by division. An eligibility warning is a chip in `warning` with its reason as the label: under 20 games, over the MMR cap, banned. An identity that is not linked reads "Not linked" in medium emphasis. A withdrawn entrant keeps its row in medium emphasis.
+- A result bar or square uses `win` and `loss` only; a draw or no result uses `draw`.
 
 ## Patterns
 

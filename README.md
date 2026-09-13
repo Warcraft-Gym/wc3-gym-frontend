@@ -299,6 +299,7 @@ The admin UI requires authentication via JWT tokens:
 
 - [Frontend Architecture Guide](.github/copilot-instructions.md)
 - [User Guide](ADMIN_UI_USER_GUIDE.md)
+- [Design Rules](DESIGN.md)
 - [Backend Setup](../backend/README.md)
 - [Vuetify Documentation](https://vuetifyjs.com/)
 - [Vue 3 Documentation](https://vuejs.org/)

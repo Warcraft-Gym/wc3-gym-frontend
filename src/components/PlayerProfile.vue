@@ -87,7 +87,7 @@
     </v-card>
 
     <v-card elevation="2">
-      <v-card-title class="d-flex align-center">
+      <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-calendar-account</v-icon>
         Events
       </v-card-title>

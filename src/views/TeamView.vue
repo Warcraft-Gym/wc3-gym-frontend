@@ -36,7 +36,10 @@
 
       <v-card-text v-if="seasonInfo" class="season-stats">
         <div v-for="stat in stats" :key="stat.label" class="text-right">
-          <div class="text-caption text-medium-emphasis">{{ stat.label }}</div>
+          <div class="text-caption text-medium-emphasis" :class="{ 'stat-note': POINTS_NOTES[stat.label] }">
+            {{ stat.label }}
+            <v-tooltip v-if="POINTS_NOTES[stat.label]" activator="parent" location="top" max-width="320">{{ POINTS_NOTES[stat.label] }}</v-tooltip>
+          </div>
           <div class="text-h6 stat-value">{{ stat.value }}</div>
         </div>
       </v-card-text>
@@ -109,6 +112,7 @@ import { useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { resolveCurrentSeasonId, loadSeasons } from '@/helpers/current-season';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { seasonRank, roundResults, seriesRecord } from '@/helpers/team-record.mjs';
+import { POINTS_NOTES } from '@/helpers/achievements';
 import PlayerName from '@/components/PlayerName.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
@@ -194,6 +198,9 @@ load();
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+.stat-note {
+  cursor: help;
 }
 .season-stats {
   display: grid;

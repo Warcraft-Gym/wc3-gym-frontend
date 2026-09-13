@@ -3,9 +3,9 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore, useSeasonStore } from '@/stores';
 import { saveReturnUrl, takeReturnUrl } from './return-url.mjs';
 import { playerPath } from './players.mjs';
-import { AvailabilityView, HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView } from '@/views';
+import { AvailabilityView, HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView, NoAccessView } from '@/views';
 
-// meta.role: the lowest session role the route accepts; meta.nav / meta.bar = false hide the links / app bar
+// meta.role: the lowest session role the route accepts; meta.nav = false hides the nav links
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
 
 // a session with no role claim is a member, which is what the admin-token login mints
@@ -52,14 +52,15 @@ export const router = createRouter({
         { path: '/fantasy/bets', component: FantasyBetsView, meta: { role: 'admin' } },
         { path: '/fantasy/tiers', component: FantasyTiersView, meta: { role: 'admin' } },
         { path: '/koth', component: KothView, meta: { role: 'admin' } },
-        { path: '/koth/dashboard', component: KothDashboard, meta: { role: 'public', nav: false, bar: false } },
+        { path: '/koth/dashboard', component: KothDashboard, meta: { role: 'public' } },
         { path: '/user-guide', component: UserGuideView, meta: { role: 'admin' } },
         { path: '/player-stats', redirect: '/players' },  // career stats live on the players page
         { path: '/report', component: SeasonReportView, meta: { role: 'public' } },
         { path: '/report/:id', component: SeasonReportView, meta: { role: 'public', season: true } },
         { path: '/ladder', component: LadderView, meta: { role: 'member' } },
-        { path: '/random-stats', component: RandomStatsView, meta: { role: 'public', nav: false, bar: false } },
+        { path: '/random-stats', component: RandomStatsView, meta: { role: 'public' } },
         { path: '/credits', component: CreditsView, meta: { role: 'public' } },
+        { path: '/no-access', component: NoAccessView, meta: { role: 'public' } },
         { path: '/:pathMatch(.*)*', redirect: '/' }  // a stale Discord or website link lands on the home page, not a blank one
     ]
 });
@@ -76,6 +77,6 @@ router.beforeEach(async (to) => {
         return '/login';
     }
     if (!canSeeRole(auth.me.role, to.meta.role)) {
-        return '/profile';
+        return { path: '/no-access', query: { from: to.fullPath } };
     }
 });

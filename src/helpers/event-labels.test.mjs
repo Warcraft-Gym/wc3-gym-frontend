@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, stateOf, titleOf } from './event-labels.mjs';
+import { dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf } from './event-labels.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -39,4 +39,13 @@ test('an event name carries its league, and drops it when the name already opens
   assert.equal(eventLabel({ name: 'Autumn cup' }, { name: 'Gym Cups' }), 'Gym Cups \u00b7 Autumn cup');
   assert.equal(eventLabel(null), '');
   assert.equal(eventLabel({ league_short_name: 'GNL' }), 'GNL');
+});
+
+test('a GNL season phase is named and coloured, and stays out of the events filter', () => {
+  assert.equal(STATE_LABEL.complete, 'Complete');
+  assert.equal(STATE_LABEL.finished, 'Finished');
+  assert.equal(STATE_COLOR.commenced, 'primary');
+  assert.equal(STATE_COLOR.overdue, 'warning');
+  assert.deepEqual(STATE_ITEMS.map((item) => item.value),
+    ['draft', 'signups_open', 'checkin', 'seeded', 'running', 'finished']);
 });

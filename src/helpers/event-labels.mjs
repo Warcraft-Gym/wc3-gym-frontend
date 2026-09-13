@@ -2,6 +2,8 @@
 // is, the state it is in, and how a stage plays. Lifted from the overnight admin branch.
 import { DateTime } from 'luxon';
 
+import { PHASE_LABEL } from './season-phase.mjs';
+
 // A stored day, as a reader wants it; nothing shows a dash
 export const dateText = (value) => (value ? DateTime.fromISO(value).toFormat('d LLL yyyy') : '—');
 
@@ -20,7 +22,7 @@ export const dateRange = (event) => {
 
 // The backend derives the state of an event from published, the signup and check-in
 // windows and its series; nothing stores it
-export const STATE_LABEL = {
+const EVENT_STATE_LABEL = {
   draft: 'Draft',
   signups_open: 'Signups open',
   checkin: 'Check-in',
@@ -28,6 +30,8 @@ export const STATE_LABEL = {
   running: 'Running',
   finished: 'Finished',
 };
+// A GNL season answers its own four phases, so the header names both vocabularies
+export const STATE_LABEL = { ...EVENT_STATE_LABEL, ...PHASE_LABEL };
 // A draft carries no colour: the neutral chip is the quiet one
 export const STATE_COLOR = {
   signups_open: 'success',
@@ -35,10 +39,15 @@ export const STATE_COLOR = {
   seeded: 'secondary',
   running: 'primary',
   finished: 'draw',
+  open: 'success',
+  commenced: 'primary',
+  overdue: 'warning',
+  complete: 'draw',
 };
 // The reads answer the state under `phase`
 export const stateOf = (event) => event?.state ?? event?.phase ?? null;
-export const STATE_ITEMS = Object.entries(STATE_LABEL).map(([value, title]) => ({ value, title }));
+// The events list filters on the model's own states, never on a GNL phase
+export const STATE_ITEMS = Object.entries(EVENT_STATE_LABEL).map(([value, title]) => ({ value, title }));
 
 export const LEAGUE_KINDS = [
   { value: 'gnl', title: 'GNL' },

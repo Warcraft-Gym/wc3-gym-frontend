@@ -32,7 +32,7 @@
                 prepend-icon="mdi-trophy" @click="reportDialog.open(series)">
                 {{ scored ? 'Edit result' : 'Report result' }}
               </v-btn>
-              <v-btn v-if="auth.isAdmin" variant="outlined" size="small"
+              <v-btn v-if="auth.isAdmin && !scored" variant="outlined" size="small"
                 prepend-icon="mdi-account-cancel" @click="awardOpen = true">
                 No game played
               </v-btn>

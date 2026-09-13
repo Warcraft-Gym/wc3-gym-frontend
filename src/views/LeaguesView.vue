@@ -72,14 +72,8 @@
             <v-col cols="12" md="6">
               <v-select v-model="form.entrant_kind" :items="ENTRANT_KINDS" label="Entrants" />
             </v-col>
-            <v-col cols="12" md="4">
+            <v-col cols="12">
               <v-text-field v-model="form.page_url" label="Page link" placeholder="https://" />
-            </v-col>
-            <v-col cols="12" md="4">
-              <v-text-field v-model="form.rules_url" label="Rules link" placeholder="https://" />
-            </v-col>
-            <v-col cols="12" md="4">
-              <v-text-field v-model="form.stream_url" label="Stream link" placeholder="https://" />
             </v-col>
           </v-row>
         </v-card-text>
@@ -109,7 +103,7 @@ const error = ref(null);
 const dialog = ref(false);
 const saving = ref(false);
 const formError = ref(null);
-const blank = () => ({ name: '', short_name: '', kind: 'custom', entrant_kind: 'solo', page_url: '', rules_url: '', stream_url: '' });
+const blank = () => ({ name: '', short_name: '', kind: 'custom', entrant_kind: 'solo', page_url: '' });
 const form = ref(blank());
 
 // The list read leaves a league's events empty, so the count and the next run come

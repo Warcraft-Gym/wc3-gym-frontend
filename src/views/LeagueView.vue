@@ -11,7 +11,6 @@
         <div class="text-medium-emphasis mt-1">
           {{ titleOf(ENTRANT_KINDS, league?.entrant_kind) }}
           <a v-if="league?.page_url" class="ml-3" :href="league.page_url" target="_blank" rel="noopener noreferrer">Page</a>
-          <a v-if="league?.rules_url" class="ml-3" :href="league.rules_url" target="_blank" rel="noopener noreferrer">Rules</a>
         </div>
       </v-col>
     </v-row>

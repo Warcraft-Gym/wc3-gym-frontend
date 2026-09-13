@@ -45,7 +45,7 @@ export const useEventStore = defineStore({
         },
         // The stages are written for the whole event at once: their positions must stay 1..n
         async setStages(event_id, stages) {
-            return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages`, { stages });
+            return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages`, stages);
         },
     }
 });

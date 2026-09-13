@@ -26,7 +26,7 @@ test('a blank field is sent as nothing, not as an empty string', () => {
   assert.equal(body.name, 'Autumn league');
   assert.equal(body.short_name, null);
   assert.equal(body.page_url, 'https://gnl.gg');
-  assert.equal(body.stream_url, null);
+  assert.equal('stream_url' in body, false);
 });
 
 test('a start date and a typed time are stored as the UTC instant they name', () => {

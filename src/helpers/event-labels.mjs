@@ -89,8 +89,6 @@ export const leaguePayload = (form) => ({
   kind: form.kind,
   entrant_kind: form.entrant_kind,
   page_url: text(form.page_url),
-  rules_url: text(form.rules_url),
-  stream_url: text(form.stream_url),
 });
 
 // The body POST and PUT /events take. The pickers hand over Dates and "HH:mm" typed in

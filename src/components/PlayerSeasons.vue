@@ -10,7 +10,7 @@
         <div class="season-grid">
           <div class="season-name">
             <div class="d-flex align-center flex-wrap ga-2 text-h6">
-              {{ row.season.name }}
+              {{ eventLabel(row.season) }}
               <v-chip v-if="row.won" size="x-small" variant="outlined">
                 <v-icon start size="x-small" color="primary">mdi-crown</v-icon>Champion
               </v-chip>
@@ -105,6 +105,7 @@ import { useDisplay } from 'vuetify';
 import { useLadderStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
 import { isUnscored } from '@/helpers/season-phase.mjs';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { currentRound } from '@/helpers/rounds.mjs';
 import CastChips from '@/components/CastChips.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';

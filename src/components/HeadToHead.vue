@@ -55,7 +55,7 @@
         <tr v-for="meeting in group.row.opponent.meetings" :key="meeting.series_id" class="detail-row">
           <td></td>
           <td class="text-caption">
-            {{ meeting.season_name }}<template v-if="meeting.playday">, round {{ meeting.playday }}</template>
+            {{ eventLabel(meeting) }}<template v-if="meeting.playday">, round {{ meeting.playday }}</template>
           </td>
           <td>
             <template v-if="meeting.my_score != null && meeting.their_score != null">
@@ -89,6 +89,7 @@
 import { computed, ref, watch } from 'vue';
 import { usePlayerStore } from '@/stores';
 import { formatDateTime } from '@/helpers/datetime';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { opponentRows } from '@/helpers/head-to-head';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';

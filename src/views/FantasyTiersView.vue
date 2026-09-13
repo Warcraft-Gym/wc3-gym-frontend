@@ -87,6 +87,7 @@ import SeasonSelect from '@/components/SeasonSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts, rangeText } from '@/helpers/divisions.mjs';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
 import { ALL_COLORS, ALL_NAMES, tierChanges } from '@/helpers/tiers.mjs';
 import { getW3CStatsWithFallback } from '@/helpers/w3c-stats';
@@ -109,7 +110,7 @@ const successMessage = ref(null);
 const currentSeason = ref(null);
 // A commenced season's tiers are locked until the admin unlocks them: moving a cut moves drafted players
 const locked = ref(false);
-const seasonName = computed(() => currentSeason.value?.name ?? 'season');
+const seasonName = computed(() => eventLabel(currentSeason.value) || 'season');
 const phase = computed(() => currentSeason.value?.phase ?? 'open');
 const currentW3CSeason = ref(null);
 const tierCount = ref(ALL_NAMES.length);

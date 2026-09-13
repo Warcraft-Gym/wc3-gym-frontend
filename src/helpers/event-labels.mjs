@@ -103,11 +103,16 @@ export const leaguePayload = (form) => ({
   page_url: text(form.page_url),
 });
 
-// The league word a header puts before an event name, empty when the name already opens
-// with it: "GNL · Season 18" but plain "GNL S18"
-export const leaguePrefix = (event, league) => {
-  const name = (event?.name || '').toLowerCase();
-  const opens = (word) => !!word && name.startsWith(String(word).toLowerCase());
-  if (opens(league?.short_name) || opens(league?.name)) return '';
-  return league?.short_name || league?.name || '';
+// How an event is named anywhere outside its own page: the league, a middle dot, the
+// name — "GNL · Season 18" — and the name alone when the event carries no league or
+// already opens with the league's short name ("GNL S18"). The reads answer the league
+// under `league_short_name`; a page that loaded the league row passes it instead. Rows
+// that carry a flat event name, the trophies and the head-to-head meetings, say
+// `season_name`.
+export const eventLabel = (event, league = null) => {
+  const name = String(event?.name ?? event?.season_name ?? '');
+  const short = String(league?.short_name || league?.name || event?.league_short_name || '');
+  if (!short) return name;
+  if (!name) return short;
+  return name.toLowerCase().startsWith(short.toLowerCase()) ? name : `${short} · ${name}`;
 };

@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { eventLabel } from './event-labels.mjs';
 import { seasonSlug } from './season-slug.mjs';
 import { currentRound, roundLabel } from './rounds.mjs';
 import { myProfilePath } from './players.mjs';
@@ -66,7 +67,7 @@ export function kothCards({ kothEvents = [], now = new Date(), store = globalThi
         key: `koth:${event.id}`,
         kind: 'koth',
         id: event.id,
-        name: event.name,
+        name: eventLabel(event),
         date,
         status: `King of the Hill · ${date.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`,
         chips: [],
@@ -93,7 +94,7 @@ export function homeCards({ me = null, seasons = [], kothEvents = [], now = new 
       key: `season:${season.id}`,
       kind: 'season',
       id: season.id,
-      name: season.name,
+      name: eventLabel(season),
       date: season.start_date ? new Date(`${season.start_date}T00:00:00Z`) : null,
       status: seasonStatus(season, round),
       chips: [

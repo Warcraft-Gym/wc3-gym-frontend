@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { dateRange, ENTRANT_KINDS, leaguePayload, leaguePrefix, stateOf, titleOf } from './event-labels.mjs';
+import { dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, stateOf, titleOf } from './event-labels.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -29,10 +29,14 @@ test('a blank field is sent as nothing, not as an empty string', () => {
   assert.equal('stream_url' in body, false);
 });
 
-test('the header drops the league word when the event name already opens with it', () => {
+test('an event name carries its league, and drops it when the name already opens with it', () => {
   const gnl = { name: 'GNL', short_name: 'GNL' };
-  assert.equal(leaguePrefix({ name: 'Season 18' }, gnl), 'GNL');
-  assert.equal(leaguePrefix({ name: 'GNL S18' }, gnl), '');
-  assert.equal(leaguePrefix({ name: 'Autumn cup' }, { name: 'Gym Cups' }), 'Gym Cups');
-  assert.equal(leaguePrefix({ name: 'Season 18' }, null), '');
+  assert.equal(eventLabel({ name: 'Season 18', league_short_name: 'GNL' }), 'GNL \u00b7 Season 18');
+  assert.equal(eventLabel({ name: 'GNL S18', league_short_name: 'GNL' }), 'GNL S18');
+  assert.equal(eventLabel({ name: 'Season 18' }), 'Season 18');
+  assert.equal(eventLabel({ season_name: 'Season 18', league_short_name: 'GNL' }), 'GNL \u00b7 Season 18');
+  assert.equal(eventLabel({ name: 'Season 18' }, gnl), 'GNL \u00b7 Season 18');
+  assert.equal(eventLabel({ name: 'Autumn cup' }, { name: 'Gym Cups' }), 'Gym Cups \u00b7 Autumn cup');
+  assert.equal(eventLabel(null), '');
+  assert.equal(eventLabel({ league_short_name: 'GNL' }), 'GNL');
 });

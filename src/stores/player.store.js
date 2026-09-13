@@ -38,6 +38,10 @@ export const usePlayerStore = defineStore({
         async createPlayer(player) {
             await fetchWrapper.post(`${backendUrl}/users`, player);
         },
+        // The ban warns on every entrant row of every event; it refuses no signup
+        async banPlayer(player_id) {
+            await fetchWrapper.put(`${backendUrl}/users/${player_id}/ban`);
+        },
         async deletePlayer(player_id) {
             await fetchWrapper.delete(`${backendUrl}/users/${player_id}`);
         },

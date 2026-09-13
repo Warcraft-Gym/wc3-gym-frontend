@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { seasonRank, roundResults, seriesRecord } from './team-record.mjs';
+import { seasonRank, roundResults, seriesRecord, seasonTabs } from './team-record.mjs';
 
 const team = (id, final_score, points_against) => ({ id, seasons_info: [{ season_id: 4, final_score, points_against }] });
 
@@ -42,4 +42,27 @@ test('a round with nothing scored yet keeps its row, with every series still to 
   ], 6);
   assert.deepEqual(rows.map(r => [r.playday, r.opponent.id, r.wins, r.losses, r.toPlay]), [[1, 8, 0, 0, 2]]);
   assert.deepEqual(seriesRecord(rows), { wins: 0, losses: 0 });
+});
+
+test('a tab reads the league and the event name the team route carries, newest first', () => {
+  const tabs = seasonTabs([
+    { season_id: 17, name: 'Season 17', league_short_name: 'GNL' },
+    { season_id: 18, name: 'Season 18', league_short_name: 'GNL' },
+  ]);
+  assert.deepEqual(tabs, [
+    { id: 18, label: 'GNL \u00b7 Season 18' },
+    { id: 17, label: 'GNL \u00b7 Season 17' },
+  ]);
+});
+
+test('a backend that names no event falls back to the season list', () => {
+  const tabs = seasonTabs(
+    [{ season_id: 18, final_score: 12 }],
+    [{ id: 18, name: 'Season 18' }],
+  );
+  assert.deepEqual(tabs, [{ id: 18, label: 'Season 18' }]);
+});
+
+test('a row with no season id is not a tab', () => {
+  assert.deepEqual(seasonTabs([{ season_id: null, name: 'Season 18' }]), []);
 });

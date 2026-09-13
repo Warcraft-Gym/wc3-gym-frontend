@@ -91,9 +91,8 @@ import { useRoute } from 'vue-router';
 import { useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
 import { resolveCurrentSeasonId, loadSeasons } from '@/helpers/current-season';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
-import { seasonRank, roundResults, seriesRecord } from '@/helpers/team-record.mjs';
+import { seasonRank, roundResults, seriesRecord, seasonTabs as tabsOf } from '@/helpers/team-record.mjs';
 import { POINTS_NOTES } from '@/helpers/achievements';
-import { eventLabel } from '@/helpers/event-labels.mjs';
 import { rosterOf } from '@/helpers/team-roster.mjs';
 import ColumnNote from '@/components/ColumnNote.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
@@ -114,12 +113,8 @@ const currentSeasonId = ref(null);
 const isLoading = ref(true);
 const errorMessage = ref(null);
 
-// The team route carries one row per event the team played, with its league; newest first
-const seasonTabs = computed(() => (team.value?.seasons_info || [])
-  .filter((info) => info.season_id != null)
-  .slice()
-  .sort((a, b) => b.season_id - a.season_id)
-  .map((info) => ({ id: info.season_id, label: eventLabel(info) })));
+// One tab per event the team played, named by the team route or by the season list
+const seasonTabs = computed(() => tabsOf(team.value?.seasons_info || [], seasonStore.seasons || []));
 
 const seasonInfo = computed(() =>
   (team.value?.seasons_info || []).find((info) => info.season_id === seasonId.value) || null

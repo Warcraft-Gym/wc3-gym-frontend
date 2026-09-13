@@ -32,6 +32,7 @@
               <th>Stage</th>
               <th class="d-none d-md-table-cell">Format</th>
               <th class="text-right">Best of</th>
+              <th class="text-right d-none d-md-table-cell">Series each round</th>
               <th class="d-none d-md-table-cell">Scheduling</th>
             </tr>
           </thead>
@@ -40,17 +41,17 @@
               <td>{{ stage.position }}</td>
               <td class="py-3">
                 {{ stage.name || `Stage ${stage.position}` }}
-                <!-- a phone drops the format and the scheduling columns, so they ride under the name -->
                 <div class="d-md-none text-caption text-medium-emphasis">
-                  {{ [titleOf(FORMATS, stage.format), titleOf(SCHEDULING_MODES, stage.scheduling_mode)].join(' · ') }}
+                  {{ phoneLine(stage) }}
                 </div>
               </td>
               <td class="d-none d-md-table-cell">{{ titleOf(FORMATS, stage.format) }}</td>
               <td class="text-right">{{ stage.best_of }}</td>
+              <td class="text-right d-none d-md-table-cell">{{ seriesEachRound(stage) ?? '—' }}</td>
               <td class="d-none d-md-table-cell">{{ titleOf(SCHEDULING_MODES, stage.scheduling_mode) }}</td>
             </tr>
             <tr v-if="!stages.length">
-              <td colspan="5" class="text-medium-emphasis py-6 text-center">No stage is set yet.</td>
+              <td colspan="6" class="text-medium-emphasis py-6 text-center">No stage is set yet.</td>
             </tr>
           </tbody>
         </v-table>
@@ -89,6 +90,16 @@ const error = ref(route.query.divisions === 'unsaved'
 
 const league = computed(() => leagues.value.find((row) => row.id === event.value?.league_id) || null);
 const stages = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position));
+
+// Only a round robin plays more than one series an entrant a round
+const seriesEachRound = (stage) => (stage.format === 'round_robin' ? stage.series_per_entrant_per_round ?? 1 : null);
+
+// A phone drops the format, the series count and the scheduling columns, so they ride under the name
+const phoneLine = (stage) => [
+  titleOf(FORMATS, stage.format),
+  seriesEachRound(stage) ? `${seriesEachRound(stage)} series each round` : null,
+  titleOf(SCHEDULING_MODES, stage.scheduling_mode),
+].filter(Boolean).join(' · ');
 
 // Only the stages that hold series are drawn; the table above lists every stage
 const drawn = computed(() => stages.value

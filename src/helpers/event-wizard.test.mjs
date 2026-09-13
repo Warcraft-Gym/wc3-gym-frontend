@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { blankForm, createPayload, divisionsPayload, eventPayload, stagesPayload, stepProblem, wizardProblem } from './event-wizard.mjs';
+import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, stagesPayload, stepProblem, wizardProblem } from './event-wizard.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -38,15 +38,41 @@ test('the new event fields ride along, and a blank number is nothing', () => {
   assert.equal(body.entrant_cap, 32);
   assert.equal(body.mmr_max, null);
   assert.equal(body.min_games, null);
-  assert.equal(body.min_games_seasons, null);  // a seasons count without a games floor means nothing
   assert.equal(body.checkin_days, null);  // check-in is off, so its window is not sent
+  assert.ok(!('min_games_seasons' in body));  // the API has no such field
 });
 
-test('check-in sends its window, and a games floor sends its seasons', () => {
-  const body = eventPayload({ ...blankForm(), checkin_enabled: true, checkin_days: 2, min_games: '20', min_games_seasons: 3 });
+test('check-in sends its window and a games floor sends its count', () => {
+  const body = eventPayload({ ...blankForm(), checkin_enabled: true, checkin_days: 2, min_games: '20' });
   assert.equal(body.checkin_days, 2);
   assert.equal(body.min_games, 20);
-  assert.equal(body.min_games_seasons, 3);
+});
+
+test('a map rule writes one word per game, and a veto runs once for the series', () => {
+  for (const bestOf of [1, 3, 5]) {
+    assert.equal(gameRules('veto', bestOf), ['veto', ...Array(bestOf - 1).fill('loser')].join(','));
+    assert.equal(gameRules('fixed', bestOf), Array(bestOf).fill('fixed').join(','));
+    assert.equal(gameRules('loser', bestOf), Array(bestOf).fill('loser').join(','));
+    assert.equal(gameRules('host', bestOf), Array(bestOf).fill('host').join(','));
+  }
+  assert.equal(gameRules('veto', 1), 'veto');
+  assert.equal(gameRules('veto', 3), 'veto,loser,loser');
+  assert.equal(gameRules('veto', 5), 'veto,loser,loser,loser,loser');
+  assert.equal(gameRules('fixed', 5), 'fixed,fixed,fixed,fixed,fixed');
+  assert.equal(gameRules('host', 3), 'host,host,host');
+});
+
+test('a round robin stage carries its series count and every other format carries one', () => {
+  const stages = stagesPayload({
+    stages: [
+      { format: 'round_robin', best_of: 3, map_rule: 'loser', series_per_entrant_per_round: '2' },
+      { format: 'round_robin', best_of: 3, map_rule: 'loser' },
+      { format: 'single_elimination', best_of: 3, map_rule: 'veto', series_per_entrant_per_round: '4' },
+    ],
+  });
+  assert.equal(stages[0].series_per_entrant_per_round, 2);
+  assert.equal(stages[1].series_per_entrant_per_round, 1);  // a blank field means one series
+  assert.equal(stages[2].series_per_entrant_per_round, 1);  // a bracket plays one series a round
 });
 
 test('the stages are numbered in the order they are listed and repeat their map rule', () => {
@@ -63,7 +89,7 @@ test('the stages are numbered in the order they are listed and repeat their map 
   assert.equal(stages[0].auto_advance, true);
   assert.equal(stages[1].position, 2);
   assert.equal(stages[1].name, null);
-  assert.equal(stages[1].map_rules, 'veto,veto,veto,veto,veto');
+  assert.equal(stages[1].map_rules, 'veto,loser,loser,loser,loser');
   assert.equal(stages[1].advance_count, null);
   assert.equal(stages[1].auto_advance, false);
 });

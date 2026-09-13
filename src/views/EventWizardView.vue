@@ -74,9 +74,6 @@
             <v-col cols="12" md="4">
               <v-text-field v-model="form.min_games" type="number" label="Recent games at least" placeholder="No floor" />
             </v-col>
-            <v-col v-if="form.min_games" cols="12" md="4">
-              <v-text-field v-model="form.min_games_seasons" type="number" label="Counted over how many ladder seasons" />
-            </v-col>
             <v-col cols="12">
               <v-switch v-model="form.checkin_enabled" color="primary" hide-details
                 label="Ask entrants to check in before each round" />
@@ -115,6 +112,10 @@
                 </v-col>
                 <v-col cols="6" md="4">
                   <v-select v-model="stage.map_rule" :items="MAP_RULES" label="Map rule" />
+                </v-col>
+                <v-col v-if="stage.format === 'round_robin'" cols="12" md="4">
+                  <v-text-field v-model="stage.series_per_entrant_per_round" type="number" min="1"
+                    label="Series each round" hint="Series each entrant plays per round" persistent-hint />
                 </v-col>
                 <v-col cols="12" md="4">
                   <v-select v-model="stage.scheduling_mode" :items="SCHEDULING_MODES" label="Scheduling" />
@@ -198,8 +199,8 @@ import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { dateRange, dateText, FORMATS, MAP_RULES, SCHEDULING_MODES, SIGNUP_POLICIES, titleOf } from '@/helpers/event-labels.mjs';
 import {
-  BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload, stepProblem, STEPS,
-  WIZARD_ENTRANT_KINDS, WIZARD_KINDS,
+  BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload, seriesPerRound,
+  stepProblem, STEPS, WIZARD_ENTRANT_KINDS, WIZARD_KINDS,
 } from '@/helpers/event-wizard.mjs';
 import { useEventStore } from '@/stores';
 
@@ -265,10 +266,7 @@ const review = computed(() => {
         { k: 'An entrant is', v: titleOf(WIZARD_ENTRANT_KINDS, it.entrant_kind) },
         { k: 'Entrant cap', v: orNone(it.entrant_cap) },
         { k: 'MMR maximum', v: orNone(it.mmr_max) },
-        {
-          k: 'Recent games at least',
-          v: it.min_games ? `${it.min_games} over ${it.min_games_seasons} ladder seasons` : 'None',
-        },
+        { k: 'Recent games at least', v: orNone(it.min_games) },
         { k: 'Check-in', v: it.checkin_enabled ? `${it.checkin_days} days before a round` : 'Off' },
       ],
     },
@@ -280,6 +278,7 @@ const review = computed(() => {
         v: [
           titleOf(FORMATS, stage.format),
           `best of ${stage.best_of}`,
+          ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each round`] : []),
           titleOf(MAP_RULES, stage.map_rule).toLowerCase(),
           titleOf(SCHEDULING_MODES, stage.scheduling_mode).toLowerCase(),
           stage.advance_count ? `${stage.advance_count} advance` : 'nobody advances',

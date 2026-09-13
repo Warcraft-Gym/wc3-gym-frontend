@@ -284,6 +284,7 @@ const roster = computed(() => {
     return {
       ...b,
       key: b.player_id ?? b.player_name,
+      label: b.player_name,
       player,
       mmr: getW3CMMR(player, props.w3cSeason, player.signup_race),
       record: gnlRecord(player),
@@ -311,7 +312,7 @@ const betWeeks = computed(() => {
       won.length && `${won.length} won (+${points(won)})`,
       lost.length && `${lost.length} lost (${points(lost)})`,
     ].filter(Boolean).join(' · ');
-    return { key: week, week, bets, summary, net: points(bets) };
+    return { key: week, label: `Round ${week}`, week, bets, summary, net: points(bets) };
   });
 });
 

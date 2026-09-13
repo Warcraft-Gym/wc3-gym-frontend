@@ -16,27 +16,65 @@
     <GroupedTable v-if="!errorMessage && !loading" :columns="columns" :groups="groups" empty="No series played yet.">
       <template #group="{ group }">
         <td>
-          <PlayerName :player="group.opponent" />
+          <PlayerName :player="group.row.opponent" />
         </td>
         <td>
-          <v-chip :color="recordColor(group.opponent.won, group.opponent.lost)" variant="tonal" size="small">
-            {{ group.opponent.won }} to {{ group.opponent.lost }}
-          </v-chip>
+          <div class="d-flex align-center ga-2">
+            <span class="record-bar" aria-hidden="true">
+              <span v-if="group.row.record.won" class="record-seg won" :style="{ flexGrow: group.row.record.won }" />
+              <span v-if="group.row.record.lost" class="record-seg lost" :style="{ flexGrow: group.row.record.lost }" />
+            </span>
+            <span class="record-label" :title="`${group.row.record.won} won, ${group.row.record.lost} lost`">
+              {{ group.row.record.won }}&ndash;{{ group.row.record.lost }}
+            </span>
+          </div>
         </td>
-        <td class="text-caption text-medium-emphasis">last met {{ lastMet(group.opponent) }}</td>
+        <td class="text-caption text-medium-emphasis d-none d-md-table-cell">
+          {{ group.row.games.mine }}&ndash;{{ group.row.games.theirs }}
+        </td>
+        <td>
+          <div class="d-flex align-center flex-wrap ga-2">
+            <span v-for="matchup in group.row.matchups" :key="`${matchup.mine}-${matchup.theirs}`" class="matchup">
+              <RaceIcon :raceIdentifier="matchup.mine" size="1.1em" />
+              <span class="text-caption text-medium-emphasis">v</span>
+              <RaceIcon :raceIdentifier="matchup.theirs" size="1.1em" />
+              <span v-if="matchup.count > 1" class="text-caption text-medium-emphasis">&times;{{ matchup.count }}</span>
+            </span>
+          </div>
+        </td>
+        <td class="d-none d-md-table-cell">
+          <div class="d-flex flex-wrap ga-1">
+            <v-chip v-for="season in group.row.seasons" :key="season.id" size="x-small" variant="outlined">
+              {{ season.name }}<template v-if="season.count > 1">&nbsp;&times;{{ season.count }}</template>
+            </v-chip>
+          </div>
+        </td>
+        <td class="text-caption text-medium-emphasis">{{ group.row.lastMet }}</td>
       </template>
       <template #rows="{ group }">
-        <tr v-for="meeting in group.opponent.meetings" :key="meeting.series_id" class="detail-row">
+        <tr v-for="meeting in group.row.opponent.meetings" :key="meeting.series_id" class="detail-row">
           <td></td>
           <td class="text-caption">
             {{ meeting.season_name }}<template v-if="meeting.playday">, round {{ meeting.playday }}</template>
           </td>
           <td>
-            <v-chip :color="recordColor(meeting.my_score, meeting.their_score)" variant="tonal" size="x-small">
-              {{ meeting.my_score }} to {{ meeting.their_score }}
-            </v-chip>
-            <span class="text-caption text-medium-emphasis ml-1">games</span>
+            <template v-if="meeting.my_score != null && meeting.their_score != null">
+              <v-chip :color="recordColor(meeting.my_score, meeting.their_score)" variant="tonal" size="x-small">
+                {{ meeting.my_score }}&ndash;{{ meeting.their_score }}
+              </v-chip>
+              <span class="text-caption text-medium-emphasis ml-1">games</span>
+            </template>
+            <span v-else class="text-caption text-medium-emphasis">not played yet</span>
           </td>
+          <td class="d-none d-md-table-cell"></td>
+          <td>
+            <span v-if="meeting.my_race && meeting.their_race" class="matchup">
+              <RaceIcon :raceIdentifier="meeting.my_race" size="1.1em" />
+              <span class="text-caption text-medium-emphasis">v</span>
+              <RaceIcon :raceIdentifier="meeting.their_race" size="1.1em" />
+            </span>
+          </td>
+          <td class="d-none d-md-table-cell"></td>
           <td class="text-caption text-medium-emphasis">
             <template v-if="meeting.maps?.length">{{ meeting.maps.join(', ') }} · </template>
             {{ meeting.date_time ? formatDateTime(meeting.date_time) : '' }}
@@ -51,18 +89,24 @@
 import { computed, ref, watch } from 'vue';
 import { usePlayerStore } from '@/stores';
 import { formatDateTime } from '@/helpers/datetime';
+import { opponentRows } from '@/helpers/head-to-head';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
+import RaceIcon from '@/components/RaceIcon.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 
 const props = defineProps({
   playerId: { type: Number, required: true },
 });
 
+// games and seasons cost the most width, so a phone drops them first
 const columns = [
   { key: 'opponent', title: 'Opponent' },
-  { key: 'record', title: 'Series record' },
-  { key: 'when', title: 'When' },
+  { key: 'record', title: 'Series', width: '200px' },
+  { key: 'games', title: 'Games', phone: false, width: '80px' },
+  { key: 'matchups', title: 'Matchups' },
+  { key: 'seasons', title: 'Seasons', phone: false },
+  { key: 'when', title: 'Last met' },
 ];
 
 const playerStore = usePlayerStore();
@@ -70,7 +114,8 @@ const opponents = ref([]);
 const loading = ref(false);
 const errorMessage = ref(null);
 
-const groups = computed(() => opponents.value.map((opponent) => ({ key: opponent.id, title: opponent.name, opponent })));
+const groups = computed(() => opponentRows(opponents.value)
+  .map((row) => ({ key: row.opponent.id, label: `Meetings with ${row.opponent.name}`, row })));
 
 // read once per player; a failed read says so rather than leaving an empty card
 watch(() => props.playerId, async (id) => {
@@ -88,6 +133,40 @@ watch(() => props.playerId, async (id) => {
 }, { immediate: true });
 
 const recordColor = (won, lost) => (won > lost ? 'win' : won < lost ? 'loss' : undefined);
-
-const lastMet = (opp) => [opp.last_season_name, opp.last_playday ? `round ${opp.last_playday}` : null].filter(Boolean).join(', ');
 </script>
+
+<style scoped>
+/* one thin stacked bar per opponent: won, a surface gap, then lost */
+.record-bar {
+  display: flex;
+  gap: 2px;
+  width: 120px;
+  max-width: 120px;
+  height: 8px;
+  flex: none;
+}
+.record-seg {
+  border-radius: 4px;
+  min-width: 4px;
+}
+.record-seg.won {
+  background: rgb(var(--v-theme-win));
+}
+.record-seg.lost {
+  background: rgb(var(--v-theme-loss));
+}
+.record-label {
+  font-variant-numeric: tabular-nums;
+}
+.matchup {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+/* the bar has no room beside a name on a phone, the label carries the record there */
+@media (max-width: 959px) {
+  .record-bar {
+    display: none;
+  }
+}
+</style>

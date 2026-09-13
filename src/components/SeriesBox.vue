@@ -18,8 +18,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, inject, ref } from 'vue';
 
+import { HIDE_RESULTS } from '@/helpers/events.mjs';
 import PlayerName from '@/components/PlayerName.vue';
 import { isByeSide, seriesState, winnerSide } from '@/helpers/stage-view.mjs';
 
@@ -40,12 +41,15 @@ const STATE_WORD = {
   forfeit: 'Forfeit',
 };
 
+// The spoiler switch of the page around this box; a page with no switch shows every result
+const hidden = inject(HIDE_RESULTS, ref(false));
+
 const state = computed(() => seriesState(props.series));
-const winner = computed(() => winnerSide(props.series));
+const winner = computed(() => (hidden.value ? null : winnerSide(props.series)));
 
 const player = (side) => props.series[`player${side}`] || null;
 const race = (side) => props.series[`player${side}_race`] || undefined;
-const score = (side) => props.series[`player${side}_score`] ?? '';
+const score = (side) => (hidden.value ? '' : props.series[`player${side}_score`] ?? '');
 // A side with no feeder and no entrant can never fill: the other side passes through
 const empty = (side) => (isByeSide(props.series, side) ? 'Bye' : 'To be decided');
 const sideClass = (side) => ({

@@ -446,7 +446,7 @@ const ban = () => run('ban', async () => {
 const actionsFor = (row) => [
   !row.checked_in_at && !row.withdrawn_at && {
     icon: 'mdi-check', label: 'Check in', onClick: () => run('checkin', async () => {
-      const updated = await store.checkInEntrant(eventId, row.id);
+      const updated = await store.checkIn(eventId, row.id);
       entrants.value = entrants.value.map((old) => (old.id === updated.id ? updated : old));
     }),
   },

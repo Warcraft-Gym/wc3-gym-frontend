@@ -1,0 +1,102 @@
+<!-- A member entering one event: the race he plays it on, a battle tag when the event takes
+     anyone and the caller has no linked account, and the eligibility warnings the API answered.
+     A warning never blocks: the entrant is in, and the chips say what an admin will look at. -->
+<template>
+  <v-dialog v-model="show" max-width="520">
+    <v-card>
+      <v-card-title class="bg-primary">
+        <v-icon class="mr-2" icon="mdi-account-plus" />
+        Sign up for {{ eventLabel(event) }}
+      </v-card-title>
+
+      <StatusAlert v-model="error" class="mx-4 mt-3" />
+
+      <v-card-text class="pt-4">
+        <template v-if="!entrant">
+          <RaceSelect v-model="race" variant="outlined" density="comfortable" label="Race" />
+          <v-text-field v-if="needsTag" v-model="battleTag" variant="outlined" density="comfortable"
+            label="Battle tag" hint="Your w3champions name, as Name#1234" persistent-hint />
+        </template>
+
+        <template v-else>
+          <p class="mb-2">You are in. See you on the ladder.</p>
+          <div v-if="warnings.length" class="d-flex flex-wrap ga-2">
+            <v-chip v-for="code in warnings" :key="code" size="small" color="warning" variant="tonal"
+              prepend-icon="mdi-alert-outline">
+              {{ warningLabel(code, event) }}
+            </v-chip>
+          </div>
+          <p v-if="warnings.length" class="text-caption text-medium-emphasis mt-2 mb-0">
+            An admin reads these before the draw. Your signup stands.
+          </p>
+        </template>
+      </v-card-text>
+
+      <v-card-actions>
+        <v-spacer />
+        <v-btn v-if="!entrant" @click="show = false">Cancel</v-btn>
+        <v-btn color="primary" variant="elevated" :loading="saving" :disabled="!entrant && !ready"
+          @click="entrant ? (show = false) : submit()">
+          {{ entrant ? 'Done' : 'Sign up' }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script setup>
+import { computed, ref } from 'vue';
+
+import RaceSelect from '@/components/RaceSelect.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
+import { warningLabel } from '@/helpers/entrants.mjs';
+import { eventLabel } from '@/helpers/event-labels.mjs';
+import { defaultSignupRace } from '@/helpers/players.mjs';
+import { useAuthStore, useEventStore } from '@/stores';
+
+const props = defineProps({
+  event: { type: Object, required: true },
+});
+const emit = defineEmits(['signed-up']);
+
+const auth = useAuthStore();
+const store = useEventStore();
+
+const show = ref(false);
+const saving = ref(false);
+const error = ref(null);
+const race = ref(null);
+const battleTag = ref('');
+const entrant = ref(null);
+
+// An event open to anyone takes a battle tag from a caller whose account names no player
+const needsTag = computed(() => props.event.signup_policy === 'anyone' && !auth.me?.user);
+const ready = computed(() => !!race.value && (!needsTag.value || battleTag.value.trim().length > 2));
+const warnings = computed(() => entrant.value?.warnings ?? []);
+
+const open = () => {
+  entrant.value = null;
+  error.value = null;
+  battleTag.value = '';
+  race.value = defaultSignupRace(auth.me?.user, () => 0);
+  show.value = true;
+};
+
+const submit = async () => {
+  error.value = null;
+  saving.value = true;
+  try {
+    entrant.value = await store.signUp(props.event.id, {
+      race: race.value,
+      battle_tag: needsTag.value ? battleTag.value.trim() : null,
+    });
+    emit('signed-up', entrant.value);
+  } catch (e) {
+    error.value = `The signup did not go through: ${e.message}`;
+  } finally {
+    saving.value = false;
+  }
+};
+
+defineExpose({ open });
+</script>

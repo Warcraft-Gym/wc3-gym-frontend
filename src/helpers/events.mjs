@@ -116,3 +116,38 @@ export function homeCards({ me = null, seasons = [], kothEvents = [], now = new 
 
 // The rows the landing popup offers: open signups the player has not taken, each with its own button
 export const joinableEvents = (rows) => rows.filter((row) => row.action === 'signup' && row.joined === false && row.primary);
+
+// The one button an event page offers a member, from the action word /me/events answers.
+// `checked_in` reads as a chip and `closed` offers nothing, so both answer null.
+const ACTION_BUTTON = {
+  sign_up: { text: 'Sign up', icon: 'mdi-account-plus', color: 'primary', variant: 'elevated' },
+  withdraw: { text: 'Withdraw', icon: 'mdi-account-remove', color: 'error', variant: 'outlined' },
+  check_in: { text: 'Check in', icon: 'mdi-check', color: 'success', variant: 'elevated' },
+  view: { text: 'View the stage', icon: 'mdi-tournament', color: 'primary', variant: 'outlined' },
+};
+
+export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
+
+// A viewer who says he wants no results keeps that answer past a logout, so the key
+// stays out of SESSION_KEYS. One key for the whole app: the switch is the viewer's.
+const HIDE_RESULTS_KEY = 'hideResults';
+
+// The Vue provide key the stage drawing reads the switch through
+export const HIDE_RESULTS = 'hideResults';
+
+export function hideResultsStored(store = globalThis.localStorage) {
+  try {
+    return store.getItem(HIDE_RESULTS_KEY) === '1';
+  } catch {
+    return false;  // a browser with storage blocked shows the results
+  }
+}
+
+export function storeHideResults(on, store = globalThis.localStorage) {
+  try {
+    if (on) store.setItem(HIDE_RESULTS_KEY, '1');
+    else store.removeItem(HIDE_RESULTS_KEY);
+  } catch {
+    // a browser with storage blocked forgets the choice on the next load
+  }
+}

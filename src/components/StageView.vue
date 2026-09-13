@@ -44,15 +44,20 @@
     </section>
 
     <div v-if="series.length" class="legend text-caption text-medium-emphasis mb-4" style="order: 1">
-      <span><i class="key win" />Won</span>
-      <span><i class="key loss" />Lost</span>
-      <span><i class="key draw" />No result</span>
+      <template v-if="!hidden">
+        <span><i class="key win" />Won</span>
+        <span><i class="key loss" />Lost</span>
+      </template>
+      <span><i class="key draw" />{{ hidden ? 'Results are hidden' : 'No result' }}</span>
     </div>
 
     <!-- A table stage is read from its standings down; a bracket is read first and ranked after -->
     <v-card v-if="tables.length" elevation="2" :style="{ order: isBracket ? 2 : 0 }">
       <v-card-title>Standings</v-card-title>
-      <GroupedTable :columns="STANDING_COLUMNS" :groups="tables" default-open empty="No standings yet">
+      <p v-if="hidden" class="text-medium-emphasis px-4 pb-4 mb-0">
+        Results are hidden. Turn off "Hide results" to read the standings.
+      </p>
+      <GroupedTable v-else :columns="STANDING_COLUMNS" :groups="tables" default-open empty="No standings yet">
         <template #group="{ group }">
           <td colspan="7">{{ group.label }}</td>
         </template>
@@ -77,12 +82,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, inject, ref } from 'vue';
 import { useDisplay } from 'vuetify';
 
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import SeriesBox from '@/components/SeriesBox.vue';
+import { HIDE_RESULTS } from '@/helpers/events.mjs';
 import { blocks, chainOrder, columns, inDivision, layout, standingsGroups } from '@/helpers/stage-view.mjs';
 
 const props = defineProps({
@@ -104,6 +110,9 @@ const STANDING_COLUMNS = [
   { key: 'game_diff', title: 'Game diff', align: 'right' },
   { key: 'points', title: 'Points', align: 'right' },
 ];
+
+// The spoiler switch of the page around this stage; the standings give the whole result away
+const hidden = inject(HIDE_RESULTS, ref(false));
 
 const { smAndDown } = useDisplay();
 const stacked = computed(() => smAndDown.value);

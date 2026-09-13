@@ -4,13 +4,14 @@
   </v-overlay>
 
   <v-container fluid class="pa-4">
-    <!-- Page Header -->
+    <!-- Page Header: the team, and the season it is read in -->
     <v-row class="mb-4">
       <v-col>
         <h1>
           <v-icon class="mr-2">mdi-shield-account</v-icon>
-          Team Details
+          {{ team?.name || 'Team' }}
         </h1>
+        <div v-if="seasonLabel" class="text-medium-emphasis mt-1">{{ seasonLabel }}</div>
       </v-col>
     </v-row>
 
@@ -20,7 +21,7 @@
     <v-card v-if="team" elevation="2" class="mb-4">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-shield-account</v-icon>
-        <span>{{ team.name }}</span>
+        <span>Season points</span>
       </v-card-title>
       <v-card-text v-if="currentSeasonInfo">
         <p><strong><ColumnNote title="Points:" :note="POINTS_NOTES['Points']" /></strong> {{ currentSeasonInfo.final_score }}</p>
@@ -303,6 +304,7 @@ import W3CIcon from '@/components/W3CIcon.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CSyncResultDialog from '@/components/W3CSyncResultDialog.vue';
 import { useColumns } from '@/helpers/columns';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 
 
 // Router and store setup
@@ -322,6 +324,12 @@ const seasonId = computed(() => {
 
 // The rounds grid takes a captain of this team, or any admin
 const canSetRounds = computed(() => auth.isCaptainOf(teamId.value, seasonId.value));
+
+// The season under the team name, named the way every other page names an event
+const seasonLabel = computed(() => {
+  const season = seasonStore.seasons.find((row) => row.id === seasonId.value);
+  return season ? eventLabel(season) : '';
+});
 
 // Current W3C season for stats fallback
 const currentW3CSeason = ref(null);

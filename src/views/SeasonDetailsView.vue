@@ -8,38 +8,14 @@
     ></v-progress-circular>
   </v-overlay>
 
-  <!-- Enhanced Hero Section -->
-  <div id="seasonHeader">
-    <div class="banner-band">
-      <v-container class="fill-height">
-        <v-row align="center" justify="center">
-          <v-col cols="12" md="8" class="text-center">
-            <h1 class="text-h5 text-md-h2 font-weight-bold mb-4 season-title">{{ season.name }}</h1>
-            <v-row class="justify-center mt-6 d-none d-sm-flex">
-              <v-col cols="auto">
-                <v-card class="stat-card" elevation="8">
-                  <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold text-primary-text">{{ season.round_count }}</div>
-                    <div class="text-subtitle-2">Rounds</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="auto">
-                <v-card class="stat-card" elevation="8">
-                  <v-card-text class="pa-4">
-                    <div class="text-h4 font-weight-bold text-primary-text">{{ teams.length }}</div>
-                    <div class="text-subtitle-2">Teams</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-      </v-container>
-    </div>
-  </div>
-
   <v-container fluid class="pa-4">
+    <!-- The season is one event of the GNL league, so it wears the shared event header -->
+    <EventHeader :event="season" />
+    <div class="d-flex flex-wrap ga-2 mt-3 mb-4">
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-calendar-week">{{ season.round_count }} rounds</v-chip>
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-account-group">{{ teams.length }} teams</v-chip>
+    </div>
+
     <!-- Series with no result, reached from the unscored count on the Seasons page -->
     <v-card v-if="unscoredOnly" class="mb-4" elevation="2">
       <v-card-title class="bg-primary d-flex align-center">
@@ -488,6 +464,7 @@ import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import CastChips from '@/components/CastChips.vue';
+import EventHeader from '@/components/EventHeader.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore, useSeasonStore, useMatchStore, useTeamStore, useMapStore, useSeriesStore } from '@/stores';
@@ -819,33 +796,6 @@ onMounted(async () => {
     object-fit: cover;
   }
 
-  /* Header Styles */
-  #seasonHeader {
-    position: relative;
-    color: rgb(var(--v-theme-on-band));
-  }
-  
-  .banner-band {
-    height: 250px;
-    background: rgb(var(--v-theme-band));
-  }
-
-  .season-title {
-    letter-spacing: 1px;
-  }
-
-  /* Stat Cards */
-  .stat-card {
-    background: rgba(var(--v-theme-surface), 0.95) !important;
-    backdrop-filter: blur(10px);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
-  }
-
   /* Match Cards */
   .match-card-enhanced {
     transition: all 0.3s ease;
@@ -918,22 +868,7 @@ onMounted(async () => {
   }
 
   /* Responsive adjustments */
-  /* On a phone the hero is a title alone, so it does not need 250px */
-  @media (max-width: 599px) {
-    .banner-band {
-      height: 120px;
-    }
-  }
-
   @media (max-width: 960px) {
-    .season-title {
-      font-size: 2rem !important;
-    }
-
-    .stat-card .text-h4 {
-      font-size: 1.5rem !important;
-    }
-
     .match-row {
       min-height: auto;
     }

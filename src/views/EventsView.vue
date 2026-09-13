@@ -1,5 +1,5 @@
-<!-- Every event of every league, the newest first. A member reads the published runs;
-     an admin also reads the drafts. -->
+<!-- Every event of every league, the newest first. GET /events answers the published
+     runs only, so a draft reaches nobody here; the league page lists an admin's drafts. -->
 <template>
   <v-container fluid class="pa-4">
     <v-row class="mb-4">
@@ -66,9 +66,8 @@ import { computed, onMounted, ref } from 'vue';
 
 import StatusAlert from '@/components/StatusAlert.vue';
 import { dateRange, EVENT_KINDS, STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf } from '@/helpers/event-labels.mjs';
-import { useAuthStore, useEventStore } from '@/stores';
+import { useEventStore } from '@/stores';
 
-const auth = useAuthStore();
 const store = useEventStore();
 const leagues = ref([]);
 const events = ref([]);
@@ -80,9 +79,9 @@ const state = ref(null);
 const leagueItems = computed(() => leagues.value.map((league) => ({ value: league.id, title: league.name })));
 const leagueName = (event) => leagues.value.find((league) => league.id === event.league_id)?.name || '';
 
-// A draft is the admin's own working copy; the newest run reads first
+// The read is published-only; the guard holds if that ever changes. The newest run reads first
 const rows = computed(() => events.value
-  .filter((event) => auth.isAdmin || event.published !== false)
+  .filter((event) => event.published !== false)
   .filter((event) => !leagueId.value || event.league_id === leagueId.value)
   .filter((event) => !state.value || stateOf(event) === state.value)
   .slice()

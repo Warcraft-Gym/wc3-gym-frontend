@@ -138,8 +138,8 @@ const blank = () => ({
 });
 const form = ref(blank());
 
-// The read answers the league's events newest first
-const events = computed(() => league.value?.events || []);
+// The read answers every event of the league, drafts included, so a member is filtered out
+const events = computed(() => (league.value?.events || []).filter((e) => auth.isAdmin || e.published !== false));
 
 const load = async () => {
   loading.value = true;

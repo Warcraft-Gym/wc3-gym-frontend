@@ -39,3 +39,4 @@ export { default as LeagueView } from './LeagueView.vue';
 export { default as EventsView } from './EventsView.vue';
 export { default as EventView } from './EventView.vue';
 export { default as EventWizardView } from './EventWizardView.vue';
+export { default as EntrantsView } from './EntrantsView.vue';

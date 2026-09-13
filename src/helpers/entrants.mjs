@@ -1,0 +1,59 @@
+// The pure parts of the entrants page: what an eligibility warning says, how the rows
+// group by division, and the bodies the division and seed writes take.
+// Divisions run strongest first, the way event_division.position reads them, so the
+// bands of the MMR strip ascend where the divisions descend.
+
+// A warning names what an admin should look at; none of them refused the signup.
+export function warningLabel(code, event = {}) {
+  if (code === 'under_min_games') return event.min_games ? `under ${event.min_games} games` : 'under the game count';
+  if (code === 'over_mmr_max') return 'over the MMR cap';
+  if (code === 'banned') return 'banned';
+  return code;
+}
+
+// What a row is called: the team of a team entrant, else the player.
+export const entrantName = (row) => row.team?.name || row.user?.name || '';
+
+// Seeded entrants first in seed order, the rest strongest first, the name breaking a tie.
+export function bySeed(rows) {
+  return [...rows].sort((a, b) => (a.seed ?? Infinity) - (b.seed ?? Infinity)
+    || (b.mmr ?? 0) - (a.mmr ?? 0)
+    || entrantName(a).localeCompare(entrantName(b)));
+}
+
+// One group per division in position order, and the entrants no division holds last.
+export function groupByDivision(rows, divisions = []) {
+  const held = new Set(divisions.map((division) => division.id));
+  const groups = divisions.map((division, index) => ({
+    key: division.id,
+    id: division.id,
+    title: division.name || `Division ${division.position ?? index + 1}`,
+    rows: bySeed(rows.filter((row) => row.division_id === division.id)),
+  }));
+  const none = bySeed(rows.filter((row) => !held.has(row.division_id)));
+  return none.length ? [...groups, { key: 'none', id: null, title: 'No division', rows: none }] : groups;
+}
+
+// The body PUT .../seeds takes once an admin ordered the rows by hand: every entrant of
+// every division, because the stage numbers them 1..n inside each one.
+export const seedPayload = (groups) => ({
+  source: 'manual',
+  order: groups.flatMap((group) => group.rows.map((row) => row.id)),
+});
+
+// The body PUT /events/{id}/divisions takes, read off the ascending strip: the highest cut
+// is the lower bound of the strongest division and the weakest one opens at no bound.
+// The cuts and the names arrive as the strip holds them, lowest MMR first.
+export const divisionsPayload = (cuts, names = []) => {
+  const descending = [...names].reverse();
+  return [...cuts].reverse().concat(null)
+    .map((bound, index) => ({ name: descending[index] || `Division ${index + 1}`, lower_bound: bound }));
+};
+
+// The ascending cuts the strip opens on, read back from the stored divisions.
+export const cutsOf = (divisions = []) => divisions
+  .map((division) => division.lower_bound).filter((bound) => bound != null).reverse();
+
+// The band names the strip prints, lowest MMR first.
+export const bandNames = (divisions = []) => [...divisions]
+  .map((division, index) => division.name || `Division ${division.position ?? index + 1}`).reverse();

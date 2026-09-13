@@ -51,5 +51,33 @@ export const useEventStore = defineStore({
         async setDivisions(event_id, divisions) {
             return await fetchWrapper.put(`${backendUrl}/events/${event_id}/divisions`, divisions);
         },
+        // Cut the entrants into the stored divisions from the MMR of their signup race
+        async assignDivisions(event_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/divisions/assign`);
+        },
+        async fetchEntrants(event_id) {
+            return await fetchWrapper.get(`${backendUrl}/events/${event_id}/entrants`);
+        },
+        // An admin enters any player or team, whether the signups stand open or not
+        async addEntrant(event_id, entrant) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/admin`, entrant);
+        },
+        async removeEntrant(event_id, entrant_id) {
+            return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`);
+        },
+        async checkInEntrant(event_id, entrant_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/checkin`);
+        },
+        // Move one entrant into a division and mark it placed by hand, so a reassign leaves it
+        async placeEntrant(event_id, entrant_id, placement) {
+            return await fetchWrapper.put(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`, placement);
+        },
+        // The seeds of one stage: mmr, random, or an order of entrant ids for manual
+        async setSeeds(event_id, stage_id, seeds) {
+            return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds`, seeds);
+        },
+        async lockSeeds(event_id, stage_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/lock`);
+        },
     }
 });

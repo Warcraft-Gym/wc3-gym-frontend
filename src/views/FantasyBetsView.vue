@@ -113,7 +113,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-plus</v-icon>
-        Add New Fantasy Bet
+        Add new fantasy bet
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -123,7 +123,7 @@
             :items="fantasyTeams"
             item-value="captain_id"
             :item-title="(team) => team.captain?.name || 'N/A'"
-            label="Select Bettor"
+            label="Select bettor"
             variant="outlined"
             density="comfortable"
             class="mb-4"
@@ -145,7 +145,7 @@
             :items="availableSeries"
             item-value="id"
             :item-title="seriesTitle"
-            label="Select Series"
+            label="Select series"
             variant="outlined"
             density="comfortable"
             class="mb-4"
@@ -157,7 +157,7 @@
           >
           </v-autocomplete>
 
-          <v-radio-group v-model="newBet.winner_id" label="Select Winner:" v-if="selectedSeriesForNew">
+          <v-radio-group v-model="newBet.winner_id" label="Select winner:" v-if="selectedSeriesForNew">
             <v-radio
               :label="selectedSeriesForNew.player1?.name || 'Player 1'"
               :value="selectedSeriesForNew.player1_id"
@@ -171,7 +171,7 @@
           <v-text-field
             v-if="!useFixedBetPoints"
             v-model.number="newBet.bet_points"
-            label="Bet Points"
+            label="Bet points"
             type="number"
             :min="minBetPoints || 1"
             :max="maxBetPoints"
@@ -210,7 +210,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-pencil</v-icon>
-        Edit Fantasy Bet
+        Edit fantasy bet
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -225,10 +225,10 @@
             <strong>Captain:</strong> {{ editingBet.user?.name || 'N/A' }}
           </div>
           <div class="text-subtitle-2 mb-4">
-            <strong>Current Score:</strong> {{ editingBet.series.player1_score || 0 }} : {{ editingBet.series.player2_score || 0 }}
+            <strong>Current score:</strong> {{ editingBet.series.player1_score || 0 }} : {{ editingBet.series.player2_score || 0 }}
           </div>
 
-          <v-radio-group v-model="selectedWinnerId" label="Select Winner:">
+          <v-radio-group v-model="selectedWinnerId" label="Select winner:">
             <v-radio
               :label="editingBet.series.player1?.name || 'Player 1'"
               :value="editingBet.series.player1_id"
@@ -242,7 +242,7 @@
           <v-text-field
             v-if="!useFixedBetPoints"
             v-model.number="selectedBetPoints"
-            label="Bet Points"
+            label="Bet points"
             type="number"
             :min="minBetPoints || 1"
             :max="maxBetPoints"
@@ -281,7 +281,7 @@
     <v-card>
       <v-card-title class="bg-error text-on-error">
         <v-icon class="mr-2">mdi-alert</v-icon>
-        Confirm Delete
+        Confirm delete
       </v-card-title>
       <v-card-text class="pt-4">
         <StatusAlert v-model="dialogError" />
@@ -370,7 +370,7 @@ const allHeaders = [
   { title: 'ID', value: 'id', width: '70px', sortable: true },
   { title: 'Captain', value: 'captain', sortable: true },
   { title: 'Series', value: 'series', sortable: false },
-  { title: 'Bet On', value: 'bet_on', sortable: false },
+  { title: 'Bet on', value: 'bet_on', sortable: false },
   { mobile: false, title: 'Score', value: 'score', sortable: false, align: 'center' },
   { title: 'Result', value: 'bet_result', sortable: false, align: 'center' },
   { title: 'Points', value: 'bet_points', sortable: true, align: 'end' },

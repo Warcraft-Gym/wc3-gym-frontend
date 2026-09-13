@@ -70,27 +70,27 @@
                               <strong>Season:</strong> {{ existingTeam.season?.name || 'N/A' }}
                             </div>
                             <div class="mb-2">
-                              <strong>Drafted Team:</strong> {{ existingTeam.drafted_team?.name || 'N/A' }}
+                              <strong>Drafted team:</strong> {{ existingTeam.drafted_team?.name || 'N/A' }}
                             </div>
                             <div v-if="season?.fantasy_grind" class="mb-2">
-                              <strong>Grind Team:</strong> {{ grindTeamName || 'N/A' }}
+                              <strong>Grind team:</strong> {{ grindTeamName || 'N/A' }}
                             </div>
                             <div class="mb-2">
-                              <strong>Drafted Race:</strong>
+                              <strong>Drafted race:</strong>
                               <RaceIcon v-if="existingTeam.drafted_race" :raceIdentifier="existingTeam.drafted_race" />
                             </div>
                           </v-col>
                           <v-col cols="12" md="6">
                             <div class="mb-2">
-                              <strong>Total Points:</strong> {{ existingTeam.total_points || 0 }}
+                              <strong>Total points:</strong> {{ existingTeam.total_points || 0 }}
                             </div>
                             <div class="text-caption">
-                              Player Points: {{ existingTeam.player_points || 0 }}<br>
-                              Bench Points: {{ existingTeam.bench_points || 0 }}<br>
-                              Team Points: {{ existingTeam.team_points || 0 }}<br>
-                              Race Points: {{ existingTeam.race_points || 0 }}<br>
-                              <span v-if="season?.fantasy_grind">Grind Points: {{ existingTeam.grind_points || 0 }}<br></span>
-                              Bet Points: {{ existingTeam.bet_points || 0 }}
+                              Player points: {{ existingTeam.player_points || 0 }}<br>
+                              Bench points: {{ existingTeam.bench_points || 0 }}<br>
+                              Team points: {{ existingTeam.team_points || 0 }}<br>
+                              Race points: {{ existingTeam.race_points || 0 }}<br>
+                              <span v-if="season?.fantasy_grind">Grind points: {{ existingTeam.grind_points || 0 }}<br></span>
+                              Bet points: {{ existingTeam.bet_points || 0 }}
                             </div>
                           </v-col>
                         </v-row>
@@ -98,7 +98,7 @@
                         <v-divider class="my-4"></v-divider>
 
                         <div>
-                          <strong class="mb-2 d-block">Drafted Players:</strong>
+                          <strong class="mb-2 d-block">Drafted players:</strong>
                           <v-chip-group>
                             <v-chip v-for="player in existingTeam.drafted_players" :key="player.id" size="small">
                               {{ player.name }}
@@ -130,14 +130,14 @@
                     <v-card variant="outlined" class="mb-4">
                       <v-card-title class="bg-primary text-on-primary">
                         <v-icon start>mdi-account-group</v-icon>
-                        Team Details
+                        Team details
                       </v-card-title>
                       <v-card-text class="pt-4">
                         <v-row>
                           <v-col cols="12">
                             <v-text-field
                               v-model="teamForm.name"
-                              label="Fantasy Team Name *"
+                              label="Fantasy team name *"
                               variant="outlined"
                               density="comfortable"
                               required
@@ -150,7 +150,7 @@
                               :items="teams"
                               :item-title="teamTitle"
                               item-value="id"
-                              label="Draft a Team *"
+                              label="Draft a team *"
                               variant="outlined"
                               density="comfortable"
                               required
@@ -169,7 +169,7 @@
                           <v-col cols="12" md="6">
                             <RaceSelect
                               v-model="teamForm.drafted_race"
-                              label="Draft a Race *"
+                              label="Draft a race *"
                               variant="outlined"
                               density="comfortable"
                               required
@@ -181,7 +181,7 @@
                               :items="teams"
                               :item-title="teamTitle"
                               item-value="id"
-                              label="Grind Team"
+                              label="Grind team"
                               variant="outlined"
                               density="comfortable"
                               clearable
@@ -204,7 +204,7 @@
                     <v-card variant="outlined" class="mb-4">
                       <v-card-title class="bg-primary">
                         <v-icon start>mdi-account-multiple</v-icon>
-                        Draft Players
+                        Draft players
                       </v-card-title>
                       <v-card-text class="pt-4">
                         <v-alert type="info" variant="tonal" class="mb-4">
@@ -377,7 +377,7 @@
   <!-- Place Bet Dialog -->
   <v-dialog v-model="betDialog" max-width="500px">
     <v-card>
-      <v-card-title class="text-h5">Place Fantasy Bet</v-card-title>
+      <v-card-title class="text-h5">Place fantasy bet</v-card-title>
       <v-card-text>
         <StatusAlert v-model="betError" />
         <div class="mb-4">
@@ -401,7 +401,7 @@
         <v-text-field
           v-if="!useFixedBetPoints"
           v-model.number="betPoints"
-          label="Bet Points"
+          label="Bet points"
           type="number"
           :min="minBetPoints || 1"
           :max="maxBetPoints"
@@ -574,8 +574,8 @@ const grindTeamName = computed(
 // Table headers for betting
 const allFantasyHeaders = [
   { title: 'Match', key: 'players', sortable: false },
-  { title: 'Date & Time', key: 'date_time', sortable: true },
-  { title: 'My Bet', key: 'my_bet', sortable: false },
+  { title: 'Date & time', key: 'date_time', sortable: true },
+  { title: 'My bet', key: 'my_bet', sortable: false },
   { mobile: false, title: 'Score', key: 'score', sortable: false },
   { title: 'Result', key: 'result', sortable: false },
   { title: '', key: 'actions', sortable: false }
@@ -798,7 +798,7 @@ const cancelEditing = () => {
 const submitTeam = async () => {
   // Validate all required fields
   if (!teamForm.value.name || !teamForm.value.season_id || !teamForm.value.drafted_team_id || !teamForm.value.drafted_race) {
-    errorMessage.value = 'Please fill in all required fields (Team Name, Draft a Team, Draft a Race).';
+    errorMessage.value = 'Please fill in all required fields (Fantasy team name, Draft a team, Draft a race).';
     return;
   }
 

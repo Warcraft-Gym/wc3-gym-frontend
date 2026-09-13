@@ -86,7 +86,7 @@
           </span>
         </div>
       </template>
-      <p v-if="!isLoading && !blocks.length && !busy.length" class="text-body-2 text-medium-emphasis">
+      <p v-if="!isLoading && !errorMessage && !blocks.length && !busy.length" class="text-body-2 text-medium-emphasis">
         You have not blocked any time — every hour is open.
       </p>
     </div>
@@ -96,7 +96,7 @@
       <v-btn class="row-btn" color="primary" variant="outlined" prepend-icon="mdi-plus" @click="addBusy">Once-off</v-btn>
     </div>
 
-    <div class="mt-6">
+    <div v-if="!errorMessage" class="mt-6">
       <h3 class="text-subtitle-1 font-weight-medium mb-2">What a round leaves open</h3>
       <div v-for="day in week" :key="day.day" class="preview-row text-body-2">
         <span class="text-medium-emphasis">{{ day.name }}</span>

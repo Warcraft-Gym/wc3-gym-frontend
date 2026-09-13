@@ -25,27 +25,17 @@
         <h2 class="text-h6 mb-3">Waiting for you</h2>
         <div v-for="row in waiting" :key="row.key" class="waiting d-flex flex-wrap align-center ga-3">
           <div class="flex-grow-1 min-w-0">{{ row.text }}</div>
-          <!-- Until the series time has passed the job is to agree a time, so Schedule leads -->
           <div v-if="row.kind === 'series'" class="d-flex flex-wrap ga-2">
             <v-btn
-              :color="row.played ? 'primary' : undefined"
-              :variant="row.played ? 'elevated' : 'text'"
-              :style="{ order: row.played ? 0 : 1 }"
+              v-for="action in seriesActions(row)"
+              :key="action.label"
+              :color="action.lead ? 'primary' : undefined"
+              :variant="action.lead ? 'elevated' : 'text'"
               size="small"
-              prepend-icon="mdi-trophy"
-              @click="reportDialog.open(row.series)"
+              :prepend-icon="action.icon"
+              @click="action.open(row.series)"
             >
-              Report result
-            </v-btn>
-            <v-btn
-              :color="row.played ? undefined : 'primary'"
-              :variant="row.played ? 'text' : 'elevated'"
-              :style="{ order: row.played ? 1 : 0 }"
-              size="small"
-              prepend-icon="mdi-calendar-edit"
-              @click="scheduleDialog.open(row.series)"
-            >
-              Schedule
+              {{ action.label }}
             </v-btn>
           </div>
           <div v-else class="d-flex ga-2">
@@ -194,6 +184,13 @@ const scheduleDialog = ref(null);
 const reportDialog = ref(null);
 const errorMessage = ref(null);
 const successMessage = ref(null);
+
+// Until the series time has passed the job is to agree a time, so Schedule leads
+const seriesActions = (row) => {
+  const schedule = { label: 'Schedule', icon: 'mdi-calendar-edit', lead: !row.played, open: (series) => scheduleDialog.value.open(series) };
+  const report = { label: 'Report result', icon: 'mdi-trophy', lead: row.played, open: (series) => reportDialog.value.open(series) };
+  return row.played ? [report, schedule] : [schedule, report];
+};
 
 // The side panel reads a profile over another page, so it never carries the owner's
 // actions: a click there would take his unsaved work with it.

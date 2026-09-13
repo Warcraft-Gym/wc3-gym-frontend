@@ -13,7 +13,7 @@
     <v-progress-linear v-if="loading" indeterminate />
     <StatusAlert v-model="errorMessage" />
     <!-- no race on the summary row: it spans every season, and a player is not one race -->
-    <GroupedTable v-if="!errorMessage" :columns="columns" :groups="groups" empty="No series played yet.">
+    <GroupedTable v-if="!errorMessage && !loading" :columns="columns" :groups="groups" empty="No series played yet.">
       <template #group="{ group }">
         <td>
           <PlayerName :player="group.opponent" />

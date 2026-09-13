@@ -30,16 +30,16 @@ Ink means `#1A241E`. White means `#FBF7F1`.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `background` | `#E8E9E3` | `#151B17` | The page. |
-| `surface` | `#F4F5F1` | `#1E2620` | Cards, tables, dialogs. |
-| `surface-bright` | `#FAFBF8` | `#29322B` | A raised surface. |
-| `surface-light` | `#E1E4DD` | `#273029` | One tab bar, a banned veto tile, a progress-bar track, an empty heat-map cell. |
+| `background` | `#E8E9E3` | `#191A16` | The page. |
+| `surface` | `#F4F5F1` | `#232420` | Cards, tables, dialogs. |
+| `surface-bright` | `#FAFBF8` | `#2F302C` | A raised surface. |
+| `surface-light` | `#E1E4DD` | `#2D2E2A` | One tab bar, a banned veto tile, a progress-bar track, an empty heat-map cell. |
 | `surface-variant` / `on-surface-variant` | `#1C2420` / `#F2F4ED` | `#D5DBD1` / ink | Vuetify's inverted surface, for example a tooltip. |
 | `on-surface`, `on-background` | ink | `#E7EBE3` | Body text. |
-| `band` / `on-band` | `#1C2420` / `#F2F4ED` | `#0E1210` / `#F2F4ED` | The dark strip on the season, match, maps and veto pages, and behind a map thumbnail. |
+| `band` / `on-band` | `#1C2420` / `#F2F4ED` | `#11110E` / `#F2F4ED` | The dark strip on the season, match, maps and veto pages, and behind a map thumbnail. |
 | `hero` / `on-hero` | `#1C2420` / `#F2F4ED` | `#332A1B` / `#F2F4ED` | The top block of the season report page. |
 | `band-muted` | `#B9C4B6` | `#B9C4B6` | Second-level text on the hero. |
-| `tag` / `on-tag` | `#DCE1D8` / `#3F4C43` | `#2C362F` / `#C3CCC1` | A quiet label on the fantasy tiers page. |
+| `tag` / `on-tag` | `#DCE1D8` / `#3F4C43` | `#333430` / `#C3CCC1` | A quiet label on the fantasy tiers page. |
 
 ### Brand
 

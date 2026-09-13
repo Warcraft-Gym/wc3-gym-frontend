@@ -102,9 +102,9 @@
     <v-card class="mb-4" elevation="1">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-trophy</v-icon>
-        Round {{ selectedWeek }} Matches
+        Round {{ selectedWeek }} matches
       </v-card-title>
-      <v-card-text class="pa-0">
+      <v-card-text v-if="auth.isAdmin" class="pa-0">
         <v-toolbar flat height="auto">
           <v-row align="center" class="flex-wrap ma-0 pa-2">
             <v-spacer />
@@ -117,7 +117,7 @@
                 variant="outlined"
                 block
               >
-                Series Maps
+                Series maps
               </v-btn>
             </v-col>
             <v-col cols="12" sm="auto">
@@ -141,7 +141,7 @@
                 variant="elevated"
                 block
               >
-                Add Match
+                Add match
               </v-btn>
             </v-col>
           </v-row>
@@ -186,7 +186,7 @@
               <v-col cols="2" class="text-center">
                 <div class="vs-section">
                   <v-icon size="40" color="primary">mdi-sword-cross</v-icon>
-                  <div class="text-caption mt-2 text-medium-emphasis">{{ roundLabel(roundOf(match.playday)) }}</div>
+                  <div class="text-caption mt-2 text-medium-emphasis text-no-wrap">{{ roundLabel(roundOf(match.playday)) }}</div>
                 </div>
               </v-col>
 
@@ -221,8 +221,8 @@
               </v-col>
               <v-col cols="auto">
                 <RowActions :actions="[
-                  { icon: 'mdi-pencil', label: 'Edit Match', onClick: () => editMatch(match) },
-                  { icon: 'mdi-delete', label: 'Delete Match', color: 'error', onClick: () => openDeleteDialog(match.id, removeMatch) },
+                  { icon: 'mdi-pencil', label: 'Edit match', onClick: () => editMatch(match) },
+                  { icon: 'mdi-delete', label: 'Delete match', color: 'error', onClick: () => openDeleteDialog(match.id, removeMatch) },
                 ]" />
               </v-col>
             </v-row>
@@ -243,7 +243,7 @@
         v-if="auth.isAdmin"
         @click="openMatchCreationModal"
       >
-        Schedule First Match
+        Schedule the first match
       </v-btn>
     </v-card>
 
@@ -252,7 +252,7 @@
       <v-expansion-panel>
         <v-expansion-panel-title class="text-h6">
           <v-icon class="mr-2">mdi-shield-account</v-icon>
-          Season Teams ({{ teams.length }})
+          Season teams ({{ teams.length }})
           <template v-slot:actions="{ expanded }">
             <v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"></v-icon>
           </template>
@@ -266,14 +266,14 @@
               variant="tonal"
               color="primary"
               prepend-icon="mdi-plus">
-              Add Teams
+              Add teams
             </v-btn>
             <v-btn
               @click="router.push(`/seasons/${route.params.id}/assign`)"
               variant="tonal"
               color="secondary"
               prepend-icon="mdi-account-multiple-plus">
-              Assign Signups
+              Assign signups
             </v-btn>
           </v-card-actions>
 
@@ -325,7 +325,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-shield-plus</v-icon>
-        Add Teams to Season
+        Add teams to the season
       </v-card-title>
       <v-card-text class="pa-0">
         <v-data-table v-if="availableTeams"
@@ -356,7 +356,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-calendar-plus</v-icon>
-        Create Match - Round {{ selectedWeek }}
+        Create a match in round {{ selectedWeek }}
       </v-card-title>
       <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
         {{ matchError }}
@@ -399,7 +399,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="closeMatchCreationModal">Cancel</v-btn>
-        <v-btn v-if="auth.isAdmin" color="primary" @click="confirmSelection">Create Match</v-btn>
+        <v-btn v-if="auth.isAdmin" color="primary" @click="confirmSelection">Create match</v-btn>
       </v-card-actions>        
     </v-card>
   </v-dialog>
@@ -412,7 +412,7 @@
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2">mdi-pencil</v-icon>
-        Edit Match
+        Edit match
       </v-card-title>
       <v-alert v-if="matchError" type="error" variant="tonal" class="mx-4 mt-4" border="start" closable @click:close="matchError = null">
         {{ matchError }}
@@ -455,7 +455,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn variant="text" @click="cancelEdit">Cancel</v-btn>
-        <v-btn v-if="auth.isAdmin" color="primary" @click="updateMatch">Save Changes</v-btn>
+        <v-btn v-if="auth.isAdmin" color="primary" @click="updateMatch">Save changes</v-btn>
       </v-card-actions>        
     </v-card>
   </v-dialog>

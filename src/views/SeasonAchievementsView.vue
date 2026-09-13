@@ -35,7 +35,7 @@
           @update:modelValue="runImport"
         />
       </v-col>
-      <v-col class="text-caption text-medium-emphasis">Imported prices are the source season's. Edit them before you save.</v-col>
+      <v-col class="text-caption text-medium-emphasis">Imported points come from the source season. Edit them before you save.</v-col>
     </v-row>
 
     <v-row>
@@ -71,7 +71,7 @@
             </div>
           </v-expand-transition>
 
-          <v-list max-height="560" class="overflow-y-auto">
+          <v-list max-height="560" class="overflow-y-auto rule-list">
             <v-list-item v-for="row in rowsOf(card.team)" :key="row.rule_id" class="py-2">
               <template #prepend>
                 <AchievementIcon :id="row.rule_id" :size="28" class="mr-4" />
@@ -213,6 +213,20 @@ onMounted(() => run(async () => {
 .num-field {
   width: 104px;
   flex: none;
+}
+
+/* On a phone the number fields sit under the text instead of squeezing it to one character */
+@media (max-width: 599px) {
+  .rule-list :deep(.v-list-item) {
+    grid-template-areas: 'prepend content' 'append append';
+    grid-template-columns: max-content 1fr;
+  }
+
+  .rule-list :deep(.v-list-item__append) {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
 }
 
 /* The description wraps beside the number fields instead of ending in an ellipsis */

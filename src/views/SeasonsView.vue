@@ -416,9 +416,9 @@ const addNewSeason = () => {
   seasonDialogOpen.value = true;
 };
 
-// a cleared number field holds an empty string; the column takes a number or null
+// a cleared number field holds an empty string; the column is not null, so it takes the default
 const normalizeCheckin = () => {
-  if (selectedSeason.value.checkin_days === '') selectedSeason.value.checkin_days = null;
+  if (selectedSeason.value.checkin_days === '') selectedSeason.value.checkin_days = 3;
 };
 
 const createNewSeason = async () => {

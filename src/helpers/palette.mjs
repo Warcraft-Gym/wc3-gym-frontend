@@ -69,10 +69,11 @@ export const themes = {
     dark: {
         dark: true,
         colors: {
-            background: '#151B17',
-            surface: '#1E2620',
-            'surface-bright': '#29322B',
-            'surface-light': '#273029',
+            // Dark surfaces sit on the light stone's hue (OKLCH 118, chroma 0.007), not on the ink's green
+            background: '#191A16',
+            surface: '#232420',
+            'surface-bright': '#2F302C',
+            'surface-light': '#2D2E2A',
             'surface-variant': '#D5DBD1',
             'on-surface-variant': '#1A241E',
             'on-background': '#E7EBE3',
@@ -88,12 +89,12 @@ export const themes = {
             info: '#7FB0DA',
             success: '#5FA870',  // inside the dark lightness band the chart-mark validator checks, still 4.62:1 or more as text
             'primary-text': '#E3A45F',
-            band: '#0E1210',
+            band: '#11110E',
             'on-band': '#F2F4ED',
             hero: '#332A1B',  // lighter than the page, so the hero stands out from it
             'on-hero': '#F2F4ED',
             'band-muted': '#B9C4B6',
-            tag: '#2C362F',
+            tag: '#333430',
             'on-tag': '#C3CCC1',
             win: '#4F95D8',
             loss: '#DE6E52',

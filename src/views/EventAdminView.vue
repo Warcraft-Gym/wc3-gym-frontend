@@ -42,13 +42,13 @@
           <p class="mb-3">Seeds come from {{ seedSource }}.</p>
           <v-table density="compact">
             <thead>
-              <tr><th>Division</th><th class="text-right">Entrants</th><th class="text-right">Byes</th></tr>
+              <tr><th>Division</th><th class="text-right">Entrants</th><th v-if="showByes" class="text-right">Byes</th></tr>
             </thead>
             <tbody>
               <tr v-for="row in fields" :key="row.key">
                 <td>{{ row.name }}</td>
                 <td class="text-right">{{ row.entrants }}</td>
-                <td class="text-right">{{ row.byes }}</td>
+                <td v-if="showByes" class="text-right">{{ row.byes }}</td>
               </tr>
             </tbody>
           </v-table>
@@ -66,7 +66,7 @@
       <v-card>
         <v-card-title class="bg-primary">Advance this stage</v-card-title>
         <v-card-text class="pt-4">
-          <p v-if="!advancing.length" class="mb-0">Nobody moves on: the next stage takes no entrants.</p>
+          <p v-if="!advancing.length" class="mb-0">Nobody moves on: the standings are empty.</p>
           <template v-else>
             <p class="mb-2">These entrants move into the next stage.</p>
             <ul class="ml-4">
@@ -158,9 +158,11 @@ import { useRoute } from 'vue-router';
 import EventHeader from '@/components/EventHeader.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { FORMATS, titleOf } from '@/helpers/event-labels.mjs';
+import { FORMATS, SEED_SOURCES, titleOf } from '@/helpers/event-labels.mjs';
 import { scoreOf } from '@/helpers/map-order.mjs';
-import { isScored, winsFor } from '@/helpers/stage-view.mjs';
+import {
+  advancingRows, generateFields, isScored, winsFor,
+} from '@/helpers/stage-view.mjs';
 import { useEventStore } from '@/stores';
 
 const route = useRoute();
@@ -191,24 +193,12 @@ const stage = computed(() => stages.value[tab.value] || null);
 const complete = computed(() => series.value.length > 0 && series.value.every(isScored));
 
 // What the generate dialog promises: where the seeds come from, and the field per division
-const seedSource = computed(() => entrants.value.find((row) => row.seed_source)?.seed_source || 'MMR');
-const fields = computed(() => {
-  const bands = event.value?.divisions?.length
-    ? [...event.value.divisions].sort((a, b) => a.position - b.position)
-    : [{ id: null, position: 1, name: null }];
-  return bands.map((band) => {
-    const count = entrants.value.filter((row) => (band.id == null ? true : row.division_id === band.id)).length;
-    let size = 1;
-    while (size < count) size *= 2;
-    return { key: band.id ?? 'all', name: band.name || `Division ${band.position}`, entrants: count, byes: size - count };
-  });
-});
+const seedSource = computed(() => titleOf(SEED_SOURCES, entrants.value.find((row) => row.seed_source)?.seed_source || 'mmr'));
+const fields = computed(() => generateFields(entrants.value, event.value?.divisions, stage.value?.format));
+const showByes = computed(() => fields.value.some((row) => row.byes != null));
 
-// Who the next stage takes: the top of each division's table, as the stage's count says
-const advancing = computed(() => {
-  const take = stage.value?.advance_count || 0;
-  return standings.value.flatMap((group) => (group.rows || []).slice(0, take));
-});
+// Who the next stage takes: the top of each division's table, or the whole table
+const advancing = computed(() => advancingRows(standings.value, stage.value?.advance_count));
 
 const load = async () => {
   loading.value = true;

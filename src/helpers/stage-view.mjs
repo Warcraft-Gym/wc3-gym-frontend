@@ -124,3 +124,37 @@ export const inDivision = (series, divisionId) => (divisionId == null
 
 // The maps one side must win to take the series
 export const winsFor = (bestOf) => Math.floor((bestOf || 3) / 2) + 1;
+
+const ELIMINATION = ['single_elimination', 'double_elimination'];
+
+// What a generate will play over, read the way app/services/stage_engine.py does: a
+// withdrawn entrant never plays, and once any entrant carries a seed the seeded alone
+// stand. Only an elimination bracket pads to a power of two, so only it counts byes.
+export function generateFields(entrants = [], divisions = [], format = null) {
+  const bands = divisions?.length
+    ? [...divisions].sort((a, b) => a.position - b.position)
+    : [{ id: null, position: 1, name: null }];
+  const standing = entrants.filter((row) => !row.withdrawn_at);
+  const seeded = standing.filter((row) => row.seed != null);
+  const field = seeded.length ? seeded : standing;
+  const pads = ELIMINATION.includes(format);
+  return bands.map((band) => {
+    const count = field.filter((row) => band.id == null || row.division_id === band.id).length;
+    let size = 1;
+    while (size < count) size *= 2;
+    return {
+      key: band.id ?? 'all',
+      name: band.name || `Division ${band.position}`,
+      entrants: count,
+      byes: pads && count ? size - count : null,
+    };
+  });
+}
+
+// Who the next stage takes, read the way app/services/stage_engine.py _advance does:
+// the top of every division's table, and the whole table when the stage names no count.
+export function advancingRows(standings = [], advanceCount = null) {
+  return standings.flatMap((group) => (advanceCount
+    ? (group.rows || []).slice(0, advanceCount)
+    : group.rows || []));
+}

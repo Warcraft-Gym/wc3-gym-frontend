@@ -2,8 +2,8 @@ import assert from 'node:assert';
 import test from 'node:test';
 
 import {
-  chainOrder, columns, inDivision, isBye, isByeSide, layout,
-  seriesState, standingsGroups, winnerSide, winsFor,
+  advancingRows, chainOrder, columns, generateFields, inDivision, isBye, isByeSide,
+  layout, seriesState, standingsGroups, winnerSide, winsFor,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -153,4 +153,40 @@ test('a division reads only its own series, and a best-of names its wins', () =>
   assert.strictEqual(inDivision(mixed, 1).length, 10);
   assert.strictEqual(inDivision(mixed, 2).length, 1);
   assert.deepStrictEqual([winsFor(1), winsFor(3), winsFor(5)], [1, 2, 3]);
+});
+
+// One entrant row of the field the generate dialog counts
+const E = (id, division_id, extra = {}) => ({ id, division_id, seed: null, withdrawn_at: null, ...extra });
+
+test('the generate field drops withdrawn entrants and pads only a bracket', () => {
+  const rows = [E(1, 1), E(2, 1), E(3, 1), E(4, 1), E(5, 1), E(6, 1, { withdrawn_at: '2026-09-13T00:00:00Z' })];
+  const bracket = generateFields(rows, [{ id: 1, position: 1, name: 'Gold' }], 'single_elimination');
+  assert.deepStrictEqual(bracket, [{ key: 1, name: 'Gold', entrants: 5, byes: 3 }]);
+  assert.strictEqual(generateFields(rows, [], 'round_robin')[0].byes, null);
+  assert.strictEqual(generateFields(rows, [], 'koth')[0].byes, null);
+  assert.strictEqual(generateFields([], [], 'single_elimination')[0].byes, null);
+});
+
+test('the generate field counts the seeded alone once any entrant carries a seed', () => {
+  const bands = [{ id: 1, position: 1, name: 'Gold' }, { id: 2, position: 2, name: 'Silver' }];
+  const rows = [
+    E(1, 1, { seed: 1 }), E(2, 1, { seed: 2 }), E(3, 1), E(4, 1),
+    E(5, 2, { seed: 1 }), E(6, 2), E(7, 2), E(8, 2),
+  ];
+  assert.deepStrictEqual(
+    generateFields(rows, bands, 'single_elimination').map((row) => [row.entrants, row.byes]),
+    [[2, 0], [1, 0]],
+  );
+  const unseeded = rows.map((row) => ({ ...row, seed: null }));
+  assert.deepStrictEqual(
+    generateFields(unseeded, bands, 'single_elimination').map((row) => [row.entrants, row.byes]),
+    [[4, 0], [4, 0]],
+  );
+});
+
+test('a stage with no advance count carries the whole table', () => {
+  const table = [{ rows: [{ position: 1 }, { position: 2 }] }, { rows: [{ position: 1 }] }];
+  assert.strictEqual(advancingRows(table, null).length, 3);
+  assert.strictEqual(advancingRows(table, 1).length, 2);
+  assert.strictEqual(advancingRows([{ rows: [] }], null).length, 0);
 });

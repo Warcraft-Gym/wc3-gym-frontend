@@ -92,9 +92,9 @@
               <tr class="table-header-row">
                 <th class="text-center" style="width:56px">#</th>
                 <th>Team</th>
-                <th class="text-center">Points</th>
-                <th class="text-center d-none d-md-table-cell">Points available</th>
-                <th class="text-center d-none d-md-table-cell">Points against</th>
+                <th class="text-center"><ColumnNote title="Points" :note="POINTS_NOTES['Points']" /></th>
+                <th class="text-center d-none d-md-table-cell"><ColumnNote title="Points available" :note="POINTS_NOTES['Points available']" /></th>
+                <th class="text-center d-none d-md-table-cell"><ColumnNote title="Points against" :note="POINTS_NOTES['Points against']" /></th>
                 <th class="text-center d-none d-md-table-cell">Players</th>
                 <th class="text-center">Win rate</th>
               </tr>
@@ -455,6 +455,8 @@ import { themeMode } from '@/helpers/theme';
 import { gamesBarHeight, winRate } from '@/helpers/ladder-days.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import { scaleQuantize } from 'd3-scale';
+import { POINTS_NOTES } from '@/helpers/achievements';
+import ColumnNote from '@/components/ColumnNote.vue';
 
 
 const route = useRoute();

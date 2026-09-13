@@ -23,10 +23,9 @@
         <span>{{ team.name }}</span>
       </v-card-title>
       <v-card-text v-if="currentSeasonInfo">
-        <p><strong>Points:</strong> {{ currentSeasonInfo.final_score }}</p>
-        <p><strong>Points against:</strong> {{ currentSeasonInfo.points_against }}</p>
-        <p><strong>Points available:</strong> {{ currentSeasonInfo.points_available }}</p>
-        <!-- Add more details as needed -->
+        <p><strong><ColumnNote title="Points:" :note="POINTS_NOTES['Points']" /></strong> {{ currentSeasonInfo.final_score }}</p>
+        <p><strong><ColumnNote title="Points against:" :note="POINTS_NOTES['Points against']" /></strong> {{ currentSeasonInfo.points_against }}</p>
+        <p><strong><ColumnNote title="Points available:" :note="POINTS_NOTES['Points available']" /></strong> {{ currentSeasonInfo.points_available }}</p>
       </v-card-text>
     </v-card>
 
@@ -292,7 +291,7 @@ import RowActions from '@/components/RowActions.vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore, useTeamStore, usePlayerStore, useSeasonStore, useLadderStore } from '@/stores';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE } from '@/helpers/achievements';
+import { SCORED_NOTE, ACHIEVEMENTS_NOTE, LADDER_NOTE, POINTS_NOTES } from '@/helpers/achievements';
 import ColumnNote from '@/components/ColumnNote.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { computed, onMounted, ref, watch } from 'vue';

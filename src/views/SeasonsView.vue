@@ -296,6 +296,8 @@
                   variant="outlined"
                   density="comfortable"
                   prepend-inner-icon="mdi-calendar-clock"
+                  hint="Days before a round the check-in opens. Blank keeps it open all season."
+                  persistent-hint
                 />
               </v-col>
               <v-col cols="12" md="6">
@@ -416,9 +418,9 @@ const addNewSeason = () => {
   seasonDialogOpen.value = true;
 };
 
-// a cleared number field holds an empty string; the column is not null, so it takes the default
+// a cleared number field holds an empty string; null is the season that stays open all season
 const normalizeCheckin = () => {
-  if (selectedSeason.value.checkin_days === '') selectedSeason.value.checkin_days = 3;
+  if (selectedSeason.value.checkin_days === '') selectedSeason.value.checkin_days = null;
 };
 
 const createNewSeason = async () => {

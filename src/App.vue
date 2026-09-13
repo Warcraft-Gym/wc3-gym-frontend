@@ -83,7 +83,8 @@ onUnmounted(() => {
 
 // the nav links are drawn for a session on any route that does not opt out with meta.nav
 const showNavLinks = computed(() => !!me.value && route.meta.nav !== false);
-const showBar = computed(() => route.meta.bar !== false && !isReadonly.value);
+// an iframe embed asks for the bare page with ?readonly=1; every route keeps the bar and the footer
+const showBar = computed(() => !isReadonly.value);
 
 // a link is drawn only when the session role reaches the target route's meta.role
 const canSee = (path) => canSeeRole(me.value?.role, router.resolve(path).meta.role);

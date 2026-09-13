@@ -203,8 +203,8 @@ the override.
 
 An event carries a name, a date, a description and the two bracket thresholds. Players sign
 up with a BattleTag, a Twitch username and their races, either on this page or through the
-Nightbot command configured on `/config`. The public board is `/koth/dashboard`, which has
-no navigation bar so it can be shown on stream.
+Nightbot command configured on `/config`. The public board is `/koth/dashboard`; add
+`?readonly=1` to hide the app bar when you show it on stream.
 
 ---
 

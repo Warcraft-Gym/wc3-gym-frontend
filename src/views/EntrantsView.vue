@@ -263,7 +263,7 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts } from '@/helpers/divisions.mjs';
 import { bandNames, cutsOf, divisionsPayload, groupByDivision, mergeSeeds, seedPayload, warningLabel } from '@/helpers/entrants.mjs';
-import { leaguePrefix, timeText, titleOf, FORMATS } from '@/helpers/event-labels.mjs';
+import { eventLabel, timeText, titleOf, FORMATS } from '@/helpers/event-labels.mjs';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { useAuthStore, useEventStore, usePlayerStore, useTeamStore } from '@/stores';
 
@@ -301,8 +301,7 @@ const banTarget = ref(null);
 
 const eventName = computed(() => {
   const league = leagues.value.find((row) => row.id === event.value?.league_id);
-  const prefix = leaguePrefix(event.value, league);
-  return prefix ? `${prefix} · ${event.value.name}` : event.value?.name;
+  return eventLabel(event.value, league);
 });
 const live = computed(() => entrants.value.filter((row) => !row.withdrawn_at));
 const rated = computed(() => live.value.filter((row) => row.mmr > 0));

@@ -77,6 +77,8 @@ router.beforeEach(async (to) => {
         return '/login';
     }
     if (!canSeeRole(auth.me.role, to.meta.role)) {
-        return { path: '/no-access', query: { from: to.fullPath } };
+        // a guest is not in the Discord server yet: the profile shows the join card, not a locked door
+        if (auth.me.role === 'guest') return '/profile';
+        return { path: '/no-access', query: { role: to.meta.role } };
     }
 });

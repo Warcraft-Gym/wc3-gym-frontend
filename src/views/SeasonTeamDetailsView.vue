@@ -23,9 +23,9 @@
         <span>{{ team.name }}</span>
       </v-card-title>
       <v-card-text v-if="currentSeasonInfo">
-        <p><strong class="points-label">Points:<v-tooltip activator="parent" location="top" max-width="320">{{ POINTS_NOTES['Points'] }}</v-tooltip></strong> {{ currentSeasonInfo.final_score }}</p>
-        <p><strong class="points-label">Points against:<v-tooltip activator="parent" location="top" max-width="320">{{ POINTS_NOTES['Points against'] }}</v-tooltip></strong> {{ currentSeasonInfo.points_against }}</p>
-        <p><strong class="points-label">Points available:<v-tooltip activator="parent" location="top" max-width="320">{{ POINTS_NOTES['Points available'] }}</v-tooltip></strong> {{ currentSeasonInfo.points_available }}</p>
+        <p><strong><ColumnNote title="Points:" :note="POINTS_NOTES['Points']" /></strong> {{ currentSeasonInfo.final_score }}</p>
+        <p><strong><ColumnNote title="Points against:" :note="POINTS_NOTES['Points against']" /></strong> {{ currentSeasonInfo.points_against }}</p>
+        <p><strong><ColumnNote title="Points available:" :note="POINTS_NOTES['Points available']" /></strong> {{ currentSeasonInfo.points_available }}</p>
       </v-card-text>
     </v-card>
 
@@ -572,10 +572,6 @@ const filteredAllPlayers = computed(() => {
 </script>
 
 <style scoped>
-.points-label {
-  cursor: help;
-}
-
 .player-row {
   cursor: pointer;
   transition: all 0.2s ease;

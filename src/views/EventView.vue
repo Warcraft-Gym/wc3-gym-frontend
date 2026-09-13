@@ -13,6 +13,10 @@
         <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
           {{ event.entrant_count ?? 0 }} entrants
         </v-chip>
+        <v-btn variant="outlined" color="primary" size="small"
+          prepend-icon="mdi-account-multiple" :to="`/events/${event.id}/entrants`">
+          Entrants
+        </v-btn>
         <v-btn v-if="event.kind === 'gnl'" variant="outlined" color="primary" size="small"
           prepend-icon="mdi-trophy-outline" :to="`/seasons/${seasonSlug(event)}`">
           Season page

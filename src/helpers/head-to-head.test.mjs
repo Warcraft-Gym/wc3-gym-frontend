@@ -68,3 +68,13 @@ test('an opponent with no meeting reads as an empty row', () => {
   assert.deepEqual(row.seasons, []);
   assert.equal(row.lastMet, '');
 });
+
+test('the chips and the last-met line print the league beside the event', () => {
+  const met = (id, name) => ({ ...meeting(id, name, 2, 0, 'HU', 'OC'), league_short_name: 'GNL' });
+  const [row] = opponentRows([{
+    id: 52, name: 'Peterian', last_season_name: 'Season 19', last_playday: 4,
+    meetings: [met(4, 'Season 19'), met(3, 'Season 18')],
+  }]);
+  assert.deepEqual(row.seasons.map((s) => s.name), ['GNL · Season 18', 'GNL · Season 19']);
+  assert.equal(row.lastMet, 'GNL · Season 19, round 4');
+});

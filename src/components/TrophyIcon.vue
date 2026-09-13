@@ -12,12 +12,13 @@
     <span v-else class="trophy-crest trophy-cup">
       <v-icon :size="Math.round(size * 0.62)">mdi-trophy</v-icon>
     </span>
-    <span v-if="plate" class="trophy-plate">{{ trophy.season_name }}</span>
+    <span v-if="plate" class="trophy-plate">{{ label }}</span>
   </span>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 
 const props = defineProps({
@@ -25,11 +26,12 @@ const props = defineProps({
   size: { type: Number, default: 44 },
 });
 
-// Below this the engraved season is too small to read, so the mark shows the crest alone
+// Below this the engraved event is too small to read, so the mark shows the crest alone
 const plate = computed(() => props.size >= 40);
-// e.g. "GNL S18 champion · CRIT"
+const label = computed(() => eventLabel(props.trophy));
+// e.g. "GNL · Season 18 champion · CRIT"
 const title = computed(() => {
-  const event = `${props.trophy.season_name} champion`;
+  const event = `${label.value} champion`;
   return props.trophy.team_name ? `${event} · ${props.trophy.team_name}` : event;
 });
 </script>

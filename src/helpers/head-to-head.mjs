@@ -1,5 +1,6 @@
 // One row per opponent for the head to head card: the series record, the games
-// behind it, every race matchup played, and the seasons the two met in.
+// behind it, every race matchup played, and the events the two met in.
+import { eventLabel } from './event-labels.mjs';
 
 const scored = (m) => m.my_score != null && m.their_score != null;
 
@@ -28,11 +29,13 @@ export const opponentRows = (opponents = []) => opponents.map((opponent) => {
   const matchups = [...tally((m) => (m.my_race && m.their_race ? `${m.my_race}|${m.their_race}` : null), meetings)]
     .map(([pair, count]) => ({ mine: pair.split('|')[0], theirs: pair.split('|')[1], count }))
     .sort((a, b) => b.count - a.count);
-  const names = new Map(meetings.map((m) => [m.season_id, m.season_name]));
+  const names = new Map(meetings.map((m) => [m.season_id, eventLabel(m)]));
   const seasons = [...tally((m) => m.season_id, meetings)]
     .sort(([a], [b]) => a - b)
     .map(([id, count]) => ({ id, name: names.get(id), count }));
-  const lastMet = [opponent.last_season_name, opponent.last_playday ? `round ${opponent.last_playday}` : null]
+  // The reads answer newest first, so the first meeting is the one last_season_name names
+  const lastMet = [eventLabel(meetings[0] ?? { season_name: opponent.last_season_name }),
+    opponent.last_playday ? `round ${opponent.last_playday}` : null]
     .filter(Boolean).join(', ');
   return { opponent, record, games, matchups, seasons, lastMet };
 });

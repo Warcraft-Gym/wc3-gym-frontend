@@ -15,7 +15,7 @@
       <div v-if="event" class="text-center mb-8">
         <h1 class="text-h5 text-md-h2 font-weight-bold mb-2">
           <v-icon size="48" color="primary" class="mr-3">mdi-crown</v-icon>
-          {{ event.name }}
+          {{ eventLabel(event) }}
         </h1>
         <p v-if="event.description" class="text-h6 text-medium-emphasis">{{ event.description }}</p>
       </div>
@@ -120,7 +120,7 @@
       <v-card>
         <v-card-title class="bg-primary">
           <v-icon class="mr-2">mdi-account-plus</v-icon>
-          Sign up for {{ event?.name }}
+          Sign up for {{ eventLabel(event) }}
         </v-card-title>
         
         <v-card-text class="pt-4">
@@ -203,6 +203,7 @@ import { useKothStore } from '@/stores';
 import { useAuthStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { kingPlayer } from '@/helpers/players.mjs';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import bracketSilverIcon from '@/assets/media/bracket-silver.png';

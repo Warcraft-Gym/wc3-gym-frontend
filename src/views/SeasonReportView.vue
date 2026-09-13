@@ -11,7 +11,7 @@
           <v-select
             v-model="selectedSeasonId"
             :items="seasonItems"
-            item-title="name"
+            :item-title="(season) => eventLabel(season)"
             item-value="id"
             label="Select season"
             variant="outlined"
@@ -448,6 +448,7 @@ import { useLadderStore } from '@/stores/ladder.store';
 import { teamImageUrl, showDefaultTeamImage } from '@/helpers/team-image';
 import { raceWrapper } from '@/helpers/races';
 import { resolveCurrentSeasonId } from '@/helpers/current-season';
+import { eventLabel } from '@/helpers/event-labels.mjs';
 import { playerPath } from '@/helpers/players';
 import { canSeeRole } from '@/helpers';
 import { useAuthStore } from '@/stores';

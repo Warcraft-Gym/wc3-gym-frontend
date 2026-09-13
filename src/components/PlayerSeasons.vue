@@ -127,7 +127,7 @@ import { useDisplay } from 'vuetify';
 import { useLadderStore, usePlayerStore, useSeasonStore, useSeriesStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
 import { isUnscored } from '@/helpers/season-phase.mjs';
-import { eventRows } from '@/helpers/player-events.mjs';
+import { eventRows, openRowId } from '@/helpers/player-events.mjs';
 import { currentRound } from '@/helpers/rounds.mjs';
 import CastChips from '@/components/CastChips.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
@@ -230,10 +230,8 @@ const mmrDelta = (row) => {
   return mmr?.current != null && mmr?.start != null ? mmr.current - mmr.start : 0;
 };
 
-// With no event named, the newest one still running opens onto its rounds
-const openId = computed(() => props.open
-  ?? rows.value.find(row => row.season.phase && row.season.phase !== 'complete')?.id
-  ?? null);
+// With no event named, the running GNL season opens onto its rounds
+const openId = computed(() => props.open ?? openRowId(rows.value));
 // A reader wants the event with ladder facts in it, which is rarely the one just opened
 const defaultOpen = computed(() => props.open
   ?? rows.value.find(row => row.ladder?.games)?.id

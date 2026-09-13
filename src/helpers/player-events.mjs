@@ -24,6 +24,11 @@ export const nextSeries = (series = []) => [...series]
   .filter(isUnscored)
   .sort((a, b) => (a.date_time ?? '9').localeCompare(b.date_time ?? '9'))[0] ?? null;
 
+// The row whose body draws the current slot: only a GNL row has one, so a running
+// cup never takes the open slot from a running season
+export const openRowId = (rows = []) => rows.find(
+  (row) => row.kind === 'gnl' && row.season?.phase && row.season.phase !== 'complete')?.id ?? null;
+
 export const eventRows = ({
   history = {},
   player = {},

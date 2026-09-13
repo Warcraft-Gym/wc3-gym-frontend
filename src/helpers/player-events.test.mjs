@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { eventRows, nextSeries, ordinal, placing } from './player-events.mjs';
+import { eventRows, nextSeries, openRowId, ordinal, placing } from './player-events.mjs';
 
 test('an ordinal names the place a reader says out loud', () => {
   assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21, 102].map(ordinal),
@@ -93,4 +93,26 @@ test('the series and ladder reads land on the row of their own event', () => {
 test('an empty history draws no row', () => {
   assert.deepEqual(eventRows(), []);
   assert.deepEqual(eventRows({ history: {}, player: {} }), []);
+});
+
+test('a running cup never takes the open slot from a running season', () => {
+  const running = {
+    events: [
+      { season_id: 12, season_name: 'Review Season', league_short_name: 'GNL', kind: 'gnl' },
+      { season_id: 30, season_name: 'Autumn Cup', kind: 'cup' },
+    ],
+  };
+  const phases = [
+    { id: 12, name: 'Review Season', phase: 'commenced' },
+    { id: 30, name: 'Autumn Cup', phase: 'commenced' },
+  ];
+  const rows = eventRows({ history: running, seasons: phases });
+  assert.equal(rows[0].kind, 'cup');
+  assert.equal(openRowId(rows), 12);
+});
+
+test('no running season leaves the open slot empty', () => {
+  const rows = eventRows({ history, player, seasons: [{ id: 18, phase: 'complete' }] });
+  assert.equal(openRowId(rows), null);
+  assert.equal(openRowId(), null);
 });

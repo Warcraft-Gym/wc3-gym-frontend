@@ -47,5 +47,9 @@ export const useEventStore = defineStore({
         async setStages(event_id, stages) {
             return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages`, stages);
         },
+        // The divisions are written for the whole event at once, in position order
+        async setDivisions(event_id, divisions) {
+            return await fetchWrapper.put(`${backendUrl}/events/${event_id}/divisions`, divisions);
+        },
     }
 });

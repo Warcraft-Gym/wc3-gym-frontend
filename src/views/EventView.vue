@@ -70,7 +70,9 @@ const store = useEventStore();
 const event = ref(null);
 const leagues = ref([]);
 const loading = ref(true);
-const error = ref(null);
+// the wizard lands here when the event was written but its divisions were not
+const error = ref(route.query.divisions === 'unsaved'
+  ? 'The event was created, but its divisions were not saved.' : null);
 
 const league = computed(() => leagues.value.find((row) => row.id === event.value?.league_id) || null);
 const stages = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position));

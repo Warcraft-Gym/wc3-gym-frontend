@@ -3,7 +3,7 @@
 <template>
   <div class="d-flex flex-wrap align-center ga-3">
     <h1 class="text-h5 text-md-h3 font-weight-bold">
-      <span v-if="leagueName" class="text-medium-emphasis">{{ leagueName }} · </span>{{ event.name }}
+      <span v-if="prefix" class="text-medium-emphasis">{{ prefix }} · </span>{{ event.name }}
     </h1>
     <v-chip v-if="state" size="small" variant="tonal" :color="STATE_COLOR[state]">{{ STATE_LABEL[state] || state }}</v-chip>
   </div>
@@ -26,15 +26,15 @@
 <script setup>
 import { computed } from 'vue';
 
-import { dateRange, STATE_COLOR, STATE_LABEL, stateOf } from '@/helpers/event-labels.mjs';
+import { dateRange, leaguePrefix, STATE_COLOR, STATE_LABEL, stateOf } from '@/helpers/event-labels.mjs';
 
 const props = defineProps({
   event: { type: Object, required: true },
   league: { type: Object, default: null },
 });
 
-// The short name is what a header has room for; a league without one is named in full
-const leagueName = computed(() => props.league?.short_name || props.league?.name || '');
+// The short name is what a header has room for, and it is dropped when the event name repeats it
+const prefix = computed(() => leaguePrefix(props.event, props.league));
 const state = computed(() => stateOf(props.event));
 const when = computed(() => dateRange(props.event));
 </script>

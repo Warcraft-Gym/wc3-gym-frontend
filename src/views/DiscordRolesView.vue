@@ -8,7 +8,7 @@
       <v-col>
         <h1>
           <v-icon class="mr-2">$discord</v-icon>
-          Discord Roles
+          Discord roles
         </h1>
         <div v-if="view === 'columns'" class="text-body-2 text-medium-emphasis">Drag a card to a column, double-click it, or use its buttons.</div>
       </v-col>
@@ -158,7 +158,7 @@
     <v-card elevation="2" :class="{ 'order-first': view === 'columns' }">
       <v-card-title class="bg-primary d-flex align-center">
         <v-icon class="mr-2">mdi-account-sync</v-icon>
-        <span>Accounts Out of Sync</span>
+        <span>Accounts out of sync</span>
       </v-card-title>
 
       <v-card-text class="pa-0">
@@ -169,7 +169,7 @@
                 <v-spacer />
                 <v-col cols="12" sm="auto">
                   <v-btn variant="elevated" color="primary" prepend-icon="mdi-sync" @click="syncAll" :loading="isSyncingAll" :disabled="isSyncing" block>
-                    Sync All
+                    Sync all
                   </v-btn>
                 </v-col>
               </v-row>
@@ -453,7 +453,7 @@ const scopeCaption = computed(() => {
   if (picker.value?.kind === 'admin') return 'Follows the current season.';
   if (listScope.value === 'season') return `Holders keep the role after ${seasonName(listSeasonId.value)} ends.`;
   if (listScope.value === 'all') return 'Anyone who ever earned it keeps the role.';
-  return 'When the next season becomes current, Apply or Sync All grants it to the new holders and removes it from last season\'s.';
+  return 'When the next season becomes current, Apply or Sync all grants it to the new holders and removes it from last season\'s.';
 });
 
 const seasonGroups = computed(() => groups.value.filter(g => g.kind !== 'team'));
@@ -801,10 +801,12 @@ onMounted(fetchAll);
 </script>
 
 <style scoped>
-/* The three columns share one viewport-tied height, so their headers stay aligned and each list scrolls on its own */
-.role-column {
-  height: calc(100vh - 320px);
-  min-height: 360px;
+/* Side by side from md up, the three columns share one viewport-tied height, so their headers stay aligned and each list scrolls on its own */
+@media (min-width: 960px) {
+  .role-column {
+    height: calc(100vh - 320px);
+    min-height: 360px;
+  }
 }
 /* The zone fills the rest of the column card, so a drop below the last card still lands */
 .drop-zone {

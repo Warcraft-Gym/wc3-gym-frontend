@@ -241,7 +241,7 @@ const endScrub = () => { scrubbing = null; };
 .band-name { font-size: 18px; font-weight: 500; fill: rgb(var(--v-theme-on-surface)); }
 .axis :deep(path),
 .axis :deep(line) { stroke: rgba(var(--v-theme-on-surface), 0.3); }
-.axis :deep(text) { font-size: 13px; fill: rgba(var(--v-theme-on-surface), 0.6); }
+.axis :deep(text) { font-size: 13px; fill: rgba(var(--v-theme-on-surface), 0.7); }
 circle { stroke: rgb(var(--v-theme-surface)); stroke-width: 1.5; }
 circle.pinned { stroke: rgb(var(--v-theme-on-surface)); }
 .cut { cursor: ew-resize; }

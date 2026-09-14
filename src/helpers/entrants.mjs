@@ -21,6 +21,16 @@ export function bySeed(rows) {
     || entrantName(a).localeCompare(entrantName(b)));
 }
 
+// A sign-up list holds no seed and no draw, so it reads in the order people entered.
+export const bySignup = (rows) => [...rows].sort((a, b) => a.id - b.id);
+
+// The line over a sign-up list: who is in, against the cap when the event holds one.
+// A withdrawn entrant keeps its row but gives its place back, so it is not counted.
+export function signupCount(event, rows = []) {
+  const live = rows.filter((row) => !row.withdrawn_at).length;
+  return event?.entrant_cap ? `${live} of ${event.entrant_cap} signed up` : `${live} signed up`;
+}
+
 // One group per division in position order, and the entrants no division holds last.
 export function groupByDivision(rows, divisions = []) {
   const held = new Set(divisions.map((division) => division.id));

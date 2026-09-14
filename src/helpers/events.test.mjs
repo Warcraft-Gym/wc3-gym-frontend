@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { checkInFor, dismissKoth, eventActionButton, hideResultsStored, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction, storeHideResults } from './events.mjs';
+import { blocksHint, checkInFor, dismissKoth, eventActionButton, hideResultsStored, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction, storeHideResults } from './events.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
@@ -250,4 +250,28 @@ test('a browser with storage blocked shows the results and swallows the write', 
   };
   assert.equal(hideResultsStored(blocked), false);
   assert.doesNotThrow(() => storeHideResults(true, blocked));
+});
+
+
+test('blocks that cover the next round read as a hint with one answer, and nothing else does', () => {
+  assert.deepEqual(blocksHint({ availability_hint: 'blocked_by_blocks' }),
+    { title: 'Your blocks cover this round', text: "Confirm I can't play" });
+  assert.equal(blocksHint({ availability_hint: 'open' }), null);
+  assert.equal(blocksHint({ availability_hint: 'answered_yes' }), null);
+  assert.equal(blocksHint({ availability_hint: 'answered_no' }), null);
+  assert.equal(blocksHint({ availability_hint: null }), null);
+  assert.equal(blocksHint(undefined), null);
+});
+
+test('the blocked row carries its hint on the card, and answering the round clears it', () => {
+  const blocked = row({ phase: 'checkin', signups_open: false, joined: true, entrant_id: 22, action: 'check_in',
+    checkin_shape: 'round', checkin_open: true, availability_hint: 'blocked_by_blocks',
+    next_round: { id: 3, number: 2, name: null, start_date: '2026-10-12', end_date: '2026-10-13' } });
+  const [card] = homeCards({ events: [blocked], me, seasons, now });
+  assert.equal(card.hint.title, 'Your blocks cover this round');
+  // the answer the button sends is the check-in call with available turned around
+  assert.deepEqual({ ...checkInFor(blocked).answer, available: false },
+    { season_id: 9, playday: 2, available: false });
+  const answered = homeCards({ events: [{ ...blocked, availability_hint: 'answered_no' }], me, seasons, now });
+  assert.equal(answered[0].hint, null);
 });

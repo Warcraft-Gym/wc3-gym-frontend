@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bySeed, cutsOf, divisionsPayload, entrantName, groupByDivision, mergeSeeds, seedPayload, warningLabel } from './entrants.mjs';
+import { bandNames, bySeed, bySignup, cutsOf, divisionsPayload, entrantName, groupByDivision, mergeSeeds, seedPayload, signupCount, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -72,4 +72,26 @@ test('the strip reads the stored divisions back as ascending cuts and names', ()
   assert.deepEqual(cutsOf(DIVISIONS), [1600]);
   assert.deepEqual(bandNames(DIVISIONS), ['Open', 'Pro']);
   assert.deepEqual(cutsOf([{ lower_bound: null }, { lower_bound: null }]), []);
+});
+
+
+// a coaching session: no seed, no MMR order, a note on two of the rows and one withdrawal
+const signups = [
+  { id: 12, mmr: 1400, note: 'Human vs orc openings', user: { name: 'Wispy' } },
+  { id: 9, mmr: 1900, note: null, user: { name: 'Grubbstep' }, checked_in_at: '2026-09-14T09:00:00Z' },
+  { id: 14, mmr: 1600, note: 'Late game micro', user: { name: 'Kaelthas' }, withdrawn_at: '2026-09-13T10:00:00Z' },
+];
+
+test('a sign-up list reads in the order people entered, not by MMR', () => {
+  assert.deepEqual(bySignup(signups).map((row) => row.user.name), ['Grubbstep', 'Wispy', 'Kaelthas']);
+  assert.deepEqual(bySeed(signups).map((row) => row.user.name), ['Grubbstep', 'Kaelthas', 'Wispy']);
+  assert.deepEqual(bySignup([]), []);
+});
+
+test('the sign-up count reads against the cap, and a withdrawal gives its place back', () => {
+  assert.equal(signupCount({ entrant_cap: 8 }, signups), '2 of 8 signed up');
+  assert.equal(signupCount({ entrant_cap: 2 }, signups), '2 of 2 signed up');
+  assert.equal(signupCount({ entrant_cap: null }, signups), '2 signed up');
+  assert.equal(signupCount({ entrant_cap: 8 }, []), '0 of 8 signed up');
+  assert.equal(signupCount(null), '0 signed up');
 });

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, stagesPayload, stepProblem, wizardProblem } from './event-wizard.mjs';
+import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, stagesPayload, stepProblem, stepsFor, wizardProblem } from './event-wizard.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -136,4 +136,27 @@ test('the create body carries the stages, so one write makes the whole event', (
   assert.equal(body.league_id, 2);
   assert.equal(body.stages.length, 1);
   assert.equal(body.stages[0].position, 1);
+});
+
+
+test('a signup-only event skips the stages step and every other kind keeps it', () => {
+  const keys = (form) => stepsFor(form).map((step) => step.key);
+  assert.deepEqual(keys(blankForm()), ['basics', 'entrants', 'stages', 'divisions', 'review']);
+  assert.deepEqual(keys({ ...blankForm(), kind: 'signup' }), ['basics', 'entrants', 'divisions', 'review']);
+  assert.deepEqual(keys(undefined), ['basics', 'entrants', 'stages', 'divisions', 'review']);
+});
+
+test('a signup-only event writes an explicit empty stage list', () => {
+  const form = { ...blankForm({ id: 2 }), name: 'Coaching night', kind: 'signup' };
+  assert.deepEqual(createPayload(form).stages, []);
+  assert.equal(createPayload(form).kind, 'signup');
+  // the same form as a cup still writes the one stage it holds
+  assert.equal(createPayload({ ...form, kind: 'cup' }).stages.length, 1);
+});
+
+test('the stages step never holds a signup-only event back', () => {
+  const form = { ...blankForm({ id: 2 }), name: 'Coaching night', kind: 'signup', stages: [] };
+  assert.equal(stepProblem(form, 'stages'), 'Add at least one stage.');  // the step is not asked for
+  assert.equal(wizardProblem(form), null);
+  assert.equal(wizardProblem({ ...form, kind: 'cup' }), 'Add at least one stage.');
 });

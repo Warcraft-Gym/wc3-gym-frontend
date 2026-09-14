@@ -1,4 +1,5 @@
 import { isUnscored } from './season-phase.mjs';
+import { eventLabel } from './event-labels.mjs';
 
 const infoOf = (team, seasonId) => team.seasons_info?.find(i => i.season_id === seasonId) || {};
 
@@ -44,3 +45,15 @@ export const seriesRecord = (rounds = []) => rounds.reduce(
   (sum, r) => ({ wins: sum.wins + r.wins, losses: sum.losses + r.losses }),
   { wins: 0, losses: 0 },
 );
+
+// One tab per event the team played, newest first. The team route names the event and
+// its league; a backend that does not carry those names yet falls back to the season
+// list the page already loaded, so the tabs read the same at any deploy order.
+export const seasonTabs = (seasonsInfo = [], seasons = []) => seasonsInfo
+  .filter((info) => info.season_id != null)
+  .slice()
+  .sort((a, b) => b.season_id - a.season_id)
+  .map((info) => ({
+    id: info.season_id,
+    label: eventLabel(info) || seasons.find((s) => s.id === info.season_id)?.name || '',
+  }));

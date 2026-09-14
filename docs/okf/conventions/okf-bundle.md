@@ -71,4 +71,5 @@ The bundle is public. Never write a secret, a token, a database URL, an account 
 - A pull request that changes a fact this bundle states changes the concept in the same pull request and updates `generated.at`.
 - A concept that no longer holds gets `status: deprecated` and one line naming what replaced it. It is not deleted, so links keep working.
 - `log.md` gets one line per change, newest first.
+- `index.html` beside the root `index.md` is the graph viewer from the OKF reference repository, served by GitHub Pages from `docs/`; the two Python repositories regenerate it with `just okf-graph`; here, run the same commands from that recipe with the bundle name `wc3-gym-frontend knowledge bundle` after a change to the bundle. It carries a no-index tag and is not a concept.
 - `npm test` runs `docs/okf/okf.test.mjs`. It checks that every concept has a `type`, that `index.md` files carry no frontmatter except the root one, and that every relative link resolves to a file.

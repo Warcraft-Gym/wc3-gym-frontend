@@ -8,7 +8,7 @@
       "staging": true
     }
   },
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':!docs' ':!AGENTS.md' ':!CLAUDE.md'",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':!docs' ':!AGENTS.md' ':!CLAUDE.md' ':!justfile' ':!.github' ':!.gitignore'",
   "rewrites": [
     {
       "source": "/__clerk/(.*)",

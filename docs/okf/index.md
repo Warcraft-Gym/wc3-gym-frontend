@@ -11,6 +11,7 @@ This directory is an [Open Knowledge Format](https://github.com/GoogleCloudPlatf
 * [Overview](overview.md) - What the repository is, where it runs, its layout, and where to start.
 * [conventions](conventions/index.md) - Code style, git and pull requests, testing, and this bundle.
 * [concepts](concepts/index.md) - The app shell and routing, the session, the backend contract as consumed here, the stores, the shared components, the read-only embed, the theme.
+* [pages](pages/index.md) - One concept per page area: its routes, what each role does there, and the writes it makes, from the member's home to the event run page.
 * [runbooks](runbooks/index.md) - Run locally, build and preview, deploy.
 * [decisions](decisions/index.md) - What was decided, when, why, and what it means for new code.
 * [pitfalls](pitfalls/index.md) - Mistakes made once, with the rule that avoids each.

@@ -3,7 +3,7 @@ type: Domain Concept
 title: Stores
 description: One Pinia store per area holds the fetched rows and every call to the backend; views never fetch on their own.
 tags: [pinia, stores, state]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:30:00Z }
 sources:
   - id: index
     resource: ../../../src/stores/index.js
@@ -21,7 +21,7 @@ sources:
 |---|---|
 | `auth` | the session: `user` (the admin token), `me`, `viewAs`, `loginError` |
 | `season` | the season list, the current season, its maps, rounds, signups, achievements, ladder |
-| `event` | leagues, events, one event, entrants, stages, standings, nights |
+| `event` | leagues, one league, events, one event; the entrants, stages, standings and nights are returned to the view, not held |
 | `player` | players, one player, the player's own series and history |
 | `team` | teams, a team, a team's season page, the availability grid |
 | `match` | fixtures and draft series |

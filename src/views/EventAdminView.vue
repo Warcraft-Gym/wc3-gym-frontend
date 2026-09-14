@@ -74,8 +74,20 @@
         <v-card-title class="bg-primary">Add challenger</v-card-title>
         <v-card-text class="pt-4">
           <StatusAlert v-model="dialogError" />
-          <v-select v-model="challenger" :items="challengerItems" label="Entrant" variant="outlined"
-            density="comfortable" hide-details item-props />
+          <v-select v-model="challenger" :items="challengerItems" item-value="id" :item-title="entrantName"
+            label="Entrant" variant="outlined" density="comfortable" hide-details>
+            <template #selection="{ item }">
+              <PlayerName v-if="item.raw.user" :player="item.raw.user" :race="item.raw.race" plain />
+              <span v-else>{{ entrantName(item.raw) }}</span>
+            </template>
+            <template #item="{ props: itemProps, item }">
+              <v-list-item v-bind="itemProps" :title="null">
+                <PlayerName v-if="item.raw.user" :player="item.raw.user" :race="item.raw.race" plain />
+                <span v-else>{{ entrantName(item.raw) }}</span>
+                <div class="text-caption text-medium-emphasis">{{ entrantLine(item.raw) }}</div>
+              </v-list-item>
+            </template>
+          </v-select>
           <p v-if="!challengerItems.length" class="text-medium-emphasis mt-3 mb-0">
             Every entrant already plays in a chain. Enter the player on the entrants page first.
           </p>
@@ -254,11 +266,9 @@ const advancing = computed(() => advancingRows(standings.value, stage.value?.adv
 const isChain = computed(() => stage.value?.format === 'koth');
 const pendingCount = computed(() => pendingChainSeries(series.value, event.value?.divisions).length);
 const divisionName = (id) => event.value?.divisions?.find((band) => band.id === id)?.name || '';
-const challengerItems = computed(() => chainChallengers(entrants.value, series.value).map((row) => ({
-  value: row.id,
-  title: row.user?.name || row.team?.name || 'Unnamed',
-  subtitle: [divisionName(row.division_id), row.mmr ? `${row.mmr} MMR` : ''].filter(Boolean).join(' · '),
-})));
+const challengerItems = computed(() => chainChallengers(entrants.value, series.value));
+const entrantName = (row) => row.user?.name || row.team?.name || 'Unnamed';
+const entrantLine = (row) => [divisionName(row.division_id), row.mmr ? `${row.mmr} MMR` : ''].filter(Boolean).join(' · ');
 
 const load = async () => {
   loading.value = true;

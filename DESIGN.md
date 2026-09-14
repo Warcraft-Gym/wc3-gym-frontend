@@ -121,7 +121,7 @@ Light uses 0.78 because 0.7 put field labels under 4.5:1 on the light surface.
 
 `@fontsource` serves both faces from the app's own bundle. Every number uses lining, equal-width digits (`tabular-nums`), so figures line up in a column.
 
-A large count that is not a heading, for example the admin counts on Home, uses Alegreya Sans 700 at the `.text-h2` size.
+A large number on a card, for example the admin counts on Home, uses Alegreya Sans 500 at the `.text-h2` size. The heading serif at 800 looks playful at that size.
 
 Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 

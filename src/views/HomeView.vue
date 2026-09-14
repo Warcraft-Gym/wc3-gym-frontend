@@ -214,7 +214,7 @@ onMounted(fetchHomeData);
 /* A count is a figure, not a heading: the body face at heading size. */
 .stat-total {
   font-family: 'Alegreya Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .date-tile {

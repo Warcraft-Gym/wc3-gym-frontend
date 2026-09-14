@@ -148,6 +148,67 @@
       </v-card>
     </v-dialog>
 
+    <!-- One free for all lobby: where every seat finished, and who sits in it -->
+    <v-dialog v-model="lobbyOpen" max-width="560">
+      <v-card v-if="picked">
+        <v-card-title class="bg-primary">Enter the places</v-card-title>
+        <v-card-text class="pt-4">
+          <StatusAlert v-model="dialogError" />
+          <p class="text-medium-emphasis mb-4">
+            The order is the result: drag a seat, or type its place. The winner is 1.
+          </p>
+          <div class="seats">
+            <div v-for="(seat, index) in order" :key="seat.side_no" class="seat"
+              :class="{ dragging: dragFrom === index }" draggable="true"
+              @dragstart="dragFrom = index" @dragend="dragFrom = null"
+              @dragover.prevent @drop="moveSeat(dragFrom, index)">
+              <v-icon class="handle" size="18" icon="mdi-drag-horizontal-variant" aria-hidden="true" />
+              <v-text-field :model-value="index + 1" type="number" min="1" :max="order.length"
+                density="compact" variant="outlined" hide-details class="place"
+                :aria-label="`Place of ${seatName(seat)}`"
+                @update:model-value="moveSeat(index, Number($event) - 1)" />
+              <PlayerName v-if="seat.user" :player="seat.user" plain />
+              <span v-else class="text-medium-emphasis">Empty seat</span>
+              <v-spacer />
+              <v-btn v-if="!lobbyScored && seat.entrant_id" variant="text" size="small"
+                :disabled="saving" @click="openMove(seat)">Move</v-btn>
+            </div>
+          </div>
+          <p v-if="emptySeats" class="text-medium-emphasis text-caption mt-3 mb-0">
+            This lobby seats nobody yet in {{ emptySeats }} of its places. It fills when the
+            round before it is played.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :disabled="saving" @click="lobbyOpen = false">Close</v-btn>
+          <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save"
+            :disabled="!!emptySeats || saving" :loading="saving" @click="savePlaces">Save places</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- An entrant leaves one lobby for another, before either of them is played -->
+    <v-dialog v-model="moveOpen" max-width="480">
+      <v-card>
+        <v-card-title class="bg-primary">Move to another lobby</v-card-title>
+        <v-card-text class="pt-4">
+          <StatusAlert v-model="dialogError" />
+          <v-select v-model="moveTo" :items="moveTargets" item-value="id" item-title="label"
+            label="Lobby" variant="outlined" density="comfortable" hide-details />
+          <p v-if="!moveTargets.length" class="text-medium-emphasis mt-3 mb-0">
+            This round holds no other lobby that is still to play.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :disabled="saving" @click="moveOpen = false">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" :disabled="!moveTo || saving"
+            :loading="saving" @click="moveEntrant">Move</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- One series: the winner of each game, or a result no game was played for -->
     <v-dialog v-model="resultOpen" max-width="560">
       <v-card v-if="picked">
@@ -227,8 +288,8 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } from '@/helpers/event-labels.mjs';
 import { scoreOf } from '@/helpers/map-order.mjs';
 import {
-  advancingRows, chainChallengers, generateFields, isScored, pendingChainSeries, sideName as nameOfSide,
-  standsOn, winsFor,
+  advancingRows, chainChallengers, generateFields, isLobby, isScored, lobbySeats,
+  pendingChainSeries, sideName as nameOfSide, standsOn, winsFor,
 } from '@/helpers/stage-view.mjs';
 import { rostersByEntrant } from '@/helpers/entrants.mjs';
 import { useEventStore, useTeamStore } from '@/stores';
@@ -257,6 +318,12 @@ const challengerOpen = ref(false);
 const challenger = ref(null);
 const confirmForce = ref(false);
 const resultOpen = ref(false);
+const lobbyOpen = ref(false);
+const moveOpen = ref(false);
+const order = ref([]);      // the seats of the open lobby, best place first
+const dragFrom = ref(null);
+const moving = ref(null);   // the seat the move dialog carries
+const moveTo = ref(null);
 const picked = ref(null);
 const winners = ref([]);
 const awardSide = ref(null);
@@ -371,14 +438,67 @@ const closeNight = async () => {
   }
 };
 
-// One series in the dialog: its games open on the score it already carries
+// One series in the dialog: its games open on the score it already carries. A free for
+// all lobby carries places instead of a score, so it opens the placement dialog.
 const openSeries = (row) => {
   picked.value = row;
   dialogError.value = null;
   awardSide.value = null;
+  if (isLobby(row)) {
+    order.value = lobbySeats(row);
+    lobbyOpen.value = true;
+    return;
+  }
   const [a, b] = [row.player1_score ?? 0, row.player2_score ?? 0];
   winners.value = [...Array(a).fill('A'), ...Array(b).fill('B')];
   resultOpen.value = true;
+};
+
+// The places are the order of the rows, so a drag and a typed place do the same move
+const moveSeat = (from, to) => {
+  if (from == null || to == null || to < 0 || to >= order.value.length || from === to) return;
+  const rows = [...order.value];
+  rows.splice(to, 0, ...rows.splice(from, 1));
+  order.value = rows;
+};
+
+const lobbyScored = computed(() => isScored(picked.value));
+const emptySeats = computed(() => order.value.filter((seat) => !seat.entrant_id).length);
+const seatName = (seat) => seat.user?.name || `seat ${seat.side_no}`;
+
+const savePlaces = async () => {
+  const places = order.value.map((seat, index) => ({ side_no: seat.side_no, place: index + 1 }));
+  if (await run(() => store.setPlaces(picked.value.id, places))) lobbyOpen.value = false;
+};
+
+// A lobby of the same round that nobody played yet may take one more entrant
+const moveTargets = computed(() => series.value
+  .filter((row) => isLobby(row) && row.id !== picked.value?.id
+    && row.round_id === picked.value?.round_id && !isScored(row))
+  .map((row, index) => ({ id: row.id, label: `Lobby ${index + 1}: ${lobbyNames(row)}` })));
+const lobbyNames = (row) => (row.sides || []).map((seat) => seat.user?.name || 'empty').join(', ');
+
+const openMove = (seat) => {
+  moving.value = seat;
+  moveTo.value = null;
+  dialogError.value = null;
+  moveOpen.value = true;
+};
+
+// A move is two writes: the target seats the entrant and the lobby he leaves drops him
+const moveEntrant = async () => {
+  const target = series.value.find((row) => row.id === moveTo.value);
+  const taken = (target?.sides || []).map((seat) => seat.entrant_id).filter(Boolean);
+  const left = order.value.map((seat) => seat.entrant_id)
+    .filter((id) => id && id !== moving.value.entrant_id);
+  const ok = await run(async () => {
+    await store.setLobbySides(target.id, [...taken, moving.value.entrant_id]);
+    await store.setLobbySides(picked.value.id, left);
+  });
+  if (ok) {
+    moveOpen.value = false;
+    lobbyOpen.value = false;
+  }
 };
 
 const scored = computed(() => isScored(picked.value));
@@ -425,5 +545,24 @@ const reopen = async (force) => {
 };
 
 // A reload swaps every series row, so the open dialog follows the one it was showing
-watch(series, () => { if (picked.value) picked.value = series.value.find((row) => row.id === picked.value.id) || null; });
+watch(series, () => {
+  if (!picked.value) return;
+  picked.value = series.value.find((row) => row.id === picked.value.id) || null;
+  if (picked.value && lobbyOpen.value) order.value = lobbySeats(picked.value);
+});
 </script>
+
+<style scoped>
+/* One seat a row: the place first, then who sits in it, then the move out of the lobby */
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.seats > .seat:first-child { border-top: none; }
+.seat.dragging { opacity: 0.5; }
+.handle { cursor: grab; color: rgba(var(--v-theme-on-surface), 0.5); }
+.place { max-width: 76px; }
+</style>

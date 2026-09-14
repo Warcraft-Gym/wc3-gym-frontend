@@ -1,10 +1,18 @@
 <!-- One series of a stage: a side per row with its race, the score, and the state as a
-     word. A team side reads as the team name over the roster it fields. The winning side
-     wears the win token; a click opens the series. -->
+     word. A team side reads as the team name over the roster it fields. A free for all
+     lobby reads one row a seat with its place. The winning side wears the win token;
+     a click opens the series. -->
 <template>
   <component :is="readonly ? 'div' : 'button'" :type="readonly ? undefined : 'button'"
     class="series-box" :class="{ flat, readonly }" @click="readonly || $emit('open', series)">
-    <div v-for="side in [1, 2]" :key="side" class="side" :class="sideClass(side)">
+    <!-- a free for all lobby: one row a seat, the winner first, the place as the number -->
+    <div v-for="seat in seats" :key="seat.key" class="side" :class="seat.result">
+      <span class="mark" />
+      <PlayerName v-if="seat.user" :player="seat.user" :plain="!readonly" />
+      <span v-else class="text-medium-emphasis empty">Empty seat</span>
+      <span class="score">{{ seat.place ?? '' }}</span>
+    </div>
+    <div v-for="side in seats.length ? [] : [1, 2]" :key="side" class="side" :class="sideClass(side)">
       <span class="mark" />
       <v-icon v-if="crown && side === 1" size="14" icon="mdi-crown" class="crown" aria-hidden="true" />
       <div v-if="team(side)" class="who">
@@ -19,7 +27,7 @@
       <span class="score">{{ score(side) }}</span>
     </div>
     <div class="foot text-caption text-medium-emphasis">
-      <span>{{ STATE_WORD[state] }}</span>
+      <span>{{ stateWord }}</span>
       <span v-if="label">{{ label }}</span>
     </div>
   </component>
@@ -30,7 +38,7 @@ import { computed, inject, ref } from 'vue';
 
 import { HIDE_RESULTS } from '@/helpers/events.mjs';
 import PlayerName from '@/components/PlayerName.vue';
-import { isByeSide, seriesState, shownPlayer, shownTeam, winnerSide } from '@/helpers/stage-view.mjs';
+import { isByeSide, lobbySeats, seriesState, shownPlayer, shownTeam, winnerSide } from '@/helpers/stage-view.mjs';
 
 const props = defineProps({
   series: { type: Object, required: true },
@@ -54,6 +62,11 @@ const STATE_WORD = {
 const hidden = inject(HIDE_RESULTS, ref(false));
 
 const state = computed(() => seriesState(props.series));
+// A lobby seats more than two, so its seats replace the two side rows
+const seats = computed(() => lobbySeats(props.series, hidden.value));
+// A lobby fills from the round before it, so it never waits for "both sides"
+const stateWord = computed(() => (seats.value.length && state.value === 'pending'
+  ? 'Waiting for the round before' : STATE_WORD[state.value]));
 const winner = computed(() => (hidden.value ? null : winnerSide(props.series)));
 
 const player = (side) => shownPlayer(props.series, side, hidden.value);

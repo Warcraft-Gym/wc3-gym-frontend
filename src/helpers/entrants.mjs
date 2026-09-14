@@ -3,6 +3,8 @@
 // Divisions run strongest first, the way event_division.position reads them, so the
 // bands of the MMR strip ascend where the divisions descend.
 
+import { rosterOf } from './team-roster.mjs';
+
 // A warning names what an admin should look at; none of them refused the signup.
 export function warningLabel(code, event = {}) {
   if (code === 'under_min_games') return event.min_games ? `under ${event.min_games} games` : 'under the game count';
@@ -14,10 +16,26 @@ export function warningLabel(code, event = {}) {
 // What a row is called: the team of a team entrant, else the player.
 export const entrantName = (row) => row.team?.name || row.user?.name || '';
 
+// The rating a row prints: the one the read answers, which for a team is the mean of
+// its roster, and the rating the seed was cut from when the read rates it no longer.
+export const entrantMmr = (row) => row.mmr ?? row.mmr_at_seed ?? null;
+
+// The roster a team entrant draws under its name: every member the team was rostered
+// with for this event, on the race he signed up on, the captains marked.
+export function teamRoster(team, eventId) {
+  const { captains, members } = rosterOf(team, eventId);
+  const seats = new Set(captains.map((captain) => captain.id));
+  return members.map((player) => ({
+    player,
+    race: player.signup_race,
+    captain: seats.has(player.id),
+  }));
+}
+
 // Seeded entrants first in seed order, the rest strongest first, the name breaking a tie.
 export function bySeed(rows) {
   return [...rows].sort((a, b) => (a.seed ?? Infinity) - (b.seed ?? Infinity)
-    || (b.mmr ?? 0) - (a.mmr ?? 0)
+    || (entrantMmr(b) ?? 0) - (entrantMmr(a) ?? 0)
     || entrantName(a).localeCompare(entrantName(b)));
 }
 

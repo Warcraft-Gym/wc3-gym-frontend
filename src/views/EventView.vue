@@ -102,7 +102,8 @@
       <template v-for="stage in drawn" :key="stage.id">
         <h3 class="text-subtitle-1 font-weight-bold mt-4 mb-2">{{ stage.name || `Stage ${stage.position}` }}</h3>
         <StageView readonly :stage="stage" :series="stage.series" :rounds="stage.rounds"
-          :divisions="event.divisions" :standings="stage.standings" />
+          :divisions="event.divisions" :standings="stage.standings"
+          @open-series="row => router.push(`/series/${row.id}`)" />
       </template>
 
       <SignupDialog ref="dialog" :event="event" @signed-up="reload" />
@@ -112,7 +113,7 @@
 
 <script setup>
 import { computed, onMounted, provide, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import EventHeader from '@/components/EventHeader.vue';
 import PlayerName from '@/components/PlayerName.vue';
@@ -129,6 +130,7 @@ import { useAuthStore, useEventStore } from '@/stores';
 
 const route = useRoute();
 const auth = useAuthStore();
+const router = useRouter();
 const store = useEventStore();
 const event = ref(null);
 const leagues = ref([]);

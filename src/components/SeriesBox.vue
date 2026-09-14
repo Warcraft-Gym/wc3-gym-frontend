@@ -29,7 +29,7 @@ const props = defineProps({
   label: { type: String, default: '' },  // the grand final and the third place name themselves
   crown: Boolean,                        // the standing king of a KOTH chain
   flat: Boolean,                         // inside a list, the card around it draws the border
-  readonly: Boolean,                     // a reader's box opens nothing, so its names link
+  readonly: Boolean,                     // the series page opens nothing, so its names link
 });
 defineEmits(['open']);
 

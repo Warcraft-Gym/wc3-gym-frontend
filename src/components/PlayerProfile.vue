@@ -98,7 +98,7 @@
             :player="player"
             :season="row.season"
             :series="seriesOf(row)"
-            :teamId="row.stat?.team_id"
+            :teamId="row.teamId"
             :answers="answersOf(row.season.id)"
           >
             <template v-if="owner" #series-actions="{ series: item }">

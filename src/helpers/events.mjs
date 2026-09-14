@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { eventLabel } from './event-labels.mjs';
+import { dateRange, eventLabel, STATE_COLOR, STATE_LABEL } from './event-labels.mjs';
 import { seasonSlug } from './season-slug.mjs';
 import { currentRound, roundLabel } from './rounds.mjs';
 import { myProfilePath } from './players.mjs';
@@ -8,15 +8,6 @@ import { myProfilePath } from './players.mjs';
 export function seasonAction(season) {
   const action = { open: 'signup', commenced: 'request', overdue: 'request' }[season?.phase] ?? null;
   return action === 'signup' && season.signups_open === false ? 'request' : action;
-}
-
-// The line under a season name: the round in play for a player who is in, the start
-// date while his season has no round yet, else where the signups stand
-function seasonStatus(season, round) {
-  if (round) return `Round ${round.playday} of ${season.round_count ?? season.rounds.length} · ${roundLabel(round)}`;
-  if (season.phase !== 'open') return 'In progress';
-  if (season.signed_up) return season.start_date ? `Starts ${roundLabel({ start_date: season.start_date })}` : '';
-  return season.signups_open === false ? 'Signups are closed. An admin may add you.' : 'Signups are open';
 }
 
 // The links under a season card; a season the player is not in carries the two open reads only
@@ -80,34 +71,70 @@ export function kothCards({ kothEvents = [], now = new Date(), store = globalThi
     .sort((a, b) => a.date - b.date);
 }
 
-// One card per season /me names, then the KOTH nights still to come. The /seasons row of the
-// same id adds the rounds and the round count; /me answers what the account is to that season.
-export function homeCards({ me = null, seasons = [], kothEvents = [], now = new Date() }) {
+// The line under an event name: the round in play for a GNL player who is in, the
+// check-in that stands open, else the days the event runs
+function eventStatus(row, season, round) {
+  if (round) return `Round ${round.playday} of ${season.round_count ?? season.rounds?.length ?? '?'} · ${roundLabel(round)}`;
+  if (row.checkin_open) {
+    return row.next_round ? `Check-in is open for round ${row.next_round.number}` : 'Check-in is open';
+  }
+  return dateRange({ start_date: row.start, end_date: row.end });
+}
+
+// The one thing a card offers. A GNL season keeps its own signup form and its own
+// pages, so its button is a link; every other kind carries the action word the home
+// acts on in place, and `view` opens the event page.
+function eventPrimary(row, me, slug) {
+  if (row.kind === 'gnl') {
+    if (row.joined) return { title: 'Your series', to: myProfilePath(me), variant: 'elevated' };
+    // the token admin holds no Discord account, so it cannot sign up
+    if (me?.superadmin) return null;
+    return row.action === 'sign_up'
+      ? { title: 'Sign up', to: `/signup?season=${slug}`, variant: 'elevated' }
+      : { title: 'Ask to join', to: `/signup?season=${slug}`, variant: 'outlined' };
+  }
+  const button = eventActionButton(row.action);
+  if (!button) return null;
+  return {
+    title: button.text,
+    icon: button.icon,
+    color: button.color,
+    variant: button.variant,
+    ...(row.action === 'view' ? { to: `/events/${row.id}` } : { act: row.action }),
+  };
+}
+
+// One card per event GET /me/events answers, of any kind, then the KOTH nights still
+// to come. A finished event is not upcoming, so it stays off the home. The /seasons row
+// of the same id adds the rounds and the round count a GNL card reads, and the /me entry
+// adds the team and the captain seat, which the member read does not carry.
+export function homeCards({ events = [], me = null, seasons = [], kothEvents = [], now = new Date() }) {
   const clock = DateTime.fromJSDate(new Date(now));
-  const cards = (me?.seasons ?? []).map((entry) => {
-    const season = { ...seasons.find((row) => row.id === entry.id), ...entry };
-    const slug = seasonSlug(season);
-    const round = season.signed_up ? currentRound(season.rounds ?? [], clock) : null;
-    const action = seasonAction(season);
-    const ask = { signup: 'Sign up', request: 'Ask to join' }[action];
+  const cards = events.filter((row) => row.phase !== 'finished').map((row) => {
+    const gnl = row.kind === 'gnl';
+    const entry = (me?.seasons ?? []).find((mine) => mine.id === row.id) ?? {};
+    const season = { ...seasons.find((known) => known.id === row.id), ...entry, signed_up: row.joined };
+    const slug = gnl ? seasonSlug(row) : null;
+    const round = gnl && row.joined ? currentRound(season.rounds ?? [], clock) : null;
     return {
-      key: `season:${season.id}`,
-      kind: 'season',
-      id: season.id,
-      name: eventLabel(season),
-      date: season.start_date ? new Date(`${season.start_date}T00:00:00Z`) : null,
-      status: seasonStatus(season, round),
+      key: `event:${row.id}`,
+      kind: row.kind,
+      id: row.id,
+      zone: 'UTC',  // the dates are calendar days, so the date tile must not shift them
+      name: eventLabel(row),
+      date: row.start ? new Date(`${row.start}T00:00:00Z`) : null,
+      status: eventStatus(row, season, round),
       chips: [
-        season.signed_up && { title: 'Signed up', color: 'success', icon: 'mdi-check' },
-        season.captain && season.team && { title: `Captain · ${season.team.name}`, color: 'primary', icon: 'mdi-shield-star' },
+        STATE_LABEL[row.phase] && { title: STATE_LABEL[row.phase], color: STATE_COLOR[row.phase] },
+        row.checked_in_at
+          ? { title: 'Checked in', color: 'success', icon: 'mdi-check' }
+          : row.joined && { title: 'Signed up', color: 'success', icon: 'mdi-check' },
+        gnl && entry.captain && season.team && { title: `Captain · ${season.team.name}`, color: 'primary', icon: 'mdi-shield-star' },
       ].filter(Boolean),
-      action,
-      joined: !!season.signed_up,
-      primary: season.signed_up
-        ? { title: 'Your series', to: myProfilePath(me), variant: 'elevated' }
-        // the token admin holds no Discord account, so it cannot sign up
-        : !me?.superadmin && ask && { title: ask, to: `/signup?season=${slug}`, variant: action === 'signup' ? 'elevated' : 'outlined' },
-      links: seasonLinks(season, slug),
+      action: row.action,
+      joined: row.joined,
+      primary: eventPrimary(row, me, slug),
+      links: gnl ? seasonLinks(season, slug) : [{ title: 'Event page', icon: 'mdi-tournament', to: `/events/${row.id}` }],
       slug,
     };
   });
@@ -115,7 +142,7 @@ export function homeCards({ me = null, seasons = [], kothEvents = [], now = new 
 }
 
 // The rows the landing popup offers: open signups the player has not taken, each with its own button
-export const joinableEvents = (rows) => rows.filter((row) => row.action === 'signup' && row.joined === false && row.primary);
+export const joinableEvents = (rows) => rows.filter((row) => row.action === 'sign_up' && row.joined === false && row.primary);
 
 // The one button an event page offers a member, from the action word /me/events answers.
 // `checked_in` reads as a chip and `closed` offers nothing, so both answer null.

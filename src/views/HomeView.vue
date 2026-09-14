@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, nextTick, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
-import { useTeamStore, useSeasonStore, usePlayerStore, useAuthStore, useKothStore } from '@/stores';
+import { useTeamStore, useSeasonStore, usePlayerStore, useAuthStore, useEventStore, useKothStore } from '@/stores';
 import { storeToRefs } from 'pinia';
+import SignupDialog from '@/components/SignupDialog.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { homeCards, joinableEvents } from '@/helpers/events.mjs';
 
@@ -14,6 +15,7 @@ const teamStore = useTeamStore();
 const seasonStore = useSeasonStore();
 const playerStore = usePlayerStore();
 const authStore = useAuthStore();
+const eventStore = useEventStore();
 const kothStore = useKothStore();
 
 const { teams } = storeToRefs(teamStore);
@@ -23,13 +25,20 @@ const { me, isAdmin } = storeToRefs(authStore);
 
 const isLoading = ref(true);
 const errorMessage = ref(null);
+const myEvents = ref([]);
+const acting = ref(null);  // the card whose action is in flight
+const signupEvent = ref(null);
+const dialog = ref(null);
 
-// /me names every season the account is in or may join; the /seasons row adds the rounds
-const cards = computed(() => homeCards({ me: me.value, seasons: seasons.value, kothEvents: kothStore.events }));
+// /me/events names every published event with the caller's own state and its one action;
+// the /seasons row adds the rounds and the round count a GNL card reads
+const cards = computed(() => homeCards({
+  events: myEvents.value, me: me.value, seasons: seasons.value, kothEvents: kothStore.events,
+}));
 
-// A season date is a calendar day, so it reads in UTC; a KOTH night is a moment
-const day = (card) => card.date?.toLocaleDateString(undefined, { day: 'numeric', ...(card.kind === 'season' && { timeZone: 'UTC' }) }) ?? '\u2013';
-const month = (card) => card.date?.toLocaleDateString(undefined, { month: 'short', ...(card.kind === 'season' && { timeZone: 'UTC' }) }) ?? '';
+// An event date is a calendar day, so it reads in UTC; a KOTH night is a moment, and its card says so
+const day = (card) => card.date?.toLocaleDateString(undefined, { day: 'numeric', timeZone: card.zone }) ?? '\u2013';
+const month = (card) => card.date?.toLocaleDateString(undefined, { month: 'short', timeZone: card.zone }) ?? '';
 
 // The landing popup shows once per browser session, and only when there is something to join
 const POPUP_KEY = 'eventsPopupSeen';
@@ -45,6 +54,32 @@ const openPopupOnce = () => {
   popup.value = true;
 };
 
+// One action word, one thing to do. A withdraw asks once; the rest go straight through.
+const act = async (card) => {
+  popup.value = false;
+  if (card.primary.act === 'sign_up') {
+    // the member read carries no signup policy, so the dialog reads the event itself
+    signupEvent.value = await eventStore.fetchEvent(card.id);
+    await nextTick();
+    return dialog.value.open();
+  }
+  if (card.primary.act === 'withdraw' && !confirm('Withdraw from this event?')) return;
+  acting.value = card.key;
+  try {
+    if (card.primary.act === 'withdraw') await eventStore.withdraw(card.id);
+    if (card.primary.act === 'check_in') await eventStore.checkIn(card.id, myEvents.value.find((row) => row.id === card.id)?.entrant_id);
+    await reloadEvents();
+  } catch (error) {
+    errorMessage.value = `That did not go through: ${error.message}`;
+  } finally {
+    acting.value = null;
+  }
+};
+
+const reloadEvents = async () => {
+  myEvents.value = await eventStore.myEvents();
+};
+
 const stats = computed(() => ({
   teams: { total: teams.value.length, icon: 'mdi-account-group', route: '/teams' },
   seasons: { total: seasons.value.length, icon: 'mdi-trophy', route: '/seasons' },
@@ -57,6 +92,7 @@ const fetchHomeData = async () => {
   try {
     await Promise.all([
       seasonStore.fetchSeasons(),
+      reloadEvents(),
       kothStore.fetchAllEvents().catch(() => {}),  // KOTH nights are extra; the page stands without them
       ...(isAdmin.value ? [teamStore.fetchTeams(), playerStore.fetchPlayers()] : []),
     ]);
@@ -92,9 +128,9 @@ onMounted(fetchHomeData);
                 <v-chip v-for="chip in card.chips" :key="chip.title" :color="chip.color" :prepend-icon="chip.icon" variant="tonal" size="small">{{ chip.title }}</v-chip>
               </div>
             </div>
-            <v-btn v-if="card.primary && !smAndDown" class="align-self-center" color="primary" :variant="card.primary.variant" :to="card.primary.to">{{ card.primary.title }}</v-btn>
+            <v-btn v-if="card.primary && !smAndDown" class="align-self-center" :color="card.primary.color || 'primary'" :variant="card.primary.variant" :prepend-icon="card.primary.icon" :to="card.primary.to" :loading="acting === card.key" @click="card.primary.act && act(card)">{{ card.primary.title }}</v-btn>
           </div>
-          <v-btn v-if="card.primary && smAndDown" class="mt-3" block color="primary" :variant="card.primary.variant" :to="card.primary.to">{{ card.primary.title }}</v-btn>
+          <v-btn v-if="card.primary && smAndDown" class="mt-3" block :color="card.primary.color || 'primary'" :variant="card.primary.variant" :prepend-icon="card.primary.icon" :to="card.primary.to" :loading="acting === card.key" @click="card.primary.act && act(card)">{{ card.primary.title }}</v-btn>
           <div v-if="card.links.length" class="card-links mt-3 pt-3">
             <RouterLink v-for="link in card.links" :key="link.to" :to="link.to" class="card-link">
               <v-icon :icon="link.icon" size="16" />{{ link.title }}
@@ -144,7 +180,7 @@ onMounted(fetchHomeData);
             <v-list-item-title class="font-weight-medium">{{ row.name }}</v-list-item-title>
             <v-list-item-subtitle>{{ row.status }}</v-list-item-subtitle>
             <template #append>
-              <v-btn color="primary" size="small" variant="elevated" :to="row.primary.to">{{ row.primary.title }}</v-btn>
+              <v-btn color="primary" size="small" variant="elevated" :to="row.primary.to" @click="row.primary.act && act(row)">{{ row.primary.title }}</v-btn>
             </template>
           </v-list-item>
         </v-list>
@@ -154,6 +190,8 @@ onMounted(fetchHomeData);
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <SignupDialog v-if="signupEvent" ref="dialog" :event="signupEvent" @signed-up="reloadEvents" />
   </v-container>
 </template>
 

@@ -195,7 +195,7 @@
                   Round {{ match.playday }} has no fixed map
                 </v-chip>
               </v-col>
-              <v-col cols="auto">
+              <v-col v-if="auth.isAdmin" cols="auto">
                 <RowActions :actions="[
                   { icon: 'mdi-pencil', label: 'Edit match', onClick: () => editMatch(match) },
                   { icon: 'mdi-delete', label: 'Delete match', color: 'error', onClick: () => openDeleteDialog(match.id, removeMatch) },

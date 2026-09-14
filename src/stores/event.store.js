@@ -119,6 +119,10 @@ export const useEventStore = defineStore({
         async generateStage(event_id, stage_id) {
             return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/generate`);
         },
+        // Pairs one more round of a stage that draws round by round, per division
+        async drawNextRound(event_id, stage_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/rounds`);
+        },
         // Appends one entrant to the end of the chain his division plays
         async addChallenger(event_id, stage_id, entrant_id) {
             return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`, { entrant_id });

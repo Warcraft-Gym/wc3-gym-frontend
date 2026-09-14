@@ -122,9 +122,22 @@
                   <v-text-field v-model="stage.points_by_place" label="Points each place pays"
                     placeholder="4,3,2,1" hint="Best place first" persistent-hint />
                 </v-col>
+                <v-col v-if="stage.format === 'swiss'" cols="12" md="4">
+                  <v-text-field v-model="stage.swiss_rounds" type="number" min="1" label="Rounds"
+                    placeholder="No limit" hint="The draw stops after this many rounds" persistent-hint />
+                </v-col>
                 <v-col v-if="stage.format === 'round_robin'" cols="12" md="4">
                   <v-text-field v-model="stage.series_per_entrant_per_round" type="number" min="1"
                     :label="SERIES_PER_ENTRANT_PER_ROUND" />
+                </v-col>
+                <v-col v-if="stage.format === 'round_robin'" cols="12" md="4">
+                  <v-text-field v-model="stage.group_size" type="number" min="2" label="Entrants per group"
+                    placeholder="One table a division" hint="The groups merge at the next stage" persistent-hint />
+                </v-col>
+                <v-col v-if="stage.format === 'round_robin'" cols="12" md="4">
+                  <v-text-field v-model="stage.group_advance" type="number" min="1"
+                    label="Entrants each group advances" placeholder="Every entrant"
+                    hint="Taken from the top of each group" persistent-hint />
                 </v-col>
                 <v-col cols="12" md="4">
                   <v-select v-model="stage.scheduling_mode" :items="SCHEDULING_MODES" label="Scheduling" />
@@ -301,6 +314,10 @@ const review = computed(() => {
             titleOf(FORMATS, stage.format),
             `best of ${stage.best_of}`,
             ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each entrant a round`] : []),
+            ...(stage.format === 'swiss' && stage.swiss_rounds ? [`${stage.swiss_rounds} rounds`] : []),
+            ...(stage.format === 'round_robin' && stage.group_size ? [`groups of ${stage.group_size}`] : []),
+            ...(stage.format === 'round_robin' && stage.group_advance
+              ? [`${stage.group_advance} advance from each group`] : []),
             ...(stage.format === 'ffa' && stage.lobby_size ? [`lobbies of ${stage.lobby_size}`] : []),
             ...(stage.format === 'ffa' && stage.points_by_place ? [`places pay ${stage.points_by_place}`] : []),
             titleOf(MAP_RULES, stage.map_rule).toLowerCase(),

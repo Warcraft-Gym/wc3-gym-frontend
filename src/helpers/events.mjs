@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import { dateRange, eventLabel, STATE_COLOR, STATE_LABEL } from './event-labels.mjs';
 import { seasonSlug } from './season-slug.mjs';
 import { currentRound, roundLabel } from './rounds.mjs';
+import { myNight } from './koth.mjs';
 import { myProfilePath } from './players.mjs';
 
 // What a player can do with a season: sign up, ask an admin, or nothing; an absent signups_open reads as open
@@ -24,51 +25,6 @@ function seasonLinks(season, slug) {
     { title: 'My fantasy team', icon: 'mdi-cards-playing-outline', to: `/fantasy-registration?season=${slug}` },
     season.scheduling_enabled && { title: 'Availability', icon: 'mdi-calendar-month', to: '/availability' },
   ].filter(Boolean);
-}
-
-// A player who says he is not interested in a KOTH night keeps that answer past a logout,
-// so the key stays out of SESSION_KEYS.
-const dismissKey = (id) => `kothDismissed:${id}`;
-
-export function kothDismissed(id, store = globalThis.localStorage) {
-  try {
-    return store.getItem(dismissKey(id)) !== null;
-  } catch {
-    return false;  // a browser with storage blocked keeps showing the card
-  }
-}
-
-export function dismissKoth(id, store = globalThis.localStorage) {
-  try {
-    store.setItem(dismissKey(id), '1');
-  } catch {
-    // a browser with storage blocked keeps showing the card
-  }
-}
-
-// The KOTH nights still to come, soonest first, the ones the player waved off left out
-export function kothCards({ kothEvents = [], now = new Date(), store = globalThis.localStorage }) {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);  // the player's own midnight, so a KOTH night under way today stays
-  return kothEvents
-    .filter((event) => event.is_active && new Date(event.event_date) >= today && !kothDismissed(event.id, store))
-    .map((event) => {
-      const date = new Date(event.event_date);
-      return {
-        key: `koth:${event.id}`,
-        kind: 'koth',
-        id: event.id,
-        name: eventLabel(event),
-        date,
-        status: `King of the Hill · ${date.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`,
-        chips: [],
-        action: 'signup',
-        joined: null,  // the KOTH signups carry no own-row key
-        primary: { title: 'Sign up', to: '/koth/dashboard', variant: 'elevated' },
-        links: [],
-      };
-    })
-    .sort((a, b) => a.date - b.date);
 }
 
 // The line under an event name: the round in play for a GNL player who is in, the
@@ -111,16 +67,19 @@ export const blocksHint = (row) => (row?.availability_hint === 'blocked_by_block
   ? { title: 'Your blocks cover this round', text: "Confirm I can't play" }
   : null);
 
-// One card per event GET /me/events answers, of any kind, with the KOTH nights still
-// to come. A finished event is not upcoming, so it stays off the home. The /seasons row
-// of the same id adds the rounds and the round count a GNL card reads, and the /me entry
-// adds the team and the captain seat, which the member read does not carry.
-export function homeCards({ events = [], me = null, seasons = [], kothEvents = [], now = new Date() }) {
+// One card per event GET /me/events answers, of any kind. A finished event is not
+// upcoming, so it stays off the home, and a KOTH league runs one night after another, so
+// only tonight's night takes a card. The /seasons row of the same id adds the rounds and
+// the round count a GNL card reads, and the /me entry adds the team and the captain seat,
+// which the member read does not carry.
+export function homeCards({ events = [], me = null, seasons = [], now = new Date() }) {
   const clock = DateTime.fromJSDate(new Date(now));
   // /me lists every season the member is still in, so a season past its end date with series
   // left to play keeps its card even once the phase reads finished
   const stillIn = (id) => (me?.seasons ?? []).some((entry) => entry.id === id);
-  const cards = events.filter((row) => row.phase !== 'finished' || stillIn(row.id)).map((row) => {
+  const night = myNight(events);
+  const cards = events.filter((row) => (row.kind !== 'koth' || row.id === night?.id)
+    && (row.phase !== 'finished' || stillIn(row.id))).map((row) => {
     const gnl = row.kind === 'gnl';
     const entry = (me?.seasons ?? []).find((mine) => mine.id === row.id) ?? {};
     const season = { ...seasons.find((known) => known.id === row.id), ...entry, signed_up: row.joined };
@@ -149,10 +108,10 @@ export function homeCards({ events = [], me = null, seasons = [], kothEvents = [
       slug,
     };
   });
-  // One list in date order, the KOTH nights among the rest: the date tile leads every
-  // card, so a running event sits above a later one and an event without a start falls last.
+  // One list in date order: the date tile leads every card, so a running event sits above
+  // a later one and an event without a start falls last.
   const start = (card) => card.date?.getTime() ?? Number.MAX_SAFE_INTEGER;
-  return [...cards, ...kothCards({ kothEvents, now })].sort((a, b) => start(a) - start(b));
+  return [...cards].sort((a, b) => start(a) - start(b));
 }
 
 // The rows the landing popup offers: open signups the player has not taken, each with its own button

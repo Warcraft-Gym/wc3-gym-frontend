@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { blocksHint, checkInFor, dismissKoth, eventActionButton, hideResultsStored, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction, storeHideResults } from './events.mjs';
+import { blocksHint, checkInFor, eventActionButton, hideResultsStored, homeCards, joinableEvents, seasonAction, storeHideResults } from './events.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
@@ -35,10 +35,11 @@ const events = [
   row({ kind: 'gnl', id: 4, name: 'GNL Review Season', league_short_name: 'GNL', start: '2026-09-01', end: null, phase: 'running', signups_open: false, joined: true, action: 'view' }),
   row({ id: 3, name: 'Spring Cup', start: '2026-03-02', end: '2026-03-03', phase: 'finished', signups_open: false, action: 'view' }),
 ];
-const kothEvents = [
-  { id: 1, name: 'Old KOTH', event_date: '2026-09-27T09:00:00Z', is_active: true },
-  { id: 4, name: 'KOTH Night 14', event_date: '2026-10-09T18:00:00Z', is_active: true },
-  { id: 7, name: 'Off KOTH', event_date: '2026-10-20T18:00:00Z', is_active: false },
+// the KOTH nights of the same member read: a league of nights runs one after another
+const nights = [
+  row({ kind: 'koth', id: 14, name: 'KOTH Night 14', league_short_name: 'KOTH', start: '2026-10-09', end: '2026-10-09', action: 'sign_up' }),
+  row({ kind: 'koth', id: 12, name: 'KOTH Night 13', league_short_name: 'KOTH', start: '2026-10-02', end: '2026-10-02', phase: 'running', signups_open: false, joined: true, action: 'view' }),
+  row({ kind: 'koth', id: 11, name: 'KOTH Night 12', league_short_name: 'KOTH', start: '2026-09-25', end: '2026-09-25', phase: 'finished', signups_open: false, action: 'view' }),
 ];
 
 test('the phase and signups_open decide the action', () => {
@@ -61,8 +62,8 @@ test('one card per event of any kind, the finished one left out, soonest start f
 
 test('an event without a start date falls last', () => {
   const undated = row({ id: 11, name: 'Undated Cup', start: null, end: null });
-  const cards = homeCards({ events: [undated, ...events], me, seasons, kothEvents, now });
-  assert.deepEqual(cards.map((card) => card.key), ['event:4', 'koth:4', 'event:9', 'event:5', 'event:11']);
+  const cards = homeCards({ events: [undated, ...events, ...nights], me, seasons, now });
+  assert.deepEqual(cards.map((card) => card.key), ['event:4', 'event:14', 'event:9', 'event:5', 'event:11']);
 });
 
 test('the season the captain plays reads the round in play and carries every link', () => {
@@ -133,52 +134,16 @@ test('a running cup opens its own page, and a closed one offers nothing', () => 
   assert.equal(homeCards({ events: [shut], me, seasons, now })[0].primary, null);
 });
 
-test('a KOTH night still to come takes its date place; a past or inactive one is gone', () => {
-  const cards = homeCards({ events, me, seasons, kothEvents, now });
-  assert.deepEqual(cards.map((card) => card.key), ['event:4', 'koth:4', 'event:9', 'event:5']);
-  const koth = cards[1];
-  assert.match(koth.status, /^King of the Hill · /);
-  assert.deepEqual(koth.primary, { title: 'Sign up', to: '/koth/dashboard', variant: 'elevated' });
-  assert.deepEqual(koth.links, []);
-  assert.deepEqual(joinableEvents(cards).map((card) => card.key), ['event:9']);  // a KOTH row carries no own signup answer
-});
-
-test("a KOTH night keeps its card through the player's own day, not the UTC day", () => {
-  const early = new Date('2026-09-10T19:00:00Z');  // 05:00 on 11 Sep in Sydney
-  const nights = [
-    { id: 1, name: 'Last night', event_date: '2026-09-10T09:00:00Z', is_active: true },  // 19:00 on 10 Sep
-    { id: 2, name: 'Tonight so far', event_date: '2026-09-10T15:00:00Z', is_active: true },  // 01:00 on 11 Sep
-  ];
-  assert.deepEqual(homeCards({ kothEvents: nights, now: early }).map((card) => card.key), ['koth:2']);
-});
-
-// localStorage over a Map, so the test never needs a browser
-const mapStore = () => {
-  const rows = new Map();
-  return { getItem: (key) => rows.get(key) ?? null, setItem: (key, value) => rows.set(key, value) };
-};
-
-test('a dismissed night is written once and read back, and a broken store answers no', () => {
-  const store = mapStore();
-  assert.equal(kothDismissed(4, store), false);
-  dismissKoth(4, store);
-  assert.equal(kothDismissed(4, store), true);
-  assert.equal(kothDismissed(7, store), false);
-  assert.equal(kothDismissed(4, null), false);  // storage blocked
-  assert.doesNotThrow(() => dismissKoth(4, null));
-});
-
-test('a dismissed night drops out of kothCards and out of homeCards', () => {
-  const store = mapStore();
-  assert.deepEqual(kothCards({ kothEvents, now, store }).map((card) => card.key), ['koth:4']);
-  dismissKoth(4, store);
-  assert.deepEqual(kothCards({ kothEvents, now, store }), []);
-  globalThis.localStorage = store;
-  try {
-    assert.deepEqual(homeCards({ events, me, seasons, kothEvents, now }).map((card) => card.key), ['event:4', 'event:9', 'event:5']);
-  } finally {
-    delete globalThis.localStorage;
-  }
+test('one KOTH night stands on the home, the newest one still open, as any other card', () => {
+  const cards = homeCards({ events: [...events, ...nights], me, seasons, now });
+  // night 13 is still running and night 12 is finished: neither takes a card beside night 14
+  assert.deepEqual(cards.map((card) => card.key), ['event:4', 'event:14', 'event:9', 'event:5']);
+  const night = cards[1];
+  assert.equal(night.name, 'KOTH Night 14');  // the name already opens with the league
+  assert.equal(night.status, '9 Oct 2026');
+  assert.deepEqual(night.primary, { title: 'Sign up', icon: 'mdi-account-plus', color: 'primary', variant: 'elevated', act: 'sign_up' });
+  assert.deepEqual(night.links, [{ title: 'Event page', icon: 'mdi-tournament', to: '/events/14' }]);
+  assert.deepEqual(joinableEvents(cards).map((card) => card.key), ['event:14', 'event:9']);
 });
 
 test('an account with no events gets no cards', () => {

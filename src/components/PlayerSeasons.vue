@@ -3,7 +3,8 @@
      season his team, race, series record, round strip, ladder record and MMR; it
      opens into his series by round and the ladder tab. A cup opens on its placing,
      the series still to play and its event page. The event named by `open` draws the
-     `current` slot instead of the series table. -->
+     `current` slot instead of the series table. On the owner's own page tonight's KOTH
+     night joins the list, crowned, with the races he entered on and its one action. -->
 <template>
   <StatusAlert v-model="errorMessage" />
   <v-expansion-panels v-if="rows.length" v-model="opened" class="season-panels" variant="accordion" flat>
@@ -14,7 +15,10 @@
             <div class="d-flex align-center flex-wrap ga-2 text-h6">
               {{ row.label }}
               <v-chip size="x-small" variant="outlined">{{ row.kindLabel }}</v-chip>
-              <v-chip v-if="row.champion" size="x-small" variant="outlined">
+              <v-chip v-if="row.night" size="x-small" variant="outlined" :color="EVENT_STATE_COLOR[row.night.phase] ?? undefined">
+                <v-icon start size="x-small" color="primary">mdi-crown</v-icon>{{ STATE_LABEL[row.night.phase] ?? row.night.phase }}
+              </v-chip>
+              <v-chip v-else-if="row.champion" size="x-small" variant="outlined">
                 <v-icon start size="x-small" color="primary">mdi-crown</v-icon>Champion
               </v-chip>
               <v-chip v-else-if="row.placing && !row.running" size="x-small" variant="outlined">
@@ -58,6 +62,15 @@
         </div>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
+        <!-- Tonight's night: what he entered on, and the one thing left to do about it -->
+        <section v-if="row.night" class="section d-flex flex-wrap align-center ga-2">
+          <template v-if="row.races.length">
+            <v-chip color="success" size="small" prepend-icon="mdi-check">Signed up</v-chip>
+            <RaceIcon v-for="race in row.races" :key="race" :raceIdentifier="race" />
+          </template>
+          <v-btn v-if="nightAction(row)" :color="nightAction(row).color" :variant="nightAction(row).variant"
+            size="small" :prepend-icon="nightAction(row).icon" to="/koth/dashboard">{{ nightAction(row).text }}</v-btn>
+        </section>
         <slot v-if="row.kind === 'gnl' && row.id === openId && $slots.current" name="current" :row="row" />
         <template v-else-if="row.kind === 'gnl'">
           <section class="section">
@@ -101,7 +114,7 @@
             <PlayerLadderTab :player="player" :seasonId="row.id" />
           </template>
         </template>
-        <section v-else class="section">
+        <section v-else-if="!row.night || row.series.length" class="section">
           <div>{{ row.placing ? `Finished ${row.placing}` : 'No placing yet' }} · won {{ row.wins }}, lost {{ row.losses }}</div>
           <div v-if="row.next" class="mt-2">
             Next series
@@ -126,6 +139,9 @@ import { DateTime } from 'luxon';
 import { useDisplay } from 'vuetify';
 import { useLadderStore, usePlayerStore, useSeasonStore, useSeriesStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
+import { STATE_COLOR as EVENT_STATE_COLOR, STATE_LABEL, timeText } from '@/helpers/event-labels.mjs';
+import { eventActionButton } from '@/helpers/events.mjs';
+import { foldNight } from '@/helpers/koth.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import { eventRows, openRowId } from '@/helpers/player-events.mjs';
 import { currentRound } from '@/helpers/rounds.mjs';
@@ -139,6 +155,8 @@ import W3CMmr from '@/components/W3CMmr.vue';
 const props = defineProps({
   player: { type: Object, required: true },
   open: Number, // the event expanded at first, whose body the current slot draws
+  night: Object, // tonight's KOTH night, the GET /me/events row; null off the owner's page
+  nightRaces: { type: Array, default: () => [] }, // the races he entered that night on
 });
 const opened = ref(props.open ?? null);
 
@@ -159,13 +177,16 @@ const ladderByEvent = ref({});
 
 // The history read names every event of every kind the player stood in; the season
 // list adds the dates and the phase, the per-event reads the series and the ladder
-const rows = computed(() => eventRows({
+const rows = computed(() => foldNight(eventRows({
   history: history.value,
   player: props.player,
   seasons: seasonStore.seasons ?? [],
   seriesByEvent: seriesByEvent.value,
   ladderByEvent: ladderByEvent.value,
-}));
+}), props.night, props.nightRaces));
+
+// The one action word the member read picked for the night; checked in and closed offer none
+const nightAction = (row) => eventActionButton(row.night?.action);
 
 const byRound = (series) => [...series].sort((a, b) =>
   (a.match?.playday ?? 0) - (b.match?.playday ?? 0) || (a.date_time ?? '').localeCompare(b.date_time ?? ''));
@@ -174,6 +195,7 @@ const raceName = (code) => (code ? raceWrapper.getRaceObject(code)?.name ?? code
 
 const day = (iso) => DateTime.fromISO(iso).toFormat('LLL d');
 const dates = (season) => {
+  if (season.starts_at) return timeText(season.starts_at);  // a KOTH night is one evening, not a span
   if (!season.start_date) return '';
   const span = `${day(season.start_date)} – ${season.end_date ? day(season.end_date) : '…'}`;
   const rounds = season.round_count;
@@ -232,8 +254,10 @@ const mmrDelta = (row) => {
 
 // With no event named, the running GNL season opens onto its rounds
 const openId = computed(() => props.open ?? openRowId(rows.value));
-// A reader wants the event with ladder facts in it, which is rarely the one just opened
-const defaultOpen = computed(() => props.open
+// A night he has not entered opens first, because its action is the reason it is here;
+// otherwise a reader wants the event with ladder facts in it, rarely the one just opened
+const defaultOpen = computed(() => (props.night && !props.night.joined ? props.night.id : null)
+  ?? props.open
   ?? rows.value.find(row => row.ladder?.games)?.id
   ?? openId.value);
 // it follows the ladder reads as they land, until the reader opens an event himself

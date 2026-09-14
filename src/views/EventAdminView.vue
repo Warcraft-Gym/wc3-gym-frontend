@@ -471,11 +471,13 @@ const savePlaces = async () => {
   if (await run(() => store.setPlaces(picked.value.id, places))) lobbyOpen.value = false;
 };
 
-// A lobby of the same round that nobody played yet may take one more entrant
+// A lobby of the same round that nobody played yet may take one more entrant. Each one
+// is numbered the way its box is, over the whole round, so the two screens agree.
 const moveTargets = computed(() => series.value
-  .filter((row) => isLobby(row) && row.id !== picked.value?.id
-    && row.round_id === picked.value?.round_id && !isScored(row))
-  .map((row, index) => ({ id: row.id, label: `Lobby ${index + 1}: ${lobbyNames(row)}` })));
+  .filter((row) => isLobby(row) && row.round_id === picked.value?.round_id)
+  .sort((a, b) => (a.sequence ?? a.id) - (b.sequence ?? b.id))
+  .map((row, index) => ({ id: row.id, row, label: `Lobby ${index + 1}: ${lobbyNames(row)}` }))
+  .filter((item) => item.id !== picked.value?.id && !isScored(item.row)));
 const lobbyNames = (row) => (row.sides || []).map((seat) => seat.user?.name || 'empty').join(', ');
 
 const openMove = (seat) => {

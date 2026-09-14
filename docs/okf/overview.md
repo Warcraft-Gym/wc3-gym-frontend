@@ -3,7 +3,7 @@ type: Repository
 title: wc3-gym-frontend
 description: The Vue 3 web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
 resource: https://github.com/Warcraft-Gym/wc3-gym-frontend
-tags: [repository, vue, vuetify, vercel]
+tags: [design, deploy]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: readme

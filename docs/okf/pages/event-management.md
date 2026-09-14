@@ -3,7 +3,7 @@ type: Page
 title: Event management
 description: The admin's path from an empty league to a finished event with awards; the wizard, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
 resource: ../../../src/views/EventWizardView.vue
-tags: [pages, events, admin]
+tags: [pages, events]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: wizard

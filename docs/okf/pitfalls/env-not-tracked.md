@@ -2,7 +2,7 @@
 type: Pitfall
 title: .env is not tracked, and /api is not api/
 description: A missing VITE_BACKEND_URL used to become the string undefined in every URL; now the app throws at load. On Vercel the value must be absolute.
-tags: [pitfall, env, vite]
+tags: [deploy, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

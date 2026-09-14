@@ -3,7 +3,7 @@ type: Convention
 title: Code style
 description: Vue 3 with Vuetify and Pinia, pure helpers in .mjs files with node tests, theme tokens instead of colour values, Title Case page titles, and one-line comments.
 resource: ../../../package.json
-tags: [vue, style, tooling]
+tags: [design, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T14:30:00Z }
 sources:
   - id: package

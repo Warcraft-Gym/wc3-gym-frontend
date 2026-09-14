@@ -3,7 +3,7 @@ type: Page
 title: Players and stats
 description: The players list, one player's page with the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../src/views/PlayersView.vue
-tags: [pages, players, stats]
+tags: [pages, players]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: players

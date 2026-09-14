@@ -2,7 +2,7 @@
 type: Pitfall
 title: The edge-cached read must carry no bearer
 description: A backend route cached at the edge is never cached for a request with an Authorization header, so the wrapper skips the bearer on it; the backend also had to write the CORS header itself.
-tags: [pitfall, cache, fetch]
+tags: [stores, deploy]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

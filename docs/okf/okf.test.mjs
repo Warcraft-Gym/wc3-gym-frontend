@@ -55,6 +55,8 @@ for (const path of walk(BUNDLE)) {
 // YAML reads a bare `a: b` value as a nested key, so a value that holds `: ` is quoted
 const UNQUOTED_COLON = /^\s*(?:- )?[\w-]+: (?!["'[{|>]).*: /m;
 const INDEX_ENTRY = /^\* \[[^\]]+\]\(([^)]+)\) - (.+)$/gm;
+// The areas a concept may be tagged with; `type` already says what kind of file it is
+const TAGS = new Set('pages components design router session stores events series fantasy koth teams players deploy testing tooling'.split(' '));
 
 function description(path) {
     const found = /^description: (.+)$/m.exec(frontmatter(readFileSync(path, 'utf8')) ?? '');
@@ -82,7 +84,10 @@ for (const path of walk(BUNDLE)) {
     test(`${name} metadata`, () => {
         const fm = frontmatter(readFileSync(path, 'utf8')) ?? '';
         assert.match(fm, /^title: \S/m, 'a concept has a title');
-        assert.match(fm, /^tags: \[/m, 'tags is a list');
+        const tags = /^tags: \[(.*)\]$/m.exec(fm);
+        assert.ok(tags, 'tags is a list');
+        const unknown = tags[1].split(',').map((t) => t.trim()).filter((t) => !TAGS.has(t));
+        assert.deepEqual(unknown, [], 'tags outside the vocabulary');
         description(path);
         const hit = UNQUOTED_COLON.exec(fm);
         assert.equal(hit, null, `quote the value: ${JSON.stringify(hit?.[0].trim())}`);

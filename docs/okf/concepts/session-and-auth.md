@@ -3,7 +3,7 @@ type: Domain Concept
 title: Session and auth
 description: Clerk signs a member in with Discord, the backend's /me answer is the session the app reads, a legacy admin token has its own login page, and the fetch wrapper sends the bearer.
 resource: ../../../src/stores/auth.store.js
-tags: [auth, clerk, session]
+tags: [session]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: auth-store

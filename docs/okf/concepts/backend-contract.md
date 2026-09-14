@@ -3,7 +3,7 @@ type: Integration
 title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../src/stores
-tags: [api, backend, contract]
+tags: [stores]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:30:00Z }
 sources:
   - id: stores

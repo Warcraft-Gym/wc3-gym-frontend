@@ -2,7 +2,7 @@
 type: Decision
 title: Clerk in proxy mode on production
 description: Production runs the Clerk production instance through an edge function on this domain, because Clerk cannot own a vercel.app subdomain.
-tags: [decision, clerk, auth]
+tags: [session]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

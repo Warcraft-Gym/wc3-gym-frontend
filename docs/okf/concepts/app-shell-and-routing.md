@@ -3,7 +3,7 @@ type: Domain Concept
 title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
 resource: ../../../src/helpers/router.js
-tags: [router, roles, navigation]
+tags: [router, session]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: router

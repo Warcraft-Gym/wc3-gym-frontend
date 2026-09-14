@@ -3,7 +3,7 @@ type: Convention
 title: Git and pull requests
 description: One branch and one pull request per change, squash merged, pushes batched because every push builds a preview, and the merged combination built before a second merge.
 resource: ../../../.github/workflows/staging-branch.yml
-tags: [git, process, vercel]
+tags: [deploy, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: staging

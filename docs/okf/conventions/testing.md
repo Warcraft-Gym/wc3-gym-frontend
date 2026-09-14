@@ -3,7 +3,7 @@ type: Convention
 title: Testing
 description: Pure helpers have node tests beside them; a user-visible change is verified by rendering the real page, with known traps in worktrees.
 resource: ../../../package.json
-tags: [tests, node, playwright]
+tags: [testing, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: package

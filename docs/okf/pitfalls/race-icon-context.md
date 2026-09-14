@@ -2,7 +2,7 @@
 type: Pitfall
 title: A race icon needs a race for the row
 description: The profile race was passed to the name component on a table with no race dimension; the icon then asserted a fact no row held.
-tags: [pitfall, components, race]
+tags: [components, design]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

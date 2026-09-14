@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import {
   advancingRows, blocks, chainOrder, columns, generateFields, inDivision, isBye, isByeSide,
-  layout, seriesState, standingsGroups, winnerSide, winsFor,
+  layout, seriesState, shownPlayer, standingsGroups, winnerSide, winsFor,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -154,6 +154,14 @@ test('a padded pair is a bye and passes its one side through', () => {
   assert.strictEqual(isBye(S(1, 1, 1, 7, null)), true);
   assert.strictEqual(isByeSide(S(1, 1, 1, 7, null), 2), true);
   assert.strictEqual(isByeSide(S(1, 1, 1, 7, null), 1), false);
+});
+
+test('hiding the results takes the name off a fed side, and leaves a first round side alone', () => {
+  // the semi final once its quarter final ran: side 1 holds the winner it fed, side 2 an entrant
+  const semi = { ...S(9, 2, 1, ['w', 1], 4), player1_id: 1, player1: { id: 1, name: 'P1' } };
+  assert.strictEqual(shownPlayer(semi, 1, false).id, 1);
+  assert.strictEqual(shownPlayer(semi, 1, true), null);
+  assert.strictEqual(shownPlayer(semi, 2, true).id, 4);
   assert.strictEqual(isBye(S(1, 1, 1, 7, 2)), false);
   assert.strictEqual(isBye(S(1, 2, 1, ['w', 1], ['w', 2])), false);
 });

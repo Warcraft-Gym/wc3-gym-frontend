@@ -27,6 +27,11 @@ export const isByeSide = (row, side) => !feederOf(row, side)
   && !(side === 1 ? row.player1_id : row.player2_id);
 export const isBye = (row) => [1, 2].some((side) => isByeSide(row, side));
 
+// The side a box may name. A feeder fills its side with the winner of the series before
+// it, so while results are hidden that side reads as undecided instead of naming him.
+export const shownPlayer = (row, side, hidden = false) => (
+  hidden && feederOf(row, side) ? null : row?.[`player${side}`] || null);
+
 // One column per round, in round order, each holding its series in sequence order.
 // The rounds name the columns; a round the list does not name reads as its number.
 export function columns(series, rounds = []) {

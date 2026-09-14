@@ -29,11 +29,12 @@
           Log in to sign up
         </v-btn>
 
-        <v-btn variant="outlined" color="primary" size="small"
+        <!-- Both targets sit behind a login, so a reader who is not logged in reads neither -->
+        <v-btn v-if="!anonymous" variant="outlined" color="primary" size="small"
           prepend-icon="mdi-account-multiple" :to="`/events/${event.id}/entrants`">
           Entrants
         </v-btn>
-        <v-btn v-if="event.kind === 'gnl'" variant="outlined" color="primary" size="small"
+        <v-btn v-if="!anonymous && event.kind === 'gnl'" variant="outlined" color="primary" size="small"
           prepend-icon="mdi-trophy-outline" :to="`/seasons/${seasonSlug(event)}`">
           Season page
         </v-btn>
@@ -195,8 +196,11 @@ const act = async () => {
 const reload = async () => {
   const [rows, mine] = await Promise.all([
     store.fetchEntrants(event.value.id),
-    // the caller's row lives behind a login, and an older backend answers nothing at all
-    auth.me ? store.myEvents().catch(() => []) : Promise.resolve([]),
+    // the caller's row lives behind a login; a read that fails says so instead of reading as closed
+    auth.me ? store.myEvents().catch((e) => {
+      error.value = `Your own entry did not load: ${e.message}`;
+      return [];
+    }) : Promise.resolve([]),
   ]);
   entrants.value = bySeed(rows);
   row.value = mine.find((r) => r.id === event.value.id) ?? null;

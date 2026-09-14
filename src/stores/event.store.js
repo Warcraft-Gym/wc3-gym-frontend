@@ -89,8 +89,13 @@ export const useEventStore = defineStore({
         async checkInRow(row) {
             const call = checkInFor(row);
             return call.shape === 'round'
-                ? await useAvailabilityStore().setPlayerAvailability(call.answer)
+                ? await this.answerRound(row, true)
                 : await this.checkIn(call.event_id, call.entrant_id);
+        },
+        // The caller answers the next round: the check-in says yes, the blocks hint says no
+        async answerRound(row, available) {
+            return await useAvailabilityStore()
+                .setPlayerAvailability({ ...checkInFor(row).answer, available });
         },
         // Move one entrant into a division and mark it placed by hand, so a reassign leaves it
         async placeEntrant(event_id, entrant_id, placement) {

@@ -1,5 +1,6 @@
-<!-- A member entering one event: the race he plays it on, a battle tag when the event takes
-     anyone and the caller has no linked account, and the eligibility warnings the API answered.
+<!-- A member entering one event: the race he plays it on, a note on a signup-only event, a
+     battle tag when the event takes anyone and the caller has no linked account, and the
+     eligibility warnings the API answered.
      A warning never blocks: the entrant is in, and the chips say what an admin will look at. -->
 <template>
   <v-dialog v-model="show" max-width="520">
@@ -14,6 +15,9 @@
       <v-card-text class="pt-4">
         <template v-if="!entrant">
           <RaceSelect v-model="race" variant="outlined" density="comfortable" label="Race" />
+          <v-text-field v-if="takesNote" v-model="note" variant="outlined" density="comfortable"
+            label="Note" counter="200" maxlength="200" hint="What you want to work on"
+            persistent-hint class="mb-2" />
           <v-text-field v-if="needsTag" v-model="battleTag" variant="outlined" density="comfortable"
             label="Battle tag" hint="Your w3champions name, as Name#1234" persistent-hint />
         </template>
@@ -67,10 +71,13 @@ const saving = ref(false);
 const error = ref(null);
 const race = ref(null);
 const battleTag = ref('');
+const note = ref('');
 const entrant = ref(null);
 
 // An event open to anyone takes a battle tag from a caller whose account names no player
 const needsTag = computed(() => props.event.signup_policy === 'anyone' && !auth.me?.user);
+// A signup-only event is a list of what people want to work on, so it asks for the note
+const takesNote = computed(() => props.event.kind === 'signup');
 const ready = computed(() => !!race.value && (!needsTag.value || battleTag.value.trim().length > 2));
 const warnings = computed(() => entrant.value?.warnings ?? []);
 
@@ -78,6 +85,7 @@ const open = () => {
   entrant.value = null;
   error.value = null;
   battleTag.value = '';
+  note.value = '';
   race.value = defaultSignupRace(auth.me?.user, () => 0);
   show.value = true;
 };
@@ -88,6 +96,7 @@ const submit = async () => {
   try {
     entrant.value = await store.signUp(props.event.id, {
       race: race.value,
+      note: note.value.trim() || null,
       battle_tag: needsTag.value ? battleTag.value.trim() : null,
     });
     emit('signed-up', entrant.value);

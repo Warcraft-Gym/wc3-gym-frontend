@@ -1,6 +1,8 @@
 <!-- One event, open to everyone: what it is, how it plays, who is in it, and the one thing
-     the reader can do about it. A GNL season keeps its own pages, so this one links to them
-     rather than redrawing them. The spoiler switch is the reader's own, kept in this browser. -->
+     the reader can do about it. An event with no stage is a sign-up list, so it reads its
+     entrants against the cap in place of the stage table. A GNL season keeps its own pages,
+     so this one links to them rather than redrawing them. The spoiler switch is the reader's
+     own, kept in this browser. -->
 <template>
   <v-container fluid class="pa-4">
     <StatusAlert v-model="error" />
@@ -32,6 +34,17 @@
           Log in to sign up
         </v-btn>
 
+        <!-- The caller's own blocks cover the next round; the answer is his, the blocks only inform -->
+        <template v-if="hint">
+          <v-chip size="small" color="info" variant="tonal" prepend-icon="mdi-calendar-remove">
+            {{ hint.title }}
+          </v-chip>
+          <v-btn variant="outlined" color="error" size="small" prepend-icon="mdi-close"
+            :loading="answering" @click="answerBlocked">
+            {{ hint.text }}
+          </v-btn>
+        </template>
+
         <!-- Both targets sit behind a login, so a reader who is not logged in reads neither -->
         <v-btn v-if="!anonymous" variant="outlined" color="primary" size="small"
           prepend-icon="mdi-account-multiple" :to="`/events/${event.id}/entrants`">
@@ -43,7 +56,7 @@
         </v-btn>
       </div>
 
-      <v-card elevation="2" class="mt-4">
+      <v-card v-if="!signupOnly" elevation="2" class="mt-4">
         <v-card-title>Stages</v-card-title>
         <v-table density="comfortable">
           <thead>
@@ -79,9 +92,11 @@
         </v-table>
       </v-card>
 
-      <!-- Who is in. A seed reads only once a stage locked its order, so it means something -->
+      <!-- Who is in. A seed reads only once a stage locked its order, so it means something.
+           A sign-up list counts its entrants against the cap and prints what each one wrote. -->
       <v-card elevation="2" class="mt-4">
-        <v-card-title>Entrants</v-card-title>
+        <v-card-title>{{ signupOnly ? 'Sign-ups' : 'Entrants' }}</v-card-title>
+        <v-card-subtitle v-if="signupOnly" class="pb-2">{{ signupCount(event, entrants) }}</v-card-subtitle>
         <v-list v-if="entrants.length" density="compact" class="py-0">
           <v-list-item v-for="entrant in entrants" :key="entrant.id"
             :class="{ 'text-medium-emphasis': entrant.withdrawn_at }">
@@ -91,8 +106,11 @@
               </span>
               <PlayerName v-if="entrant.user" :player="entrant.user" :race="entrant.race" />
               <span v-else>{{ entrantName(entrant) }}</span>
+              <v-icon v-if="entrant.checked_in_at" icon="mdi-check" size="small" color="success"
+                title="Checked in" />
               <span v-if="entrant.withdrawn_at" class="text-caption">withdrawn</span>
             </div>
+            <div v-if="entrant.note" class="text-body-2 text-medium-emphasis note">{{ entrant.note }}</div>
           </v-list-item>
         </v-list>
         <p v-else class="text-medium-emphasis px-4 pb-4 mb-0">No entrants yet</p>
@@ -126,11 +144,13 @@ import PlayerName from '@/components/PlayerName.vue';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { bySeed, entrantName } from '@/helpers/entrants.mjs';
+import { bySeed, bySignup, entrantName, signupCount } from '@/helpers/entrants.mjs';
 import {
   FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, titleOf,
 } from '@/helpers/event-labels.mjs';
-import { eventActionButton, HIDE_RESULTS, hideResultsStored, storeHideResults } from '@/helpers/events.mjs';
+import {
+  blocksHint, eventActionButton, HIDE_RESULTS, hideResultsStored, storeHideResults,
+} from '@/helpers/events.mjs';
 import { saveReturnUrl } from '@/helpers/return-url.mjs';
 import { router } from '@/helpers/router.js';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
@@ -145,6 +165,7 @@ const entrants = ref([]);
 const row = ref(null);  // the caller's own row of /me/events; null for a reader who is not logged in
 const loading = ref(true);
 const acting = ref(false);
+const answering = ref(false);
 const stageData = ref({});
 const dialog = ref(null);
 const draw = ref(null);
@@ -164,6 +185,9 @@ const button = computed(() => (keepsEntrants.value ? eventActionButton(row.value
 const league = computed(() => leagues.value.find((r) => r.id === event.value?.league_id) || null);
 const stages = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position));
 const seedsLocked = computed(() => stages.value.some((stage) => stage.seeds_locked_at));
+// An event that plays no stage is a sign-up list: the entrants are the whole page
+const signupOnly = computed(() => !!event.value && !stages.value.length);
+const hint = computed(() => blocksHint(row.value));
 
 // A fixture pairs two team entrants, so a solo event reads no fixture chip
 const fixtureSeries = computed(() => seriesPerFixture(event.value));
@@ -203,6 +227,19 @@ const act = async () => {
   }
 };
 
+// The caller answers the next round himself; the hint only said what his blocks cover
+const answerBlocked = async () => {
+  answering.value = true;
+  try {
+    await store.answerRound(row.value, false);
+    await reload();
+  } catch (e) {
+    error.value = `That did not go through: ${e.message}`;
+  } finally {
+    answering.value = false;
+  }
+};
+
 // The entrant list and the caller's own row move together: a signup changes both
 const reload = async () => {
   const [rows, mine] = await Promise.all([
@@ -213,7 +250,7 @@ const reload = async () => {
       return [];
     }) : Promise.resolve([]),
   ]);
-  entrants.value = bySeed(rows);
+  entrants.value = signupOnly.value ? bySignup(rows) : bySeed(rows);
   row.value = mine.find((r) => r.id === event.value.id) ?? null;
 };
 
@@ -249,5 +286,9 @@ onMounted(async () => {
   min-width: 2ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+.note {
+  max-width: 70ch;
+  white-space: pre-line;
 }
 </style>

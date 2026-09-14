@@ -3,7 +3,7 @@ type: Domain Concept
 title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
 tags: [router, roles, navigation]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: router
     resource: ../../../src/helpers/router.js
@@ -20,13 +20,15 @@ sources:
 
 `src/helpers/router.js` lists every route with `meta.role`, the lowest session role that may open it, ranked `public < guest < member < captain < admin`. `meta.nav: false` hides a route from the navigation. `meta.season: true` says the path carries a season slug, so the guard loads the season list first.
 
-| Role | Typical routes |
+| Role | Routes |
 |---|---|
-| public | `/login`, `/series/:id`, `/leagues`, `/events`, `/events/:id`, `/report`, `/koth/dashboard`, `/credits`, `/random-stats` |
+| public | `/login`, `/sso-callback`, `/admin-login`, `/series/:id`, `/leagues`, `/leagues/:id`, `/events`, `/events/:id`, `/report`, `/report/:id`, `/koth/dashboard`, `/random-stats`, `/credits`, `/no-access` |
 | guest | `/profile` only; it shows the join-the-Discord card |
-| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/upcoming`, `/team/:id`, `/match/:id`, `/fantasy`, `/ladder`, `/events/:id/entrants` |
+| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/upcoming`, `/seasons/:id`, `/match/:id`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/fantasy`, `/fantasy-registration`, `/ladder` |
 | captain | `/seasons/:id/assign`, `/team/:id/season/:season_id/rounds` (reads; the view gates writes to admins) |
-| admin | `/seasons`, `/seasons/:id/maps`, `/maps`, `/teams`, `/config/*`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/events/new`, `/events/:id/admin`, `/user-guide` |
+| admin | `/seasons`, `/seasons/:id/maps`, `/seasons/:id/achievements`, `/maps`, `/config`, `/config/discord-roles`, `/config/access`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/events/new`, `/events/:id/admin`, `/user-guide` |
+
+`/player-dashboard` redirects to the member's own player page and `/player-stats` to `/players`. What each page does is in the [pages](../pages/index.md) directory.
 
 The guard: a public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path lands on `/` rather than a blank page, because old links from Discord and the website exist.
 

@@ -3,7 +3,7 @@ type: Integration
 title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 tags: [api, backend, contract]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T14:30:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:30:00Z }
 sources:
   - id: stores
     resource: ../../../src/stores
@@ -42,7 +42,7 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 | Store | Routes |
 |---|---|
 | `auth` | `POST /login`, `GET /me` |
-| `season` | `/seasons`, `/seasons/{id}`, `/seasons/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements` |
+| `season` | `/seasons`, `/seasons/{id}`, `/seasons/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements`, `/import`, `/export` |
 | `event` | `/leagues`, `/leagues/{id}`, `/events`, `/events/{id}`, `/me/events`, `/events/{id}/entrants...`, `/divisions`, `/divisions/assign`, `/stages`, `/stages/{id}/seeds`, `/seeds/lock`, `/generate`, `/rounds`, `/series`, `/standings`, `/advance`, `/finish`, `/koth/nights`, `/koth/nights/{id}/close` |
 | `player` | `/users`, `/users/{id}`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/player-series`, `/player-history` |
 | `team` | `/teams`, `/teams/basic`, `/teams/{id}`, `/teams/season/{id}`, `/teams/season/{id}/basic`, `/teams/{id}/seasons/{sid}`, `/players`, `/captains`, `/availability`, `/w3c-sync`, `/teams/{id}/image` |

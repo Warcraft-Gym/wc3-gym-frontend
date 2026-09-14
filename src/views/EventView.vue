@@ -24,7 +24,7 @@
           :prepend-icon="button.icon" :loading="acting" @click="act">
           {{ button.text }}
         </v-btn>
-        <v-btn v-else-if="anonymous && event.signups_open" color="primary" variant="elevated" size="small"
+        <v-btn v-else-if="anonymous && event.signups_open && keepsEntrants" color="primary" variant="elevated" size="small"
           prepend-icon="mdi-login" @click="logIn">
           Log in to sign up
         </v-btn>
@@ -149,7 +149,9 @@ provide(HIDE_RESULTS, hideResults);
 watch(hideResults, (on) => storeHideResults(on));
 
 const anonymous = computed(() => !auth.me);
-const button = computed(() => eventActionButton(row.value?.action));
+// A GNL season signs up on its own page, so it offers no entrant action here
+const keepsEntrants = computed(() => event.value?.kind !== 'gnl');
+const button = computed(() => (keepsEntrants.value ? eventActionButton(row.value?.action) : null));
 const league = computed(() => leagues.value.find((r) => r.id === event.value?.league_id) || null);
 const stages = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position));
 const seedsLocked = computed(() => stages.value.some((stage) => stage.seeds_locked_at));

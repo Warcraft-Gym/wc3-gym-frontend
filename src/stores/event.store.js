@@ -28,8 +28,9 @@ export const useEventStore = defineStore({
         async updateLeague(league_id, league) {
             return await fetchWrapper.put(`${backendUrl}/leagues/${league_id}`, league);
         },
-        async fetchEvents(league_id = null) {
-            const query = league_id ? `?league_id=${league_id}` : '';
+        async fetchEvents(league_id = null, kind = null) {
+            const filters = [league_id && `league_id=${league_id}`, kind && `kind=${kind}`].filter(Boolean);
+            const query = filters.length ? `?${filters.join('&')}` : '';
             this.events = await fetchWrapper.get(`${backendUrl}/events${query}`);
             return this.events;
         },

@@ -2,7 +2,7 @@
 // A fixed game takes the round's map. A loser game takes the map picked by the
 // side that lost the game before, so it is only known once the games are won.
 // Every other rule leaves the game without a map and the reporter names it.
-import { DEFAULT_RULES, gamesOf, winsOf } from './best-of.mjs';
+import { DEFAULT_RULES, winsFor } from './best-of.mjs';
 
 export const otherSide = (side) => (side === 'A' ? 'B' : 'A');
 
@@ -38,12 +38,14 @@ export const scoreOf = (winners) => {
   return ['A', 'B'].map((side) => played.filter((won) => won === side).length);
 };
 
-// How many game rows to show: every game answered, plus the next while the series is open
-export const gameSlots = (mapRules, winners) => {
+// How many game rows to show over a best-of of this many games: every game answered, plus
+// the next while the series is open. A season counts its games off its map rules and a
+// stage carries its best_of, so both hand over a count.
+export const gameSlots = (games, winners) => {
   const [a, b] = scoreOf(winners);
-  const wins = winsOf(mapRules);
+  const wins = winsFor(games);
   if (a >= wins || b >= wins) return a + b;
-  return Math.min(gamesOf(mapRules), a + b + 1);
+  return Math.min(games, a + b + 1);
 };
 
 // The games to report: one entry per game played, as the backend checks them

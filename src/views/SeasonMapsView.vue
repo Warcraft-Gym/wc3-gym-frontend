@@ -94,8 +94,7 @@
               v-for="(rule, i) in rules"
               :key="i"
               :model-value="rule"
-              :items="RULES"
-              item-title="label"
+              :items="MAP_RULES"
               item-value="value"
               :label="`Game ${i + 1}`"
               variant="outlined"
@@ -258,16 +257,11 @@ import { onBeforeRouteLeave, useRoute } from 'vue-router';
 import { useMapStore, useSeasonStore } from '@/stores';
 import { hideMissingImage } from '@/helpers/team-image';
 import { DEFAULT_RULES } from '@/helpers/best-of.mjs';
+import { MAP_RULES, titleOf } from '@/helpers/event-labels.mjs';
 import StatusAlert from '@/components/StatusAlert.vue';
 import LadderImportDialog from '@/components/LadderImportDialog.vue';
 import W3CIcon from '@/components/W3CIcon.vue';
 
-const RULES = [
-  { value: 'veto', label: 'Veto' },
-  { value: 'loser', label: 'Loser picks' },
-  { value: 'host', label: 'Host picks' },
-  { value: 'fixed', label: 'Fixed map' },
-];
 const STEPS = [
   { value: 'Ban_A', label: '+ Ban A', color: 'error' },
   { value: 'Ban_B', label: '+ Ban B', color: 'error' },
@@ -332,7 +326,7 @@ const fills = computed(() => {
   let nextPick = 0;
   let usedLeftOver = 0;
   return rules.value.map((rule, i) => {
-    let source = RULES.find((r) => r.value === rule)?.label || rule;
+    let source = titleOf(MAP_RULES, rule);
     let short = false;
     if (rule === 'veto') {
       if (nextPick < pickSides.length) {

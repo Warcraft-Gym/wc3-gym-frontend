@@ -85,9 +85,6 @@
               <td class="text-right d-none d-md-table-cell">{{ seriesPerEntrant(stage) ?? '—' }}</td>
               <td class="d-none d-md-table-cell">{{ titleOf(SCHEDULING_MODES, stage.scheduling_mode) }}</td>
             </tr>
-            <tr v-if="!stages.length">
-              <td colspan="6" class="text-medium-emphasis py-6 text-center">No stage is set yet.</td>
-            </tr>
           </tbody>
         </v-table>
       </v-card>
@@ -157,7 +154,7 @@ import {
   stateOf, titleOf,
 } from '@/helpers/event-labels.mjs';
 import {
-  blocksHint, eventActionButton, HIDE_RESULTS, hideResultsStored, storeHideResults,
+  actOnEvent, blocksHint, eventActionButton, HIDE_RESULTS, hideResultsStored, storeHideResults,
 } from '@/helpers/events.mjs';
 import { saveReturnUrl } from '@/helpers/return-url.mjs';
 import { router } from '@/helpers/router.js';
@@ -224,22 +221,17 @@ const logIn = () => {
   router.push('/login');
 };
 
-// One action word, one thing to do. A withdraw asks once; the rest go straight through.
+// One action word, one thing to do. The dialog and the draw are this page's own; every
+// other word goes through the shared act.
 const act = async () => {
   const action = row.value?.action;
   if (action === 'sign_up') return dialog.value.open();
   if (action === 'view') return draw.value?.scrollIntoView({ behavior: 'smooth' });
-  if (action === 'withdraw' && !confirm('Withdraw from this event?')) return;
   acting.value = true;
-  try {
-    if (action === 'withdraw') await store.withdraw(event.value.id);
-    if (action === 'check_in') await store.checkInRow(row.value);
-    await reload();
-  } catch (e) {
-    error.value = `That did not go through: ${e.message}`;
-  } finally {
-    acting.value = false;
-  }
+  error.value = await actOnEvent(action, {
+    store, eventId: event.value.id, row: row.value, reload,
+  });
+  acting.value = false;
 };
 
 // The caller answers the next round himself; the hint only said what his blocks cover

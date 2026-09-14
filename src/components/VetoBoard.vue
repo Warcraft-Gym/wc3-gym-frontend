@@ -3,10 +3,13 @@
     <v-row class="mb-4">
       <v-col class="d-flex align-center flex-wrap ga-3">
         <slot />
+        <!-- A team side names a team and no player, so it reads as the team name -->
         <span v-if="board" class="d-flex align-center ga-2 text-medium-emphasis">
-          <PlayerName :player="board.player1" :plain="report" />
+          <span v-if="board.player1?.team_name">{{ board.player1.team_name }}</span>
+          <PlayerName v-else :player="board.player1" :plain="report" />
           <span>vs</span>
-          <PlayerName :player="board.player2" :plain="report" />
+          <span v-if="board.player2?.team_name">{{ board.player2.team_name }}</span>
+          <PlayerName v-else :player="board.player2" :plain="report" />
         </span>
         <v-spacer />
         <v-chip v-if="board && !collapsed" :color="statusColor" variant="tonal">{{ statusLine }}</v-chip>
@@ -218,11 +221,15 @@ const stepByMap = computed(() => new Map(taken.value.map(step => [step.map_id, s
 const rules = computed(() => (board.value?.map_rules || DEFAULT_RULES).split(',').map(rule => rule.trim()).filter(Boolean));
 
 const entrySide = (entry) => (entry || '').split('_').pop().toUpperCase();
-const sideName = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.name || `Player ${side}`;
+const sideOf = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2);
+// A team side carries its team's name and no user id, so the board names the team
+const sideName = (side) => sideOf(side)?.team_name || sideOf(side)?.name || `Player ${side}`;
 const nextAction = computed(() => (order.value[taken.value.length] || '').split('_')[0]);
 
-const viewerId = computed(() => (board.value?.viewer_side === 'A' ? board.value?.player1 : board.value?.player2)?.id);
-const playerId = (side) => (side === 'A' ? board.value?.player1 : board.value?.player2)?.id;
+// The API says which side the caller acts for; a team side names no user, so the id it
+// carries can be null and never stands in for the side
+const viewerId = computed(() => sideOf(board.value?.viewer_side)?.id ?? null);
+const playerId = (side) => sideOf(side)?.id ?? null;
 const canRecord = computed(() => (auth.isAdmin || !!board.value?.viewer_side) && !board.value?.complete);
 
 const statusLine = computed(() => {
@@ -241,7 +248,8 @@ const forcedLast = computed(() => order.value.length >= 2 && taken.value.length 
 // a forced last step goes with the step that forced it
 const canUndo = computed(() => {
   const last = taken.value[taken.value.length - (forcedLast.value ? 2 : 1)];
-  return !!last && (admin.value || last.side === board.value?.viewer_side || last.entered_by === viewerId.value);
+  return !!last && (admin.value || last.side === board.value?.viewer_side
+    || (viewerId.value != null && last.entered_by === viewerId.value));
 });
 
 // a step typed in for the other side names who entered it; an admin who plays neither side is "an admin"

@@ -33,7 +33,6 @@ const feederOf = (row, side) => (side === 1 ? row.slot1_from_series_id : row.slo
 // A row that names neither side is a payload without them, never a bye.
 export const isByeSide = (row, side) => !feederOf(row, side) && !standsOn(row, side)
   && !!standsOn(row, side === 1 ? 2 : 1);
-export const isBye = (row) => [1, 2].some((side) => isByeSide(row, side));
 
 // The side a box may name. A feeder fills its side with the winner of the series before
 // it, so while results are hidden that side reads as undecided instead of naming him.
@@ -221,9 +220,6 @@ export function nextRound(stage, series = [], divisions = []) {
 export const inDivision = (series, divisionId) => (divisionId == null
   ? series.filter((row) => row.division_id == null)
   : series.filter((row) => row.division_id === divisionId));
-
-// The maps one side must win to take the series
-export const winsFor = (bestOf) => Math.floor((bestOf || 3) / 2) + 1;
 
 const ELIMINATION = ['single_elimination', 'double_elimination'];
 

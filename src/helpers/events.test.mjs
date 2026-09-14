@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { blocksHint, checkInFor, eventActionButton, hideResultsStored, homeCards, joinableEvents, seasonAction, storeHideResults } from './events.mjs';
+import { actOnEvent, blocksHint, checkInFor, eventActionButton, hideResultsStored, homeCards, joinableEvents, seasonAction, storeHideResults } from './events.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
@@ -239,4 +239,28 @@ test('the blocked row carries its hint on the card, and answering the round clea
     { season_id: 9, playday: 2, available: false });
   const answered = homeCards({ events: [{ ...blocked, availability_hint: 'answered_no' }], me, seasons, now });
   assert.equal(answered[0].hint, null);
+});
+
+test('the shared act withdraws once the reader says so, checks in, and names a failure', async () => {
+  const calls = [];
+  const store = {
+    withdraw: (id) => calls.push(['withdraw', id]),
+    checkInRow: (entry) => calls.push(['check_in', entry.id]),
+  };
+  const reload = () => calls.push(['reload']);
+  const ask = globalThis.confirm;
+
+  globalThis.confirm = () => false;
+  assert.equal(await actOnEvent('withdraw', { store, eventId: 7, row: null, reload }), null);
+  assert.deepEqual(calls, []);  // the reader said no, so nothing was written
+
+  globalThis.confirm = () => true;
+  assert.equal(await actOnEvent('withdraw', { store, eventId: 7, row: null, reload }), null);
+  assert.equal(await actOnEvent('check_in', { store, eventId: 7, row: { id: 3 }, reload }), null);
+  assert.deepEqual(calls, [['withdraw', 7], ['reload'], ['check_in', 3], ['reload']]);
+
+  const broken = { withdraw: () => { throw new Error('the server said no'); } };
+  assert.equal(await actOnEvent('withdraw', { store: broken, eventId: 7, row: null, reload }),
+    'That did not go through: the server said no');
+  globalThis.confirm = ask;
 });

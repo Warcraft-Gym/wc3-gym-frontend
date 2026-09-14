@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, groupProblem, stagesPayload, stepProblem, stepsFor, wizardProblem } from './event-wizard.mjs';
+import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, groupProblem, stagesPayload, stepProblem, stepsFor } from './event-wizard.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -84,19 +84,19 @@ test('a round robin stage carries its series count and every other format carrie
   assert.equal(stages[2].series_per_entrant_per_round, 1);  // a bracket plays one series a round
 });
 
-test('the stages are numbered in the order they are listed and repeat their map rule', () => {
+test('the stages are written in the order they are listed and repeat their map rule', () => {
   const stages = stagesPayload({
     stages: [
       { name: ' Group ', format: 'round_robin', best_of: 3, map_rule: 'loser', scheduling_mode: 'agreed', advance_count: '2', auto_advance: true },
       { name: '', format: 'single_elimination', best_of: 5, map_rule: 'veto', scheduling_mode: 'assigned', advance_count: '' },
     ],
   });
-  assert.equal(stages[0].position, 1);
   assert.equal(stages[0].name, 'Group');
   assert.equal(stages[0].map_rules, 'loser,loser,loser');
   assert.equal(stages[0].advance_count, 2);
   assert.equal(stages[0].auto_advance, true);
-  assert.equal(stages[1].position, 2);
+  // EventStageWrite declares no position: the list order is the position
+  assert.ok(stages.every((stage) => !('position' in stage)));
   assert.equal(stages[1].name, null);
   assert.equal(stages[1].map_rules, 'veto,loser,loser,loser,loser');
   assert.equal(stages[1].advance_count, null);
@@ -126,8 +126,6 @@ test('a step names what it still needs', () => {
   assert.equal(stepProblem({ ...named, stages: [{ best_of: 2 }] }, 'stages'), 'A best-of is an odd number of games.');
   assert.equal(stepProblem({ ...named, division_count: 1 }, 'divisions'), 'Two divisions or more, or none at all.');
   assert.equal(stepProblem(named, 'review'), null);
-  assert.equal(wizardProblem(named), null);
-  assert.equal(wizardProblem(form), 'Pick the league this event runs in.');
 });
 
 test('the create body carries the stages, so one write makes the whole event', () => {
@@ -135,7 +133,6 @@ test('the create body carries the stages, so one write makes the whole event', (
   assert.equal(body.name, 'Autumn cup');
   assert.equal(body.league_id, 2);
   assert.equal(body.stages.length, 1);
-  assert.equal(body.stages[0].position, 1);
 });
 
 
@@ -157,8 +154,7 @@ test('a signup-only event writes an explicit empty stage list', () => {
 test('the stages step never holds a signup-only event back', () => {
   const form = { ...blankForm({ id: 2 }), name: 'Coaching night', kind: 'signup', stages: [] };
   assert.equal(stepProblem(form, 'stages'), 'Add at least one stage.');  // the step is not asked for
-  assert.equal(wizardProblem(form), null);
-  assert.equal(wizardProblem({ ...form, kind: 'cup' }), 'Add at least one stage.');
+  assert.deepEqual(stepsFor(form).map((step) => step.key).includes('stages'), false);
 });
 
 test('only a Swiss stage counts rounds and only a round robin splits into groups', () => {

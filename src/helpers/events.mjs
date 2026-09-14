@@ -128,6 +128,22 @@ const ACTION_BUTTON = {
 
 export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
 
+// The action word the home card and the event page both act on: a withdraw asks once,
+// then the store call and the reload. It answers the sentence a failure reads, or null,
+// so each page keeps its own loading flag. `sign_up` and `view` never reach here, because
+// one opens its own dialog and the other scrolls its own draw.
+export async function actOnEvent(action, { store, eventId, row, reload }) {
+  if (action === 'withdraw' && !globalThis.confirm('Withdraw from this event?')) return null;
+  try {
+    if (action === 'withdraw') await store.withdraw(eventId);
+    if (action === 'check_in') await store.checkInRow(row);
+    await reload();
+    return null;
+  } catch (error) {
+    return `That did not go through: ${error.message}`;
+  }
+}
+
 // The call a check-in makes, from the shape the event answers: an event checks in through the
 // caller's own entrant row, a round through the next round's availability. Every caller
 // dispatches here, so the two shapes are decided in one place.
@@ -142,8 +158,9 @@ export function checkInFor(row) {
 // stays out of SESSION_KEYS. One key for the whole app: the switch is the viewer's.
 const HIDE_RESULTS_KEY = 'hideResults';
 
-// The Vue provide key the stage drawing reads the switch through
-export const HIDE_RESULTS = 'hideResults';
+// The Vue provide key the stage drawing reads the switch through; a Symbol, so it can
+// never be confused with the storage key above
+export const HIDE_RESULTS = Symbol('hideResults');
 
 export function hideResultsStored(store = globalThis.localStorage) {
   try {

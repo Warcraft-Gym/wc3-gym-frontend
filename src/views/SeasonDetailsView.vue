@@ -12,7 +12,7 @@
     <!-- The season is one event of the GNL league, so it wears the shared event header -->
     <EventHeader :event="season" />
     <div class="d-flex flex-wrap ga-2 mt-3 mb-4">
-      <v-chip size="small" variant="tonal" prepend-icon="mdi-calendar-week">{{ season.round_count }} rounds</v-chip>
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-calendar-range">{{ season.round_count }} rounds</v-chip>
       <v-chip size="small" variant="tonal" prepend-icon="mdi-account-group">{{ teams.length }} teams</v-chip>
     </div>
 

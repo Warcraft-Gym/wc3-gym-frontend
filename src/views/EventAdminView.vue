@@ -113,7 +113,7 @@
         <v-card-title class="bg-primary">Add challenger</v-card-title>
         <v-card-text class="pt-4">
           <StatusAlert v-model="dialogError" />
-          <v-select v-model="challenger" :items="challengerItems" item-value="id" :item-title="entrantName"
+          <v-select v-model="challenger" :items="challengerItems" item-value="id" :item-title="challengerTitle"
             label="Entrant" variant="outlined" density="comfortable" hide-details>
             <template #selection="{ item }">
               <PlayerName v-if="item.raw.user" :player="item.raw.user" :race="item.raw.race" plain />
@@ -294,7 +294,7 @@
         <v-card-title class="bg-primary">Enter a result</v-card-title>
         <v-card-text class="pt-4">
           <StatusAlert v-model="dialogError" />
-          <p class="text-subtitle-1 mb-4">{{ sideName(1) }} {{ score[0] }} – {{ score[1] }} {{ sideName(2) }}</p>
+          <p class="text-subtitle-1 mb-4">{{ nameOf(1) }} {{ score[0] }} – {{ score[1] }} {{ nameOf(2) }}</p>
 
           <v-alert v-if="scored" type="info" variant="tonal" density="compact" class="mb-4">
             This series carries a result. Reopening it clears every side it feeds.
@@ -305,8 +305,8 @@
               <div class="text-subtitle-2 mb-1">Game {{ game }}</div>
               <v-btn-toggle :model-value="winners[game - 1]" color="primary" divided variant="outlined"
                 density="comfortable" class="d-flex" @update:model-value="setWinner(game, $event)">
-                <v-btn value="A" class="flex-grow-1">{{ sideName(1) }} won</v-btn>
-                <v-btn value="B" class="flex-grow-1">{{ sideName(2) }} won</v-btn>
+                <v-btn value="A" class="flex-grow-1">{{ nameOf(1) }} won</v-btn>
+                <v-btn value="B" class="flex-grow-1">{{ nameOf(2) }} won</v-btn>
               </v-btn-toggle>
             </div>
             <p class="text-caption text-medium-emphasis mb-4">
@@ -319,8 +319,8 @@
           <div class="text-subtitle-2 mb-2">No game played</div>
           <v-btn-toggle v-model="awardSide" color="primary" divided variant="outlined"
             density="comfortable" class="d-flex mb-2">
-            <v-btn :value="1" class="flex-grow-1">{{ sideName(1) }}</v-btn>
-            <v-btn :value="2" class="flex-grow-1">{{ sideName(2) }}</v-btn>
+            <v-btn :value="1" class="flex-grow-1">{{ nameOf(1) }}</v-btn>
+            <v-btn :value="2" class="flex-grow-1">{{ nameOf(2) }}</v-btn>
           </v-btn-toggle>
           <div class="d-flex ga-2">
             <v-btn variant="outlined" size="small" :disabled="!awardSide || scored || saving"
@@ -365,14 +365,14 @@ import EventHeader from '@/components/EventHeader.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } from '@/helpers/event-labels.mjs';
-import { scoreOf } from '@/helpers/map-order.mjs';
+import { winsFor } from '@/helpers/best-of';
+import { gameSlots, scoreOf } from '@/helpers/map-order.mjs';
 import {
   advancingRows, chainChallengers, drawsByRound, generateFields, isLobby, isScored,
-  lobbySeats, lobbyTargets, nextRound, pendingChainSeries, sideName as nameOfSide,
-  standsOn, winsFor,
+  lobbySeats, lobbyTargets, nextRound, pendingChainSeries, sideName, standsOn,
 } from '@/helpers/stage-view.mjs';
 import { awardList, placeIcon, placeMedal } from '@/helpers/awards.mjs';
-import { rostersByEntrant } from '@/helpers/entrants.mjs';
+import { entrantName, rostersByEntrant } from '@/helpers/entrants.mjs';
 import { useEventStore, useTeamStore } from '@/stores';
 
 const route = useRoute();
@@ -445,7 +445,9 @@ const isChain = computed(() => stage.value?.format === 'koth');
 const pendingCount = computed(() => pendingChainSeries(series.value, event.value?.divisions).length);
 const divisionName = (id) => event.value?.divisions?.find((band) => band.id === id)?.name || '';
 const challengerItems = computed(() => chainChallengers(entrants.value, series.value));
-const entrantName = (row) => row.user?.name || row.team?.name || 'Unnamed';
+// The picker needs a plain string for a row that PlayerName draws itself; a row with no
+// name at all still reads as something
+const challengerTitle = (row) => entrantName(row) || 'Unnamed';
 const entrantLine = (row) => [divisionName(row.division_id), row.mmr ? `${row.mmr} MMR` : ''].filter(Boolean).join(' · ');
 
 const load = async () => {
@@ -608,16 +610,13 @@ const scored = computed(() => isScored(picked.value));
 const bothSides = computed(() => !!(standsOn(picked.value, 1) && standsOn(picked.value, 2)));
 const wins = computed(() => winsFor(stage.value?.best_of));
 const score = computed(() => scoreOf(winners.value));
-const gameRows = computed(() => {
-  const [a, b] = score.value;
-  return a >= wins.value || b >= wins.value ? a + b : Math.min(stage.value?.best_of || 3, a + b + 1);
-});
+const gameRows = computed(() => gameSlots(stage.value?.best_of || 3, winners.value));
 const validScore = computed(() => {
   const [a, b] = score.value;
   return bothSides.value && (a === wins.value) !== (b === wins.value) && Math.max(a, b) === wins.value;
 });
 
-const sideName = (side) => nameOfSide(picked.value, side) || `Side ${side}`;
+const nameOf = (side) => sideName(picked.value, side) || `Side ${side}`;
 // A changed winner drops the games after it: they were played from a different score
 const setWinner = (game, side) => {
   winners.value[game - 1] = side || null;
@@ -636,13 +635,17 @@ const award = async (kind) => {
   if (!dialogError.value) resultOpen.value = false;
 };
 
+// The one refusal a force answers, as app/services/stage_engine.py on_reopened words it
+const NEEDS_FORCE = 'A later series already carries a result';
+
 const reopen = async (force) => {
   const cleared = { player1_score: null, player2_score: null };
   const ok = await run(() => store.scoreSeries(picked.value.id, cleared, force));
   if (ok) {
     confirmForce.value = false;
     resultOpen.value = false;
-  } else if (!force) {
+  } else if (!force && (dialogError.value || '').includes(NEEDS_FORCE)) {
+    // every other failure is an error, not a question, so it stays in the alert
     confirmForce.value = true;
   }
 };

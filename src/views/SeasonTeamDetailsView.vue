@@ -92,7 +92,8 @@
     </v-card>
 
     <!-- The roster of this season: the captains an admin sets, then the players -->
-    <TeamRoster :captains="seasonCaptains" :members="players">
+    <TeamRoster :captains="seasonCaptains" :members="players"
+      no-captains="No captains recorded for this season." no-members="No members recorded for this season.">
       <template #captains-actions>
         <v-card-text v-if="auth.isAdmin" class="pa-0">
           <v-toolbar flat height="auto">

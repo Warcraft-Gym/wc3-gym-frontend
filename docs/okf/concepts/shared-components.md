@@ -1,9 +1,9 @@
 ---
 type: Domain Concept
 title: Shared components
-description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, and when a race icon may show.
+description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, and how the veto board knows its side.
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T14:30:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -14,6 +14,12 @@ sources:
   - id: grouped-table
     resource: ../../../src/components/GroupedTable.vue
     title: GroupedTable
+  - id: stage-view
+    resource: ../../../src/components/StageView.vue
+    title: StageView
+  - id: veto-board
+    resource: ../../../src/components/VetoBoard.vue
+    title: VetoBoard
 ---
 
 `DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle.
@@ -33,6 +39,17 @@ A race icon asserts a fact about a row. Show one only when the row has a race: t
 # GroupedTable
 
 The one table for groups of rows: a tinted clickable header row per group, detail rows on the same column grid, so a detail number sits under the group total it adds up to. Never nest a table inside a table cell. Numeric columns right-aligned; column titles bare nouns. See [the decision](../decisions/grouped-table.md).
+
+# StageView
+
+`StageView` draws one stage per division in any format. `DESIGN.md` describes the drawing. Two rules took a decision:
+
+- The standings card is the first child of the stage in the DOM, so a screen reader and a keyboard user meet the table before the rounds. A bracket alone pushes it under the draw with CSS `order`, because a bracket is read first and ranked after. No other page reorders with CSS.
+- The third-place box names itself off the stage's `third_place` flag and the two loser slots its series carries, never off the column's name.
+
+# VetoBoard
+
+`VetoBoard` reads which side the viewer acts for from the board answer's `viewer_side`; it never works the side out from ids on the client. A side that is a team shows its team name when the answer sets `team_name`, and the player through `PlayerName` otherwise. See [the backend contract](backend-contract.md).
 
 # The rest
 

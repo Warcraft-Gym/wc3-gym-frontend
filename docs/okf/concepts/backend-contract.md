@@ -3,7 +3,7 @@ type: Integration
 title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 tags: [api, backend, contract]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T14:30:00Z }
 sources:
   - id: stores
     resource: ../../../src/stores
@@ -31,6 +31,7 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 - A series answers `player1_race` / `player2_race` resolved, and takes `player1_off_race` / `player2_off_race` on a write.
 - Every datetime is UTC and ends in `Z`; Luxon reads it and shows the viewer's zone.
 - The veto board answer carries `week_map_id` for the fixed map of game 1; the name is kept on purpose.
+- The veto board answer carries `viewer_side` (`A`, `B`, or null for an admin, who edits either side). Each side is a player or a team: `id` and `name` are the user's, or null for a team side, which sets `team_id` and `team_name` instead.
 
 # The session answer
 

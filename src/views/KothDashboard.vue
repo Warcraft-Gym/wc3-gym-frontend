@@ -1,410 +1,188 @@
+<!-- Tonight's KOTH night, open to everyone and drawn from the event reads: one column per
+     bracket with its standing king, everyone signed up for it, and the chain the throne is
+     played on. `?mode=clean` drops the two buttons, so the page can sit in a stream. -->
 <template>
-  <div class="koth-dashboard-wrapper">
-    <v-container fluid class="pa-6 koth-dashboard">
-      <v-overlay v-model="initialLoad" persistent class="loading-overlay align-center justify-center">
-        <v-progress-circular indeterminate size="64" width="8" color="primary" />
-      </v-overlay>
+  <div class="night">
+    <v-container fluid class="pa-6">
+      <StatusAlert v-model="error" />
+      <v-progress-linear v-if="loading" indeterminate />
 
-      <!-- No event, or the load failed: this page has no app bar, so it must say so -->
-      <div v-if="loadError || (!event && !initialLoad)" class="text-center py-12 text-medium-emphasis">
-        <v-icon size="64" class="text-disabled">mdi-crown-outline</v-icon>
-        <div class="text-h6 mt-3">{{ loadError || 'No King of the Hill night is running right now.' }}</div>
+      <div v-if="!event && !loading" class="text-center py-12 text-medium-emphasis">
+        <v-icon size="64" class="text-disabled" icon="mdi-crown-outline" />
+        <p class="text-h6 mt-3 mb-0">No night open tonight</p>
       </div>
 
-      <!-- Event Header -->
-      <div v-if="event" class="text-center mb-8">
-        <h1 class="text-h5 text-md-h2 font-weight-bold mb-2">
-          <v-icon size="48" color="primary" class="mr-3">mdi-crown</v-icon>
-          {{ eventLabel(event) }}
-        </h1>
-        <p v-if="event.description" class="text-h6 text-medium-emphasis">{{ event.description }}</p>
-      </div>
+      <template v-if="event">
+        <EventHeader :event="event" />
 
-      <!-- Signup Button -->
-      <div v-if="event && !isCleanMode" class="text-center mb-6">
-        <v-btn
-          color="primary"
-          size="x-large"
-          class="signup-btn"
-          elevation="8"
-          @click="showSignupDialog = true"
-        >
-          <v-icon start>mdi-account-plus</v-icon>
-          Sign Up to Compete
-        </v-btn>
-        <v-btn
-          v-if="mySignups.length"
-          color="error"
-          variant="tonal"
-          size="large"
-          class="ml-3"
-          :loading="isWithdrawing"
-          @click="showWithdrawConfirm = true"
-        >
-          <v-icon start>mdi-account-minus</v-icon>
-          Withdraw
-        </v-btn>
-      </div>
-
-    <!-- Brackets Grid -->
-    <v-row v-if="event" class="mb-8">
-      <v-col v-for="bracket in [1, 2, 3]" :key="bracket" cols="12" md="4">
-        <v-card elevation="8" class="bracket-card">
-          <v-card-title class="bracket-header text-center py-4">
-            <div class="d-flex align-center justify-center">
-              <img :src="getBracketIcon(bracket)" alt="Bracket Icon" style="width: 60px; height: 60px;" class="mr-3" />
-              <div class="text-h5 font-weight-bold">{{ kothStore.getBracketThresholdText(event)[bracket] || '' }}</div>
-            </div>
-          </v-card-title>
-          
-          <v-card-text class="pa-4">
-            <!-- Kings Section -->
-            <div v-if="kothStore.getBracketKings(bracket).length > 0" class="mb-4">
-              <v-card 
-                v-for="king in kothStore.getBracketKings(bracket)" 
-                :key="king.id" 
-                variant="outlined" 
-                class="king-card mb-3 pa-4"
-              >
-                <v-row align="center" no-gutters>
-                  <v-col>
-                    <PlayerName class="text-h5 font-weight-bold" :player="kingPlayer(king)" :race="king.race" />
-                    <div class="text-subtitle-1 text-medium-emphasis">{{ king.mmr }} MMR</div>
-                  </v-col>
-                  <v-col cols="auto">
-                    <v-icon color="primary" size="56">mdi-crown</v-icon>
-                  </v-col>
-                </v-row>
-              </v-card>
-            </div>
-            <div v-else class="text-center py-4 text-medium-emphasis">
-              <v-icon size="56" class="text-disabled">mdi-crown-outline</v-icon>
-              <div class="mt-2 text-body-1">No King Yet</div>
-            </div>
-
-            <v-divider class="my-4"></v-divider>
-
-            <!-- Signed Up Players -->
-            <div class="players-section">
-              <div v-if="kothStore.getBracketPlayers(bracket).length > 0" class="players-list">
-                <div
-                  v-for="player in kothStore.getBracketPlayers(bracket)"
-                  :key="player.battleTag"
-                  class="player-item mb-2 pa-3"
-                >
-                  <PlayerName class="text-h6" :player="player" />
-                  <div v-for="signup in player.signups" :key="signup.id" class="race-row d-flex align-center ga-2">
-                    <RaceIcon v-if="signup.race" :raceIdentifier="signup.race" />
-                    <span class="text-body-1 text-medium-emphasis">{{ signup.mmr }} MMR</span>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-center py-4 text-medium-emphasis text-body-1">
-                No players signed up
-              </div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- Signup Dialog -->
-    <ConfirmDeleteDialog
-      v-model="showWithdrawConfirm"
-      message="Withdraw all your signups from this event?"
-      @confirm="withdraw"
-      @cancel="showWithdrawConfirm = false"
-    />
-
-    <v-dialog v-model="showSignupDialog" max-width="500px" persistent>
-      <v-card>
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-account-plus</v-icon>
-          Sign up for {{ eventLabel(event) }}
-        </v-card-title>
-        
-        <v-card-text class="pt-4">
-          <v-row dense>
-            <template v-if="!profileBattleTag">
-              <v-col cols="12">
-                <v-text-field
-                  v-model="signupForm.battle_tag"
-                  label="BattleTag"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-shield-account"
-                  hint="Required. Format: Name#1234"
-                  persistent-hint
-                  :rules="[v => !!v || 'BattleTag is required']"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="signupForm.twitch_username"
-                  label="Twitch Username"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-twitch"
-                  hint="Required. Your Twitch username"
-                  persistent-hint
-                  :rules="[v => !!v || 'Twitch username is required']"
-                />
-              </v-col>
-              <v-col cols="12">
-                <RaceSelect v-model="signupForm.race" />
-              </v-col>
-            </template>
-            <template v-else>
-              <v-col cols="12" class="text-body-1 mb-2">
-                Signing up as <strong>{{ profileBattleTag }}</strong>
-              </v-col>
-              <v-col cols="12">
-                <RaceSelect
-                  v-model="signupForm.races"
-                  multiple
-                  chips
-                  label="Races"
-                  hint="One signup per race, each in the bracket its MMR cuts into"
-                  persistent-hint
-                />
-              </v-col>
-            </template>
-          </v-row>
-          
-          <v-alert v-if="signupError" type="error" variant="tonal" class="mt-4" closable @click:close="signupError = null">
-            {{ signupError }}
-          </v-alert>
-          <v-alert v-if="signupSuccess" type="success" variant="tonal" class="mt-4" closable @click:close="signupSuccess = null">
-            {{ signupSuccess }}
-          </v-alert>
-        </v-card-text>
-        
-        <v-card-actions class="px-4 py-3">
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="closeSignupDialog">Cancel</v-btn>
-          <v-btn 
-            color="primary" 
-            prepend-icon="mdi-check" 
-            @click="submitSignup"
-            :disabled="!profileBattleTag && (!signupForm.battle_tag || !signupForm.twitch_username)"
-          >
-            Sign Up
+        <div v-if="!cleanMode" class="d-flex flex-wrap align-center ga-3 mt-4">
+          <v-btn v-if="event.signups_open && !mine" color="primary" variant="elevated" size="small"
+            prepend-icon="mdi-account-plus" @click="dialog.open()">
+            Sign up
           </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          <v-btn v-if="mine" color="error" variant="tonal" size="small" prepend-icon="mdi-account-minus"
+            :loading="withdrawing" @click="withdraw">
+            Withdraw
+          </v-btn>
+          <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
+            {{ standing.length }} entrants
+          </v-chip>
+        </div>
+
+        <v-row class="mt-2">
+          <v-col v-for="bracket in brackets" :key="bracket.id" cols="12" md="4">
+            <v-card elevation="2" class="h-100">
+              <v-card-title class="bg-primary">{{ bracket.name }}</v-card-title>
+
+              <div class="king pa-4">
+                <template v-if="bracket.king">
+                  <v-icon size="28" icon="mdi-crown" class="crown" aria-hidden="true" />
+                  <div>
+                    <PlayerName class="text-h6" :player="bracket.king.user" :race="bracket.king.race" />
+                    <div class="text-caption text-medium-emphasis">
+                      {{ bracket.king.mmr ? `${bracket.king.mmr} MMR` : 'Holds the throne' }}
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="text-medium-emphasis">No king yet</div>
+              </div>
+
+              <v-divider />
+
+              <v-list v-if="bracket.entrants.length" density="compact" class="py-0">
+                <v-list-item v-for="entrant in bracket.entrants" :key="entrant.id">
+                  <div class="d-flex align-center ga-3">
+                    <PlayerName v-if="entrant.user" :player="entrant.user" :race="entrant.race" />
+                    <span v-else>{{ entrantName(entrant) }}</span>
+                    <span v-if="entrant.mmr" class="text-caption text-medium-emphasis">{{ entrant.mmr }} MMR</span>
+                  </div>
+                </v-list-item>
+              </v-list>
+              <p v-else class="text-medium-emphasis px-4 py-3 mb-0">Nobody signed up yet</p>
+
+              <div v-if="stage && bracket.chain.length" class="px-4 pb-2">
+                <StageView :stage="stage" :series="bracket.chain" :rounds="rounds" :divisions="[bracket]"
+                  @open-series="row => router.push(`/series/${row.id}`)" />
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <SignupDialog ref="dialog" :event="event" @signed-up="load" />
+      </template>
     </v-container>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useKothStore } from '@/stores';
-import { useAuthStore } from '@/stores';
-import { storeToRefs } from 'pinia';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { eventLabel } from '@/helpers/event-labels.mjs';
-import { kingPlayer } from '@/helpers/players.mjs';
-import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
-import bracketSilverIcon from '@/assets/media/bracket-silver.png';
-import bracketGoldIcon from '@/assets/media/bracket-gold.png';
-import bracketDiamondIcon from '@/assets/media/bracket-diamond.png';
 
+import EventHeader from '@/components/EventHeader.vue';
+import PlayerName from '@/components/PlayerName.vue';
+import SignupDialog from '@/components/SignupDialog.vue';
+import StageView from '@/components/StageView.vue';
+import StatusAlert from '@/components/StatusAlert.vue';
+import { bySeed, entrantName } from '@/helpers/entrants.mjs';
+import { openNight } from '@/helpers/koth.mjs';
+import { router } from '@/helpers/router.js';
+import { inDivision, isScored } from '@/helpers/stage-view.mjs';
+import { useAuthStore, useEventStore } from '@/stores';
 
 const route = useRoute();
-const isCleanMode = computed(() => route.query.mode === 'clean');
+const auth = useAuthStore();
+const store = useEventStore();
 
-const kothStore = useKothStore();
-const authStore = useAuthStore();
-const { activeEvent: event } = storeToRefs(kothStore);
+// A stream reads the brackets alone, so the clean page offers nothing to click
+const cleanMode = computed(() => route.query.mode === 'clean');
 
-// A logged-in player whose row carries a battle tag signs up from his profile
-const profileBattleTag = computed(() => authStore.me?.user?.battleTag || null);
+const event = ref(null);
+const entrants = ref([]);
+const series = ref([]);
+const rounds = ref([]);
+const standings = ref([]);
+const loading = ref(true);
+const withdrawing = ref(false);
+const error = ref(null);
+const dialog = ref(null);
+let timer = null;
 
-// the caller's own active signups on this event, by folded battle tag
-const fold = (tag) => String(tag || '').trim().toLowerCase();
-const mySignups = computed(() => (kothStore.signups || []).filter(
-  (s) => s.is_active && profileBattleTag.value && fold(s.battle_tag) === fold(profileBattleTag.value)
-));
-const isWithdrawing = ref(false);
-const showWithdrawConfirm = ref(false);
+// A night plays one koth stage; a night nobody drew yet has none of its series
+const stage = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position)[0] || null);
+const standing = computed(() => entrants.value.filter((row) => !row.withdrawn_at));
+const mine = computed(() => standing.value.find((row) => row.user?.id && row.user.id === auth.me?.user?.id) || null);
 
-async function withdraw() {
-  showWithdrawConfirm.value = false;
-  isWithdrawing.value = true;
-  try {
-    await kothStore.withdrawMe();
-    await loadDashboardData();
-  } catch (error) {
-    console.error('Failed to withdraw:', error);
-  } finally {
-    isWithdrawing.value = false;
+// One column per bracket, strongest first. The king is the top of the bracket's table,
+// which the engine sorts him to once the chain has scored a series.
+const brackets = computed(() => [...(event.value?.divisions || [])]
+  .sort((a, b) => a.position - b.position)
+  .map((division) => {
+    const chain = inDivision(series.value, division.id);
+    const top = standings.value.find((group) => group.division_id === division.id)?.rows?.[0];
+    return {
+      ...division,
+      entrants: bySeed(standing.value.filter((row) => row.division_id === division.id)),
+      king: chain.some(isScored) ? entrants.value.find((row) => row.id === top?.entrant_id) || null : null,
+      chain,
+    };
+  }));
+
+const load = async () => {
+  const night = openNight(await store.fetchEvents(null, 'koth'));
+  if (!night) {
+    event.value = null;
+    return;
   }
-}
+  const [full, rows] = await Promise.all([store.fetchEvent(night.id), store.fetchEntrants(night.id)]);
+  event.value = full;
+  entrants.value = rows;
+  const first = [...(full.stages || [])].sort((a, b) => a.position - b.position)[0];
+  // A stage nobody drew yet answers nothing, and the columns show the signups alone
+  const [drawn, table] = first
+    ? await Promise.all([
+      store.fetchStage(full.id, first.id).catch(() => null),
+      store.fetchStandings(full.id, first.id).catch(() => []),
+    ])
+    : [null, []];
+  series.value = drawn?.series || [];
+  rounds.value = drawn?.rounds || [];
+  standings.value = table;
+};
 
-const showSignupDialog = ref(false);
-const signupError = ref(null);
-const signupSuccess = ref(null);
-const signupForm = ref({
-  battle_tag: '',
-  twitch_username: '',
-  race: null,
-  races: []
-});
-let refreshInterval = null;
-const initialLoad = ref(true);
-const loadError = ref(null);
+const reload = async () => {
+  try {
+    await load();
+    error.value = null;
+  } catch (e) {
+    error.value = `The night did not load: ${e.message}`;
+  }
+};
+
+const withdraw = async () => {
+  if (!confirm('Withdraw from tonight?')) return;
+  withdrawing.value = true;
+  try {
+    await store.withdraw(event.value.id);
+    await load();
+  } catch (e) {
+    error.value = `The withdraw did not go through: ${e.message}`;
+  } finally {
+    withdrawing.value = false;
+  }
+};
 
 onMounted(async () => {
-  await loadDashboardData();
-  initialLoad.value = false;
-  // Auto-refresh every 30 seconds
-  refreshInterval = setInterval(loadDashboardData, 30000);
+  await reload();
+  loading.value = false;
+  // The page hangs on a stream all night, so it reads itself again every 30 seconds
+  timer = setInterval(reload, 30000);
 });
 
-onUnmounted(() => {
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
-  }
-});
-
-async function loadDashboardData() {
-  try {
-    // The active event is the one the signup and the withdraw write to
-    await kothStore.fetchActiveEvent();
-    loadError.value = null;
-  } catch (error) {
-    // 404 means no event is active; anything else is a failure the 30 s retry may clear
-    const noEvent = error.status === 404;
-    loadError.value = noEvent ? null : 'Could not load the event — retrying.';
-    if (noEvent) kothStore.$patch({ activeEvent: null, signups: [] });
-    console.error('Failed to load dashboard data:', error);
-  }
-}
-
-
-
-function getBracketIcon(bracket) {
-  const icons = { 
-    1: bracketSilverIcon,   // Silver shield for lowest bracket
-    2: bracketGoldIcon,     // Gold shield for middle bracket
-    3: bracketDiamondIcon   // Diamond shield for highest bracket
-  };
-  return icons[bracket] || bracketSilverIcon;
-}
-
-function closeSignupDialog() {
-  showSignupDialog.value = false;
-  signupForm.value = {
-    battle_tag: '',
-    twitch_username: '',
-    race: null
-  };
-  signupError.value = null;
-  signupSuccess.value = null;
-}
-
-async function submitSignup() {
-  if (!event.value) return;
-  
-  try {
-    signupError.value = null;
-    signupSuccess.value = null;
-
-    if (profileBattleTag.value) {
-      const newSignups = await kothStore.signupMe(signupForm.value.races);
-      signupSuccess.value = `Successfully signed up! ${newSignups.length} bracket entr${newSignups.length === 1 ? 'y' : 'ies'} added.`;
-      await loadDashboardData();
-      setTimeout(closeSignupDialog, 2000);
-      return;
-    }
-
-    await kothStore.createPublicSignup({
-      twitch_username: signupForm.value.twitch_username || null,
-      battle_tag: signupForm.value.battle_tag,
-      race: signupForm.value.race || null,
-    });
-    
-    signupSuccess.value = 'Successfully signed up! You have been added to the brackets.';
-    
-    // Refresh data to show new signup
-    await loadDashboardData();
-    
-    // Close dialog after 2 seconds
-    setTimeout(() => {
-      closeSignupDialog();
-    }, 2000);
-  } catch (error) {
-    signupError.value = error.message || 'Failed to sign up. Please try again.';
-  }
-}
+onUnmounted(() => clearInterval(timer));
 </script>
 
 <style scoped>
-.koth-dashboard-wrapper {
-  background: rgb(var(--v-theme-background));
-  min-height: 100vh;
-}
-
-.koth-dashboard {
-  min-height: 100vh;
-}
-
-.loading-overlay {
-  z-index: 999;
-}
-
-.bracket-card {
-  background: rgba(var(--v-theme-surface), 0.95) !important;
-  border-radius: 16px !important;
-  overflow: hidden;
-  transition: transform 0.2s;
-}
-
-.bracket-card:hover {
-  transform: translateY(-4px);
-}
-
-.bracket-header {
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-}
-
-.king-card {
-  background: rgba(var(--v-theme-surface), 0.8) !important;
-  border: 2px solid rgb(var(--v-theme-primary)) !important;
-  border-radius: 8px !important;
-}
-
-.players-section {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.players-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.player-item {
-  background: rgba(var(--v-theme-surface), 0.5);
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-
-.player-item:hover {
-  background: rgba(var(--v-theme-surface), 0.7);
-}
-
-.player-item {
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(var(--v-theme-surface), 0.6);
-}
-
-.race-row {
-  padding-left: 26px;
-}
-
+.night { background: rgb(var(--v-theme-background)); min-height: 100vh; }
+.king { display: flex; align-items: center; gap: 12px; min-height: 84px; }
+.crown { color: rgb(var(--v-theme-primary-text)); }
 </style>

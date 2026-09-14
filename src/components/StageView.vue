@@ -1,6 +1,7 @@
 <!-- One stage, drawn once per division. An elimination stage is bracket columns joined
-     by their feeder lines, a round robin is its standings and its rounds, a KOTH night
-     is the chain from the king down. A phone stacks the columns into one list per round. -->
+     by their feeder lines, a round robin and a Swiss stage are their standings and their
+     rounds, a KOTH night is the chain from the king down. A stage split into groups reads
+     one table a group. A phone stacks the columns into one list per round. -->
 <template>
   <div class="stage-view">
     <p v-if="!series.length" class="text-medium-emphasis my-4">
@@ -74,6 +75,9 @@
             <td class="text-right">{{ row.won }}</td>
             <td class="text-right d-none d-md-table-cell">{{ row.lost }}</td>
             <td v-if="!isLobbyStage" class="text-right">{{ signed(row.game_diff) }}</td>
+            <td v-if="showBuchholz" class="text-right d-none d-md-table-cell">
+              {{ buchholzOf.get(row.entrant_id) ?? 0 }}
+            </td>
             <td class="text-right">{{ row.points }}</td>
           </tr>
         </template>
@@ -90,7 +94,9 @@ import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import SeriesBox from '@/components/SeriesBox.vue';
 import { HIDE_RESULTS } from '@/helpers/events.mjs';
-import { blocks, chainOrder, columns, inDivision, layout, standingsGroups } from '@/helpers/stage-view.mjs';
+import {
+  blocks, buchholz, chainOrder, columns, inDivision, layout, ranking, standingsGroups,
+} from '@/helpers/stage-view.mjs';
 
 const props = defineProps({
   stage: { type: Object, required: true },
@@ -113,6 +119,8 @@ const STANDING_COLUMNS = [
 ];
 // A lobby counts no games, so a free for all table reads its place points and nothing else
 const LOBBY_COLUMNS = STANDING_COLUMNS.filter((column) => column.key !== 'game_diff');
+// The tie break a Swiss table ranks on sits beside the points it breaks
+const BUCHHOLZ_COLUMN = { key: 'buchholz', title: 'Buchholz', align: 'right', phone: false };
 
 // The spoiler switch of the page around this stage; the standings give the whole result away
 const hidden = inject(HIDE_RESULTS, ref(false));
@@ -123,7 +131,14 @@ const isBracket = computed(() => ['single_elimination', 'double_elimination'].in
 const isChain = computed(() => props.stage.format === 'koth');
 // A free for all plays lobbies: a bracket of them round by round, or one league lobby
 const isLobbyStage = computed(() => props.stage.format === 'ffa');
-const standingColumns = computed(() => (isLobbyStage.value ? LOBBY_COLUMNS : STANDING_COLUMNS));
+// A table reads a Buchholz column only where the stage's ranking rule breaks ties on it
+const showBuchholz = computed(() => !isLobbyStage.value && ranking(props.stage).includes('buchholz'));
+const standingColumns = computed(() => {
+  if (isLobbyStage.value) return LOBBY_COLUMNS;
+  if (!showBuchholz.value) return STANDING_COLUMNS;
+  const at = STANDING_COLUMNS.findIndex((column) => column.key === 'points');
+  return STANDING_COLUMNS.toSpliced(at, 0, BUCHHOLZ_COLUMN);
+});
 
 // A team side prints its name over its roster, so a box of team sides is taller than a
 // box of two names. A roster name wears a flag and a race icon and takes a line of the
@@ -157,6 +172,8 @@ const groups = computed(() => {
 });
 
 const tables = computed(() => standingsGroups(props.standings, props.divisions));
+const buchholzOf = computed(() => (showBuchholz.value
+  ? buchholz(props.standings, props.series) : new Map()));
 
 // The beaten semi-finalists play last in the final column, so the second box names itself.
 // A free for all names each box instead: a lobby of a round, or a game of the one league

@@ -151,17 +151,70 @@ export function chainOrder(series) {
   return [...chain, ...series.filter((other) => !seen.has(other.id))];
 }
 
-// One group of standings per division, in division order, for the grouped table
+// One group of standings per table the stage answers, in division order: a division, or
+// one group of a division where the stage splits into groups. The key carries the group,
+// so a grouped stage reads one table per group under the division that holds it.
 export function standingsGroups(standings = [], divisions = []) {
   const order = new Map(divisions.map((division) => [division.id, division.position]));
   return [...standings]
-    .sort((a, b) => (order.get(a.division_id) ?? 0) - (order.get(b.division_id) ?? 0))
+    .sort((a, b) => (order.get(a.division_id) ?? 0) - (order.get(b.division_id) ?? 0)
+      || (a.group_no ?? 0) - (b.group_no ?? 0))
     .map((group) => ({
-      key: group.division_id ?? 'all',
-      label: group.division_name || 'All entrants',
+      key: `${group.division_id ?? 'all'}:${group.group_no ?? 0}`,
+      label: [group.division_name, group.group_name].filter(Boolean).join(' \u00b7 ') || 'All entrants',
       division_id: group.division_id ?? null,
+      group_no: group.group_no ?? null,
       rows: group.rows || [],
     }));
+}
+
+// The tie breaks a stage table reads, in the order ranking_rule names them, the way
+// app/services/stage_engine.py _ranking resolves it: a stage that draws round by round
+// and names no rule of its own ranks on Buchholz after the points.
+const RANKING_RULE = 'points,game_diff,head_to_head';
+const SWISS_RANKING_RULE = 'points,buchholz,game_diff,head_to_head';
+
+// Whether the stage pairs one round at a time instead of drawing every series up front
+export const drawsByRound = (stage) => stage?.format === 'swiss';
+
+export function ranking(stage) {
+  const named = stage?.ranking_rule || RANKING_RULE;
+  const rule = drawsByRound(stage) && named === RANKING_RULE ? SWISS_RANKING_RULE : named;
+  return rule.split(',').map((word) => word.trim()).filter(Boolean);
+}
+
+// Buchholz per entrant: the sum of his opponents' points, added the way app/core/
+// brackets.py standings adds it. A bye names one side only, so it adds nothing.
+export function buchholz(standings = [], series = []) {
+  const points = new Map();
+  for (const group of standings) {
+    for (const row of group.rows || []) points.set(row.entrant_id, row.points ?? 0);
+  }
+  const sums = new Map([...points.keys()].map((id) => [id, 0]));
+  for (const row of series) {
+    const [a, b] = [row.entrant1_id, row.entrant2_id];
+    if (!isScored(row) || a == null || b == null) continue;
+    if (sums.has(a)) sums.set(a, sums.get(a) + (points.get(b) ?? 0));
+    if (sums.has(b)) sums.set(b, sums.get(b) + (points.get(a) ?? 0));
+  }
+  return sums;
+}
+
+// What the next draw of a round-by-round stage writes: the round number it pairs, whether
+// the stage has drawn every round it plays, and why it may not draw yet. The engine
+// refuses while a series already drawn carries no result, so the button says so first.
+export function nextRound(stage, series = [], divisions = []) {
+  const bands = divisions.length ? divisions.map((band) => band.id) : [null];
+  const drawn = Math.max(0, ...bands
+    .map((id) => new Set(inDivision(series, id).map((row) => row.round_id)).size));
+  const open = series.filter((row) => !isScored(row)).length;
+  return {
+    number: drawn + 1,
+    done: stage?.swiss_rounds != null && drawn >= stage.swiss_rounds,
+    blocked: open
+      ? `Round ${drawn} is not finished: ${open} ${open === 1 ? 'series carries' : 'series carry'} no result.`
+      : null,
+  };
 }
 
 // The series of one division, or every series when the stage runs no divisions

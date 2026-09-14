@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, stagesPayload, stepProblem, stepsFor, wizardProblem } from './event-wizard.mjs';
+import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, groupProblem, stagesPayload, stepProblem, stepsFor, wizardProblem } from './event-wizard.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -159,4 +159,35 @@ test('the stages step never holds a signup-only event back', () => {
   assert.equal(stepProblem(form, 'stages'), 'Add at least one stage.');  // the step is not asked for
   assert.equal(wizardProblem(form), null);
   assert.equal(wizardProblem({ ...form, kind: 'cup' }), 'Add at least one stage.');
+});
+
+test('only a Swiss stage counts rounds and only a round robin splits into groups', () => {
+  const stages = stagesPayload({
+    stages: [
+      { format: 'swiss', best_of: 3, map_rule: 'veto', swiss_rounds: '5', group_size: '4' },
+      { format: 'round_robin', best_of: 3, map_rule: 'veto', group_size: '4', group_advance: '2', swiss_rounds: '5' },
+      { format: 'single_elimination', best_of: 3, map_rule: 'veto' },
+    ],
+  });
+  assert.equal(stages[0].swiss_rounds, 5);
+  assert.equal(stages[0].group_size, null);
+  assert.equal(stages[1].swiss_rounds, null);
+  assert.equal(stages[1].group_size, 4);
+  assert.equal(stages[1].group_advance, 2);
+  assert.equal(stages[2].swiss_rounds, null);
+  assert.equal(stages[2].group_advance, null);
+  // a blank field is no setting at all, not a zero
+  assert.equal(stagesPayload({ stages: [{ format: 'swiss', best_of: 3, map_rule: 'veto' }] })[0].swiss_rounds, null);
+});
+
+test('a group seats two entrants and advances one', () => {
+  assert.equal(groupProblem({ format: 'round_robin', group_size: '', group_advance: '' }), null);
+  assert.equal(groupProblem({ format: 'round_robin', group_size: '4', group_advance: '2' }), null);
+  assert.equal(groupProblem({ format: 'round_robin', group_size: '1' }), 'A group seats two entrants or more.');
+  assert.equal(groupProblem({ format: 'round_robin', group_advance: '0' }), 'A group advances one entrant or more.');
+  assert.equal(groupProblem({ format: 'swiss', group_size: '1' }), null);
+  assert.equal(
+    stepProblem({ stages: [{ format: 'round_robin', best_of: 3, group_size: '1' }] }, 'stages'),
+    'A group seats two entrants or more.',
+  );
 });

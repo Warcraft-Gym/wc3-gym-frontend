@@ -2,9 +2,10 @@ import assert from 'node:assert';
 import test from 'node:test';
 
 import {
-  advancingRows, blocks, chainChallengers, chainOrder, columns, generateFields, inDivision,
-  isBye, isByeSide, isLobby, layout, lobbySeats, lobbyTargets, pendingChainSeries, seriesState,
-  shownPlayer, shownTeam, sideName, standingsGroups, standsOn, winnerSide, winsFor,
+  advancingRows, blocks, buchholz, chainChallengers, chainOrder, columns, drawsByRound,
+  generateFields, inDivision, isBye, isByeSide, isLobby, layout, lobbySeats, lobbyTargets,
+  nextRound, pendingChainSeries, ranking, seriesState, shownPlayer, shownTeam, sideName,
+  standingsGroups, standsOn, winnerSide, winsFor,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -177,6 +178,82 @@ test('standings group by division in division order', () => {
   );
   assert.deepStrictEqual(groups.map((group) => group.label), ['Gold', 'Silver']);
   assert.strictEqual(groups[1].rows.length, 1);
+});
+
+test('a stage split into groups reads one table a group, under its division', () => {
+  const groups = standingsGroups(
+    [{ division_id: 1, division_name: 'Gold', group_no: 2, group_name: 'Group B', rows: [{ position: 1 }] },
+      { division_id: 1, division_name: 'Gold', group_no: 1, group_name: 'Group A', rows: [] }],
+    [{ id: 1, position: 1 }],
+  );
+  assert.deepStrictEqual(groups.map((group) => group.label), ['Gold \u00b7 Group A', 'Gold \u00b7 Group B']);
+  assert.deepStrictEqual(groups.map((group) => group.key), ['1:1', '1:2']);
+  assert.deepStrictEqual(groups.map((group) => group.group_no), [1, 2]);
+  // a stage that plays no group keys on the division alone and reads its name
+  assert.deepStrictEqual(
+    standingsGroups([{ division_id: null, rows: [] }], []).map((group) => [group.key, group.label]),
+    [['all:0', 'All entrants']],
+  );
+});
+
+test('a Swiss stage ranks on Buchholz where it names no rule of its own', () => {
+  assert.strictEqual(drawsByRound({ format: 'swiss' }), true);
+  assert.strictEqual(drawsByRound({ format: 'round_robin' }), false);
+  assert.deepStrictEqual(
+    ranking({ format: 'swiss', ranking_rule: 'points,game_diff,head_to_head' }),
+    ['points', 'buchholz', 'game_diff', 'head_to_head'],
+  );
+  // a rule the stage names of its own is read as it stands, on any format
+  assert.deepStrictEqual(ranking({ format: 'swiss', ranking_rule: 'points' }), ['points']);
+  assert.deepStrictEqual(
+    ranking({ format: 'round_robin', ranking_rule: 'points,game_diff,head_to_head' }),
+    ['points', 'game_diff', 'head_to_head'],
+  );
+});
+
+// A Swiss round of four entrants: two pairs, and a bye that names one side only
+const SW = (id, round_id, a, b, scores = null) => ({
+  id, round_id, sequence: 1, division_id: null, entrant1_id: a, entrant2_id: b,
+  player1_score: scores?.[0] ?? null, player2_score: scores?.[1] ?? null,
+});
+
+test('Buchholz adds the opponents points, and a bye adds nothing', () => {
+  const standings = [{ division_id: 1, rows: [
+    { entrant_id: 1, points: 2 }, { entrant_id: 2, points: 1 },
+    { entrant_id: 3, points: 1 }, { entrant_id: 4, points: 0 },
+  ] }];
+  const series = [
+    SW(1, 10, 1, 2, [2, 0]), SW(2, 10, 3, 4, [2, 1]),
+    SW(3, 11, 1, 3, [2, 1]), SW(4, 11, 2, null, [2, 0]),
+  ];
+  const sums = buchholz(standings, series);
+  // 1 met 2 and 3, 2 met 1 and the bye, 3 met 4 and 1, 4 met 3 alone
+  assert.deepStrictEqual([1, 2, 3, 4].map((id) => sums.get(id)), [2, 2, 2, 1]);
+  // an unscored series counts for nobody yet
+  assert.strictEqual(buchholz(standings, [SW(5, 12, 1, 4)]).get(1), 0);
+});
+
+test('the next Swiss round waits for the round before it', () => {
+  const stage = { format: 'swiss', swiss_rounds: 3 };
+  const drawn = [SW(1, 10, 1, 2, [2, 0]), SW(2, 10, 3, 4, [2, 1])];
+  assert.deepStrictEqual(nextRound(stage, [], []), { number: 1, done: false, blocked: null });
+  assert.deepStrictEqual(nextRound(stage, drawn, []), { number: 2, done: false, blocked: null });
+  const open = [...drawn, SW(3, 11, 1, 3), SW(4, 11, 2, 4)];
+  assert.strictEqual(
+    nextRound(stage, open, []).blocked,
+    'Round 2 is not finished: 2 series carry no result.',
+  );
+  assert.strictEqual(nextRound(stage, [SW(3, 11, 1, 3)], []).blocked,
+    'Round 1 is not finished: 1 series carries no result.');
+  // the stage stops once it has drawn every round it plays
+  const three = [...drawn, SW(3, 11, 1, 3, [2, 0]), SW(4, 12, 1, 4, [2, 0])];
+  assert.strictEqual(nextRound(stage, three, []).done, true);
+  assert.strictEqual(nextRound({ format: 'swiss' }, three, []).done, false);
+  // a division draws its own rounds, so the count is the rounds the busiest one has drawn
+  const split = [{ ...SW(5, 10, 1, 2, [2, 0]), division_id: 1 },
+    { ...SW(6, 11, 1, 3, [2, 0]), division_id: 1 },
+    { ...SW(7, 10, 5, 6, [2, 0]), division_id: 2 }];
+  assert.strictEqual(nextRound(stage, split, [{ id: 1 }, { id: 2 }]).number, 3);
 });
 
 test('a division reads only its own series, and a best-of names its wins', () => {

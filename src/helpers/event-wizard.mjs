@@ -30,6 +30,9 @@ export const blankStage = () => ({
   best_of: 3,
   map_rule: 'veto',
   series_per_entrant_per_round: 1,
+  swiss_rounds: '',
+  group_size: '',
+  group_advance: '',
   lobby_size: '',
   points_by_place: '',
   scheduling_mode: 'agreed',
@@ -103,8 +106,8 @@ export const gameRules = (rule, bestOf) => Array.from(
   (unused, index) => (rule === 'veto' && index ? 'loser' : rule),
 ).join(',');
 
-// The body PUT /events/{id}/stages takes: the positions must run 1..n, and the group
-// settings are cut on the stage page later.
+// The body PUT /events/{id}/stages takes; the positions must run 1..n. Every setting a
+// format does not play is written as nothing, so a format change carries none of it over.
 export const stagesPayload = (form) => (form.stages || []).map((stage, index) => ({
   position: index + 1,
   name: text(stage.name),
@@ -118,8 +121,10 @@ export const stagesPayload = (form) => (form.stages || []).map((stage, index) =>
   // A lobby seats a free for all; every other format plays two sides a series
   lobby_size: stage.format === 'ffa' ? count(stage.lobby_size) : null,
   points_by_place: stage.format === 'ffa' ? text(stage.points_by_place) : null,
-  group_size: null,
-  group_advance: null,
+  // Only a Swiss stage counts its rounds; only a round robin splits into groups
+  swiss_rounds: stage.format === 'swiss' ? count(stage.swiss_rounds) : null,
+  group_size: stage.format === 'round_robin' ? count(stage.group_size) : null,
+  group_advance: stage.format === 'round_robin' ? count(stage.group_advance) : null,
 }));
 
 // The body POST /events takes: the event and its stages in one write, so a later failure
@@ -147,6 +152,17 @@ export const lobbyProblem = (stage) => {
   return null;
 };
 
+// What a stage split into groups still needs. A group seats two entrants or more, and the
+// next stage takes at least one of them.
+export const groupProblem = (stage) => {
+  if (stage.format !== 'round_robin') return null;
+  const seats = count(stage.group_size);
+  if (seats !== null && !(seats >= 2)) return 'A group seats two entrants or more.';
+  const through = count(stage.group_advance);
+  if (through !== null && !(through >= 1)) return 'A group advances one entrant or more.';
+  return null;
+};
+
 // What the step still needs, in one sentence, or nothing when it is ready
 export const stepProblem = (form, key) => {
   if (key === 'basics') {
@@ -165,7 +181,7 @@ export const stepProblem = (form, key) => {
   if (key === 'stages') {
     if (!(form.stages || []).length) return 'Add at least one stage.';
     if (form.stages.some((stage) => Number(stage.best_of) % 2 === 0)) return 'A best-of is an odd number of games.';
-    return form.stages.map(lobbyProblem).find(Boolean) || null;
+    return form.stages.map((stage) => lobbyProblem(stage) || groupProblem(stage)).find(Boolean) || null;
   }
   if (key === 'divisions') {
     if (form.division_count === 1) return 'Two divisions or more, or none at all.';

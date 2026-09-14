@@ -1,5 +1,6 @@
-<!-- The run page: an admin generates a stage, enters every result, reopens one and
-     advances the stage. It draws each stage with the same StageView the public page shows. -->
+<!-- The run page: an admin generates a stage or draws a Swiss round, enters every result,
+     reopens one and advances the stage. It draws each stage with the same StageView the
+     public page shows. -->
 <template>
   <v-container fluid class="pa-4">
     <StatusAlert v-model="error" />
@@ -36,11 +37,18 @@
             <v-btn variant="outlined" color="error" prepend-icon="mdi-crown-outline"
               :disabled="saving" @click="confirmClose = true">Close the night</v-btn>
           </template>
-          <v-btn v-if="!series.length" color="primary" prepend-icon="mdi-tournament"
+          <!-- a Swiss stage pairs one round at a time, so it is drawn round by round and
+               never generated whole -->
+          <v-btn v-if="drawsRounds" color="primary" prepend-icon="mdi-cards-playing-outline"
+            :disabled="saving || draw.done || !!draw.blocked" @click="confirmDraw = true">
+            Draw the next round
+          </v-btn>
+          <v-btn v-else-if="!series.length" color="primary" prepend-icon="mdi-tournament"
             :disabled="saving" @click="confirmGenerate = true">Generate</v-btn>
-          <v-btn v-else-if="complete" color="primary" prepend-icon="mdi-arrow-right-bold"
+          <v-btn v-if="complete" color="primary" prepend-icon="mdi-arrow-right-bold"
             :disabled="saving" @click="confirmAdvance = true">Advance</v-btn>
         </div>
+        <p v-if="drawNote" class="text-caption text-medium-emphasis mt-1 mb-0">{{ drawNote }}</p>
 
         <StageView class="mt-4" :stage="stage" :series="series" :rounds="rounds"
           :divisions="event.divisions" :standings="standings" :rosters="rosters"
@@ -71,6 +79,27 @@
           <v-spacer />
           <v-btn variant="text" @click="confirmGenerate = false">Cancel</v-btn>
           <v-btn color="primary" variant="elevated" :loading="saving" @click="generate">Generate</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- The draw pairs the round from the table as it stands, so it names the round first -->
+    <v-dialog v-model="confirmDraw" max-width="520">
+      <v-card>
+        <v-card-title class="bg-primary">Draw round {{ draw.number }}</v-card-title>
+        <v-card-text class="pt-4">
+          <p class="mb-0">
+            Round {{ draw.number }} pairs each entrant with the closest opponent he has not met
+            yet, from the table as it stands. An odd field gives the bye to the lowest entrant
+            without one.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="confirmDraw = false">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" :loading="saving" @click="drawRound">
+            Draw round {{ draw.number }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -291,8 +320,9 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } from '@/helpers/event-labels.mjs';
 import { scoreOf } from '@/helpers/map-order.mjs';
 import {
-  advancingRows, chainChallengers, generateFields, isLobby, isScored, lobbySeats,
-  lobbyTargets, pendingChainSeries, sideName as nameOfSide, standsOn, winsFor,
+  advancingRows, chainChallengers, drawsByRound, generateFields, isLobby, isScored,
+  lobbySeats, lobbyTargets, nextRound, pendingChainSeries, sideName as nameOfSide,
+  standsOn, winsFor,
 } from '@/helpers/stage-view.mjs';
 import { rostersByEntrant } from '@/helpers/entrants.mjs';
 import { useEventStore, useTeamStore } from '@/stores';
@@ -315,6 +345,7 @@ const dialogError = ref(null);
 const tab = ref(0);
 
 const confirmGenerate = ref(false);
+const confirmDraw = ref(false);
 const confirmAdvance = ref(false);
 const confirmClose = ref(false);
 const challengerOpen = ref(false);
@@ -346,6 +377,15 @@ const showByes = computed(() => fields.value.some((row) => row.byes != null));
 
 // Who the next stage takes: the top of each division's table, or the whole table
 const advancing = computed(() => advancingRows(standings.value, stage.value?.advance_count));
+
+// A Swiss stage draws one round at a time; the engine refuses while a drawn series has no
+// result, and once the stage has drawn every round it plays
+const drawsRounds = computed(() => drawsByRound(stage.value));
+const draw = computed(() => nextRound(stage.value, series.value, event.value?.divisions));
+const drawNote = computed(() => {
+  if (!drawsRounds.value) return '';
+  return draw.value.done ? 'This stage has drawn every round it plays.' : draw.value.blocked || '';
+});
 
 // A chain stage is a KOTH night: it takes one challenger at a time and an admin closes it
 const isChain = computed(() => stage.value?.format === 'koth');
@@ -414,6 +454,9 @@ const run = async (work) => {
 
 const generate = async () => {
   if (await run(() => store.generateStage(event.value.id, stage.value.id))) confirmGenerate.value = false;
+};
+const drawRound = async () => {
+  if (await run(() => store.drawNextRound(event.value.id, stage.value.id))) confirmDraw.value = false;
 };
 const advance = async () => {
   if (await run(() => store.advanceStage(event.value.id, stage.value.id))) {

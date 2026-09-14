@@ -5,7 +5,7 @@
         :menu-props="{ scrollStrategy: 'close'}"
         item-title="name"
         item-value="id"
-        :items="raceWrapper.races">
+        :items="items">
         <template v-slot:selection="{ item }">            
         <span>            
             <RaceIcon :raceIdentifier="item.raw.id" />
@@ -25,8 +25,13 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { raceWrapper } from '@/helpers/races.js'
 
 const model = defineModel();
-defineProps({ label: { type: String, default: 'Race' } });
+const props = defineProps({
+  label: { type: String, default: 'Race' },
+  exclude: { type: Array, default: () => [] }, // race ids the list leaves out
+});
+const items = computed(() => raceWrapper.races.filter((race) => !props.exclude.includes(race.id)));
 </script>

@@ -33,6 +33,11 @@
           prepend-icon="mdi-login" @click="logIn">
           Log in to sign up
         </v-btn>
+        <!-- An event that takes one entry per race lets a player in on another race beside his own row -->
+        <v-btn v-if="event.multi_entry && event.signups_open && held.length" color="primary" variant="outlined" size="small"
+          prepend-icon="mdi-account-plus" @click="dialog.open()">
+          Enter another race
+        </v-btn>
 
         <!-- The caller's own blocks cover the next round; the answer is his, the blocks only inform -->
         <template v-if="hint">
@@ -95,13 +100,13 @@
         <v-card-title>{{ signupOnly ? 'Sign-ups' : 'Entrants' }}</v-card-title>
         <v-card-subtitle v-if="signupOnly" class="pb-2">{{ signupCount(event, entrants) }}</v-card-subtitle>
         <v-list v-if="entrants.length" density="compact" class="py-0">
-          <v-list-item v-for="entrant in entrants" :key="entrant.id"
+          <v-list-item v-for="entrant in byPlayer(entrants)" :key="entrant.id"
             :class="{ 'text-medium-emphasis': entrant.withdrawn_at }">
             <div class="d-flex align-center ga-3">
               <span v-if="seedsLocked" class="seed text-caption text-medium-emphasis">
-                {{ entrant.seed ?? '—' }}
+                {{ solo(entrant) ? entrant.seed ?? '—' : '' }}
               </span>
-              <PlayerName v-if="entrant.user" :player="entrant.user" :race="entrant.race" />
+              <PlayerName v-if="entrant.user" :player="entrant.user" :race="solo(entrant) ? entrant.race : undefined" />
               <span v-else>{{ entrantName(entrant) }}</span>
               <v-chip v-if="places[entrant.id]" size="x-small" variant="outlined">
                 <v-icon v-if="placeMedal(places[entrant.id].place)" start size="14"
@@ -112,6 +117,15 @@
               <v-icon v-if="entrant.checked_in_at" icon="mdi-check" size="small" color="success"
                 title="Checked in" />
               <span v-if="entrant.withdrawn_at" class="text-caption">withdrawn</span>
+            </div>
+            <!-- A player on more than one race: one line a race, with its seed and its division -->
+            <div v-for="race in raceRows(entrant)" :key="race.id" class="d-flex align-center ga-2 pl-6 text-body-2"
+              :class="{ 'text-medium-emphasis': race.withdrawn_at }">
+              <span v-if="seedsLocked" class="seed text-caption text-medium-emphasis">{{ race.seed ?? '—' }}</span>
+              <RaceIcon :raceIdentifier="race.race" />
+              <span>{{ raceName(race.race) }}</span>
+              <span v-if="divisionName(race)" class="text-caption text-medium-emphasis">{{ divisionName(race) }}</span>
+              <span v-if="race.withdrawn_at" class="text-caption">withdrawn</span>
             </div>
             <div v-if="entrant.note" class="text-body-2 text-medium-emphasis note">{{ entrant.note }}</div>
           </v-list-item>
@@ -132,7 +146,7 @@
           @open-series="row => router.push(`/series/${row.id}`)" />
       </template>
 
-      <SignupDialog ref="dialog" :event="event" @signed-up="reload" />
+      <SignupDialog ref="dialog" :event="event" :held="held" @signed-up="reload" />
     </template>
   </v-container>
 </template>
@@ -144,11 +158,12 @@ import { useRoute } from 'vue-router';
 import ColumnNote from '@/components/ColumnNote.vue';
 import EventHeader from '@/components/EventHeader.vue';
 import PlayerName from '@/components/PlayerName.vue';
+import RaceIcon from '@/components/RaceIcon.vue';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { placeIcon, placeMedal, placings } from '@/helpers/awards.mjs';
-import { bySeed, bySignup, entrantName, rostersByEntrant, signupCount } from '@/helpers/entrants.mjs';
+import { byPlayer, bySeed, bySignup, entrantName, raceRows, rostersByEntrant, signupCount } from '@/helpers/entrants.mjs';
 import {
   FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture,
   stateOf, titleOf,
@@ -156,6 +171,8 @@ import {
 import {
   actOnEvent, blocksHint, eventActionButton, HIDE_RESULTS, hideResultsStored, storeHideResults,
 } from '@/helpers/events.mjs';
+import { myRaces } from '@/helpers/koth.mjs';
+import { raceWrapper } from '@/helpers/races.js';
 import { saveReturnUrl } from '@/helpers/return-url.mjs';
 import { router } from '@/helpers/router.js';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
@@ -195,6 +212,14 @@ const seedsLocked = computed(() => stages.value.some((stage) => stage.seeds_lock
 // An event that plays no stage is a sign-up list: the entrants are the whole page
 const signupOnly = computed(() => !!event.value && !stages.value.length);
 const hint = computed(() => blocksHint(row.value));
+const held = computed(() => myRaces(entrants.value, auth.me?.user?.id));
+
+const solo = (item) => !raceRows(item).length;
+const raceName = (race) => raceWrapper.getRaceObject(race)?.name || race;
+const divisionName = (row) => {
+  const division = (event.value?.divisions || []).find((band) => band.id === row.division_id);
+  return division ? division.name || `Division ${division.position}` : null;
+};
 
 // A fixture pairs two team entrants, so a solo event reads no fixture chip
 const fixtureSeries = computed(() => seriesPerFixture(event.value));

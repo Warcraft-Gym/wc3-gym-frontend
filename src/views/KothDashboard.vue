@@ -16,16 +16,16 @@
         <EventHeader :event="event" />
 
         <div v-if="!cleanMode" class="d-flex flex-wrap align-center ga-3 mt-4">
-          <v-btn v-if="event.signups_open && !mine" color="primary" variant="elevated" size="small"
+          <v-btn v-if="event.signups_open && (!mine || event.multi_entry)" color="primary" variant="elevated" size="small"
             prepend-icon="mdi-account-plus" @click="dialog.open()">
-            Sign up
+            {{ mine ? 'Enter another race' : 'Sign up' }}
           </v-btn>
           <v-btn v-if="mine" color="error" variant="tonal" size="small" prepend-icon="mdi-account-minus"
             :loading="withdrawing" @click="withdraw">
             Withdraw
           </v-btn>
           <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
-            {{ standing.length }} entrants
+            {{ players }} entrants
           </v-chip>
         </div>
 
@@ -52,9 +52,15 @@
               <v-list v-if="bracket.entrants.length" density="compact" class="py-0">
                 <v-list-item v-for="entrant in bracket.entrants" :key="entrant.id">
                   <div class="d-flex align-center ga-3">
-                    <PlayerName v-if="entrant.user" :player="entrant.user" :race="entrant.race" />
+                    <PlayerName v-if="entrant.user" :player="entrant.user" :race="solo(entrant) ? entrant.race : undefined" />
                     <span v-else>{{ entrantName(entrant) }}</span>
-                    <span v-if="entrant.mmr" class="text-caption text-medium-emphasis">{{ entrant.mmr }} MMR</span>
+                    <span v-if="solo(entrant) && entrant.mmr" class="text-caption text-medium-emphasis">{{ entrant.mmr }} MMR</span>
+                  </div>
+                  <!-- A player on two races of one bracket sits once in its chain and reads once here -->
+                  <div v-for="race in raceRows(entrant)" :key="race.id" class="d-flex align-center ga-2 pl-6 text-caption text-medium-emphasis">
+                    <RaceIcon :raceIdentifier="race.race" />
+                    <span>{{ raceName(race.race) }}</span>
+                    <span v-if="race.mmr">{{ race.mmr }} MMR</span>
                   </div>
                 </v-list-item>
               </v-list>
@@ -68,7 +74,7 @@
           </v-col>
         </v-row>
 
-        <SignupDialog ref="dialog" :event="event" @signed-up="load" />
+        <SignupDialog ref="dialog" :event="event" :held="myRaces(standing, auth.me?.user?.id)" @signed-up="load" />
       </template>
     </v-container>
   </div>
@@ -80,11 +86,13 @@ import { useRoute } from 'vue-router';
 
 import EventHeader from '@/components/EventHeader.vue';
 import PlayerName from '@/components/PlayerName.vue';
+import RaceIcon from '@/components/RaceIcon.vue';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { bySeed, entrantName } from '@/helpers/entrants.mjs';
-import { openNight } from '@/helpers/koth.mjs';
+import { byPlayer, bySeed, entrantName, raceRows } from '@/helpers/entrants.mjs';
+import { myRaces, openNight } from '@/helpers/koth.mjs';
+import { raceWrapper } from '@/helpers/races.js';
 import { router } from '@/helpers/router.js';
 import { inDivision, isScored } from '@/helpers/stage-view.mjs';
 import { useAuthStore, useEventStore } from '@/stores';
@@ -110,6 +118,8 @@ let timer = null;
 // A night plays one koth stage; a night nobody drew yet has none of its series
 const stage = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position)[0] || null);
 const standing = computed(() => entrants.value.filter((row) => !row.withdrawn_at));
+// A player on two races is one entrant
+const players = computed(() => byPlayer(standing.value).length);
 const mine = computed(() => standing.value.find((row) => row.user?.id && row.user.id === auth.me?.user?.id) || null);
 
 // One column per bracket, strongest first. The king is the top of the bracket's table,
@@ -121,11 +131,14 @@ const brackets = computed(() => [...(event.value?.divisions || [])]
     const top = standings.value.find((group) => group.division_id === division.id)?.rows?.[0];
     return {
       ...division,
-      entrants: bySeed(standing.value.filter((row) => row.division_id === division.id)),
+      entrants: byPlayer(bySeed(standing.value.filter((row) => row.division_id === division.id))),
       king: chain.some(isScored) ? entrants.value.find((row) => row.id === top?.entrant_id) || null : null,
       chain,
     };
   }));
+
+const solo = (item) => !raceRows(item).length;
+const raceName = (race) => raceWrapper.getRaceObject(race)?.name || race;
 
 const load = async () => {
   const night = openNight(await store.fetchEvents(null, 'koth'));

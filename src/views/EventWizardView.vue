@@ -84,6 +84,9 @@
             <v-col v-if="form.checkin_enabled" cols="12" md="4">
               <v-text-field v-model="form.checkin_days" type="number" label="Check-in opens how many days before" />
             </v-col>
+            <v-col cols="12">
+              <v-switch v-model="form.multi_entry" color="primary" hide-details label="One entry per race" />
+            </v-col>
           </v-row>
         </v-card-text>
 
@@ -297,6 +300,7 @@ const review = computed(() => {
         { k: 'MMR maximum', v: orNone(it.mmr_max) },
         { k: 'Recent games at least', v: orNone(it.min_games) },
         { k: 'Check-in', v: it.checkin_enabled ? `${it.checkin_days} days before a round` : 'Off' },
+        { k: 'One entry per race', v: it.multi_entry ? 'On' : 'Off' },
       ],
     },
     {

@@ -3,7 +3,7 @@ type: Convention
 title: How this bundle is written
 description: The rules for every file under docs/okf, and the one rule for talking about the other repositories.
 tags: [okf, documentation]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: okf-spec
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
@@ -28,6 +28,7 @@ Every concept starts with a YAML block. `type` is required. The types this bundl
 | Data Model | tables and model families |
 | API Area | a group of routes and their rules |
 | Integration | how this repository talks to a service outside it |
+| Page | a page area: its routes, what each role does there, the writes it makes |
 | Runbook | steps to do one operational task |
 | Decision | a choice that was made, when, and why it stands |
 | Pitfall | a mistake that was made once, and how to not repeat it |

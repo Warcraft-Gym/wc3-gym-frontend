@@ -3,7 +3,7 @@ type: Repository
 title: wc3-gym-frontend
 description: The Vue 3 web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
 tags: [repository, vue, vuetify, vercel]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -18,7 +18,7 @@ sources:
 
 # What it is
 
-One single-page app for everyone: the public event and series pages, a member's profile, signup, availability, series reporting and fantasy pages, a captain's draft pages, and the admin pages for seasons, teams, maps, config, Discord roles and KOTH nights. It draws nothing of its own data; every number comes from the backend API, and the backend's `/me` answer decides what the app shows.
+One single-page app for everyone: the public event and series pages, a member's profile, signup, availability, team, series reporting and fantasy pages, a captain's draft pages, and the admin pages for events, seasons, maps, config, Discord roles and KOTH nights. It draws nothing of its own data; every number comes from the backend API, and the backend's `/me` answer decides what the app shows.
 
 # Where it runs
 
@@ -50,5 +50,6 @@ ADMIN_UI_USER_GUIDE.md  the admin guide, also served at /user-guide
 1. [App shell and routing](concepts/app-shell-and-routing.md), [session and auth](concepts/session-and-auth.md).
 2. [The backend contract as consumed here](concepts/backend-contract.md), [stores](concepts/stores.md).
 3. `DESIGN.md` in full, then [shared components](concepts/shared-components.md).
-4. [Run locally](runbooks/run-locally.md), [testing](conventions/testing.md), [git and pull requests](conventions/git-and-pull-requests.md).
-5. Before a change: the [decisions](decisions/index.md) and the [pitfalls](pitfalls/index.md).
+4. The [pages](pages/index.md): what each page area does, who may do it, and the routes it writes. Start with [event management](pages/event-management.md).
+5. [Run locally](runbooks/run-locally.md), [testing](conventions/testing.md), [git and pull requests](conventions/git-and-pull-requests.md).
+6. Before a change: the [decisions](decisions/index.md) and the [pitfalls](pitfalls/index.md).

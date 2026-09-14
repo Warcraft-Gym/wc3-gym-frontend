@@ -2,6 +2,7 @@
 type: Domain Concept
 title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, and how the veto board knows its side.
+resource: ../../../DESIGN.md
 tags: [components, design]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T14:30:00Z }
 sources:

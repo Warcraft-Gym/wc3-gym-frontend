@@ -2,6 +2,7 @@
 type: Page
 title: Fantasy
 description: The fantasy leaderboard, the bets, the player tiers and the member's own fantasy team and bets.
+resource: ../../../src/views/FantasyLeaderboardView.vue
 tags: [pages, fantasy]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:

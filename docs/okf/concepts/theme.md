@@ -2,6 +2,7 @@
 type: Domain Concept
 title: Theme
 description: One look, stone and bronze, in a light and a dark theme, every value in one palette file, the choice stored per browser.
+resource: ../../../src/helpers/palette.mjs
 tags: [theme, design, palette]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:

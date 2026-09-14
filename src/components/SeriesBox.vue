@@ -1,12 +1,20 @@
 <!-- One series of a stage: a side per row with its race, the score, and the state as a
-     word. The winning side wears the win token; a click opens the series. -->
+     word. A team side reads as the team name over the roster it fields. The winning side
+     wears the win token; a click opens the series. -->
 <template>
   <component :is="readonly ? 'div' : 'button'" :type="readonly ? undefined : 'button'"
     class="series-box" :class="{ flat, readonly }" @click="readonly || $emit('open', series)">
     <div v-for="side in [1, 2]" :key="side" class="side" :class="sideClass(side)">
       <span class="mark" />
       <v-icon v-if="crown && side === 1" size="14" icon="mdi-crown" class="crown" aria-hidden="true" />
-      <PlayerName v-if="player(side)" :player="player(side)" :race="race(side)" :plain="!readonly" />
+      <div v-if="team(side)" class="who">
+        <span class="team-name">{{ team(side).name }}</span>
+        <span v-if="roster(side).length" class="roster">
+          <PlayerName v-for="seat in roster(side)" :key="seat.player.id" :player="seat.player"
+            :race="seat.race || undefined" :plain="!readonly" />
+        </span>
+      </div>
+      <PlayerName v-else-if="player(side)" :player="player(side)" :race="race(side)" :plain="!readonly" />
       <span v-else class="text-medium-emphasis empty">{{ empty(side) }}</span>
       <span class="score">{{ score(side) }}</span>
     </div>
@@ -22,7 +30,7 @@ import { computed, inject, ref } from 'vue';
 
 import { HIDE_RESULTS } from '@/helpers/events.mjs';
 import PlayerName from '@/components/PlayerName.vue';
-import { isByeSide, seriesState, shownPlayer, winnerSide } from '@/helpers/stage-view.mjs';
+import { isByeSide, seriesState, shownPlayer, shownTeam, winnerSide } from '@/helpers/stage-view.mjs';
 
 const props = defineProps({
   series: { type: Object, required: true },
@@ -30,6 +38,7 @@ const props = defineProps({
   crown: Boolean,                        // the standing king of a KOTH chain
   flat: Boolean,                         // inside a list, the card around it draws the border
   readonly: Boolean,                     // the series page opens nothing, so its names link
+  rosters: { type: Object, default: () => ({}) },  // the players of each team entrant, by entrant id
 });
 defineEmits(['open']);
 
@@ -48,6 +57,9 @@ const state = computed(() => seriesState(props.series));
 const winner = computed(() => (hidden.value ? null : winnerSide(props.series)));
 
 const player = (side) => shownPlayer(props.series, side, hidden.value);
+const team = (side) => shownTeam(props.series, side, hidden.value);
+// The roster reads only beside the team it belongs to, so a hidden side names nobody
+const roster = (side) => (team(side) && props.rosters[props.series[`entrant${side}_id`]]) || [];
 const race = (side) => props.series[`player${side}_race`] || undefined;
 const score = (side) => (hidden.value ? '' : props.series[`player${side}_score`] ?? '');
 // A side with no feeder and no entrant can never fill: the other side passes through
@@ -91,6 +103,9 @@ const sideClass = (side) => ({
 .side.won .mark { background: rgb(var(--v-theme-win)); }
 .side.lost .mark { background: rgb(var(--v-theme-loss)); }
 .side.won { font-weight: 700; }
+/* A team side stacks its name over its roster and keeps the score on the right */
+.who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.roster { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 0.8125rem; font-weight: 400; }
 .crown { color: rgb(var(--v-theme-primary-text)); }
 .empty { font-size: 0.8125rem; }
 .score { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; }

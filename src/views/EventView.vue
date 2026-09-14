@@ -125,7 +125,7 @@
       <template v-for="stage in drawn" :key="stage.id">
         <h3 class="text-subtitle-1 font-weight-bold mt-4 mb-2">{{ stage.name || `Stage ${stage.position}` }}</h3>
         <StageView readonly :stage="stage" :series="stage.series" :rounds="stage.rounds"
-          :divisions="event.divisions" :standings="stage.standings"
+          :divisions="event.divisions" :standings="stage.standings" :rosters="rosters"
           @open-series="row => router.push(`/series/${row.id}`)" />
       </template>
 
@@ -144,7 +144,7 @@ import PlayerName from '@/components/PlayerName.vue';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { bySeed, bySignup, entrantName, signupCount } from '@/helpers/entrants.mjs';
+import { bySeed, bySignup, entrantName, rostersByEntrant, signupCount } from '@/helpers/entrants.mjs';
 import {
   FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, titleOf,
 } from '@/helpers/event-labels.mjs';
@@ -154,14 +154,16 @@ import {
 import { saveReturnUrl } from '@/helpers/return-url.mjs';
 import { router } from '@/helpers/router.js';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
-import { useAuthStore, useEventStore } from '@/stores';
+import { useAuthStore, useEventStore, useTeamStore } from '@/stores';
 
 const route = useRoute();
 const auth = useAuthStore();
 const store = useEventStore();
+const teamStore = useTeamStore();
 const event = ref(null);
 const leagues = ref([]);
 const entrants = ref([]);
+const rosters = ref({});  // the players each team entrant fields, so a series box names them
 const row = ref(null);  // the caller's own row of /me/events; null for a reader who is not logged in
 const loading = ref(true);
 const acting = ref(false);
@@ -252,6 +254,11 @@ const reload = async () => {
   ]);
   entrants.value = signupOnly.value ? bySignup(rows) : bySeed(rows);
   row.value = mine.find((r) => r.id === event.value.id) ?? null;
+  // only a team event fields rosters, so nothing else pays for the read
+  if (event.value.entrant_kind === 'team') {
+    await teamStore.fetchTeamsBySeason(event.value.id).catch(() => {});
+    rosters.value = rostersByEntrant(rows, teamStore.teams, event.value.id);
+  }
 };
 
 onMounted(async () => {

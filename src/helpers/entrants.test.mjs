@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bySeed, bySignup, cutsOf, divisionsPayload, entrantMmr, entrantName, groupByDivision, mergeSeeds, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
+import { bandNames, bySeed, bySignup, cutsOf, divisionsPayload, entrantMmr, entrantName, groupByDivision, mergeSeeds, rostersByEntrant, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -119,4 +119,28 @@ test('the sign-up count reads against the cap, and a withdrawal gives its place 
   assert.equal(signupCount({ entrant_cap: null }, signups), '2 signed up');
   assert.equal(signupCount({ entrant_cap: 8 }, []), '0 of 8 signed up');
   assert.equal(signupCount(null), '0 signed up');
+});
+
+test('a team entrant carries the roster its team fields for that event', () => {
+  const teams = [
+    {
+      id: 4,
+      player_by_season: { 77: [{ id: 1, name: 'Wispy', signup_race: 'NE' }, { id: 2, name: 'Grubbstep', signup_race: 'OC' }] },
+      captains_by_season: { 77: [{ id: 2, name: 'Grubbstep' }] },
+    },
+    { id: 5, player_by_season: { 88: [{ id: 3, name: 'Kaelthas', signup_race: 'HU' }] } },
+  ];
+  const entrants = [
+    { id: 90, team: { id: 4 } },
+    { id: 91, team: { id: 5 } },
+    { id: 92, user: { id: 9 } },
+  ];
+  const rosters = rostersByEntrant(entrants, teams, 77);
+  assert.deepEqual(Object.keys(rosters), ['90']);
+  assert.deepEqual(rosters[90].map((seat) => [seat.player.name, seat.race, seat.captain]),
+    [['Wispy', 'NE', false], ['Grubbstep', 'OC', true]]);
+  // the same team rosters again for another event, and reads nobody for one it never entered
+  assert.deepEqual(Object.keys(rostersByEntrant(entrants, teams, 88)), ['91']);
+  assert.deepEqual(rostersByEntrant([], [], 77), {});
+  assert.deepEqual(rostersByEntrant(), {});
 });

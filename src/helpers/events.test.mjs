@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { dismissKoth, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction } from './events.mjs';
+import { dismissKoth, eventActionButton, hideResultsStored, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction, storeHideResults } from './events.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
@@ -147,4 +147,40 @@ test('a signed-up player of an open season reads the start, not the signups sent
   assert.equal(card.status, 'Starts 2 Nov');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Signed up', 'Captain · GNLA']);
   assert.deepEqual(card.primary, { title: 'Your series', to: '/player/thanks%2311187', variant: 'elevated' });
+});
+
+test('every action word the member read answers picks one button, or none', () => {
+  assert.equal(eventActionButton('sign_up').text, 'Sign up');
+  assert.equal(eventActionButton('withdraw').text, 'Withdraw');
+  assert.equal(eventActionButton('check_in').text, 'Check in');
+  assert.equal(eventActionButton('view').text, 'View the stage');
+  // a checked-in caller reads a chip and a closed event offers nothing
+  assert.equal(eventActionButton('checked_in'), null);
+  assert.equal(eventActionButton('closed'), null);
+  assert.equal(eventActionButton(undefined), null);
+});
+
+test('the spoiler switch is off until the viewer turns it on, and forgets on the way back', () => {
+  const store = new Map();
+  const fake = {
+    getItem: (key) => store.get(key) ?? null,
+    setItem: (key, value) => store.set(key, value),
+    removeItem: (key) => store.delete(key),
+  };
+  assert.equal(hideResultsStored(fake), false);
+  storeHideResults(true, fake);
+  assert.equal(hideResultsStored(fake), true);
+  storeHideResults(false, fake);
+  assert.equal(hideResultsStored(fake), false);
+  assert.equal(store.size, 0);
+});
+
+test('a browser with storage blocked shows the results and swallows the write', () => {
+  const blocked = {
+    getItem: () => { throw new Error('blocked'); },
+    setItem: () => { throw new Error('blocked'); },
+    removeItem: () => { throw new Error('blocked'); },
+  };
+  assert.equal(hideResultsStored(blocked), false);
+  assert.doesNotThrow(() => storeHideResults(true, blocked));
 });

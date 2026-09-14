@@ -280,9 +280,11 @@ export function chainChallengers(entrants = [], series = []) {
   return entrants.filter((row) => !row.withdrawn_at && !playing.has(row.user?.id ?? row.user_id));
 }
 
-// A free for all series is a lobby: one series holding one `series_side` row a seat,
-// each with the place it finished. A series with two sides writes no seat at all.
-export const isLobby = (row) => (row?.sides?.length ?? 0) > 0;
+// A free for all series is a lobby: one series holding one `series_side` row a seat, each
+// with the place it finished. A fixture series writes the same rows for the roster each
+// side fields, so a lobby is the series that names no entrant on either side.
+export const isLobby = (row) => (row?.sides?.length ?? 0) > 0
+  && !standsOn(row, 1) && !standsOn(row, 2);
 
 // The lobbies an entrant may move into: the same round and the same division, still to
 // play, and not the one he sits in. A division runs the whole event on its own and never

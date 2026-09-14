@@ -61,6 +61,11 @@
 
   <v-container fluid class="pa-4">
     <StatusAlert v-model="errorMessage" />
+
+    <!-- A fixture of the events module holds ordered series, each with its own mode and
+         pick rule; a GNL fixture answers none and reads the tables below instead. -->
+    <FixtureSeries v-if="fixtureRows.length" class="mb-4" :series="fixtureRows" :rosters="fixtureRosterMap" />
+
     <!-- Week Navigation Panel -->
     <v-card class="mb-4" elevation="2">
       <v-card-text class="pa-3">
@@ -1062,6 +1067,9 @@ import { raceWrapper } from '@/helpers/races';
 import { useColumns } from '@/helpers/columns';
 import { roundLabel } from '@/helpers/rounds.mjs';
 import { winsOf, resultProblem, neverPlayed } from '@/helpers/best-of';
+import FixtureSeries from '@/components/FixtureSeries.vue';
+import { fixtureRosters } from '@/helpers/fixture.mjs';
+import { useEventStore } from '@/stores';
 
 
 // Stores initialization
@@ -1930,10 +1938,26 @@ const toggleDraftFantasyMatch = async (draftSeriesItem) => {
   }
 };
 
+// The ordered series this fixture holds, when the event runs it through the events module
+const eventStore = useEventStore();
+const fixtureRows = ref([]);
+const fixtureRosterMap = ref({});
+
+const loadFixtureSeries = async () => {
+  const eventId = match.value?.season_id;
+  if (!eventId || !match.value?.id) return;
+  const answer = await eventStore.fetchFixture(eventId, match.value.id).catch(() => null);
+  if (!answer?.series?.length) return;
+  fixtureRows.value = answer.series;
+  // The two teams of the fixture are already read for the header, so nothing is read twice
+  fixtureRosterMap.value = fixtureRosters(answer.series, [team1.value, team2.value], eventId);
+};
+
 onMounted(async () => {
   // The w3champions season does not depend on the match, so both reads start together
   const [w3cSeason] = await Promise.all([resolveCurrentW3CSeason(), fetchMatchDetails()]);
   currentW3CSeason.value = w3cSeason;
+  await loadFixtureSeries();
 });
 </script>
 

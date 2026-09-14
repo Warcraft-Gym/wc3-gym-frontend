@@ -21,6 +21,7 @@
           <PlayerName v-for="seat in roster(side)" :key="seat.player.id" :player="seat.player"
             :race="seat.race || undefined" :plain="!readonly" />
         </span>
+        <span v-else-if="series.pick_rule" class="roster text-medium-emphasis">Roster not named</span>
       </div>
       <PlayerName v-else-if="player(side)" :player="player(side)" :race="race(side)" :plain="!readonly" />
       <span v-else class="text-medium-emphasis empty">{{ empty(side) }}</span>
@@ -38,7 +39,8 @@ import { computed, inject, ref } from 'vue';
 
 import { HIDE_RESULTS } from '@/helpers/events.mjs';
 import PlayerName from '@/components/PlayerName.vue';
-import { isByeSide, lobbySeats, seriesState, shownPlayer, shownTeam, winnerSide } from '@/helpers/stage-view.mjs';
+import { sideRoster } from '@/helpers/fixture.mjs';
+import { isByeSide, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, winnerSide } from '@/helpers/stage-view.mjs';
 
 const props = defineProps({
   series: { type: Object, required: true },
@@ -63,8 +65,10 @@ const STATE_WORD = {
 const hidden = inject(HIDE_RESULTS, ref(false));
 
 const state = computed(() => seriesState(props.series));
-// A lobby seats more than two, so its seats replace the two side rows
-const seats = computed(() => lobbySeats(props.series, hidden.value, props.fed));
+// A lobby seats more than two, so its seats replace the two side rows. A fixture series
+// writes the same rows for its side rosters, and those read under the team name instead.
+const seats = computed(() => (isLobby(props.series)
+  ? lobbySeats(props.series, hidden.value, props.fed) : []));
 // A lobby fills from the round before it, so it never waits for "both sides"
 const stateWord = computed(() => (seats.value.length && state.value === 'pending'
   ? 'Waiting for the round before' : STATE_WORD[state.value]));
@@ -72,8 +76,18 @@ const winner = computed(() => (hidden.value ? null : winnerSide(props.series)));
 
 const player = (side) => shownPlayer(props.series, side, hidden.value);
 const team = (side) => shownTeam(props.series, side, hidden.value);
-// The roster reads only beside the team it belongs to, so a hidden side names nobody
-const roster = (side) => (team(side) && props.rosters[props.series[`entrant${side}_id`]]) || [];
+// Who a team side fields: the players the series names, else the one player it drafted,
+// else every member the team is rostered with. A series that names its own pick rule
+// fields the players it names alone, so a side nobody has named yet reads empty.
+const roster = (side) => {
+  if (!team(side)) return [];
+  const named = sideRoster(props.series, side);
+  if (named.length) return named.map((one) => ({ player: one, race: one.signup_race }));
+  const drafted = player(side);
+  if (drafted) return [{ player: drafted, race: race(side) }];
+  if (props.series.pick_rule) return [];
+  return props.rosters[props.series[`entrant${side}_id`]] || [];
+};
 const race = (side) => props.series[`player${side}_race`] || undefined;
 const score = (side) => (hidden.value ? '' : props.series[`player${side}_score`] ?? '');
 // A side with no feeder and no entrant can never fill: the other side passes through

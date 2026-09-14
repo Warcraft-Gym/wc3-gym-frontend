@@ -30,6 +30,8 @@ export const blankStage = () => ({
   best_of: 3,
   map_rule: 'veto',
   series_per_entrant_per_round: 1,
+  lobby_size: '',
+  points_by_place: '',
   scheduling_mode: 'agreed',
   advance_count: '',
   auto_advance: false,
@@ -113,6 +115,9 @@ export const stagesPayload = (form) => (form.stages || []).map((stage, index) =>
   scheduling_mode: stage.scheduling_mode,
   advance_count: count(stage.advance_count),
   auto_advance: !!stage.auto_advance,
+  // A lobby seats a free for all; every other format plays two sides a series
+  lobby_size: stage.format === 'ffa' ? count(stage.lobby_size) : null,
+  points_by_place: stage.format === 'ffa' ? text(stage.points_by_place) : null,
   group_size: null,
   group_advance: null,
 }));
@@ -130,6 +135,17 @@ export const divisionsPayload = (form) => Array.from({ length: form.division_cou
   position: index + 1,
   name: text(form.division_names?.[index]) || `Division ${index + 1}`,
 }));
+
+// What a free for all stage still needs. A lobby seats two or more, and the place points
+// are the points each place pays, best place first.
+export const lobbyProblem = (stage) => {
+  if (stage.format !== 'ffa') return null;
+  const seats = count(stage.lobby_size);
+  if (seats !== null && !(seats >= 2)) return 'A lobby seats two players or more.';
+  const points = (stage.points_by_place || '').trim();
+  if (points && !/^\d+(\s*,\s*\d+)*$/.test(points)) return 'Write the place points as numbers, best place first: 4,3,2,1.';
+  return null;
+};
 
 // What the step still needs, in one sentence, or nothing when it is ready
 export const stepProblem = (form, key) => {
@@ -149,7 +165,7 @@ export const stepProblem = (form, key) => {
   if (key === 'stages') {
     if (!(form.stages || []).length) return 'Add at least one stage.';
     if (form.stages.some((stage) => Number(stage.best_of) % 2 === 0)) return 'A best-of is an odd number of games.';
-    return null;
+    return form.stages.map(lobbyProblem).find(Boolean) || null;
   }
   if (key === 'divisions') {
     if (form.division_count === 1) return 'Two divisions or more, or none at all.';

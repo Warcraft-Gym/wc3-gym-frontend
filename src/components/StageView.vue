@@ -25,7 +25,7 @@
           <div v-for="box in block.drawn.boxes" :key="box.key" class="box"
             :style="{ left: `${box.x}px`, top: `${box.cy - block.drawn.boxH / 2 + 28}px`, width: `${block.drawn.boxW}px` }">
             <SeriesBox :series="box.row" :rosters="rosters"
-              :label="thirdPlace(block.columns[box.column], box.row)" @open="open" />
+              :label="boxLabel(group, block.columns[box.column], box.row)" @open="open" />
           </div>
         </div>
       </div>
@@ -34,9 +34,10 @@
       <template v-else>
         <v-card v-for="column in group.columns" :key="column.key" elevation="1" class="mb-3 round-card">
           <v-card-title class="text-subtitle-1">{{ column.name }}</v-card-title>
-          <div class="rows">
+          <div class="rows" :class="{ lobbies: isLobbyStage }">
             <SeriesBox v-for="(row, index) in column.series" :key="row.id" :series="row" flat
-              :rosters="rosters" :crown="isChain" :label="thirdPlace(column, row)"
+              :rosters="rosters" :crown="isChain" :label="boxLabel(group, column, row)"
+              :fed="isLobbyStage && column.index > 0"
               class="list-row" :class="{ first: index === 0 }" @open="open" />
           </div>
         </v-card>
@@ -52,14 +53,14 @@
     </div>
 
     <!-- A table stage is read from its standings down; a bracket is read first and ranked after -->
-    <v-card v-if="tables.length" elevation="2" :style="{ order: isBracket ? 2 : 0 }">
-      <v-card-title>Standings</v-card-title>
+    <v-card v-if="tables.length" elevation="2" class="mb-4" :style="{ order: isBracket ? 2 : 0 }">
+      <v-card-title>{{ isLobbyStage ? 'Place points' : 'Standings' }}</v-card-title>
       <p v-if="hidden" class="text-medium-emphasis px-4 pb-4 mb-0">
         Results are hidden. Turn off "Hide results" to read the standings.
       </p>
-      <GroupedTable v-else :columns="STANDING_COLUMNS" :groups="tables" default-open empty="No standings yet">
+      <GroupedTable v-else :columns="standingColumns" :groups="tables" default-open empty="No standings yet">
         <template #group="{ group }">
-          <td colspan="7">{{ group.label }}</td>
+          <td :colspan="standingColumns.length">{{ group.label }}</td>
         </template>
         <template #rows="{ group }">
           <tr v-for="row in group.rows" :key="row.entrant_id" class="detail-row">
@@ -72,7 +73,7 @@
             <td class="text-right d-none d-md-table-cell">{{ row.played }}</td>
             <td class="text-right">{{ row.won }}</td>
             <td class="text-right d-none d-md-table-cell">{{ row.lost }}</td>
-            <td class="text-right">{{ signed(row.game_diff) }}</td>
+            <td v-if="!isLobbyStage" class="text-right">{{ signed(row.game_diff) }}</td>
             <td class="text-right">{{ row.points }}</td>
           </tr>
         </template>
@@ -110,6 +111,8 @@ const STANDING_COLUMNS = [
   { key: 'game_diff', title: 'Game diff', align: 'right' },
   { key: 'points', title: 'Points', align: 'right' },
 ];
+// A lobby counts no games, so a free for all table reads its place points and nothing else
+const LOBBY_COLUMNS = STANDING_COLUMNS.filter((column) => column.key !== 'game_diff');
 
 // The spoiler switch of the page around this stage; the standings give the whole result away
 const hidden = inject(HIDE_RESULTS, ref(false));
@@ -118,6 +121,9 @@ const { smAndDown } = useDisplay();
 const stacked = computed(() => smAndDown.value);
 const isBracket = computed(() => ['single_elimination', 'double_elimination'].includes(props.stage.format));
 const isChain = computed(() => props.stage.format === 'koth');
+// A free for all plays lobbies: a bracket of them round by round, or one league lobby
+const isLobbyStage = computed(() => props.stage.format === 'ffa');
+const standingColumns = computed(() => (isLobbyStage.value ? LOBBY_COLUMNS : STANDING_COLUMNS));
 
 // A team side prints its name over its roster, so a box of team sides is taller than a
 // box of two names. A roster name wears a flag and a race icon and takes a line of the
@@ -152,10 +158,19 @@ const groups = computed(() => {
 
 const tables = computed(() => standingsGroups(props.standings, props.divisions));
 
-// The beaten semi-finalists play last in the final column, so the second box names itself
-const thirdPlace = (column, row) => (
-  column?.name === 'Final' && column.series.length > 1 && column.series.indexOf(row) > 0
-    ? 'Third place' : '');
+// The beaten semi-finalists play last in the final column, so the second box names itself.
+// A free for all names each box instead: a lobby of a round, or a game of the one league
+// lobby, which plays every one of its series in the same round.
+const boxLabel = (group, column, row) => {
+  if (isLobbyStage.value) {
+    // A round of one lobby is named by the round itself, so the box names nothing
+    if (column.series.length < 2) return '';
+    const word = group.columns.length > 1 ? 'Lobby' : 'Game';
+    return `${word} ${column.series.indexOf(row) + 1}`;
+  }
+  return column?.name === 'Final' && column.series.length > 1 && column.series.indexOf(row) > 0
+    ? 'Third place' : '';
+};
 const signed = (value) => (value > 0 ? `+${value}` : String(value ?? 0));
 const open = (row) => emit('open-series', row);
 </script>
@@ -174,6 +189,8 @@ const open = (row) => emit('open-series', row);
 .round-card { max-width: 560px; }
 .rows > .list-row { border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
 .rows > .list-row.first { border-top: none; }
+/* A lobby is a block of seats, so the next lobby stands off it and not on one hairline */
+.rows.lobbies > .list-row + .list-row { margin-top: 10px; }
 
 .legend { display: flex; gap: 16px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }

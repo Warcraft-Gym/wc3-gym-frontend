@@ -140,6 +140,14 @@ export const useEventStore = defineStore({
             const query = force ? '?force=true' : '';
             return await fetchWrapper.put(`${backendUrl}/series/${series_id}${query}`, scores);
         },
+        // Where every seat of a free for all lobby finished; a lobby plays one game
+        async setPlaces(series_id, places) {
+            return await fetchWrapper.put(`${backendUrl}/series/${series_id}/places`, { places });
+        },
+        // Seats a lobby again before it is played, so an entrant moves between lobbies
+        async setLobbySides(series_id, entrant_ids) {
+            return await fetchWrapper.put(`${backendUrl}/series/${series_id}/sides`, { entrant_ids });
+        },
         // A series no game was played for: a walkover or a forfeit, with the side that takes it
         async awardSeries(series_id, result_kind, winner) {
             return await fetchWrapper.put(`${backendUrl}/series/${series_id}/result-kind`, { result_kind, winner });

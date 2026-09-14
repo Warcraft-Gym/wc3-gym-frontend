@@ -13,6 +13,8 @@ export const standsOn = (row, side) => row?.[`entrant${side}_id`] ?? row?.[`play
 
 export const seriesState = (row) => {
   if (isScored(row)) return SERIES_STATES.includes(row.result_kind) ? row.result_kind : 'played';
+  // A lobby names nobody in the player columns; its seats say whether it can be played
+  if (row?.sides?.length) return row.sides.every((seat) => seat.entrant_id) ? 'open' : 'pending';
   return standsOn(row, 1) && standsOn(row, 2) ? 'open' : 'pending';
 };
 
@@ -223,4 +225,43 @@ export function chainChallengers(entrants = [], series = []) {
     .flatMap((row) => [row.player1_id, row.player2_id])
     .filter((id) => id != null));
   return entrants.filter((row) => !row.withdrawn_at && !playing.has(row.user?.id ?? row.user_id));
+}
+
+// A free for all series is a lobby: one series holding one `series_side` row a seat,
+// each with the place it finished. A series with two sides writes no seat at all.
+export const isLobby = (row) => (row?.sides?.length ?? 0) > 0;
+
+// The lobbies an entrant may move into: the same round and the same division, still to
+// play, and not the one he sits in. A division runs the whole event on its own and never
+// merges, so the picker numbers its lobbies the way that division's boxes are numbered.
+export function lobbyTargets(series = [], picked = null) {
+  if (!picked) return [];
+  return series
+    .filter((row) => isLobby(row) && row.round_id === picked.round_id
+      && row.division_id === picked.division_id)
+    .sort((a, b) => (a.sequence ?? a.id) - (b.sequence ?? b.id))
+    .map((row, index) => ({ id: row.id, row, label: `Lobby ${index + 1}: ${lobbyNames(row)}` }))
+    .filter((item) => item.id !== picked.id && !isScored(item.row));
+}
+
+const lobbyNames = (row) => (row.sides || []).map((seat) => seat.user?.name || 'empty').join(', ');
+
+// The seats of one lobby as its box reads them: the winner first, then the rest by
+// place, then the seats nobody placed yet. While results are hidden every seat keeps
+// its seat order and carries no place, so the box gives nothing away. A fed lobby takes
+// its seats from the round before it, so a hidden one names nobody either.
+export function lobbySeats(row, hidden = false, fed = false) {
+  const seats = [...(row?.sides || [])].sort((a, b) => a.side_no - b.side_no);
+  if (hidden) {
+    return seats.map((seat) => ({
+      ...seat, key: seat.side_no, place: null, result: null, user: fed ? null : seat.user,
+    }));
+  }
+  return seats
+    .map((seat) => ({
+      ...seat,
+      key: seat.side_no,
+      result: seat.place == null ? null : (seat.place === 1 ? 'won' : 'lost'),
+    }))
+    .sort((a, b) => (a.place ?? Infinity) - (b.place ?? Infinity) || a.side_no - b.side_no);
 }

@@ -114,6 +114,14 @@
                 <v-col cols="6" md="4">
                   <v-select v-model="stage.map_rule" :items="MAP_RULES" label="Map rule" />
                 </v-col>
+                <v-col v-if="stage.format === 'ffa'" cols="6" md="4">
+                  <v-text-field v-model="stage.lobby_size" type="number" min="2" label="Players per lobby"
+                    placeholder="The whole field" />
+                </v-col>
+                <v-col v-if="stage.format === 'ffa'" cols="6" md="4">
+                  <v-text-field v-model="stage.points_by_place" label="Points each place pays"
+                    placeholder="4,3,2,1" hint="Best place first" persistent-hint />
+                </v-col>
                 <v-col v-if="stage.format === 'round_robin'" cols="12" md="4">
                   <v-text-field v-model="stage.series_per_entrant_per_round" type="number" min="1"
                     :label="SERIES_PER_ENTRANT_PER_ROUND" />
@@ -293,6 +301,8 @@ const review = computed(() => {
             titleOf(FORMATS, stage.format),
             `best of ${stage.best_of}`,
             ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each entrant a round`] : []),
+            ...(stage.format === 'ffa' && stage.lobby_size ? [`lobbies of ${stage.lobby_size}`] : []),
+            ...(stage.format === 'ffa' && stage.points_by_place ? [`places pay ${stage.points_by_place}`] : []),
             titleOf(MAP_RULES, stage.map_rule).toLowerCase(),
             titleOf(SCHEDULING_MODES, stage.scheduling_mode).toLowerCase(),
             stage.advance_count ? `${stage.advance_count} advance` : 'nobody advances',

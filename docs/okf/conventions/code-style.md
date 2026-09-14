@@ -3,7 +3,7 @@ type: Convention
 title: Code style
 description: Vue 3 with Vuetify and Pinia, pure helpers in .mjs files with node tests, theme tokens instead of colour values, Title Case page titles, and one-line comments.
 tags: [vue, style, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T14:30:00Z }
 sources:
   - id: package
     resource: ../../../package.json
@@ -45,5 +45,6 @@ A comment describes the current state in the present tense, on one line where it
 # What not to add
 
 - No second table component, no second player-name fragment, no hand-rolled chart when a `GroupedTable`, a `PlayerName` or a d3 scale already exists.
+- No second copy of a pure rule. A rule two pages need lives once in `src/helpers`, under one name, with one node test. Before writing a helper, search `src/helpers` for the same arithmetic or the same label under another name, and call that one.
 - No configuration knob that restates a library default.
 - No hand-written parser over a binary format. The replay reader inflates a block and searches its text; it never walks records.

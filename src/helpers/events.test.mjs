@@ -51,16 +51,22 @@ test('the phase and signups_open decide the action', () => {
   assert.equal(seasonAction(null), null);
 });
 
-test('one card per event of any kind, the finished one left out', () => {
+test('one card per event of any kind, the finished one left out, soonest start first', () => {
   const cards = homeCards({ events, me, seasons, now });
-  assert.deepEqual(cards.map((card) => card.key), ['event:9', 'event:5', 'event:4']);
-  assert.equal(cards[0].name, 'GYM · Autumn Cup');
-  assert.equal(cards[0].date.toISOString(), '2026-10-12T00:00:00.000Z');
-  assert.equal(cards[1].slug, 'gnl-review-season-2');
+  assert.deepEqual(cards.map((card) => card.key), ['event:4', 'event:9', 'event:5']);
+  assert.equal(cards[1].name, 'GYM · Autumn Cup');
+  assert.equal(cards[1].date.toISOString(), '2026-10-12T00:00:00.000Z');
+  assert.equal(cards[2].slug, 'gnl-review-season-2');
+});
+
+test('an event without a start date falls last', () => {
+  const undated = row({ id: 11, name: 'Undated Cup', start: null, end: null });
+  const cards = homeCards({ events: [undated, ...events], me, seasons, kothEvents, now });
+  assert.deepEqual(cards.map((card) => card.key), ['event:4', 'koth:4', 'event:9', 'event:5', 'event:11']);
 });
 
 test('the season the captain plays reads the round in play and carries every link', () => {
-  const card = homeCards({ events, me, seasons, now })[2];
+  const card = homeCards({ events, me, seasons, now })[0];
   assert.equal(card.status, 'Round 5 of 8 · 5 to 11 Oct');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Running', 'Signed up', 'Captain · GNLB']);
   assert.deepEqual(card.primary, { title: 'Your series', to: '/player/thanks%2311187', variant: 'elevated' });
@@ -68,7 +74,7 @@ test('the season the captain plays reads the round in play and carries every lin
 });
 
 test('a season the player is not in asks to join and shows the two open reads', () => {
-  const card = homeCards({ events, me, seasons, now })[1];
+  const card = homeCards({ events, me, seasons, now })[2];
   assert.equal(card.status, '2 Nov 2026');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Seeded']);
   assert.deepEqual(card.primary, { title: 'Ask to join', to: '/signup?season=gnl-review-season-2', variant: 'outlined' });
@@ -84,10 +90,10 @@ test('a season with signups open links to the GNL signup form, and the popup tak
 
 test('a cup with signups open offers the signup dialog, and the popup takes that row', () => {
   const cards = homeCards({ events, me, seasons, now });
-  assert.equal(cards[0].status, '12 Oct 2026 – 13 Oct 2026');
-  assert.deepEqual(cards[0].chips.map((chip) => chip.title), ['Signups open']);
-  assert.deepEqual(cards[0].primary, { title: 'Sign up', icon: 'mdi-account-plus', color: 'primary', variant: 'elevated', act: 'sign_up' });
-  assert.deepEqual(cards[0].links.map((link) => link.to), ['/events/9']);
+  assert.equal(cards[1].status, '12 Oct 2026 – 13 Oct 2026');
+  assert.deepEqual(cards[1].chips.map((chip) => chip.title), ['Signups open']);
+  assert.deepEqual(cards[1].primary, { title: 'Sign up', icon: 'mdi-account-plus', color: 'primary', variant: 'elevated', act: 'sign_up' });
+  assert.deepEqual(cards[1].links.map((link) => link.to), ['/events/9']);
   assert.deepEqual(joinableEvents(cards).map((card) => card.key), ['event:9']);
 });
 
@@ -127,10 +133,10 @@ test('a running cup opens its own page, and a closed one offers nothing', () => 
   assert.equal(homeCards({ events: [shut], me, seasons, now })[0].primary, null);
 });
 
-test('a KOTH night still to come follows the event cards; a past or inactive one is gone', () => {
+test('a KOTH night still to come takes its date place; a past or inactive one is gone', () => {
   const cards = homeCards({ events, me, seasons, kothEvents, now });
-  assert.deepEqual(cards.map((card) => card.key), ['event:9', 'event:5', 'event:4', 'koth:4']);
-  const koth = cards[3];
+  assert.deepEqual(cards.map((card) => card.key), ['event:4', 'koth:4', 'event:9', 'event:5']);
+  const koth = cards[1];
   assert.match(koth.status, /^King of the Hill · /);
   assert.deepEqual(koth.primary, { title: 'Sign up', to: '/koth/dashboard', variant: 'elevated' });
   assert.deepEqual(koth.links, []);
@@ -169,7 +175,7 @@ test('a dismissed night drops out of kothCards and out of homeCards', () => {
   assert.deepEqual(kothCards({ kothEvents, now, store }), []);
   globalThis.localStorage = store;
   try {
-    assert.deepEqual(homeCards({ events, me, seasons, kothEvents, now }).map((card) => card.key), ['event:9', 'event:5', 'event:4']);
+    assert.deepEqual(homeCards({ events, me, seasons, kothEvents, now }).map((card) => card.key), ['event:4', 'event:9', 'event:5']);
   } finally {
     delete globalThis.localStorage;
   }

@@ -104,7 +104,7 @@ function eventPrimary(row, me, slug) {
   };
 }
 
-// One card per event GET /me/events answers, of any kind, then the KOTH nights still
+// One card per event GET /me/events answers, of any kind, with the KOTH nights still
 // to come. A finished event is not upcoming, so it stays off the home. The /seasons row
 // of the same id adds the rounds and the round count a GNL card reads, and the /me entry
 // adds the team and the captain seat, which the member read does not carry.
@@ -138,7 +138,10 @@ export function homeCards({ events = [], me = null, seasons = [], kothEvents = [
       slug,
     };
   });
-  return [...cards, ...kothCards({ kothEvents, now })];
+  // One list in date order, the KOTH nights among the rest: the date tile leads every
+  // card, so a running event sits above a later one and an event without a start falls last.
+  const start = (card) => card.date?.getTime() ?? Number.MAX_SAFE_INTEGER;
+  return [...cards, ...kothCards({ kothEvents, now })].sort((a, b) => start(a) - start(b));
 }
 
 // The rows the landing popup offers: open signups the player has not taken, each with its own button

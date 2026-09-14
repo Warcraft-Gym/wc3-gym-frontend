@@ -1,18 +1,24 @@
-<!-- One row per season the player signed up for, newest first. The row carries
-     the season's state, his team, race, series record and round strip, ladder
-     record and MMR; it opens into his series by round and the ladder tab. The
-     season named by `open` draws the `current` slot instead of the series table. -->
+<!-- One row per event the player took part in, of any kind, newest first. The row
+     carries the event's kind, its dates and the placing or the state, and for a GNL
+     season his team, race, series record, round strip, ladder record and MMR; it
+     opens into his series by round and the ladder tab. A cup opens on its placing,
+     the series still to play and its event page. The event named by `open` draws the
+     `current` slot instead of the series table. -->
 <template>
   <StatusAlert v-model="errorMessage" />
   <v-expansion-panels v-if="rows.length" v-model="opened" class="season-panels" variant="accordion" flat>
-    <v-expansion-panel v-for="row in rows" :key="row.season.id" :value="row.season.id">
+    <v-expansion-panel v-for="row in rows" :key="row.id" :value="row.id">
       <v-expansion-panel-title class="season-head">
         <div class="season-grid">
           <div class="season-name">
             <div class="d-flex align-center flex-wrap ga-2 text-h6">
-              {{ eventLabel(row.season) }}
-              <v-chip v-if="row.won" size="x-small" variant="outlined">
+              {{ row.label }}
+              <v-chip size="x-small" variant="outlined">{{ row.kindLabel }}</v-chip>
+              <v-chip v-if="row.champion" size="x-small" variant="outlined">
                 <v-icon start size="x-small" color="primary">mdi-crown</v-icon>Champion
+              </v-chip>
+              <v-chip v-else-if="row.placing && !row.running" size="x-small" variant="outlined">
+                <v-icon start size="x-small">mdi-podium</v-icon>{{ row.placing }}
               </v-chip>
               <v-chip v-else size="x-small" variant="outlined" :color="STATE_COLOR[row.season.phase] ?? undefined">
                 <v-icon start size="x-small">mdi-circle</v-icon>{{ STATE[row.season.phase] ?? row.season.phase ?? '—' }}
@@ -20,92 +26,108 @@
             </div>
             <div class="text-caption text-medium-emphasis">{{ dates(row.season) }}</div>
           </div>
-          <div class="fact"><div class="text-caption text-medium-emphasis">Team</div><div>{{ row.team ?? '—' }}</div></div>
-          <div class="fact">
+          <div v-if="row.team" class="fact"><div class="text-caption text-medium-emphasis">Team</div><div>{{ row.team }}</div></div>
+          <div v-if="row.race" class="fact">
             <div class="text-caption text-medium-emphasis">Race</div>
-            <div class="d-flex align-center ga-1"><RaceIcon v-if="row.race" :raceIdentifier="row.race" />{{ raceName(row.race) }}</div>
+            <div class="d-flex align-center ga-1"><RaceIcon :raceIdentifier="row.race" />{{ raceName(row.race) }}</div>
           </div>
           <div class="fact">
             <div class="text-caption text-medium-emphasis">Series</div>
             <div class="d-flex align-center ga-2">
-              <span><span class="text-win">{{ row.stat?.wins ?? 0 }}</span> – <span class="text-loss">{{ row.stat?.losses ?? 0 }}</span></span>
+              <span><span class="text-win">{{ row.wins }}</span> – <span class="text-loss">{{ row.losses }}</span></span>
               <span v-if="row.season.round_count" class="weeks">
                 <span v-for="week in row.season.round_count" :key="week" class="week" :class="weekClass(row, week)" :title="weekTitle(row, week)" />
               </span>
             </div>
           </div>
-          <div class="fact">
-            <div class="text-caption text-medium-emphasis">Ladder</div>
-            <div v-if="row.ladder">{{ row.ladder.points }} pts <span class="text-medium-emphasis">· {{ row.ladder.wins }} – {{ row.ladder.losses }}</span></div>
-            <div v-else class="text-medium-emphasis">—</div>
-          </div>
-          <div class="fact">
-            <div class="text-caption text-medium-emphasis"><W3CMmr /></div>
-            <div v-if="row.ladder?.mmr?.current != null">
-              {{ row.ladder.mmr.current }}
-              <span v-if="mmrDelta(row) > 0" class="text-win">▲ {{ mmrDelta(row) }}</span>
-              <span v-else-if="mmrDelta(row) < 0" class="text-loss">▼ {{ -mmrDelta(row) }}</span>
+          <template v-if="row.ladder">
+            <div class="fact">
+              <div class="text-caption text-medium-emphasis">Ladder</div>
+              <div>{{ row.ladder.points }} pts <span class="text-medium-emphasis">· {{ row.ladder.wins }} – {{ row.ladder.losses }}</span></div>
             </div>
-            <div v-else class="text-medium-emphasis">no games yet</div>
-          </div>
+            <div class="fact">
+              <div class="text-caption text-medium-emphasis"><W3CMmr /></div>
+              <div v-if="row.ladder.mmr?.current != null">
+                {{ row.ladder.mmr.current }}
+                <span v-if="mmrDelta(row) > 0" class="text-win">▲ {{ mmrDelta(row) }}</span>
+                <span v-else-if="mmrDelta(row) < 0" class="text-loss">▼ {{ -mmrDelta(row) }}</span>
+              </div>
+              <div v-else class="text-medium-emphasis">no games yet</div>
+            </div>
+          </template>
         </div>
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <slot v-if="row.season.id === openId && $slots.current" name="current" :row="row" />
-        <section v-else class="section">
-          <h4 class="text-body-1 font-weight-medium">Series by round <span class="text-caption text-medium-emphasis">{{ row.stat?.wins ?? 0 }} – {{ row.stat?.losses ?? 0 }}</span></h4>
-          <v-table density="compact">
-            <thead>
-              <tr>
-                <th>Round</th>
-                <th>Opponent</th>
-                <th v-if="mdAndUp">Team</th>
-                <th class="text-right">Result</th>
-                <th v-if="mdAndUp" class="text-right">Played</th>
-                <th v-if="mdAndUp"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="series in row.series" :key="series.id">
-                <td>{{ series.match?.playday ?? '—' }}</td>
-                <td>
-                  <PlayerName :player="opponent(series)" :race="opponentRace(series)" />
-                  <span v-if="!mdAndUp" class="text-medium-emphasis ml-1">{{ opponentTeam(series, row) }}</span>
-                </td>
-                <td v-if="mdAndUp">{{ opponentTeam(series, row) }}</td>
-                <td class="text-right font-weight-medium" :class="resultClass(series)">{{ result(series) }}</td>
-                <td v-if="mdAndUp" class="text-right">{{ playedOn(series) }}</td>
-                <td v-if="mdAndUp" class="text-medium-emphasis">
-                  <div class="d-flex align-center ga-2">
-                    <span v-if="series.host_player_id === player.id">host</span>
-                    <CastChips :series="series" />
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="!row.series.length">
-                <td colspan="6" class="text-medium-emphasis">No series yet.</td>
-              </tr>
-            </tbody>
-          </v-table>
-        </section>
-        <template v-if="row.stat">
-          <v-divider class="mb-4" />
-          <PlayerLadderTab :player="player" :seasonId="row.season.id" />
+        <slot v-if="row.kind === 'gnl' && row.id === openId && $slots.current" name="current" :row="row" />
+        <template v-else-if="row.kind === 'gnl'">
+          <section class="section">
+            <h4 class="text-body-1 font-weight-medium">Series by round <span class="text-caption text-medium-emphasis">{{ row.wins }} – {{ row.losses }}</span></h4>
+            <v-table density="compact">
+              <thead>
+                <tr>
+                  <th>Round</th>
+                  <th>Opponent</th>
+                  <th v-if="mdAndUp">Team</th>
+                  <th class="text-right">Result</th>
+                  <th v-if="mdAndUp" class="text-right">Played</th>
+                  <th v-if="mdAndUp"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="series in byRound(row.series)" :key="series.id">
+                  <td>{{ series.match?.playday ?? '—' }}</td>
+                  <td>
+                    <PlayerName :player="opponent(series)" :race="opponentRace(series)" />
+                    <span v-if="!mdAndUp" class="text-medium-emphasis ml-1">{{ opponentTeam(series, row) }}</span>
+                  </td>
+                  <td v-if="mdAndUp">{{ opponentTeam(series, row) }}</td>
+                  <td class="text-right font-weight-medium" :class="resultClass(series)">{{ result(series) }}</td>
+                  <td v-if="mdAndUp" class="text-right">{{ playedOn(series) }}</td>
+                  <td v-if="mdAndUp" class="text-medium-emphasis">
+                    <div class="d-flex align-center ga-2">
+                      <span v-if="series.host_player_id === player.id">host</span>
+                      <CastChips :series="series" />
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="!row.series.length">
+                  <td colspan="6" class="text-medium-emphasis">No series yet.</td>
+                </tr>
+              </tbody>
+            </v-table>
+          </section>
+          <template v-if="row.ladder">
+            <v-divider class="mb-4" />
+            <PlayerLadderTab :player="player" :seasonId="row.id" />
+          </template>
         </template>
+        <section v-else class="section">
+          <div>{{ row.placing ? `Finished ${row.placing}` : 'No placing yet' }} · won {{ row.wins }}, lost {{ row.losses }}</div>
+          <div v-if="row.next" class="mt-2">
+            Next series
+            <a class="text-primary-text" :href="`/series/${row.next.id}`">
+              vs {{ opponent(row.next).name }}{{ row.next.date_time ? ` on ${playedOn(row.next)}` : '' }}
+            </a>
+          </div>
+          <div v-else class="mt-2 text-medium-emphasis">No series to play.</div>
+          <v-btn class="mt-3" variant="outlined" size="small" prepend-icon="mdi-tournament" :to="`/events/${row.id}`">
+            Event page
+          </v-btn>
+        </section>
       </v-expansion-panel-text>
     </v-expansion-panel>
   </v-expansion-panels>
-  <div v-else class="text-medium-emphasis pa-4">Not signed up for a season.</div>
+  <div v-else class="text-medium-emphasis pa-4">No events yet.</div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { DateTime } from 'luxon';
 import { useDisplay } from 'vuetify';
-import { useLadderStore, useSeasonStore, useSeriesStore, useTeamStore } from '@/stores';
+import { useLadderStore, usePlayerStore, useSeasonStore, useSeriesStore } from '@/stores';
 import { raceWrapper } from '@/helpers/races';
 import { isUnscored } from '@/helpers/season-phase.mjs';
-import { eventLabel } from '@/helpers/event-labels.mjs';
+import { eventRows, openRowId } from '@/helpers/player-events.mjs';
 import { currentRound } from '@/helpers/rounds.mjs';
 import CastChips from '@/components/CastChips.vue';
 import PlayerLadderTab from '@/components/PlayerLadderTab.vue';
@@ -116,7 +138,7 @@ import W3CMmr from '@/components/W3CMmr.vue';
 
 const props = defineProps({
   player: { type: Object, required: true },
-  open: Number, // the season expanded at first, whose body the current slot draws
+  open: Number, // the event expanded at first, whose body the current slot draws
 });
 const opened = ref(props.open ?? null);
 
@@ -126,36 +148,26 @@ const STATE_COLOR = { commenced: 'info', overdue: 'info' };
 
 const { mdAndUp } = useDisplay();
 const ladderStore = useLadderStore();
+const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const seriesStore = useSeriesStore();
-const teamStore = useTeamStore();
 
 const errorMessage = ref(null);
-const seriesBySeason = ref({});
-const ladderBySeason = ref({});
+const history = ref({});
+const seriesByEvent = ref({});
+const ladderByEvent = ref({});
 
-// Newest season first; the season list carries the phase and dates, the
-// player's own record his team and series tally
-const rows = computed(() => {
-  const seasons = seasonStore.seasons ?? [];
-  return (props.player.signup_seasons ?? [])
-    .map(signup => {
-      const season = seasons.find(s => s.id === signup.id) ?? signup;
-      const stat = (props.player.gnl_stats ?? []).find(s => s.season_id === signup.id) ?? null;
-      return {
-        season,
-        stat,
-        race: signup.signup_race,
-        team: (teamStore.teams ?? []).find(t => t.id === stat?.team_id)?.name ?? null,
-        series: byWeek(seriesBySeason.value[signup.id] ?? []),
-        ladder: ladderBySeason.value[signup.id] ?? null,
-        won: (props.player.trophies ?? []).some(t => t.season_id === signup.id),
-      };
-    })
-    .sort((a, b) => b.season.id - a.season.id);
-});
+// The history read names every event of every kind the player stood in; the season
+// list adds the dates and the phase, the per-event reads the series and the ladder
+const rows = computed(() => eventRows({
+  history: history.value,
+  player: props.player,
+  seasons: seasonStore.seasons ?? [],
+  seriesByEvent: seriesByEvent.value,
+  ladderByEvent: ladderByEvent.value,
+}));
 
-const byWeek = (series) => [...series].sort((a, b) =>
+const byRound = (series) => [...series].sort((a, b) =>
   (a.match?.playday ?? 0) - (b.match?.playday ?? 0) || (a.date_time ?? '').localeCompare(b.date_time ?? ''));
 
 const raceName = (code) => (code ? raceWrapper.getRaceObject(code)?.name ?? code : '—');
@@ -180,7 +192,7 @@ const opponentRace = (series) => (mine(series) ? series.player2_race : series.pl
 const opponentTeam = (series, row) => {
   const match = series.match;
   if (!match) return '';
-  return (match.team1_id === row.stat?.team_id ? match.team2 : match.team1)?.name ?? '';
+  return (match.team1_id === row.teamId ? match.team2 : match.team1)?.name ?? '';
 };
 const scores = (series) => (mine(series)
   ? [series.player1_score, series.player2_score]
@@ -218,33 +230,34 @@ const mmrDelta = (row) => {
   return mmr?.current != null && mmr?.start != null ? mmr.current - mmr.start : 0;
 };
 
-// With no season named, the newest season still running opens onto its rounds
-const openId = computed(() => props.open
-  ?? rows.value.find(row => row.season.phase && row.season.phase !== 'complete')?.season.id
-  ?? null);
-// A reader wants the season with ladder facts in it, which is rarely the one just opened
+// With no event named, the running GNL season opens onto its rounds
+const openId = computed(() => props.open ?? openRowId(rows.value));
+// A reader wants the event with ladder facts in it, which is rarely the one just opened
 const defaultOpen = computed(() => props.open
-  ?? rows.value.find(row => row.stat && row.ladder?.games)?.season.id
+  ?? rows.value.find(row => row.ladder?.games)?.id
   ?? openId.value);
-// it follows the ladder reads as they land, until the reader opens a season himself
+// it follows the ladder reads as they land, until the reader opens an event himself
 watch(defaultOpen, (id, was) => { if (opened.value == null || opened.value === was) opened.value = id; }, { immediate: true });
 
-// The season list and the team names once; one series read and one ladder
-// read per season, for the row's own facts
+// One history read for the whole accordion, the season list once, then one series
+// read and one ladder read per event, for the row's own facts
 const load = async () => {
   errorMessage.value = null;
-  seriesBySeason.value = {};
-  ladderBySeason.value = {};
+  history.value = {};
+  seriesByEvent.value = {};
+  ladderByEvent.value = {};
   try {
     if (!seasonStore.seasons?.length) await seasonStore.fetchSeasons();
-    if (!teamStore.teams?.length) await teamStore.fetchTeams();
-    await Promise.all((props.player.signup_seasons ?? []).map(async (signup) => {
+    history.value = await playerStore.playerHistory(props.player.id);
+    await Promise.all((history.value.events ?? []).map(async (event) => {
+      const id = event.season_id;
+      // the ladder record is a GNL season's: the read has nothing to say about a cup
       const [series, ladder] = await Promise.all([
-        seriesStore.playerSeries(signup.id, props.player.id),
-        ladderStore.userLadder(props.player.id, { seasonId: signup.id }).catch(() => null),
+        seriesStore.playerSeries(id, props.player.id).catch(() => []),
+        (event.kind ?? 'gnl') === 'gnl' ? ladderStore.userLadder(props.player.id, { seasonId: id }).catch(() => null) : null,
       ]);
-      seriesBySeason.value = { ...seriesBySeason.value, [signup.id]: series };
-      ladderBySeason.value = { ...ladderBySeason.value, [signup.id]: ladder };
+      seriesByEvent.value = { ...seriesByEvent.value, [id]: series };
+      ladderByEvent.value = { ...ladderByEvent.value, [id]: ladder };
     }));
   } catch (error) {
     errorMessage.value = error.message;

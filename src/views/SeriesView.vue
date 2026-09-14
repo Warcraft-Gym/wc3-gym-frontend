@@ -113,7 +113,7 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { eventLabel, MAP_RULES, timeText, titleOf } from '@/helpers/event-labels.mjs';
 import { rulesOf } from '@/helpers/map-order.mjs';
-import { isScored } from '@/helpers/stage-view.mjs';
+import { isScored, sideName as nameOfSide } from '@/helpers/stage-view.mjs';
 import { useAuthStore, useEventStore, useMapStore } from '@/stores';
 
 const route = useRoute();
@@ -147,7 +147,7 @@ const rules = computed(() => rulesOf(series.value?.rules?.map_rules));
 const bestOfLine = computed(() => `Best of ${series.value?.rules?.best_of || rules.value.length}`);
 const hasVeto = computed(() => rules.value.includes('veto'));
 
-const sideName = (side) => series.value?.[`player${side}`]?.name || `Side ${side}`;
+const sideName = (side) => nameOfSide(series.value, side) || `Side ${side}`;
 const mapName = (id) => mapStore.maps.find((row) => row.id === id)?.name;
 
 // One row per game of the best-of: its rule, the map it was played on or the one the
@@ -162,9 +162,14 @@ const gameRows = computed(() => rules.value.map((rule, index) => {
   };
 }));
 
+// A team side names no player of its own, so any logged-in member may open the report
+// and the API answers whether he acts for the side; the 403 reads as the dialog's alert.
+const teamSided = computed(() => !!series.value && !series.value.match
+  && !series.value.player1_id && !series.value.player2_id);
 // A side of the series reports it, and so does an admin
 const canReport = computed(() => auth.isAdmin
-  || [series.value?.player1_id, series.value?.player2_id].includes(auth.me?.user?.id));
+  || [series.value?.player1_id, series.value?.player2_id].includes(auth.me?.user?.id)
+  || (!!auth.me && teamSided.value));
 
 const award = async (kind) => {
   awarding.value = true;

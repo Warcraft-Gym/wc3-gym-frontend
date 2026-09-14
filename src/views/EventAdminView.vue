@@ -43,7 +43,8 @@
         </div>
 
         <StageView class="mt-4" :stage="stage" :series="series" :rounds="rounds"
-          :divisions="event.divisions" :standings="standings" @open-series="openSeries" />
+          :divisions="event.divisions" :standings="standings" :rosters="rosters"
+          @open-series="openSeries" />
       </template>
     </template>
 
@@ -226,12 +227,15 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } from '@/helpers/event-labels.mjs';
 import { scoreOf } from '@/helpers/map-order.mjs';
 import {
-  advancingRows, chainChallengers, generateFields, isScored, pendingChainSeries, winsFor,
+  advancingRows, chainChallengers, generateFields, isScored, pendingChainSeries, sideName as nameOfSide,
+  standsOn, winsFor,
 } from '@/helpers/stage-view.mjs';
-import { useEventStore } from '@/stores';
+import { rostersByEntrant } from '@/helpers/entrants.mjs';
+import { useEventStore, useTeamStore } from '@/stores';
 
 const route = useRoute();
 const store = useEventStore();
+const teamStore = useTeamStore();
 
 const event = ref(null);
 const league = ref(null);
@@ -239,6 +243,7 @@ const entrants = ref([]);
 const series = ref([]);
 const rounds = ref([]);
 const standings = ref([]);
+const rosters = ref({});  // the players each team entrant fields, so a series box names them
 const loading = ref(true);
 const saving = ref(false);
 const error = ref(null);
@@ -287,6 +292,11 @@ const load = async () => {
     event.value = row;
     league.value = leagues.find((one) => one.id === row.league_id) || null;
     entrants.value = await store.fetchEntrants(row.id).catch(() => []);
+    // only a team event fields rosters, so nothing else pays for the read
+    if (row.entrant_kind === 'team') {
+      await teamStore.fetchTeamsBySeason(row.id).catch(() => {});
+      rosters.value = rostersByEntrant(entrants.value, teamStore.teams, row.id);
+    }
     await loadStage();
   } catch (e) {
     error.value = `The event did not load: ${e.message}`;
@@ -372,7 +382,7 @@ const openSeries = (row) => {
 };
 
 const scored = computed(() => isScored(picked.value));
-const bothSides = computed(() => !!(picked.value?.player1_id && picked.value?.player2_id));
+const bothSides = computed(() => !!(standsOn(picked.value, 1) && standsOn(picked.value, 2)));
 const wins = computed(() => winsFor(stage.value?.best_of));
 const score = computed(() => scoreOf(winners.value));
 const gameRows = computed(() => {
@@ -384,7 +394,7 @@ const validScore = computed(() => {
   return bothSides.value && (a === wins.value) !== (b === wins.value) && Math.max(a, b) === wins.value;
 });
 
-const sideName = (side) => picked.value?.[`player${side}`]?.name || `Side ${side}`;
+const sideName = (side) => nameOfSide(picked.value, side) || `Side ${side}`;
 // A changed winner drops the games after it: they were played from a different score
 const setWinner = (game, side) => {
   winners.value[game - 1] = side || null;

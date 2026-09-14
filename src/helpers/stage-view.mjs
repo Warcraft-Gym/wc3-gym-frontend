@@ -7,9 +7,13 @@ export const SERIES_STATES = ['pending', 'open', 'played', 'walkover', 'forfeit'
 
 export const isScored = (row) => row?.player1_score != null || row?.player2_score != null;
 
+// Who stands on one side: its entrant, else the player a GNL row names, the way
+// app/services/series_rules.py stands_on_side reads the pair.
+export const standsOn = (row, side) => row?.[`entrant${side}_id`] ?? row?.[`player${side}_id`] ?? null;
+
 export const seriesState = (row) => {
   if (isScored(row)) return SERIES_STATES.includes(row.result_kind) ? row.result_kind : 'played';
-  return row?.player1_id && row?.player2_id ? 'open' : 'pending';
+  return standsOn(row, 1) && standsOn(row, 2) ? 'open' : 'pending';
 };
 
 // The side a scored series sends on, 1 or 2; a draw and an unscored series send nobody
@@ -21,16 +25,25 @@ export const winnerSide = (row) => {
 
 const feederOf = (row, side) => (side === 1 ? row.slot1_from_series_id : row.slot2_from_series_id);
 
-// A side can never fill when it has neither an entrant nor a feeder: it is a bye, and
-// the other side passes through. That is how a padded pair reaches the next column.
-export const isByeSide = (row, side) => !feederOf(row, side)
-  && !(side === 1 ? row.player1_id : row.player2_id);
+// A side can never fill when it has neither an entrant nor a feeder while the other side
+// is named: it is a bye, and the other side passes through. That is how a padded pair
+// reaches the next column, and it is the pair stage_engine._row awards a walkover to.
+// A row that names neither side is a payload without them, never a bye.
+export const isByeSide = (row, side) => !feederOf(row, side) && !standsOn(row, side)
+  && !!standsOn(row, side === 1 ? 2 : 1);
 export const isBye = (row) => [1, 2].some((side) => isByeSide(row, side));
 
 // The side a box may name. A feeder fills its side with the winner of the series before
 // it, so while results are hidden that side reads as undecided instead of naming him.
 export const shownPlayer = (row, side, hidden = false) => (
   hidden && feederOf(row, side) ? null : row?.[`player${side}`] || null);
+
+// The team a box may name, hidden behind a feeder the same way a player is
+export const shownTeam = (row, side, hidden = false) => (
+  hidden && feederOf(row, side) ? null : row?.[`team${side}`] || null);
+
+// What a side is called in a sentence: the team of a team entrant, else the player
+export const sideName = (row, side) => row?.[`team${side}`]?.name || row?.[`player${side}`]?.name || '';
 
 // One column per round, in round order, each holding its series in sequence order.
 // The rounds name the columns; a round the list does not name reads as its number.

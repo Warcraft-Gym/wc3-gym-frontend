@@ -24,7 +24,7 @@
           </svg>
           <div v-for="box in block.drawn.boxes" :key="box.key" class="box"
             :style="{ left: `${box.x}px`, top: `${box.cy - block.drawn.boxH / 2 + 28}px`, width: `${block.drawn.boxW}px` }">
-            <SeriesBox :series="box.row"
+            <SeriesBox :series="box.row" :rosters="rosters"
               :label="thirdPlace(block.columns[box.column], box.row)" @open="open" />
           </div>
         </div>
@@ -36,7 +36,7 @@
           <v-card-title class="text-subtitle-1">{{ column.name }}</v-card-title>
           <div class="rows">
             <SeriesBox v-for="(row, index) in column.series" :key="row.id" :series="row" flat
-              :crown="isChain" :label="thirdPlace(column, row)"
+              :rosters="rosters" :crown="isChain" :label="thirdPlace(column, row)"
               class="list-row" :class="{ first: index === 0 }" @open="open" />
           </div>
         </v-card>
@@ -97,6 +97,7 @@ const props = defineProps({
   rounds: { type: Array, default: () => [] },
   divisions: { type: Array, default: () => [] },
   standings: { type: Array, default: () => [] },
+  rosters: { type: Object, default: () => ({}) },  // the players of each team entrant, by entrant id
 });
 const emit = defineEmits(['open-series']);
 
@@ -118,6 +119,16 @@ const stacked = computed(() => smAndDown.value);
 const isBracket = computed(() => ['single_elimination', 'double_elimination'].includes(props.stage.format));
 const isChain = computed(() => props.stage.format === 'koth');
 
+// A team side prints its name over its roster, so a box of team sides is taller than a
+// box of two names. A roster name wears a flag and a race icon and takes a line of the
+// box on its own, and the box holds two sides.
+const ROSTER_LINE = 22;
+const boxH = computed(() => {
+  const longest = Math.max(0, ...props.series.flatMap((row) => [1, 2]
+    .map((side) => (props.rosters[row[`entrant${side}_id`]] || []).length)));
+  return 88 + 2 * ROSTER_LINE * longest;
+});
+
 // One drawing per division; a stage with no divisions draws its whole field once
 const groups = computed(() => {
   const bands = props.divisions.length
@@ -133,7 +144,7 @@ const groups = computed(() => {
       name: band.name || `Division ${band.position}`,
       columns: cols.map((column, index) => ({ ...column, index })),
       blocks: isBracket.value
-        ? blocks(cols).map((block) => ({ ...block, drawn: layout(block.columns) }))
+        ? blocks(cols).map((block) => ({ ...block, drawn: layout(block.columns, { boxH: boxH.value }) }))
         : [],
     };
   }).filter((group) => group.columns.length);

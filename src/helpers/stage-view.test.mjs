@@ -3,8 +3,8 @@ import test from 'node:test';
 
 import {
   advancingRows, blocks, chainChallengers, chainOrder, columns, generateFields, inDivision,
-  isBye, isByeSide, layout, pendingChainSeries, seriesState, shownPlayer, standingsGroups,
-  winnerSide, winsFor,
+  isBye, isByeSide, layout, pendingChainSeries, seriesState, shownPlayer, shownTeam, sideName,
+  standingsGroups, standsOn, winnerSide, winsFor,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -155,6 +155,8 @@ test('a padded pair is a bye and passes its one side through', () => {
   assert.strictEqual(isBye(S(1, 1, 1, 7, null)), true);
   assert.strictEqual(isByeSide(S(1, 1, 1, 7, null), 2), true);
   assert.strictEqual(isByeSide(S(1, 1, 1, 7, null), 1), false);
+  // the series read names no side at all, which is a thin payload and not a bye
+  assert.strictEqual(isBye({ id: 1, player1_score: 2, player2_score: 1 }), false);
 });
 
 test('hiding the results takes the name off a fed side, and leaves a first round side alone', () => {
@@ -249,4 +251,67 @@ test('a challenger is an entrant no series names yet', () => {
   const rows = [{ id: 1, player1_id: 11, player2_id: null }, { id: 2, player1_id: null, player2_id: 12 }];
   assert.deepStrictEqual(chainChallengers(entrants, rows).map((row) => row.id), [3]);
   assert.deepStrictEqual(chainChallengers(entrants, []).map((row) => row.id), [1, 2, 3]);
+});
+
+// A four-team 2v2 cup: every side is a team entrant, so no series names a player.
+// The shape follows StageSeriesRow on the backend branch that adds the entrant ids.
+const team = (id, name) => ({ id, name });
+const T4 = [
+  {
+    id: 1, round_id: 1, sequence: 1, division_id: 1, result_kind: 'played', side_size: 2,
+    entrant1_id: 11, entrant2_id: 14, team1: team(1, 'Night Owls'), team2: team(4, 'Frost Giants'),
+    player1_score: 2, player2_score: 1,
+  },
+  {
+    id: 2, round_id: 1, sequence: 2, division_id: 1, result_kind: 'played', side_size: 2,
+    entrant1_id: 12, entrant2_id: 13, team1: team(2, 'Ash Wolves'), team2: team(3, 'Sea Kings'),
+  },
+  {
+    id: 3, round_id: 2, sequence: 1, division_id: 1, result_kind: 'played', side_size: 2,
+    entrant1_id: 11, team1: team(1, 'Night Owls'),
+    slot1_from_series_id: 1, slot2_from_series_id: 2,
+  },
+];
+
+test('a team side stands on its entrant, so the state of a 2v2 series reads without a player', () => {
+  assert.strictEqual(standsOn(T4[0], 1), 11);
+  assert.strictEqual(standsOn(T4[0], 2), 14);
+  assert.strictEqual(standsOn(T4[2], 2), null);
+  // a GNL row names players and no entrant, and reads the same way
+  assert.strictEqual(standsOn({ player1_id: 7 }, 1), 7);
+
+  assert.strictEqual(seriesState(T4[0]), 'played');
+  assert.strictEqual(seriesState(T4[1]), 'open');
+  assert.strictEqual(seriesState(T4[2]), 'pending');
+});
+
+test('a padded team side is a bye, and a fed one waits', () => {
+  const padded = { id: 4, entrant1_id: 15, team1: team(5, 'Stormcrows') };
+  assert.strictEqual(isByeSide(padded, 2), true);
+  assert.strictEqual(isBye(padded), true);
+  // side 2 of the final has a feeder, so it is not a bye
+  assert.strictEqual(isByeSide(T4[2], 2), false);
+  assert.strictEqual(isBye(T4[2]), false);
+});
+
+test('a side is named by its team, and a hidden fed side names nobody', () => {
+  assert.strictEqual(sideName(T4[0], 1), 'Night Owls');
+  assert.strictEqual(sideName(T4[2], 2), '');
+  // a solo side keeps naming its player
+  assert.strictEqual(sideName({ player1: { name: 'Grubbstep' } }, 1), 'Grubbstep');
+  assert.strictEqual(sideName(null, 1), '');
+
+  assert.deepStrictEqual(shownTeam(T4[0], 1), team(1, 'Night Owls'));
+  assert.strictEqual(shownTeam(T4[2], 1, true), null);
+  assert.deepStrictEqual(shownTeam(T4[2], 1, false), team(1, 'Night Owls'));
+  assert.strictEqual(shownPlayer(T4[0], 1), null);
+});
+
+test('a 2v2 bracket draws two columns and joins the final to both first-round series', () => {
+  const cols = columns(T4, named('Round 1', 'Final'));
+  assert.deepStrictEqual(cols.map((column) => column.name), ['Round 1', 'Final']);
+  assert.deepStrictEqual(cols[0].series.map((row) => row.id), [1, 2]);
+  const drawn = layout(cols, { boxH: 128 });
+  assert.strictEqual(drawn.lines.length, 2);
+  assert.strictEqual(drawn.boxes.length, 3);
 });

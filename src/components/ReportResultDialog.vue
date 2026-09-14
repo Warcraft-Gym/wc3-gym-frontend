@@ -1,5 +1,6 @@
 <!-- The player reports one series: the map veto, the winner and map of each game, and
-     the replay file per game. The veto warns when it is not complete; it never blocks. -->
+     the replay file per game. A roster member reports for a team side, which names no
+     race of its own. The veto warns when it is not complete; it never blocks. -->
 <template>
   <v-dialog v-model="show" :max-width="vetoMissing ? 960 : 600">
     <v-card>
@@ -21,19 +22,19 @@
         <VetoBoard v-if="series.id" :key="series.id" :series-id="series.id" report class="mb-4" @change="board => scoreVeto = board" />
         <v-form ref="scoreForm" v-model="scoreFormValid">
           <v-container>
-            <v-row v-if="!series.raceOpen">
+            <v-row v-if="series.solo && !series.raceOpen">
               <v-col cols="12" class="pt-0">
                 <v-btn variant="text" size="small" density="comfortable" prepend-icon="mdi-account-switch" @click="series.raceOpen = true">
                   Played a different race
                 </v-btn>
               </v-col>
             </v-row>
-            <v-row v-else>
+            <v-row v-else-if="series.solo">
               <v-col cols="6">
-                <RaceSelect v-model="series.races.player1" :label="series.player1_name || ''" density="comfortable" />
+                <RaceSelect v-model="series.races.player1" :label="name(1)" density="comfortable" />
               </v-col>
               <v-col cols="6">
-                <RaceSelect v-model="series.races.player2" :label="series.player2_name || ''" density="comfortable" />
+                <RaceSelect v-model="series.races.player2" :label="name(2)" density="comfortable" />
               </v-col>
             </v-row>
             <v-row v-for="game in gameRows" :key="game">
@@ -50,8 +51,8 @@
                       class="d-flex mb-3"
                       @update:model-value="setWinner(game, $event)"
                     >
-                      <v-btn value="A" class="flex-grow-1">{{ series.player1_name }} won</v-btn>
-                      <v-btn value="B" class="flex-grow-1">{{ series.player2_name }} won</v-btn>
+                      <v-btn value="A" class="flex-grow-1">{{ name(1) }} won</v-btn>
+                      <v-btn value="B" class="flex-grow-1">{{ name(2) }} won</v-btn>
                     </v-btn-toggle>
                     <v-select
                       :model-value="mapOf(game)"
@@ -119,6 +120,7 @@ import { useMapStore } from '@/stores';
 import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from '@/helpers/map-order.mjs';
 import { readReplay, matchMap, isOtherSeries } from '@/helpers/w3g.mjs';
+import { sideName } from '@/helpers/stage-view.mjs';
 import RaceSelect from '@/components/RaceSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import VetoBoard from '@/components/VetoBoard.vue';
@@ -135,6 +137,10 @@ const scoreForm = ref(null);
 const series = ref({ replays: {}, races: {}, winners: [], maps: {}, reads: {} });
 // a result carries its veto, so the dialog holds the board above the scores
 const scoreVeto = ref(null);
+// What a side is called: the team or the player of the series, else the name the veto
+// board answers, because GET /series/{id} names no team behind a team entrant yet
+const name = (side) => series.value[`player${side}_name`]
+  || scoreVeto.value?.[`player${side}`]?.name || `Side ${side}`;
 const vetoMissing = computed(() => scoreVeto.value !== null && !scoreVeto.value.complete);
 
 // Validation rules
@@ -150,8 +156,10 @@ const open = (item) => {
   errorMessage.value = null;
   series.value = {
     id: item.id,
-    player1_name: item.player1?.name || `Player ${item.player1_id}`,
-    player2_name: item.player2?.name || `Player ${item.player2_id}`,
+    player1_name: sideName(item, 1),
+    player2_name: sideName(item, 2),
+    // a team side plays no one race, so only a solo series offers the off-race panel
+    solo: !!(item.player1_id || item.player2_id),
     // the tags name the sides in a replay, which carries no player id of ours
     tags: [item.player1?.battleTag, item.player2?.battleTag],
     // the rules of this series, which the backend resolves with or without a fixture
@@ -340,7 +348,7 @@ const scoreProblem = computed(() => {
 });
 const resultLine = computed(() => {
   const [p1, p2] = reportedScore.value;
-  return `${series.value.player1_name} ${p1} – ${p2} ${series.value.player2_name}`;
+  return `${name(1)} ${p1} – ${p2} ${name(2)}`;
 });
 
 // Allowed score combinations and every required file present

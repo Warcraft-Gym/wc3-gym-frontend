@@ -13,6 +13,7 @@ test('an event shows its start time, its two dates, one date, or nothing', () =>
   assert.equal(dateRange({ starts_at: '2026-10-01T09:00:00' }), '1 Oct 2026, 19:00');
   assert.equal(dateRange({ start_date: '2026-10-01', end_date: '2026-11-30' }), '1 Oct 2026 – 30 Nov 2026');
   assert.equal(dateRange({ start_date: '2026-10-01' }), '1 Oct 2026');
+  assert.equal(dateRange({ start_date: '2026-10-01', end_date: '2026-10-01' }), '1 Oct 2026');
   assert.equal(dateRange({}), '');
 });
 

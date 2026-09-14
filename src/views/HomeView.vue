@@ -2,7 +2,7 @@
 import { ref, nextTick, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
-import { useTeamStore, useSeasonStore, usePlayerStore, useAuthStore, useEventStore, useKothStore } from '@/stores';
+import { useTeamStore, useSeasonStore, usePlayerStore, useAuthStore, useEventStore } from '@/stores';
 import { storeToRefs } from 'pinia';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
@@ -16,7 +16,6 @@ const seasonStore = useSeasonStore();
 const playerStore = usePlayerStore();
 const authStore = useAuthStore();
 const eventStore = useEventStore();
-const kothStore = useKothStore();
 
 const { teams } = storeToRefs(teamStore);
 const { seasons } = storeToRefs(seasonStore);
@@ -30,13 +29,11 @@ const acting = ref(null);  // the card whose action is in flight
 const signupEvent = ref(null);
 const dialog = ref(null);
 
-// /me/events names every published event with the caller's own state and its one action;
-// the /seasons row adds the rounds and the round count a GNL card reads
-const cards = computed(() => homeCards({
-  events: myEvents.value, me: me.value, seasons: seasons.value, kothEvents: kothStore.events,
-}));
+// /me/events names every published event of every kind with the caller's own state and
+// its one action; the /seasons row adds the rounds and the round count a GNL card reads
+const cards = computed(() => homeCards({ events: myEvents.value, me: me.value, seasons: seasons.value }));
 
-// An event date is a calendar day, so it reads in UTC; a KOTH night is a moment, and its card says so
+// An event date is a calendar day, so it reads in UTC
 const day = (card) => card.date?.toLocaleDateString(undefined, { day: 'numeric', timeZone: card.zone }) ?? '\u2013';
 const month = (card) => card.date?.toLocaleDateString(undefined, { month: 'short', timeZone: card.zone }) ?? '';
 
@@ -106,7 +103,6 @@ const fetchHomeData = async () => {
     await Promise.all([
       seasonStore.fetchSeasons(),
       reloadEvents(),
-      kothStore.fetchAllEvents().catch(() => {}),  // KOTH nights are extra; the page stands without them
       ...(isAdmin.value ? [teamStore.fetchTeams(), playerStore.fetchPlayers()] : []),
     ]);
     openPopupOnce();

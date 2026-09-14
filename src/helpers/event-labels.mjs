@@ -12,11 +12,12 @@ export const timeText = (value) => (value
   ? DateTime.fromISO(value, { zone: 'utc' }).toLocal().toFormat('d LLL yyyy, HH:mm')
   : '—');
 
-// An event runs between two days, starts on one, or carries no dates at all
+// An event runs between two days, starts on one, or carries no dates at all; an event
+// that starts and ends on the same day, a KOTH night among them, names that day once
 export const dateRange = (event) => {
   if (event?.starts_at) return timeText(event.starts_at);
   const [start, end] = [event?.start_date, event?.end_date];
-  if (start && end) return `${dateText(start)} – ${dateText(end)}`;
+  if (start && end && start !== end) return `${dateText(start)} – ${dateText(end)}`;
   return start || end ? dateText(start || end) : '';
 };
 

@@ -20,28 +20,6 @@
       </v-card-text>
     </v-card>
 
-    <!-- The next KOTH night, offered to the owner until he signs up or waves it off -->
-    <v-card v-if="owner && kothCard" elevation="2" class="mb-6">
-      <v-card-title class="bg-primary d-flex align-center">
-        <v-icon class="mr-2">mdi-crown</v-icon>
-        {{ kothCard.name }}
-      </v-card-title>
-      <v-card-text class="pa-4">
-        <div class="mb-3">{{ kothCard.status }}</div>
-        <div class="d-flex flex-wrap align-center ga-2">
-          <template v-if="myKothSignups.length">
-            <v-chip color="success" size="small" prepend-icon="mdi-check">Signed up</v-chip>
-            <RaceIcon v-for="signup in myKothSignups" :key="signup.id" :raceIdentifier="signup.race" />
-            <v-btn variant="text" size="small" to="/koth/dashboard">Your signup</v-btn>
-          </template>
-          <template v-else>
-            <v-btn color="primary" variant="elevated" size="small" to="/koth/dashboard">Sign up</v-btn>
-            <v-btn variant="text" size="small" @click="notInterested">Not interested</v-btn>
-          </template>
-        </div>
-      </v-card-text>
-    </v-card>
-
     <v-card v-if="owner && waiting.length" elevation="2" class="mb-6">
       <v-card-text class="pa-4">
         <h2 class="text-h6 mb-3">Waiting for you</h2>
@@ -92,7 +70,7 @@
         Events
       </v-card-title>
       <!-- The event still running opens onto its rounds; the others onto their series -->
-      <PlayerSeasons :player="player" :open="openSeasonId">
+      <PlayerSeasons :player="player" :open="openSeasonId" :night="night" :nightRaces="nightRaces">
         <template #current="{ row }">
           <RoundCards
             :player="player"
@@ -171,10 +149,10 @@ import { computed, inject, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { backendUrl, fetchWrapper } from '@/helpers';
-import { useAuthStore, useAvailabilityStore, useKothStore, usePlayerStore, useSeasonStore } from '@/stores';
+import { useAuthStore, useAvailabilityStore, useEventStore, usePlayerStore, useSeasonStore } from '@/stores';
 import { panelLinks } from '@/helpers/players';
 import { resolveCurrentW3CSeason } from '@/helpers/current-season';
-import { dismissKoth, kothCards } from '@/helpers/events.mjs';
+import { myNight, myRaces } from '@/helpers/koth.mjs';
 import { roundCards, waitingLines } from '@/helpers/rounds.mjs';
 import { isUnscored } from '@/helpers/season-phase.mjs';
 import EditPlayerDialog from '@/components/EditPlayerDialog.vue';
@@ -194,7 +172,7 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const availabilityStore = useAvailabilityStore();
-const kothStore = useKothStore();
+const eventStore = useEventStore();
 const playerStore = usePlayerStore();
 const seasonStore = useSeasonStore();
 const { me } = storeToRefs(auth);
@@ -247,30 +225,30 @@ const loadSeasons = async () => {
     openSeasons.value.map((season, i) => [season.id, answers[i]]).filter(([, answer]) => answer));
 };
 
-// The next KOTH night, an extra the page stands without; the answer is one active event
-const kothEvent = ref(null);
-const kothWaved = ref(false);
-const loadKoth = async () => {
-  kothEvent.value = await kothStore.fetchActiveEvent().catch(() => null);
-};
-const kothCard = computed(() => (kothWaved.value ? null : kothCards({ kothEvents: [kothEvent.value].filter(Boolean) })[0] ?? null));
-
-// the owner's own active signups on this event, folded the way the KOTH dashboard folds them
-const fold = (tag) => String(tag || '').trim().toLowerCase();
-const myKothSignups = computed(() => (kothStore.signups ?? []).filter(
-  (row) => row.is_active && me.value?.user?.battleTag && fold(row.battle_tag) === fold(me.value.user.battleTag)));
-
-const notInterested = () => {
-  dismissKoth(kothEvent.value.id);
-  kothWaved.value = true;
+// Tonight's KOTH night, an extra the page stands without: the member read names it and
+// its one action, the event read its start time, and the entrants read the races he
+// entered on. The events list folds it in.
+const night = ref(null);
+const nightRaces = ref([]);
+const loadNight = async () => {
+  const row = myNight(await eventStore.myEvents().catch(() => []));
+  if (!row) return;
+  const [event, entrants] = await Promise.all([
+    eventStore.fetchEvent(row.id).catch(() => null),
+    eventStore.fetchEntrants(row.id).catch(() => []),
+  ]);
+  night.value = { ...event, ...row };
+  nightRaces.value = myRaces(entrants, player.value?.id);
 };
 
 // a visitor's page must never read the last owner's series, so the cache drops first
 watch(owner, (isOwner) => {
   seasonData.value = {};
+  night.value = null;
+  nightRaces.value = [];
   if (!isOwner) return;
   loadSeasons();
-  loadKoth();
+  loadNight();
 }, { immediate: true });
 
 const seriesOf = (row) => seasonData.value[row.season.id]?.series ?? row.series;

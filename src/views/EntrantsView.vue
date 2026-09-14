@@ -156,7 +156,7 @@
                 </td>
               </tr>
               <!-- A player on more than one race: one row a race, each with its own seed and state -->
-              <tr v-for="race in raceRows(row)" :key="race.id" class="detail-row race-row" :class="{ withdrawn: race.withdrawn_at }">
+              <tr v-for="race in raceRows(row)" :key="race.id" class="detail-row" :class="{ withdrawn: race.withdrawn_at }">
                 <td></td>
                 <td class="pl-8">
                   <RaceIcon :raceIdentifier="race.race" />
@@ -182,7 +182,7 @@
                   <v-icon v-if="race.manual_placement" size="16" class="ml-1" aria-label="placed by hand">mdi-pin</v-icon>
                 </td>
                 <td v-if="isAdmin">
-                  <RowActions :actions="actionsFor(race)" />
+                  <RowActions :actions="actionsFor(race, false)" />
                 </td>
               </tr>
             </template>
@@ -532,7 +532,8 @@ const ban = () => run('ban', async () => {
 }, 'The player is banned. Every entrant row of the event warns.');
 
 const banAction = (row) => row.user && { icon: 'mdi-gavel', label: 'Ban player', color: 'error', onClick: () => askBan(row) };
-const actionsFor = (row) => [
+// A race row of a player offers no ban: his own row above carries the one ban
+const actionsFor = (row, withBan = true) => [
   !row.checked_in_at && !row.withdrawn_at && {
     icon: 'mdi-check', label: 'Check in', onClick: () => run('checkin', async () => {
       const updated = await store.checkIn(eventId, row.id);
@@ -557,7 +558,7 @@ const actionsFor = (row) => [
       entrants.value = entrants.value.map((old) => (old.id === updated.id ? updated : old));
     }),
   },
-  banAction(row),
+  withBan && banAction(row),
   { icon: 'mdi-close', label: 'Remove', color: 'error', onClick: () => run('remove', async () => {
     await store.removeEntrant(eventId, row.id);
     entrants.value = entrants.value.filter((old) => old.id !== row.id);

@@ -16,7 +16,7 @@
         <EventHeader :event="event" />
 
         <div v-if="!cleanMode" class="d-flex flex-wrap align-center ga-3 mt-4">
-          <v-btn v-if="event.signups_open && (!mine || event.multi_entry)" color="primary" variant="elevated" size="small"
+          <v-btn v-if="event.signups_open && (!mine || (event.multi_entry && held.length < raceWrapper.races.length))" color="primary" variant="elevated" size="small"
             prepend-icon="mdi-account-plus" @click="dialog.open()">
             {{ mine ? 'Enter another race' : 'Sign up' }}
           </v-btn>
@@ -74,7 +74,7 @@
           </v-col>
         </v-row>
 
-        <SignupDialog ref="dialog" :event="event" :held="myRaces(standing, auth.me?.user?.id)" @signed-up="load" />
+        <SignupDialog ref="dialog" :event="event" :held="held" @signed-up="load" />
       </template>
     </v-container>
   </div>
@@ -121,6 +121,7 @@ const standing = computed(() => entrants.value.filter((row) => !row.withdrawn_at
 // A player on two races is one entrant
 const players = computed(() => byPlayer(standing.value).length);
 const mine = computed(() => standing.value.find((row) => row.user?.id && row.user.id === auth.me?.user?.id) || null);
+const held = computed(() => myRaces(standing.value, auth.me?.user?.id));
 
 // One column per bracket, strongest first. The king is the top of the bracket's table,
 // which the engine sorts him to once the chain has scored a series.

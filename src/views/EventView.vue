@@ -14,7 +14,7 @@
 
       <div class="d-flex flex-wrap align-center ga-3 mt-4">
         <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
-          {{ event.entrant_count ?? entrants.length }} entrants
+          {{ entered }} entrants
         </v-chip>
         <v-chip v-if="fixtureSeries" size="small" variant="tonal" prepend-icon="mdi-sword-cross">
           {{ fixtureSeries }} series per fixture
@@ -34,7 +34,7 @@
           Log in to sign up
         </v-btn>
         <!-- An event that takes one entry per race lets a player in on another race beside his own row -->
-        <v-btn v-if="event.multi_entry && event.signups_open && held.length" color="primary" variant="outlined" size="small"
+        <v-btn v-if="event.multi_entry && event.signups_open && held.length && held.length < raceWrapper.races.length" color="primary" variant="outlined" size="small"
           prepend-icon="mdi-account-plus" @click="dialog.open()">
           Enter another race
         </v-btn>
@@ -213,6 +213,8 @@ const seedsLocked = computed(() => stages.value.some((stage) => stage.seeds_lock
 const signupOnly = computed(() => !!event.value && !stages.value.length);
 const hint = computed(() => blocksHint(row.value));
 const held = computed(() => myRaces(entrants.value, auth.me?.user?.id));
+// The chip counts players: a player on two races holds two rows and is one entrant
+const entered = computed(() => (entrants.value.length ? byPlayer(entrants.value).length : event.value?.entrant_count ?? 0));
 
 const solo = (item) => !raceRows(item).length;
 const raceName = (race) => raceWrapper.getRaceObject(race)?.name || race;

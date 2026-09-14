@@ -1,375 +1,72 @@
+<!-- Every KOTH night, newest first. A night is one event of the KOTH league, so this page
+     only opens tonight's and hands the run over to the event run page. -->
 <template>
   <v-container fluid class="pa-4">
-    <v-row class="mb-4">
-      <v-col>
-        <h1 class="text-h5 text-md-h3 font-weight-bold">
-          <v-icon class="mr-2" size="large">mdi-crown</v-icon>
-          King of the Hill<span v-if="selectedEvent"> — {{ eventLabel(selectedEvent) }}</span>
-          <v-chip v-if="selectedEvent" class="ml-3" size="small" :color="selectedEvent.is_active ? 'success' : undefined">
-            {{ selectedEvent.is_active ? 'Active' : 'Inactive' }}
-          </v-chip>
-        </h1>
-      </v-col>
-    </v-row>
-
-    <v-overlay v-model="isLoading" persistent class="loading-overlay align-center justify-center">
-      <v-progress-circular indeterminate size="64" width="8" color="primary" />
-    </v-overlay>
-
-    <!-- Error Message -->
-    <v-alert v-if="errorMessage" type="error" variant="tonal" class="mb-4" closable @click:close="errorMessage = null">
-      {{ errorMessage }}
-    </v-alert>
-
-    <!-- Success Message -->
-    <v-alert v-if="successMessage" type="success" variant="tonal" class="mb-4" closable @click:close="successMessage = null">
-      {{ successMessage }}
-    </v-alert>
-
-    <!-- Event Selection and Info -->
-    <v-expansion-panels class="mb-4">
-      <v-expansion-panel elevation="2">
-        <v-expansion-panel-title class="bg-primary">
-          <v-icon class="mr-2">mdi-trophy</v-icon>
-          Event Management
-        </v-expansion-panel-title>
-        
-        <v-expansion-panel-text class="pa-4">
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="selectedEventId"
-                :items="events"
-                item-title="name"
-                item-value="id"
-                label="Select Event"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-calendar"
-                @update:model-value="loadEventData"
-              >
-                <template #item="{ props, item }">
-                  <v-list-item v-bind="props">
-                    <template #prepend>
-                      <v-icon v-if="item.raw.is_active" color="success">mdi-check-circle</v-icon>
-                      <v-icon v-else class="text-medium-emphasis">mdi-circle-outline</v-icon>
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-select>
-            </v-col>
-            <v-col cols="12" md="6" class="d-flex gap-2 flex-wrap">
-              <v-btn variant="elevated" color="primary" prepend-icon="mdi-plus" @click="openCreateEventDialog">
-                New Event
-              </v-btn>
-              <v-btn v-if="selectedEvent" variant="outlined" color="secondary" prepend-icon="mdi-pencil" @click="openEditEventDialog">
-                Edit Event
-              </v-btn>
-              <v-btn v-if="selectedEvent && !selectedEvent.is_active" variant="outlined" color="success" prepend-icon="mdi-check" @click="activateEvent">
-                Activate
-              </v-btn>
-              <v-btn v-if="selectedEvent && selectedEvent.is_active" variant="outlined" color="warning" prepend-icon="mdi-pause" @click="deactivateEvent">
-                Deactivate
-              </v-btn>
-              <v-btn v-if="selectedEvent" variant="outlined" color="error" prepend-icon="mdi-delete" @click="confirmDeleteEvent">
-                Delete
-              </v-btn>
-            </v-col>
-          </v-row>
-
-          <v-divider v-if="selectedEvent" class="my-4"></v-divider>
-
-          <v-row v-if="selectedEvent">
-            <v-col cols="12" md="4">
-              <div class="text-subtitle-2 text-medium-emphasis">Event Date</div>
-              <div class="mt-2">{{ formatEventDate(selectedEvent.event_date) }}</div>
-            </v-col>
-            <v-col cols="12" md="4">
-              <div class="text-subtitle-2 text-medium-emphasis">Bracket Thresholds</div>
-              <div class="mt-2">
-                <div><strong>Bracket 1:</strong> &lt; {{ selectedEvent.bracket_1_threshold }} MMR</div>
-                <div><strong>Bracket 2:</strong> {{ selectedEvent.bracket_1_threshold }} - {{ selectedEvent.bracket_2_threshold - 1 }} MMR</div>
-                <div><strong>Bracket 3:</strong> ≥ {{ selectedEvent.bracket_2_threshold }} MMR</div>
-              </div>
-            </v-col>
-            <v-col cols="12" md="4">
-              <div class="text-subtitle-2 text-medium-emphasis">Total Signups</div>
-              <div class="text-h4 mt-2">{{ activeSignups.length }}</div>
-            </v-col>
-          </v-row>
-        </v-expansion-panel-text>
-      </v-expansion-panel>
-    </v-expansion-panels>
-
-    <!-- Add Signup Button -->
-    <div v-if="selectedEvent" class="text-center mb-6">
-      <v-btn
-        color="primary"
-        size="large"
-        class="signup-btn"
-        elevation="4"
-        @click="openAddSignupDialog"
-      >
-        <v-icon start>mdi-account-plus</v-icon>
-        Add Player Signup
-      </v-btn>
+    <div class="d-flex flex-wrap align-center ga-3">
+      <h1 class="text-h5 text-md-h3 font-weight-bold">
+        <v-icon class="mr-2" size="large">mdi-crown</v-icon>
+        KOTH Nights
+      </h1>
+      <v-spacer />
+      <v-btn variant="outlined" color="primary" prepend-icon="mdi-eye-outline" to="/koth/dashboard">Public page</v-btn>
+      <v-btn color="primary" prepend-icon="mdi-plus" :disabled="loading" @click="openDialog">Open tonight</v-btn>
     </div>
 
-    <!-- Brackets View -->
-    <template v-if="selectedEvent">
-      <v-row>
-        <v-col v-for="bracket in [1, 2, 3]" :key="bracket" cols="12" md="4">
-          <v-card elevation="2" class="bracket-card">
-            <v-card-title class="bg-primary">
-              <v-icon class="mr-2">mdi-trophy</v-icon>
-              Bracket {{ bracket }}
-            </v-card-title>
-            
-            <v-card-subtitle class="pa-3 text-subtitle-2">
-              {{ kothStore.getBracketThresholdText(selectedEvent)[bracket] || '' }}
-            </v-card-subtitle>
-            
-            <v-divider></v-divider>
-            
-            <v-card-text class="pa-3">
-              <!-- Kings Section -->
-              <div v-if="kothStore.getBracketKings(bracket).length > 0" class="mb-4 pa-3 king-section">
-                <div class="d-flex align-center mb-2">
-                  <v-icon color="primary" class="mr-2">mdi-crown</v-icon>
-                  <span class="text-subtitle-2 font-weight-bold">King{{ kothStore.getBracketKings(bracket).length > 1 ? 's' : '' }}</span>
-                </div>
-                <div v-for="king in kothStore.getBracketKings(bracket)" :key="king.id" class="king-item pa-2 mb-2">
-                  <div class="d-flex align-center justify-space-between">
-                    <div class="flex-grow-1">
-                      <PlayerName class="font-weight-bold" :player="kingPlayer(king)" :race="king.race" />
-                      <div class="text-caption text-medium-emphasis">{{ king.mmr }} MMR</div>
-                    </div>
-                    <v-btn size="small" variant="tonal" color="error" @click="removeKing(king.id)" title="Remove King">
-                      <v-icon>mdi-close-circle</v-icon>
-                    </v-btn>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-center pa-3 mb-4 no-king-section">
-                <v-icon size="32" class="text-disabled">mdi-crown-outline</v-icon>
-                <div class="text-caption text-medium-emphasis mt-1">No King Yet</div>
-              </div>
-              
-              <v-divider class="my-3"></v-divider>
-              
-              <!-- Players List -->
-              <div class="text-subtitle-2 mb-2 d-flex align-center justify-space-between">
-                <span>Players ({{ kothStore.getBracketPlayers(bracket).length }})</span>
-              </div>
+    <StatusAlert v-model="error" class="mt-4" />
 
-              <div v-if="kothStore.getBracketPlayers(bracket).length > 0" class="players-list">
-                <div
-                  v-for="player in kothStore.getBracketPlayers(bracket)"
-                  :key="player.battleTag"
-                  class="player-item pa-2 mb-1"
-                >
-                  <PlayerName class="text-body-2 font-weight-medium" :player="player" />
-                  <div
-                    v-for="signup in player.signups"
-                    :key="signup.id"
-                    class="d-flex align-center justify-space-between race-row"
-                  >
-                    <span class="text-caption text-medium-emphasis d-flex align-center ga-1">
-                      <RaceIcon v-if="signup.race" :raceIdentifier="signup.race" />
-                      {{ signup.mmr }} MMR
-                    </span>
-                    <div class="d-flex gap-1">
-                      <v-btn icon="mdi-crown" size="x-small" variant="tonal" color="primary" @click="setAsKing(signup.id)" title="Make King"></v-btn>
-                      <v-btn icon="mdi-delete" size="x-small" variant="tonal" color="error" @click="deleteSignup(signup.id)" title="Remove from bracket"></v-btn>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-center pa-4 text-medium-emphasis">
-                <v-icon size="40">mdi-account-off</v-icon>
-                <div class="text-caption mt-2">No players signed up</div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-    </template>
+    <v-card elevation="2" class="mt-4">
+      <v-progress-linear v-if="loading" indeterminate />
+      <v-table density="comfortable" hover>
+        <thead>
+          <tr>
+            <th>Night</th>
+            <th class="d-none d-md-table-cell">Date</th>
+            <th>State</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="night in nights" :key="night.id">
+            <td class="py-3">
+              <RouterLink :to="`/events/${night.id}/admin`"><strong>{{ night.name }}</strong></RouterLink>
+              <!-- a phone drops the date column, so the date rides under the name -->
+              <div class="d-md-none text-caption text-medium-emphasis">{{ dateRange(night) }}</div>
+            </td>
+            <td class="d-none d-md-table-cell text-no-wrap">{{ dateRange(night) || '—' }}</td>
+            <td>
+              <v-chip size="small" variant="tonal" :color="STATE_COLOR[stateOf(night)]">
+                {{ STATE_LABEL[stateOf(night)] || '—' }}
+              </v-chip>
+            </td>
+          </tr>
+          <tr v-if="!nights.length && !loading">
+            <td colspan="3" class="text-medium-emphasis py-6 text-center">No night has run yet.</td>
+          </tr>
+        </tbody>
+      </v-table>
+    </v-card>
 
-    <div v-else class="text-center pa-8">
-      <v-icon size="80" class="text-disabled">mdi-trophy-outline</v-icon>
-      <div class="text-h5 mt-4 text-medium-emphasis">No Event Selected</div>
-      <div class="text-body-2 text-medium-emphasis mt-2">Create or select an event to manage brackets and players</div>
-      <v-btn color="primary" variant="elevated" class="mt-4" prepend-icon="mdi-plus" @click="openCreateEventDialog">
-        Create Event
-      </v-btn>
-    </div>
-
-    <!-- Create/Edit Event Dialog -->
-    <v-dialog v-model="showEventDialog" max-width="600px" persistent>
+    <!-- Tonight's night: when it starts, and where its three brackets cut -->
+    <v-dialog v-model="dialogOpen" max-width="520">
       <v-card>
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">{{ editingEvent ? 'mdi-pencil' : 'mdi-plus-circle' }}</v-icon>
-          {{ editingEvent ? 'Edit event' : 'Create event' }}
-        </v-card-title>
-        
+        <v-card-title class="bg-primary">Open tonight</v-card-title>
         <v-card-text class="pt-4">
+          <StatusAlert v-model="dialogError" />
+          <v-text-field v-model="form.starts_at" type="datetime-local" label="Starts at"
+            variant="outlined" density="comfortable" class="mb-2" />
+          <div class="text-subtitle-2 mb-2">The MMR each bracket opens at</div>
           <v-row dense>
-            <v-col cols="12">
-              <v-text-field
-                v-model="eventForm.name"
-                label="Event Name"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-trophy"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-textarea
-                v-model="eventForm.description"
-                label="Description"
-                variant="outlined"
-                density="comfortable"
-                rows="3"
-                prepend-inner-icon="mdi-text"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                v-model="eventForm.event_date"
-                label="Event Date"
-                type="date"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-calendar"
-                hint="Date of the event"
-                persistent-hint
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model.number="eventForm.bracket_1_threshold"
-                label="Bracket 1 Threshold"
-                type="number"
-                variant="outlined"
-                density="comfortable"
-                hint="MMR below this value"
-                persistent-hint
-              />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model.number="eventForm.bracket_2_threshold"
-                label="Bracket 2 Threshold"
-                type="number"
-                variant="outlined"
-                density="comfortable"
-                hint="MMR below this value (Bracket 3 is above)"
-                persistent-hint
-              />
+            <v-col v-for="(bound, index) in form.lower_bounds" :key="index" cols="12" sm="4">
+              <v-text-field :model-value="bound" type="number" :label="`Bracket ${index + 1}`"
+                variant="outlined" density="comfortable" hide-details
+                @update:model-value="form.lower_bounds[index] = Number($event)" />
             </v-col>
           </v-row>
         </v-card-text>
-        
-        <v-card-actions class="px-4 py-3">
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="closeEventDialog">Cancel</v-btn>
-          <v-btn color="primary" prepend-icon="mdi-check" @click="saveEvent">
-            {{ editingEvent ? 'Update' : 'Create' }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Add Signup Dialog -->
-    <v-dialog v-model="showAddSignupDialog" max-width="500px" persistent>
-      <v-card>
-        <v-card-title class="bg-primary">
-          <v-icon class="mr-2">mdi-account-plus</v-icon>
-          Add player signup
-        </v-card-title>
-        
-        <v-card-text class="pt-4">
-          <v-row dense>
-            <v-col cols="12">
-              <v-text-field
-                v-model="signupForm.battle_tag"
-                label="BattleTag"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-shield-account"
-                hint="Required. Format: Name#1234"
-                persistent-hint
-                :rules="[v => !!v || 'BattleTag is required']"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                v-model="signupForm.twitch_username"
-                label="Twitch Username"
-                variant="outlined"
-                density="comfortable"
-                prepend-inner-icon="mdi-twitch"
-                hint="Optional. Player's Twitch username"
-                persistent-hint
-              />
-            </v-col>
-            <v-col cols="12">
-              <RaceSelect v-model="signupForm.races" multiple chips label="Races" hint="Optional. One signup per race, each in its own bracket" persistent-hint />
-            </v-col>
-          </v-row>
-          
-          <v-alert v-if="signupError" type="error" variant="tonal" class="mt-4" closable @click:close="signupError = null">
-            {{ signupError }}
-          </v-alert>
-        </v-card-text>
-        
-        <v-card-actions class="px-4 py-3">
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="closeAddSignupDialog">Cancel</v-btn>
-          <v-btn 
-            color="primary" 
-            prepend-icon="mdi-check" 
-            @click="saveSignup"
-            :disabled="!signupForm.battle_tag"
-          >
-            Add Signup
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Delete Event Confirmation Dialog -->
-    <v-dialog v-model="showDeleteDialog" max-width="500px" persistent>
-      <v-card>
-        <v-card-title class="bg-error text-on-error">
-          <v-icon class="mr-2">mdi-alert</v-icon>
-          Confirm delete event
-        </v-card-title>
-        
-        <v-card-text class="pt-4">
-          <p class="text-h6 mb-2">Are you sure you want to delete this event?</p>
-          <p class="text-body-2 text-medium-emphasis">
-            This will permanently delete:
-          </p>
-          <ul class="text-body-2 text-medium-emphasis mt-2">
-            <li>Event: <strong>{{ eventLabel(selectedEvent) }}</strong></li>
-            <li>All signups ({{ activeSignups.length }})</li>
-          </ul>
-          <v-alert type="warning" variant="tonal" class="mt-4">
-            <strong>This action cannot be undone!</strong>
-          </v-alert>
-        </v-card-text>
-        
-        <v-card-actions class="px-4 py-3">
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="showDeleteDialog = false">Cancel</v-btn>
-          <v-btn 
-            color="error" 
-            prepend-icon="mdi-delete" 
-            @click="deleteEvent"
-          >
-            Delete Event
-          </v-btn>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="dialogOpen = false">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" :disabled="!form.starts_at || saving"
+            :loading="saving" @click="openNight">Open tonight</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -378,335 +75,75 @@
 
 <script setup>
 import { DateTime } from 'luxon';
-import { ref, computed, onMounted } from 'vue';
-import { useKothStore } from '@/stores';
-import { eventLabel } from '@/helpers/event-labels.mjs';
-import { kingPlayer } from '@/helpers/players.mjs';
-import { storeToRefs } from 'pinia';
+import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+import StatusAlert from '@/components/StatusAlert.vue';
+import { dateRange, STATE_COLOR, STATE_LABEL, stateOf } from '@/helpers/event-labels.mjs';
+import { useEventStore } from '@/stores';
 
-const kothStore = useKothStore();
-const { events, signups, isLoading } = storeToRefs(kothStore);
+// The bracket cuts a first night takes, weakest first, the way the module names them
+const DEFAULT_BOUNDS = [0, 1450, 1600];
 
-const errorMessage = ref(null);
-const successMessage = ref(null);
-const selectedEventId = ref(null);
+const router = useRouter();
+const store = useEventStore();
 
-// Event dialog
-const showEventDialog = ref(false);
-const editingEvent = ref(false);
-const eventForm = ref({
-  name: '',
-  description: '',
-  event_date: '',
-  bracket_1_threshold: 1450,
-  bracket_2_threshold: 1600,
-});
+const nights = ref([]);
+const loading = ref(true);
+const saving = ref(false);
+const error = ref(null);
+const dialogError = ref(null);
+const dialogOpen = ref(false);
+const form = ref({ starts_at: '', lower_bounds: [...DEFAULT_BOUNDS] });
 
-// Add signup dialog
-const showAddSignupDialog = ref(false);
-const signupForm = ref({
-  battle_tag: '',
-  twitch_username: '',
-  races: [],
-});
-const signupError = ref(null);
-
-// Delete confirmation dialog
-const showDeleteDialog = ref(false);
-
-const selectedEvent = computed(() => {
-  return events.value.find(e => e.id === selectedEventId.value);
-});
-
-const activeSignups = computed(() => {
-  return signups.value.filter(s => s.is_active === 1);
-});
-
-onMounted(async () => {
-  await loadEvents();
-});
-
-async function loadEvents() {
+const load = async () => {
+  loading.value = true;
   try {
-    errorMessage.value = null;
-    await kothStore.fetchAllEvents();
-    
-    // The active event is only the default; a selection already made survives a reload
-    const activeEvent = events.value.find(e => e.is_active);
-    if (!selectedEventId.value && activeEvent) {
-      selectedEventId.value = activeEvent.id;
-    }
-    await loadEventData();
-  } catch (error) {
-    errorMessage.value = `Failed to load events: ${error.message}`;
+    nights.value = await store.fetchEvents(null, 'koth');
+  } catch (e) {
+    error.value = `The nights did not load: ${e.message}`;
+  } finally {
+    loading.value = false;
   }
-}
+};
 
-async function loadEventData() {
-  if (!selectedEventId.value) return;
-  
-  try {
-    errorMessage.value = null;
-    await kothStore.fetchSignups(selectedEventId.value);
-  } catch (error) {
-    errorMessage.value = `Failed to load event data: ${error.message}`;
-  }
-}
+onMounted(load);
 
-function openCreateEventDialog() {
-  editingEvent.value = false;
-  const today = new Date().toISOString().slice(0, 10);
-  
-  eventForm.value = {
-    name: '',
-    description: '',
-    event_date: today,
-    bracket_1_threshold: 1450,
-    bracket_2_threshold: 1600,
+// Tonight at the hour the last night started, and its bracket cuts, weakest first.
+// The list read carries no divisions, so the last night is read in full for them.
+const openDialog = async () => {
+  dialogError.value = null;
+  const last = nights.value[0]
+    ? await store.fetchEvent(nights.value[0].id).catch(() => null)
+    : null;
+  const started = last?.starts_at ? DateTime.fromISO(last.starts_at, { zone: 'utc' }).toLocal() : null;
+  const start = DateTime.now().set({
+    hour: started?.hour ?? 20, minute: started?.minute ?? 0, second: 0, millisecond: 0,
+  });
+  const bounds = [...(last?.divisions || [])]
+    .sort((a, b) => b.position - a.position)
+    .map((band) => band.lower_bound ?? 0);
+  form.value = {
+    starts_at: start.toFormat("yyyy-LL-dd'T'HH:mm"),
+    lower_bounds: bounds.length === 3 ? bounds : [...DEFAULT_BOUNDS],
   };
-  showEventDialog.value = true;
-}
+  dialogOpen.value = true;
+};
 
-function openEditEventDialog() {
-  if (!selectedEvent.value) return;
-  
-  editingEvent.value = true;
-  let eventDateLocal = '';
-  if (selectedEvent.value.event_date) {
-    eventDateLocal = selectedEvent.value.event_date.split('T')[0].split(' ')[0];
-  }
-  
-  eventForm.value = {
-    name: selectedEvent.value.name,
-    description: selectedEvent.value.description,
-    event_date: eventDateLocal,
-    is_active: selectedEvent.value.is_active,
-    bracket_1_threshold: selectedEvent.value.bracket_1_threshold,
-    bracket_2_threshold: selectedEvent.value.bracket_2_threshold,
-  };
-  showEventDialog.value = true;
-}
-
-function closeEventDialog() {
-  showEventDialog.value = false;
-  eventForm.value = {
-    name: '',
-    description: '',
-    event_date: '',
-    bracket_1_threshold: 1450,
-    bracket_2_threshold: 1600,
-  };
-}
-
-async function saveEvent() {
+const openNight = async () => {
+  saving.value = true;
+  dialogError.value = null;
   try {
-    const eventData = { ...eventForm.value };
-    // A blank date is left out; an explicit null is refused, the backend default applies
-    if (eventForm.value.event_date) {
-      eventData.event_date = eventForm.value.event_date + ' 00:00:00';
-    } else {
-      delete eventData.event_date;
-    }
-    
-    if (!editingEvent.value && eventData.is_active === undefined) {
-      eventData.is_active = false;
-    }
-    
-    if (editingEvent.value) {
-      await kothStore.updateEvent(selectedEventId.value, eventData);
-      successMessage.value = 'Event updated successfully!';
-    } else {
-      const newEvent = await kothStore.createEvent(eventData);
-      selectedEventId.value = newEvent.id;
-      successMessage.value = 'Event created successfully!';
-    }
-    closeEventDialog();
-    await loadEvents();
-  } catch (error) {
-    errorMessage.value = `Failed to save event: ${error.message}`;
-  }
-}
-
-async function activateEvent() {
-  try {
-    await kothStore.activateEvent(selectedEventId.value);
-    successMessage.value = 'Event activated successfully!';
-    await loadEvents();
-  } catch (error) {
-    errorMessage.value = `Failed to activate event: ${error.message}`;
-  }
-}
-
-async function deactivateEvent() {
-  try {
-    const eventData = {
-      name: selectedEvent.value.name,
-      description: selectedEvent.value.description,
-      event_date: selectedEvent.value.event_date,
-      bracket_1_threshold: selectedEvent.value.bracket_1_threshold,
-      bracket_2_threshold: selectedEvent.value.bracket_2_threshold,
-      is_active: false
-    };
-    await kothStore.updateEvent(selectedEventId.value, eventData);
-    successMessage.value = 'Event deactivated successfully!';
-    await loadEvents();
-  } catch (error) {
-    errorMessage.value = `Failed to deactivate event: ${error.message}`;
-  }
-}
-
-function confirmDeleteEvent() {
-  showDeleteDialog.value = true;
-}
-
-async function deleteEvent() {
-  try {
-    await kothStore.deleteEvent(selectedEventId.value);
-    selectedEventId.value = null;
-    showDeleteDialog.value = false;
-    successMessage.value = 'Event deleted successfully!';
-    await loadEvents();
-  } catch (error) {
-    errorMessage.value = `Failed to delete event: ${error.message}`;
-  }
-}
-
-async function setAsKing(signupId) {
-  try {
-    await kothStore.setKing(signupId);
-    successMessage.value = 'Player set as King! The previous king is now inactive and can sign up again.';
-    await loadEventData();
-  } catch (error) {
-    errorMessage.value = `Failed to set king: ${error.message}`;
-  }
-}
-
-async function removeKing(signupId) {
-  try {
-    await kothStore.unsetKing(signupId);
-    successMessage.value = 'King status removed successfully!';
-    await loadEventData();
-  } catch (error) {
-    errorMessage.value = `Failed to remove king: ${error.message}`;
-  }
-}
-
-async function deleteSignup(signupId) {
-  if (!confirm('Are you sure you want to remove this player from the bracket?')) return;
-  
-  try {
-    await kothStore.deleteSignup(signupId);
-    successMessage.value = 'Player removed from bracket successfully!';
-    await loadEventData();
-  } catch (error) {
-    errorMessage.value = `Failed to delete signup: ${error.message}`;
-  }
-}
-
-function openAddSignupDialog() {
-  if (!selectedEventId.value) {
-    errorMessage.value = 'Please select an event first';
-    return;
-  }
-  
-  signupForm.value = {
-    battle_tag: '',
-    twitch_username: '',
-    races: [],
-  };
-  signupError.value = null;
-  showAddSignupDialog.value = true;
-}
-
-function closeAddSignupDialog() {
-  showAddSignupDialog.value = false;
-  signupForm.value = {
-    battle_tag: '',
-    twitch_username: '',
-    races: [],
-  };
-  signupError.value = null;
-}
-
-async function saveSignup() {
-  if (!signupForm.value.battle_tag) {
-    signupError.value = 'BattleTag is required';
-    return;
-  }
-  
-  try {
-    signupError.value = null;
-    await kothStore.createSignup({
-      event_id: selectedEventId.value,
-      battle_tag: signupForm.value.battle_tag,
-      // the admin may leave the Twitch name blank; the body takes a string, never null
-      twitch_username: signupForm.value.twitch_username || '',
-      races: signupForm.value.races,
+    const night = await store.openNight({
+      starts_at: DateTime.fromISO(form.value.starts_at).toUTC().toISO(),
+      lower_bounds: form.value.lower_bounds,
     });
-    closeAddSignupDialog();
-    successMessage.value = 'Player signup added successfully!';
-    await loadEventData();
-  } catch (error) {
-    signupError.value = error.message || 'Failed to add signup';
+    dialogOpen.value = false;
+    router.push(`/events/${night.id}/admin`);
+  } catch (e) {
+    dialogError.value = e.message;
+  } finally {
+    saving.value = false;
   }
-}
-
-function formatEventDate(dateString) {
-  if (!dateString) return 'Not set';
-  return DateTime.fromISO(dateString, { zone: 'UTC' }).toFormat('ccc, LLL d, yyyy');
-}
+};
 </script>
-
-<style scoped>
-.loading-overlay {
-  z-index: 999;
-}
-
-.bracket-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.king-section {
-  background-color: rgba(var(--v-theme-primary), 0.1);
-  border-left: 4px solid rgb(var(--v-theme-primary));
-  border-radius: 4px;
-}
-
-.king-item {
-  background: rgba(var(--v-theme-surface), 0.9);
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.king-item:hover {
-  background: rgb(var(--v-theme-surface));
-}
-
-.no-king-section {
-  background-color: rgba(var(--v-theme-on-surface), 0.02);
-  border-radius: 4px;
-}
-
-.players-list {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.player-item {
-  background: rgba(var(--v-theme-on-surface), 0.02);
-  border-radius: 4px;
-  transition: background 0.2s, transform 0.1s;
-}
-
-.player-item:hover {
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  transform: translateX(2px);
-}
-
-.race-row {
-  padding-left: 22px;
-}
-</style>

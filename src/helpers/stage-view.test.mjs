@@ -2,8 +2,9 @@ import assert from 'node:assert';
 import test from 'node:test';
 
 import {
-  advancingRows, blocks, chainOrder, columns, generateFields, inDivision, isBye, isByeSide,
-  layout, seriesState, shownPlayer, standingsGroups, winnerSide, winsFor,
+  advancingRows, blocks, chainChallengers, chainOrder, columns, generateFields, inDivision,
+  isBye, isByeSide, layout, pendingChainSeries, seriesState, shownPlayer, standingsGroups,
+  winnerSide, winsFor,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -217,4 +218,35 @@ test('a stage with no advance count carries the whole table', () => {
   assert.strictEqual(advancingRows(table, null).length, 3);
   assert.strictEqual(advancingRows(table, 1).length, 2);
   assert.strictEqual(advancingRows([{ rows: [] }], null).length, 0);
+});
+
+test('closing a night takes the unplayed tail of every chain', () => {
+  const played = { player1_score: 1, player2_score: 0 };
+  const rows = [
+    { id: 1, division_id: 7, sequence: 1, ...played },
+    { id: 2, division_id: 7, sequence: 2, ...played },
+    { id: 3, division_id: 7, sequence: 3 },
+    { id: 4, division_id: 8, sequence: 1 },
+    { id: 5, division_id: 8, sequence: 2 },
+  ];
+  const bands = [{ id: 7, position: 1 }, { id: 8, position: 2 }];
+  assert.deepStrictEqual(pendingChainSeries(rows, bands).map((row) => row.id), [3, 4, 5]);
+  assert.strictEqual(pendingChainSeries(rows.slice(0, 2), bands).length, 0);
+  // an event with no divisions closes its one chain
+  assert.deepStrictEqual(
+    pendingChainSeries([{ id: 9, division_id: null, sequence: 1 }], []).map((row) => row.id),
+    [9],
+  );
+});
+
+test('a challenger is an entrant no series names yet', () => {
+  const entrants = [
+    { id: 1, user: { id: 11 } },
+    { id: 2, user: { id: 12 } },
+    { id: 3, user: { id: 13 } },
+    { id: 4, user: { id: 14 }, withdrawn_at: '2026-09-14T00:00:00Z' },
+  ];
+  const rows = [{ id: 1, player1_id: 11, player2_id: null }, { id: 2, player1_id: null, player2_id: 12 }];
+  assert.deepStrictEqual(chainChallengers(entrants, rows).map((row) => row.id), [3]);
+  assert.deepStrictEqual(chainChallengers(entrants, []).map((row) => row.id), [1, 2, 3]);
 });

@@ -28,8 +28,11 @@ export const useEventStore = defineStore({
         async updateLeague(league_id, league) {
             return await fetchWrapper.put(`${backendUrl}/leagues/${league_id}`, league);
         },
-        async fetchEvents(league_id = null) {
-            const query = league_id ? `?league_id=${league_id}` : '';
+        async fetchEvents(league_id = null, kind = null) {
+            const params = new URLSearchParams();
+            if (league_id) params.set('league_id', league_id);
+            if (kind) params.set('kind', kind);
+            const query = params.size ? `?${params}` : '';
             this.events = await fetchWrapper.get(`${backendUrl}/events${query}`);
             return this.events;
         },
@@ -102,6 +105,18 @@ export const useEventStore = defineStore({
         // Writes every series of the stage from its locked seeds, per division
         async generateStage(event_id, stage_id) {
             return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/generate`);
+        },
+        // Appends one entrant to the end of the chain his division plays
+        async addChallenger(event_id, stage_id, entrant_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`, { entrant_id });
+        },
+        // A KOTH night is an event, so the module owns only these two writes
+        async openNight(night) {
+            return await fetchWrapper.post(`${backendUrl}/koth/nights`, night);
+        },
+        // Deletes the series nobody played, so every series left carries a result
+        async closeNight(event_id) {
+            return await fetchWrapper.post(`${backendUrl}/koth/nights/${event_id}/close`);
         },
         // Moves the top entrants of a finished stage into the next stage
         async advanceStage(event_id, stage_id) {

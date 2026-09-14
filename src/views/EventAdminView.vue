@@ -170,13 +170,16 @@
               <PlayerName v-if="seat.user" :player="seat.user" plain />
               <span v-else class="text-medium-emphasis">Empty seat</span>
               <v-spacer />
-              <v-btn v-if="!lobbyScored && seat.entrant_id" variant="text" size="small"
+              <v-btn v-if="!lobbyScored && seat.entrant_id && canMove" variant="text" size="small"
                 :disabled="saving" @click="openMove(seat)">Move</v-btn>
             </div>
           </div>
           <p v-if="emptySeats" class="text-medium-emphasis text-caption mt-3 mb-0">
             This lobby seats nobody yet in {{ emptySeats }} of its places. It fills when the
             round before it is played.
+          </p>
+          <p v-else-if="!lobbyScored && !canMove" class="text-medium-emphasis text-caption mt-3 mb-0">
+            A lobby seats two entrants or more, so nobody leaves this one.
           </p>
         </v-card-text>
         <v-card-actions>
@@ -289,7 +292,7 @@ import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } fr
 import { scoreOf } from '@/helpers/map-order.mjs';
 import {
   advancingRows, chainChallengers, generateFields, isLobby, isScored, lobbySeats,
-  pendingChainSeries, sideName as nameOfSide, standsOn, winsFor,
+  lobbyTargets, pendingChainSeries, sideName as nameOfSide, standsOn, winsFor,
 } from '@/helpers/stage-view.mjs';
 import { rostersByEntrant } from '@/helpers/entrants.mjs';
 import { useEventStore, useTeamStore } from '@/stores';
@@ -464,6 +467,8 @@ const moveSeat = (from, to) => {
 
 const lobbyScored = computed(() => isScored(picked.value));
 const emptySeats = computed(() => order.value.filter((seat) => !seat.entrant_id).length);
+// A lobby seats two entrants or more, so the third seat is the first one free to leave
+const canMove = computed(() => order.value.filter((seat) => seat.entrant_id).length > 2);
 const seatName = (seat) => seat.user?.name || `seat ${seat.side_no}`;
 
 const savePlaces = async () => {
@@ -471,14 +476,7 @@ const savePlaces = async () => {
   if (await run(() => store.setPlaces(picked.value.id, places))) lobbyOpen.value = false;
 };
 
-// A lobby of the same round that nobody played yet may take one more entrant. Each one
-// is numbered the way its box is, over the whole round, so the two screens agree.
-const moveTargets = computed(() => series.value
-  .filter((row) => isLobby(row) && row.round_id === picked.value?.round_id)
-  .sort((a, b) => (a.sequence ?? a.id) - (b.sequence ?? b.id))
-  .map((row, index) => ({ id: row.id, row, label: `Lobby ${index + 1}: ${lobbyNames(row)}` }))
-  .filter((item) => item.id !== picked.value?.id && !isScored(item.row)));
-const lobbyNames = (row) => (row.sides || []).map((seat) => seat.user?.name || 'empty').join(', ');
+const moveTargets = computed(() => lobbyTargets(series.value, picked.value));
 
 const openMove = (seat) => {
   moving.value = seat;

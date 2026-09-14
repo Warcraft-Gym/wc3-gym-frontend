@@ -37,6 +37,7 @@
           <div class="rows" :class="{ lobbies: isLobbyStage }">
             <SeriesBox v-for="(row, index) in column.series" :key="row.id" :series="row" flat
               :rosters="rosters" :crown="isChain" :label="boxLabel(group, column, row)"
+              :fed="isLobbyStage && column.index > 0"
               class="list-row" :class="{ first: index === 0 }" @open="open" />
           </div>
         </v-card>

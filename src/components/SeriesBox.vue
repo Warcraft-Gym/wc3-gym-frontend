@@ -9,7 +9,7 @@
     <div v-for="seat in seats" :key="seat.key" class="side" :class="seat.result">
       <span class="mark" />
       <PlayerName v-if="seat.user" :player="seat.user" :plain="!readonly" />
-      <span v-else class="text-medium-emphasis empty">Empty seat</span>
+      <span v-else class="text-medium-emphasis empty">{{ fed ? 'To be decided' : 'Empty seat' }}</span>
       <span class="score">{{ seat.place ?? '' }}</span>
     </div>
     <div v-for="side in seats.length ? [] : [1, 2]" :key="side" class="side" :class="sideClass(side)">
@@ -47,6 +47,7 @@ const props = defineProps({
   flat: Boolean,                         // inside a list, the card around it draws the border
   readonly: Boolean,                     // the series page opens nothing, so its names link
   rosters: { type: Object, default: () => ({}) },  // the players of each team entrant, by entrant id
+  fed: Boolean,                          // a lobby seated by the round before it, not by the seeds
 });
 defineEmits(['open']);
 
@@ -63,7 +64,7 @@ const hidden = inject(HIDE_RESULTS, ref(false));
 
 const state = computed(() => seriesState(props.series));
 // A lobby seats more than two, so its seats replace the two side rows
-const seats = computed(() => lobbySeats(props.series, hidden.value));
+const seats = computed(() => lobbySeats(props.series, hidden.value, props.fed));
 // A lobby fills from the round before it, so it never waits for "both sides"
 const stateWord = computed(() => (seats.value.length && state.value === 'pending'
   ? 'Waiting for the round before' : STATE_WORD[state.value]));

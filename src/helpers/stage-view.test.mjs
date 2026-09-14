@@ -3,8 +3,8 @@ import test from 'node:test';
 
 import {
   advancingRows, blocks, chainChallengers, chainOrder, columns, generateFields, inDivision,
-  isBye, isByeSide, isLobby, layout, lobbySeats, pendingChainSeries, seriesState, shownPlayer,
-  shownTeam, sideName, standingsGroups, standsOn, winnerSide, winsFor,
+  isBye, isByeSide, isLobby, layout, lobbySeats, lobbyTargets, pendingChainSeries, seriesState,
+  shownPlayer, shownTeam, sideName, standingsGroups, standsOn, winnerSide, winsFor,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -354,4 +354,33 @@ test('a lobby is to play once every seat names an entrant, and waits while one i
   assert.equal(seriesState({ id: 72, sides: [seat(1, 31), seat(2, 32)] }), 'open');
   assert.equal(seriesState({ id: 73, sides: [seat(1, 31), { side_no: 2, entrant_id: null }] }), 'pending');
   assert.equal(seriesState({ ...LOBBY, player1_score: 1, player2_score: 0 }), 'played');
+});
+
+test('a hidden lobby of a later round names nobody: its seats are the round before it', () => {
+  const rows = lobbySeats(LOBBY, true, true);
+  assert.deepEqual(rows.map((row) => row.side_no), [1, 2, 3, 4]);
+  assert.deepEqual(rows.map((row) => row.user), [null, null, null, null]);
+  assert.deepEqual(lobbySeats(LOBBY, true, false).map((row) => row.user?.name),
+    ['P11', 'P12', 'P13', 'P14']);
+});
+
+test('the move picker holds the division of the lobby, and numbers its lobbies from one', () => {
+  const lobby = (id, division_id, sequence) => ({
+    id, division_id, round_id: 1, sequence, sides: [seat(1, id * 10), seat(2, id * 10 + 1)],
+  });
+  const rows = [lobby(1, 7, 1), lobby(2, 7, 2), lobby(3, 8, 1), lobby(4, 8, 2)];
+  const targets = lobbyTargets(rows, rows[0]);
+  assert.deepEqual(targets.map((item) => item.id), [2]);
+  assert.equal(targets[0].label.startsWith('Lobby 2: '), true);
+  assert.deepEqual(lobbyTargets(rows, rows[2]).map((item) => item.id), [4]);
+  assert.deepEqual(lobbyTargets(rows, rows[2])[0].label.startsWith('Lobby 2: '), true);
+});
+
+test('the move picker drops a lobby that is already played', () => {
+  const played = {
+    id: 9, division_id: null, round_id: 1, sequence: 2, player1_score: 1, player2_score: 0,
+    sides: [seat(1, 91, 1), seat(2, 92, 2)],
+  };
+  const open = { id: 8, division_id: null, round_id: 1, sequence: 1, sides: [seat(1, 81), seat(2, 82)] };
+  assert.deepEqual(lobbyTargets([open, played], open), []);
 });

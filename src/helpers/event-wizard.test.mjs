@@ -42,6 +42,11 @@ test('the new event fields ride along, and a blank number is nothing', () => {
   assert.ok(!('min_games_seasons' in body));  // the API has no such field
 });
 
+test('one entry per race starts off and sends its switch', () => {
+  assert.equal(eventPayload(blankForm()).multi_entry, false);
+  assert.equal(eventPayload({ ...blankForm(), multi_entry: true }).multi_entry, true);
+});
+
 test('check-in sends its window and a games floor sends its count', () => {
   const body = eventPayload({ ...blankForm(), checkin_enabled: true, checkin_days: 2, min_games: '20' });
   assert.equal(body.checkin_days, 2);

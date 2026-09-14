@@ -1,20 +1,27 @@
 <!-- A member entering one event: the race he plays it on, a note on a signup-only event, a
      battle tag when the event takes anyone and the caller has no linked account, and the
-     eligibility warnings the API answered.
+     eligibility warnings the API answered. On an event that takes one entry per race a
+     member already in enters another race, and the races he holds are not offered again.
      A warning never blocks: the entrant is in, and the chips say what an admin will look at. -->
 <template>
   <v-dialog v-model="show" max-width="520">
     <v-card>
       <v-card-title class="bg-primary">
         <v-icon class="mr-2" icon="mdi-account-plus" />
-        Sign up for {{ eventLabel(event) }}
+        {{ another ? 'Enter another race' : `Sign up for ${eventLabel(event)}` }}
       </v-card-title>
 
       <StatusAlert v-model="error" class="mx-4 mt-3" />
 
       <v-card-text class="pt-4">
         <template v-if="!entrant">
-          <RaceSelect v-model="race" variant="outlined" density="comfortable" label="Race" />
+          <div v-if="another" class="d-flex align-center flex-wrap ga-2 mb-3">
+            <span class="text-medium-emphasis">You are in on</span>
+            <span v-for="held in taken" :key="held" class="d-inline-flex align-center ga-1">
+              <RaceIcon :raceIdentifier="held" />{{ raceName(held) }}
+            </span>
+          </div>
+          <RaceSelect v-model="race" :exclude="taken" variant="outlined" density="comfortable" label="Race" />
           <v-text-field v-if="takesNote" v-model="note" variant="outlined" density="comfortable"
             label="Note" counter="200" maxlength="200" hint="What you want to work on"
             persistent-hint class="mb-2" />
@@ -41,7 +48,7 @@
         <v-btn v-if="!entrant" @click="show = false">Cancel</v-btn>
         <v-btn color="primary" variant="elevated" :loading="saving" :disabled="!entrant && !ready"
           @click="entrant ? (show = false) : submit()">
-          {{ entrant ? 'Done' : 'Sign up' }}
+          {{ entrant ? 'Done' : (another ? 'Enter' : 'Sign up') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -51,15 +58,18 @@
 <script setup>
 import { computed, ref } from 'vue';
 
+import RaceIcon from '@/components/RaceIcon.vue';
 import RaceSelect from '@/components/RaceSelect.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { warningLabel } from '@/helpers/entrants.mjs';
 import { eventLabel } from '@/helpers/event-labels.mjs';
 import { defaultSignupRace } from '@/helpers/players.mjs';
+import { raceWrapper } from '@/helpers/races.js';
 import { useAuthStore, useEventStore } from '@/stores';
 
 const props = defineProps({
   event: { type: Object, required: true },
+  held: { type: Array, default: () => [] }, // the races the caller already entered on
 });
 const emit = defineEmits(['signed-up']);
 
@@ -80,13 +90,18 @@ const needsTag = computed(() => props.event.signup_policy === 'anyone' && !auth.
 const takesNote = computed(() => props.event.kind === 'signup');
 const ready = computed(() => !!race.value && (!needsTag.value || battleTag.value.trim().length > 2));
 const warnings = computed(() => entrant.value?.warnings ?? []);
+// The races the dialog leaves out: only an event that takes one entry per race holds any
+const taken = computed(() => (props.event.multi_entry ? props.held : []));
+const another = computed(() => taken.value.length > 0);
+const raceName = (race) => raceWrapper.getRaceObject(race)?.name || race;
 
 const open = () => {
   entrant.value = null;
   error.value = null;
   battleTag.value = '';
   note.value = '';
-  race.value = defaultSignupRace(auth.me?.user, () => 0);
+  const usual = defaultSignupRace(auth.me?.user, () => 0);
+  race.value = taken.value.includes(usual) ? null : usual;
   show.value = true;
 };
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bandsPayload, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, mergeSeeds, rostersByEntrant, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
+import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -143,4 +143,36 @@ test('a team entrant carries the roster its team fields for that event', () => {
   assert.deepEqual(Object.keys(rostersByEntrant(entrants, teams, 88)), ['91']);
   assert.deepEqual(rostersByEntrant([], [], 77), {});
   assert.deepEqual(rostersByEntrant(), {});
+});
+
+test('a player prints once with his races strongest first, and a team row passes through', () => {
+  const two = [
+    { id: 11, seed: 1, mmr: 1400, race: 'HU', division_id: 8, withdrawn_at: null, warnings: [], user: { id: 5, name: 'Two' } },
+    { id: 12, seed: null, mmr: 1700, race: 'NE', division_id: 9, withdrawn_at: '2026-09-14T20:00:00Z', warnings: ['over_mmr_max'], user: { id: 5, name: 'Two' } },
+    { id: 4, mmr: 1500, team: { name: 'Wolves' } },
+    { id: 13, mmr: null, mmr_at_seed: 1300, race: 'OC', division_id: 8, withdrawn_at: null, user: { id: 6, name: 'One' } },
+  ];
+  const items = byPlayer(two);
+  assert.deepEqual(items.map((item) => item.id), [11, 4, 13]);
+  assert.deepEqual(items[0].races.map(({ race, mmr, division_id, id, withdrawn_at }) => ({ race, mmr, division_id, id, withdrawn_at })), [
+    { race: 'NE', mmr: 1700, division_id: 9, id: 12, withdrawn_at: '2026-09-14T20:00:00Z' },
+    { race: 'HU', mmr: 1400, division_id: 8, id: 11, withdrawn_at: null },
+  ]);
+  assert.equal(items[0].withdrawn_at, null);  // one race still stands
+  assert.deepEqual(items[0].warnings, ['over_mmr_max']);
+  assert.deepEqual(items[1].races, []);
+  assert.deepEqual(items[2].races.map((race) => race.mmr), [1300]);
+  assert.deepEqual(raceRows(items[0]).map((race) => race.id), [12, 11]);
+  assert.deepEqual(raceRows(items[2]), []);
+  assert.deepEqual(idsOf(items[0]), [12, 11]);
+  assert.deepEqual(idsOf(items[1]), [4]);
+});
+
+test('a player whose every race withdrew reads withdrawn', () => {
+  const gone = byPlayer([
+    { id: 1, mmr: 1400, race: 'HU', withdrawn_at: '2026-09-14T20:00:00Z', user: { id: 5, name: 'Two' } },
+    { id: 2, mmr: 1300, race: 'NE', withdrawn_at: '2026-09-14T20:01:00Z', user: { id: 5, name: 'Two' } },
+  ]);
+  assert.equal(gone.length, 1);
+  assert.equal(gone[0].withdrawn_at, '2026-09-14T20:00:00Z');
 });

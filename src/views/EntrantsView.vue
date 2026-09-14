@@ -5,7 +5,7 @@
   <v-container fluid class="pa-4">
     <div class="d-flex flex-wrap align-center ga-3">
       <h1 class="text-h5 text-md-h3 font-weight-bold">Entrants</h1>
-      <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">{{ live.length }} entered</v-chip>
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">{{ entered }} entered</v-chip>
       <v-chip v-if="seedsLocked" size="small" variant="tonal" color="secondary" prepend-icon="mdi-lock">seeds locked</v-chip>
       <v-spacer />
       <v-btn v-if="isAdmin" color="primary" prepend-icon="mdi-account-plus" :disabled="loading" @click="openAdd">Add entrant</v-btn>
@@ -67,7 +67,7 @@
 
       <!-- The table carries the identities and the seed handles; a phone reads the cards below -->
       <v-card elevation="2" class="mt-4 d-none d-md-block">
-        <GroupedTable :columns="columns" :groups="groups" default-open empty="Nobody has entered yet." >
+        <GroupedTable :columns="columns" :groups="playerGroups" default-open empty="Nobody has entered yet." >
           <template #head.mmr><W3CMmr /></template>
           <template #group="{ group }">
             <td :colspan="columns.length">
@@ -77,88 +77,122 @@
             </td>
           </template>
           <template #rows="{ group }">
-            <tr
-              v-for="row in group.rows"
-              :key="row.id"
-              class="detail-row"
-              :class="{ withdrawn: row.withdrawn_at, dragging: dragged === row.id }"
-              :draggable="canReorder"
-              @dragstart="dragged = row.id"
-              @dragover.prevent
-              @drop.prevent="drop(group, row)"
-              @dragend="dragged = null"
-            >
-              <td>
-                <v-icon v-if="canReorder" size="18" class="grip" aria-hidden="true">mdi-drag-horizontal-variant</v-icon>
-              </td>
-              <td>
-                <PlayerName v-if="row.user" :player="row.user" :race="row.race" />
-                <template v-else-if="row.team">
-                  <span class="font-weight-medium">{{ row.team.name }}</span>
-                  <div class="roster text-caption">
-                    <PlayerName v-for="seat in rosterFor(row)" :key="seat.player.id" :player="seat.player" :race="seat.race">
-                      <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon>
-                    </PlayerName>
-                    <span v-if="!rosterFor(row).length" class="text-medium-emphasis">No roster for this event</span>
-                  </div>
-                </template>
-              </td>
-              <td class="text-right">
-                <span v-if="entrantMmr(row)">
-                  {{ entrantMmr(row) }}
-                  <v-tooltip activator="parent" location="top">{{ mmrText(row) }}</v-tooltip>
-                </span>
-                <span v-else class="text-medium-emphasis">—</span>
-              </td>
-              <!-- A team has no identity of its own; the three columns belong to a player -->
-              <td :class="{ 'text-medium-emphasis': !row.user?.battleTag }">
-                {{ row.user ? row.user.battleTag || 'Not linked' : '—' }}
-              </td>
-              <td :class="{ 'text-medium-emphasis': !row.user?.discordTag }">
-                {{ row.user ? row.user.discordTag || 'Not linked' : '—' }}
-              </td>
-              <!-- The W3C name is the battle tag, so this column answers whether w3champions
-                   knows it rather than printing the same string twice -->
-              <td>
-                <a v-if="w3cName(row)" :href="w3cPlayerUrl(w3cName(row))" target="_blank" rel="noopener noreferrer">
-                  Linked
-                  <v-tooltip activator="parent" location="top">{{ w3cName(row) }}</v-tooltip>
-                </a>
-                <span v-else class="text-medium-emphasis">{{ row.user ? 'Not linked' : '—' }}</span>
-              </td>
-              <td>
-                <v-chip
-                  v-for="code in row.warnings"
-                  :key="code"
-                  size="x-small"
-                  color="warning"
-                  variant="tonal"
-                  prepend-icon="mdi-alert"
-                  class="mr-1"
-                >{{ warningLabel(code, event) }}</v-chip>
-              </td>
-              <td class="text-right">
-                <span v-if="row.seed">{{ row.seed }}</span>
-                <span v-else class="text-medium-emphasis">—</span>
-                <div v-if="seedsLocked && row.seed_source" class="text-caption text-medium-emphasis">{{ row.seed_source }}</div>
-              </td>
-              <td class="text-no-wrap">
-                <v-chip v-if="row.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
-                <v-chip v-else-if="row.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
-                <v-chip v-else size="x-small" variant="tonal" prepend-icon="mdi-account-clock">signed up</v-chip>
-                <v-icon v-if="row.manual_placement" size="16" class="ml-1" aria-label="placed by hand">mdi-pin</v-icon>
-              </td>
-              <td v-if="isAdmin">
-                <RowActions :actions="actionsFor(row)" />
-              </td>
-            </tr>
+            <template v-for="row in group.rows" :key="row.id">
+              <tr
+                class="detail-row"
+                :class="{ withdrawn: row.withdrawn_at, dragging: dragged === row.id }"
+                :draggable="canReorder"
+                @dragstart="dragged = row.id"
+                @dragover.prevent
+                @drop.prevent="drop(group, row)"
+                @dragend="dragged = null"
+              >
+                <td>
+                  <v-icon v-if="canReorder" size="18" class="grip" aria-hidden="true">mdi-drag-horizontal-variant</v-icon>
+                </td>
+                <td>
+                  <PlayerName v-if="row.user" :player="row.user" :race="solo(row) ? row.race : undefined" />
+                  <template v-else-if="row.team">
+                    <span class="font-weight-medium">{{ row.team.name }}</span>
+                    <div class="roster text-caption">
+                      <PlayerName v-for="seat in rosterFor(row)" :key="seat.player.id" :player="seat.player" :race="seat.race">
+                        <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon>
+                      </PlayerName>
+                      <span v-if="!rosterFor(row).length" class="text-medium-emphasis">No roster for this event</span>
+                    </div>
+                  </template>
+                </td>
+                <td class="text-right">
+                  <span v-if="solo(row) && entrantMmr(row)">
+                    {{ entrantMmr(row) }}
+                    <v-tooltip activator="parent" location="top">{{ mmrText(row) }}</v-tooltip>
+                  </span>
+                  <span v-else-if="solo(row)" class="text-medium-emphasis">—</span>
+                </td>
+                <!-- A team has no identity of its own; the three columns belong to a player -->
+                <td :class="{ 'text-medium-emphasis': !row.user?.battleTag }">
+                  {{ row.user ? row.user.battleTag || 'Not linked' : '—' }}
+                </td>
+                <td :class="{ 'text-medium-emphasis': !row.user?.discordTag }">
+                  {{ row.user ? row.user.discordTag || 'Not linked' : '—' }}
+                </td>
+                <!-- The W3C name is the battle tag, so this column answers whether w3champions
+                     knows it rather than printing the same string twice -->
+                <td>
+                  <a v-if="w3cName(row)" :href="w3cPlayerUrl(w3cName(row))" target="_blank" rel="noopener noreferrer">
+                    Linked
+                    <v-tooltip activator="parent" location="top">{{ w3cName(row) }}</v-tooltip>
+                  </a>
+                  <span v-else class="text-medium-emphasis">{{ row.user ? 'Not linked' : '—' }}</span>
+                </td>
+                <td>
+                  <v-chip
+                    v-for="code in row.warnings"
+                    :key="code"
+                    size="x-small"
+                    color="warning"
+                    variant="tonal"
+                    prepend-icon="mdi-alert"
+                    class="mr-1"
+                  >{{ warningLabel(code, event) }}</v-chip>
+                </td>
+                <td class="text-right">
+                  <template v-if="solo(row)">
+                    <span v-if="row.seed">{{ row.seed }}</span>
+                    <span v-else class="text-medium-emphasis">—</span>
+                    <div v-if="seedsLocked && row.seed_source" class="text-caption text-medium-emphasis">{{ row.seed_source }}</div>
+                  </template>
+                </td>
+                <td class="text-no-wrap">
+                  <template v-if="solo(row)">
+                    <v-chip v-if="row.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
+                    <v-chip v-else-if="row.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
+                    <v-chip v-else size="x-small" variant="tonal" prepend-icon="mdi-account-clock">signed up</v-chip>
+                    <v-icon v-if="row.manual_placement" size="16" class="ml-1" aria-label="placed by hand">mdi-pin</v-icon>
+                  </template>
+                </td>
+                <td v-if="isAdmin">
+                  <RowActions :actions="solo(row) ? actionsFor(row) : [banAction(row)]" />
+                </td>
+              </tr>
+              <!-- A player on more than one race: one row a race, each with its own seed and state -->
+              <tr v-for="race in raceRows(row)" :key="race.id" class="detail-row" :class="{ withdrawn: race.withdrawn_at }">
+                <td></td>
+                <td class="pl-8">
+                  <RaceIcon :raceIdentifier="race.race" />
+                  <span class="ml-2">{{ raceName(race.race) }}</span>
+                </td>
+                <td class="text-right">
+                  <span v-if="race.mmr">
+                    {{ race.mmr }}
+                    <v-tooltip activator="parent" location="top">{{ mmrText(race) }}</v-tooltip>
+                  </span>
+                  <span v-else class="text-medium-emphasis">—</span>
+                </td>
+                <td colspan="4"></td>
+                <td class="text-right">
+                  <span v-if="race.seed">{{ race.seed }}</span>
+                  <span v-else class="text-medium-emphasis">—</span>
+                  <div v-if="seedsLocked && race.seed_source" class="text-caption text-medium-emphasis">{{ race.seed_source }}</div>
+                </td>
+                <td class="text-no-wrap">
+                  <v-chip v-if="race.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
+                  <v-chip v-else-if="race.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
+                  <v-chip v-else size="x-small" variant="tonal" prepend-icon="mdi-account-clock">signed up</v-chip>
+                  <v-icon v-if="race.manual_placement" size="16" class="ml-1" aria-label="placed by hand">mdi-pin</v-icon>
+                </td>
+                <td v-if="isAdmin">
+                  <RowActions :actions="actionsFor(race, false)" />
+                </td>
+              </tr>
+            </template>
           </template>
         </GroupedTable>
       </v-card>
 
       <!-- A phone reads one card per entrant: who, the race, the MMR and what to look at -->
       <div class="d-md-none mt-4">
-        <div v-for="group in groups" :key="group.key" class="mb-4">
+        <div v-for="group in playerGroups" :key="group.key" class="mb-4">
           <div class="d-flex align-center ga-2 mb-2">
             <v-icon size="12" :color="colorOf(group)">mdi-circle</v-icon>
             <span class="font-weight-bold">{{ group.title }}</span>
@@ -166,11 +200,20 @@
           </div>
           <v-card v-for="row in group.rows" :key="row.id" variant="outlined" class="mb-2 pa-3" :class="{ withdrawn: row.withdrawn_at }">
             <div class="d-flex align-center ga-2">
-              <span v-if="row.seed" class="text-medium-emphasis">{{ row.seed }}</span>
-              <PlayerName v-if="row.user" :player="row.user" :race="row.race" />
+              <span v-if="solo(row) && row.seed" class="text-medium-emphasis">{{ row.seed }}</span>
+              <PlayerName v-if="row.user" :player="row.user" :race="solo(row) ? row.race : undefined" />
               <span v-else-if="row.team" class="font-weight-medium">{{ row.team.name }}</span>
               <v-spacer />
-              <span>{{ entrantMmr(row) || '—' }}</span>
+              <span v-if="solo(row)">{{ entrantMmr(row) || '—' }}</span>
+            </div>
+            <div v-for="race in raceRows(row)" :key="race.id" class="d-flex align-center ga-2 mt-1 pl-4" :class="{ withdrawn: race.withdrawn_at }">
+              <span v-if="race.seed" class="text-medium-emphasis">{{ race.seed }}</span>
+              <RaceIcon :raceIdentifier="race.race" />
+              <span>{{ raceName(race.race) }}</span>
+              <v-chip v-if="race.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
+              <v-chip v-else-if="race.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
+              <v-spacer />
+              <span>{{ race.mmr || '—' }}</span>
             </div>
             <div v-if="row.team" class="roster text-caption mt-1">
               <PlayerName v-for="seat in rosterFor(row)" :key="seat.player.id" :player="seat.player" :race="seat.race">
@@ -179,8 +222,8 @@
               <span v-if="!rosterFor(row).length" class="text-medium-emphasis">No roster for this event</span>
             </div>
             <div class="d-flex flex-wrap ga-1 mt-2">
-              <v-chip v-if="row.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
-              <v-chip v-else-if="row.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
+              <v-chip v-if="solo(row) && row.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
+              <v-chip v-else-if="solo(row) && row.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
               <v-chip
                 v-for="code in row.warnings"
                 :key="code"
@@ -274,13 +317,15 @@ import { RouterLink, useRoute } from 'vue-router';
 import DivisionBracketing from '@/components/DivisionBracketing.vue';
 import GroupedTable from '@/components/GroupedTable.vue';
 import PlayerName from '@/components/PlayerName.vue';
+import RaceIcon from '@/components/RaceIcon.vue';
 import RaceSelect from '@/components/RaceSelect.vue';
 import RowActions from '@/components/RowActions.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts } from '@/helpers/divisions.mjs';
-import { bandNames, bandsPayload, cutsOf, entrantMmr, entrantName, groupByDivision, mergeSeeds, seedPayload, teamRoster, warningLabel } from '@/helpers/entrants.mjs';
+import { bandNames, bandsPayload, byPlayer, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, seedPayload, teamRoster, warningLabel } from '@/helpers/entrants.mjs';
 import { eventLabel, timeText, titleOf, FORMATS } from '@/helpers/event-labels.mjs';
+import { raceWrapper } from '@/helpers/races.js';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { useAuthStore, useEventStore, usePlayerStore, useTeamStore } from '@/stores';
 
@@ -324,7 +369,12 @@ const eventName = computed(() => {
 });
 const live = computed(() => entrants.value.filter((row) => !row.withdrawn_at));
 const rated = computed(() => live.value.filter((row) => entrantMmr(row) > 0));
+const entered = computed(() => byPlayer(live.value).length);
 const groups = computed(() => groupByDivision(entrants.value, event.value?.divisions || []));
+// The list prints a player once a division; the seed writes still read the rows of `groups`
+const playerGroups = computed(() => groups.value.map((group) => ({ ...group, rows: byPlayer(group.rows) })));
+const solo = (item) => !raceRows(item).length;
+const raceName = (race) => raceWrapper.getRaceObject(race)?.name || race;
 const stages = computed(() => [...(event.value?.stages || [])]
   .sort((a, b) => a.position - b.position)
   .map((stage) => ({ ...stage, label: stage.name || titleOf(FORMATS, stage.format) })));
@@ -432,14 +482,16 @@ const lock = () => run('lock', async () => {
   event.value.stages = event.value.stages.map((row) => (row.id === locked.id ? locked : row));
 }, 'The seeds of this stage are locked.');
 
-// A row dropped on another of the same division takes its place, and the whole order posts
+// A player dropped on another of the same division takes his place, his races together,
+// and the whole order posts
 const drop = (group, target) => {
-  const ids = group.rows.map((row) => row.id);
-  const from = ids.indexOf(dragged.value);
-  const to = ids.indexOf(target.id);
+  const items = [...group.rows];
+  const from = items.findIndex((item) => item.id === dragged.value);
+  const to = items.findIndex((item) => item.id === target.id);
   dragged.value = null;
   if (from === -1 || to === -1 || from === to) return;
-  ids.splice(to, 0, ...ids.splice(from, 1));
+  items.splice(to, 0, ...items.splice(from, 1));
+  const ids = items.flatMap(idsOf);
   const byId = new Map(entrants.value.map((row) => [row.id, row]));
   ids.forEach((id, index) => { byId.get(id).seed = index + 1; });
   run('order', async () => {
@@ -479,7 +531,9 @@ const ban = () => run('ban', async () => {
   await readEntrants();
 }, 'The player is banned. Every entrant row of the event warns.');
 
-const actionsFor = (row) => [
+const banAction = (row) => row.user && { icon: 'mdi-gavel', label: 'Ban player', color: 'error', onClick: () => askBan(row) };
+// A race row of a player offers no ban: his own row above carries the one ban
+const actionsFor = (row, withBan = true) => [
   !row.checked_in_at && !row.withdrawn_at && {
     icon: 'mdi-check', label: 'Check in', onClick: () => run('checkin', async () => {
       const updated = await store.checkIn(eventId, row.id);
@@ -504,7 +558,7 @@ const actionsFor = (row) => [
       entrants.value = entrants.value.map((old) => (old.id === updated.id ? updated : old));
     }),
   },
-  row.user && { icon: 'mdi-gavel', label: 'Ban player', color: 'error', onClick: () => askBan(row) },
+  withBan && banAction(row),
   { icon: 'mdi-close', label: 'Remove', color: 'error', onClick: () => run('remove', async () => {
     await store.removeEntrant(eventId, row.id);
     entrants.value = entrants.value.filter((old) => old.id !== row.id);

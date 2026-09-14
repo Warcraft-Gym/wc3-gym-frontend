@@ -60,6 +60,7 @@ export const blankForm = (league = null) => ({
   min_games: '',
   checkin_enabled: false,
   checkin_days: 3,
+  multi_entry: false,
   series_per_round: 1,
   division_count: 0,
   division_names: [],
@@ -90,6 +91,8 @@ export const eventPayload = (form) => ({
   min_games: count(form.min_games),
   checkin_enabled: !!form.checkin_enabled,
   checkin_days: form.checkin_enabled ? count(form.checkin_days) : null,
+  // On, a player may enter once per race; each row seeds on its own race
+  multi_entry: !!form.multi_entry,
   // A fixture pairs two team entrants, so a solo event always holds one series a pairing
   series_per_round: form.entrant_kind === 'team' ? Math.max(1, Number(form.series_per_round) || 1) : 1,
 });

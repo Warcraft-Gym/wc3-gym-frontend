@@ -39,6 +39,35 @@ export function bySeed(rows) {
     || entrantName(a).localeCompare(entrantName(b)));
 }
 
+// One item per player in the list's order, his races as sub-rows strongest first: an event
+// that takes one entry per race holds one row per race. A team row passes through with no
+// races. The item reads withdrawn only once every race of the player is, and warns for all.
+export function byPlayer(rows) {
+  const items = [];
+  const byUser = new Map();
+  for (const row of rows) {
+    const id = row.user?.id;
+    if (id == null) { items.push({ ...row, races: [] }); continue; }
+    if (!byUser.has(id)) {
+      byUser.set(id, { ...row, races: [] });
+      items.push(byUser.get(id));
+    }
+    byUser.get(id).races.push({ ...row, mmr: entrantMmr(row) });
+  }
+  for (const item of items.filter((item) => item.races.length)) {
+    item.races.sort((a, b) => (b.mmr ?? 0) - (a.mmr ?? 0));
+    item.withdrawn_at = item.races.every((race) => race.withdrawn_at) ? item.races[0].withdrawn_at : null;
+    item.warnings = [...new Set(item.races.flatMap((race) => race.warnings || []))];
+  }
+  return items;
+}
+
+// The rows a player prints under his name: none while he holds one race, which his own row carries
+export const raceRows = (item) => (item.races?.length > 1 ? item.races : []);
+
+// The ids a player item stands for, in the order the seeds take them
+export const idsOf = (item) => (item.races?.length ? item.races.map((race) => race.id) : [item.id]);
+
 // A sign-up list holds no seed and no draw, so it reads in the order people entered.
 export const bySignup = (rows) => [...rows].sort((a, b) => a.id - b.id);
 

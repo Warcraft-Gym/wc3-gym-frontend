@@ -24,7 +24,7 @@
             <v-card-actions class="flex-wrap ga-2 px-3 pb-3">
               <CastChips :series="series" />
               <v-spacer />
-              <v-btn v-if="hasVeto" variant="outlined" color="primary" size="small"
+              <v-btn v-if="hasVeto && canReport" variant="outlined" color="primary" size="small"
                 prepend-icon="mdi-map-outline" :to="`/player-series/${series.id}/veto`">
                 Map veto
               </v-btn>

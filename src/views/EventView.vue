@@ -186,7 +186,7 @@ const act = async () => {
   acting.value = true;
   try {
     if (action === 'withdraw') await store.withdraw(event.value.id);
-    if (action === 'check_in') await store.checkIn(event.value.id, row.value.entrant_id);
+    if (action === 'check_in') await store.checkInRow(row.value);
     await reload();
   } catch (e) {
     error.value = `That did not go through: ${e.message}`;

@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { backendUrl, fetchWrapper } from '@/helpers';
-import { publicSignupBody } from '@/helpers/koth.mjs';
 
 export const useKothStore = defineStore({
     id: 'kothStore',
@@ -84,24 +83,6 @@ export const useKothStore = defineStore({
             const newSignups = await fetchWrapper.post(`${backendUrl}/koth/signups/admin`, signupData);
             this.signups.push(...newSignups);
             return newSignups;
-        },
-
-        // The logged-in player: the backend reads his battle tag from his profile
-        async signupMe(races) {
-            const newSignups = await fetchWrapper.post(`${backendUrl}/koth/signups/me`, { races });
-            this.signups.push(...newSignups);
-            return newSignups;
-        },
-        async withdrawMe(race = null) {
-            // the caller refetches the signups; this list has no reliable own-row key
-            const url = race ? `${backendUrl}/koth/signups/me?race=${encodeURIComponent(race)}` : `${backendUrl}/koth/signups/me`;
-            await fetchWrapper.delete(url);
-        },
-
-        async createPublicSignup(signupData) {
-            // the open signup POST; the Nightbot GET keeps its token
-            const body = publicSignupBody({ event_id: this.activeEvent?.id, ...signupData });
-            return await fetchWrapper.post(`${backendUrl}/koth/signups`, body);
         },
 
         async deleteSignup(signupId) {

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 
 import { backendUrl, fetchWrapper } from '@/helpers';
+import { checkInFor } from '@/helpers/events.mjs';
+import { useAvailabilityStore } from './availability.store.js';
 
 // The leagues and their events. A league is what repeats, an event is one run of it,
 // and a GNL season is the gnl-kind event of the GNL league. Reads are open, writes admin.
@@ -29,10 +31,8 @@ export const useEventStore = defineStore({
             return await fetchWrapper.put(`${backendUrl}/leagues/${league_id}`, league);
         },
         async fetchEvents(league_id = null, kind = null) {
-            const params = new URLSearchParams();
-            if (league_id) params.set('league_id', league_id);
-            if (kind) params.set('kind', kind);
-            const query = params.size ? `?${params}` : '';
+            const filters = [league_id && `league_id=${league_id}`, kind && `kind=${kind}`].filter(Boolean);
+            const query = filters.length ? `?${filters.join('&')}` : '';
             this.events = await fetchWrapper.get(`${backendUrl}/events${query}`);
             return this.events;
         },
@@ -83,6 +83,14 @@ export const useEventStore = defineStore({
         // The caller's own row, or any row for an admin
         async checkIn(event_id, entrant_id) {
             return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/checkin`);
+        },
+        // The caller checks in the way the event asks: the event shape posts the entrant row,
+        // the round shape answers the next round's availability
+        async checkInRow(row) {
+            const call = checkInFor(row);
+            return call.shape === 'round'
+                ? await useAvailabilityStore().setPlayerAvailability(call.answer)
+                : await this.checkIn(call.event_id, call.entrant_id);
         },
         // Move one entrant into a division and mark it placed by hand, so a reassign leaves it
         async placeEntrant(event_id, entrant_id, placement) {

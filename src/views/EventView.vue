@@ -113,7 +113,7 @@
 
 <script setup>
 import { computed, onMounted, provide, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import EventHeader from '@/components/EventHeader.vue';
 import PlayerName from '@/components/PlayerName.vue';
@@ -130,7 +130,6 @@ import { useAuthStore, useEventStore } from '@/stores';
 
 const route = useRoute();
 const auth = useAuthStore();
-const router = useRouter();
 const store = useEventStore();
 const event = ref(null);
 const leagues = ref([]);

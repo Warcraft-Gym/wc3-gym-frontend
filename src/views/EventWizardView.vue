@@ -192,9 +192,6 @@
         </v-card-text>
       </template>
 
-      <template #actions>
-        <div />
-      </template>
     </v-stepper>
 
     <div class="d-flex flex-wrap align-center ga-3 mt-4">
@@ -218,10 +215,10 @@ import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import {
   dateRange, dateText, FORMATS, MAP_RULES, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND,
-  SERIES_PER_FIXTURE, SIGNUP_POLICIES, titleOf,
+  SERIES_PER_FIXTURE, seriesPerEntrant, SIGNUP_POLICIES, titleOf,
 } from '@/helpers/event-labels.mjs';
 import {
-  BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload, seriesPerRound,
+  BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload,
   stepProblem, stepsFor, WIZARD_ENTRANT_KINDS, WIZARD_KINDS,
 } from '@/helpers/event-wizard.mjs';
 import { useEventStore } from '@/stores';
@@ -313,7 +310,7 @@ const review = computed(() => {
           v: [
             titleOf(FORMATS, stage.format),
             `best of ${stage.best_of}`,
-            ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each entrant a round`] : []),
+            ...(seriesPerEntrant(stage) ? [`${seriesPerEntrant(stage)} series each entrant a round`] : []),
             ...(stage.format === 'swiss' && stage.swiss_rounds ? [`${stage.swiss_rounds} rounds`] : []),
             ...(stage.format === 'round_robin' && stage.group_size ? [`groups of ${stage.group_size}`] : []),
             ...(stage.format === 'round_robin' && stage.group_advance

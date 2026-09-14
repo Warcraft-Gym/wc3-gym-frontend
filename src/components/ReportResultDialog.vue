@@ -117,7 +117,7 @@ import { computed, ref } from 'vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { authHeader } from '@/helpers/fetch-wrapper';
 import { useMapStore } from '@/stores';
-import { winsOf, isValidResult, replaysNeeded } from '@/helpers/best-of';
+import { gamesOf, winsFor, isValidResult, replaysNeeded } from '@/helpers/best-of';
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from '@/helpers/map-order.mjs';
 import { readReplay, matchMap, isOtherSeries } from '@/helpers/w3g.mjs';
 import { sideName } from '@/helpers/stage-view.mjs';
@@ -312,14 +312,15 @@ const save = async () => {
 
 // The score the tapped winners add up to, the season's maps to win, and the file picked for a game
 const reportedScore = computed(() => scoreOf(series.value.winners || []));
-const seriesWins = computed(() => winsOf(series.value.map_rules));
+const seriesGames = computed(() => gamesOf(series.value.map_rules));
+const seriesWins = computed(() => winsFor(seriesGames.value));
 const hasReplay = (game) => series.value.replays?.[game] instanceof File;
 // A first report needs every game's file; a fix keeps the stored ones unless a new file is picked
 const needsFile = (game) => game > (series.value.reported || 0);
 const fileHint = (game) => (needsFile(game) ? undefined : 'Leave empty to keep the stored replay');
 
 // One row per game played, plus the next while neither side has won the series
-const gameRows = computed(() => gameSlots(series.value.map_rules, series.value.winners || []));
+const gameRows = computed(() => gameSlots(seriesGames.value, series.value.winners || []));
 
 // The map the season's rules offer for each game, given the veto and who won the games before
 const offeredMaps = computed(() => mapsByGame(

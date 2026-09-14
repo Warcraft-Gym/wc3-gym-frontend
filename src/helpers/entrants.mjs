@@ -77,10 +77,11 @@ export function mergeSeeds(entrants, seeded) {
   return entrants.map((row) => byId.get(row.id) ?? { ...row, seed: null });
 }
 
-// The body PUT /events/{id}/divisions takes, read off the ascending strip: the highest cut
-// is the lower bound of the strongest division and the weakest one opens at no bound.
-// The cuts and the names arrive as the strip holds them, lowest MMR first.
-export const divisionsPayload = (cuts, names = []) => {
+// The body PUT /events/{id}/divisions takes from the MMR strip, named apart from the
+// wizard's divisionsPayload because it writes bands and not a count: the highest cut is
+// the lower bound of the strongest division and the weakest one opens at no bound. The
+// cuts and the names arrive as the strip holds them, lowest MMR first.
+export const bandsPayload = (cuts, names = []) => {
   const descending = [...names].reverse();
   return [...cuts].reverse().concat(null)
     .map((bound, index) => ({ name: descending[index] || `Division ${index + 1}`, lower_bound: bound }));

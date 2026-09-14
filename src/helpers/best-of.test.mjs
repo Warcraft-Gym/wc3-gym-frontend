@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gamesOf, winsOf, isValidResult, replaysNeeded, resultProblem, neverPlayed } from './best-of.mjs';
+import { gamesOf, winsFor, isValidResult, replaysNeeded, resultProblem, neverPlayed } from './best-of.mjs';
 
 test('the games are the rules a season lists', () => {
   assert.equal(gamesOf('veto,veto,veto'), 3);
@@ -15,10 +15,11 @@ test('a season without rules is a Bo3', () => {
   assert.equal(gamesOf(',,'), 3);
 });
 
-test('the wins are half the games plus one', () => {
-  assert.equal(winsOf('veto'), 1);
-  assert.equal(winsOf('veto,veto,veto'), 2);
-  assert.equal(winsOf('veto,veto,veto,veto,veto'), 3);
+test('the wins are half the games plus one, off a game count', () => {
+  assert.deepEqual([winsFor(1), winsFor(3), winsFor(5)], [1, 2, 3]);
+  // a season asks off its map rules and a stage off its best_of; both hand over a count
+  assert.equal(winsFor(gamesOf('veto,veto,veto')), 2);
+  assert.equal(winsFor(undefined), 2);  // an unnamed best-of is a Bo3
 });
 
 test('a Bo3 takes the four scorelines it always took', () => {

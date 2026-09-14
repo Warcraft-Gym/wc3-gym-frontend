@@ -8,6 +8,38 @@
       No series yet. Generate the stage to draw it.
     </p>
 
+    <!-- A table stage is read from its standings down, so the card leads the DOM; only a
+         bracket, which is read first and ranked after, is pushed below by its order -->
+    <v-card v-if="tables.length" elevation="2" class="mb-4" :style="{ order: isBracket ? 2 : 0 }">
+      <v-card-title>{{ isLobbyStage ? 'Place points' : 'Standings' }}</v-card-title>
+      <p v-if="hidden" class="text-medium-emphasis px-4 pb-4 mb-0">
+        Results are hidden. Turn off "Hide results" to read the standings.
+      </p>
+      <GroupedTable v-else :columns="standingColumns" :groups="tables" default-open empty="No standings yet">
+        <template #group="{ group }">
+          <td :colspan="standingColumns.length">{{ group.label }}</td>
+        </template>
+        <template #rows="{ group }">
+          <tr v-for="row in group.rows" :key="row.entrant_id" class="detail-row">
+            <td />
+            <td class="text-right">{{ row.position }}</td>
+            <td>
+              <PlayerName v-if="row.user_id" :player="{ id: row.user_id, name: row.name }" />
+              <span v-else>{{ row.name }}</span>
+            </td>
+            <td class="text-right d-none d-md-table-cell">{{ row.played }}</td>
+            <td class="text-right">{{ row.won }}</td>
+            <td class="text-right d-none d-md-table-cell">{{ row.lost }}</td>
+            <td v-if="!isLobbyStage" class="text-right">{{ signed(row.game_diff) }}</td>
+            <td v-if="showBuchholz" class="text-right d-none d-md-table-cell">
+              {{ buchholzOf.get(row.entrant_id) ?? 0 }}
+            </td>
+            <td class="text-right">{{ row.points }}</td>
+          </tr>
+        </template>
+      </GroupedTable>
+    </v-card>
+
     <section v-for="group in groups" :key="group.key" class="mb-6" style="order: 1">
       <h2 v-if="groups.length > 1" class="text-h6 mb-2">{{ group.name }}</h2>
 
@@ -52,37 +84,6 @@
       </template>
       <span><i class="key draw" />{{ hidden ? 'Results are hidden' : 'No result' }}</span>
     </div>
-
-    <!-- A table stage is read from its standings down; a bracket is read first and ranked after -->
-    <v-card v-if="tables.length" elevation="2" class="mb-4" :style="{ order: isBracket ? 2 : 0 }">
-      <v-card-title>{{ isLobbyStage ? 'Place points' : 'Standings' }}</v-card-title>
-      <p v-if="hidden" class="text-medium-emphasis px-4 pb-4 mb-0">
-        Results are hidden. Turn off "Hide results" to read the standings.
-      </p>
-      <GroupedTable v-else :columns="standingColumns" :groups="tables" default-open empty="No standings yet">
-        <template #group="{ group }">
-          <td :colspan="standingColumns.length">{{ group.label }}</td>
-        </template>
-        <template #rows="{ group }">
-          <tr v-for="row in group.rows" :key="row.entrant_id" class="detail-row">
-            <td />
-            <td class="text-right">{{ row.position }}</td>
-            <td>
-              <PlayerName v-if="row.user_id" :player="{ id: row.user_id, name: row.name }" />
-              <span v-else>{{ row.name }}</span>
-            </td>
-            <td class="text-right d-none d-md-table-cell">{{ row.played }}</td>
-            <td class="text-right">{{ row.won }}</td>
-            <td class="text-right d-none d-md-table-cell">{{ row.lost }}</td>
-            <td v-if="!isLobbyStage" class="text-right">{{ signed(row.game_diff) }}</td>
-            <td v-if="showBuchholz" class="text-right d-none d-md-table-cell">
-              {{ buchholzOf.get(row.entrant_id) ?? 0 }}
-            </td>
-            <td class="text-right">{{ row.points }}</td>
-          </tr>
-        </template>
-      </GroupedTable>
-    </v-card>
   </div>
 </template>
 
@@ -185,7 +186,9 @@ const boxLabel = (group, column, row) => {
     const word = group.columns.length > 1 ? 'Lobby' : 'Game';
     return `${word} ${column.series.indexOf(row) + 1}`;
   }
-  return column?.name === 'Final' && column.series.length > 1 && column.series.indexOf(row) > 0
+  // The third-place series is the one the two beaten semi-finalists play, so both its
+  // sides take a loser; the stage says whether it runs one at all
+  return props.stage.third_place && row.slot1_takes_loser && row.slot2_takes_loser
     ? 'Third place' : '';
 };
 const signed = (value) => (value > 0 ? `+${value}` : String(value ?? 0));

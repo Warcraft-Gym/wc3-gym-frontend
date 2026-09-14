@@ -59,9 +59,9 @@
         />
         <span v-if="seedsLocked" class="text-medium-emphasis">The seeds of this stage are locked.</span>
         <v-spacer />
-        <v-btn variant="outlined" prepend-icon="mdi-sort-numeric-ascending" :loading="busy === 'mmr'" :disabled="seedsLocked" @click="seedBy('mmr')">Seed by MMR</v-btn>
-        <v-btn variant="outlined" prepend-icon="mdi-shuffle-variant" :loading="busy === 'random'" :disabled="seedsLocked" @click="seedBy('random')">Shuffle</v-btn>
-        <v-btn v-if="hasPreviousStage" variant="outlined" prepend-icon="mdi-arrow-right-bold-outline" :loading="busy === 'previous_stage'" :disabled="seedsLocked" @click="seedBy('previous_stage')">Seed from the previous stage</v-btn>
+        <v-btn variant="outlined" prepend-icon="mdi-sort-numeric-ascending" :loading="busy === 'mmr'" :disabled="seedsLocked || !stageId" @click="seedBy('mmr')">Seed by MMR</v-btn>
+        <v-btn variant="outlined" prepend-icon="mdi-shuffle-variant" :loading="busy === 'random'" :disabled="seedsLocked || !stageId" @click="seedBy('random')">Shuffle</v-btn>
+        <v-btn v-if="hasPreviousStage" variant="outlined" prepend-icon="mdi-arrow-right-bold-outline" :loading="busy === 'previous_stage'" :disabled="seedsLocked || !stageId" @click="seedBy('previous_stage')">Seed from the previous stage</v-btn>
         <v-btn variant="outlined" prepend-icon="mdi-lock" :loading="busy === 'lock'" :disabled="seedsLocked || !stageId" @click="lock">Lock seeds</v-btn>
       </div>
 
@@ -111,15 +111,15 @@
                 <span v-else class="text-medium-emphasis">—</span>
               </td>
               <!-- A team has no identity of its own; the three columns belong to a player -->
-              <td class="d-none d-md-table-cell" :class="{ 'text-medium-emphasis': !row.user?.battleTag }">
+              <td :class="{ 'text-medium-emphasis': !row.user?.battleTag }">
                 {{ row.user ? row.user.battleTag || 'Not linked' : '—' }}
               </td>
-              <td class="d-none d-md-table-cell" :class="{ 'text-medium-emphasis': !row.user?.discordTag }">
+              <td :class="{ 'text-medium-emphasis': !row.user?.discordTag }">
                 {{ row.user ? row.user.discordTag || 'Not linked' : '—' }}
               </td>
               <!-- The W3C name is the battle tag, so this column answers whether w3champions
                    knows it rather than printing the same string twice -->
-              <td class="d-none d-md-table-cell">
+              <td>
                 <a v-if="w3cName(row)" :href="w3cPlayerUrl(w3cName(row))" target="_blank" rel="noopener noreferrer">
                   Linked
                   <v-tooltip activator="parent" location="top">{{ w3cName(row) }}</v-tooltip>
@@ -279,7 +279,7 @@ import RowActions from '@/components/RowActions.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts } from '@/helpers/divisions.mjs';
-import { bandNames, cutsOf, divisionsPayload, entrantMmr, groupByDivision, mergeSeeds, seedPayload, teamRoster, warningLabel } from '@/helpers/entrants.mjs';
+import { bandNames, bandsPayload, cutsOf, entrantMmr, entrantName, groupByDivision, mergeSeeds, seedPayload, teamRoster, warningLabel } from '@/helpers/entrants.mjs';
 import { eventLabel, timeText, titleOf, FORMATS } from '@/helpers/event-labels.mjs';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { useAuthStore, useEventStore, usePlayerStore, useTeamStore } from '@/stores';
@@ -360,7 +360,7 @@ const domain = computed(() => domainOf(live.value.map((row) => entrantMmr(row) |
 const storedCuts = computed(() => cutsOf(event.value?.divisions || []));
 const stripPlayers = computed(() => live.value.map((row) => ({
   id: row.id,
-  label: row.team?.name || row.user?.name || '',
+  label: entrantName(row),
   mmr: entrantMmr(row) || 0,
   band: entrantMmr(row) > 0 ? bandOf(entrantMmr(row), cuts.value) : null,
   pinned: row.manual_placement,
@@ -379,8 +379,8 @@ const rosterText = (teamId) => {
 const w3cName = (row) => (row.user?.w3c_synced_at ? row.user.battleTag : null);
 // A team is rated from its roster, so no one player's sync time answers for it
 const mmrText = (row) => {
-  if (row.team) return 'The mean of the ratings of its roster';
   if (row.mmr == null) return 'The rating the seed was cut from';
+  if (row.team) return 'The mean of the ratings of its roster';
   return row.mmr_synced_at ? `Read from w3champions ${timeText(row.mmr_synced_at)}` : 'Never read from w3champions';
 };
 
@@ -408,7 +408,7 @@ const run = async (key, work, message) => {
 const readEntrants = async () => { entrants.value = await store.fetchEntrants(eventId); };
 
 const saveDivisions = () => run('divisions', async () => {
-  event.value = await store.setDivisions(eventId, divisionsPayload(cuts.value, names.value));
+  event.value = await store.setDivisions(eventId, bandsPayload(cuts.value, names.value));
   await readEntrants();  // the write clears every division a hand had placed
 }, `${divisionCount.value} divisions saved. Assign the entrants to fill them.`);
 

@@ -1066,7 +1066,7 @@ import { teamImageUrl, hideMissingImage, showDefaultTeamImage } from '@/helpers/
 import { raceWrapper } from '@/helpers/races';
 import { useColumns } from '@/helpers/columns';
 import { roundLabel } from '@/helpers/rounds.mjs';
-import { winsOf, resultProblem, neverPlayed } from '@/helpers/best-of';
+import { gamesOf, winsFor, resultProblem, neverPlayed } from '@/helpers/best-of';
 import FixtureSeries from '@/components/FixtureSeries.vue';
 import { fixtureRosters } from '@/helpers/fixture.mjs';
 import { useEventStore } from '@/stores';
@@ -1589,7 +1589,7 @@ const cancelEditSeries = async () => {
 }
 
 // An admin writes the same result the report form writes: the season's best-of
-const editWins = computed(() => winsOf(season.value?.map_rules));
+const editWins = computed(() => winsFor(gamesOf(season.value?.map_rules)));
 // A blank field is no score at all, which Number() would read as a zero
 const editedScore = (value) => (value === null || value === undefined || value === '' ? NaN : Number(value));
 const editScoreProblem = computed(() => {

@@ -6,7 +6,7 @@ import { useTeamStore, useSeasonStore, usePlayerStore, useAuthStore, useEventSto
 import { storeToRefs } from 'pinia';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { homeCards, joinableEvents } from '@/helpers/events.mjs';
+import { actOnEvent, homeCards, joinableEvents } from '@/helpers/events.mjs';
 
 const router = useRouter();
 const { smAndDown } = useDisplay();
@@ -51,26 +51,23 @@ const openPopupOnce = () => {
   popup.value = true;
 };
 
-// One action word, one thing to do. A withdraw asks once; the rest go straight through.
+// One action word, one thing to do. The signup dialog is the home's own, because the
+// member read carries no signup policy; every other word goes through the shared act.
 const act = async (card) => {
   popup.value = false;
   if (card.primary.act === 'sign_up') {
-    // the member read carries no signup policy, so the dialog reads the event itself
     signupEvent.value = await eventStore.fetchEvent(card.id);
     await nextTick();
     return dialog.value.open();
   }
-  if (card.primary.act === 'withdraw' && !confirm('Withdraw from this event?')) return;
   acting.value = card.key;
-  try {
-    if (card.primary.act === 'withdraw') await eventStore.withdraw(card.id);
-    if (card.primary.act === 'check_in') await eventStore.checkInRow(myEvents.value.find((row) => row.id === card.id));
-    await reloadEvents();
-  } catch (error) {
-    errorMessage.value = `That did not go through: ${error.message}`;
-  } finally {
-    acting.value = null;
-  }
+  errorMessage.value = await actOnEvent(card.primary.act, {
+    store: eventStore,
+    eventId: card.id,
+    row: myEvents.value.find((row) => row.id === card.id),
+    reload: reloadEvents,
+  });
+  acting.value = null;
 };
 
 // The caller answers the next round himself; the hint only said what his blocks cover

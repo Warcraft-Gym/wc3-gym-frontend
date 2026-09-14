@@ -40,12 +40,14 @@ test('the score counts the games each side won', () => {
 });
 
 test('a row opens for the next game until the series is won', () => {
-  assert.equal(gameSlots('fixed,loser,loser', []), 1);
-  assert.equal(gameSlots('fixed,loser,loser', ['A']), 2);
-  assert.equal(gameSlots('fixed,loser,loser', ['A', 'B']), 3);
+  assert.equal(gameSlots(3, []), 1);
+  assert.equal(gameSlots(3, ['A']), 2);
+  assert.equal(gameSlots(3, ['A', 'B']), 3);
   // 2-0 ends a Bo3, so the third row stays shut
-  assert.equal(gameSlots('fixed,loser,loser', ['A', 'A']), 2);
-  assert.equal(gameSlots('fixed,loser,loser', ['A', 'B', 'A']), 3);
+  assert.equal(gameSlots(3, ['A', 'A']), 2);
+  assert.equal(gameSlots(3, ['A', 'B', 'A']), 3);
+  // a stage hands over its best_of the same way a season hands over its game count
+  assert.equal(gameSlots(5, ['A', 'A']), 3);
 });
 
 test('the report names one game per map played', () => {

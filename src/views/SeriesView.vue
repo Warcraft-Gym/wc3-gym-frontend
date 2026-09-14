@@ -8,8 +8,8 @@
 
     <template v-if="series">
       <h1 class="text-h5 text-md-h3 font-weight-bold">{{ title }}</h1>
-      <div class="d-flex flex-wrap align-center id-links mt-2">
-        <span v-for="part in place" :key="part.text" class="id-link text-medium-emphasis">
+      <div class="d-flex flex-wrap align-center facts mt-2">
+        <span v-for="part in place" :key="part.text" class="fact text-medium-emphasis">
           <v-icon size="18" :icon="part.icon" /><span>{{ part.text }}</span>
         </span>
       </div>
@@ -144,7 +144,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import CastChips from '@/components/CastChips.vue';
@@ -251,7 +251,7 @@ const gameRows = computed(() => rules.value.map((rule, index) => {
     game_no: index + 1,
     rule: titleOf(MAP_RULES, rule),
     map: mapName(game?.map_id ?? game?.offered_map_id) || '—',
-    winner: game ? sideName(game.winner_side === 'B' ? 2 : 1) : null,
+    winner: game?.winner_side ? sideName(game.winner_side === 'A' ? 1 : 2) : null,
   };
 }));
 
@@ -309,12 +309,15 @@ onMounted(() => {
   if (!mapStore.maps.length) mapStore.fetchMaps().catch(() => {});  // names the map of each game
   load();
 });
+
+// A link from one series to the next keeps the page, so the read follows the route
+watch(() => route.params.id, load);
 </script>
 
 <style scoped>
 /* One gap for every icon-and-text pair, as the event header sets them */
-.id-links { gap: 4px 20px; }
-.id-link {
+.facts { gap: 4px 20px; }
+.fact {
   display: inline-flex;
   align-items: center;
   gap: 6px;

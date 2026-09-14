@@ -1,7 +1,7 @@
 // The pure parts of the event wizard: the blank form, the three bodies the create writes,
 // and what a step still needs before it may be left.
 import { dayIso } from './date-input.mjs';
-import { ENTRANT_KINDS, EVENT_KINDS, text } from './event-labels.mjs';
+import { ENTRANT_KINDS, EVENT_KINDS, seriesPerEntrant, text } from './event-labels.mjs';
 import { storedUtc } from './timezone.mjs';
 
 export const STEPS = [
@@ -69,11 +69,6 @@ export const blankForm = (league = null) => ({
 // A blank number field is no value at all, not a zero
 const count = (value) => (value === '' || value === null || value === undefined ? null : Number(value));
 
-// Only a round robin plays more than one series an entrant a round; every other format plays one
-export const seriesPerRound = (stage) => (stage.format === 'round_robin'
-  ? Math.max(1, Number(stage.series_per_entrant_per_round) || 1)
-  : 1);
-
 // The body POST and PUT /events take. The pickers hand over Dates and "HH:mm" typed in
 // the viewer's zone, so a start time is stored as the UTC instant it names.
 export const eventPayload = (form) => ({
@@ -106,14 +101,15 @@ export const gameRules = (rule, bestOf) => Array.from(
   (unused, index) => (rule === 'veto' && index ? 'loser' : rule),
 ).join(',');
 
-// The body PUT /events/{id}/stages takes; the positions must run 1..n. Every setting a
-// format does not play is written as nothing, so a format change carries none of it over.
-export const stagesPayload = (form) => (form.stages || []).map((stage, index) => ({
-  position: index + 1,
+// The body PUT /events/{id}/stages takes; the list order is the position, which
+// EventStageWrite does not declare. Every setting a format does not play is written as
+// nothing, so a format change carries none of it over.
+export const stagesPayload = (form) => (form.stages || []).map((stage) => ({
   name: text(stage.name),
   format: stage.format,
   best_of: Number(stage.best_of),
-  series_per_entrant_per_round: seriesPerRound(stage),
+  // A stage plays at least one series an entrant a round; only a round robin plays more
+  series_per_entrant_per_round: seriesPerEntrant(stage) ?? 1,
   map_rules: gameRules(stage.map_rule, stage.best_of),
   scheduling_mode: stage.scheduling_mode,
   advance_count: count(stage.advance_count),
@@ -189,7 +185,3 @@ export const stepProblem = (form, key) => {
   }
   return null;
 };
-
-// The wizard may create once every step it asks for is answered
-export const wizardProblem = (form) => stepsFor(form)
-  .map((step) => stepProblem(form, step.key)).find(Boolean) || null;

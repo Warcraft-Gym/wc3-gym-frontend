@@ -101,8 +101,10 @@ export const SEED_SOURCES = [
 export const SERIES_PER_FIXTURE = 'Series per fixture';
 export const SERIES_PER_ENTRANT_PER_ROUND = 'Series each entrant plays per round';
 
+// Only a round robin plays more than one series an entrant a round, and it plays at least
+// one whatever the field holds, so a blank reads as one. Every other format answers null.
 export const seriesPerEntrant = (stage) => (stage?.format === 'round_robin'
-  ? stage.series_per_entrant_per_round ?? 1
+  ? Math.max(1, Number(stage.series_per_entrant_per_round) || 1)
   : null);
 
 export const seriesPerFixture = (event) => (event?.entrant_kind === 'team'

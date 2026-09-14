@@ -217,7 +217,7 @@
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="selectedSeason.series_per_round"
-                  label="Series per Round"
+                  :label="SERIES_PER_FIXTURE"
                   type="number"
                   variant="outlined"
                   density="comfortable"
@@ -372,7 +372,7 @@ const allTableHeader = computed(() => [
   { title: 'Name', value: 'name', sortable: true },
   { mobile: false, title: 'Rounds', value: 'round_count', sortable: true },
   { mobile: false, title: 'Pick Ban', value: 'pick_ban', sortable: false },
-  { mobile: false, title: 'Series/Round', value: 'series_per_round', sortable: true },
+  { mobile: false, title: SERIES_PER_FIXTURE, value: 'series_per_round', sortable: true },
   { title: 'Phase', value: 'phase', sortable: true },
   ...(auth.isAdmin ? [{ title: '', key: 'actions', align: 'end', sortable: false }] : []),
 ]);

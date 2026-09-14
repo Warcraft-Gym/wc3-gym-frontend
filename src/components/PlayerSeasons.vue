@@ -39,8 +39,8 @@
             <div class="text-caption text-medium-emphasis">Series</div>
             <div class="d-flex align-center ga-2">
               <span><span class="text-win">{{ row.wins }}</span> – <span class="text-loss">{{ row.losses }}</span></span>
-              <span v-if="row.season.round_count" class="weeks">
-                <span v-for="week in row.season.round_count" :key="week" class="week" :class="weekClass(row, week)" :title="weekTitle(row, week)" />
+              <span v-if="row.season.round_count" class="rounds">
+                <span v-for="round in row.season.round_count" :key="round" class="round" :class="roundClass(row, round)" :title="roundTitle(row, round)" />
               </span>
             </div>
           </div>
@@ -232,19 +232,19 @@ const resultClass = (series) => {
 };
 const playedOn = (series) => (series.date_time ? DateTime.fromISO(series.date_time).toLocal().toFormat('LLL d') : '—');
 // One square per round: won, lost, mixed, still to play, or no series
-const weekSeries = (row, week) => row.series.filter(s => s.match?.playday === week);
-const weekClass = (row, week) => {
-  const list = weekSeries(row, week);
+const roundSeries = (row, round) => row.series.filter(s => s.match?.playday === round);
+const roundClass = (row, round) => {
+  const list = roundSeries(row, round);
   if (!list.length) return 'none';
   if (list.some(s => !scored(s))) return 'pending';
   const won = list.filter(s => { const [me, them] = scores(s); return me > them; }).length;
   const lost = list.filter(s => { const [me, them] = scores(s); return me < them; }).length;
   return won && lost ? 'mixed' : won ? 'won' : lost ? 'lost' : 'none';
 };
-const weekTitle = (row, week) => {
-  const list = weekSeries(row, week);
-  if (!list.length) return `Round ${week} · no series`;
-  return list.map(s => `Round ${week} · vs ${opponent(s).name} · ${result(s)}`).join('\n');
+const roundTitle = (row, round) => {
+  const list = roundSeries(row, round);
+  if (!list.length) return `Round ${round} · no series`;
+  return list.map(s => `Round ${round} · vs ${opponent(s).name} · ${result(s)}`).join('\n');
 };
 
 const mmrDelta = (row) => {
@@ -304,18 +304,18 @@ watch(() => props.player, load, { immediate: true });
 .section { padding-bottom: 16px; }
 .section h4 { margin-bottom: 8px; }
 .fact { white-space: nowrap; }
-.weeks { display: inline-flex; gap: 3px; }
-.week {
+.rounds { display: inline-flex; gap: 3px; }
+.round {
   width: 12px;
   height: 12px;
   border-radius: 2px;
   background: rgba(var(--v-border-color), var(--v-border-opacity));
   box-sizing: border-box;
 }
-.week.won { background: rgb(var(--v-theme-win)); }
-.week.lost { background: rgb(var(--v-theme-loss)); }
-.week.mixed { background: linear-gradient(90deg, rgb(var(--v-theme-win)) 50%, rgb(var(--v-theme-loss)) 50%); }
-.week.pending { background: transparent; border: 1px dashed rgba(var(--v-theme-on-surface), 0.5); }
+.round.won { background: rgb(var(--v-theme-win)); }
+.round.lost { background: rgb(var(--v-theme-loss)); }
+.round.mixed { background: linear-gradient(90deg, rgb(var(--v-theme-win)) 50%, rgb(var(--v-theme-loss)) 50%); }
+.round.pending { background: transparent; border: 1px dashed rgba(var(--v-theme-on-surface), 0.5); }
 /* the panels' own width, not the window's: the side panel is narrow on a wide screen */
 @container (max-width: 959px) {
   .season-grid { display: flex; flex-wrap: wrap; gap: 4px 14px; }

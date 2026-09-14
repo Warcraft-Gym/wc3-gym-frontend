@@ -3,9 +3,9 @@ import test from 'node:test';
 
 import {
   advancingRows, blocks, buchholz, chainChallengers, chainOrder, columns, drawsByRound,
-  generateFields, inDivision, isBye, isByeSide, isLobby, layout, lobbySeats, lobbyTargets,
+  generateFields, inDivision, isByeSide, isLobby, layout, lobbySeats, lobbyTargets,
   nextRound, pendingChainSeries, ranking, seriesState, shownPlayer, shownTeam, sideName,
-  standingsGroups, standsOn, winnerSide, winsFor,
+  standingsGroups, standsOn, winnerSide,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -153,11 +153,10 @@ test('the state of a series follows its sides, its score and its kind', () => {
 });
 
 test('a padded pair is a bye and passes its one side through', () => {
-  assert.strictEqual(isBye(S(1, 1, 1, 7, null)), true);
   assert.strictEqual(isByeSide(S(1, 1, 1, 7, null), 2), true);
   assert.strictEqual(isByeSide(S(1, 1, 1, 7, null), 1), false);
   // the series read names no side at all, which is a thin payload and not a bye
-  assert.strictEqual(isBye({ id: 1, player1_score: 2, player2_score: 1 }), false);
+  assert.strictEqual(isByeSide({ id: 1, player1_score: 2, player2_score: 1 }, 1), false);
 });
 
 test('hiding the results takes the name off a fed side, and leaves a first round side alone', () => {
@@ -166,8 +165,8 @@ test('hiding the results takes the name off a fed side, and leaves a first round
   assert.strictEqual(shownPlayer(semi, 1, false).id, 1);
   assert.strictEqual(shownPlayer(semi, 1, true), null);
   assert.strictEqual(shownPlayer(semi, 2, true).id, 4);
-  assert.strictEqual(isBye(S(1, 1, 1, 7, 2)), false);
-  assert.strictEqual(isBye(S(1, 2, 1, ['w', 1], ['w', 2])), false);
+  assert.strictEqual(isByeSide(S(1, 1, 1, 7, 2), 2), false);
+  assert.strictEqual(isByeSide(S(1, 2, 1, ['w', 1], ['w', 2]), 1), false);
 });
 
 test('standings group by division in division order', () => {
@@ -256,11 +255,10 @@ test('the next Swiss round waits for the round before it', () => {
   assert.strictEqual(nextRound(stage, split, [{ id: 1 }, { id: 2 }]).number, 3);
 });
 
-test('a division reads only its own series, and a best-of names its wins', () => {
+test('a division reads only its own series', () => {
   const mixed = [...RR5, { ...S(99, 1, 3, 1, 2), division_id: 2 }];
   assert.strictEqual(inDivision(mixed, 1).length, 10);
   assert.strictEqual(inDivision(mixed, 2).length, 1);
-  assert.deepStrictEqual([winsFor(1), winsFor(3), winsFor(5)], [1, 2, 3]);
 });
 
 // One entrant row of the field the generate dialog counts
@@ -365,10 +363,8 @@ test('a team side stands on its entrant, so the state of a 2v2 series reads with
 test('a padded team side is a bye, and a fed one waits', () => {
   const padded = { id: 4, entrant1_id: 15, team1: team(5, 'Stormcrows') };
   assert.strictEqual(isByeSide(padded, 2), true);
-  assert.strictEqual(isBye(padded), true);
   // side 2 of the final has a feeder, so it is not a bye
   assert.strictEqual(isByeSide(T4[2], 2), false);
-  assert.strictEqual(isBye(T4[2]), false);
 });
 
 test('a side is named by its team, and a hidden fed side names nobody', () => {

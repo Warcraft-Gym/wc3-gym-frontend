@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bySeed, bySignup, cutsOf, divisionsPayload, entrantMmr, entrantName, groupByDivision, mergeSeeds, rostersByEntrant, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
+import { bandNames, bandsPayload, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, mergeSeeds, rostersByEntrant, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -61,7 +61,7 @@ test('the seed answer merges in, so a withdrawn entrant keeps its row and loses 
 });
 
 test('the ascending cuts write divisions strongest first, the weakest without a bound', () => {
-  assert.deepEqual(divisionsPayload([1450, 1600], ['Open', 'Pro']), [
+  assert.deepEqual(bandsPayload([1450, 1600], ['Open', 'Pro']), [
     { name: 'Pro', lower_bound: 1600 },
     { name: 'Open', lower_bound: 1450 },
     { name: 'Division 3', lower_bound: null },

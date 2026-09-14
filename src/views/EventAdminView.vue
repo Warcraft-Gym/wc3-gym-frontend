@@ -47,6 +47,9 @@
             :disabled="saving" @click="confirmGenerate = true">Generate</v-btn>
           <v-btn v-if="complete" color="primary" prepend-icon="mdi-arrow-right-bold"
             :disabled="saving" @click="confirmAdvance = true">Advance</v-btn>
+          <!-- The event ends on its last stage, so only that stage's table pays the places -->
+          <v-btn v-if="lastStage" color="primary" variant="outlined" prepend-icon="mdi-trophy"
+            :disabled="saving" @click="confirmFinish = true">Finish</v-btn>
         </div>
         <p v-if="drawNote" class="text-caption text-medium-emphasis mt-1 mb-0">{{ drawNote }}</p>
 
@@ -173,6 +176,50 @@
           <v-spacer />
           <v-btn variant="text" @click="confirmAdvance = false">Cancel</v-btn>
           <v-btn color="primary" variant="elevated" :loading="saving" @click="advance">Advance</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Finishing writes the places, so it names who takes each one first -->
+    <v-dialog v-model="confirmFinish" max-width="520">
+      <v-card>
+        <v-card-title class="bg-primary">Finish this event</v-card-title>
+        <v-card-text class="pt-4">
+          <StatusAlert v-model="dialogError" />
+          <p v-if="!awards.length" class="mb-0">
+            Nobody is awarded: this stage's table is empty. Enter the results first.
+          </p>
+          <template v-else>
+            <p class="mb-2">These entrants are awarded their place.</p>
+            <v-table density="compact">
+              <thead>
+                <tr>
+                  <th v-if="awards.some((one) => one.division)">Division</th>
+                  <th>Entrant</th>
+                  <th>Place</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="one in awards" :key="one.key">
+                  <td v-if="awards.some((row) => row.division)">{{ one.division || '—' }}</td>
+                  <td>{{ one.name }}</td>
+                  <td>
+                    <v-icon v-if="placeMedal(one.place)" size="16" :icon="placeIcon(one.place)"
+                      :color="placeMedal(one.place)" class="mr-1" />{{ one.title }}
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+            <p class="text-caption text-medium-emphasis mt-3 mb-0">
+              Finishing again rewrites the places from the table as it stands.
+            </p>
+          </template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" :disabled="saving" @click="confirmFinish = false">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" :disabled="!awards.length || saving"
+            :loading="saving" @click="finish">Finish</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -324,6 +371,7 @@ import {
   lobbySeats, lobbyTargets, nextRound, pendingChainSeries, sideName as nameOfSide,
   standsOn, winsFor,
 } from '@/helpers/stage-view.mjs';
+import { awardList, placeIcon, placeMedal } from '@/helpers/awards.mjs';
 import { rostersByEntrant } from '@/helpers/entrants.mjs';
 import { useEventStore, useTeamStore } from '@/stores';
 
@@ -347,6 +395,7 @@ const tab = ref(0);
 const confirmGenerate = ref(false);
 const confirmDraw = ref(false);
 const confirmAdvance = ref(false);
+const confirmFinish = ref(false);
 const confirmClose = ref(false);
 const challengerOpen = ref(false);
 const challenger = ref(null);
@@ -377,6 +426,10 @@ const showByes = computed(() => fields.value.some((row) => row.byes != null));
 
 // Who the next stage takes: the top of each division's table, or the whole table
 const advancing = computed(() => advancingRows(standings.value, stage.value?.advance_count));
+
+// Closing the event freezes the table of its last stage, so the finish sits on that tab
+const lastStage = computed(() => !!stage.value && tab.value === stages.value.length - 1);
+const awards = computed(() => awardList(standings.value));
 
 // A Swiss stage draws one round at a time; the engine refuses while a drawn series has no
 // result, and once the stage has drawn every round it plays
@@ -461,6 +514,13 @@ const drawRound = async () => {
 const advance = async () => {
   if (await run(() => store.advanceStage(event.value.id, stage.value.id))) {
     confirmAdvance.value = false;
+    event.value = await store.fetchEvent(route.params.id);
+  }
+};
+
+const finish = async () => {
+  if (await run(() => store.finishEvent(event.value.id))) {
+    confirmFinish.value = false;
     event.value = await store.fetchEvent(route.params.id);
   }
 };

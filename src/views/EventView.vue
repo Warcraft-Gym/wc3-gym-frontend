@@ -106,6 +106,12 @@
               </span>
               <PlayerName v-if="entrant.user" :player="entrant.user" :race="entrant.race" />
               <span v-else>{{ entrantName(entrant) }}</span>
+              <v-chip v-if="places[entrant.id]" size="x-small" variant="outlined">
+                <v-icon v-if="placeMedal(places[entrant.id].place)" start size="14"
+                  :icon="placeIcon(places[entrant.id].place)"
+                  :color="placeMedal(places[entrant.id].place)" />
+                {{ places[entrant.id].title }}
+              </v-chip>
               <v-icon v-if="entrant.checked_in_at" icon="mdi-check" size="small" color="success"
                 title="Checked in" />
               <span v-if="entrant.withdrawn_at" class="text-caption">withdrawn</span>
@@ -144,9 +150,11 @@ import PlayerName from '@/components/PlayerName.vue';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
+import { placeIcon, placeMedal, placings } from '@/helpers/awards.mjs';
 import { bySeed, bySignup, entrantName, rostersByEntrant, signupCount } from '@/helpers/entrants.mjs';
 import {
-  FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, titleOf,
+  FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture,
+  stateOf, titleOf,
 } from '@/helpers/event-labels.mjs';
 import {
   blocksHint, eventActionButton, HIDE_RESULTS, hideResultsStored, storeHideResults,
@@ -205,6 +213,11 @@ const phoneLine = (stage) => [
 const drawn = computed(() => stages.value
   .map((stage) => ({ ...stage, ...(stageData.value[stage.id] || {}) }))
   .filter((stage) => stage.series?.length));
+
+// Closing an event freezes the table of its last stage as the places it awards, so a
+// finished event names its champion and every other place off that table.
+const places = computed(() => (stateOf(event.value) !== 'finished'
+  ? {} : placings(drawn.value.at(-1)?.standings || [])));
 
 const logIn = () => {
   saveReturnUrl(route.fullPath);

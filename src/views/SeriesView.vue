@@ -17,9 +17,13 @@
       <v-row class="mt-2">
         <v-col cols="12" md="7">
           <v-card elevation="2">
-            <v-card-title>{{ bestOfLine }}</v-card-title>
+            <v-card-title class="d-flex align-center ga-3 flex-wrap">
+              <span>{{ bestOfLine }}</span>
+              <v-chip v-if="stageRow" size="x-small" variant="tonal">{{ mode }}</v-chip>
+              <v-chip v-if="stageRow" size="x-small" variant="outlined">{{ pick }}</v-chip>
+            </v-card-title>
             <div class="pa-3">
-              <SeriesBox readonly :series="series" />
+              <SeriesBox readonly :series="box" :rosters="rosters" />
             </div>
             <v-card-actions class="flex-wrap ga-2 px-3 pb-3">
               <CastChips :series="series" />
@@ -31,6 +35,10 @@
               <v-btn v-if="canReport" variant="elevated" color="primary" size="small"
                 prepend-icon="mdi-trophy" @click="reportDialog.open(series)">
                 {{ scored ? 'Edit result' : 'Report result' }}
+              </v-btn>
+              <v-btn v-for="side in rosterSides" :key="side" variant="outlined" color="primary"
+                size="small" prepend-icon="mdi-account-group" @click="openRoster(side)">
+                {{ rosterVerb(side) }} {{ teamName(side) }}
               </v-btn>
               <v-btn v-if="auth.isAdmin && !scored" variant="outlined" size="small"
                 prepend-icon="mdi-account-cancel" @click="awardOpen = true">
@@ -73,6 +81,39 @@
         </v-col>
       </v-row>
 
+      <!-- The whole fixture, so a reader reads the five series from any one of them -->
+      <FixtureSeries v-if="fixture.length > 1" class="mt-4" :series="fixture" :rosters="rosters"
+        :current-id="series.id" />
+
+      <!-- A captain names the players his side fields, out of the roster his team holds -->
+      <v-dialog v-model="rosterOpen" max-width="520">
+        <v-card>
+          <v-card-title class="bg-primary">Name the roster</v-card-title>
+          <v-card-text class="pt-4">
+            <StatusAlert v-model="rosterError" />
+            <v-select v-model="picked" :items="rosterItems" item-value="id" item-title="name"
+              :label="teamName(rosterSide)" variant="outlined" density="comfortable" multiple
+              :hint="`Pick ${sideSize} ${sideSize === 1 ? 'player' : 'players'}.`" persistent-hint>
+              <template #item="{ props: itemProps, item }">
+                <v-list-item v-bind="itemProps" :title="null" :active="picked.includes(item.raw.id)">
+                  <template #prepend>
+                    <v-checkbox-btn :model-value="picked.includes(item.raw.id)" tabindex="-1" />
+                  </template>
+                  <PlayerName :player="item.raw.player" :race="item.raw.race || undefined" plain />
+                </v-list-item>
+              </template>
+            </v-select>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" :disabled="savingRoster" @click="rosterOpen = false">Cancel</v-btn>
+            <v-btn color="primary" variant="elevated" prepend-icon="mdi-content-save"
+              :disabled="picked.length !== sideSize || savingRoster" :loading="savingRoster"
+              @click="saveRoster">Save roster</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
       <!-- An admin scores a series nobody played: the side that takes it, then the kind -->
       <v-dialog v-model="awardOpen" max-width="480">
         <v-card>
@@ -107,22 +148,35 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import CastChips from '@/components/CastChips.vue';
+import FixtureSeries from '@/components/FixtureSeries.vue';
+import PlayerName from '@/components/PlayerName.vue';
 import ReportResultDialog from '@/components/ReportResultDialog.vue';
 import SeriesBox from '@/components/SeriesBox.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { backendUrl, fetchWrapper } from '@/helpers';
 import { eventLabel, MAP_RULES, timeText, titleOf } from '@/helpers/event-labels.mjs';
+import {
+  fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster,
+} from '@/helpers/fixture.mjs';
 import { rulesOf } from '@/helpers/map-order.mjs';
 import { isScored, sideName as nameOfSide } from '@/helpers/stage-view.mjs';
-import { useAuthStore, useEventStore, useMapStore } from '@/stores';
+import { useAuthStore, useEventStore, useMapStore, useTeamStore } from '@/stores';
 
 const route = useRoute();
 const auth = useAuthStore();
 const eventStore = useEventStore();
 const mapStore = useMapStore();
+const teamStore = useTeamStore();
 
 const series = ref(null);
 const games = ref([]);
+const fixture = ref([]);   // every series the fixture holds, in play order
+const rosters = ref({});   // the roster each team entrant fields for the event, by entrant id
+const rosterOpen = ref(false);
+const rosterSide = ref(1);
+const picked = ref([]);
+const rosterError = ref(null);
+const savingRoster = ref(false);
 const loading = ref(true);
 const error = ref(null);
 const reportDialog = ref(null);
@@ -147,7 +201,46 @@ const rules = computed(() => rulesOf(series.value?.rules?.map_rules));
 const bestOfLine = computed(() => `Best of ${series.value?.rules?.best_of || rules.value.length}`);
 const hasVeto = computed(() => rules.value.includes('veto'));
 
-const sideName = (side) => nameOfSide(series.value, side) || `Side ${side}`;
+const sideName = (side) => nameOfSide(box.value, side) || `Side ${side}`;
+
+// The stage row of this series carries what it plays and who fields it; GET /series/{id}
+// answers neither, so a series inside a fixture reads them off the fixture.
+const stageRow = computed(() => fixture.value.find((row) => row.id === series.value?.id) || null);
+const box = computed(() => stageRow.value || series.value);
+const mode = computed(() => modeLabel(stageRow.value?.side_size));
+const pick = computed(() => pickLabel(stageRow.value?.pick_rule));
+const sideSize = computed(() => stageRow.value?.side_size || 1);
+const teamName = (side) => stageRow.value?.[`team${side}`]?.name || `side ${side}`;
+
+// A captain names his own side, an admin either; a side already named is changed, not written
+const rosterSides = computed(() => sidesFor(
+  stageRow.value, rosters.value, auth.me?.user?.id, auth.isAdmin,
+));
+const rosterVerb = (side) => (sideRoster(stageRow.value, side).length ? 'Change' : 'Name');
+const rosterItems = computed(() => (rosters.value[stageRow.value?.[`entrant${rosterSide.value}_id`]] || [])
+  .map((seat) => ({ id: seat.player.id, name: seat.player.name, player: seat.player, race: seat.race })));
+
+const openRoster = (side) => {
+  rosterSide.value = side;
+  rosterError.value = null;
+  picked.value = sideRoster(stageRow.value, side).map((player) => player.id);
+  rosterOpen.value = true;
+};
+
+const saveRoster = async () => {
+  savingRoster.value = true;
+  rosterError.value = null;
+  try {
+    await eventStore.setSideRoster(series.value.id, rosterSide.value, picked.value);
+    rosterOpen.value = false;
+    await load();
+  } catch (e) {
+    rosterError.value = e.message;
+  } finally {
+    savingRoster.value = false;
+  }
+};
+
 const mapName = (id) => mapStore.maps.find((row) => row.id === id)?.name;
 
 // One row per game of the best-of: its rule, the map it was played on or the one the
@@ -164,8 +257,9 @@ const gameRows = computed(() => rules.value.map((rule, index) => {
 
 // A team side names no player of its own, so any logged-in member may open the report
 // and the API answers whether he acts for the side; the 403 reads as the dialog's alert.
-const teamSided = computed(() => !!series.value && !series.value.match
-  && !series.value.player1_id && !series.value.player2_id);
+const teamSided = computed(() => !!series.value
+  && ((!series.value.match && !series.value.player1_id && !series.value.player2_id)
+    || !!stageRow.value?.entrant1_id));
 // A side of the series reports it, and so does an admin
 const canReport = computed(() => auth.isAdmin
   || [series.value?.player1_id, series.value?.player2_id].includes(auth.me?.user?.id)
@@ -185,12 +279,25 @@ const award = async (kind) => {
   }
 };
 
+// The fixture this series plays, once the event runs it through the events module: its
+// ordered series with their mode, their pick rule and the roster each side fields.
+const loadFixture = async () => {
+  const eventId = series.value?.match?.season_id ?? series.value?.match?.season?.id;
+  if (!series.value?.match_id || !eventId) return;
+  const answer = await eventStore.fetchFixture(eventId, series.value.match_id).catch(() => null);
+  if (!answer?.series?.length) return;
+  fixture.value = answer.series;
+  await teamStore.fetchTeamsBySeason(eventId).catch(() => {});
+  rosters.value = fixtureRosters(answer.series, teamStore.teams, eventId);
+};
+
 const load = async () => {
   const id = route.params.id;
   try {
     series.value = await fetchWrapper.get(`${backendUrl}/series/${id}`);
     // A series nobody reported records no game, and the table shows its rules alone
     games.value = await fetchWrapper.get(`${backendUrl}/series/${id}/games`).catch(() => []);
+    await loadFixture();
   } catch (e) {
     error.value = `The series did not load: ${e.message}`;
   } finally {

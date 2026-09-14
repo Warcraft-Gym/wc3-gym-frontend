@@ -152,6 +152,29 @@ export const useEventStore = defineStore({
         async setLobbySides(series_id, entrant_ids) {
             return await fetchWrapper.put(`${backendUrl}/series/${series_id}/sides`, { entrant_ids });
         },
+        // The players one side of a fixture series fields; a captain writes his own side
+        async setSideRoster(series_id, side_no, user_ids) {
+            return await fetchWrapper.put(`${backendUrl}/series/${series_id}/sides`, {
+                sides: [{ side_no, user_ids }],
+            });
+        },
+        // Closes the event: the table of its last stage becomes the places it awards
+        async finishEvent(event_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/finish`);
+        },
+        // The series one fixture holds, with the event that runs it. A fixture plays one
+        // stage, so the first stage that answers it is the one it belongs to. A GNL season
+        // draws its fixtures on its own pages and answers no rows here.
+        async fetchFixture(event_id, match_id) {
+            const event = await fetchWrapper.get(`${backendUrl}/events/${event_id}`);
+            if (event.kind === 'gnl') return { event, series: [] };
+            for (const stage of event.stages || []) {
+                const drawn = await this.fetchStage(event.id, stage.id).catch(() => null);
+                const rows = (drawn?.series || []).filter((row) => row.match_id === match_id);
+                if (rows.length) return { event, stage, series: rows };
+            }
+            return { event, series: [] };
+        },
         // A series no game was played for: a walkover or a forfeit, with the side that takes it
         async awardSeries(series_id, result_kind, winner) {
             return await fetchWrapper.put(`${backendUrl}/series/${series_id}/result-kind`, { result_kind, winner });

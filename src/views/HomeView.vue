@@ -169,7 +169,7 @@ onMounted(fetchHomeData);
                 {{ key.charAt(0).toUpperCase() + key.slice(1) }}
               </v-card-title>
               <v-card-text class="pt-6 text-center">
-                <div class="text-h2 text-primary">{{ isLoading ? '–' : stat.total }}</div>
+                <div class="text-h2 text-primary stat-total">{{ isLoading ? '–' : stat.total }}</div>
               </v-card-text>
             </v-card>
           </v-hover>
@@ -209,6 +209,12 @@ onMounted(fetchHomeData);
 <style scoped>
 .min-w-0 {
   min-width: 0;
+}
+
+/* A count is a figure, not a heading: the body face at heading size. */
+.stat-total {
+  font-family: 'Alegreya Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 700;
 }
 
 .date-tile {

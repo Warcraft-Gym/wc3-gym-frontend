@@ -190,3 +190,24 @@ export function advancingRows(standings = [], advanceCount = null) {
     ? (group.rows || []).slice(0, advanceCount)
     : group.rows || []));
 }
+
+// The series closing a KOTH night deletes, read the way app/services/koth_night
+// close_night does: the unplayed tail of every division's chain, in play order.
+export function pendingChainSeries(series = [], divisions = []) {
+  const bands = divisions.length ? divisions.map((band) => band.id) : [null];
+  return bands.flatMap((id) => {
+    const chain = [...inDivision(series, id)]
+      .sort((a, b) => (a.sequence ?? a.id) - (b.sequence ?? b.id));
+    let tail = chain.length;
+    while (tail > 0 && !isScored(chain[tail - 1])) tail -= 1;
+    return chain.slice(tail);
+  });
+}
+
+// The entrants a chain can still take: standing, and on no side of any series yet
+export function chainChallengers(entrants = [], series = []) {
+  const playing = new Set(series
+    .flatMap((row) => [row.player1_id, row.player2_id])
+    .filter((id) => id != null));
+  return entrants.filter((row) => !row.withdrawn_at && !playing.has(row.user?.id ?? row.user_id));
+}

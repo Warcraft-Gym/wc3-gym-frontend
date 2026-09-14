@@ -23,6 +23,13 @@
           <v-chip v-if="stage.auto_advance" size="small" variant="tonal" color="info"
             prepend-icon="mdi-fast-forward">Advance is automatic</v-chip>
           <v-spacer />
+          <!-- a KOTH night grows one challenger at a time and ends when the admin closes it -->
+          <template v-if="isChain">
+            <v-btn v-if="series.length" variant="outlined" color="primary" prepend-icon="mdi-account-plus"
+              :disabled="saving" @click="openChallenger">Add challenger</v-btn>
+            <v-btn variant="outlined" color="error" prepend-icon="mdi-crown-outline"
+              :disabled="saving" @click="confirmClose = true">Close the night</v-btn>
+          </template>
           <v-btn v-if="!series.length" color="primary" prepend-icon="mdi-tournament"
             :disabled="saving" @click="confirmGenerate = true">Generate</v-btn>
           <v-btn v-else-if="complete" color="primary" prepend-icon="mdi-arrow-right-bold"
@@ -57,6 +64,58 @@
           <v-spacer />
           <v-btn variant="text" @click="confirmGenerate = false">Cancel</v-btn>
           <v-btn color="primary" variant="elevated" :loading="saving" @click="generate">Generate</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- One more challenger at the end of his own chain -->
+    <v-dialog v-model="challengerOpen" max-width="480">
+      <v-card>
+        <v-card-title class="bg-primary">Add challenger</v-card-title>
+        <v-card-text class="pt-4">
+          <StatusAlert v-model="dialogError" />
+          <v-select v-model="challenger" :items="challengerItems" item-value="id" :item-title="entrantName"
+            label="Entrant" variant="outlined" density="comfortable" hide-details>
+            <template #selection="{ item }">
+              <PlayerName v-if="item.raw.user" :player="item.raw.user" :race="item.raw.race" plain />
+              <span v-else>{{ entrantName(item.raw) }}</span>
+            </template>
+            <template #item="{ props: itemProps, item }">
+              <v-list-item v-bind="itemProps" :title="null">
+                <PlayerName v-if="item.raw.user" :player="item.raw.user" :race="item.raw.race" plain />
+                <span v-else>{{ entrantName(item.raw) }}</span>
+                <div class="text-caption text-medium-emphasis">{{ entrantLine(item.raw) }}</div>
+              </v-list-item>
+            </template>
+          </v-select>
+          <p v-if="!challengerItems.length" class="text-medium-emphasis mt-3 mb-0">
+            Every entrant already plays in a chain. Enter the player on the entrants page first.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn variant="text" :to="`/events/${event.id}/entrants`">Entrants</v-btn>
+          <v-spacer />
+          <v-btn variant="text" @click="challengerOpen = false">Cancel</v-btn>
+          <v-btn color="primary" variant="elevated" :disabled="!challenger || saving"
+            :loading="saving" @click="addChallenger">Add challenger</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Closing deletes the series nobody played, so it counts them first -->
+    <v-dialog v-model="confirmClose" max-width="520">
+      <v-card>
+        <v-card-title class="bg-error">Close the night</v-card-title>
+        <v-card-text class="pt-4">
+          <p class="mb-0">
+            {{ pendingCount }} {{ pendingCount === 1 ? 'series goes' : 'series go' }}: nobody played
+            {{ pendingCount === 1 ? 'it' : 'them' }}. Every series left carries a result and the night reads finished.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="confirmClose = false">Cancel</v-btn>
+          <v-btn color="error" variant="elevated" :loading="saving" @click="closeNight">Close the night</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -161,7 +220,7 @@ import StatusAlert from '@/components/StatusAlert.vue';
 import { FORMATS, SEED_SOURCES, titleOf } from '@/helpers/event-labels.mjs';
 import { scoreOf } from '@/helpers/map-order.mjs';
 import {
-  advancingRows, generateFields, isScored, winsFor,
+  advancingRows, chainChallengers, generateFields, isScored, pendingChainSeries, winsFor,
 } from '@/helpers/stage-view.mjs';
 import { useEventStore } from '@/stores';
 
@@ -182,6 +241,9 @@ const tab = ref(0);
 
 const confirmGenerate = ref(false);
 const confirmAdvance = ref(false);
+const confirmClose = ref(false);
+const challengerOpen = ref(false);
+const challenger = ref(null);
 const confirmForce = ref(false);
 const resultOpen = ref(false);
 const picked = ref(null);
@@ -199,6 +261,14 @@ const showByes = computed(() => fields.value.some((row) => row.byes != null));
 
 // Who the next stage takes: the top of each division's table, or the whole table
 const advancing = computed(() => advancingRows(standings.value, stage.value?.advance_count));
+
+// A chain stage is a KOTH night: it takes one challenger at a time and an admin closes it
+const isChain = computed(() => stage.value?.format === 'koth');
+const pendingCount = computed(() => pendingChainSeries(series.value, event.value?.divisions).length);
+const divisionName = (id) => event.value?.divisions?.find((band) => band.id === id)?.name || '';
+const challengerItems = computed(() => chainChallengers(entrants.value, series.value));
+const entrantName = (row) => row.user?.name || row.team?.name || 'Unnamed';
+const entrantLine = (row) => [divisionName(row.division_id), row.mmr ? `${row.mmr} MMR` : ''].filter(Boolean).join(' · ');
 
 const load = async () => {
   loading.value = true;
@@ -258,6 +328,25 @@ const generate = async () => {
 const advance = async () => {
   if (await run(() => store.advanceStage(event.value.id, stage.value.id))) {
     confirmAdvance.value = false;
+    event.value = await store.fetchEvent(route.params.id);
+  }
+};
+
+const openChallenger = () => {
+  challenger.value = null;
+  dialogError.value = null;
+  challengerOpen.value = true;
+};
+
+const addChallenger = async () => {
+  if (await run(() => store.addChallenger(event.value.id, stage.value.id, challenger.value))) {
+    challengerOpen.value = false;
+  }
+};
+
+const closeNight = async () => {
+  if (await run(() => store.closeNight(event.value.id))) {
+    confirmClose.value = false;
     event.value = await store.fetchEvent(route.params.id);
   }
 };

@@ -114,6 +114,18 @@ export const useEventStore = defineStore({
         async generateStage(event_id, stage_id) {
             return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/generate`);
         },
+        // Appends one entrant to the end of the chain his division plays
+        async addChallenger(event_id, stage_id, entrant_id) {
+            return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`, { entrant_id });
+        },
+        // A KOTH night is an event, so the module owns only these two writes
+        async openNight(night) {
+            return await fetchWrapper.post(`${backendUrl}/koth/nights`, night);
+        },
+        // Deletes the series nobody played, so every series left carries a result
+        async closeNight(event_id) {
+            return await fetchWrapper.post(`${backendUrl}/koth/nights/${event_id}/close`);
+        },
         // Moves the top entrants of a finished stage into the next stage
         async advanceStage(event_id, stage_id) {
             return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/advance`);

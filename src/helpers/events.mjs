@@ -110,7 +110,10 @@ function eventPrimary(row, me, slug) {
 // adds the team and the captain seat, which the member read does not carry.
 export function homeCards({ events = [], me = null, seasons = [], kothEvents = [], now = new Date() }) {
   const clock = DateTime.fromJSDate(new Date(now));
-  const cards = events.filter((row) => row.phase !== 'finished').map((row) => {
+  // /me lists every season the member is still in, so a season past its end date with series
+  // left to play keeps its card even once the phase reads finished
+  const stillIn = (id) => (me?.seasons ?? []).some((entry) => entry.id === id);
+  const cards = events.filter((row) => row.phase !== 'finished' || stillIn(row.id)).map((row) => {
     const gnl = row.kind === 'gnl';
     const entry = (me?.seasons ?? []).find((mine) => mine.id === row.id) ?? {};
     const season = { ...seasons.find((known) => known.id === row.id), ...entry, signed_up: row.joined };
@@ -157,6 +160,16 @@ const ACTION_BUTTON = {
 };
 
 export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
+
+// The call a check-in makes, from the shape the event answers: an event checks in through the
+// caller's own entrant row, a round through the next round's availability. Every caller
+// dispatches here, so the two shapes are decided in one place.
+export function checkInFor(row) {
+  if (row?.checkin_shape === 'round') {
+    return { shape: 'round', answer: { season_id: row.id, playday: row.next_round?.number, available: true } };
+  }
+  return { shape: 'event', event_id: row?.id, entrant_id: row?.entrant_id };
+}
 
 // A viewer who says he wants no results keeps that answer past a logout, so the key
 // stays out of SESSION_KEYS. One key for the whole app: the switch is the viewer's.

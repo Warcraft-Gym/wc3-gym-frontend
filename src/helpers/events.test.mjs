@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
-import { dismissKoth, eventActionButton, hideResultsStored, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction, storeHideResults } from './events.mjs';
+import { checkInFor, dismissKoth, eventActionButton, hideResultsStored, homeCards, joinableEvents, kothCards, kothDismissed, seasonAction, storeHideResults } from './events.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
@@ -205,6 +205,26 @@ test('every action word the member read answers picks one button, or none', () =
   assert.equal(eventActionButton('checked_in'), null);
   assert.equal(eventActionButton('closed'), null);
   assert.equal(eventActionButton(undefined), null);
+});
+
+test('the check-in shape picks the call: the entrant row, or the next round availability', () => {
+  const perEvent = row({ joined: true, entrant_id: 22, action: 'check_in', checkin_shape: 'event', checkin_open: true });
+  assert.deepEqual(checkInFor(perEvent), { shape: 'event', event_id: 9, entrant_id: 22 });
+  const perRound = row({ joined: true, entrant_id: 22, action: 'check_in', checkin_shape: 'round', checkin_open: true,
+    next_round: { id: 3, number: 2, name: null, start_date: '2026-10-12', end_date: '2026-10-13' } });
+  assert.deepEqual(checkInFor(perRound), { shape: 'round', answer: { season_id: 9, playday: 2, available: true } });
+  // a row with no shape yet reads as the event shape, which is what the API answered before
+  assert.deepEqual(checkInFor(row({ entrant_id: 22 })), { shape: 'event', event_id: 9, entrant_id: 22 });
+  assert.deepEqual(checkInFor(undefined), { shape: 'event', event_id: undefined, entrant_id: undefined });
+});
+
+test('a season past its end date keeps its card while the member is still in it', () => {
+  const over = row({ kind: 'gnl', id: 4, name: 'GNL Review Season', start: '2026-09-01', end: '2026-10-01',
+    phase: 'finished', signups_open: false, joined: true, action: 'view' });
+  const gone = row({ id: 3, name: 'Spring Cup', start: '2026-03-02', end: '2026-03-03', phase: 'finished', action: 'view' });
+  // /me lists season 4 and not cup 3, so only the season the member still plays stays
+  assert.deepEqual(homeCards({ events: [over, gone], me, seasons, now }).map((card) => card.key), ['event:4']);
+  assert.deepEqual(homeCards({ events: [over, gone], me: null, seasons, now }), []);
 });
 
 test('the spoiler switch is off until the viewer turns it on, and forgets on the way back', () => {

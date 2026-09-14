@@ -67,7 +67,7 @@ const act = async (card) => {
   acting.value = card.key;
   try {
     if (card.primary.act === 'withdraw') await eventStore.withdraw(card.id);
-    if (card.primary.act === 'check_in') await eventStore.checkIn(card.id, myEvents.value.find((row) => row.id === card.id)?.entrant_id);
+    if (card.primary.act === 'check_in') await eventStore.checkInRow(myEvents.value.find((row) => row.id === card.id));
     await reloadEvents();
   } catch (error) {
     errorMessage.value = `That did not go through: ${error.message}`;

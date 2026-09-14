@@ -52,6 +52,48 @@ for (const path of walk(BUNDLE)) {
     });
 }
 
+// YAML reads a bare `a: b` value as a nested key, so a value that holds `: ` is quoted
+const UNQUOTED_COLON = /^\s*(?:- )?[\w-]+: (?!["'[{|>]).*: /m;
+const INDEX_ENTRY = /^\* \[[^\]]+\]\(([^)]+)\) - (.+)$/gm;
+// The areas a concept may be tagged with; `type` already says what kind of file it is
+const TAGS = new Set('pages components design router session stores events series fantasy koth teams players deploy testing tooling'.split(' '));
+
+function description(path) {
+    const found = /^description: (.+)$/m.exec(frontmatter(readFileSync(path, 'utf8')) ?? '');
+    assert.ok(found, `${path} has no description`);
+    const text = found[1].trim();
+    return text.startsWith('"') ? text.slice(1, -1).replaceAll('\\"', '"') : text;
+}
+
+for (const path of walk(BUNDLE)) {
+    const name = relative(BUNDLE, path);
+    const base = path.split('/').pop();
+    if (base === 'log.md') continue;
+
+    if (base === 'index.md') {
+        test(`${name} lists its directory`, () => {
+            const listed = Object.fromEntries([...readFileSync(path, 'utf8').matchAll(INDEX_ENTRY)].map((m) => [m[1], m[2]]));
+            for (const concept of readdirSync(dirname(path)).filter((f) => f.endsWith('.md') && f !== 'index.md' && f !== 'log.md')) {
+                assert.ok(concept in listed, `${concept} is not in the index`);
+                assert.equal(listed[concept], description(join(dirname(path), concept)), `the index line for ${concept} is not its description`);
+            }
+        });
+        continue;
+    }
+
+    test(`${name} metadata`, () => {
+        const fm = frontmatter(readFileSync(path, 'utf8')) ?? '';
+        assert.match(fm, /^title: \S/m, 'a concept has a title');
+        const tags = /^tags: \[(.*)\]$/m.exec(fm);
+        assert.ok(tags, 'tags is a list');
+        const unknown = tags[1].split(',').map((t) => t.trim()).filter((t) => !TAGS.has(t));
+        assert.deepEqual(unknown, [], 'tags outside the vocabulary');
+        description(path);
+        const hit = UNQUOTED_COLON.exec(fm);
+        assert.equal(hit, null, `quote the value: ${JSON.stringify(hit?.[0].trim())}`);
+    });
+}
+
 // Content that must never appear in a public bundle: an id-shaped digit run, an
 // email, a connection string, a token, a deployment hostname, an IP address.
 const SENSITIVE = new RegExp(

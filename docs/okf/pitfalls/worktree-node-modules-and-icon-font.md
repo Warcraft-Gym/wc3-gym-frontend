@@ -2,7 +2,7 @@
 type: Pitfall
 title: Worktrees inherit node_modules and lose the icon font
 description: A worktree's node_modules is empty and works by resolving up; the dev server then refuses the icon font, so every icon is an empty box in a screenshot.
-tags: [pitfall, worktree, vite]
+tags: [tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

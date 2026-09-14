@@ -2,8 +2,10 @@
 type: Runbook
 title: Run locally
 description: Install, copy the example environment, start the dev server against a local or the staging backend.
-tags: [runbook, local, vite]
+resource: ../../../README.md
+tags: [deploy, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+stale_after: 2027-03-14T00:00:00Z
 sources:
   - id: source
     resource: ../../../README.md

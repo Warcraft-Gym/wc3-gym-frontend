@@ -2,6 +2,7 @@
 type: Page
 title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
+resource: ../../../src/views/LeaguesView.vue
 tags: [pages, events]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:

@@ -2,7 +2,8 @@
 type: Domain Concept
 title: Read-only embed
 description: A page opened with readonly=1 drops the chrome, stays light, and reports its height to the parent frame so the public site can embed it.
-tags: [embed, wordpress]
+resource: ../../../src/App.vue
+tags: [router]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: app

@@ -20,3 +20,9 @@
 3. A change to a fact the bundle states changes the concept in the same pull request and updates `generated.at`.
 
 The review that merges the pull request repeats step 1.
+
+## Working in this repository
+
+- `npm test` runs the tests and `npx vite build` builds the app. There is no CI on a pull request, so run both before you push.
+- The code rules live in the bundle: [code style](docs/okf/conventions/code-style.md), [testing](docs/okf/conventions/testing.md), [git and pull requests](docs/okf/conventions/git-and-pull-requests.md).
+- `just okf-validate` checks the bundle with a third-party OKF validator. `just okf-drift` lists the concepts to re-read after a code change.

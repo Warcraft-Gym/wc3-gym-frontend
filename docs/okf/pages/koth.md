@@ -2,6 +2,7 @@
 type: Page
 title: KOTH
 description: The KOTH nights list an admin opens tonight from, and the public dashboard that draws tonight's brackets for the stream.
+resource: ../../../src/views/KothView.vue
 tags: [pages, koth]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:

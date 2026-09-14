@@ -1,8 +1,8 @@
 ---
 type: Pitfall
-title: No CI on pull requests: build the merged pair
+title: "No CI on pull requests: build the merged pair"
 description: Two green branches broke main together because one removed a helper the other imported, and Vercel builds only after the merge.
-tags: [pitfall, ci, merge]
+tags: [deploy, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

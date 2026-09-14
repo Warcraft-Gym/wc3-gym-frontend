@@ -2,7 +2,7 @@
 type: Decision
 title: History routing, no hash bridge
 description: The router runs on plain paths, and old hash links get no redirect.
-tags: [decision, router]
+tags: [router]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

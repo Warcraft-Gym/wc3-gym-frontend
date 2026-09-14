@@ -2,7 +2,8 @@
 type: Page
 title: Member self-service
 description: The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
-tags: [pages, member]
+resource: ../../../src/views/HomeView.vue
+tags: [pages]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: home

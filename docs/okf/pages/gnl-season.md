@@ -2,7 +2,8 @@
 type: Page
 title: The GNL season
 description: The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
-tags: [pages, gnl, season]
+resource: ../../../src/views/SeasonsView.vue
+tags: [pages, events]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: seasons

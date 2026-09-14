@@ -2,6 +2,7 @@
 type: Page
 title: Teams
 description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's round grid.
+resource: ../../../src/views/TeamsView.vue
 tags: [pages, teams]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:

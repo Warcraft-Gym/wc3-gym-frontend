@@ -2,7 +2,8 @@
 type: Page
 title: Site admin
 description: The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
-tags: [pages, admin, config]
+resource: ../../../src/views/ConfigView.vue
+tags: [pages]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: config

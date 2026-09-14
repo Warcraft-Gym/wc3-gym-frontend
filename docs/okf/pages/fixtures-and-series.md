@@ -2,7 +2,8 @@
 type: Page
 title: Fixtures and series
 description: The GNL fixture page with its published and draft series, one series of any event, the map veto, the upcoming series, and the Report Result, schedule and cast dialogs.
-tags: [pages, series, fixtures]
+resource: ../../../src/views/MatchDetailsView.vue
+tags: [pages, events, series]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: match

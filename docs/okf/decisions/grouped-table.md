@@ -2,7 +2,7 @@
 type: Decision
 title: One grouped table component
 description: Groups of rows with subtotals are drawn by GroupedTable, never by a table nested in a cell.
-tags: [decision, components, tables]
+tags: [components]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

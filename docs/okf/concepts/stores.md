@@ -2,7 +2,8 @@
 type: Domain Concept
 title: Stores
 description: One Pinia store per area holds the fetched rows and every call to the backend; views never fetch on their own.
-tags: [pinia, stores, state]
+resource: ../../../src/stores/index.js
+tags: [stores]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:30:00Z }
 sources:
   - id: index

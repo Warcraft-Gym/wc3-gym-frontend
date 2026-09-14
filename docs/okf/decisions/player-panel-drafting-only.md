@@ -2,7 +2,7 @@
 type: Decision
 title: The player panel opens only on drafting pages
 description: A player name links to the player page everywhere except on a page that holds unsaved draft work, where it opens a side panel and shows a dock icon.
-tags: [decision, components]
+tags: [components]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

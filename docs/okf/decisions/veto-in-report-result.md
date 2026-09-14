@@ -2,7 +2,7 @@
 type: Decision
 title: The veto is entered inside Report Result
 description: The Report Result dialog embeds the veto board in a compact mode, so a player never leaves the dialog to record the veto, and the veto warns but never blocks.
-tags: [decision, veto, dialogs]
+tags: [components, series]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source

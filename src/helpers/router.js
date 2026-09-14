@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore, useSeasonStore } from '@/stores';
 import { saveReturnUrl, takeReturnUrl } from './return-url.mjs';
 import { playerPath } from './players.mjs';
-import { AvailabilityView, HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView, NoAccessView, LeaguesView, LeagueView, EventsView, EventView, EventAdminView, EventWizardView, EntrantsView } from '@/views';
+import { AvailabilityView, HomeView, LoginView, AdminLoginView, ProfileView, PlayersView, PlayerView, SeasonsView, SeasonDetailsView, MatchDetailsView, SeriesView, UpcomingView, SeasonTeamDetailsView, SeasonTeamAssignView, SeasonMapsView, SeasonAchievementsView, TeamRoundsView, MapsView, TeamsView, PublicSignupView, ConfigView, DiscordRolesView, AccessView, FantasyLeaderboardView, FantasyBetsView, FantasyDashboardView, FantasyTiersView, UserGuideView, KothView, KothDashboard, SeasonReportView, RandomStatsView, LadderView, VetoBoardView, CreditsView, TeamView, NoAccessView, LeaguesView, LeagueView, EventsView, EventView, EventAdminView, EventWizardView, EntrantsView } from '@/views';
 
 // meta.role: the lowest session role the route accepts; meta.nav = false hides the nav links
 const RANK = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
@@ -40,6 +40,7 @@ export const router = createRouter({
         { path: '/seasons/:id/maps', component: SeasonMapsView, meta: { role: 'admin', nav: false, season: true } },
         { path: '/seasons/:id/achievements', component: SeasonAchievementsView, meta: { role: 'admin', nav: false, season: true } },
         { path: '/match/:id', component: MatchDetailsView, meta: { role: 'member' } },
+        { path: '/series/:id', component: SeriesView, meta: { role: 'public' } },  // one series of any event; the reads behind it are open
         { path: '/team/:id', component: TeamView, meta: { role: 'member' } },
         { path: '/team/:id/season/:season_id', component: SeasonTeamDetailsView, meta: { role: 'member', season: true } },
         { path: '/team/:id/season/:season_id/rounds', component: TeamRoundsView, meta: { role: 'captain', season: true } },

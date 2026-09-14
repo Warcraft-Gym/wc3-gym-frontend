@@ -24,7 +24,7 @@
           </svg>
           <div v-for="box in block.drawn.boxes" :key="box.key" class="box"
             :style="{ left: `${box.x}px`, top: `${box.cy - block.drawn.boxH / 2 + 28}px`, width: `${block.drawn.boxW}px` }">
-            <SeriesBox :series="box.row" :readonly="readonly"
+            <SeriesBox :series="box.row"
               :label="thirdPlace(block.columns[box.column], box.row)" @open="open" />
           </div>
         </div>
@@ -36,7 +36,7 @@
           <v-card-title class="text-subtitle-1">{{ column.name }}</v-card-title>
           <div class="rows">
             <SeriesBox v-for="(row, index) in column.series" :key="row.id" :series="row" flat
-              :crown="isChain" :readonly="readonly" :label="thirdPlace(column, row)"
+              :crown="isChain" :label="thirdPlace(column, row)"
               class="list-row" :class="{ first: index === 0 }" @open="open" />
           </div>
         </v-card>
@@ -91,7 +91,6 @@ const props = defineProps({
   rounds: { type: Array, default: () => [] },
   divisions: { type: Array, default: () => [] },
   standings: { type: Array, default: () => [] },
-  readonly: Boolean,  // the public page draws the same stage with nothing to click
 });
 const emit = defineEmits(['open-series']);
 

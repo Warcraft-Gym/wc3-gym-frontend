@@ -95,21 +95,27 @@
                 <PlayerName v-if="row.user" :player="row.user" :race="row.race" />
                 <template v-else-if="row.team">
                   <span class="font-weight-medium">{{ row.team.name }}</span>
-                  <div class="text-caption text-medium-emphasis">{{ membersOf(row) }}</div>
+                  <div class="roster text-caption">
+                    <PlayerName v-for="seat in rosterFor(row)" :key="seat.player.id" :player="seat.player" :race="seat.race">
+                      <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon>
+                    </PlayerName>
+                    <span v-if="!rosterFor(row).length" class="text-medium-emphasis">No roster for this event</span>
+                  </div>
                 </template>
               </td>
               <td class="text-right">
-                <span v-if="row.mmr">
-                  {{ row.mmr }}
-                  <v-tooltip activator="parent" location="top">{{ syncText(row) }}</v-tooltip>
+                <span v-if="entrantMmr(row)">
+                  {{ entrantMmr(row) }}
+                  <v-tooltip activator="parent" location="top">{{ mmrText(row) }}</v-tooltip>
                 </span>
                 <span v-else class="text-medium-emphasis">—</span>
               </td>
+              <!-- A team has no identity of its own; the three columns belong to a player -->
               <td class="d-none d-md-table-cell" :class="{ 'text-medium-emphasis': !row.user?.battleTag }">
-                {{ row.user?.battleTag || 'Not linked' }}
+                {{ row.user ? row.user.battleTag || 'Not linked' : '—' }}
               </td>
               <td class="d-none d-md-table-cell" :class="{ 'text-medium-emphasis': !row.user?.discordTag }">
-                {{ row.user?.discordTag || 'Not linked' }}
+                {{ row.user ? row.user.discordTag || 'Not linked' : '—' }}
               </td>
               <!-- The W3C name is the battle tag, so this column answers whether w3champions
                    knows it rather than printing the same string twice -->
@@ -118,7 +124,7 @@
                   Linked
                   <v-tooltip activator="parent" location="top">{{ w3cName(row) }}</v-tooltip>
                 </a>
-                <span v-else class="text-medium-emphasis">Not linked</span>
+                <span v-else class="text-medium-emphasis">{{ row.user ? 'Not linked' : '—' }}</span>
               </td>
               <td>
                 <v-chip
@@ -164,7 +170,13 @@
               <PlayerName v-if="row.user" :player="row.user" :race="row.race" />
               <span v-else-if="row.team" class="font-weight-medium">{{ row.team.name }}</span>
               <v-spacer />
-              <span>{{ row.mmr || '—' }}</span>
+              <span>{{ entrantMmr(row) || '—' }}</span>
+            </div>
+            <div v-if="row.team" class="roster text-caption mt-1">
+              <PlayerName v-for="seat in rosterFor(row)" :key="seat.player.id" :player="seat.player" :race="seat.race">
+                <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon>
+              </PlayerName>
+              <span v-if="!rosterFor(row).length" class="text-medium-emphasis">No roster for this event</span>
             </div>
             <div class="d-flex flex-wrap ga-1 mt-2">
               <v-chip v-if="row.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
@@ -198,7 +210,11 @@
             label="Team"
             variant="outlined"
             density="comfortable"
-          />
+          >
+            <template #item="{ props: itemProps, item }">
+              <v-list-item v-bind="itemProps" :subtitle="rosterText(item.raw.id)" />
+            </template>
+          </v-autocomplete>
           <v-autocomplete
             v-else
             v-model="addPlayerId"
@@ -263,7 +279,7 @@ import RowActions from '@/components/RowActions.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import W3CMmr from '@/components/W3CMmr.vue';
 import { bandOf, domainOf, quantileCuts } from '@/helpers/divisions.mjs';
-import { bandNames, cutsOf, divisionsPayload, groupByDivision, mergeSeeds, seedPayload, warningLabel } from '@/helpers/entrants.mjs';
+import { bandNames, cutsOf, divisionsPayload, entrantMmr, groupByDivision, mergeSeeds, seedPayload, teamRoster, warningLabel } from '@/helpers/entrants.mjs';
 import { eventLabel, timeText, titleOf, FORMATS } from '@/helpers/event-labels.mjs';
 import { w3cPlayerUrl } from '@/helpers/w3c-stats';
 import { useAuthStore, useEventStore, usePlayerStore, useTeamStore } from '@/stores';
@@ -284,7 +300,9 @@ const event = ref(null);
 const entrants = ref([]);
 const leagues = ref([]);
 const players = ref([]);
+// The pick list of the Add dialog; `rosters` holds the teams rostered for this event
 const teams = ref([]);
+const rosters = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const saved = ref(null);
@@ -305,7 +323,7 @@ const eventName = computed(() => {
   return eventLabel(event.value, league);
 });
 const live = computed(() => entrants.value.filter((row) => !row.withdrawn_at));
-const rated = computed(() => live.value.filter((row) => row.mmr > 0));
+const rated = computed(() => live.value.filter((row) => entrantMmr(row) > 0));
 const groups = computed(() => groupByDivision(entrants.value, event.value?.divisions || []));
 const stages = computed(() => [...(event.value?.stages || [])]
   .sort((a, b) => a.position - b.position)
@@ -338,13 +356,13 @@ const names = computed(() => {
 // One bronze step per band, light to dark: a division is a band of amounts, not a category
 const colors = computed(() => Array.from({ length: divisionCount.value },
   (unused, index) => RAMP[Math.round((index * (RAMP.length - 1)) / Math.max(1, divisionCount.value - 1))]));
-const domain = computed(() => domainOf(live.value.map((row) => row.mmr || 0)));
+const domain = computed(() => domainOf(live.value.map((row) => entrantMmr(row) || 0)));
 const storedCuts = computed(() => cutsOf(event.value?.divisions || []));
 const stripPlayers = computed(() => live.value.map((row) => ({
   id: row.id,
   label: row.team?.name || row.user?.name || '',
-  mmr: row.mmr || 0,
-  band: row.mmr > 0 ? bandOf(row.mmr, cuts.value) : null,
+  mmr: entrantMmr(row) || 0,
+  band: entrantMmr(row) > 0 ? bandOf(entrantMmr(row), cuts.value) : null,
   pinned: row.manual_placement,
 })));
 
@@ -352,13 +370,22 @@ const colorOf = (group) => {
   const at = (event.value?.divisions || []).findIndex((division) => division.id === group.id);
   return at === -1 ? 'draw' : colors.value[colors.value.length - 1 - at] || 'draw';
 };
-const membersOf = (row) => (teams.value.find((team) => team.id === row.team?.id)?.player_by_season?.[eventId] || [])
-  .map((player) => player.name).join(', ');
+const rosterOfTeam = (teamId) => teamRoster(rosters.value.find((team) => team.id === teamId), eventId);
+const rosterFor = (row) => rosterOfTeam(row.team?.id);
+const rosterText = (teamId) => {
+  const size = rosterOfTeam(teamId).length;
+  return size ? `${size} ${size === 1 ? 'player' : 'players'}` : 'no roster for this event';
+};
 const w3cName = (row) => (row.user?.w3c_synced_at ? row.user.battleTag : null);
-const syncText = (row) => (row.mmr_synced_at ? `Read from w3champions ${timeText(row.mmr_synced_at)}` : 'Never read from w3champions');
+// A team is rated from its roster, so no one player's sync time answers for it
+const mmrText = (row) => {
+  if (row.team) return 'The mean of the ratings of its roster';
+  if (row.mmr == null) return 'The rating the seed was cut from';
+  return row.mmr_synced_at ? `Read from w3champions ${timeText(row.mmr_synced_at)}` : 'Never read from w3champions';
+};
 
 const evenSplit = () => {
-  cuts.value = quantileCuts(live.value.map((row) => row.mmr || 0), divisionCount.value);
+  cuts.value = quantileCuts(live.value.map((row) => entrantMmr(row) || 0), divisionCount.value);
 };
 watch(divisionCount, (count) => {
   if (cuts.value.length !== count - 1) evenSplit();
@@ -426,7 +453,7 @@ const openAdd = async () => {
   addTeamId.value = null;
   addRace.value = null;
   try {
-    if (takesTeams.value) teams.value = teamStore.teams.length ? teamStore.teams : (await teamStore.getTeamsBasic());
+    if (takesTeams.value) { if (!teams.value.length) teams.value = await teamStore.getTeamsBasic(); }
     else if (!players.value.length) {
       if (!playerStore.players.length) await playerStore.fetchPlayers();
       players.value = playerStore.players;
@@ -493,10 +520,10 @@ onMounted(async () => {
     ]);
     stageId.value = stages.value[0]?.id ?? null;
     divisionCount.value = event.value.divisions.length || 2;
-    cuts.value = storedCuts.value.length === divisionCount.value - 1 ? storedCuts.value : quantileCuts(live.value.map((row) => row.mmr || 0), divisionCount.value);
-    if (entrants.value.some((row) => row.team)) {
+    cuts.value = storedCuts.value.length === divisionCount.value - 1 ? storedCuts.value : quantileCuts(live.value.map((row) => entrantMmr(row) || 0), divisionCount.value);
+    if (takesTeams.value || entrants.value.some((row) => row.team)) {
       await teamStore.fetchTeamsBySeason(eventId);
-      teams.value = teamStore.teams;
+      rosters.value = teamStore.teams;
     }
   } catch (e) {
     error.value = `The entrants did not load: ${e.message}`;
@@ -509,6 +536,8 @@ onMounted(async () => {
 <style scoped>
 .count-field { max-width: 130px; }
 .stage-field { max-width: 240px; }
+/* The roster sits under the team name, one line per screen width */
+.roster { display: flex; flex-wrap: wrap; column-gap: 12px; row-gap: 2px; }
 /* A withdrawn entrant keeps its row and reads back one step */
 .withdrawn { opacity: var(--v-medium-emphasis-opacity); }
 .grip { cursor: grab; }

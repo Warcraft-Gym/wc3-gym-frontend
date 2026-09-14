@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bySeed, cutsOf, divisionsPayload, entrantName, groupByDivision, mergeSeeds, seedPayload, warningLabel } from './entrants.mjs';
+import { bandNames, bySeed, cutsOf, divisionsPayload, entrantMmr, entrantName, groupByDivision, mergeSeeds, seedPayload, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -72,4 +72,30 @@ test('the strip reads the stored divisions back as ascending cuts and names', ()
   assert.deepEqual(cutsOf(DIVISIONS), [1600]);
   assert.deepEqual(bandNames(DIVISIONS), ['Open', 'Pro']);
   assert.deepEqual(cutsOf([{ lower_bound: null }, { lower_bound: null }]), []);
+});
+
+const WOLVES = {
+  id: 5,
+  captains_by_season: { 31: [{ id: 4, name: 'Alpha' }] },
+  player_by_season: {
+    31: [{ id: 4, name: 'Alpha', signup_race: 'HU' }, { id: 7, name: 'Bravo' }],
+  },
+};
+
+test('a team entrant draws its roster, the captain marked and each on his race', () => {
+  const roster = teamRoster(WOLVES, 31);
+  assert.deepEqual(roster.map((seat) => seat.player.name), ['Alpha', 'Bravo']);
+  assert.deepEqual(roster.map((seat) => seat.captain), [true, false]);
+  assert.deepEqual(roster.map((seat) => seat.race), ['HU', undefined]);
+});
+
+test('a team with no roster for this event draws none', () => {
+  assert.deepEqual(teamRoster(WOLVES, 30), []);
+  assert.deepEqual(teamRoster(undefined, 31), []);
+});
+
+test('a row is rated by the read, and by the seed once the read rates it no longer', () => {
+  assert.equal(entrantMmr({ mmr: 1700, mmr_at_seed: 1650 }), 1700);
+  assert.equal(entrantMmr({ mmr: null, mmr_at_seed: 1650 }), 1650);
+  assert.equal(entrantMmr({}), null);
 });

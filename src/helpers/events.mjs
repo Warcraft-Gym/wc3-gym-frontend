@@ -104,6 +104,13 @@ function eventPrimary(row, me, slug) {
   };
 }
 
+// What the next round's check-in shows the caller when he has not answered it and his own
+// blocks cover the whole round window. Blocks inform: the hint offers the answer and the
+// player writes it, so nothing here refuses anyone.
+export const blocksHint = (row) => (row?.availability_hint === 'blocked_by_blocks'
+  ? { title: 'Your blocks cover this round', text: "Confirm I can't play" }
+  : null);
+
 // One card per event GET /me/events answers, of any kind, with the KOTH nights still
 // to come. A finished event is not upcoming, so it stays off the home. The /seasons row
 // of the same id adds the rounds and the round count a GNL card reads, and the /me entry
@@ -136,6 +143,7 @@ export function homeCards({ events = [], me = null, seasons = [], kothEvents = [
       ].filter(Boolean),
       action: row.action,
       joined: row.joined,
+      hint: blocksHint(row),
       primary: eventPrimary(row, me, slug),
       links: gnl ? seasonLinks(season, slug) : [{ title: 'Event page', icon: 'mdi-tournament', to: `/events/${row.id}` }],
       slug,

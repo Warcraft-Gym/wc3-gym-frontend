@@ -12,6 +12,11 @@ export const STEPS = [
   { key: 'review', title: 'Review' },
 ];
 
+// A signup-only event plays no stage, so the wizard never asks for one
+export const stepsFor = (form) => (form?.kind === 'signup'
+  ? STEPS.filter((step) => step.key !== 'stages')
+  : STEPS);
+
 // A wizard writes a new run of a league; a GNL season and a KOTH night are made elsewhere
 export const WIZARD_KINDS = EVENT_KINDS.filter((kind) => kind.value === 'cup' || kind.value === 'signup');
 // A drafted-team event needs the team draft, which is not part of creating the event
@@ -113,8 +118,12 @@ export const stagesPayload = (form) => (form.stages || []).map((stage, index) =>
 }));
 
 // The body POST /events takes: the event and its stages in one write, so a later failure
-// cannot leave an event that has no stage
-export const createPayload = (form) => ({ ...eventPayload(form), stages: stagesPayload(form) });
+// cannot leave an event that has no stage. A signup-only event sends an explicit empty
+// list, which the API reads as no stage at all where a missing field writes a default one.
+export const createPayload = (form) => ({
+  ...eventPayload(form),
+  stages: form.kind === 'signup' ? [] : stagesPayload(form),
+});
 
 // The body PUT /events/{id}/divisions takes; the MMR bounds are cut on the entrants page later
 export const divisionsPayload = (form) => Array.from({ length: form.division_count || 0 }, (unused, index) => ({
@@ -149,5 +158,6 @@ export const stepProblem = (form, key) => {
   return null;
 };
 
-// The wizard may create once every step before the review is answered
-export const wizardProblem = (form) => STEPS.map((step) => stepProblem(form, step.key)).find(Boolean) || null;
+// The wizard may create once every step it asks for is answered
+export const wizardProblem = (form) => stepsFor(form)
+  .map((step) => stepProblem(form, step.key)).find(Boolean) || null;

@@ -76,6 +76,19 @@ const act = async (card) => {
   }
 };
 
+// The caller answers the next round himself; the hint only said what his blocks cover
+const answerBlocked = async (card) => {
+  acting.value = `${card.key}:hint`;
+  try {
+    await eventStore.answerRound(myEvents.value.find((row) => row.id === card.id), false);
+    await reloadEvents();
+  } catch (error) {
+    errorMessage.value = `That did not go through: ${error.message}`;
+  } finally {
+    acting.value = null;
+  }
+};
+
 const reloadEvents = async () => {
   myEvents.value = await eventStore.myEvents();
 };
@@ -124,8 +137,13 @@ onMounted(fetchHomeData);
             <div class="flex-grow-1 min-w-0">
               <h2 class="text-h5 font-weight-bold">{{ card.name }}</h2>
               <div v-if="card.status" class="text-body-2 text-medium-emphasis">{{ card.status }}</div>
-              <div v-if="card.chips.length" class="d-flex flex-wrap ga-2 mt-2">
+              <div v-if="card.chips.length || card.hint" class="d-flex flex-wrap align-center ga-2 mt-2">
                 <v-chip v-for="chip in card.chips" :key="chip.title" :color="chip.color" :prepend-icon="chip.icon" variant="tonal" size="small">{{ chip.title }}</v-chip>
+                <!-- The caller's own blocks cover the next round; the answer is his, the blocks only inform -->
+                <template v-if="card.hint">
+                  <v-chip color="info" variant="tonal" size="small" prepend-icon="mdi-calendar-remove">{{ card.hint.title }}</v-chip>
+                  <v-btn variant="outlined" color="error" size="small" prepend-icon="mdi-close" :loading="acting === `${card.key}:hint`" @click="answerBlocked(card)">{{ card.hint.text }}</v-btn>
+                </template>
               </div>
             </div>
             <v-btn v-if="card.primary && !smAndDown" class="align-self-center" :color="card.primary.color || 'primary'" :variant="card.primary.variant" :prepend-icon="card.primary.icon" :to="card.primary.to" :loading="acting === card.key" @click="card.primary.act && act(card)">{{ card.primary.title }}</v-btn>

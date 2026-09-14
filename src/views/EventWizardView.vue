@@ -1,5 +1,7 @@
-<!-- Creating one event: the five steps an admin answers, then the write that makes the
-     event with its stages, and the second write that adds its divisions. -->
+<!-- Creating one event: the steps an admin answers, then the write that makes the event
+     with its stages, and the second write that adds its divisions. A signup-only event plays
+     no stage, so the wizard leaves that step out and writes an empty stage list. The stepper
+     numbers the steps it asks for, so one slot picks the block each number carries. -->
 <template>
   <v-container fluid class="pa-4">
     <h1 class="text-h5 text-md-h3 font-weight-bold mb-4">
@@ -9,13 +11,13 @@
     <StatusAlert v-model="error" />
 
     <div class="d-sm-none text-medium-emphasis mb-2">
-      Step {{ step }} of {{ STEPS.length }} · {{ STEPS[step - 1].title }}
+      Step {{ step }} of {{ steps.length }} · {{ steps[step - 1].title }}
     </div>
 
     <v-stepper v-model="step" :items="stepTitles" hide-actions flat class="wizard">
-      <!-- Basics -->
-      <template #item.1>
-        <v-card-text>
+      <template #item="{ value }">
+        <!-- Basics -->
+        <v-card-text v-if="keyAt(value) === 'basics'">
           <v-row dense>
             <v-col cols="12" md="4">
               <v-select v-model="form.league_id" :items="leagues" item-title="name" item-value="id" label="League" />
@@ -53,11 +55,9 @@
             </v-col>
           </v-row>
         </v-card-text>
-      </template>
 
-      <!-- Entrants -->
-      <template #item.2>
-        <v-card-text>
+        <!-- Entrants -->
+        <v-card-text v-else-if="keyAt(value) === 'entrants'">
           <v-row dense>
             <v-col cols="12" md="6">
               <v-select v-model="form.signup_policy" :items="SIGNUP_POLICIES" label="Who may sign up" />
@@ -86,11 +86,9 @@
             </v-col>
           </v-row>
         </v-card-text>
-      </template>
 
-      <!-- Stages -->
-      <template #item.3>
-        <v-card-text>
+        <!-- Stages -->
+        <v-card-text v-else-if="keyAt(value) === 'stages'">
           <v-card v-for="(stage, index) in form.stages" :key="index" variant="outlined" class="mb-3">
             <v-card-text>
               <div class="d-flex align-center mb-2">
@@ -137,11 +135,9 @@
           <v-btn variant="outlined" color="primary" prepend-icon="mdi-plus"
             @click="form.stages.push(blankStage())">Add stage</v-btn>
         </v-card-text>
-      </template>
 
-      <!-- Divisions -->
-      <template #item.4>
-        <v-card-text>
+        <!-- Divisions -->
+        <v-card-text v-else-if="keyAt(value) === 'divisions'">
           <p class="text-medium-emphasis mb-4">
             A division runs the whole event beside the others and never merges. The MMR bounds are
             cut on the entrants page once the signups are in.
@@ -158,15 +154,14 @@
             </v-col>
           </v-row>
         </v-card-text>
-      </template>
 
-      <!-- Review -->
-      <template #item.5>
-        <v-card-text>
+        <!-- Review -->
+        <v-card-text v-else>
           <div v-for="group in review" :key="group.title" class="mb-5">
             <div class="d-flex align-center mb-1">
               <h2 class="text-subtitle-1 font-weight-bold">{{ group.title }}</h2>
-              <v-btn variant="text" size="small" class="ml-2" @click="step = group.step">Edit</v-btn>
+              <v-btn v-if="group.step" variant="text" size="small" class="ml-2"
+                @click="step = group.step">Edit</v-btn>
             </div>
             <div v-for="row in group.rows" :key="row.k" class="review-row">
               <div class="text-medium-emphasis">{{ row.k }}</div>
@@ -185,7 +180,7 @@
       <v-btn variant="text" :disabled="step === 1" @click="step -= 1">Back</v-btn>
       <span v-if="problem" class="text-medium-emphasis text-body-2">{{ problem }}</span>
       <v-spacer />
-      <v-btn v-if="step < STEPS.length" variant="elevated" color="primary" :disabled="!!problem"
+      <v-btn v-if="step < steps.length" variant="elevated" color="primary" :disabled="!!problem"
         @click="step += 1">Next</v-btn>
       <v-btn v-else variant="elevated" color="primary" :loading="saving" :disabled="!!problem"
         @click="create">Create event</v-btn>
@@ -206,7 +201,7 @@ import {
 } from '@/helpers/event-labels.mjs';
 import {
   BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload, seriesPerRound,
-  stepProblem, STEPS, WIZARD_ENTRANT_KINDS, WIZARD_KINDS,
+  stepProblem, stepsFor, WIZARD_ENTRANT_KINDS, WIZARD_KINDS,
 } from '@/helpers/event-wizard.mjs';
 import { useEventStore } from '@/stores';
 
@@ -223,11 +218,20 @@ const DIVISION_COUNTS = [
   { value: 0, title: 'None' },
   ...[2, 3, 4, 5, 6].map((value) => ({ value, title: `${value} divisions` })),
 ];
-const stepTitles = STEPS.map((item) => item.title);
+// The steps this kind asks for. The stepper numbers them 1..n, so a step it leaves out
+// shifts every later number, and one lookup says what each number carries.
+const steps = computed(() => stepsFor(form.value));
+const stepTitles = computed(() => steps.value.map((item) => item.title));
+const keyAt = (number) => steps.value[number - 1]?.key;
+// The number of one step, or nothing when this kind does not ask for it
+const stepNumber = (key) => steps.value.findIndex((item) => item.key === key) + 1 || null;
 const league = computed(() => leagues.value.find((row) => row.id === form.value.league_id) || null);
 // A qualifier feeds an event of the same league; a run cannot be part of itself
 const parentEvents = computed(() => league.value?.events || []);
-const problem = computed(() => stepProblem(form.value, STEPS[step.value - 1].key));
+const problem = computed(() => stepProblem(form.value, keyAt(step.value)));
+
+// A kind with fewer steps must not leave the wizard past its last one
+watch(steps, (list) => { step.value = Math.min(step.value, list.length); });
 
 const moveStage = (index, delta) => {
   const [stage] = form.value.stages.splice(index, 1);
@@ -250,7 +254,7 @@ const review = computed(() => {
   return [
     {
       title: 'Basics',
-      step: 1,
+      step: stepNumber('basics'),
       rows: [
         { k: 'League', v: league.value?.name || '—' },
         { k: 'Name', v: it.name || '—' },
@@ -266,7 +270,7 @@ const review = computed(() => {
     },
     {
       title: 'Entrants',
-      step: 2,
+      step: stepNumber('entrants'),
       rows: [
         { k: 'Who may sign up', v: titleOf(SIGNUP_POLICIES, it.signup_policy) },
         { k: 'An entrant is', v: titleOf(WIZARD_ENTRANT_KINDS, it.entrant_kind) },
@@ -279,23 +283,26 @@ const review = computed(() => {
     },
     {
       title: 'Stages',
-      step: 3,
-      rows: it.stages.map((stage, index) => ({
-        k: stage.name || `Stage ${index + 1}`,
-        v: [
-          titleOf(FORMATS, stage.format),
-          `best of ${stage.best_of}`,
-          ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each entrant a round`] : []),
-          titleOf(MAP_RULES, stage.map_rule).toLowerCase(),
-          titleOf(SCHEDULING_MODES, stage.scheduling_mode).toLowerCase(),
-          stage.advance_count ? `${stage.advance_count} advance` : 'nobody advances',
-          stage.auto_advance ? 'advance is automatic' : 'advance by hand',
-        ].join(' · '),
-      })),
+      // A signup-only event answers no stages step, so the group names the shape and offers no edit
+      step: stepNumber('stages'),
+      rows: it.kind === 'signup'
+        ? [{ k: titleOf(WIZARD_KINDS, it.kind), v: 'No stages: a sign-up list' }]
+        : it.stages.map((stage, index) => ({
+          k: stage.name || `Stage ${index + 1}`,
+          v: [
+            titleOf(FORMATS, stage.format),
+            `best of ${stage.best_of}`,
+            ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each entrant a round`] : []),
+            titleOf(MAP_RULES, stage.map_rule).toLowerCase(),
+            titleOf(SCHEDULING_MODES, stage.scheduling_mode).toLowerCase(),
+            stage.advance_count ? `${stage.advance_count} advance` : 'nobody advances',
+            stage.auto_advance ? 'advance is automatic' : 'advance by hand',
+          ].join(' · '),
+        })),
     },
     {
       title: 'Divisions',
-      step: 4,
+      step: stepNumber('divisions'),
       rows: it.division_count
         ? divisionsPayload(it).map((division) => ({ k: `Division ${division.position}`, v: division.name }))
         : [{ k: 'Divisions', v: 'None' }],

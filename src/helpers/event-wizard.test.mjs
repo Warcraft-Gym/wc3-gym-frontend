@@ -62,6 +62,15 @@ test('a map rule writes one word per game, and a veto runs once for the series',
   assert.equal(gameRules('host', 3), 'host,host,host');
 });
 
+test('a team event sends the series a fixture holds and a solo event sends one', () => {
+  const team = eventPayload({ ...blankForm(), entrant_kind: 'team', series_per_round: '2' });
+  assert.equal(team.series_per_round, 2);
+  assert.equal(eventPayload({ ...blankForm(), entrant_kind: 'team', series_per_round: '' }).series_per_round, 1);
+  // a solo event has no fixture, so the typed count never reaches the body
+  assert.equal(eventPayload({ ...blankForm(), entrant_kind: 'solo', series_per_round: '3' }).series_per_round, 1);
+  assert.equal(blankForm().series_per_round, 1);
+});
+
 test('a round robin stage carries its series count and every other format carries one', () => {
   const stages = stagesPayload({
     stages: [

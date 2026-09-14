@@ -50,6 +50,7 @@ export const blankForm = (league = null) => ({
   min_games: '',
   checkin_enabled: false,
   checkin_days: 3,
+  series_per_round: 1,
   division_count: 0,
   division_names: [],
   stages: [blankStage()],
@@ -84,6 +85,8 @@ export const eventPayload = (form) => ({
   min_games: count(form.min_games),
   checkin_enabled: !!form.checkin_enabled,
   checkin_days: form.checkin_enabled ? count(form.checkin_days) : null,
+  // A fixture pairs two team entrants, so a solo event always holds one series a pairing
+  series_per_round: form.entrant_kind === 'team' ? Math.max(1, Number(form.series_per_round) || 1) : 1,
 });
 
 // One word per game of the best-of, as the veto engine reads it. A veto runs once for the

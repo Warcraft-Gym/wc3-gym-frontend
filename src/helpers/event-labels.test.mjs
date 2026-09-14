@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf } from './event-labels.mjs';
+import {
+  dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, SEED_SOURCES, seriesPerEntrant, seriesPerFixture,
+  STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf,
+} from './event-labels.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -48,4 +51,21 @@ test('a GNL season phase is named and coloured, and stays out of the events filt
   assert.equal(STATE_COLOR.overdue, 'warning');
   assert.deepEqual(STATE_ITEMS.map((item) => item.value),
     ['draft', 'signups_open', 'checkin', 'seeded', 'running', 'finished']);
+});
+
+test('the two series settings each read only where they apply', () => {
+  assert.equal(seriesPerEntrant({ format: 'round_robin', series_per_entrant_per_round: 2 }), 2);
+  assert.equal(seriesPerEntrant({ format: 'round_robin' }), 1);
+  assert.equal(seriesPerEntrant({ format: 'single_elimination', series_per_entrant_per_round: 2 }), null);
+  assert.equal(seriesPerEntrant(null), null);
+  assert.equal(seriesPerFixture({ entrant_kind: 'team', series_per_round: 2 }), 2);
+  assert.equal(seriesPerFixture({ entrant_kind: 'team' }), 1);
+  assert.equal(seriesPerFixture({ entrant_kind: 'solo', series_per_round: 2 }), null);
+  assert.equal(seriesPerFixture(null), null);
+});
+
+test('no seed source offers a qualifier, and the previous stage stays', () => {
+  const values = SEED_SOURCES.map((row) => row.value);
+  assert.ok(!values.includes('qualifier'));
+  assert.ok(values.includes('previous_stage'));
 });

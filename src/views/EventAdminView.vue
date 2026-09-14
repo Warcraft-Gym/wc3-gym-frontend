@@ -20,6 +20,12 @@
         <div class="d-flex flex-wrap align-center ga-3 mt-4">
           <v-chip size="small" variant="tonal">{{ titleOf(FORMATS, stage.format) }}</v-chip>
           <v-chip size="small" variant="tonal">Best of {{ stage.best_of }}</v-chip>
+          <v-chip v-if="entrantSeries" size="small" variant="tonal">
+            {{ entrantSeries }} series each entrant a round
+          </v-chip>
+          <v-chip v-if="fixtureSeries" size="small" variant="tonal">
+            {{ fixtureSeries }} series per fixture
+          </v-chip>
           <v-chip v-if="stage.auto_advance" size="small" variant="tonal" color="info"
             prepend-icon="mdi-fast-forward">Advance is automatic</v-chip>
           <v-spacer />
@@ -158,7 +164,7 @@ import { useRoute } from 'vue-router';
 import EventHeader from '@/components/EventHeader.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { FORMATS, SEED_SOURCES, titleOf } from '@/helpers/event-labels.mjs';
+import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } from '@/helpers/event-labels.mjs';
 import { scoreOf } from '@/helpers/map-order.mjs';
 import {
   advancingRows, generateFields, isScored, winsFor,
@@ -191,6 +197,10 @@ const awardSide = ref(null);
 const stages = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position));
 const stage = computed(() => stages.value[tab.value] || null);
 const complete = computed(() => series.value.length > 0 && series.value.every(isScored));
+
+// The two series settings, each where it applies: the round robin's own, and the fixture's
+const entrantSeries = computed(() => seriesPerEntrant(stage.value));
+const fixtureSeries = computed(() => seriesPerFixture(event.value));
 
 // What the generate dialog promises: where the seeds come from, and the field per division
 const seedSource = computed(() => titleOf(SEED_SOURCES, entrants.value.find((row) => row.seed_source)?.seed_source || 'mmr'));

@@ -61,6 +61,7 @@
         <v-spacer />
         <v-btn variant="outlined" prepend-icon="mdi-sort-numeric-ascending" :loading="busy === 'mmr'" :disabled="seedsLocked" @click="seedBy('mmr')">Seed by MMR</v-btn>
         <v-btn variant="outlined" prepend-icon="mdi-shuffle-variant" :loading="busy === 'random'" :disabled="seedsLocked" @click="seedBy('random')">Shuffle</v-btn>
+        <v-btn v-if="hasPreviousStage" variant="outlined" prepend-icon="mdi-arrow-right-bold-outline" :loading="busy === 'previous_stage'" :disabled="seedsLocked" @click="seedBy('previous_stage')">Seed from the previous stage</v-btn>
         <v-btn variant="outlined" prepend-icon="mdi-lock" :loading="busy === 'lock'" :disabled="seedsLocked || !stageId" @click="lock">Lock seeds</v-btn>
       </div>
 
@@ -311,6 +312,8 @@ const stages = computed(() => [...(event.value?.stages || [])]
   .map((stage) => ({ ...stage, label: stage.name || titleOf(FORMATS, stage.format) })));
 const stage = computed(() => stages.value.find((row) => row.id === stageId.value) || null);
 const seedsLocked = computed(() => !!stage.value?.seeds_locked_at);
+// The standings of the stage before order these seeds, so the first stage is offered no button
+const hasPreviousStage = computed(() => (stage.value?.position ?? 1) > 1);
 const canReorder = computed(() => isAdmin.value && !seedsLocked.value);
 const takesTeams = computed(() => event.value?.entrant_kind === 'team');
 
@@ -387,9 +390,15 @@ const assign = () => run('assign', async () => {
   await readEntrants();
 }, 'The entrants are cut into their divisions.');
 
+const SEEDED = {
+  mmr: 'Seeded by MMR.',
+  random: 'The seeds are shuffled.',
+  previous_stage: 'Seeded from the standings of the previous stage.',
+};
+
 const seedBy = (source) => run(source, async () => {
   entrants.value = mergeSeeds(entrants.value, await store.setSeeds(eventId, stageId.value, { source }));
-}, source === 'mmr' ? 'Seeded by MMR.' : 'The seeds are shuffled.');
+}, SEEDED[source]);
 
 const lock = () => run('lock', async () => {
   const locked = await store.lockSeeds(eventId, stageId.value);

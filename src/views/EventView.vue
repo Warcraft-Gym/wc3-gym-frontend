@@ -14,6 +14,9 @@
         <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
           {{ event.entrant_count ?? entrants.length }} entrants
         </v-chip>
+        <v-chip v-if="fixtureSeries" size="small" variant="tonal" prepend-icon="mdi-sword-cross">
+          {{ fixtureSeries }} series per fixture
+        </v-chip>
 
         <!-- The one action the server picked for this caller; a chip once he is checked in -->
         <v-chip v-if="row?.action === 'checked_in'" size="small" color="success" variant="tonal"
@@ -49,7 +52,9 @@
               <th>Stage</th>
               <th class="d-none d-md-table-cell">Format</th>
               <th class="text-right">Best of</th>
-              <th class="text-right d-none d-md-table-cell">Series each round</th>
+              <th class="text-right d-none d-md-table-cell">
+                <ColumnNote title="Series per entrant" :note="SERIES_PER_ENTRANT_PER_ROUND" />
+              </th>
               <th class="d-none d-md-table-cell">Scheduling</th>
             </tr>
           </thead>
@@ -64,7 +69,7 @@
               </td>
               <td class="d-none d-md-table-cell">{{ titleOf(FORMATS, stage.format) }}</td>
               <td class="text-right">{{ stage.best_of }}</td>
-              <td class="text-right d-none d-md-table-cell">{{ seriesEachRound(stage) ?? '—' }}</td>
+              <td class="text-right d-none d-md-table-cell">{{ seriesPerEntrant(stage) ?? '—' }}</td>
               <td class="d-none d-md-table-cell">{{ titleOf(SCHEDULING_MODES, stage.scheduling_mode) }}</td>
             </tr>
             <tr v-if="!stages.length">
@@ -115,13 +120,16 @@
 import { computed, onMounted, provide, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
+import ColumnNote from '@/components/ColumnNote.vue';
 import EventHeader from '@/components/EventHeader.vue';
 import PlayerName from '@/components/PlayerName.vue';
 import SignupDialog from '@/components/SignupDialog.vue';
 import StageView from '@/components/StageView.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
 import { bySeed, entrantName } from '@/helpers/entrants.mjs';
-import { FORMATS, SCHEDULING_MODES, titleOf } from '@/helpers/event-labels.mjs';
+import {
+  FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, titleOf,
+} from '@/helpers/event-labels.mjs';
 import { eventActionButton, HIDE_RESULTS, hideResultsStored, storeHideResults } from '@/helpers/events.mjs';
 import { saveReturnUrl } from '@/helpers/return-url.mjs';
 import { router } from '@/helpers/router.js';
@@ -157,13 +165,13 @@ const league = computed(() => leagues.value.find((r) => r.id === event.value?.le
 const stages = computed(() => [...(event.value?.stages || [])].sort((a, b) => a.position - b.position));
 const seedsLocked = computed(() => stages.value.some((stage) => stage.seeds_locked_at));
 
-// Only a round robin plays more than one series an entrant a round
-const seriesEachRound = (stage) => (stage.format === 'round_robin' ? stage.series_per_entrant_per_round ?? 1 : null);
+// A fixture pairs two team entrants, so a solo event reads no fixture chip
+const fixtureSeries = computed(() => seriesPerFixture(event.value));
 
 // A phone drops the format, the series count and the scheduling columns, so they ride under the name
 const phoneLine = (stage) => [
   titleOf(FORMATS, stage.format),
-  seriesEachRound(stage) ? `${seriesEachRound(stage)} series each round` : null,
+  seriesPerEntrant(stage) ? `${seriesPerEntrant(stage)} series each entrant a round` : null,
   titleOf(SCHEDULING_MODES, stage.scheduling_mode),
 ].filter(Boolean).join(' · ');
 

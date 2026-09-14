@@ -83,14 +83,30 @@ export const FORMATS = [
   { value: 'ffa', title: 'Free for all' },
 ];
 
+// What ordered the seeds of a stage. Seeding from a qualifier reads the field of a parent
+// event, which the engine does not build yet, so nothing offers that source.
 export const SEED_SOURCES = [
   { value: 'mmr', title: 'MMR' },
   { value: 'manual', title: 'a manual seed order' },
   { value: 'random', title: 'a random draw' },
   { value: 'previous_stage', title: 'the previous stage' },
-  { value: 'qualifier', title: 'a qualifier' },
   { value: 'invitation', title: 'invitation' },
 ];
+
+// The two series-per-round settings, named apart. The event's `series_per_round` counts the
+// series one fixture holds, and a fixture pairs two team entrants, so it reads only on a team
+// event. A stage's `series_per_entrant_per_round` counts the series one entrant plays in a
+// round of a round robin, and every other format plays one.
+export const SERIES_PER_FIXTURE = 'Series per fixture';
+export const SERIES_PER_ENTRANT_PER_ROUND = 'Series each entrant plays per round';
+
+export const seriesPerEntrant = (stage) => (stage?.format === 'round_robin'
+  ? stage.series_per_entrant_per_round ?? 1
+  : null);
+
+export const seriesPerFixture = (event) => (event?.entrant_kind === 'team'
+  ? event.series_per_round ?? 1
+  : null);
 
 export const SCHEDULING_MODES = [
   { value: 'assigned', title: 'An admin sets the time' },

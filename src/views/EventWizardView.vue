@@ -65,6 +65,9 @@
             <v-col cols="12" md="6">
               <v-select v-model="form.entrant_kind" :items="WIZARD_ENTRANT_KINDS" label="An entrant is" />
             </v-col>
+            <v-col v-if="form.entrant_kind === 'team'" cols="12" md="4">
+              <v-text-field v-model="form.series_per_round" type="number" min="1" :label="SERIES_PER_FIXTURE" />
+            </v-col>
             <v-col cols="12" md="4">
               <v-text-field v-model="form.entrant_cap" type="number" label="Entrant cap" placeholder="No cap" />
             </v-col>
@@ -115,7 +118,7 @@
                 </v-col>
                 <v-col v-if="stage.format === 'round_robin'" cols="12" md="4">
                   <v-text-field v-model="stage.series_per_entrant_per_round" type="number" min="1"
-                    label="Series each round" hint="Series each entrant plays per round" persistent-hint />
+                    :label="SERIES_PER_ENTRANT_PER_ROUND" />
                 </v-col>
                 <v-col cols="12" md="4">
                   <v-select v-model="stage.scheduling_mode" :items="SCHEDULING_MODES" label="Scheduling" />
@@ -197,7 +200,10 @@ import { useRoute, useRouter } from 'vue-router';
 import SimpleDatePicker from '@/components/SimpleDatePicker.vue';
 import SimpleTimePicker from '@/components/SimpleTimePicker.vue';
 import StatusAlert from '@/components/StatusAlert.vue';
-import { dateRange, dateText, FORMATS, MAP_RULES, SCHEDULING_MODES, SIGNUP_POLICIES, titleOf } from '@/helpers/event-labels.mjs';
+import {
+  dateRange, dateText, FORMATS, MAP_RULES, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND,
+  SERIES_PER_FIXTURE, SIGNUP_POLICIES, titleOf,
+} from '@/helpers/event-labels.mjs';
 import {
   BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload, seriesPerRound,
   stepProblem, STEPS, WIZARD_ENTRANT_KINDS, WIZARD_KINDS,
@@ -264,6 +270,7 @@ const review = computed(() => {
       rows: [
         { k: 'Who may sign up', v: titleOf(SIGNUP_POLICIES, it.signup_policy) },
         { k: 'An entrant is', v: titleOf(WIZARD_ENTRANT_KINDS, it.entrant_kind) },
+        ...(it.entrant_kind === 'team' ? [{ k: SERIES_PER_FIXTURE, v: String(body.series_per_round) }] : []),
         { k: 'Entrant cap', v: orNone(it.entrant_cap) },
         { k: 'MMR maximum', v: orNone(it.mmr_max) },
         { k: 'Recent games at least', v: orNone(it.min_games) },
@@ -278,7 +285,7 @@ const review = computed(() => {
         v: [
           titleOf(FORMATS, stage.format),
           `best of ${stage.best_of}`,
-          ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each round`] : []),
+          ...(stage.format === 'round_robin' ? [`${seriesPerRound(stage)} series each entrant a round`] : []),
           titleOf(MAP_RULES, stage.map_rule).toLowerCase(),
           titleOf(SCHEDULING_MODES, stage.scheduling_mode).toLowerCase(),
           stage.advance_count ? `${stage.advance_count} advance` : 'nobody advances',

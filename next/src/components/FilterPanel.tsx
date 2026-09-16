@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,11 @@ export function FilterPanel({
   summary?: React.ReactNode;
 }) {
   const events = [...seasons].sort((a, b) => b.id - a.id);
-  const mdAndUp = useBreakpoint(MD_AND_UP);
+  // Server and first paint agree on the phone layout; the desktop tree only mounts once
+  // hydrated, so the layout never flips right after hydration.
+  const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
+  const isDesktop = useBreakpoint(MD_AND_UP);
+  const mdAndUp = hydrated && isDesktop;
   const [open, setOpen] = useState(false);
   const expanded = mdAndUp || open;
   const activeCount =

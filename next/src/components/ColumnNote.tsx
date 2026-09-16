@@ -29,7 +29,8 @@ export function ColumnNote({
         <TooltipTrigger
           render={
             // a tap opens it as well as a hover, so the note is reachable on a phone
-            <span
+            <button
+              type="button"
               className="note-icon ml-1 cursor-help opacity-60 hover:opacity-100"
               onClick={(event) => {
                 event.stopPropagation();

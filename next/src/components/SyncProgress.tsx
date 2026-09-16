@@ -21,7 +21,7 @@ export function SyncProgress({ caption = "", stamp = "" }: { caption?: string; s
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
       {/* a tap opens it as well as a hover, so the stamp is reachable on a phone */}
-      <TooltipTrigger render={<div className="text-xs text-muted-foreground" onClick={() => setOpen((o) => !o)} />}>{caption}</TooltipTrigger>
+      <TooltipTrigger render={<button type="button" className="text-xs text-muted-foreground" onClick={() => setOpen((o) => !o)} />}>{caption}</TooltipTrigger>
       <TooltipContent>{stamp}</TooltipContent>
     </Tooltip>
   );

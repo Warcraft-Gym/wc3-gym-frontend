@@ -34,8 +34,8 @@ export const useSeasonStore = defineStore({
         },
         async fetchSeasons() {
             const league = await this.gnlLeague();
-            const resp = await fetchWrapper.get(`${backendUrl}/events?league_id=${league.id}`);
-            this.seasons = resp.map(asSeason);
+            const resp = await fetchWrapper.get(`${backendUrl}/events?league_id=${league.id}&kind=gnl`);
+            this.seasons = resp.sort((a, b) => a.id - b.id).map(asSeason);
             return this.seasons;
         },
         async fetchSeason(season_id){

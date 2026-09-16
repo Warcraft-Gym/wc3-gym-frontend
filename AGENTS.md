@@ -26,3 +26,4 @@ The review that merges the pull request repeats step 1.
 - `npm test` runs the tests and `npx vite build` builds the app. There is no CI on a pull request, so run both before you push.
 - The code rules live in the bundle: [code style](docs/okf/conventions/code-style.md), [testing](docs/okf/conventions/testing.md), [git and pull requests](docs/okf/conventions/git-and-pull-requests.md).
 - `just okf-validate` checks the bundle with a third-party OKF validator. `just okf-drift` lists the concepts to re-read after a code change.
+- A pull request that changes a page, a store action, a contract or a decision rewrites the concept in `docs/okf/` that states it, in the same pull request.

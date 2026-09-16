@@ -142,14 +142,19 @@ export const leaguePayload = (form) => ({
 
 // How an event is named anywhere outside its own page: the league, a middle dot, the
 // name — "GNL · Season 18" — and the name alone when the event carries no league or
-// already opens with the league's short name ("GNL S18"). The reads answer the league
-// under `league_short_name`; a page that loaded the league row passes it instead. Rows
-// that carry a flat event name, the trophies and the head-to-head meetings, say
-// `season_name`.
-export const eventLabel = (event, league = null) => {
+// already opens with the league's short name ("GNL S18"). A wide screen reads the long
+// league name, "Gym Newbie League · Season 18"; a phone keeps the short one. The reads
+// answer the league under `league_short_name` and `league_name`; a page that loaded the
+// league row passes it instead. Rows that carry a flat event name, the trophies and the
+// head-to-head meetings, say `season_name`.
+// ponytail: the width is read per call, not watched; a resize across 960px shows on the next render
+const wide = () => (typeof window === 'undefined' ? false : window.matchMedia('(min-width: 960px)').matches);
+export const eventLabel = (event, league = null, { long = wide() } = {}) => {
   const name = String(event?.name ?? event?.season_name ?? '');
   const short = String(league?.short_name || league?.name || event?.league_short_name || '');
-  if (!short) return name;
-  if (!name) return short;
-  return name.toLowerCase().startsWith(short.toLowerCase()) ? name : `${short} · ${name}`;
+  const full = String(league?.name || event?.league_name || '');
+  const prefix = (long && full) || short;
+  if (!prefix) return name;
+  if (!name) return prefix;
+  return name.toLowerCase().startsWith(short.toLowerCase()) ? name : `${prefix} · ${name}`;
 };

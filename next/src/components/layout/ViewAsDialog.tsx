@@ -58,12 +58,13 @@ export function ViewAsDialog({ onOpenChange }: { onOpenChange: (open: boolean) =
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[400px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>View as</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <ToggleGroup
+            aria-label="Role"
             className="w-full"
             value={[viewRole]}
             onValueChange={(value) => value[0] && setViewRole(value[0])}

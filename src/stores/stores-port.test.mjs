@@ -23,8 +23,8 @@ const source = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 // node loads no TypeScript, so the check reads the source of both sides
 for (const [vue, ported] of Object.entries(PORTS)) {
   test(`${ported} answers every action of ${vue}`, () => {
-    const actions = names(source(`../../../src/stores/${vue}`));
-    const text = source(`./${ported}`);
+    const actions = names(source(`./${vue}`));
+    const text = source(`../../next/src/stores/${ported}`);
     const have = new Set(names(text));
     assert.ok(actions.length > 0, `${vue} lists no action`);
     for (const action of actions) assert.ok(have.has(action), `${ported} is missing ${action}`);

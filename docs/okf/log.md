@@ -1,5 +1,10 @@
 # Bundle history
 
+## 2026-09-15
+
+* **Update**: team identities use league-scoped routes; rosters, captains, availability, series searches, fantasy tiers and fantasy breakdowns use event-scoped routes.
+* **Update**: the season and ladder stores consume the canonical event routes, select the GNL league for list and create, and adapt the common event phase for the season pages.
+
 ## 2026-09-14
 
 * **Update**: a tag vocabulary per area, enforced by the test; `resource` and `stale_after` where they apply; `# Examples` on the session answer, the error envelope, the paged list and the result report; a Start here by question guide that doubles as the benchmark; `just okf-drift`.

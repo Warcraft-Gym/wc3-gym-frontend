@@ -98,7 +98,7 @@ function request(method) {
 }
 
 // no bearer on purpose: the Vercel edge caches this open read, never a request with one
-const EDGE_CACHED = /\/seasons\/\d+\/ladder$/;
+const EDGE_CACHED = /\/events\/\d+\/ladder$/;
 
 // exported so the raw FormData requests can send the same bearer
 export async function authHeader(method, url) {

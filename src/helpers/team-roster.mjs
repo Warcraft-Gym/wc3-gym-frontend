@@ -1,4 +1,4 @@
-// The roster of one team in one event, off GET /teams/{id}/seasons/{event_id}. Both
+// The roster of one team in one event, off GET /events/{event_id}/teams/{id}. Both
 // team pages read the same two lists from the same payload, so the shape lives here.
 // JSON object keys are text, so the event id is read as text.
 

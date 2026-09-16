@@ -4,7 +4,7 @@ title: Players and stats
 description: The players list, one player's page with the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../src/views/PlayersView.vue
 tags: [pages, players]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: openai/gpt-6, at: 2026-09-15T16:51:45Z }
 sources:
   - id: players
     resource: ../../../src/views/PlayersView.vue
@@ -56,10 +56,10 @@ sources:
 | the edit dialog, no store | `PUT /user-info` (the owner editing their own row) |
 | `player.deletePlayer` | `DELETE /users/{id}` |
 | `player.syncW3CPlayer` | `POST /users/{id}/w3c-sync` |
-| `season.addUserSignup` | `POST /seasons/{id}/signups` |
+| `season.addUserSignup` | `POST /events/{id}/signups` |
 | `player_career_stats.update` | `PUT /stats/career/{id}` |
 | `player_career_stats.delete` | `DELETE /stats/career/{id}` |
-| `ladder.syncSeason` | `POST /seasons/{id}/ladder-sync` |
+| `ladder.syncSeason` | `POST /events/{id}/ladder-sync` |
 | `availability.setPlayerAvailability` | `PUT /player-availability` |
 | the schedule and report dialogs | see [fixtures and series](fixtures-and-series.md) |
 

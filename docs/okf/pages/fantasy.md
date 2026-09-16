@@ -4,7 +4,7 @@ title: Fantasy
 description: The fantasy leaderboard, the bets, the player tiers and the member's own fantasy team and bets.
 resource: ../../../src/views/FantasyLeaderboardView.vue
 tags: [pages, fantasy]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: leaderboard
     resource: ../../../src/views/FantasyLeaderboardView.vue
@@ -56,8 +56,8 @@ Every page carries the season picker; the picked season is shared across the fan
 | `fantasy.createBet` | `POST /fantasy/bets` |
 | `fantasy.updateBet` | `PUT /fantasy/bets/{id}` |
 | `fantasy.deleteBet` | `DELETE /fantasy/bets/{id}` |
-| `player.updateFantasyTiers` | `PUT /fantasy/tiers?season_id={id}` |
-| `ladder.syncSeason` | `POST /seasons/{id}/ladder-sync` |
+| `player.updateFantasyTiers` | `PUT /events/{id}/fantasy/tiers` |
+| `ladder.syncSeason` | `POST /events/{id}/ladder-sync` |
 | `fantasy.public_createFantasyTeam` | `POST /fantasy-team` |
 | `fantasy.public_createBet` | `POST /fantasy-bet` |
 | `fantasy.public_updateBet` | `PUT /fantasy-bet/{id}` |

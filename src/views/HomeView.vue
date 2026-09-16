@@ -30,7 +30,7 @@ const signupEvent = ref(null);
 const dialog = ref(null);
 
 // /me/events names every published event of every kind with the caller's own state and
-// its one action; the /seasons row adds the rounds and the round count a GNL card reads
+// its one action; the GNL /events row adds the rounds and the round count its card reads
 const cards = computed(() => homeCards({ events: myEvents.value, me: me.value, seasons: seasons.value }));
 
 // An event date is a calendar day, so it reads in UTC

@@ -13,7 +13,7 @@ export const useLadderStore = defineStore({
     actions: {
         // sent without a bearer so the edge can cache it (EDGE_CACHED in fetch-wrapper)
         async seasonLadder(season_id) {
-            const ladder = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/ladder`);
+            const ladder = await fetchWrapper.get(`${backendUrl}/events/${season_id}/ladder`);
             this.ladders[season_id] = ladder;
             return ladder;
         },
@@ -28,7 +28,7 @@ export const useLadderStore = defineStore({
             try {
                 while (offset !== null) {
                     // No limit is sent, so the server picks the chunk size from its worker count
-                    const chunk = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/ladder-sync?offset=${offset}`);
+                    const chunk = await fetchWrapper.post(`${backendUrl}/events/${season_id}/ladder-sync?offset=${offset}`);
                     result.synced.push(...(chunk.synced ?? []));
                     result.skipped.push(...(chunk.skipped ?? []));
                     result.failed.push(...(chunk.failed ?? []));

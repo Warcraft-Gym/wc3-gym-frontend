@@ -125,7 +125,7 @@ export const bandNames = (divisions = []) => [...divisions]
   .map((division, index) => division.name || `Division ${division.position ?? index + 1}`).reverse();
 
 // The roster every team entrant fields for the event, keyed by entrant id, so a series
-// box prints it under the team name. GET /teams/season/{event_id} answers the teams.
+// box prints it under the team name. GET /events/{event_id}/teams answers the teams.
 export function rostersByEntrant(entrants = [], teams = [], eventId = null) {
   const byTeam = new Map(teams.map((team) => [team.id, teamRoster(team, eventId)]));
   return Object.fromEntries(entrants

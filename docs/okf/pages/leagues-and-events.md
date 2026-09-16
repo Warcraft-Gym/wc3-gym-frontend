@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../src/views/LeaguesView.vue
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T17:00:00Z }
 sources:
   - id: leagues
     resource: ../../../src/views/LeaguesView.vue
@@ -42,6 +42,8 @@ sources:
 # What it does
 
 A league is what repeats. An event is one run of it: a GNL season, a KOTH night, a cup, or a sign-up list. The admin side of these pages is in [event management](event-management.md).
+
+Outside its own page an event is named by its league and its name, "GNL · Season 18". A wide screen reads the long league name, "Gym Newbie League · Season 18"; a phone keeps the short one. An event whose name already opens with the short name, "GNL S18", is named alone.
 
 **Leagues (`/leagues`).** One row per league: name, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
 

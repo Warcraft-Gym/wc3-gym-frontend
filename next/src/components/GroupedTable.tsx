@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
@@ -53,7 +53,7 @@ export function GroupedTable<G extends GroupedRow>({
 
   return (
     <div className={cn("table-scroll grouped-table overflow-x-auto", className)}>
-      <Table>
+      <table className="w-full caption-bottom text-sm">
         <TableHeader>
           <TableRow>
             <TableHead style={{ width: "40px" }} />
@@ -80,7 +80,7 @@ export function GroupedTable<G extends GroupedRow>({
             </TableRow>
           ) : null}
         </TableBody>
-      </Table>
+      </table>
     </div>
   );
 }

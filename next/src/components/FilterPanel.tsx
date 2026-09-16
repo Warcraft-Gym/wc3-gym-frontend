@@ -103,9 +103,8 @@ export function FilterPanel({
           <Select
             value={selectedSeasonFilter}
             onValueChange={(value) => onSelectedSeasonFilterChange?.(value as number | null)}
-            aria-label="Filter by events"
           >
-            <SelectTrigger className="w-full md:w-[220px]">
+            <SelectTrigger aria-label="Filter by events" className="w-full md:w-[220px]">
               <Icon name="mdi-calendar" className="text-muted-foreground" />
               <SelectValue placeholder="Filter by events" />
             </SelectTrigger>

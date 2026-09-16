@@ -3,10 +3,9 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type SyncResult = {
-  synced?: any[];
-  skipped?: any[];
+  synced?: unknown[];
+  skipped?: unknown[];
   failed?: { id: number | string; name: string; battleTag?: string | null; reason: string }[];
   total?: number;
 };

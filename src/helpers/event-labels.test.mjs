@@ -45,6 +45,16 @@ test('an event name carries its league, and drops it when the name already opens
   assert.equal(eventLabel({ league_short_name: 'GNL' }), 'GNL');
 });
 
+test('a wide screen reads the long league name, and a phone or a missing one keeps the short', () => {
+  const season = { name: 'Season 18', league_short_name: 'GNL', league_name: 'Gym Newbie League' };
+  assert.equal(eventLabel(season, null, { long: true }), 'Gym Newbie League \u00b7 Season 18');
+  assert.equal(eventLabel(season, null, { long: false }), 'GNL \u00b7 Season 18');
+  assert.equal(eventLabel({ ...season, league_name: null }, null, { long: true }), 'GNL \u00b7 Season 18');
+  assert.equal(eventLabel({ ...season, name: 'GNL S18' }, null, { long: true }), 'GNL S18');
+  assert.equal(eventLabel({ name: 'Season 18' }, { name: 'Gym Newbie League', short_name: 'GNL' }, { long: true }), 'Gym Newbie League \u00b7 Season 18');
+  assert.equal(eventLabel(season), 'GNL \u00b7 Season 18');  // node has no matchMedia, so a test reads narrow
+});
+
 test('a GNL season phase is named and coloured, and stays out of the events filter', () => {
   assert.equal(STATE_LABEL.complete, 'Complete');
   assert.equal(STATE_LABEL.finished, 'Finished');

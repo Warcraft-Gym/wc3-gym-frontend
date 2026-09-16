@@ -20,7 +20,7 @@ const PORTS = {
 const names = (text) => [...text.matchAll(/async (\w+)\(/g)].map((match) => match[1]);
 const source = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
-// node loads no TypeScript, so the check reads the source of both sides
+// node loads no TypeScript, so the check reads the source of both sides; the Vue store is the oracle
 for (const [vue, ported] of Object.entries(PORTS)) {
   test(`${ported} answers every action of ${vue}`, () => {
     const actions = names(source(`./${vue}`));

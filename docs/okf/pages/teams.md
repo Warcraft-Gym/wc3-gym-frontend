@@ -4,7 +4,7 @@ title: Teams
 description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's round grid.
 resource: ../../../src/views/TeamsView.vue
 tags: [pages, teams]
-generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T19:30:00Z }
 sources:
   - id: teams
     resource: ../../../src/views/TeamsView.vue
@@ -48,15 +48,17 @@ sources:
 
 | Store action | Route |
 |---|---|
-| `team.createTeam` | `POST /teams` |
-| `team.updateTeam` | `PUT /teams/{id}` |
-| `team.uploadTeamImage` | `POST /teams/{id}/image` |
-| `team.deleteTeam` | `DELETE /teams/{id}` |
+| `team.createTeam` | `POST /leagues/{league_id}/teams` |
+| `team.updateTeam` | `PUT /leagues/{league_id}/teams/{id}` |
+| `team.uploadTeamImage` | `POST /leagues/{league_id}/teams/{id}/image` |
+| `team.deleteTeam` | `DELETE /leagues/{league_id}/teams/{id}` |
 | `team.setCaptains` | `PUT /events/{season_id}/teams/{id}/captains` |
 | `team.addPlayersToTeamForSeason` | `POST /events/{season_id}/teams/{id}/players` |
 | `team.removePlayersFromTeamForSeason` | `DELETE /events/{season_id}/teams/{id}/players` |
 | `team.syncPlayersW3C` | `POST /events/{season_id}/teams/{id}/ladder-sync` |
 | `availability.setTeamAvailability` | `PUT /events/{season_id}/teams/{id}/availability` |
+
+A team belongs to one league. The team store reads the league from the team row, or resolves the GNL league when the page gives none, and the team lists read `GET /leagues/{league_id}/teams` and `GET /events/{season_id}/teams`.
 
 # Rules
 

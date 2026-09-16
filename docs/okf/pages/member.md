@@ -4,7 +4,7 @@ title: Member self-service
 description: The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
 resource: ../../../src/views/HomeView.vue
 tags: [pages]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T22:30:00Z }
 sources:
   - id: home
     resource: ../../../src/views/HomeView.vue
@@ -39,7 +39,7 @@ sources:
 
 # What it does
 
-**Home (`/`).** One card per event that `GET /me/events` answers, in date order. A finished event stays off the page unless `/me` still lists the member in that season. A KOTH league takes one card only, for tonight's night. A card shows the date tile, the event label, a status line (the round in play for a GNL member, the open check-in, or the dates), the state chip, and one action. The action is the word the backend picked for the caller: sign up, withdraw, check in, or view. A GNL season carries a link instead: "Sign up" or "Ask to join" while the member is not in, "Your series" once they are. Under a GNL card sit the links to the team, the report, the upcoming series, the ladder, the players, the fantasy team, and the availability page when the season's scheduling tools are on. When the backend hints that the member's own blocks cover the next round, the card shows the hint and a button to confirm they cannot play. Once per browser session a dialog lists the events the member can still sign up for. An admin also sees three counters, teams, seasons and players, each a link to its page.
+**Home (`/`).** One card per event that `GET /me/events` answers, in date order. A finished event stays off the page unless `/me` still lists the member in that season. A KOTH league takes one card only, for tonight's night. A card shows the date tile, the event label, a status line (the round in play for a GNL member, the open check-in, or the dates), the state chip, and one action. The action is the word the backend picked for the caller: sign up, withdraw (the confirm says every race the member entered goes; one race at a time is the event page's job), check in, or view. A GNL season carries a link instead: "Sign up" or "Ask to join" while the member is not in, "Your series" once they are. Under a GNL card sit the links to the team, the report, the upcoming series, the ladder, the players, the fantasy team, and the availability page when the season's scheduling tools are on. When the backend hints that the member's own blocks cover the next round, the card shows the hint and a button to confirm they cannot play. Once per browser session a dialog lists the events the member can still sign up for. An admin also sees three counters, teams, seasons and players, each a link to its page.
 
 **Profile (`/profile`).** The one route a guest may open. A guest reads a card that offers the Discord invite from the settings and a "Check again" button, which reads `/me` once more. A member with no player row reads the signup form. A member with a player row is sent to their own player page.
 

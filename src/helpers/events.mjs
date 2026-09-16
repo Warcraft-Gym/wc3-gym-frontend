@@ -131,11 +131,13 @@ export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
 // The action word the home card and the event page both act on: a withdraw asks once,
 // then the store call and the reload. It answers the sentence a failure reads, or null,
 // so each page keeps its own loading flag. `sign_up` and `view` never reach here, because
-// one opens its own dialog and the other scrolls its own draw.
-export async function actOnEvent(action, { store, eventId, row, reload }) {
-  if (action === 'withdraw' && !globalThis.confirm('Withdraw from this event?')) return null;
+// one opens its own dialog and the other scrolls its own draw. A withdraw with a race
+// gives back that race alone; without one, every race the caller entered goes.
+export async function actOnEvent(action, { store, eventId, row, reload, race = null, raceName = race }) {
+  const question = race ? `Withdraw ${raceName}?` : 'Withdraw from this event? Every race you entered is withdrawn.';
+  if (action === 'withdraw' && !globalThis.confirm(question)) return null;
   try {
-    if (action === 'withdraw') await store.withdraw(eventId);
+    if (action === 'withdraw') await store.withdraw(eventId, race);
     if (action === 'check_in') await store.checkInRow(row);
     await reload();
     return null;

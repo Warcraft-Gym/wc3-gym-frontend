@@ -244,7 +244,7 @@ test('the blocked row carries its hint on the card, and answering the round clea
 test('the shared act withdraws once the reader says so, checks in, and names a failure', async () => {
   const calls = [];
   const store = {
-    withdraw: (id) => calls.push(['withdraw', id]),
+    withdraw: (id, race = null) => calls.push(['withdraw', id, race]),
     checkInRow: (entry) => calls.push(['check_in', entry.id]),
   };
   const reload = () => calls.push(['reload']);
@@ -257,7 +257,14 @@ test('the shared act withdraws once the reader says so, checks in, and names a f
   globalThis.confirm = () => true;
   assert.equal(await actOnEvent('withdraw', { store, eventId: 7, row: null, reload }), null);
   assert.equal(await actOnEvent('check_in', { store, eventId: 7, row: { id: 3 }, reload }), null);
-  assert.deepEqual(calls, [['withdraw', 7], ['reload'], ['check_in', 3], ['reload']]);
+  assert.deepEqual(calls, [['withdraw', 7, null], ['reload'], ['check_in', 3], ['reload']]);
+
+  const asked = [];
+  globalThis.confirm = (q) => { asked.push(q); return true; };
+  calls.length = 0;
+  assert.equal(await actOnEvent('withdraw', { store, eventId: 7, row: null, reload, race: 'HU', raceName: 'Human' }), null);
+  assert.deepEqual(calls, [['withdraw', 7, 'HU'], ['reload']]);  // one race gives back that race alone
+  assert.deepEqual(asked, ['Withdraw Human?']);
 
   const broken = { withdraw: () => { throw new Error('the server said no'); } };
   assert.equal(await actOnEvent('withdraw', { store: broken, eventId: 7, row: null, reload }),

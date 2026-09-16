@@ -18,7 +18,7 @@ const members = ({ ladders, syncProgress }: LadderState) => {
     syncProgress,
     // sent without a bearer so the edge can cache it (EDGE_CACHED in fetch-wrapper)
     async seasonLadder(season_id: number) {
-      const ladder = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/ladder`);
+      const ladder = await fetchWrapper.get(`${backendUrl}/events/${season_id}/ladder`);
       patch({ ladders: { ...ladderBox.get().ladders, [season_id]: ladder } });
       return ladder;
     },
@@ -33,7 +33,7 @@ const members = ({ ladders, syncProgress }: LadderState) => {
       try {
         while (offset !== null) {
           // No limit is sent, so the server picks the chunk size from its worker count
-          const chunk = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/ladder-sync?offset=${offset}`);
+          const chunk = await fetchWrapper.post(`${backendUrl}/events/${season_id}/ladder-sync?offset=${offset}`);
           result.synced.push(...(chunk.synced ?? []));
           result.skipped.push(...(chunk.skipped ?? []));
           result.failed.push(...(chunk.failed ?? []));

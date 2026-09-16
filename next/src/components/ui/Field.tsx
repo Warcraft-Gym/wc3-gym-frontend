@@ -1,8 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-/** A labelled control with its hint under it. A `rules` list becomes the native
- *  `required`, `min`, `max` and `pattern` on the control itself. */
+/** A labelled control with its hint under it. */
 export function Field({
   label,
   hint,

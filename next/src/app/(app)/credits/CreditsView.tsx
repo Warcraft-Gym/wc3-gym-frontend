@@ -3,7 +3,7 @@ import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 
 export function CreditsView() {
-  // ?kit=1 mounts the shared components with sample props, so a components-only unit renders.
+  // U1 mounts the component kit in this section.
   const kit = useSearchParams().get("kit") === "1";
   return (
     <div className="mx-auto max-w-[700px] p-4">

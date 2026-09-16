@@ -53,7 +53,7 @@ export function Combobox<T extends ComboboxItem>({
                 key={item.value}
                 value={item.title}
                 onSelect={() => {
-                  onChange(item.value === value ? null : item.value);
+                  onChange(item.value);
                   setOpen(false);
                 }}
               >

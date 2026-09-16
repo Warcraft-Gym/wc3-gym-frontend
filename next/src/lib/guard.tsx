@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { saveReturnUrl, takeReturnUrl } from "@/helpers/return-url.mjs";
 import { useAuth, useSeasonStore } from "@/stores";
@@ -11,6 +11,8 @@ export function Guard({ children }: { children: React.ReactNode }) {
   const search = useSearchParams();
   const router = useRouter();
   const { me } = useAuth();
+  // useAuth answers the signed-out server snapshot until hydration, so the redirect waits for it
+  const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const { ensureSeasons } = useSeasonStore();
   const meta = metaOf(path);
 
@@ -32,7 +34,7 @@ export function Guard({ children }: { children: React.ReactNode }) {
   const allowed = !signedInOnLogin && (meta.role === "public" || (!!me && canSeeRole(me.role, meta.role)));
 
   useEffect(() => {
-    if (!seasonsReady || allowed) return;
+    if (!hydrated || !seasonsReady || allowed) return;
     if (signedInOnLogin) return router.replace(takeReturnUrl(homePath(me!.role)));
     if (!me) {
       saveReturnUrl(search.size ? `${path}?${search}` : path);
@@ -41,7 +43,7 @@ export function Guard({ children }: { children: React.ReactNode }) {
     // a guest is not in the Discord server yet: the profile shows the join card, not a locked door
     router.replace(me.role === "guest" ? "/profile" : `/no-access?role=${meta.role}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seasonsReady, allowed, signedInOnLogin, me, path]);
+  }, [hydrated, seasonsReady, allowed, signedInOnLogin, me, path]);
 
-  return seasonsReady && allowed ? children : null;
+  return hydrated && seasonsReady && allowed ? children : null;
 }

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { useAuth as useClerk } from "@clerk/clerk-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { saveReturnUrl, takeReturnUrl } from "@/helpers/return-url.mjs";
 import { useAuthStore, useSeasonStore, setNavigate, useClerkAuth } from "@/stores";
 import { homePath, metaOf } from "@/lib/routes";
@@ -11,8 +11,6 @@ import { homePath, metaOf } from "@/lib/routes";
 export function ClerkBridge() {
   const clerk = useClerk();
   const router = useRouter();
-  const path = usePathname();
-  const search = useSearchParams();
   const auth = useAuthStore();
   const { ensureSeasons } = useSeasonStore();
 
@@ -23,10 +21,12 @@ export function ClerkBridge() {
     if (!clerk.isLoaded || auth.user) return; // the legacy admin token owns its own session
     let stale = false;
     (async () => {
+      // the location is read here, not tracked, so a navigation does not fetch /me again
+      const { pathname: path, search } = window.location;
       if (!clerk.isSignedIn) {
         auth.clear();
         if (metaOf(path).role !== "public") {
-          saveReturnUrl(search.size ? `${path}?${search}` : path);
+          saveReturnUrl(`${path}${search}`);
           router.push("/login");
         }
         return;
@@ -45,7 +45,7 @@ export function ClerkBridge() {
     })();
     return () => { stale = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clerk.isLoaded, clerk.isSignedIn, path]);
+  }, [clerk.isLoaded, clerk.isSignedIn]);
 
   return null;
 }

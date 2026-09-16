@@ -15,7 +15,7 @@ export function RaceIcon({ raceIdentifier, size = "1.4em" }: { raceIdentifier?: 
       <TooltipTrigger
         render={
           // a tap opens it as well as a hover, so the name is reachable on a phone
-          <img src={src} alt="" role="img" aria-label={currentRace.name} style={{ width: box, height: box }} className="shrink-0 object-cover" onClick={() => setOpen((o) => !o)} />
+          <img src={src} alt={currentRace.name} style={{ width: box, height: box }} className="shrink-0 object-cover" onClick={() => setOpen((o) => !o)} />
         }
       />
       <TooltipContent>{currentRace.name}</TooltipContent>

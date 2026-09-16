@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/Icon";
@@ -155,10 +155,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="Theme"><Icon name={themeIcon} /></Button>} />
           <DropdownMenuContent align="end">
             {THEMES.map((t) => (
-              <DropdownMenuItem key={t.value} onClick={() => setThemeMode(t.value)}>
+              <DropdownMenuCheckboxItem key={t.value} checked={t.value === themeMode} onClick={() => setThemeMode(t.value)}>
                 <Icon name={t.icon} />
                 {t.title}
-              </DropdownMenuItem>
+              </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>

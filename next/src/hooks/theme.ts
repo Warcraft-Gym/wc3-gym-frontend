@@ -5,12 +5,12 @@ export type ThemeMode = "light" | "dark" | "system";
 
 const listeners = new Set<() => void>();
 const announce = () => listeners.forEach((l) => l());
+// One registration for every reader: a component that unmounts must not silence the rest
+if (typeof window !== "undefined") window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", announce);
 const subscribe = (l: () => void) => {
   listeners.add(l);
-  if (typeof window !== "undefined") window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", announce);
   return () => {
     listeners.delete(l);
-    if (typeof window !== "undefined") window.matchMedia("(prefers-color-scheme: dark)").removeEventListener("change", announce);
   };
 };
 

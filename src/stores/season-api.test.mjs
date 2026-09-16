@@ -13,8 +13,11 @@ test('the season clients use the event API and no deprecated season route', () =
   const fantasy = source('./fantasy.store.js');
   const players = source('./player.store.js');
   const fetchWrapper = source('../helpers/fetch-wrapper.js');
+  // The Next port calls the same routes
+  const nextSeason = source('../../next/src/stores/season.ts');
+  const nextLadder = source('../../next/src/stores/ladder.ts');
 
-  for (const text of [season, ladder, teams, availability, series, fantasy, players, fetchWrapper]) {
+  for (const text of [season, ladder, teams, availability, series, fantasy, players, fetchWrapper, nextSeason, nextLadder]) {
     assert.doesNotMatch(text, /\/seasons(?:[/?`])/);
     assert.doesNotMatch(text, /teams\/season|series\/season|\/season\/\$\{/);
   }
@@ -25,4 +28,6 @@ test('the season clients use the event API and no deprecated season route', () =
   assert.match(teams, /\/events\/\$\{season_id\}\/teams/);
   assert.match(series, /\/events\/\$\{season_id\}\/series\/search/);
   assert.match(fetchWrapper, /\\\/events\\\/\\d\+\\\/ladder/);
+  assert.match(nextSeason, /\/events\?league_id=/);
+  assert.match(nextLadder, /\/events\/\$\{season_id\}\/ladder/);
 });

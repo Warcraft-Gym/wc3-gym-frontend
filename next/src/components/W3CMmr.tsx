@@ -14,7 +14,7 @@ export function W3CMmr({ suffix = "", sortIcon = null }: { suffix?: string; sort
     <span className="inline-flex items-baseline whitespace-nowrap">
       <img src={logo.src} alt="W3C" className="mr-1 h-[1.4em] shrink-0 translate-y-[3%] object-contain align-baseline" />
       <span>MMR{suffix}</span>
-      {sortIcon ? <Icon name={sortIcon} size={12} className="ml-1" /> : null}
+      {sortIcon ? <Icon name={sortIcon} size="1em" className="ml-1" /> : null}
     </span>
   );
 }

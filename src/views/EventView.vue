@@ -25,8 +25,15 @@
           prepend-icon="mdi-check">
           Checked in
         </v-chip>
+        <!-- A player on more than one race withdraws one race at a time -->
+        <template v-else-if="button && row?.action === 'withdraw' && held.length > 1">
+          <v-btn v-for="race in held" :key="race" :color="button.color" :variant="button.variant" size="small"
+            :prepend-icon="button.icon" :loading="acting === race" @click="act(race)">
+            Withdraw {{ raceName(race) }}
+          </v-btn>
+        </template>
         <v-btn v-else-if="button" :color="button.color" :variant="button.variant" size="small"
-          :prepend-icon="button.icon" :loading="acting" @click="act">
+          :prepend-icon="button.icon" :loading="acting === true" @click="act()">
           {{ button.text }}
         </v-btn>
         <v-btn v-else-if="anonymous && event.signups_open && keepsEntrants" color="primary" variant="elevated" size="small"
@@ -188,7 +195,7 @@ const entrants = ref([]);
 const rosters = ref({});  // the players each team entrant fields, so a series box names them
 const row = ref(null);  // the caller's own row of /me/events; null for a reader who is not logged in
 const loading = ref(true);
-const acting = ref(false);
+const acting = ref(false);  // true, or the race on its way out
 const answering = ref(false);
 const stageData = ref({});
 const dialog = ref(null);
@@ -250,13 +257,13 @@ const logIn = () => {
 
 // One action word, one thing to do. The dialog and the draw are this page's own; every
 // other word goes through the shared act.
-const act = async () => {
+const act = async (race = null) => {
   const action = row.value?.action;
   if (action === 'sign_up') return dialog.value.open();
   if (action === 'view') return draw.value?.scrollIntoView({ behavior: 'smooth' });
-  acting.value = true;
+  acting.value = race ?? true;
   error.value = await actOnEvent(action, {
-    store, eventId: event.value.id, row: row.value, reload,
+    store, eventId: event.value.id, row: row.value, reload, race, raceName: race && raceName(race),
   });
   acting.value = false;
 };

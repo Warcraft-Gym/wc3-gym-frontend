@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/Icon";
 import { navItems } from "@/components/layout/nav-items";
+import { ViewAsDialog } from "@/components/layout/ViewAsDialog";
 import { ClerkBridge } from "@/lib/clerk-bridge";
 import { Guard } from "@/lib/guard";
 import { useTheme } from "@/hooks/theme";
@@ -28,10 +29,13 @@ const THEMES: { value: ThemeMode; title: string; icon: string }[] = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  const { me, viewAs, logout, setViewAs } = useAuth();
+  const { me, user, viewAs, logout, setViewAs } = useAuth();
   const { slugOf } = useSeason();
   const { themeMode, activeTheme, setThemeMode } = useTheme();
   const [drawer, setDrawer] = useState(false);
+  const [viewAsOpen, setViewAsOpen] = useState(false);
+  // view-as: an admin sees the app as a lower role; the legacy token session cannot
+  const canViewAs = me?.actual_role === "admin" && !user;
 
   // The dark-ink W3C mark is made for the light theme; the dark theme takes the white original.
   const w3cMark = (activeTheme === "dark" ? w3cLogoWhite : w3cLogo).src;
@@ -144,6 +148,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href={profileTo} />}><Icon name="mdi-account" />Profile</DropdownMenuItem>
               {me?.user ? <DropdownMenuItem render={<Link href="/availability" />}><Icon name="mdi-calendar-month" />Availability</DropdownMenuItem> : null}
+              {canViewAs ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setViewAsOpen(true)}><Icon name="mdi-eye-outline" />View as…</DropdownMenuItem>
+                </>
+              ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => logout()}><Icon name="mdi-logout" />Logout</DropdownMenuItem>
             </DropdownMenuContent>
@@ -173,6 +183,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </AlertDescription>
           </Alert>
         ) : null}
+        {viewAsOpen ? <ViewAsDialog onOpenChange={setViewAsOpen} /> : null}
         <div className="mx-auto w-full max-w-[1280px] px-2 py-3 md:px-4">
           <Guard>{children}</Guard>
         </div>

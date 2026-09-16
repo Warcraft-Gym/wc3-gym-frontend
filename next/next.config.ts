@@ -6,7 +6,15 @@ import type { NextConfig } from "next";
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const nextConfig: NextConfig = {
-  turbopack: { root: repoRoot },
+  turbopack: {
+    root: repoRoot,
+    // A helper one folder up sees no node_modules of its own, so its packages are named here.
+    // ponytail: one line per package the helpers import; the list ends when they move under next/
+    resolveAlias: {
+      luxon: "./node_modules/luxon",
+      "country-code-info/data/countries.json": "./node_modules/country-code-info/data/countries.json",
+    },
+  },
   async rewrites() {
     // The same dev proxy vite.config.js runs: /api/* reaches the backend with the prefix stripped.
     const target = process.env.PROXY_TARGET || "http://localhost:5002";

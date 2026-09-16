@@ -7,6 +7,7 @@ import { RaceMmrChips } from "@/components/RaceMmrChips";
 import { VsRaces } from "@/components/VsRaces";
 import { W3CIcon } from "@/components/W3CIcon";
 import { W3CMmr } from "@/components/W3CMmr";
+import { Kit } from "./Kit";
 
 // Sample rows for the kit section, shaped like the backend rows these components read.
 const kitPlayer = {
@@ -49,6 +50,8 @@ export function CreditsView() {
 
       {kit ? (
         <section id="kit">
+          <Kit />
+
           <h2 className="mt-6 mb-2 text-lg">Badge kit</h2>
 
           <h3 className="mt-4 mb-1">W3CIcon</h3>

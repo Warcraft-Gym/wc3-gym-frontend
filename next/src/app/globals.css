@@ -209,6 +209,7 @@
     linear-gradient(to left, rgb(var(--v-theme-surface)) 30%, rgba(var(--v-theme-surface), 0)) 100% 0,
     radial-gradient(farthest-side at 0 50%, rgba(var(--v-theme-on-surface), 0.2), transparent),
     radial-gradient(farthest-side at 100% 50%, rgba(var(--v-theme-on-surface), 0.2), transparent) 100% 0;
+  background-color: rgb(var(--v-theme-surface));
   background-repeat: no-repeat;
   background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
   background-attachment: local, local, scroll, scroll;
@@ -218,4 +219,11 @@
 .table-scroll th { white-space: nowrap; }
 @media (max-width: 959px) {
   .table-scroll th { white-space: normal; }
+}
+
+/* The grouped table tints its group header row and the gutter cell of every detail row, so a
+   detail row reads as part of the group above it. */
+.grouped-table .group-row > td,
+.grouped-table .detail-row > td:first-child {
+  background: rgba(var(--v-theme-on-surface), 0.04);
 }

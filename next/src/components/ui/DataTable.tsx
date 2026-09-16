@@ -10,7 +10,7 @@ import {
   useTable,
 } from "@tanstack/react-table";
 import type { ColumnDef, ColumnVisibilityState, RowData, SortingState } from "@tanstack/react-table";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +63,7 @@ export function DataTable<T extends RowData>({
 
   return (
     <div className={cn("table-scroll overflow-x-auto", className)}>
-      <Table>
+      <table className="w-full caption-bottom text-sm">
         <TableHeader>
           {table.getHeaderGroups().map((group) => (
             <TableRow key={group.id}>
@@ -106,7 +106,7 @@ export function DataTable<T extends RowData>({
             ))
           )}
         </TableBody>
-      </Table>
+      </table>
     </div>
   );
 }

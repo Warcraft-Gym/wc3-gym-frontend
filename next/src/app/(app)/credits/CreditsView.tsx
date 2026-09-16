@@ -1,6 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
+import { Kit } from "./Kit";
 
 export function CreditsView() {
   // ?kit=1 opens the component kit section.
@@ -26,7 +27,11 @@ export function CreditsView() {
         </li>
       </ul>
 
-      {kit ? <section id="kit" /> : null}
+      {kit ? (
+        <section id="kit">
+          <Kit />
+        </section>
+      ) : null}
     </div>
   );
 }

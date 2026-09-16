@@ -15,7 +15,7 @@ const patch = (part: Partial<SeasonState>) => seasonBox.set({ ...seasonBox.get()
 let leagues: Season[] = [];
 
 // A GNL season is the gnl-kind event of the GNL league
-const gnlLeague = async () => {
+export const gnlLeague = async () => {
   if (!leagues.length) leagues = await fetchWrapper.get(`${backendUrl}/leagues`);
   const league = leagues.find((row) => row.kind === "gnl");
   if (!league) throw new Error("The GNL league is not configured.");

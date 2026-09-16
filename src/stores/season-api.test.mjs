@@ -16,8 +16,12 @@ test('the season clients use the event API and no deprecated season route', () =
   // The Next port calls the same routes
   const nextSeason = source('../../next/src/stores/season.ts');
   const nextLadder = source('../../next/src/stores/ladder.ts');
+  const nextModules = [
+    'availability', 'config', 'event', 'fantasy', 'map',
+    'match', 'player', 'player_career_stats', 'series', 'team',
+  ].map((name) => source(`../../next/src/stores/${name}.ts`));
 
-  for (const text of [season, ladder, teams, availability, series, fantasy, players, fetchWrapper, nextSeason, nextLadder]) {
+  for (const text of [season, ladder, teams, availability, series, fantasy, players, fetchWrapper, nextSeason, nextLadder, ...nextModules]) {
     assert.doesNotMatch(text, /\/seasons(?:[/?`])/);
     assert.doesNotMatch(text, /teams\/season|series\/season|\/season\/\$\{/);
   }

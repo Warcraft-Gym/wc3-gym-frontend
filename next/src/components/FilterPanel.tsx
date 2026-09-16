@@ -101,6 +101,7 @@ export function FilterPanel({
 
         {expanded && showSeason ? (
           <Select
+            items={events.map((event) => ({ value: event.id, label: event.name }))}
             value={selectedSeasonFilter}
             onValueChange={(value) => onSelectedSeasonFilterChange?.(value as number | null)}
           >

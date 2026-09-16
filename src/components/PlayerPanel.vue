@@ -29,7 +29,8 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores';
 import { canSeeRole } from '@/helpers';
-import { panelLinks, panelPlayerKey } from '@/helpers/players';
+import { panelLinks } from '@/helpers/players';
+import { panelPlayerKey } from '@/helpers/player-panel.mjs';
 import PlayerProfile from '@/components/PlayerProfile.vue';
 
 const router = useRouter();

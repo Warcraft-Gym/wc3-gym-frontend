@@ -1,0 +1,221 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@mdi/font/css/materialdesignicons.css";
+@import "flagpack/dist/flagpack.css";
+
+/* A `dark:` class follows the theme the reader chose, and the system setting only when he chose
+   none: the two branches palette-style.ts writes for --v-theme-*. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) { @slot; }
+  }
+}
+
+/* Every palette token becomes a Tailwind colour, so bg-primary, text-win and border-loss
+   exist as utilities and DESIGN.md's "a theme token for every colour" rule holds.
+   palette-style.ts writes the --v-theme-* values from palette.mjs. */
+@theme inline {
+  --color-background: rgb(var(--v-theme-background));
+  --color-surface: rgb(var(--v-theme-surface));
+  --color-surface-bright: rgb(var(--v-theme-surface-bright));
+  --color-surface-light: rgb(var(--v-theme-surface-light));
+  --color-surface-variant: rgb(var(--v-theme-surface-variant));
+  --color-on-surface-variant: rgb(var(--v-theme-on-surface-variant));
+  --color-on-background: rgb(var(--v-theme-on-background));
+  --color-on-surface: rgb(var(--v-theme-on-surface));
+  --color-primary: rgb(var(--v-theme-primary));
+  --color-primary-darken-1: rgb(var(--v-theme-primary-darken-1));
+  --color-on-primary: rgb(var(--v-theme-on-primary));
+  --color-secondary: rgb(var(--v-theme-secondary));
+  --color-secondary-darken-1: rgb(var(--v-theme-secondary-darken-1));
+  --color-on-secondary: rgb(var(--v-theme-on-secondary));
+  --color-error: rgb(var(--v-theme-error));
+  --color-warning: rgb(var(--v-theme-warning));
+  --color-info: rgb(var(--v-theme-info));
+  --color-success: rgb(var(--v-theme-success));
+  --color-primary-text: rgb(var(--v-theme-primary-text));
+  --color-band: rgb(var(--v-theme-band));
+  --color-on-band: rgb(var(--v-theme-on-band));
+  --color-hero: rgb(var(--v-theme-hero));
+  --color-on-hero: rgb(var(--v-theme-on-hero));
+  --color-band-muted: rgb(var(--v-theme-band-muted));
+  --color-tag: rgb(var(--v-theme-tag));
+  --color-on-tag: rgb(var(--v-theme-on-tag));
+  --color-win: rgb(var(--v-theme-win));
+  --color-loss: rgb(var(--v-theme-loss));
+  --color-draw: rgb(var(--v-theme-draw));
+  --color-tier-1: rgb(var(--v-theme-tier-1));
+  --color-tier-2: rgb(var(--v-theme-tier-2));
+  --color-tier-3: rgb(var(--v-theme-tier-3));
+  --color-tier-4: rgb(var(--v-theme-tier-4));
+  --color-tier-5: rgb(var(--v-theme-tier-5));
+  --color-tier-6: rgb(var(--v-theme-tier-6));
+  --color-on-tier-1: rgb(var(--v-theme-on-tier-1));
+  --color-on-tier-2: rgb(var(--v-theme-on-tier-2));
+  --color-on-tier-3: rgb(var(--v-theme-on-tier-3));
+  --color-on-tier-4: rgb(var(--v-theme-on-tier-4));
+  --color-on-tier-5: rgb(var(--v-theme-on-tier-5));
+  --color-on-tier-6: rgb(var(--v-theme-on-tier-6));
+  --color-race-hu: rgb(var(--v-theme-race-hu));
+  --color-race-oc: rgb(var(--v-theme-race-oc));
+  --color-race-ne: rgb(var(--v-theme-race-ne));
+  --color-race-ud: rgb(var(--v-theme-race-ud));
+  --color-medal-gold: rgb(var(--v-theme-medal-gold));
+  --color-medal-silver: rgb(var(--v-theme-medal-silver));
+  --color-heat-1: rgb(var(--v-theme-heat-1));
+  --color-heat-2: rgb(var(--v-theme-heat-2));
+  --color-heat-3: rgb(var(--v-theme-heat-3));
+  --color-heat-4: rgb(var(--v-theme-heat-4));
+  --color-heat-5: rgb(var(--v-theme-heat-5));
+  --color-on-error: rgb(var(--v-theme-on-error));
+  --color-on-info: rgb(var(--v-theme-on-info));
+  --color-on-success: rgb(var(--v-theme-on-success));
+  --color-on-win: rgb(var(--v-theme-on-win));
+  --color-on-loss: rgb(var(--v-theme-on-loss));
+  --color-on-draw: rgb(var(--v-theme-on-draw));
+
+  /* The shadcn component names, mapped to the same palette. */
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --font-sans: var(--font-body), "Alegreya Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-heading: var(--font-display), Alegreya, Georgia, serif;
+  --font-display: var(--font-display), Alegreya, Georgia, serif;
+}
+
+/* The shadcn components read these names, so they take their colours from the same palette. */
+:root {
+  --radius: 0.25rem;
+  --background: rgb(var(--v-theme-background));
+  --foreground: rgb(var(--v-theme-on-background));
+  --card: rgb(var(--v-theme-surface));
+  --card-foreground: rgb(var(--v-theme-on-surface));
+  --popover: rgb(var(--v-theme-surface));
+  --popover-foreground: rgb(var(--v-theme-on-surface));
+  --primary: rgb(var(--v-theme-primary));
+  --primary-foreground: rgb(var(--v-theme-on-primary));
+  --secondary: rgb(var(--v-theme-secondary));
+  --secondary-foreground: rgb(var(--v-theme-on-secondary));
+  --muted: rgb(var(--v-theme-surface-light));
+  --muted-foreground: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  --accent: rgb(var(--v-theme-surface-light));
+  --accent-foreground: rgb(var(--v-theme-on-surface));
+  --destructive: rgb(var(--v-theme-error));
+  --destructive-foreground: rgb(var(--v-theme-on-error));
+  --border: rgba(var(--v-border-color), var(--v-border-opacity));
+  --input: rgba(var(--v-border-color), var(--v-border-opacity));
+  --ring: rgb(var(--v-theme-primary));
+  --chart-1: rgb(var(--v-theme-win));
+  --chart-2: rgb(var(--v-theme-loss));
+  --chart-3: rgb(var(--v-theme-draw));
+  --chart-4: rgb(var(--v-theme-primary));
+  --chart-5: rgb(var(--v-theme-secondary));
+  --sidebar: rgb(var(--v-theme-surface));
+  --sidebar-foreground: rgb(var(--v-theme-on-surface));
+  --sidebar-primary: rgb(var(--v-theme-primary));
+  --sidebar-primary-foreground: rgb(var(--v-theme-on-primary));
+  --sidebar-accent: rgb(var(--v-theme-surface-light));
+  --sidebar-accent-foreground: rgb(var(--v-theme-on-surface));
+  --sidebar-border: rgba(var(--v-border-color), var(--v-border-opacity));
+  --sidebar-ring: rgb(var(--v-theme-primary));
+}
+
+@layer base {
+  /* Alegreya Sans for body and controls; numbers use lining, equal-width digits so columns line up. */
+  html,
+  body {
+    background-color: rgb(var(--v-theme-background));
+    color: rgb(var(--v-theme-on-background));
+    font-family: var(--font-sans);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  /* Alegreya for titles and headings. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+  h1 { font-weight: 800; font-size: 2.125rem; line-height: 1.2; }
+  h2 { font-size: 1.5rem; }
+
+  /* Phones and small tablets: tighter titles. */
+  @media (max-width: 959px) {
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.3rem; }
+  }
+
+  a { color: rgb(var(--v-theme-primary-text)); }
+  a:hover { color: rgb(var(--v-theme-primary)); }
+  code, kbd { color: rgb(var(--v-theme-primary-text)); }
+}
+
+/* Vuetify built no .text-X for an on-* colour, so these four keep their own rule. */
+.text-on-band { color: rgb(var(--v-theme-on-band)); }
+.text-on-hero { color: rgb(var(--v-theme-on-hero)); }
+.text-on-primary { color: rgb(var(--v-theme-on-primary)); }
+.text-on-error { color: rgb(var(--v-theme-on-error)); }
+
+/* Every number column lines up. */
+.tnum { font-variant-numeric: lining-nums tabular-nums; }
+
+/* The look DESIGN.md asks for, over the shadcn primitives. */
+.card { background-color: rgb(var(--v-theme-surface)); border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
+.chip { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0 0.5rem; font-size: 0.75rem; line-height: 1.5rem; }
+.alert { border-inline-start: 4px solid currentColor; }
+.skeleton { background-color: rgb(var(--v-theme-surface-light)); }
+
+/* A table wider than its card shows a shadow at the hidden edge, so the reader knows it scrolls. */
+.table-scroll {
+  font-variant-numeric: lining-nums tabular-nums;
+  background:
+    linear-gradient(to right, rgb(var(--v-theme-surface)) 30%, rgba(var(--v-theme-surface), 0)),
+    linear-gradient(to left, rgb(var(--v-theme-surface)) 30%, rgba(var(--v-theme-surface), 0)) 100% 0,
+    radial-gradient(farthest-side at 0 50%, rgba(var(--v-theme-on-surface), 0.2), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgba(var(--v-theme-on-surface), 0.2), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* A column title is a short label, one line on a wide screen and wrapped on a phone. */
+.table-scroll th { white-space: nowrap; }
+@media (max-width: 959px) {
+  .table-scroll th { white-space: normal; }
+}

@@ -23,7 +23,8 @@
 <script setup>
 import { computed, inject, useAttrs } from 'vue'
 import { RouterLink } from 'vue-router'
-import { openPlayer, panelLinks, playerPath } from '@/helpers/players'
+import { panelLinks, playerPath } from '@/helpers/players'
+import { openPlayer } from '@/helpers/player-panel.mjs'
 import { raceWrapper } from '@/helpers/races.js'
 
 const props = defineProps({

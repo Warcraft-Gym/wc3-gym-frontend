@@ -4,7 +4,7 @@ title: Fixtures and series
 description: The GNL fixture page with its published and draft series, one series of any event, the map veto, the upcoming series, and the Report Result, schedule and cast dialogs.
 resource: ../../../src/views/MatchDetailsView.vue
 tags: [pages, events, series]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: match
     resource: ../../../src/views/MatchDetailsView.vue
@@ -75,7 +75,7 @@ sources:
 | `series.deleteDraftSeries` | `DELETE /draft-series/{id}` |
 | `series.deleteAllDraftSeriesForMatch` | `DELETE /draft-series/match/{match_id}` |
 | `series.promoteDraftSeries` | `POST /draft-series/{id}/promote` |
-| `team.syncPlayersW3C` | `POST /teams/{id}/seasons/{season_id}/w3c-sync` |
+| `team.syncPlayersW3C` | `POST /events/{season_id}/teams/{id}/ladder-sync` |
 | `event.setSideRoster` | `PUT /series/{id}/sides` |
 | `event.awardSeries` | `PUT /series/{id}/result-kind` |
 | the veto board, no store | `PUT /player-series/{id}/veto` |

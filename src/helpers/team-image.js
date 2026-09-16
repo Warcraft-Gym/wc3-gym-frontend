@@ -5,7 +5,9 @@ import { backendUrl } from './backend-url';
 // the store. An id alone falls back to the backend, which answers a redirect to the same place.
 export function teamImageUrl(team) {
   if (team && typeof team === 'object') {
-    return team.icon_url ?? `${backendUrl}/teams/${team.id}/image`;
+    return team.icon_url ?? (team.league_id
+      ? `${backendUrl}/leagues/${team.league_id}/teams/${team.id}/image`
+      : `${backendUrl}/teams/${team.id}/image`);
   }
   return `${backendUrl}/teams/${team}/image`;
 }

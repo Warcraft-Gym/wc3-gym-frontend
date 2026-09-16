@@ -85,15 +85,15 @@ export const useSeriesStore = defineStore({
         // One player's series in one season, filtered on the server; leaves the list state alone
         async playerSeries(season_id, user_id) {
             const query = encodeURIComponent(`player1_id == ${user_id} or player2_id == ${user_id}`);
-            return await fetchWrapper.post(`${backendUrl}/series/season/${season_id}/search?query=${query}`);
+            return await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search?query=${query}`);
         },
         async searchSeriesBySeason(season_id, search) {
             try{
                 this.isLoading = true; // Set loading to true
                 if (search){
-                    this.series = await fetchWrapper.post(`${backendUrl}/series/season/${season_id}/search?query=${search}`);
+                    this.series = await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search?query=${search}`);
                 } else {
-                    this.series = await fetchWrapper.post(`${backendUrl}/series/season/${season_id}/search`);
+                    this.series = await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search`);
                 }
             } finally {
                 this.isLoading = false; // Set loading to false once complete

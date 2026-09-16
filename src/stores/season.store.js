@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia';
 import { findSeason, seasonSlug } from '@/helpers/season-slug.mjs';
+import { asSeason } from '@/helpers/season-phase.mjs';
 
 import { backendUrl, fetchWrapper } from '@/helpers';
+import { useEventStore } from './event.store.js';
 
 export const useSeasonStore = defineStore({
     id: 'seasonStore',
@@ -20,74 +22,85 @@ export const useSeasonStore = defineStore({
         }
     },
     actions: {
+        async gnlLeague() {
+            const eventStore = useEventStore();
+            if (!eventStore.leagues.length) await eventStore.fetchLeagues();
+            const league = eventStore.leagues.find((row) => row.kind === 'gnl');
+            if (!league) throw new Error('The GNL league is not configured.');
+            return league;
+        },
         async ensureSeasons() {
             if (!this.seasons.length) await this.fetchSeasons();
         },
         async fetchSeasons() {
-            const resp = await fetchWrapper.get(`${backendUrl}/seasons`);
-            this.seasons =  resp
+            const league = await this.gnlLeague();
+            const resp = await fetchWrapper.get(`${backendUrl}/events?league_id=${league.id}`);
+            this.seasons = resp.map(asSeason);
+            return this.seasons;
         },
         async fetchSeason(season_id){
-            this.current_season = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}`);
+            const event = await fetchWrapper.get(`${backendUrl}/events/${season_id}`);
+            this.current_season = asSeason(event);
             return this.current_season;
         },
         async updateSeason(season) {
             const seasonId = season.id;
-            await fetchWrapper.put(`${backendUrl}/seasons/${seasonId}`, season);
+            await fetchWrapper.put(`${backendUrl}/events/${seasonId}`, season);
         },
         async createSeason(season) {
-            const createdSeason = await fetchWrapper.post(`${backendUrl}/seasons`, season);
-            return createdSeason;
+            const league = await this.gnlLeague();
+            const createdSeason = await fetchWrapper.post(`${backendUrl}/events`, { ...season, league_id: league.id });
+            return asSeason(createdSeason);
         },
         async deleteSeason(season_id) {
-            await fetchWrapper.delete(`${backendUrl}/seasons/${season_id}`);
+            await fetchWrapper.delete(`${backendUrl}/events/${season_id}`);
         },
         async addTeamsToSeason(season_id, team_ids) {
-            await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/teams`, {'team_ids': team_ids});
+            await fetchWrapper.post(`${backendUrl}/events/${season_id}/teams`, {'team_ids': team_ids});
         },
         async addMapsToSeason(season_id, map_ids) {
-            await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/maps`, {'map_ids': map_ids});
+            await fetchWrapper.post(`${backendUrl}/events/${season_id}/maps`, {'map_ids': map_ids});
         },
         async removeMapsFromSeason(season_id, map_ids) {
-            await fetchWrapper.delete(`${backendUrl}/seasons/${season_id}/maps`, {'map_ids': map_ids});
+            await fetchWrapper.delete(`${backendUrl}/events/${season_id}/maps`, {'map_ids': map_ids});
         },
         async setSeasonMapOrder(season_id, map_ids) {
-            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/maps/order`, {'map_ids': map_ids});
+            await fetchWrapper.put(`${backendUrl}/events/${season_id}/maps/order`, {'map_ids': map_ids});
         },
         async setSeasonRound(season_id, data) {
-            await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/rounds`, data);
+            await fetchWrapper.put(`${backendUrl}/events/${season_id}/rounds`, data);
         },
         async fetchLadderMapImport(season_id) {
-            return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/maps/ladder-import`);
+            return await fetchWrapper.get(`${backendUrl}/events/${season_id}/maps/ladder-import`);
         },
         async importLadderMaps(season_id, names) {
-            await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/maps/ladder-import`, {'names': names});
+            await fetchWrapper.post(`${backendUrl}/events/${season_id}/maps/ladder-import`, {'names': names});
         },
         async fetchAchievementCatalogue() {
             return await fetchWrapper.get(`${backendUrl}/achievements`);
         },
         async fetchSeasonAchievements(season_id) {
-            return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/achievements`);
+            return await fetchWrapper.get(`${backendUrl}/events/${season_id}/achievements`);
         },
         async saveSeasonAchievements(season_id, rows) {
-            return await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/achievements`, rows);
+            return await fetchWrapper.put(`${backendUrl}/events/${season_id}/achievements`, rows);
         },
         async addUserSignup(season_id, user_ids, race) {
-            const updated = await fetchWrapper.post(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids, race});
+            const updated = await fetchWrapper.post(`${backendUrl}/events/${season_id}/signups`, {'user_ids': user_ids, race});
             return updated;
         },
         async removeUserSignup(season_id, user_ids) {
-            const updated = await fetchWrapper.delete(`${backendUrl}/seasons/${season_id}/signups`, {'user_ids': user_ids});
+            const updated = await fetchWrapper.delete(`${backendUrl}/events/${season_id}/signups`, {'user_ids': user_ids});
             return updated;
         },
         async updateSeasonSignup(season_id, user_id, data) {
-            return await fetchWrapper.put(`${backendUrl}/seasons/${season_id}/signups/${user_id}`, data);
+            return await fetchWrapper.put(`${backendUrl}/events/${season_id}/signups/${user_id}`, data);
         },
         async fetchSeasonLadderPlayers(season_id) {
-            return await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/ladder/players`);
+            return await fetchWrapper.get(`${backendUrl}/events/${season_id}/ladder/players`);
         },
         async fetchSeasonSignups(season_id) {
-            const signups = await fetchWrapper.get(`${backendUrl}/seasons/${season_id}/signups`);
+            const signups = await fetchWrapper.get(`${backendUrl}/events/${season_id}/signups`);
             return signups;
         },
         async uploadSeasonFile(season_id, season_name, file){

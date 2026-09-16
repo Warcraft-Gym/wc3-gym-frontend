@@ -69,7 +69,7 @@ export const blocksHint = (row) => (row?.availability_hint === 'blocked_by_block
 
 // One card per event GET /me/events answers, of any kind. A finished event is not
 // upcoming, so it stays off the home, and a KOTH league runs one night after another, so
-// only tonight's night takes a card. The /seasons row of the same id adds the rounds and
+// only tonight's night takes a card. The GNL /events row of the same id adds the rounds and
 // the round count a GNL card reads, and the /me entry adds the team and the captain seat,
 // which the member read does not carry.
 export function homeCards({ events = [], me = null, seasons = [], now = new Date() }) {

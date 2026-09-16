@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../src/stores
 tags: [stores]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:30:00Z }
+generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: stores
     resource: ../../../src/stores
@@ -28,7 +28,8 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 - Every error is `{"error": "<text>"}`, sometimes with a `message` beside an `error` code. The wrapper reads both.
 - List routes take `limit` (up to 500) and `offset` and answer `X-Total-Count`; `sort` and `order` on the routes that support them.
 - Reads are open. A write needs an admin or the owning member; the app hides the buttons of writes the role cannot make, because a 401 ends the session.
-- The GNL season payloads keep `season_id`, `phase` (`open`, `commenced`, `overdue`, `complete`), `playday` and `rounds`.
+- The event API answers a GNL run with the common phase words. The season store translates them to `open`, `commenced`, `overdue` and `complete`; `finished` with an unscored count is overdue.
+- Payloads nested under the older GNL routes keep `season_id`, `playday` and the four season phase words.
 - A series answers `player1_race` / `player2_race` resolved, and takes `player1_off_race` / `player2_off_race` on a write.
 - Every datetime is UTC and ends in `Z`; Luxon reads it and shows the viewer's zone.
 - The veto board answer carries `week_map_id` for the fixed map of game 1; the name is kept on purpose.
@@ -43,17 +44,17 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 | Store | Routes |
 |---|---|
 | `auth` | `POST /login`, `GET /me` |
-| `season` | `/seasons`, `/seasons/{id}`, `/seasons/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements`, `/import`, `/export` |
+| `season` | `/leagues`, `/events?league_id={id}`, `/events/{id}`, `/events/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements`, `/import`, `/export` |
 | `event` | `/leagues`, `/leagues/{id}`, `/events`, `/events/{id}`, `/me/events`, `/events/{id}/entrants...`, `/divisions`, `/divisions/assign`, `/stages`, `/stages/{id}/seeds`, `/seeds/lock`, `/generate`, `/rounds`, `/series`, `/standings`, `/advance`, `/finish`, `/koth/nights`, `/koth/nights/{id}/close` |
 | `player` | `/users`, `/users/{id}`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/player-series`, `/player-history` |
-| `team` | `/teams`, `/teams/basic`, `/teams/{id}`, `/teams/season/{id}`, `/teams/season/{id}/basic`, `/teams/{id}/seasons/{sid}`, `/players`, `/captains`, `/availability`, `/w3c-sync`, `/teams/{id}/image` |
+| `team` | `/leagues/{league_id}/teams`, `/leagues/{league_id}/teams/basic`, `/leagues/{league_id}/teams/{id}`, `/events/{event_id}/teams`, `/events/{event_id}/teams/basic`, `/events/{event_id}/teams/{id}`, `/players`, `/captains`, `/availability`, `/ladder-sync`, `/image` |
 | `match` | `/matches`, `/matches/{id}`, `/matches/{id}/replays`, `/matches/search`, `/draft-series...`, `/draft-series/{id}/promote` |
-| `series` | `/series`, `/series/{id}`, `/series/{id}/result-kind`, `/series/{id}/places`, `/series/{id}/sides`, `/series/search`, `/series/season/{id}/search`, `/series/{id}/casts...`, `/casts/last`, `/series/{id}/games`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time` |
-| `availability` | `/player-availability`, `/player-blocks...`, `/teams/{id}/seasons/{sid}/availability` |
+| `series` | `/series`, `/series/{id}`, `/series/{id}/result-kind`, `/series/{id}/places`, `/series/{id}/sides`, `/series/search`, `/events/{event_id}/series/search`, `/series/{id}/casts...`, `/casts/last`, `/series/{id}/games`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time` |
+| `availability` | `/player-availability`, `/player-blocks...`, `/events/{event_id}/teams/{team_id}/availability` |
 | `map` | `/maps`, `/maps/{id}`, `/maps/ladder-import`, `/maps/{id}/image` |
 | `config` | `/config/settings`, `/config/settings/{key}`, `/config/w3c`, `/config/admins`, `/config/discord-role-bindings...`, `/config/discord-hidden-roles`, `/config/discord-roles`, `/config/discord-roles/sync`, `/config/discord-guild-roles`, `/config/discord-role-groups`, `/config/koth/nightbot-token` |
-| `fantasy` | `/fantasy/teams...`, `/fantasy/bets...`, `/fantasy/tiers`, `/fantasy/teams/{id}/season/{sid}/breakdown`, `/fantasy-team`, `/fantasy-bet` |
-| `ladder` | `/seasons/{id}/ladder`, `/users/{id}/ladder` |
+| `fantasy` | `/fantasy/teams...`, `/fantasy/bets...`, `/events/{event_id}/fantasy/tiers`, `/events/{event_id}/fantasy/teams/{team_id}/breakdown`, `/fantasy-team`, `/fantasy-bet` |
+| `ladder` | `/events/{id}/ladder`, `/events/{id}/ladder-sync`, `/users/{id}/ladder` |
 | `player_career_stats` | `/stats/career`, `/stats/career/{id}` |
 
 The backend pins the GNL payloads, the error envelope and the paged routes in its own tests. A field this app reads that is not in those tests is a reliance the backend cannot see; add a line here when you add one, and tell the backend.

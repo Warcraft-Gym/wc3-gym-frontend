@@ -4,7 +4,7 @@ title: Stores
 description: One Pinia store per area holds the fetched rows and every call to the backend; views never fetch on their own.
 resource: ../../../src/stores/index.js
 tags: [stores]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:30:00Z }
+generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: index
     resource: ../../../src/stores/index.js
@@ -12,6 +12,9 @@ sources:
   - id: event
     resource: ../../../src/stores/event.store.js
     title: A worked example
+  - id: season
+    resource: ../../../src/stores/season.store.js
+    title: The GNL event adapter
 ---
 
 # Shape
@@ -38,5 +41,7 @@ sources:
 
 - A view calls a store; a component receives props. Neither imports `fetchWrapper`.
 - `ensureSeasons()` loads the season list once; the router guard calls it for routes that carry a slug.
+- The season store selects the league whose kind is `gnl`, reads its rows through `/events`, and translates the common event phase into the four season-page lifecycle words.
+- The team store uses that GNL league id for team identity routes and an event id for rosters, captains, availability and standings.
 - `resolveCurrentSeasonId()` in `src/helpers/current-season.js` reads the `current_gnl_season` setting and falls back to the newest season, the same rule the backend applies.
 - A store method that writes returns the backend's answer and lets the view refetch what it shows. There is no optimistic update.

@@ -142,7 +142,7 @@ export const useFantasyStore = defineStore({
         },
 
         async getTeamScoreBreakdown(teamId, seasonId) {
-            return await fetchWrapper.get(`${backendUrl}/fantasy/teams/${teamId}/season/${seasonId}/breakdown`);
+            return await fetchWrapper.get(`${backendUrl}/events/${seasonId}/fantasy/teams/${teamId}/breakdown`);
         }
     }
 });

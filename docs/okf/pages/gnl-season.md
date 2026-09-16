@@ -4,7 +4,7 @@ title: The GNL season
 description: The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
 resource: ../../../src/views/SeasonsView.vue
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: seasons
     resource: ../../../src/views/SeasonsView.vue
@@ -63,27 +63,27 @@ A GNL season is the GNL-kind event of the GNL league. It keeps these pages of it
 
 | Store action | Route |
 |---|---|
-| `season.createSeason` | `POST /seasons` |
-| `season.updateSeason` | `PUT /seasons/{id}` |
-| `season.deleteSeason` | `DELETE /seasons/{id}` |
-| `season.addMapsToSeason` | `POST /seasons/{id}/maps` |
-| `season.removeMapsFromSeason` | `DELETE /seasons/{id}/maps` |
-| `season.setSeasonMapOrder` | `PUT /seasons/{id}/maps/order` |
-| `season.setSeasonRound` | `PUT /seasons/{id}/rounds` |
-| `season.importLadderMaps` | `POST /seasons/{id}/maps/ladder-import` |
-| `season.saveSeasonAchievements` | `PUT /seasons/{id}/achievements` |
-| `season.addUserSignup` | `POST /seasons/{id}/signups` |
-| `season.removeUserSignup` | `DELETE /seasons/{id}/signups` |
-| `season.updateSeasonSignup` | `PUT /seasons/{id}/signups/{user_id}` |
-| `season.addTeamsToSeason` | `POST /seasons/{id}/teams` |
+| `season.createSeason` | `POST /events`, with the GNL league id |
+| `season.updateSeason` | `PUT /events/{id}` |
+| `season.deleteSeason` | `DELETE /events/{id}` |
+| `season.addMapsToSeason` | `POST /events/{id}/maps` |
+| `season.removeMapsFromSeason` | `DELETE /events/{id}/maps` |
+| `season.setSeasonMapOrder` | `PUT /events/{id}/maps/order` |
+| `season.setSeasonRound` | `PUT /events/{id}/rounds` |
+| `season.importLadderMaps` | `POST /events/{id}/maps/ladder-import` |
+| `season.saveSeasonAchievements` | `PUT /events/{id}/achievements` |
+| `season.addUserSignup` | `POST /events/{id}/signups` |
+| `season.removeUserSignup` | `DELETE /events/{id}/signups` |
+| `season.updateSeasonSignup` | `PUT /events/{id}/signups/{user_id}` |
+| `season.addTeamsToSeason` | `POST /events/{id}/teams` |
 | `season.uploadSeasonFile` | `POST /import` |
 | `season.exportSeason` | `POST /export` |
 | `match.createMatch` | `POST /matches` |
 | `match.updateMatch` | `PUT /matches/{id}` |
 | `match.deleteMatch` | `DELETE /matches/{id}` |
-| `team.addPlayersToTeamForSeason` | `POST /teams/{id}/seasons/{season_id}/players` |
-| `team.removePlayersFromTeamForSeason` | `DELETE /teams/{id}/seasons/{season_id}/players` |
-| `ladder.syncSeason` | `POST /seasons/{id}/ladder-sync`, one chunk of players per request |
+| `team.addPlayersToTeamForSeason` | `POST /events/{season_id}/teams/{id}/players` |
+| `team.removePlayersFromTeamForSeason` | `DELETE /events/{season_id}/teams/{id}/players` |
+| `ladder.syncSeason` | `POST /events/{id}/ladder-sync`, one chunk of players per request |
 | `map.createMap`, `map.uploadMapImage` | `POST /maps`, `POST /maps/{id}/image` |
 | `player.updatePlayer` | `PUT /users/{id}` |
 

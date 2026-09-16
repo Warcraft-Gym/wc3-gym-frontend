@@ -6,7 +6,7 @@ import { actOnEvent, blocksHint, checkInFor, eventActionButton, hideResultsStore
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so the player's day and the UTC day differ
 
 const now = new Date('2026-10-05T12:00:00Z');
-// the /seasons list: the rounds and the round count live here, not on the member read
+// the GNL /events list: the rounds and the round count live here, not on the member read
 const seasons = [
   { id: 4, name: 'GNL Review Season', start_date: '2026-09-01', scheduling_enabled: true, round_count: 8, rounds: [
     { playday: 4, start_date: '2026-09-28', end_date: '2026-10-04' },

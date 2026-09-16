@@ -4,7 +4,7 @@ title: Teams
 description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's round grid.
 resource: ../../../src/views/TeamsView.vue
 tags: [pages, teams]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: teams
     resource: ../../../src/views/TeamsView.vue
@@ -52,11 +52,11 @@ sources:
 | `team.updateTeam` | `PUT /teams/{id}` |
 | `team.uploadTeamImage` | `POST /teams/{id}/image` |
 | `team.deleteTeam` | `DELETE /teams/{id}` |
-| `team.setCaptains` | `PUT /teams/{id}/seasons/{season_id}/captains` |
-| `team.addPlayersToTeamForSeason` | `POST /teams/{id}/seasons/{season_id}/players` |
-| `team.removePlayersFromTeamForSeason` | `DELETE /teams/{id}/seasons/{season_id}/players` |
-| `team.syncPlayersW3C` | `POST /teams/{id}/seasons/{season_id}/w3c-sync` |
-| `availability.setTeamAvailability` | `PUT /teams/{id}/seasons/{season_id}/availability` |
+| `team.setCaptains` | `PUT /events/{season_id}/teams/{id}/captains` |
+| `team.addPlayersToTeamForSeason` | `POST /events/{season_id}/teams/{id}/players` |
+| `team.removePlayersFromTeamForSeason` | `DELETE /events/{season_id}/teams/{id}/players` |
+| `team.syncPlayersW3C` | `POST /events/{season_id}/teams/{id}/ladder-sync` |
+| `availability.setTeamAvailability` | `PUT /events/{season_id}/teams/{id}/availability` |
 
 # Rules
 

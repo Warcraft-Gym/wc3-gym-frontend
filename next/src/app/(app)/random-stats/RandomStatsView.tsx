@@ -16,9 +16,7 @@ import { raceWrapper } from "@/helpers/races.js";
 
 const W3C_MATCH_API = "https://website-backend.w3champions.com/api/matches/search";
 
-// W3C API returns race as a number. Mapping to display name.
-// Confirmed from match data (heroes played):
-//   0 = Random (selected race), 1 = Human, 2 = Orc, 4 = Night Elf, 8 = Undead, 16/32 = Random
+// W3C race codes: 0 = Random picked, 1 = Human, 2 = Orc, 4 = Night Elf, 8 = Undead, 16 and 32 = Random
 const W3C_RACE_NAMES: Record<string | number, string> = {
   1: "Human",
   2: "Orc",
@@ -216,10 +214,11 @@ export function RandomStatsView() {
               </InputGroup>
             </Field>
 
-            <Field className="md:col-span-5" label="W3C seasons" hint="Select one or more seasons to analyse">
+            <Field className="md:col-span-5" label="W3C seasons" hint="Select one or more seasons to analyse" htmlFor="w3c-seasons">
               {/* one open list, so a season leaves the choice the same way it joined it */}
               <Select multiple value={selectedSeasons} onValueChange={setSelectedSeasons}>
-                <SelectTrigger className="h-auto min-h-8 w-full py-1.5">
+                <SelectTrigger id="w3c-seasons" className="h-auto min-h-8 w-full py-1.5">
+                  <Icon name="mdi-calendar-range" className="text-muted-foreground" />
                   <SelectValue>
                     {(seasons: number[]) => (
                       <span className="flex flex-wrap gap-1">
@@ -332,7 +331,7 @@ export function RandomStatsView() {
                   <TableCell className="text-right font-medium tnum text-loss">{matchup.losses}</TableCell>
                   <TableCell className="text-right tnum">{matchup.wins + matchup.losses}</TableCell>
                   <TableCell className="text-right">
-                    <Badge variant="outline" className="tnum">
+                    <Badge variant="secondary" className="tnum">
                       {Math.round(matchup.wins / (matchup.wins + matchup.losses) * 100)}%
                     </Badge>
                   </TableCell>
@@ -347,7 +346,7 @@ export function RandomStatsView() {
                 <TableCell className="text-right font-bold tnum text-loss">{data.losses}</TableCell>
                 <TableCell className="text-right font-bold tnum">{data.wins + data.losses}</TableCell>
                 <TableCell className="text-right">
-                  <Badge variant="outline" className="tnum">
+                  <Badge className="tnum">
                     {Math.round(data.wins / (data.wins + data.losses) * 100)}%
                   </Badge>
                 </TableCell>

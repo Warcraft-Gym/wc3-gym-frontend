@@ -87,8 +87,13 @@
                 @drop.prevent="drop(group, row)"
                 @dragend="dragged = null"
               >
-                <td>
+                <td class="text-no-wrap">
                   <v-icon v-if="canReorder" size="18" class="grip" aria-hidden="true">mdi-drag-horizontal-variant</v-icon>
+                  <!-- the keyboard route of the drag: one step up or down inside the division -->
+                  <v-btn v-if="canReorder" icon="mdi-chevron-up" size="x-small" variant="text" :disabled="busy === 'order' || group.rows[0] === row"
+                    :aria-label="`Move ${entrantName(row)} up`" @click="step(group, row, -1)" />
+                  <v-btn v-if="canReorder" icon="mdi-chevron-down" size="x-small" variant="text" :disabled="busy === 'order' || group.rows.at(-1) === row"
+                    :aria-label="`Move ${entrantName(row)} down`" @click="step(group, row, 1)" />
                 </td>
                 <td>
                   <PlayerName v-if="row.user" :player="row.user" :race="solo(row) ? row.race : undefined" />
@@ -96,7 +101,7 @@
                     <span class="font-weight-medium">{{ row.team.name }}</span>
                     <div class="roster text-caption">
                       <PlayerName v-for="seat in rosterFor(row)" :key="seat.player.id" :player="seat.player" :race="seat.race">
-                        <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon>
+                        <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon><span v-if="seat.captain" class="d-sr-only">captain</span>
                       </PlayerName>
                       <span v-if="!rosterFor(row).length" class="text-medium-emphasis">No roster for this event</span>
                     </div>
@@ -148,7 +153,7 @@
                     <v-chip v-if="row.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
                     <v-chip v-else-if="row.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
                     <v-chip v-else size="x-small" variant="tonal" prepend-icon="mdi-account-clock">signed up</v-chip>
-                    <v-icon v-if="row.manual_placement" size="16" class="ml-1" aria-label="placed by hand">mdi-pin</v-icon>
+                    <v-icon v-if="row.manual_placement" size="16" class="ml-1" aria-hidden="true">mdi-pin</v-icon><span v-if="row.manual_placement" class="d-sr-only">placed by hand</span>
                   </template>
                 </td>
                 <td v-if="isAdmin">
@@ -179,7 +184,7 @@
                   <v-chip v-if="race.withdrawn_at" size="x-small" variant="tonal" color="draw" prepend-icon="mdi-close">withdrawn</v-chip>
                   <v-chip v-else-if="race.checked_in_at" size="x-small" variant="tonal" color="success" prepend-icon="mdi-check">checked in</v-chip>
                   <v-chip v-else size="x-small" variant="tonal" prepend-icon="mdi-account-clock">signed up</v-chip>
-                  <v-icon v-if="race.manual_placement" size="16" class="ml-1" aria-label="placed by hand">mdi-pin</v-icon>
+                  <v-icon v-if="race.manual_placement" size="16" class="ml-1" aria-hidden="true">mdi-pin</v-icon><span v-if="race.manual_placement" class="d-sr-only">placed by hand</span>
                 </td>
                 <td v-if="isAdmin">
                   <RowActions :actions="actionsFor(race, false)" />
@@ -217,7 +222,7 @@
             </div>
             <div v-if="row.team" class="roster text-caption mt-1">
               <PlayerName v-for="seat in rosterFor(row)" :key="seat.player.id" :player="seat.player" :race="seat.race">
-                <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon>
+                <v-icon v-if="seat.captain" size="14" color="primary-text" title="Captain">mdi-star</v-icon><span v-if="seat.captain" class="d-sr-only">captain</span>
               </PlayerName>
               <span v-if="!rosterFor(row).length" class="text-medium-emphasis">No roster for this event</span>
             </div>
@@ -410,6 +415,7 @@ const domain = computed(() => domainOf(live.value.map((row) => entrantMmr(row) |
 const storedCuts = computed(() => cutsOf(event.value?.divisions || []));
 const stripPlayers = computed(() => live.value.map((row) => ({
   id: row.id,
+  who: row.user?.id ?? row.team?.id ?? row.id,
   label: entrantName(row),
   mmr: entrantMmr(row) || 0,
   band: entrantMmr(row) > 0 ? bandOf(entrantMmr(row), cuts.value) : null,
@@ -482,13 +488,10 @@ const lock = () => run('lock', async () => {
   event.value.stages = event.value.stages.map((row) => (row.id === locked.id ? locked : row));
 }, 'The seeds of this stage are locked.');
 
-// A player dropped on another of the same division takes his place, his races together,
+// A player moved onto another place of the same division takes it, his races together,
 // and the whole order posts
-const drop = (group, target) => {
+const reorder = (group, from, to) => {
   const items = [...group.rows];
-  const from = items.findIndex((item) => item.id === dragged.value);
-  const to = items.findIndex((item) => item.id === target.id);
-  dragged.value = null;
   if (from === -1 || to === -1 || from === to) return;
   items.splice(to, 0, ...items.splice(from, 1));
   const ids = items.flatMap(idsOf);
@@ -497,6 +500,16 @@ const drop = (group, target) => {
   run('order', async () => {
     entrants.value = mergeSeeds(entrants.value, await store.setSeeds(eventId, stageId.value, seedPayload(groups.value)));
   }, 'The seed order is saved.');
+};
+const drop = (group, target) => {
+  const from = group.rows.findIndex((item) => item.id === dragged.value);
+  dragged.value = null;
+  reorder(group, from, group.rows.findIndex((item) => item.id === target.id));
+};
+const step = (group, row, delta) => {
+  const from = group.rows.findIndex((item) => item.id === row.id);
+  const to = from + delta;
+  if (to >= 0 && to < group.rows.length) reorder(group, from, to);
 };
 
 const openAdd = async () => {

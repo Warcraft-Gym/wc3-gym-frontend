@@ -115,7 +115,7 @@
                 {{ places[entrant.id].title }}
               </v-chip>
               <v-icon v-if="entrant.checked_in_at" icon="mdi-check" size="small" color="success"
-                title="Checked in" />
+                title="Checked in" /><span v-if="entrant.checked_in_at" class="d-sr-only">checked in</span>
               <span v-if="entrant.withdrawn_at" class="text-caption">withdrawn</span>
             </div>
             <!-- A player on more than one race: one line a race, with its seed and its division -->

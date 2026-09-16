@@ -62,7 +62,7 @@ export function DataTable<T extends RowData>({
   });
 
   return (
-    <div className={cn("table overflow-x-auto", className)}>
+    <div className={cn("table-scroll overflow-x-auto", className)}>
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((group) => (

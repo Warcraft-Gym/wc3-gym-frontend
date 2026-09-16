@@ -11,7 +11,7 @@ type SeasonState = { seasons: Season[]; current_season: Season; selectedSeasonId
 export const seasonBox = box<SeasonState>({ seasons: [], current_season: {}, selectedSeasonId: null });
 const patch = (part: Partial<SeasonState>) => seasonBox.set({ ...seasonBox.get(), ...part });
 
-// The league list, read once. U3 moves this to the event module.
+// The league list, read once.
 let leagues: Season[] = [];
 
 // A GNL season is the gnl-kind event of the GNL league

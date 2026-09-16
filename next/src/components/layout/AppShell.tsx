@@ -176,7 +176,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto w-full max-w-[1280px] px-2 py-3 md:px-4">
           <Guard>{children}</Guard>
         </div>
-        {/* A player name opens the panel over the page, so nothing typed is lost. U14 fills this slot. */}
+        {/* A player name opens the panel over the page, so nothing typed is lost: the panel slot. */}
       </main>
 
       <footer className="flex justify-end px-3 py-1 text-xs">

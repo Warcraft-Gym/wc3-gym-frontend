@@ -4,6 +4,15 @@
 @import "@mdi/font/css/materialdesignicons.css";
 @import "flagpack/dist/flagpack.css";
 
+/* A `dark:` class follows the theme the reader chose, and the system setting only when he chose
+   none: the two branches palette-style.ts writes for --v-theme-*. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) { @slot; }
+  }
+}
+
 /* Every palette token becomes a Tailwind colour, so bg-primary, text-win and border-loss
    exist as utilities and DESIGN.md's "a theme token for every colour" rule holds.
    palette-style.ts writes the --v-theme-* values from palette.mjs. */
@@ -193,7 +202,7 @@
 .skeleton { background-color: rgb(var(--v-theme-surface-light)); }
 
 /* A table wider than its card shows a shadow at the hidden edge, so the reader knows it scrolls. */
-.table {
+.table-scroll {
   font-variant-numeric: lining-nums tabular-nums;
   background:
     linear-gradient(to right, rgb(var(--v-theme-surface)) 30%, rgba(var(--v-theme-surface), 0)),
@@ -206,7 +215,7 @@
 }
 
 /* A column title is a short label, one line on a wide screen and wrapped on a phone. */
-.table th { white-space: nowrap; }
+.table-scroll th { white-space: nowrap; }
 @media (max-width: 959px) {
-  .table th { white-space: normal; }
+  .table-scroll th { white-space: normal; }
 }

@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
@@ -25,8 +26,10 @@ export function StatusAlert({
   onClose?: () => void;
   className?: string;
 }) {
+  // An alert with no retry clears itself, as StatusAlert.vue does, so a caller need pass no handler
+  const [dismissed, setDismissed] = useState(false);
   // DESIGN.md: colour never carries meaning alone, so the type draws its icon too
-  if (!modelValue) return null;
+  if (!modelValue || dismissed) return null;
   const tone = type === "error" ? "text-error" : type === "success" ? "text-success" : type === "warning" ? "text-warning" : "text-info";
   return (
     <Alert className={cn("alert mb-4", tone, className)}>
@@ -34,8 +37,8 @@ export function StatusAlert({
         <div className="flex items-start gap-2">
           <Icon name={ICON[type]} className={tone} />
           <span className="flex-1">{modelValue}</span>
-          {!retry && onClose ? (
-            <Button variant="ghost" size="sm" aria-label="Close" onClick={onClose}>
+          {!retry ? (
+            <Button variant="ghost" size="sm" aria-label="Close" onClick={() => (onClose ? onClose() : setDismissed(true))}>
               ×
             </Button>
           ) : null}

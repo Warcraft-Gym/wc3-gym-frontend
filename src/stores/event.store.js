@@ -69,9 +69,11 @@ export const useEventStore = defineStore({
         async signUp(event_id, body) {
             return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants`, body);
         },
-        // The caller's own row stays and reads withdrawn
-        async withdraw(event_id) {
-            return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/me`);
+        // The caller's own rows stay and read withdrawn; a race names one row of a
+        // player who entered on more than one
+        async withdraw(event_id, race = null) {
+            const query = race ? `?race=${encodeURIComponent(race)}` : '';
+            return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/me${query}`);
         },
         // An admin enters any player or team, whether the signups stand open or not
         async addEntrant(event_id, entrant) {

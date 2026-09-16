@@ -92,7 +92,7 @@ import { select } from 'd3-selection';
 import { dodge, moveCut } from '@/helpers/divisions.mjs';
 
 const props = defineProps({
-  players: { type: Array, required: true }, // [{ id, label, mmr, band, pinned }]
+  players: { type: Array, required: true }, // [{ id, who, label, mmr, band, pinned }]; `who` is the player a dot belongs to
   cuts: { type: Array, required: true }, // ascending, one per boundary
   names: { type: Array, required: true }, // one per band, ascending
   colors: { type: Array, required: true }, // theme colour names, one per band, ascending
@@ -159,7 +159,8 @@ const ghosts = computed(() => {
 });
 // Room above the swarm for the band names, the cut boxes and a row for the ghost labels
 const top = computed(() => 60 + (boxRows.value.includes(1) ? 26 : 0) + (ghosts.value.length ? 17 : 0));
-const counts = computed(() => props.names.map((_, i) => props.players.filter((p) => p.band === i).length));
+// A player on two races is two dots and one entrant
+const counts = computed(() => props.names.map((_, i) => new Set(props.players.filter((p) => p.band === i).map((p) => p.who ?? p.id)).size));
 
 // Dots stack up from the axis, so a tall column is a crowded MMR and the swarm sets the height.
 const swarm = computed(() => {

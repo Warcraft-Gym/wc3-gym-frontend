@@ -4,6 +4,7 @@
      a click opens the series. -->
 <template>
   <component :is="readonly ? 'div' : 'button'" :type="readonly ? undefined : 'button'"
+    :role="readonly ? 'group' : undefined" :aria-label="name"
     class="series-box" :class="{ flat, readonly }" @click="readonly || $emit('open', series)">
     <!-- a free for all lobby: one row a seat, the winner first, the place as the number -->
     <div v-for="seat in seats" :key="seat.key" class="side" :class="seat.result">
@@ -45,6 +46,7 @@ import { isByeSide, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, wi
 const props = defineProps({
   series: { type: Object, required: true },
   label: { type: String, default: '' },  // the grand final and the third place name themselves
+  round: { type: String, default: '' },  // the column the box sits in, so a screen reader hears it per box
   crown: Boolean,                        // the standing king of a KOTH chain
   flat: Boolean,                         // inside a list, the card around it draws the border
   readonly: Boolean,                     // the series page opens nothing, so its names link
@@ -92,6 +94,13 @@ const race = (side) => props.series[`player${side}_race`] || undefined;
 const score = (side) => (hidden.value ? '' : props.series[`player${side}_score`] ?? '');
 // A side with no feeder and no entrant can never fill: the other side passes through
 const empty = (side) => (isByeSide(props.series, side) ? 'Bye' : 'To be decided');
+// What a screen reader hears for the box: where it sits, who plays, and the state
+const sideName = (side) => team(side)?.name || player(side)?.name || empty(side);
+const name = computed(() => {
+  const where = [props.round, props.label].filter(Boolean).join(', ');
+  const who = seats.value.length ? `${seats.value.length} seats` : `${sideName(1)} vs ${sideName(2)}`;
+  return `${where ? `${where}: ` : ''}${who}, ${stateWord.value}`;
+});
 const sideClass = (side) => ({
   won: winner.value === side,
   lost: winner.value !== null && winner.value !== side,

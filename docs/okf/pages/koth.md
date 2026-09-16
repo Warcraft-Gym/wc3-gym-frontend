@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list an admin opens tonight from, and the public dashboard that draws tonight's brackets for the stream.
 resource: ../../../src/views/KothView.vue
 tags: [pages, koth]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T17:30:00Z }
 sources:
   - id: nights
     resource: ../../../src/views/KothView.vue
@@ -30,7 +30,7 @@ A KOTH night is one event of the KOTH league. Its brackets are its divisions, an
 
 **Nights (`/koth`).** Every night, newest first, with its date and its state; each name opens the night's run page. "Open tonight" takes the start time and the MMR each of the three brackets opens at, prefilled from the night before, and lands on the run page. The run, the challengers and the close are described in [event management](event-management.md).
 
-**Dashboard (`/koth/dashboard`).** Open to anyone. It draws tonight's night: the newest published KOTH event that is not finished. A logged-in reader signs up while the signups stand open, or withdraws. Then one card per bracket: the standing king, everyone signed up for the bracket with race and MMR, and the bracket's chain. A night nobody has opened reads "No night open tonight". The page reads itself again every thirty seconds, so it can stay on a stream; `?mode=clean` drops the two buttons.
+**Dashboard (`/koth/dashboard`).** Open to anyone. It draws tonight's night: the newest published KOTH event that is not finished. A logged-in reader signs up while the signups stand open, or withdraws; a reader on more than one race withdraws one race at a time, and the withdraw names the race in `?race=`. Then one card per bracket: the standing king, everyone signed up for the bracket with race and MMR, and the bracket's chain. A night nobody has opened reads "No night open tonight". The page reads itself again every thirty seconds, so it can stay on a stream; `?mode=clean` drops the two buttons.
 
 # Writes
 

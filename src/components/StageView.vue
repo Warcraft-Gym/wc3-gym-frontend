@@ -57,7 +57,7 @@
           </svg>
           <div v-for="box in block.drawn.boxes" :key="box.key" class="box"
             :style="{ left: `${box.x}px`, top: `${box.cy - block.drawn.boxH / 2 + 28}px`, width: `${block.drawn.boxW}px` }">
-            <SeriesBox :series="box.row" :rosters="rosters"
+            <SeriesBox :series="box.row" :rosters="rosters" :round="block.columns[box.column].name"
               :label="boxLabel(group, block.columns[box.column], box.row)" @open="open" />
           </div>
         </div>
@@ -69,7 +69,7 @@
           <v-card-title class="text-subtitle-1">{{ column.name }}</v-card-title>
           <div class="rows" :class="{ lobbies: isLobbyStage }">
             <SeriesBox v-for="(row, index) in column.series" :key="row.id" :series="row" flat
-              :rosters="rosters" :crown="isChain" :label="boxLabel(group, column, row)"
+              :rosters="rosters" :crown="isChain" :round="column.name" :label="boxLabel(group, column, row)"
               :fed="isLobbyStage && column.index > 0"
               class="list-row" :class="{ first: index === 0 }" @open="open" />
           </div>

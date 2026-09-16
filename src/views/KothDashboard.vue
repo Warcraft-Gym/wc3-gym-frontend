@@ -20,8 +20,13 @@
             prepend-icon="mdi-account-plus" @click="dialog.open()">
             {{ mine ? 'Enter another race' : 'Sign up' }}
           </v-btn>
-          <v-btn v-if="mine" color="error" variant="tonal" size="small" prepend-icon="mdi-account-minus"
-            :loading="withdrawing" @click="withdraw">
+          <!-- A player on more than one race withdraws one race at a time -->
+          <v-btn v-for="race in held.length > 1 ? held : []" :key="race" color="error" variant="tonal" size="small"
+            prepend-icon="mdi-account-minus" :loading="withdrawing === race" @click="withdraw(race)">
+            Withdraw {{ raceName(race) }}
+          </v-btn>
+          <v-btn v-if="mine && held.length < 2" color="error" variant="tonal" size="small" prepend-icon="mdi-account-minus"
+            :loading="withdrawing === true" @click="withdraw()">
             Withdraw
           </v-btn>
           <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
@@ -110,7 +115,7 @@ const series = ref([]);
 const rounds = ref([]);
 const standings = ref([]);
 const loading = ref(true);
-const withdrawing = ref(false);
+const withdrawing = ref(false);  // true, or the race on its way out
 const error = ref(null);
 const dialog = ref(null);
 let timer = null;
@@ -172,11 +177,11 @@ const reload = async () => {
   }
 };
 
-const withdraw = async () => {
-  if (!confirm('Withdraw from tonight?')) return;
-  withdrawing.value = true;
+const withdraw = async (race = null) => {
+  if (!confirm(race ? `Withdraw ${raceName(race)} from tonight?` : 'Withdraw from tonight?')) return;
+  withdrawing.value = race ?? true;
   try {
-    await store.withdraw(event.value.id);
+    await store.withdraw(event.value.id, race);
     await load();
   } catch (e) {
     error.value = `The withdraw did not go through: ${e.message}`;

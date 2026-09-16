@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <li key={group.to}>
                       {group.items ? (
                         <>
-                          <p className="px-2 pt-3 text-xs uppercase tracking-wide text-muted-foreground">{group.title}</p>
+                          <p className="px-2 pt-3 text-xs text-muted-foreground">{group.title}</p>
                           <ul>
                             {group.items.map((item) => (
                               <li key={item.to}>

@@ -27,9 +27,10 @@ export function StatusAlert({
   className?: string;
 }) {
   // An alert with no retry clears itself, as StatusAlert.vue does, so a caller need pass no handler
-  const [dismissed, setDismissed] = useState(false);
+  // dismissedMessage holds the message that was closed, so a later, different message still shows
+  const [dismissedMessage, setDismissedMessage] = useState<string | null>(null);
   // DESIGN.md: colour never carries meaning alone, so the type draws its icon too
-  if (!modelValue || dismissed) return null;
+  if (!modelValue || modelValue === dismissedMessage) return null;
   const tone = type === "error" ? "text-error" : type === "success" ? "text-success" : type === "warning" ? "text-warning" : "text-info";
   return (
     <Alert className={cn("alert mb-4", tone, className)}>
@@ -38,7 +39,7 @@ export function StatusAlert({
           <Icon name={ICON[type]} className={tone} />
           <span className="flex-1">{modelValue}</span>
           {!retry ? (
-            <Button variant="ghost" size="sm" aria-label="Close" onClick={() => (onClose ? onClose() : setDismissed(true))}>
+            <Button variant="ghost" size="sm" aria-label="Close" onClick={() => (onClose ? onClose() : setDismissedMessage(modelValue))}>
               ×
             </Button>
           ) : null}

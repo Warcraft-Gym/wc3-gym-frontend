@@ -44,7 +44,7 @@ export function AchievementIcon({ id, size = 20, className }: { id: string; size
   if (glyph) {
     // The glyph is a single currentColor path, so a mask paints it in the surrounding text color
     const mask = `url(/achievementIcons/${glyph}.svg) center / contain no-repeat`;
-    return <span className={cn("inline-flex shrink-0 bg-current", className)} style={{ width: size, height: size, mask, WebkitMask: mask }} />;
+    return <span role="img" aria-label={id} className={cn("inline-flex shrink-0 bg-current", className)} style={{ width: size, height: size, mask, WebkitMask: mask }} />;
   }
   return <Icon name="mdi-trophy-variant-outline" size={size} className={className} />;
 }

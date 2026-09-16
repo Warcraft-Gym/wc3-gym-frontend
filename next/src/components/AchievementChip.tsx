@@ -3,14 +3,14 @@ import { AchievementIcon } from "@/components/AchievementIcon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { achievementPoints } from "@/helpers/achievements.js";
 
-type Badge = { id: string; name: string; points: number };
+type EarnedBadge = { id: string; name: string; points: number };
 
 /** The badges a player earned, as a row of icons over the points they paid */
 export function AchievementChip({
   badges = [],
   showPoints = true, // off where a Points column already shows the number
 }: {
-  badges?: Badge[];
+  badges?: EarnedBadge[];
   showPoints?: boolean;
 }) {
   if (!badges.length) return <span className="text-muted-foreground">&mdash;</span>;

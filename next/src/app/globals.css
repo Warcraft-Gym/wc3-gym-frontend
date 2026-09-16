@@ -219,3 +219,10 @@
 @media (max-width: 959px) {
   .table-scroll th { white-space: normal; }
 }
+
+/* The grouped table tints its group header row and the gutter cell of every detail row, so a
+   detail row reads as part of the group above it. */
+.grouped-table .group-row > td,
+.grouped-table .detail-row > td:first-child {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}

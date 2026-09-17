@@ -84,7 +84,9 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
   const [series, setSeries] = useState<any[]>([]);
   const [fantasyAll, setFantasyAll] = useState<any[]>([]);
   const [ladder, setLadder] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // A season id in the route or already stored means a fetch is coming, so the first paint
+  // shows the loading state rather than the "select a season" empty state
+  const [isLoading, setIsLoading] = useState(() => !!seasonKey || selectedSeasonId != null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // The current season heads the dropdown and is what a cold open loads
   const [currentSeasonId, setCurrentSeasonId] = useState<number | null>(null);

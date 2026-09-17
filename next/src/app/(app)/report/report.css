@@ -25,6 +25,7 @@
   }
   /* A name with no space in it breaks mid-word rather than push the table off the screen */
   .standings-table td {
+    white-space: normal;
     overflow-wrap: anywhere;
   }
 }

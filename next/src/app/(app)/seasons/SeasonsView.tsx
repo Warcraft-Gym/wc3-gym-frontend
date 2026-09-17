@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -53,6 +53,7 @@ export function SeasonsView() {
   const [seasonName, setSeasonName] = useState("");
   const [seasonId, setSeasonId] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const canUpload = !!file && (!!seasonId || !!seasonName);
 
   const [seasonDialogOpen, setSeasonDialogOpen] = useState(false);
@@ -201,6 +202,7 @@ export function SeasonsView() {
       setSeasonId("");
       setSeasonName("");
       setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -263,7 +265,7 @@ export function SeasonsView() {
                     <Input id="season-id" type="number" value={seasonId} placeholder="Enter season ID" onChange={(e) => setSeasonId(e.target.value)} />
                   </Field>
                   <Field className="md:col-span-6" label="Upload Excel File" htmlFor="season-file">
-                    <Input id="season-file" type="file" accept=".xlsx" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                    <Input ref={fileInputRef} id="season-file" type="file" accept=".xlsx" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
                   </Field>
                 </div>
                 <div className="mt-4">

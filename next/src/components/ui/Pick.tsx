@@ -9,10 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export type PickItem<V> = { value: V; title: string };
 
-/** The port of a labelled `v-select` over `{ value, title }` items. `row` draws an item the
- *  way the Vue item slot did; `clearable` adds the button that empties the pick. With
- *  `labelAfter` the label reads above the field and follows it in the markup, as the floating
- *  label of an outlined `v-select` does. */
+/** A labelled select over `{ value, title }` items. `row` draws a custom item;
+ *  `clearable` adds the button that empties the pick. With `labelAfter`, the label
+ *  reads above the field and follows it in the markup. */
 export function Pick<V extends string | number, T extends PickItem<V> = PickItem<V>>({
   label,
   hint,

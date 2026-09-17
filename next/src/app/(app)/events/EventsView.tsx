@@ -88,7 +88,7 @@ export function EventsView() {
 
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
 
-      <div className="mb-2 grid gap-2 md:grid-cols-3">
+      <div className="mb-2 grid gap-2 min-[960px]:grid-cols-3">
         <FilterCombobox items={leagueItems} value={leagueId} onChange={setLeagueId} label="League" />
         <FilterCombobox items={STATE_ITEMS} value={state} onChange={setState} label="State" />
       </div>

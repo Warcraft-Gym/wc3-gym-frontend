@@ -202,7 +202,7 @@ export function HomeView() {
       {isAdmin ? (
         <>
           <h2 className="mt-10 mb-2 text-xl">Admin</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 min-[960px]:grid-cols-3">
             {Object.entries(stats).map(([key, stat]) => (
               <Link key={key} href={stat.route} className="no-underline">
                 <Card className="card flex h-full cursor-pointer flex-col transition-all duration-300 hover:-translate-y-[5px]">

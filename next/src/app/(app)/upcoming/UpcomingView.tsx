@@ -131,7 +131,7 @@ export function UpcomingView() {
                     title={<>{timeOf(row.date_time as string)} · {roundLink(row)}{teamsOf(row) ? `· ${teamsOf(row)}` : null}</>}
                     actions={<CastChips series={row} />}
                     side={({ n, won }) =>
-                      !isUnscored(row) ? <Badge className={won ? "bg-win text-[rgb(var(--v-theme-on-win))]" : toneClass(null)}>{n ? row.player2_score : row.player1_score}</Badge> : null
+                      !isUnscored(row) ? <Badge className={won ? "bg-win text-on-win" : toneClass(null)}>{n ? row.player2_score : row.player1_score}</Badge> : null
                     }
                   />
                 ))}

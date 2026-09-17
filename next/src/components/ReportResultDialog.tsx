@@ -246,7 +246,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   // Allowed score combinations, every required file present, and every file a .w3g
   const isValid = (() => {
     if (!isValidResult(p1, p2, seriesWins)) return false;
-    if (Object.values(series.replays).some((file) => !isW3g(file))) return false;
+    if (gameRows.some((game) => !isW3g(series.replays[game]))) return false;
     const played = replaysNeeded(p1, p2);
     for (let game = 1; game <= played; game++) if (needsFile(game) && !hasReplay(game)) return false;
     return true;
@@ -350,6 +350,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
                 variant="outline"
                 spacing={0}
                 className="w-full"
+                aria-label={`Winner of game ${game}`}
                 value={series.winners[game - 1] ? [series.winners[game - 1] as string] : []}
                 onValueChange={(value) => setWinner(game, (value[0] as string) ?? null)}
               >

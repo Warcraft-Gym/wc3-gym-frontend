@@ -330,7 +330,7 @@ export function SeriesView({ id }: { id: string }) {
               <div className="p-4">
                 <StatusAlert modelValue={awardError} onClose={() => setAwardError(null)} />
                 <p className="mb-3">Pick the side that takes the series.</p>
-                <ToggleGroup variant="outline" spacing={0} className="w-full" value={awardSide ? [String(awardSide)] : []} onValueChange={(value) => setAwardSide(value[0] ? Number(value[0]) : null)}>
+                <ToggleGroup variant="outline" spacing={0} className="w-full" aria-label="Side that takes the series" value={awardSide ? [String(awardSide)] : []} onValueChange={(value) => setAwardSide(value[0] ? Number(value[0]) : null)}>
                   {[1, 2].map((side) => (
                     <ToggleGroupItem key={side} value={String(side)} className={SIDE_BUTTON}>
                       {sideName(side)}

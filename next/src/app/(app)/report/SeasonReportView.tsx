@@ -6,8 +6,8 @@ import { scaleQuantize } from "d3-scale";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,6 +25,7 @@ import { gamesBarHeight, winRate } from "@/helpers/ladder-days.mjs";
 import { playerPath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { isUnscored } from "@/helpers/season-phase.mjs";
+import { findSeason } from "@/helpers/season-slug.mjs";
 import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image.js";
 import { cn } from "@/lib/utils";
 import "./report.css";
@@ -110,13 +111,23 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
   const fantasyTeams = fantasyAll.filter((t) => t.season_id === selectedSeasonId);
   const reportReady = !!season?.id && teams.length > 0;
 
-  // The season list and the season the page opens on
+  // The season list and the season the page opens on, in one pass, so the first report load
+  // carries the resolved id. The rows the read answers name the season; the snapshot this
+  // pass closed over still holds an empty list.
   useEffect(() => {
     (async () => {
       setIsLoading(true);
       try {
-        await fetchSeasons();
-        setCurrentSeasonId(await resolveCurrentSeasonId());
+        const rows = await fetchSeasons();
+        const resolved = await resolveCurrentSeasonId();
+        setCurrentSeasonId(resolved);
+        // The path names the season; without one, the season picked on another page, then the newest
+        const paramId = seasonKey ? findSeason(rows, seasonKey)?.id ?? null : null;
+        if (paramId) setSelectedSeasonId(paramId);
+        else if (rows.length) {
+          const picked = rows.find((s: any) => s.id === selectedSeasonId);
+          setSelectedSeasonId(picked ? picked.id : resolved ?? Math.max(...rows.map((s: any) => s.id)));
+        }
       } catch {
         setErrorMessage("Failed to load seasons.");
       } finally {
@@ -128,23 +139,17 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // The path names the season; without one, the season picked on another page, then the first season.
-  // A season typed into the path while the page is open lands here too.
+  // A season typed into the path while the page is open
   useEffect(() => {
-    if (!booted || !seasons.length) return;
+    if (!booted) return;
     const paramId = seasonKey ? seasonIdOf(seasonKey) : null;
-    if (paramId) {
-      setSelectedSeasonId(paramId);
-      return;
-    }
-    const picked = seasons.find((s) => s.id === selectedSeasonId);
-    setSelectedSeasonId(picked ? picked.id : currentSeasonId ?? seasonItems[0].id);
+    if (paramId) setSelectedSeasonId(paramId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [booted, seasonKey, seasons.length, currentSeasonId]);
+  }, [seasonKey]);
 
   // The report of the season in force
   useEffect(() => {
-    if (!selectedSeasonId) return;
+    if (!booted || !selectedSeasonId) return;
     let live = true;
     (async () => {
       // Keep the season id in the URL, without remounting the page under it
@@ -179,7 +184,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSeasonId]);
+  }, [booted, selectedSeasonId]);
 
   // The report is a light document: print it light and give the admin his theme back. The light is
   // never stored, so a browser that skips afterprint leaves his saved theme alone.
@@ -355,10 +360,10 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
     </button>
   );
 
-  const teamAvatar = (team: any, className = "") => (
+  const teamAvatar = (team: any, className = "", alt = "") => (
     <img
       src={teamImageUrl(team)}
-      alt=""
+      alt={alt}
       className={cn("size-6 shrink-0 rounded-sm object-cover", className)}
       onError={showDefaultTeamImage}
     />
@@ -375,7 +380,8 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
       {/* Controls bar (hidden when printing) */}
       <div className="no-print">
         <div className="flex flex-wrap items-center gap-3 p-4 pb-2">
-          <Field label="Select season" htmlFor="report-season" className="w-full sm:w-1/3 md:w-1/4">
+          {/* The label reads above the field and follows it in the markup, as the floating Vuetify label does */}
+          <div className="flex w-full flex-col-reverse gap-1.5 sm:w-1/3 md:w-1/4">
             <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
               <SelectTrigger id="report-season" className="w-full">
                 <SelectValue>{(id: number) => eventLabel(seasons.find((s) => s.id === id))}</SelectValue>
@@ -388,7 +394,8 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                 ))}
               </SelectContent>
             </Select>
-          </Field>
+            <Label htmlFor="report-season">Select season</Label>
+          </div>
           <div className="flex-1" />
           <Button disabled={!reportReady} onClick={printReport}>
             <Icon name="mdi-printer" className="mr-1" />
@@ -523,7 +530,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         <TableCell className={cn(WIDE, "text-center")}>
                           {player.team ? (
                             <TapTooltip content={player.teamName} className="inline-flex">
-                              {teamAvatar(player.team)}
+                              {teamAvatar(player.team, "", player.teamName)}
                             </TapTooltip>
                           ) : (
                             <span className="text-xs">–</span>

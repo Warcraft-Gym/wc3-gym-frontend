@@ -68,14 +68,6 @@
     padding: 0 !important;
   }
 
-  /* Keep the hero band and the bars in colour */
-  .report-hero,
-  .race-stripe,
-  [data-slot="progress-indicator"] {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
   /* Hero: full bleed side to side, a small gap from the page edge */
   .report-hero {
     margin: 12mm 12mm 0;

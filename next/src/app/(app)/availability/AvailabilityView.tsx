@@ -58,9 +58,8 @@ export function AvailabilityView() {
   };
 
   return (
-    <div className="max-w-[900px] p-4">
-      <PageHeader title="Availability" />
-      <p className="-mt-5 mb-3 text-sm text-muted-foreground">Open hours are a starting point, not a promise. Agree the time with your opponent.</p>
+    <div className="mx-auto max-w-[900px] p-4">
+      <PageHeader title="Availability" lead="Open hours are a starting point, not a promise. Agree the time with your opponent." />
 
       <StatusAlert modelValue={zoneError} onClose={() => setZoneError(null)} />
       <Field label="Times are in" htmlFor="availability-zone" hint={profileZone ? undefined : "Saved with your first block."} className="mb-6 max-w-96">

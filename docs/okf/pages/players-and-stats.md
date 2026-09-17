@@ -4,11 +4,17 @@ title: Players and stats
 description: The players list, one player's page with the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../src/views/PlayersView.vue
 tags: [pages, players]
-generated: { by: openai/gpt-6, at: 2026-09-15T16:51:45Z }
+generated: { by: openai/gpt-5, at: 2026-09-17T07:27:31Z }
 sources:
   - id: players
     resource: ../../../src/views/PlayersView.vue
     title: The players list
+  - id: next-players
+    resource: ../../../next/src/app/(app)/players/PlayersView.tsx
+    title: The Next.js players list
+  - id: next-career
+    resource: ../../../next/src/components/CareerStatsDialog.tsx
+    title: The Next.js career stats editor
   - id: player
     resource: ../../../src/views/PlayerView.vue
     title: The player page
@@ -40,6 +46,8 @@ sources:
 # What it does
 
 **Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series and games records with win rates, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and flags. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one, adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
+
+The Next.js port preserves that filter/query contract, the 25-row pagination and the complete admin action set. Its country flags and race/MMR chips retain tap-accessible tooltips on touch screens.
 
 **One player (`/player/:id`).** The header with the flag, name, races, MMR and channels; the owner and an admin edit it. The owner also reads "Waiting for you", one line per open job: a series to schedule or report, a round to check in for. The Events card lists every event the player took part in, newest first, with the result; the running GNL season opens on its round cards, where the owner schedules a series, reports it, opens its maps, and answers each round with check in or can't play. Tonight's KOTH night joins the owner's list. The head-to-head card closes the page. The same profile opens as a side panel over a drafting page, without the owner's actions.
 

@@ -13,7 +13,16 @@ export function FlagIcon({ countryIdentifier }: { countryIdentifier?: string | n
       <TooltipTrigger
         render={
           // a tap opens it as well as a hover, so the name is reachable on a phone
-          <span role="img" aria-label={currentCountry.name} className={`fp ${currentCountry.a2.toLowerCase()}`} onClick={() => setOpen((o) => !o)} />
+          <span
+            role="img"
+            aria-label={currentCountry.name}
+            className={`fp ${currentCountry.a2.toLowerCase()}`}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setOpen((value) => !value);
+            }}
+          />
         }
       />
       <TooltipContent>{currentCountry.name}</TooltipContent>

@@ -336,6 +336,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useAuthStore, useSeasonStore, useMapStore } from '@/stores';
 import { seasonSlug } from '@/helpers/season-slug.mjs';
 import { PHASE_LABEL } from '@/helpers/season-phase.mjs';
+import { SERIES_PER_FIXTURE } from '@/helpers/event-labels.mjs';
 import { useDeleteDialog } from '@/helpers/delete-dialog';
 import { useColumns } from '@/helpers/columns';
 

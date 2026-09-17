@@ -8,6 +8,7 @@ import { VsRaces } from "@/components/VsRaces";
 import { W3CIcon } from "@/components/W3CIcon";
 import { W3CMmr } from "@/components/W3CMmr";
 import { Kit } from "./Kit";
+import { LadderKit } from "./LadderKit";
 
 // Sample rows for the kit section, shaped like the backend rows these components read.
 const kitPlayer = {
@@ -71,6 +72,8 @@ export function CreditsView() {
 
           <h3 className="mt-4 mb-1">AchievementChip</h3>
           <AchievementChip badges={kitBadges} />
+
+          <LadderKit />
         </section>
       ) : null}
     </div>

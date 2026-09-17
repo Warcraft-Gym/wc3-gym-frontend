@@ -123,6 +123,8 @@
 /* The shadcn components read these names, so they take their colours from the same palette. */
 :root {
   --radius: 0.25rem;
+  /* Vuetify wrote this one itself; the faded role dot on the Discord roles page reads it. */
+  --v-disabled-opacity: 0.38;
   --background: rgb(var(--v-theme-background));
   --foreground: rgb(var(--v-theme-on-background));
   --card: rgb(var(--v-theme-surface));
@@ -158,6 +160,9 @@
 }
 
 @layer base {
+  /* A border utility with no colour draws the theme hairline, not the text colour. */
+  *, ::before, ::after { border-color: var(--color-border); }
+
   /* Alegreya Sans for body and controls; numbers use lining, equal-width digits so columns line up. */
   html,
   body {

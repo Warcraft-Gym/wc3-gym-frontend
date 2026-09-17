@@ -38,7 +38,7 @@ export function DataTable<T extends RowData>({
 }: {
   columns: ColumnDef<typeof features, T>[];
   data: T[];
-  empty?: string;
+  empty?: React.ReactNode;
   pageSize?: number;
   rowCount?: number;
   sorting?: SortingState;
@@ -57,7 +57,8 @@ export function DataTable<T extends RowData>({
       if (onSortingChange) onSortingChange(next);
       else setOwnSorting(next);
     },
-    ...(pageSize ? { initialState: { pagination: { pageSize, pageIndex: 0 } } } : {}),
+    // The table draws no pager, so a table with no page size shows every row.
+    initialState: { pagination: { pageSize: pageSize ?? Number.MAX_SAFE_INTEGER, pageIndex: 0 } },
     ...(rowCount == null ? {} : { manualPagination: true, manualSorting: true, rowCount }),
   });
 

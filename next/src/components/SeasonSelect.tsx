@@ -33,7 +33,7 @@ export function SeasonSelect() {
     if (searchParams.get("season") === slug) return;
     const query = new URLSearchParams(searchParams.toString());
     query.set("season", slug);
-    router.replace(`${pathname}?${query.toString()}`);
+    router.replace(`${pathname}?${query.toString()}`, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeasonId, seasons.length]);
 

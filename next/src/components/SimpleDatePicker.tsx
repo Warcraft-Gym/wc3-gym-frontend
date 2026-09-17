@@ -1,4 +1,5 @@
 "use client";
+import { useId } from "react";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/hooks/theme";
@@ -21,13 +22,16 @@ export function SimpleDatePicker({
 }) {
   // the native calendar button is drawn by the browser: it follows the app's theme, not the OS
   const { activeTheme } = useTheme();
+  // The label reaches the input even when the caller passes no id
+  const auto = useId();
+  const inputId = id ?? auto;
   // What the field holds, "yyyy-mm-dd"
   const day = modelValue ? dayIso(modelValue instanceof Date ? modelValue : new Date(modelValue)) : "";
   const checked = day ? checkDate(day) : true;
   return (
-    <Field label={label} htmlFor={id} error={checked === true ? null : checked}>
+    <Field label={label} htmlFor={inputId} error={checked === true ? null : checked}>
       <Input
-        id={id}
+        id={inputId}
         type="date"
         value={day}
         disabled={disabled}

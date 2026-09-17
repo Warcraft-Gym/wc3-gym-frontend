@@ -1,4 +1,5 @@
 "use client";
+import { useId } from "react";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/input";
 
@@ -17,9 +18,12 @@ export function SimpleTimePicker({
   onUpdateModelValue?: (value: string) => void;
   id?: string;
 }) {
+  // The label reaches the input even when the caller passes no id
+  const auto = useId();
+  const inputId = id ?? auto;
   return (
-    <Field label={label} htmlFor={id}>
-      <Input id={id} type="time" value={modelValue ?? ""} disabled={disabled} onChange={(event) => onUpdateModelValue?.(event.target.value)} />
+    <Field label={label} htmlFor={inputId}>
+      <Input id={inputId} type="time" value={modelValue ?? ""} disabled={disabled} onChange={(event) => onUpdateModelValue?.(event.target.value)} />
     </Field>
   );
 }

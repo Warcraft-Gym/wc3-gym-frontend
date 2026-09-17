@@ -9,7 +9,8 @@ import { LOSS, WIN, winRate } from "@/helpers/ladder-days.mjs";
 type LadderRow = { games?: number; wins?: number; losses?: number; vs_race?: Record<string, [number, number]> } & Record<string, any>;
 type GnlRow = { games?: number; wins?: number; losses?: number } & Record<string, any>;
 
-const label = "text-center text-xs text-[rgba(var(--v-theme-on-surface),0.38)]";
+const disabled = "text-[rgba(var(--v-theme-on-surface),0.38)]";
+const label = `text-center text-xs ${disabled}`;
 
 const record = (p?: LadderRow | null) => (!p || !p.games ? "—" : `${p.wins}–${p.losses} · ${winRate(p.wins, p.losses)}%`);
 const vs = (p?: LadderRow | null, race?: string) => {
@@ -76,10 +77,10 @@ export function MatchupCompare({
       <div>{gnl(gb)}</div>
 
       <div className="flex justify-end">
-        {daysA ? <LadderDayBars days={daysA} ymax={ymax} /> : <span className="text-muted-foreground">&mdash;</span>}
+        {daysA ? <LadderDayBars days={daysA} ymax={ymax} /> : <span className={disabled}>&mdash;</span>}
       </div>
       <div className={label}>ladder</div>
-      <div>{daysB ? <LadderDayBars days={daysB} ymax={ymax} /> : <span className="text-muted-foreground">&mdash;</span>}</div>
+      <div>{daysB ? <LadderDayBars days={daysB} ymax={ymax} /> : <span className={disabled}>&mdash;</span>}</div>
 
       <div className="col-span-full flex flex-wrap justify-center gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1">

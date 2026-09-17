@@ -135,7 +135,7 @@ export function PlayerLadderTab({ player, seasonId }: { player: any; seasonId: n
             </div>
           </div>
           {player?.battleTag ? (
-            <a href={w3cStatsUrl} target="_blank" className="ml-auto inline-flex items-center self-start text-xs">
+            <a href={w3cStatsUrl} target="_blank" rel="noopener" className="ml-auto inline-flex items-center self-start text-xs">
               <W3CIcon size={14} className="mr-1" />
               W3Champions
             </a>

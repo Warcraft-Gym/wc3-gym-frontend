@@ -68,7 +68,7 @@ export function PlayerLadderPanel({
             ))}
           </div>
         ) : (
-          <span className="text-muted-foreground">&mdash;</span>
+          <span className="text-[rgba(var(--v-theme-on-surface),0.38)]">&mdash;</span>
         )}
         <span className="mt-1 text-sm text-muted-foreground">
           {player.games} games{last ? ` · last ${last}` : null}

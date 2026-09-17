@@ -35,5 +35,5 @@ export function showDefaultTeamImage(event) {
   const img = event.target;
   if (img.dataset.teamDefault) return;  // the bundled default must not retrigger this
   img.dataset.teamDefault = '1';
-  img.src = teamDefaultImg;
+  img.src = teamDefaultImg.src ?? teamDefaultImg;  // a bundler may answer the import as an object
 }

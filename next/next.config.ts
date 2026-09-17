@@ -12,8 +12,8 @@ const nextConfig: NextConfig = {
     // ponytail: one line per package the helpers import; the list ends when they move under next/
     resolveAlias: {
       luxon: "./node_modules/luxon",
-      "country-code-info/data/countries.json": "./node_modules/country-code-info/data/countries.json",
       "d3-time-format": "./node_modules/d3-time-format",
+      "country-code-info/data/countries.json": "./node_modules/country-code-info/data/countries.json",
     },
   },
   async rewrites() {

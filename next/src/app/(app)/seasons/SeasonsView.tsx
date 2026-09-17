@@ -307,13 +307,21 @@ export function SeasonsView() {
                     {tableHeader.map((column) => (
                       <TableHead
                         key={column.value}
-                        className={`${column.sortable ? "cursor-pointer select-none" : ""} ${column.actions ? "text-end" : ""} ${column.mobile === false ? MOBILE_HIDDEN : ""} ${sort.value === column.value ? "text-primary" : ""}`}
-                        onClick={() => column.sortable && setSort({ value: column.value, desc: sort.value === column.value && !sort.desc })}
+                        className={`${column.actions ? "text-end" : ""} ${column.mobile === false ? MOBILE_HIDDEN : ""} ${sort.value === column.value ? "text-primary" : ""}`}
                       >
-                        {column.title}
+                        {/* a sortable header is a button, so Tab and Enter reach the sort */}
                         {column.sortable ? (
-                          <Icon name={sort.value === column.value && sort.desc ? "mdi-arrow-down" : "mdi-arrow-up"} className={`ml-0.5 text-sm ${sort.value === column.value ? "" : "opacity-25"}`} />
-                        ) : null}
+                          <button
+                            type="button"
+                            className="inline-flex cursor-pointer items-center select-none"
+                            onClick={() => setSort({ value: column.value, desc: sort.value === column.value && !sort.desc })}
+                          >
+                            {column.title}
+                            <Icon name={sort.value === column.value && sort.desc ? "mdi-arrow-down" : "mdi-arrow-up"} className={`ml-0.5 text-sm ${sort.value === column.value ? "" : "opacity-25"}`} />
+                          </button>
+                        ) : (
+                          column.title
+                        )}
                       </TableHead>
                     ))}
                   </TableRow>

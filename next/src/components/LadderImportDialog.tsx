@@ -23,12 +23,15 @@ const STATUS: Record<string, string> = {
   off_ladder: "Not in pool",
 };
 
+// one array for every call with no rows, so the seenRows read below stays stable
+const NO_ROWS: ImportRow[] = [];
+
 /** The W3C 1v1 map pool, one row per map, before it is imported.
  *  A known map is imported too: that is what renames a drifted map to the ladder name and fills a
  *  picture it never had. Click a row to leave it out. */
 export function LadderImportDialog({
   modelValue = false,
-  rows = [],
+  rows = NO_ROWS,
   loading = false,
   onUpdateModelValue,
   onConfirm,

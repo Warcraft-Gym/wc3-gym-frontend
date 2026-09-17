@@ -253,7 +253,8 @@ export function SeasonMapsView({ id }: { id: string }) {
         </div>
       </div>
 
-      <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
+      {/* the season list is loaded by the guard, so a null id here is a slug that names no season */}
+      <StatusAlert modelValue={errorMessage ?? (seasonId ? null : "Failed to load the season. Please try again later.")} onClose={() => setErrorMessage(null)} />
 
       <div className="grid gap-4 md:grid-cols-12">
         {/* Map pool */}
@@ -371,19 +372,22 @@ export function SeasonMapsView({ id }: { id: string }) {
                   <div className="mb-1 font-medium">Round {round.playday}</div>
                   <div className="flex gap-2">
                     <Field className="flex-1" label="Start" htmlFor={`start-${round.playday}`}>
+                      {/* a date input fires onChange on every segment, so the save waits for the commit on blur */}
                       <Input
                         id={`start-${round.playday}`}
                         type="date"
-                        value={round.start_date ?? ""}
-                        onChange={(e) => setRound(round.playday, { start_date: e.target.value || null })}
+                        key={round.start_date ?? ""}
+                        defaultValue={round.start_date ?? ""}
+                        onBlur={(e) => e.target.value !== (round.start_date ?? "") && setRound(round.playday, { start_date: e.target.value || null })}
                       />
                     </Field>
                     <Field className="flex-1" label="End" htmlFor={`end-${round.playday}`}>
                       <Input
                         id={`end-${round.playday}`}
                         type="date"
-                        value={round.end_date ?? ""}
-                        onChange={(e) => setRound(round.playday, { end_date: e.target.value || null })}
+                        key={round.end_date ?? ""}
+                        defaultValue={round.end_date ?? ""}
+                        onBlur={(e) => e.target.value !== (round.end_date ?? "") && setRound(round.playday, { end_date: e.target.value || null })}
                       />
                     </Field>
                   </div>
@@ -400,9 +404,10 @@ export function SeasonMapsView({ id }: { id: string }) {
                           <SelectItem value={NO_MAP}>No fixed map</SelectItem>
                           {pool.map((m) => (
                             <SelectItem key={m.id} value={m.id}>
-                              <span className="flex items-center gap-3">
+                              <span className="flex w-full items-center gap-3">
                                 <Thumb map={m} />
                                 {m.name}
+                                <Badge variant="outline" className="ml-auto rounded-[4px]">{m.shortname}</Badge>
                               </span>
                             </SelectItem>
                           ))}

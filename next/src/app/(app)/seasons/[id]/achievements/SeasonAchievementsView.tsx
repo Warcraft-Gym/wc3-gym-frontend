@@ -129,7 +129,8 @@ export function SeasonAchievementsView({ id }: { id: string }) {
         </div>
       </div>
 
-      <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
+      {/* the season list is loaded by the guard, so a null id here is a slug that names no season */}
+      <StatusAlert modelValue={errorMessage ?? (seasonId ? null : "Failed to load the season. Please try again later.")} onClose={() => setErrorMessage(null)} />
 
       <div className="mb-1 flex flex-wrap items-center gap-4">
         <Field className="w-full sm:w-64" label="Import from" htmlFor="import-source">

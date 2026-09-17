@@ -128,11 +128,13 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
           const picked = rows.find((s: any) => s.id === selectedSeasonId);
           setSelectedSeasonId(picked ? picked.id : resolved ?? Math.max(...rows.map((s: any) => s.id)));
         }
+        // No season to read: the load effect never runs, so this pass clears the flag itself
+        else setIsLoading(false);
       } catch {
         setErrorMessage("Failed to load seasons.");
+        setIsLoading(false);
       } finally {
         setBooted(true);
-        setIsLoading(false);
       }
     })();
     // one read on mount, as onMounted does
@@ -249,7 +251,6 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
       return {
         id: team.id,
         icon_url: team.icon_url,
-        league_id: team.league_id,
         name: team.long_name || team.name,
         finalScore: info.final_score || 0,
         pointsAvailable: info.points_available || 0,

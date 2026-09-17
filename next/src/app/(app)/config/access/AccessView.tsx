@@ -185,7 +185,7 @@ export function AccessView() {
         </CardContent>
       </Card>
 
-      <Dialog open={addDialog} onOpenChange={setAddDialog}>
+      <Dialog open={addDialog} onOpenChange={setAddDialog} disablePointerDismissal>
         <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[600px]">
           <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
             <Icon name="mdi-plus-circle" />

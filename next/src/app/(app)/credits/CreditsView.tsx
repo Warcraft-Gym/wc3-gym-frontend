@@ -10,6 +10,7 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { Kit } from "./Kit";
 import { LadderKit } from "./LadderKit";
 import { FormKit } from "./FormKit";
+import { PlayerHistoryKit } from "./PlayerHistoryKit";
 
 // Sample rows for the kit section, shaped like the backend rows these components read.
 const kitPlayer = {
@@ -77,6 +78,8 @@ export function CreditsView() {
           <LadderKit />
 
           <FormKit />
+
+          <PlayerHistoryKit />
         </section>
       ) : null}
     </div>

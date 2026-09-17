@@ -88,7 +88,8 @@ export function SeasonAchievementsView({ id }: { id: string }) {
     });
 
   useEffect(() => {
-    // The reads run after the effect body, so the first paint is one render, not a cascade
+    if (!seasonId) return;
+    // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(() => run(async () => {
       await ensureSeasons();
       const [rules, current] = await Promise.all([fetchAchievementCatalogue(), fetchSeasonAchievements(seasonId!)]);

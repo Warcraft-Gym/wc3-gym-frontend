@@ -100,7 +100,7 @@ export function SeasonsView() {
   };
 
   useEffect(() => {
-    // The reads run after the effect body, so the first paint is one render, not a cascade
+    // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(() => {
       loadSeasons();
       loadMaps();
@@ -375,7 +375,8 @@ export function SeasonsView() {
       ) : null}
 
       {/* Add / Edit Season Dialog */}
-      <Dialog open={seasonDialogOpen} onOpenChange={(open) => !open || closeSeasonDialog()}>
+      {/* the Vue dialog is `persistent`: a click outside or Escape leaves the form open */}
+      <Dialog open={seasonDialogOpen} onOpenChange={() => undefined}>
         {selectedSeason ? (
           <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[800px] gap-0 overflow-y-auto p-0 sm:max-w-[800px]">
             <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">

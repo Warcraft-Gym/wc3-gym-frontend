@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +37,7 @@ export function MapsView() {
   const [importLoading, setImportLoading] = useState(false);
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   // the picked file while one is picked, else the picture the map already has
-  const picturePreview = pictureFile ? URL.createObjectURL(pictureFile) : selectedMap?.image;
+  const picturePreview = useMemo(() => (pictureFile ? URL.createObjectURL(pictureFile) : selectedMap?.image), [pictureFile, selectedMap?.image]);
 
   // Delete dialog state
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
@@ -56,7 +56,7 @@ export function MapsView() {
   };
 
   useEffect(() => {
-    // The read runs after the effect body, so the first paint is one render, not a cascade
+    // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(fetchMaps);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -231,7 +231,7 @@ export function MapsView() {
       </Card>
 
       {/* Add / Edit Map Dialog */}
-      <Dialog open={mapDialogOpen} onOpenChange={(open) => !open || closeMapDialog()}>
+      <Dialog open={mapDialogOpen} onOpenChange={(open) => open || closeMapDialog()}>
         {selectedMap ? (
           <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
             <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">

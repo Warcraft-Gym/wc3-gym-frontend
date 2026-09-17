@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ const STEPS = [
   { value: "Pick_B", label: "+ Pick B", color: "text-success" },
 ];
 
-// The fixed map of a round is cleared by picking this item, which is what `clearable` was
+// Picking this item clears the round's fixed map.
 const NO_MAP = "none";
 
 type MapRow = Record<string, any>;
@@ -58,7 +58,7 @@ export function SeasonMapsView({ id }: { id: string }) {
   const [newMapOpen, setNewMapOpen] = useState(false);
   const [newMap, setNewMap] = useState({ name: "", shortname: "" });
   const [newMapFile, setNewMapFile] = useState<File | null>(null);
-  const newMapPreview = newMapFile ? URL.createObjectURL(newMapFile) : null;
+  const newMapPreview = useMemo(() => (newMapFile ? URL.createObjectURL(newMapFile) : null), [newMapFile]);
 
   const [importOpen, setImportOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
@@ -196,7 +196,7 @@ export function SeasonMapsView({ id }: { id: string }) {
 
   useEffect(() => {
     if (!seasonId) return;
-    // The read runs after the effect body, so the first paint is one render, not a cascade
+    // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
       setIsLoading(true);
       try {
@@ -235,7 +235,14 @@ export function SeasonMapsView({ id }: { id: string }) {
           <div className="text-muted-foreground">{season.name}</div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" nativeButton={false} render={<Link href={`/seasons/${id}`} />}>
+          <Button
+            variant="ghost"
+            nativeButton={false}
+            render={<Link href={`/seasons/${id}`} />}
+            onClick={(e) => {
+              if (isDirty && !window.confirm("The map rules and the pick and ban order are not saved. Leave the page?")) e.preventDefault();
+            }}
+          >
             <Icon name="mdi-arrow-left" />
             Back to season
           </Button>
@@ -387,7 +394,7 @@ export function SeasonMapsView({ id }: { id: string }) {
                         onValueChange={(value: number | string) => setRound(round.playday, { map_id: value === NO_MAP ? null : value })}
                       >
                         <SelectTrigger id={`map-${round.playday}`} className="w-full">
-                          <SelectValue>{(value: number | string) => pool.find((m) => m.id === value)?.name ?? "No fixed map"}</SelectValue>
+                          <SelectValue>{(value: number | string) => pool.find((m) => m.id === value)?.name ?? ""}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={NO_MAP}>No fixed map</SelectItem>
@@ -463,7 +470,7 @@ export function SeasonMapsView({ id }: { id: string }) {
       </div>
 
       {/* New Map Dialog */}
-      <Dialog open={newMapOpen} onOpenChange={(open) => !open || closeNewMap()}>
+      <Dialog open={newMapOpen} onOpenChange={(open) => open || closeNewMap()}>
         <DialogContent showCloseButton={false} className="max-w-[560px] gap-0 p-0 sm:max-w-[560px]">
           <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
             <Icon name="mdi-map-plus" />

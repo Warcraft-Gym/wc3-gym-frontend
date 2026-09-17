@@ -136,6 +136,7 @@ export function AccessView() {
 
           <DataTable
             data={admins}
+            pageSize={10}
             columnVisibility={{ discord_id: mdAndUp, granted_at: mdAndUp }}
             empty={
               <div className="p-8 text-center">

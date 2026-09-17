@@ -92,7 +92,7 @@ export function DiscordRolesView() {
   const teamStore = useTeamStore();
   const { seasons, fetchSeasons } = useSeason();
 
-  // Temporary: which of the two layouts an admin last chose. Server and first paint draw the
+  // Which of the two layouts an admin last chose, while both ship. Server and first paint draw the
   // columns, so the stored choice is read only once the page is hydrated.
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [chosenView, setChosenView] = useState<string | null>(null);
@@ -373,9 +373,10 @@ export function DiscordRolesView() {
     }
   };
 
-  // The teams of a season are read once, when its group first opens
-  const loadSeasonTeams = async (id: number) => {
-    if (!id || seasonTeams[id] !== undefined) return;
+  // The teams of a season are read once, when its group first opens. A caller that just cleared the
+  // map passes the cleared one, because this render still holds the map from before.
+  const loadSeasonTeams = async (id: number, cache: Record<number, any> = seasonTeams) => {
+    if (!id || cache[id] !== undefined) return;
     setSeasonTeams((current) => ({ ...current, [id]: null }));
     try {
       const rows = await teamStore.fetchTeamsBySeasonBasic(id);
@@ -428,7 +429,7 @@ export function DiscordRolesView() {
     setSeasonTeams({});
     setOpenedSeasons(row?.kind === "team" && seasonId ? [seasonId] : []);
     setPickerDialog(true);
-    if (row?.kind === "team" && seasonId) loadSeasonTeams(seasonId);
+    if (row?.kind === "team" && seasonId) loadSeasonTeams(seasonId, {});
     await loadGroups(next);
   };
 
@@ -567,7 +568,6 @@ export function DiscordRolesView() {
         <div className="flex items-center gap-3">
           {view === "columns" ? (
             <Select items={SORTS.map((sort) => ({ value: sort.key, label: sort.label }))} value={sortKey} onValueChange={(value) => setSortKey(value as string)}>
-              <span className="text-sm text-muted-foreground">Sort</span>
               <SelectTrigger aria-label="Sort" className="min-w-[170px]">
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
@@ -578,9 +578,11 @@ export function DiscordRolesView() {
                   </SelectItem>
                 ))}
               </SelectContent>
+              {/* The label reads after the select, where the floating label of v-select sits, and order puts it back in front */}
+              <span className="order-first text-sm text-muted-foreground">Sort</span>
             </Select>
           ) : null}
-          {/* Temporary: both layouts ship so admins can say which they prefer; one goes after that */}
+          {/* Both layouts ship while admins compare them */}
           <ToggleGroup variant="outline" spacing={0} value={[view]} onValueChange={(value) => value[0] && chooseView(value[0])}>
             <ToggleGroupItem value="columns" aria-label="Columns">
               <Icon name="mdi-view-column" />
@@ -816,11 +818,16 @@ export function DiscordRolesView() {
 
             <DataTable
               data={report}
+              pageSize={10}
               empty={
-                <div className="p-8 text-center">
-                  <Icon name={loadFailed ? "mdi-alert-circle-outline" : "mdi-check-circle-outline"} size={64} className="text-muted-foreground" />
-                  <div className="mt-4 text-xl text-muted-foreground">{loadFailed ? "Could not load the comparison" : "Every account matches the database"}</div>
-                </div>
+                isLoadingReport ? (
+                  "Loading…"
+                ) : (
+                  <div className="p-8 text-center">
+                    <Icon name={loadFailed ? "mdi-alert-circle-outline" : "mdi-check-circle-outline"} size={64} className="text-muted-foreground" />
+                    <div className="mt-4 text-xl text-muted-foreground">{loadFailed ? "Could not load the comparison" : "Every account matches the database"}</div>
+                  </div>
+                )
               }
               columns={[
                 { id: "name", accessorKey: "name", header: "Name" },
@@ -870,7 +877,6 @@ export function DiscordRolesView() {
                 },
               ]}
             />
-            {isLoadingReport ? <div className="p-2 text-sm text-muted-foreground">Loading…</div> : null}
           </CardContent>
         </Card>
       </div>

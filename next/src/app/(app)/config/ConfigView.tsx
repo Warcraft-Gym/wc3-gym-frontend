@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/PageHeader";
@@ -147,7 +148,7 @@ export function ConfigView() {
       }
       await configStore.updateSettings(settingsToSave);
       // The config module answers the PUT result only, so the saved rows are read back here
-      await fetchSettings();
+      if (!(await fetchSettings())) return;
       setSuccessMessage("Settings saved.");
     } catch (error: any) {
       setErrorMessage("Failed to save settings: " + error.message);
@@ -264,7 +265,8 @@ export function ConfigView() {
             {/* GNL Settings */}
             <h3 className="mt-4 text-xl md:col-span-12">GNL league settings</h3>
 
-            <Field className="md:col-span-6" label="Current GNL season" hint="Active league season" htmlFor="current-gnl-season">
+            {/* The label reads after the select, where the floating label of v-select sits, and order puts it back on top */}
+            <div className="flex flex-col gap-1.5 md:col-span-6">
               {/* The port of the clearable select: the blank item is how a season is taken back off */}
               <Select
                 items={seasons.map((season: any) => ({ value: season.id, label: season.name }))}
@@ -284,7 +286,9 @@ export function ConfigView() {
                   ))}
                 </SelectContent>
               </Select>
-            </Field>
+              <Label htmlFor="current-gnl-season" className="order-first">Current GNL season</Label>
+              <p className="text-xs text-muted-foreground">Active league season</p>
+            </div>
 
             {/* Public Access Settings */}
             <h3 className="mt-4 text-xl md:col-span-12">Public access settings</h3>

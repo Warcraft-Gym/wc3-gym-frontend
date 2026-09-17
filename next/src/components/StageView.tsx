@@ -197,8 +197,8 @@ export function StageView({
                       round={column.name}
                       label={boxLabel(group, column, row)}
                       fed={isLobbyStage && column.index > 0}
-                      // A lobby is a block of seats, so the next lobby stands off it and not on one hairline
-                      className={cn(index && (isLobbyStage ? "mt-2.5" : "border-t"))}
+                      // A lobby is a block of seats, so the next lobby stands off the one above it
+                      className={cn(index && "border-t", index && isLobbyStage && "mt-2.5")}
                       onOpen={onOpenSeries}
                     />
                   ))}

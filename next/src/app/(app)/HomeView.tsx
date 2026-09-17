@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toneClass } from "@/components/ui/tone";
 import { SignupDialog } from "@/components/SignupDialog";
 import { StatusAlert } from "@/components/StatusAlert";
+import { cn } from "@/lib/utils";
 import { actOnEvent, homeCards, joinableEvents } from "@/helpers/events.mjs";
 import { useAuth, useEventStore, usePlayerStore, useSeason, useTeamStore } from "@/stores";
 
@@ -254,7 +255,9 @@ export function HomeView() {
 function PrimaryButton({ card, acting, act, className, size }: { card: Card; acting: string | null; act: (card: Card) => void; className?: string; size?: "sm" }) {
   const busy = acting === card.key;
   const variant = card.primary.variant === "outlined" ? "outline" : "default";
-  const tint = card.primary.color === "error" ? "text-error" : card.primary.color === "success" ? "text-success" : "";
+  const tint = card.primary.color === "error" ? "text-error" : card.primary.color === "success" ? "text-success" : "text-primary-text";
+  // A filled button already carries the colour, so the tint only paints the outline variant
+  const paint = cn(variant === "outline" && tint, className);
   const body = (
     <>
       {busy ? <Icon name="mdi-loading mdi-spin" /> : card.primary.icon ? <Icon name={card.primary.icon} /> : null}
@@ -263,12 +266,12 @@ function PrimaryButton({ card, acting, act, className, size }: { card: Card; act
   );
   if (card.primary.to)
     return (
-      <Button nativeButton={false} variant={variant} size={size} className={`${tint} ${className ?? ""}`} render={<Link href={card.primary.to} />}>
+      <Button nativeButton={false} variant={variant} size={size} className={paint} render={<Link href={card.primary.to} />}>
         {body}
       </Button>
     );
   return (
-    <Button variant={variant} size={size} className={`${tint} ${className ?? ""}`} disabled={busy} onClick={() => act(card)}>
+    <Button variant={variant} size={size} className={paint} disabled={busy} onClick={() => act(card)}>
       {body}
     </Button>
   );

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 type Row = Record<string, any>;
 
 /** One series on a phone: a title line, then one line per player with a value at the right.
- *  `title`, `actions` and `side` fill the three places the Vue slots fill. */
+ *  `title`, `actions` and `side` fill the title line, its right end and each player line. */
 export function SeriesCard({
   series, // player1, player2, host_player_id, scores
   title,

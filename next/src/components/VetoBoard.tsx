@@ -306,7 +306,7 @@ export function VetoBoard({
       ) : null}
 
       {!board && !errorMessage ? (
-        <div className="flex justify-center p-8">
+        <div className="flex justify-center p-8" role="status" aria-label="Loading">
           <Icon name="mdi-loading mdi-spin" size={64} className="text-primary" />
         </div>
       ) : null}

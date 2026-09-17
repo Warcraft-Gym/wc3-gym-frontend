@@ -321,7 +321,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
           {scoreVeto ? (
             <Note type={scoreVeto.complete ? "success" : "warning"}>{scoreVeto.complete ? "Map veto complete" : "Enter the map veto below, or report without it."}</Note>
           ) : null}
-          {series.id ? <VetoBoard key={series.id} seriesId={series.id} report onChange={setScoreVeto} /> : null}
+          {series.id ? <VetoBoard key={series.id} seriesId={series.id} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} /> : null}
 
           {series.solo && !series.raceOpen ? (
             <div>

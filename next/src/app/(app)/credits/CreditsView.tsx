@@ -9,6 +9,7 @@ import { W3CIcon } from "@/components/W3CIcon";
 import { W3CMmr } from "@/components/W3CMmr";
 import { Kit } from "./Kit";
 import { LadderKit } from "./LadderKit";
+import { FormKit } from "./FormKit";
 
 // Sample rows for the kit section, shaped like the backend rows these components read.
 const kitPlayer = {
@@ -74,6 +75,8 @@ export function CreditsView() {
           <AchievementChip badges={kitBadges} />
 
           <LadderKit />
+
+          <FormKit />
         </section>
       ) : null}
     </div>

@@ -20,6 +20,7 @@ export function Combobox<T extends ComboboxItem>({
   row,
   className,
   id,
+  disabled,
 }: {
   items: T[];
   value: string | null;
@@ -30,6 +31,7 @@ export function Combobox<T extends ComboboxItem>({
   row?: (item: T) => React.ReactNode;
   className?: string;
   id?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const chosen = items.find((i) => i.value === value) ?? null;
@@ -37,7 +39,7 @@ export function Combobox<T extends ComboboxItem>({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button id={id} variant="outline" role="combobox" aria-label={label} className={cn("w-full justify-between font-normal", className)}>
+          <Button id={id} variant="outline" role="combobox" aria-label={label} disabled={disabled} className={cn("w-full justify-between font-normal", className)}>
             <span className="flex items-center gap-2 truncate">{chosen ? (row ? row(chosen) : chosen.title) : (label ?? placeholder)}</span>
             <Icon name="mdi-chevron-down" className="opacity-60" />
           </Button>

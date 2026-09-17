@@ -16,8 +16,8 @@ export async function resolveCurrentSeasonId() {
   }
 
   try {
-    await seasonStore.fetchSeasons();
-    const newest = (seasonStore.seasons || []).slice().sort((a, b) => b.id - a.id)[0];
+    const rows = await seasonStore.fetchSeasons();
+    const newest = (rows || []).slice().sort((a, b) => b.id - a.id)[0];
     return newest ? newest.id : null;
   } catch (error) {
     console.error('Failed to fetch seasons for the current season fallback:', error);
@@ -45,8 +45,7 @@ export async function loadSeasons() {
   const seasonStore = useSeasonStore();
 
   try {
-    await seasonStore.fetchSeasons();
-    return seasonStore.seasons || [];
+    return (await seasonStore.fetchSeasons()) || [];
   } catch (error) {
     console.error('Failed to load seasons:', error);
     return [];

@@ -20,7 +20,7 @@ export function EventHeader({ event, league = null }: { event: EventRow; league?
   const state = stateOf(event);
   const when = dateRange(event);
   // One gap for every icon-and-text pair, and one nudge that centres the icon on the x-height
-  const link = "inline-flex items-center gap-1.5 whitespace-nowrap text-inherit no-underline";
+  const link = "inline-flex items-center gap-1.5 whitespace-nowrap text-inherit no-underline [&>.mdi]:-translate-y-[3%]";
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">

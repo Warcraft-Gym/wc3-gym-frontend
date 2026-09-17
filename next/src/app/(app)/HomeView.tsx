@@ -125,7 +125,7 @@ export function HomeView() {
       }
     };
     fetchHomeData();
-    // the page reads itself once a session, the way onMounted does
+    // one read per mount; isAdmin picks the admin counts
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 

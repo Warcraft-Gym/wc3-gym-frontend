@@ -158,6 +158,9 @@
 }
 
 @layer base {
+  /* A border utility with no colour draws the theme hairline, not the text colour. */
+  *, ::before, ::after { border-color: var(--color-border); }
+
   /* Alegreya Sans for body and controls; numbers use lining, equal-width digits so columns line up. */
   html,
   body {

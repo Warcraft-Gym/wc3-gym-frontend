@@ -133,7 +133,7 @@ export function CastChips({ series }: { series: CastSeries }) {
       {casts.map((cast) =>
         canEdit(cast) ? (
           <DropdownMenu key={cast.id}>
-            <DropdownMenuTrigger render={<Badge className={cn("cursor-pointer", chipClass)} />}>{chipBody(cast)}</DropdownMenuTrigger>
+            <DropdownMenuTrigger nativeButton={false} render={<Badge className={cn("cursor-pointer", chipClass)} />}>{chipBody(cast)}</DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {cast.vod_url ? (
                 <DropdownMenuItem render={<a href={cast.vod_url} target="_blank" rel="noopener" />}>

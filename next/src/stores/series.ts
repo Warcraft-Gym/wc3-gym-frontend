@@ -15,7 +15,7 @@ const store = {
   async updateCast(seriesId: number, castId: number, channel_url: string) {
     return await fetchWrapper.put(`${backendUrl}/series/${seriesId}/casts/${castId}`, { channel_url });
   },
-  async setCastVod(seriesId: number, castId: number, vod_url: string) {
+  async setCastVod(seriesId: number, castId: number, vod_url: string | null) {
     return await fetchWrapper.put(`${backendUrl}/series/${seriesId}/casts/${castId}/vod`, { vod_url });
   },
   async unclaimSeries(seriesId: number, castId: number) {

@@ -227,3 +227,11 @@
 .grouped-table .detail-row > td:first-child {
   background: rgba(var(--v-theme-on-surface), 0.04);
 }
+
+/* Five people cast a season, so a table row keeps the cast button quiet until it is pointed at
+   or tabbed into. A card, which is not a row, always shows it. */
+@media (hover: hover) {
+  tr .cast-add { opacity: 0; transition: opacity 120ms ease; }
+  tr:hover .cast-add,
+  tr:focus-within .cast-add { opacity: 1; }
+}

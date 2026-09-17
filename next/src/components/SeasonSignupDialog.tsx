@@ -122,7 +122,8 @@ export function SeasonSignupDialog({ onAdded, ref }: { onAdded?: () => void; ref
             label="Player"
             items={players.map((player) => ({ value: String(player.id), title: player.name ?? "" }))}
             value={playerId == null ? null : String(playerId)}
-            onChange={(value) => (presetPlayer ? undefined : setPlayerId(value == null ? null : Number(value)))}
+            onChange={(value) => setPlayerId(value == null ? null : Number(value))}
+            disabled={!!presetPlayer}
             row={(item) => {
               const player = players.find((row) => String(row.id) === item.value);
               return player ? <PlayerName player={player} plain /> : item.title;

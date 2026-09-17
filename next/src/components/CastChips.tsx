@@ -33,9 +33,8 @@ const iconOf = (url: string | null | undefined, fallback: string) => PLATFORM_IC
 export type Cast = { id: number; name: string; user_id: number; channel_url: string; vod_url?: string | null };
 export type CastSeries = { id: number; casts?: Cast[] | null; date_time?: string | null } & Record<string, any>;
 
-/** Who casts a series: one chip per cast with its platform icon, linking to the channel, or to the VOD
- *  with a play icon; red while the series is on now. A member claims, or adds the VOD once the series is
- *  over; the owner or an admin edits, pastes a VOD or unclaims. */
+/** Who casts a series: one chip per cast with its platform icon, linking to the channel, or to the VOD with a play icon; red while the series is on now.
+ *  A member claims, or adds the VOD once the series is over; the owner or an admin edits, pastes a VOD or unclaims. */
 export function CastChips({ series }: { series: CastSeries }) {
   const auth = useAuth();
   const seriesStore = useSeriesStore();

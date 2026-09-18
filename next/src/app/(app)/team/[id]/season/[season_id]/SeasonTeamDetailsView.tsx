@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TapTooltip } from "@/components/ui/TapTooltip";
+import { toneClass } from "@/components/ui/tone";
 import { AchievementChip } from "@/components/AchievementChip";
 import { ColumnNote } from "@/components/ColumnNote";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -216,13 +217,14 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     }
   };
 
-  const filteredAllPlayers: Row[] = (() => {
+  // The dialog table holds its page while this array holds its identity, so a tick keeps the page
+  const filteredAllPlayers: Row[] = useMemo(() => {
     let list = seasonSignups;
     if (searchName.trim().length > 0) list = list.filter((p) => matchesPlayerSearch(p, searchName));
     if (searchRace) list = list.filter((p) => p.signup_race === searchRace);
     // filter by mmr range — only apply if user changed from defaults
     return filterByMmrRange(list, rangeValues, (p: Row) => Number(getW3CMMR(p, currentW3CSeason, p.signup_race) ?? 0));
-  })();
+  }, [seasonSignups, searchName, searchRace, rangeValues, currentW3CSeason]);
 
   const syncCell = (row: Row) => (
     <TapTooltip className="text-xs text-muted-foreground" content={syncedAt(row)}>
@@ -404,7 +406,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
             {/* Save captains answers the accounts the guild has not granted the role yet */}
             <div className="mt-4 flex flex-wrap gap-2">
               {missingRoleCaptains.map((captain) => (
-                <Badge key={captain.id} className="bg-warning/12 text-warning">
+                <Badge key={captain.id} className={toneClass("warning")}>
                   <Icon name="mdi-alert" />
                   {captain.name} — role missing in Discord
                 </Badge>
@@ -501,7 +503,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
 
       {/* Add New Player Modal */}
       <Dialog open={showNewPlayerModal} onOpenChange={setShowNewPlayerModal} disablePointerDismissal>
-        <DialogContent showCloseButton={false} className="max-w-[900px] gap-0 p-0 sm:max-w-[900px]">
+        <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[900px] overflow-y-auto gap-0 p-0 sm:max-w-[900px]">
           <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
             <Icon name="mdi-account-multiple-plus" />
             Select players to add
@@ -525,6 +527,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
             />
             <DataTable
               data={filteredAllPlayers}
+              pageSize={10}
               empty="No signed-up players match the filters."
               columns={[
                 {

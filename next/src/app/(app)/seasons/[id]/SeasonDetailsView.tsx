@@ -465,7 +465,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
           <AccordionTrigger className="text-lg">
             <span className="flex items-center gap-2">
               <Icon name="mdi-shield-account" />
-              Season teams ({teams.length})
+              {`Season teams (${teams.length})`}
             </span>
           </AccordionTrigger>
           <AccordionContent>
@@ -485,7 +485,8 @@ export function SeasonDetailsView({ id }: { id: string }) {
             ) : null}
 
             {teams.length ? (
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 min-[1280px]:grid-cols-4">
+              // The grid changes at 600, 960 and 1280, as the Vue grid does, not at the Tailwind defaults
+              <div className="grid gap-4 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1280px]:grid-cols-4">
                 {teams.map((team) => (
                   <Card key={team.id} className="card gap-0 py-0 transition-colors hover:border-primary">
                     <Link href={`/team/${team.id}/season/${id}`} className="block p-4 text-center text-inherit no-underline">
@@ -572,7 +573,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
             <StatusAlert modelValue={matchError} className="mx-4 mt-4" onClose={() => setMatchError(null)} />
             <div className="flex flex-col gap-4 p-4">
               {usesFixedMap ? mapLine(selectedWeek) : null}
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 min-[960px]:grid-cols-2">
                 <Pick label="Team 1" items={teamItems} value={newMatch.team1_id} onChange={(value) => setNewMatch({ ...newMatch, team1_id: value })} />
                 <Pick label="Team 2" items={teamItems} value={newMatch.team2_id} onChange={(value) => setNewMatch({ ...newMatch, team2_id: value })} />
               </div>
@@ -598,7 +599,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
             <StatusAlert modelValue={matchError} className="mx-4 mt-4" onClose={() => setMatchError(null)} />
             <div className="flex flex-col gap-4 p-4">
               {usesFixedMap ? mapLine(selectedMatch.playday) : null}
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 min-[960px]:grid-cols-2">
                 <Pick
                   label="Team 1"
                   items={teamItems}

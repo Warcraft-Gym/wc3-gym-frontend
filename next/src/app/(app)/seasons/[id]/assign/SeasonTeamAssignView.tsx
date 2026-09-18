@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { SortingState } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -116,13 +116,13 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
   // The draft order, so a reversed sort keeps the moved players in place
   const [sorting, setSorting] = useState<SortingState>([{ id: "w3c_mmr", desc: false }]);
 
-  const mmrOf = (p: Row) => getW3CMMR(p, currentW3CSeason, p.signup_race) || 0;
+  const mmrOf = useCallback((p: Row) => getW3CMMR(p, currentW3CSeason, p.signup_race) || 0, [currentW3CSeason]);
 
   // The players an admin took out of the pick list
   const excludedPlayers = signedUpPlayersData.filter((p) => p.draft_excluded);
 
   // The draft order: MMR ascending, each moved player at his slot, no excluded player
-  const orderedPlayers: Row[] = draftOrder(signedUpPlayersData, mmrOf);
+  const orderedPlayers: Row[] = useMemo(() => draftOrder(signedUpPlayersData, mmrOf), [signedUpPlayersData, mmrOf]);
   const positionOf = new Map<number, number>(orderedPlayers.map((p, i) => [p.id, i]));
   // One round = one pick per team
   const roundSize = teams.length || 10;
@@ -180,7 +180,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
   };
 
   // compute assigned player ids across all teams for this season
-  const assignedPlayerIds = (() => {
+  const assignedPlayerIds = useMemo(() => {
     const sid = String(seasonId);
     const set = new Set<number>();
     teams.forEach((team) => {
@@ -190,19 +190,17 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
       else if (typeof v === "object") Object.values(v).forEach((p: any) => p && p.id && set.add(p.id));
     });
     return set;
-  })();
+  }, [teams, seasonId]);
 
-  // players signed up for this season, in draft order
-  const filteredPlayers: Row[] = (() => {
+  // available players = signed up players in draft order, minus assigned players
+  // The table holds its page while this array holds its identity, so a team pick keeps an admin on page 2
+  const availablePlayers: Row[] = useMemo(() => {
     let list = orderedPlayers;
     if (searchName.trim().length > 0) list = list.filter((p) => matchesPlayerSearch(p, searchName));
     if (searchRace) list = list.filter((p) => p.signup_race === searchRace);
     // filter by mmr range — only apply if user changed from defaults
-    return filterByMmrRange(list, rangeValues, mmrOf);
-  })();
-
-  // available players = signed up players minus assigned players
-  const availablePlayers = filteredPlayers.filter((p: Row) => !assignedPlayerIds.has(p.id));
+    return filterByMmrRange(list, rangeValues, mmrOf).filter((p: Row) => !assignedPlayerIds.has(p.id));
+  }, [orderedPlayers, searchName, searchRace, rangeValues, mmrOf, assignedPlayerIds]);
 
   // Count players with team selected
   const playersWithTeamSelected = Object.values(playerTeamSelection).filter((teamId) => teamId != null).length;

@@ -482,6 +482,9 @@ export function FantasyBetsView() {
                 setSorting(next);
                 setPage(1);
               }}
+              // The read always names a sort, so a third click on a header keeps the one it has
+              mustSort
+              mobileStack
               columnVisibility={{ score: mdAndUp, is_locked: mdAndUp }}
               empty="No bets in this season yet. Bets appear here once Fantasy Captains place them."
             />

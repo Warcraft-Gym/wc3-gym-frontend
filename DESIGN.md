@@ -62,7 +62,7 @@ Status colours mean a state of the app. Never use one as a chart series.
 | `info` | `#2F6690` | `#7FB0DA` | A note, the "In progress" chip. |
 | `success` | `#2A6B36` | `#5FA870` | A saved action, the "Check in" button. |
 
-In dark, `on-error`, `on-info` and `on-success` are ink.
+In dark, `on-error`, `on-info`, `on-success` and `on-warning` are ink.
 
 ### Results
 

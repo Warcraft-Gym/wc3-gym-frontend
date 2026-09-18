@@ -40,6 +40,8 @@ export function DataTable<T extends RowData>({
   rowCount,
   sorting,
   onSortingChange,
+  mustSort,
+  mobileStack,
   columnVisibility,
   page,
   onPageChange,
@@ -57,6 +59,8 @@ export function DataTable<T extends RowData>({
   rowCount?: number;
   sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
+  mustSort?: boolean; // a third click on the sorted column keeps the sort, so the read always names one
+  mobileStack?: boolean; // below the sm breakpoint every row reads as a block of label and value lines
   columnVisibility?: ColumnVisibilityState;
   page?: number; // the page the caller holds, from 0; server mode reads it back through onPageChange
   onPageChange?: (page: number) => void;
@@ -72,6 +76,7 @@ export function DataTable<T extends RowData>({
     features,
     data,
     columns,
+    enableSortingRemoval: !mustSort,
     ...(rowId ? { getRowId: (row: T) => rowId(row) } : {}),
     state: {
       sorting: sorting ?? ownSorting,
@@ -118,7 +123,7 @@ export function DataTable<T extends RowData>({
   return (
     <>
       <div className={cn("table-scroll overflow-x-auto", className)}>
-        <table className="w-full caption-bottom text-sm">
+        <table className={cn("w-full caption-bottom text-sm", mobileStack && "table-stack")}>
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id}>
@@ -178,7 +183,8 @@ export function DataTable<T extends RowData>({
                         </TableCell>
                       ) : null}
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        // a stacked row reads the column title off the cell, where the head row is hidden
+                        <TableCell key={cell.id} data-label={typeof cell.column.columnDef.header === "string" ? cell.column.columnDef.header : undefined}>
                           <table.FlexRender cell={cell} />
                         </TableCell>
                       ))}
@@ -202,7 +208,7 @@ export function DataTable<T extends RowData>({
         <div className="flex items-center justify-end gap-4 px-4 py-2 text-sm text-muted-foreground">
           {pageSizeOptions ? (
             <span className="flex items-center gap-2">
-              Items per page
+              Items per page:
               <Select value={pageSize} onValueChange={(value) => onPageSizeChange?.(value as number)}>
                 <SelectTrigger size="sm" aria-label="Items per page" className="w-[84px]">
                   <SelectValue>{(chosen: number) => pageSizeOptions.find((option) => option.value === chosen)?.title ?? String(chosen)}</SelectValue>

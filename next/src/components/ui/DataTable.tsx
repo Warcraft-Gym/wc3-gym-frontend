@@ -27,9 +27,9 @@ const features = tableFeatures({
 
 const ALL_ROWS = Number.MAX_SAFE_INTEGER;
 
-/** The port of `v-data-table`: sort, page and column visibility over one column list.
- *  `rowCount` puts the table in server mode, as `v-data-table-server` was. `expand` draws a
- *  chevron column and one detail row under the row it opens, as `show-expand` did. */
+/** Sort, page and column visibility over one column list.
+ *  `rowCount` puts the table in server mode: the caller holds the page and reads it.
+ *  `expand` draws a chevron column and one detail row under the row it opens. */
 export function DataTable<T extends RowData>({
   columns,
   data,
@@ -51,7 +51,7 @@ export function DataTable<T extends RowData>({
   columns: ColumnDef<typeof features, T>[];
   data: T[];
   empty?: React.ReactNode;
-  pageSize?: number; // -1 shows every row the server answered, as the 'All' option did
+  pageSize?: number; // -1 shows every row the server answered
   pageSizeOptions?: { value: number; title: string }[];
   onPageSizeChange?: (pageSize: number) => void;
   rowCount?: number;
@@ -156,7 +156,7 @@ export function DataTable<T extends RowData>({
                 return (
                   <Fragment key={row.id}>
                     <TableRow
-                      // The whole row opens the detail, as `expand-on-click` did.
+                      // The whole row opens the detail.
                       className={cn(expand && "cursor-pointer")}
                       onClick={expand ? () => toggle(row.id, row.original) : undefined}
                     >
@@ -167,7 +167,7 @@ export function DataTable<T extends RowData>({
                             variant="ghost"
                             size="icon-sm"
                             aria-expanded={open}
-                            aria-label="Score breakdown"
+                            aria-label="Row detail"
                             onClick={(event) => {
                               event.stopPropagation();
                               toggle(row.id, row.original);

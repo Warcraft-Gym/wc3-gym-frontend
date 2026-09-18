@@ -113,7 +113,7 @@ export function FantasyScoreBreakdown({
   })();
 
   return (
-    // `multiple`, as `v-expansion-panels multiple` was: a reader compares two panels side by side
+    // `multiple`: a reader compares two panels side by side
     <Accordion multiple className="w-full">
       {/* Team Points Breakdown */}
       {breakdown.team_breakdown.team_name ? (

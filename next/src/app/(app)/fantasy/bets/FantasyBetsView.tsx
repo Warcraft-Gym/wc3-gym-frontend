@@ -422,7 +422,7 @@ export function FantasyBetsView() {
         : "Enter the number of points for this bet";
 
   const winnerRadios = (series: any, value: number | null, onChange: (id: number) => void) => (
-    <RadioGroup value={value} onValueChange={(next) => onChange(next as number)}>
+    <RadioGroup value={value} onValueChange={(next) => onChange(next as number)} aria-label="Select winner">
       <span className="text-sm">Select winner:</span>
       {[
         { id: series.player1_id, name: series.player1?.name || "Player 1" },
@@ -471,7 +471,11 @@ export function FantasyBetsView() {
               onPageChange={(next) => setPage(next + 1)}
               pageSize={itemsPerPage}
               pageSizeOptions={PAGE_SIZES}
-              onPageSizeChange={setItemsPerPage}
+              // A new page size reads the first page, so the offset stays inside the row count
+              onPageSizeChange={(size) => {
+                setItemsPerPage(size);
+                setPage(1);
+              }}
               sorting={sorting}
               // A header click reloads from the first page in the new order
               onSortingChange={(next) => {

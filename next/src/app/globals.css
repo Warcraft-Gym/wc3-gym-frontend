@@ -72,6 +72,7 @@
   --color-on-error: rgb(var(--v-theme-on-error));
   --color-on-info: rgb(var(--v-theme-on-info));
   --color-on-success: rgb(var(--v-theme-on-success));
+  --color-on-warning: rgb(var(--v-theme-on-warning));
   --color-on-win: rgb(var(--v-theme-on-win));
   --color-on-loss: rgb(var(--v-theme-on-loss));
   --color-on-draw: rgb(var(--v-theme-on-draw));

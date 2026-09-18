@@ -75,6 +75,7 @@ export function FantasyLeaderboardView() {
   const [teamToDelete, setTeamToDelete] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [breakdowns, setBreakdowns] = useState<Record<number, any>>({}); // by team id, filled when a row expands
+  const [reloads, setReloads] = useState(0); // the DataTable's key, so a refetch closes every open row with its dropped breakdown
   // The breakdown's opponent/bet resolve() pool: season signups, carrying signup_race
   const [seasonSignups, setSeasonSignups] = useState<any[]>([]);
   const [gnlTeams, setGnlTeams] = useState<any[]>([]);
@@ -96,7 +97,7 @@ export function FantasyLeaderboardView() {
   // A fantasy captain edits their own team only while the season is open; the draft freezes when it commences
   const canEditOwn = (team: any) => !!myUserId && team.captain_id === myUserId && pickedSeason?.phase === "open";
 
-  // The tier is a season fact now, so the buckets follow the season's signups
+  // The buckets follow the season's signups, because the tier is a season fact
   const tierPlayers = useMemo(() => {
     const byTier: Record<number, any[]> = Object.fromEntries(tiers.map((tier) => [tier, []]));
     for (const player of players) {
@@ -117,6 +118,7 @@ export function FantasyLeaderboardView() {
     setErrorMessage(null);
     try {
       setBreakdowns({});
+      setReloads((count) => count + 1);
       setTeams(await fantasyStore.searchTeams(`season_id == ${selectedSeasonId}`));
       setSeasonSignups((await seasonStore.fetchSeasonSignups(selectedSeasonId)) || []);
     } catch (error: any) {
@@ -204,7 +206,7 @@ export function FantasyLeaderboardView() {
     setSelectedTierPlayers(emptyTierSelection());
   };
 
-  // The required fields the Vue form's rules named, in the order they are asked for
+  // The required fields, in the order the form asks for them
   const missingField = () =>
     !editedTeam.name
       ? "Team name is required"
@@ -369,6 +371,7 @@ export function FantasyLeaderboardView() {
           </div>
 
           <DataTable
+            key={reloads}
             data={sortedTeams}
             columns={columns}
             pageSize={25}

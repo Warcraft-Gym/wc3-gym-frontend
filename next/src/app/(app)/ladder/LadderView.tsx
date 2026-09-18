@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -55,7 +55,7 @@ export function LadderView() {
   const { seasons, selectedSeasonId, slugOf } = useSeason();
   // The dark-ink wordmark is made for the light theme; the dark theme takes the white original.
   const { activeTheme } = useTheme();
-  // Columns marked `mobile: false` in the Vue table are dropped below the md breakpoint
+  // The wide columns show from the md breakpoint
   const mdAndUp = useBreakpoint(MD_AND_UP);
   const wordmark = activeTheme === "dark" ? w3championsLogoWhite : w3championsLogo;
   // The Sync button is a primary fill, so its mark follows on-primary: the inverse of the surface rule
@@ -117,17 +117,21 @@ export function LadderView() {
   const seasonPlayers = teams.reduce((sum, team) => sum + team.players.length, 0);
   const teamOptions = teams.map((team) => ({ id: team.id, name: team.name }));
 
-  // One row per player of the season, carrying the team he plays for
-  const allPlayers: Row[] = teams.flatMap((team) =>
-    team.players.map((player: Row) => ({
-      ...player,
-      teamId: team.id,
-      teamName: team.name,
-      badgePoints: player.points - player.ladder_points,
-      mmr: player.mmr?.current ?? null,
-      // A player still in his placement games has no MMR, so there is no span to subtract
-      mmrDiff: player.mmr?.current != null && player.mmr?.start != null ? player.mmr.current - player.mmr.start : null,
-    })),
+  // One row per player of the season, carrying the team he plays for; one array per ladder read
+  const allPlayers: Row[] = useMemo(
+    () =>
+      ((ladder?.teams ?? []) as Row[]).flatMap((team) =>
+        team.players.map((player: Row) => ({
+          ...player,
+          teamId: team.id,
+          teamName: team.name,
+          badgePoints: player.points - player.ladder_points,
+          mmr: player.mmr?.current ?? null,
+          // A player still in his placement games has no MMR, so there is no span to subtract
+          mmrDiff: player.mmr?.current != null && player.mmr?.start != null ? player.mmr.current - player.mmr.start : null,
+        })),
+      ),
+    [ladder],
   );
 
   // The backend leaves the season stamp null until every signup is stamped, so the
@@ -141,11 +145,15 @@ export function LadderView() {
       ? `partly synced · ${synced} of ${allPlayers.length} players`
       : `synced ${agoFromIso(newestSync)}`;
 
-  const term = searchName.trim().toLowerCase();
-  let filtered = allPlayers;
-  if (term) filtered = filtered.filter((p) => (p.name || "").toLowerCase().includes(term) || (p.battleTag || "").toLowerCase().includes(term));
-  if (searchRace) filtered = filtered.filter((p) => p.race === searchRace);
-  if (searchTeam) filtered = filtered.filter((p) => p.teamId === searchTeam);
+  // The table's `data` keeps one reference until a filter changes, so an opening row holds the page
+  const filtered = useMemo(() => {
+    const term = searchName.trim().toLowerCase();
+    let list = allPlayers;
+    if (term) list = list.filter((p) => (p.name || "").toLowerCase().includes(term) || (p.battleTag || "").toLowerCase().includes(term));
+    if (searchRace) list = list.filter((p) => p.race === searchRace);
+    if (searchTeam) list = list.filter((p) => p.teamId === searchTeam);
+    return list;
+  }, [allPlayers, searchName, searchRace, searchTeam]);
   const resetFilters = () => {
     setSearchName("");
     setSearchRace(null);
@@ -187,7 +195,7 @@ export function LadderView() {
 
   return (
     <div className="relative p-4">
-      {/* The overlay covers the page area only, as the `contained` Vue overlay does */}
+      {/* The overlay covers the page area only */}
       {isLoading ? (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60">
           <Icon name="mdi-loading mdi-spin" size={64} className="text-primary" />

@@ -57,30 +57,36 @@ export function LadderLeaderboards({
           <CardContent className="px-4 pt-0 pb-2">
             <ol className="m-0 list-none p-0">
               {board.rows.map((row, i) => (
-                /* rank | name | bar over caption | value */
+                /* rank | name | bar | value, with the caption under the bar */
                 <li
                   key={row.id}
-                  className="tnum flex cursor-pointer items-center gap-2 py-1 hover:bg-on-surface/4"
+                  className="tnum grid cursor-pointer items-center gap-x-2 py-1 hover:bg-on-surface/4"
+                  style={{
+                    gridTemplateColumns: "1.5em minmax(0, 9.5em) 1fr 3em",
+                    gridTemplateAreas: "'rank who bar value' 'rank who caption value'",
+                  }}
                   onClick={() => onOpenPlayer?.(row)}
                 >
-                  <span className="w-6 shrink-0 text-right text-muted-foreground">{i + 1}</span>
-                  <span className="w-[9.5em] shrink-0 overflow-hidden [&_.player-name]:max-w-full [&_.name]:truncate">
+                  <span className="[grid-area:rank] text-right text-muted-foreground">{i + 1}</span>
+                  {/* The name is a link of its own, so its click never reaches the row */}
+                  <span
+                    className="[grid-area:who] overflow-hidden [&_.player-name]:max-w-full [&_.name]:truncate"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <PlayerName player={row} race={row.race} />
                   </span>
-                  <span className="min-w-0 flex-1" title={row.caption}>
-                    <span className="flex h-2 gap-[2px]">
-                      {row.segments.map((seg: Segment) => (
-                        /* The data end is rounded, the baseline end square */
-                        <span
-                          key={seg.key}
-                          className={`block min-w-[2px] rounded-r ${seg.key === "ladder" ? "bg-primary" : "bg-tier-5"}`}
-                          style={{ width: `${(100 * seg.value) / board.max}%` }}
-                        />
-                      ))}
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-none text-muted-foreground">{row.caption}</span>
+                  <span className="flex h-2 gap-[2px] [grid-area:bar]" title={row.caption}>
+                    {row.segments.map((seg: Segment) => (
+                      /* The data end is rounded, the baseline end square */
+                      <span
+                        key={seg.key}
+                        className={`block min-w-[2px] rounded-r ${seg.key === "ladder" ? "bg-primary" : "bg-tier-5"}`}
+                        style={{ width: `${(100 * seg.value) / board.max}%` }}
+                      />
+                    ))}
                   </span>
-                  <span className="w-12 shrink-0 text-right font-bold">{row.value}</span>
+                  <span className="[grid-area:value] text-right font-bold">{row.value}</span>
+                  <span className="mt-0.5 text-xs leading-none [grid-area:caption] text-muted-foreground">{row.caption}</span>
                 </li>
               ))}
             </ol>

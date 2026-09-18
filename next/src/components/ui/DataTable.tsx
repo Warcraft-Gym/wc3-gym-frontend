@@ -93,6 +93,8 @@ export function DataTable<T extends RowData>({
             onPageChange((typeof updater === "function" ? updater(was) : updater).pageIndex);
           },
         }),
+    // Every column starts ascending, as a `v-data-table` header did.
+    sortDescFirst: false,
     // A table with no page size shows every row and draws no pager.
     initialState: { pagination: { pageSize: size, pageIndex: 0 } },
     ...(rowCount == null ? {} : { manualPagination: true, manualSorting: true, rowCount }),
@@ -130,6 +132,7 @@ export function DataTable<T extends RowData>({
                   return (
                     <TableHead
                       key={header.id}
+                      aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
                       onClick={header.column.getToggleSortingHandler()}
                       // The column the table is sorted by reads in the primary colour.
                       className={cn(header.column.getCanSort() && "cursor-pointer select-none", sorted && "text-primary")}

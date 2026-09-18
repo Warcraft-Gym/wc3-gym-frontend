@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { SortingState } from "@tanstack/react-table";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AchievementChip } from "@/components/AchievementChip";
@@ -20,10 +21,12 @@ import { LadderLeaderboards } from "@/components/ladder/LadderLeaderboards";
 import { PlayerLadderTab } from "@/components/ladder/PlayerLadderTab";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TapTooltip } from "@/components/ui/TapTooltip";
+import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useTheme } from "@/hooks/theme";
 import { useAuth, useLadderStore, usePlayerStore, useSeason } from "@/stores";
 import w3championsLogo from "@/assets/media/w3champions-logo.png";
@@ -38,11 +41,8 @@ import { agoFromIso, localFromIso } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
 
 type Row = Record<string, any>;
-// A column the table drops below the md breakpoint, as `mobile: false` does in the Vue table
-const WIDE = "hidden min-[960px]:table-cell";
 // A standings column the table drops below the sm breakpoint
 const SM = "hidden min-[600px]:table-cell";
-const COLUMNS = 11;
 
 // The roster's badge points plus the team badges; the standing column and the season total
 const teamBadgePoints = (team: Row) => team.points - team.ladder_points + achievementPoints(team.achievements);
@@ -55,6 +55,8 @@ export function LadderView() {
   const { seasons, selectedSeasonId, slugOf } = useSeason();
   // The dark-ink wordmark is made for the light theme; the dark theme takes the white original.
   const { activeTheme } = useTheme();
+  // Columns marked `mobile: false` in the Vue table are dropped below the md breakpoint
+  const mdAndUp = useBreakpoint(MD_AND_UP);
   const wordmark = activeTheme === "dark" ? w3championsLogoWhite : w3championsLogo;
   // The Sync button is a primary fill, so its mark follows on-primary: the inverse of the surface rule
   const syncMark = activeTheme === "dark" ? w3cLogo : w3cLogoWhite;
@@ -70,12 +72,10 @@ export function LadderView() {
 
   const [syncDialog, setSyncDialog] = useState(false);
   const [syncEntries, setSyncEntries] = useState<SyncEntry[]>([]);
-  const [expanded, setExpanded] = useState<number[]>([]);
   const [fullPlayers, setFullPlayers] = useState<Record<number, Row>>({});
-  const [sort, setSort] = useState<{ key: string; desc: boolean }>({ key: "points", desc: true });
+  const [sorting, setSorting] = useState<SortingState>([{ id: "points", desc: true }]);
 
   const loadLadder = async (seasonId: number) => {
-    setExpanded([]);
     setIsLoading(true);
     setErrorMessage(null);
     try {
@@ -97,20 +97,15 @@ export function LadderView() {
   }, [selectedSeasonId]);
 
   // The ladder row carries no gnl_stats, so an expanding row reads the full player once
-  useEffect(() => {
-    (async () => {
-      for (const id of expanded) {
-        if (fullPlayers[id]) continue;
-        try {
-          const player = await playerStore.getPlayer(id);
-          setFullPlayers((old) => ({ ...old, [id]: player }));
-        } catch (error) {
-          setErrorMessage((error as Error).message);
-        }
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expanded]);
+  const openRow = async (row: Row) => {
+    if (fullPlayers[row.id]) return;
+    try {
+      const player = await playerStore.getPlayer(row.id);
+      setFullPlayers((old) => ({ ...old, [row.id]: player }));
+    } catch (error) {
+      setErrorMessage((error as Error).message);
+    }
+  };
 
   const seasonName = seasons.find((season: Row) => season.id === selectedSeasonId)?.name ?? "";
   // The round label formats a start/end pair exactly as every other date on the page reads
@@ -151,15 +146,6 @@ export function LadderView() {
   if (term) filtered = filtered.filter((p) => (p.name || "").toLowerCase().includes(term) || (p.battleTag || "").toLowerCase().includes(term));
   if (searchRace) filtered = filtered.filter((p) => p.race === searchRace);
   if (searchTeam) filtered = filtered.filter((p) => p.teamId === searchTeam);
-  const rows = [...filtered].sort((a, b) => {
-    const av = a[sort.key] ?? null;
-    const bv = b[sort.key] ?? null;
-    if (av == null) return 1;
-    if (bv == null) return -1;
-    const order = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv), undefined, { numeric: true });
-    return order * (sort.desc ? -1 : 1);
-  });
-
   const resetFilters = () => {
     setSearchName("");
     setSearchRace(null);
@@ -182,23 +168,6 @@ export function LadderView() {
   };
 
   const goToPlayer = (player: Row) => router.push(playerPath(player));
-  const toggleExpanded = (id: number) => setExpanded((old) => (old.includes(id) ? old.filter((row) => row !== id) : [...old, id]));
-  const toggleSort = (key: string) => setSort((old) => ({ key, desc: old.key === key ? !old.desc : false }));
-  const sortIcon = (key: string) => (sort.key === key ? (sort.desc ? "mdi-arrow-down" : "mdi-arrow-up") : null);
-  // A header that holds its own tooltip button takes the sort click on the cell, so the two never nest
-  const noteHead = (label: React.ReactNode, key: string, className = "") => (
-    <TableHead className={cn("cursor-pointer text-center select-none", sort.key === key && "text-primary", className)} onClick={() => toggleSort(key)}>
-      {label}
-    </TableHead>
-  );
-  const head = (label: React.ReactNode, key: string, className = "") => (
-    <TableHead className={className}>
-      <button type="button" className={cn("whitespace-nowrap", sort.key === key && "text-primary")} onClick={() => toggleSort(key)}>
-        {label}
-        <Icon name={sortIcon(key) ?? "mdi-arrow-up"} className={cn("ml-1 text-xs", sort.key !== key && "opacity-25")} />
-      </button>
-    </TableHead>
-  );
 
   const syncButton = (
     <Button disabled={isSyncing || !selectedSeasonId} onClick={syncLadder}>
@@ -217,10 +186,11 @@ export function LadderView() {
   );
 
   return (
-    <div className="p-4">
+    <div className="relative p-4">
+      {/* The overlay covers the page area only, as the `contained` Vue overlay does */}
       {isLoading ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60">
+          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary" />
         </div>
       ) : null}
 
@@ -338,73 +308,102 @@ export function LadderView() {
               <Icon name="mdi-account-group" />
               <span>Players</span>
             </CardTitle>
-            <div className="table-scroll overflow-x-auto">
-              <Table className="tnum">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12" />
-                    {head("Name", "name")}
-                    {head("Race", "race", cn(WIDE, "w-16"))}
-                    {head("Team", "teamName", WIDE)}
-                    {noteHead(<ColumnNote title="Ladder points" note={LADDER_NOTE} sortIcon={sortIcon("ladder_points")} />, "ladder_points", WIDE)}
-                    {noteHead(<ColumnNote title="Achievements" note={ACHIEVEMENTS_NOTE} sortIcon={sortIcon("badgePoints")} />, "badgePoints", WIDE)}
-                    {noteHead(<ColumnNote title="Total points" note={SCORED_NOTE} sortIcon={sortIcon("points")} />, "points")}
-                    {head("Wins", "wins", WIDE)}
-                    {head("Losses", "losses", WIDE)}
-                    {head(<W3CMmr sortIcon={sortIcon("mmr")} />, "mmr", WIDE)}
-                    {head(<W3CMmr suffix=" +/-" sortIcon={sortIcon("mmrDiff")} />, "mmrDiff", WIDE)}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row) => (
-                    <Fragment key={row.id}>
-                      <TableRow className="cursor-pointer" onClick={() => toggleExpanded(row.id)}>
-                        <TableCell>
-                          <Icon name={expanded.includes(row.id) ? "mdi-chevron-up" : "mdi-chevron-down"} />
-                        </TableCell>
-                        <TableCell>
-                          <PlayerName player={row}>
-                            {!row.synced_at ? (
-                              <TapTooltip content="not fully synced" className="inline-flex">
-                                <Icon name="mdi-sync-alert" size={12} className="text-warning" />
-                              </TapTooltip>
-                            ) : null}
-                          </PlayerName>
-                        </TableCell>
-                        <TableCell className={WIDE}>{row.race ? <RaceIcon raceIdentifier={row.race} /> : null}</TableCell>
-                        <TableCell className={WIDE}>
-                          <div className="flex items-center">
-                            {teamAvatar(row.teamId, "mr-2 size-5")}
-                            <span>{row.teamName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className={WIDE}>{row.ladder_points}</TableCell>
-                        <TableCell className={WIDE}><AchievementChip badges={row.achievements} /></TableCell>
-                        <TableCell className="font-bold">{row.points}</TableCell>
-                        <TableCell className={WIDE}>{row.wins}</TableCell>
-                        <TableCell className={WIDE}>{row.losses}</TableCell>
-                        <TableCell className={WIDE}>{row.mmr ?? "—"}</TableCell>
-                        <TableCell className={WIDE}>{row.mmrDiff == null ? "—" : row.mmrDiff > 0 ? `+${row.mmrDiff}` : row.mmrDiff}</TableCell>
-                      </TableRow>
-                      {expanded.includes(row.id) ? (
-                        <TableRow>
-                          <TableCell colSpan={COLUMNS} className="p-0">
-                            {/* sticky: stays in view when the summary row scrolls sideways on a narrow window */}
-                            <div className="sticky left-0 max-w-[calc(100vw-48px)] p-4">
-                              {!fullPlayers[row.id] ? (
-                                <div className="p-4 text-center"><Icon name="mdi-loading" size={32} className="animate-spin text-primary" /></div>
-                              ) : (
-                                <PlayerLadderTab player={fullPlayers[row.id]} seasonId={selectedSeasonId as number} />
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
+            {/* The season change remounts the table, so no row of the season before stays open */}
+            <DataTable
+              key={selectedSeasonId}
+              className="tnum"
+              data={filtered}
+              pageSize={10}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              rowId={(row) => String(row.id)}
+              columnVisibility={{
+                race: mdAndUp,
+                teamName: mdAndUp,
+                ladder_points: mdAndUp,
+                badgePoints: mdAndUp,
+                wins: mdAndUp,
+                losses: mdAndUp,
+                mmr: mdAndUp,
+                mmrDiff: mdAndUp,
+              }}
+              expandLabel="Show ladder record"
+              onExpand={openRow}
+              expand={(row) => (
+                /* sticky: stays in view when the summary row scrolls sideways on a narrow window */
+                <div className="sticky left-0 max-w-[calc(100vw-48px)] p-4">
+                  {!fullPlayers[row.id] ? (
+                    <div className="p-4 text-center"><Icon name="mdi-loading mdi-spin" size={32} className="text-primary" /></div>
+                  ) : (
+                    <PlayerLadderTab player={fullPlayers[row.id]} seasonId={selectedSeasonId as number} />
+                  )}
+                </div>
+              )}
+              columns={[
+                {
+                  id: "name",
+                  accessorKey: "name",
+                  header: "Name",
+                  cell: ({ row }) => (
+                    <PlayerName player={row.original}>
+                      {!row.original.synced_at ? (
+                        <TapTooltip content="not fully synced" className="inline-flex">
+                          <Icon name="mdi-sync-alert" size={12} className="text-warning" />
+                        </TapTooltip>
                       ) : null}
-                    </Fragment>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                    </PlayerName>
+                  ),
+                },
+                {
+                  id: "race",
+                  accessorKey: "race",
+                  header: "Race",
+                  cell: ({ row }) => (row.original.race ? <RaceIcon raceIdentifier={row.original.race} /> : null),
+                },
+                {
+                  id: "teamName",
+                  accessorKey: "teamName",
+                  header: "Team",
+                  cell: ({ row }) => (
+                    <div className="flex items-center">
+                      {teamAvatar(row.original.teamId, "mr-2 size-5")}
+                      <span>{row.original.teamName}</span>
+                    </div>
+                  ),
+                },
+                {
+                  id: "ladder_points",
+                  accessorKey: "ladder_points",
+                  header: () => <ColumnNote title="Ladder points" note={LADDER_NOTE} />,
+                },
+                {
+                  id: "badgePoints",
+                  accessorKey: "badgePoints",
+                  header: () => <ColumnNote title="Achievements" note={ACHIEVEMENTS_NOTE} />,
+                  cell: ({ row }) => <AchievementChip badges={row.original.achievements} />,
+                },
+                {
+                  id: "points",
+                  accessorKey: "points",
+                  header: () => <ColumnNote title="Total points" note={SCORED_NOTE} />,
+                  cell: ({ row }) => <span className="font-bold">{row.original.points}</span>,
+                },
+                { id: "wins", accessorKey: "wins", header: "Wins" },
+                { id: "losses", accessorKey: "losses", header: "Losses" },
+                {
+                  id: "mmr",
+                  accessorKey: "mmr",
+                  header: () => <W3CMmr />,
+                  cell: ({ row }) => row.original.mmr ?? "—",
+                },
+                {
+                  id: "mmrDiff",
+                  accessorKey: "mmrDiff",
+                  header: () => <W3CMmr suffix=" +/-" />,
+                  cell: ({ row }) => (row.original.mmrDiff == null ? "—" : row.original.mmrDiff > 0 ? `+${row.original.mmrDiff}` : row.original.mmrDiff),
+                },
+              ]}
+            />
           </Card>
         </>
       ) : null}

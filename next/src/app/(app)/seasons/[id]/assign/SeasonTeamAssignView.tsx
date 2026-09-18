@@ -49,6 +49,8 @@ const SYNC_ICON: Record<string, { icon: string; className: string; note?: string
 /** The W3C warnings and the sync state of one signup, as the icons that ride beside his name. */
 function PlayerCues({ player, w3cSeason, status }: { player: Row; w3cSeason?: number; status?: SyncStatus }) {
   const cue = status ? SYNC_ICON[status.state] : null;
+  // Only the skipped and the error cue carry text, so the other two draw a bare icon
+  const cueText = cue ? (cue.note ?? (status?.state === "error" ? status.message || "Sync failed" : null)) : null;
   return (
     <>
       {!hasStats(player, w3cSeason, player.signup_race) ? (
@@ -61,9 +63,13 @@ function PlayerCues({ player, w3cSeason, status }: { player: Row; w3cSeason?: nu
         </TapTooltip>
       ) : null}
       {cue ? (
-        <TapTooltip content={cue.note ?? status?.message ?? (status?.state === "error" ? "Sync failed" : "")}>
+        cueText ? (
+          <TapTooltip content={cueText}>
+            <Icon name={cue.icon} size={16} className={cue.className} />
+          </TapTooltip>
+        ) : (
           <Icon name={cue.icon} size={16} className={cue.className} />
-        </TapTooltip>
+        )
       ) : null}
     </>
   );

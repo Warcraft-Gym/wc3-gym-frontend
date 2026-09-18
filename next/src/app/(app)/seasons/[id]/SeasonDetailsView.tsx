@@ -291,11 +291,11 @@ export function SeasonDetailsView({ id }: { id: string }) {
       {/* The season is one event of the GNL league, so it wears the shared event header */}
       <EventHeader event={season} />
       <div className="mt-3 mb-4 flex flex-wrap gap-2">
-        <Badge className={toneClass("primary")}>
+        <Badge className={toneClass()}>
           <Icon name="mdi-calendar-range" />
           {season.round_count} rounds
         </Badge>
-        <Badge className={toneClass("primary")}>
+        <Badge className={toneClass()}>
           <Icon name="mdi-account-group" />
           {teams.length} teams
         </Badge>
@@ -327,7 +327,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
             )}
             rows={({ group }) =>
               group.rows.map((row: Row) => (
-                <tr key={row.id} className="detail-row cursor-pointer border-b">
+                <tr key={row.id} className="detail-row border-b">
                   <td />
                   <td className="whitespace-nowrap">
                     <Link href={`/match/${row.match_id}`} className="text-inherit no-underline hover:underline">

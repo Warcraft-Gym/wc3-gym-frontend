@@ -438,7 +438,9 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                 ) : null}
               </div>
             ) : null}
+            {/* The roster arrives after the mount, so the table starts over when the paging mode changes */}
             <DataTable
+              key={members.length > 10 ? "paged" : "all"}
               data={members as Row[]}
               pageSize={members.length > 10 ? 10 : undefined}
               columnVisibility={{ battleTag: mdAndUp, discordTag: mdAndUp }}

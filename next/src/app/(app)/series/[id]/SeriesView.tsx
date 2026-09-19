@@ -152,11 +152,11 @@ export function SeriesView({ id }: { id: string }) {
     setMoving(from);
     setError(null);
     setMoved(null);
-    const swapped = hasReplay(to);
     try {
       const rows: Row[] = await matchStore.moveSeriesReplay(series!.id, from, to);
       setReplays(rows || []);
-      setMoved(moveMessage(from, to, swapped));
+      // the answer tells the swap: after a plain move the game the file came from holds nothing
+      setMoved(moveMessage(from, to, (rows || []).some((row) => row.game_no === from)));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -183,6 +183,7 @@ export function SeriesView({ id }: { id: string }) {
       const loaded = await fetchWrapper.get(`${backendUrl}/series/${id}`);
       setSeries(loaded);
       setReplays([]); // the replays of the series the page leaves are not this one's
+      setMoved(null); // and neither is its success line
       // A series nobody reported records no game, and the table shows its rules alone
       setGames(await fetchWrapper.get(`${backendUrl}/series/${id}/games`).catch(() => []));
       await loadFixture(loaded);

@@ -2,13 +2,13 @@
 type: Runbook
 title: Deploy to Vercel
 description: A merge to main deploys production, staging mirrors main, every branch gets a public preview on the dev Clerk instance, and the environment is set per target on the project.
-resource: ../../../vercel.json
+resource: ../../../next/vercel.json
 tags: [deploy]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 stale_after: 2027-03-14T00:00:00Z
 sources:
   - id: source
-    resource: ../../../vercel.json
+    resource: ../../../next/vercel.json
     title: Rewrites and which branches deploy
 ---
 

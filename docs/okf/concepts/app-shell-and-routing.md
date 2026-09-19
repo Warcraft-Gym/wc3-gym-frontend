@@ -2,18 +2,18 @@
 type: Domain Concept
 title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
-resource: ../../../src/helpers/router.js
+resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: router
-    resource: ../../../src/helpers/router.js
+    resource: ../../../next/src/lib/routes.ts
     title: The routes and the guard
   - id: app
-    resource: ../../../src/App.vue
+    resource: ../../../next/src/components/layout/AppShell.tsx
     title: The app bar and the session watch
   - id: return-url
-    resource: ../../../src/helpers/return-url.mjs
+    resource: ../../../next/src/helpers/return-url.mjs
     title: Where a login lands
 ---
 

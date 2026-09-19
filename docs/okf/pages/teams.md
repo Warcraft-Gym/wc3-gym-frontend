@@ -2,15 +2,15 @@
 type: Page
 title: Teams
 description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's round grid.
-resource: ../../../src/views/TeamsView.vue
+resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
 tags: [pages, teams]
 generated: { by: openai/gpt-5, at: 2026-09-17T07:27:31Z }
 sources:
   - id: teams
-    resource: ../../../src/views/TeamsView.vue
+    resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
     title: The teams list
   - id: team
-    resource: ../../../src/views/TeamView.vue
+    resource: ../../../next/src/app/(app)/team/[id]/TeamView.tsx
     title: One team
   - id: next-teams
     resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
@@ -19,13 +19,13 @@ sources:
     resource: ../../../next/src/app/(app)/team/[id]/TeamView.tsx
     title: One team in Next.js
   - id: season-team
-    resource: ../../../src/views/SeasonTeamDetailsView.vue
+    resource: ../../../next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx
     title: The team in one season
   - id: rounds
-    resource: ../../../src/views/TeamRoundsView.vue
+    resource: ../../../next/src/app/(app)/team/[id]/season/[season_id]/rounds/TeamRoundsView.tsx
     title: The round grid
   - id: store
-    resource: ../../../src/stores/team.store.js
+    resource: ../../../next/src/stores/team.ts
     title: Every team write
 ---
 

@@ -2,30 +2,30 @@
 type: Page
 title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
-resource: ../../../src/views/LeaguesView.vue
+resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T22:30:00Z }
 sources:
   - id: leagues
-    resource: ../../../src/views/LeaguesView.vue
+    resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
     title: The leagues list
   - id: league
-    resource: ../../../src/views/LeagueView.vue
+    resource: ../../../next/src/app/(app)/leagues/[id]/LeagueView.tsx
     title: One league
   - id: events
-    resource: ../../../src/views/EventsView.vue
+    resource: ../../../next/src/app/(app)/events/EventsView.tsx
     title: The events list
   - id: event
-    resource: ../../../src/views/EventView.vue
+    resource: ../../../next/src/app/(app)/events/[id]/EventView.tsx
     title: One event
   - id: entrants
-    resource: ../../../src/views/EntrantsView.vue
+    resource: ../../../next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx
     title: The entrants list
   - id: signup-dialog
-    resource: ../../../src/components/SignupDialog.vue
+    resource: ../../../next/src/components/SignupDialog.tsx
     title: The event signup dialog
   - id: labels
-    resource: ../../../src/helpers/event-labels.mjs
+    resource: ../../../next/src/helpers/event-labels.mjs
     title: The words for kinds, states and formats
 ---
 

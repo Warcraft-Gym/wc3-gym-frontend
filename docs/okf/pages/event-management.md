@@ -2,27 +2,27 @@
 type: Page
 title: Event management
 description: The admin's path from an empty league to a finished event with awards; the wizard, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
-resource: ../../../src/views/EventWizardView.vue
+resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
 tags: [pages, events]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T17:30:00Z }
 sources:
   - id: wizard
-    resource: ../../../src/views/EventWizardView.vue
+    resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
     title: The event wizard
   - id: wizard-helper
-    resource: ../../../src/helpers/event-wizard.mjs
+    resource: ../../../next/src/helpers/event-wizard.mjs
     title: The steps, the bodies and the step problems
   - id: entrants
-    resource: ../../../src/views/EntrantsView.vue
+    resource: ../../../next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx
     title: The entrants page and its admin controls
   - id: admin
-    resource: ../../../src/views/EventAdminView.vue
+    resource: ../../../next/src/app/(app)/events/[id]/admin/EventAdminView.tsx
     title: The run page
   - id: koth
-    resource: ../../../src/views/KothView.vue
+    resource: ../../../next/src/app/(app)/koth/KothView.tsx
     title: The KOTH nights list
   - id: store
-    resource: ../../../src/stores/event.store.js
+    resource: ../../../next/src/stores/event.ts
     title: Every event write
 ---
 

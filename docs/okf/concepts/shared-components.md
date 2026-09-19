@@ -10,16 +10,16 @@ sources:
     resource: ../../../DESIGN.md
     title: Shared components and the events section
   - id: player-name
-    resource: ../../../src/components/PlayerName.vue
+    resource: ../../../next/src/components/PlayerName.tsx
     title: PlayerName
   - id: grouped-table
-    resource: ../../../src/components/GroupedTable.vue
+    resource: ../../../next/src/components/GroupedTable.tsx
     title: GroupedTable
   - id: stage-view
-    resource: ../../../src/components/StageView.vue
+    resource: ../../../next/src/components/StageView.tsx
     title: StageView
   - id: veto-board
-    resource: ../../../src/components/VetoBoard.vue
+    resource: ../../../next/src/components/VetoBoard.tsx
     title: VetoBoard
 ---
 

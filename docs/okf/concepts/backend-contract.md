@@ -2,18 +2,18 @@
 type: Integration
 title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
-resource: ../../../src/stores
+resource: ../../../next/src/stores
 tags: [stores]
 generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: stores
-    resource: ../../../src/stores
+    resource: ../../../next/src/stores
     title: Every fetch, one store per area
   - id: fetch
-    resource: ../../../src/helpers/fetch-wrapper.js
+    resource: ../../../next/src/helpers/fetch-wrapper.js
     title: The envelope and the paging
   - id: backend-url
-    resource: ../../../src/helpers/backend-url.js
+    resource: ../../../next/src/helpers/backend-url.js
     title: The one place the URL is read
 ---
 

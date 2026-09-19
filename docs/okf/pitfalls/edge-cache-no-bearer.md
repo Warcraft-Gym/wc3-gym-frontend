@@ -6,7 +6,7 @@ tags: [stores, deploy]
 generated: { by: openai/gpt-6, at: 2026-09-15T16:51:45Z }
 sources:
   - id: source
-    resource: ../../../src/helpers/fetch-wrapper.js
+    resource: ../../../next/src/helpers/fetch-wrapper.js
     title: EDGE_CACHED
 ---
 

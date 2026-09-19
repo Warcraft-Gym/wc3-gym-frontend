@@ -6,7 +6,7 @@ tags: [components, design]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source
-    resource: ../../../src/components/RaceIcon.vue
+    resource: ../../../next/src/components/RaceIcon.tsx
     title: RaceIcon
 ---
 

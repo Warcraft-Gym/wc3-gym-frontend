@@ -2,24 +2,24 @@
 type: Page
 title: Fantasy
 description: The fantasy leaderboard, the bets, the player tiers and the member's own fantasy team and bets.
-resource: ../../../src/views/FantasyLeaderboardView.vue
+resource: ../../../next/src/app/(app)/fantasy/FantasyLeaderboardView.tsx
 tags: [pages, fantasy]
 generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: leaderboard
-    resource: ../../../src/views/FantasyLeaderboardView.vue
+    resource: ../../../next/src/app/(app)/fantasy/FantasyLeaderboardView.tsx
     title: The leaderboard
   - id: bets
-    resource: ../../../src/views/FantasyBetsView.vue
+    resource: ../../../next/src/app/(app)/fantasy/bets/FantasyBetsView.tsx
     title: The bets
   - id: tiers
-    resource: ../../../src/views/FantasyTiersView.vue
+    resource: ../../../next/src/app/(app)/fantasy/tiers/FantasyTiersView.tsx
     title: The player tiers
   - id: dashboard
-    resource: ../../../src/views/FantasyDashboardView.vue
+    resource: ../../../next/src/app/(app)/fantasy-registration/FantasyDashboardView.tsx
     title: The member's own team and bets
   - id: store
-    resource: ../../../src/stores/fantasy.store.js
+    resource: ../../../next/src/stores/fantasy.ts
     title: Every fantasy write
 ---
 

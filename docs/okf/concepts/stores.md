@@ -2,18 +2,18 @@
 type: Domain Concept
 title: Stores
 description: One Pinia store per area holds the fetched rows and every call to the backend; views never fetch on their own.
-resource: ../../../src/stores/index.js
+resource: ../../../next/src/stores/index.ts
 tags: [stores]
 generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: index
-    resource: ../../../src/stores/index.js
+    resource: ../../../next/src/stores/index.ts
     title: The stores, exported once
   - id: event
-    resource: ../../../src/stores/event.store.js
+    resource: ../../../next/src/stores/event.ts
     title: A worked example
   - id: season
-    resource: ../../../src/stores/season.store.js
+    resource: ../../../next/src/stores/season.ts
     title: The GNL event adapter
 ---
 

@@ -10,7 +10,7 @@ sources:
     resource: ../../../.github/workflows/staging-branch.yml
     title: The only workflow
   - id: vercel
-    resource: ../../../vercel.json
+    resource: ../../../next/vercel.json
     title: Which branches deploy
 ---
 

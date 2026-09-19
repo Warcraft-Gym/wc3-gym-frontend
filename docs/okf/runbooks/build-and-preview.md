@@ -2,13 +2,13 @@
 type: Runbook
 title: Build and preview
 description: Build the static bundle, serve it, and see the real icons.
-resource: ../../../package.json
+resource: ../../../next/package.json
 tags: [tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 stale_after: 2027-03-14T00:00:00Z
 sources:
   - id: source
-    resource: ../../../package.json
+    resource: ../../../next/package.json
     title: The scripts
 ---
 

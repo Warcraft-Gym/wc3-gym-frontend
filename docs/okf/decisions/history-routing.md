@@ -6,7 +6,7 @@ tags: [router]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source
-    resource: ../../../src/helpers/router.js
+    resource: ../../../next/src/lib/routes.ts
     title: createWebHistory
 ---
 

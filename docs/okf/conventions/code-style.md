@@ -2,18 +2,18 @@
 type: Convention
 title: Code style
 description: Vue 3 with Vuetify and Pinia, pure helpers in .mjs files with node tests, theme tokens instead of colour values, Title Case page titles, and one-line comments.
-resource: ../../../package.json
+resource: ../../../next/package.json
 tags: [design, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T14:30:00Z }
 sources:
   - id: package
-    resource: ../../../package.json
+    resource: ../../../next/package.json
     title: Dependencies and scripts
   - id: design
     resource: ../../../DESIGN.md
     title: Design rules
   - id: eslint
-    resource: ../../../.eslintrc.cjs
+    resource: ../../../next/eslint.config.mjs
     title: The lint rules
 ---
 

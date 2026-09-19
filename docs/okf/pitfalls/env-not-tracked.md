@@ -6,7 +6,7 @@ tags: [deploy, tooling]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source
-    resource: ../../../src/helpers/backend-url.js
+    resource: ../../../next/src/helpers/backend-url.js
     title: The one read
 ---
 

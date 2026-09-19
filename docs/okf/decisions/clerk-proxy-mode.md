@@ -6,7 +6,7 @@ tags: [session]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source
-    resource: ../../../api/clerk-proxy.js
+    resource: ../../../next/src/app/clerk-proxy/[...p]/route.ts
     title: The proxy
 ---
 

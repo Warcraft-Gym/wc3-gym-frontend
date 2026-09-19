@@ -2,21 +2,21 @@
 type: Domain Concept
 title: Session and auth
 description: Clerk signs a member in with Discord, the backend's /me answer is the session the app reads, a legacy admin token has its own login page, and the fetch wrapper sends the bearer.
-resource: ../../../src/stores/auth.store.js
+resource: ../../../next/src/stores/auth.ts
 tags: [session]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: auth-store
-    resource: ../../../src/stores/auth.store.js
+    resource: ../../../next/src/stores/auth.ts
     title: The auth store
   - id: fetch
-    resource: ../../../src/helpers/fetch-wrapper.js
+    resource: ../../../next/src/helpers/fetch-wrapper.js
     title: The fetch wrapper
   - id: main
-    resource: ../../../src/main.js
+    resource: ../../../next/src/app/layout.tsx
     title: The Clerk plugin options
   - id: proxy
-    resource: ../../../api/clerk-proxy.js
+    resource: ../../../next/src/app/clerk-proxy/[...p]/route.ts
     title: The Clerk proxy
 ---
 

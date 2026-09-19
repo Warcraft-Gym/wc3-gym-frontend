@@ -103,9 +103,8 @@ export function SeriesView({ id }: { id: string }) {
 
   const mapName = (mapId?: number | null) => maps.find((row) => row.id === mapId)?.name;
 
-  // The map a fixed game plays: the round's own column, which the event read for the
-  // fixture answers. The match carries a fixed map of its own that only an import fills.
-  const fixedMapId: number | null = fixedMapOf(series?.rules?.map_rules, rounds.find((row) => row.playday === series?.match?.playday));
+  // The map a fixed game plays: the map of its round, else the map an import wrote on the fixture
+  const fixedMapId: number | null = fixedMapOf(series?.rules?.map_rules, rounds.find((row) => row.playday === series?.match?.playday)) ?? series?.match?.fixed_map_id ?? null;
 
   // One row per game of the best-of: its rule, the map it was played on or the one the
   // rule offers, and the side that won it

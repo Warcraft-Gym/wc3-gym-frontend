@@ -99,30 +99,34 @@ export function EditSeriesDialog({
 
           {scoreProblem ? <div className="text-xs text-error sm:col-span-2">{scoreProblem}</div> : null}
 
-          {([1, 2] as const).map((n) => (
-            <Field
-              key={n}
-              label={`${series[`player${n}`]?.name} played`}
-              htmlFor={`off-race-${n}`}
-              hint={series[`player${n}_off_race`] ? "An off race: not the race he signed up on" : "The race he signed up on"}
-            >
-              <div className="flex items-center gap-1">
-                <RaceSelect
-                  id={`off-race-${n}`}
-                  // The stored off race, else the signup race the payload resolves. The prefill is
-                  // shown only: a save writes an off race when the admin picks another race.
-                  value={series[`player${n}_off_race`] ?? series[`player${n}_race`] ?? null}
-                  onChange={(value) => onPatch({ [`player${n}_off_race`]: value })}
-                />
-                {/* The picker itself offers no empty row, so the race played goes back to the signup race here */}
-                {series[`player${n}_off_race`] ? (
-                  <Button variant="ghost" size="icon-sm" aria-label="Clear the race played" onClick={() => onPatch({ [`player${n}_off_race`]: null })}>
-                    <Icon name="mdi-close" />
-                  </Button>
-                ) : null}
-              </div>
-            </Field>
-          ))}
+          {([1, 2] as const).map((n) => {
+            const offRace: string | null = series[`player${n}_off_race`] ?? null;
+            // The race that side signed the season up on, which the player of the payload carries
+            const signupRace: string | null = series[`player${n}`]?.signup_race ?? null;
+            return (
+              <Field
+                key={n}
+                label={`${series[`player${n}`]?.name} played`}
+                htmlFor={`off-race-${n}`}
+                hint={offRace ? "An off race: not the race he signed up on" : signupRace ? "The race he signed up on" : undefined}
+              >
+                <div className="flex items-center gap-1">
+                  <RaceSelect
+                    id={`off-race-${n}`}
+                    // The stored off race, else the signup race; shown only, a save writes what the admin picks
+                    value={offRace ?? signupRace}
+                    onChange={(value) => onPatch({ [`player${n}_off_race`]: value })}
+                  />
+                  {/* The picker itself offers no empty row, so the race played goes back to the signup race here */}
+                  {offRace ? (
+                    <Button variant="ghost" size="icon-sm" aria-label="Clear the race played" onClick={() => onPatch({ [`player${n}_off_race`]: null })}>
+                      <Icon name="mdi-close" />
+                    </Button>
+                  ) : null}
+                </div>
+              </Field>
+            );
+          })}
 
           <Field label="Choose a Host" htmlFor="host-player">
             <Select

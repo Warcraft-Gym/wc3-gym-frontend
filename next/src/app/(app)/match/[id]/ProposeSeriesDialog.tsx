@@ -74,9 +74,14 @@ export function ProposeSeriesDialog({
   const shown = proposed.filter((row) => matchesQuery(row, search));
   const allShown = shown.length > 0 && shown.every((row) => selected.includes(row.key));
 
+  // the same player on the same side of another ticked row: creating the selection writes both series
+  const pickedElsewhere = (row: Row, n: 1 | 2) =>
+    proposed.some((other) => other.key !== row.key && selected.includes(other.key) && other[`player${n}`]?.id === row[`player${n}`]?.id);
+
   const nameCell = (row: Row, n: 1 | 2) => (
     <PlayerName player={row[`player${n}`]} race={row[`player${n}_race`]} plain>
       {hasSeries(row[`player${n}`]?.id) ? <Badge variant="outline" className="text-secondary border-secondary">Has series</Badge> : null}
+      {pickedElsewhere(row, n) ? <Badge variant="outline" className="text-warning border-warning">Already picked</Badge> : null}
     </PlayerName>
   );
 

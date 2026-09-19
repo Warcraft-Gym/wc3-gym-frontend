@@ -16,7 +16,7 @@ const SCORE_FILL: Record<string, string> = {
 function Side({ team, own, other }: { team: Row; own?: number; other?: number }) {
   return (
     <div className="flex basis-5/12 flex-col items-center gap-2">
-      <h2 className="text-2xl tracking-wide text-on-band [text-shadow:2px_2px_4px_rgb(var(--v-theme-band))] min-[960px]:text-4xl">{team.name}</h2>
+      <h2 className="text-2xl tracking-wide text-on-band [text-shadow:2px_2px_4px_rgb(var(--v-theme-band)/0.8)] min-[960px]:text-4xl">{team.name}</h2>
       <Badge className={`tnum min-w-[60px] justify-center px-3 py-1 text-2xl font-bold min-[960px]:min-w-[80px] min-[960px]:text-3xl ${SCORE_FILL[resultColor(own, other)]}`}>
         {own || 0}
       </Badge>

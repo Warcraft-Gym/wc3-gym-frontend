@@ -67,7 +67,7 @@ export function PublishedSeries({
     <>
       {isAdmin ? (
         <div className="flex justify-end p-2">
-          <Button onClick={onAddSeries}>
+          <Button className="w-full min-[960px]:w-auto" onClick={onAddSeries}>
             <Icon name="mdi-plus" />
             Add Series
           </Button>
@@ -77,6 +77,7 @@ export function PublishedSeries({
       {!smAndDown ? (
         <DataTable
           data={series}
+          pageSize={10}
           rowId={(row: Row) => String(row.id)}
           columns={[
             {
@@ -253,6 +254,7 @@ export function DraftSeries({
       {!smAndDown ? (
         <DataTable
           data={draftSeries}
+          pageSize={10}
           rowId={(row: Row) => String(row.id)}
           columns={[
             ...sideColumns(1),

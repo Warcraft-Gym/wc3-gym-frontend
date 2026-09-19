@@ -210,13 +210,13 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  const fetchSeriesRows = async (row: Row) => {
+  const fetchSeriesRows = async () => {
     const [rows, drafts] = await Promise.all([
-      seriesStore.getSeriesByMatchId(row.id),
-      // drafts are captain-only on the backend
-      auth.isCaptain ? seriesStore.getDraftSeriesByMatchId(row.id) : Promise.resolve([]),
+      seriesStore.getSeriesByMatchId(matchId),
+      // drafts are captain-only on the backend, and a refused draft list must not blank the series table
+      auth.isCaptain ? seriesStore.getDraftSeriesByMatchId(matchId).catch(() => []) : Promise.resolve([]),
       // a failed replay list must not blank the series table
-      matchStore.getMatchReplays(row.id).then((found: Row[]) => setReplays(found || []), console.warn),
+      matchStore.getMatchReplays(matchId).then((found: Row[]) => setReplays(found || []), console.warn),
     ]);
     setSeries(rows || []);
     setDraftSeries(drafts || []);
@@ -297,7 +297,7 @@ export function MatchDetailsView({ id }: { id: string }) {
       const [teams, , rowsAndDrafts, , availability] = await Promise.all([
         row.team1_id && row.team2_id ? fetchTeamDetails(row) : Promise.resolve([{}, {}] as Row[]),
         fetchSeason(row.season_id).catch(() => null),
-        fetchSeriesRows(row),
+        fetchSeriesRows(),
         fetchSeasonMatches(row),
         fetchAvailability(row),
         fetchLadderPlayers(row),
@@ -318,7 +318,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { rows, drafts } = await fetchSeriesRows(match);
+      const { rows, drafts } = await fetchSeriesRows();
       await loadMissingSeriesPlayers(rows, drafts, seriesPlayerById);
     } catch (error) {
       console.error("Failed to fetch match series:", error);

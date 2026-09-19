@@ -22,7 +22,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { eventLabel, MAP_RULES, timeText, titleOf } from "@/helpers/event-labels.mjs";
 import { fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster } from "@/helpers/fixture.mjs";
-import { rulesOf } from "@/helpers/map-order.mjs";
+import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
 import { isScored, sideName as nameOfSide } from "@/helpers/stage-view.mjs";
 import { useAuth, useEventStore, useMapStore, useTeamStore } from "@/stores";
 
@@ -48,6 +48,7 @@ export function SeriesView({ id }: { id: string }) {
   const [games, setGames] = useState<Row[]>([]);
   const [maps, setMaps] = useState<Row[]>([]);
   const [fixture, setFixture] = useState<Row[]>([]); // every series the fixture holds, in play order
+  const [rounds, setRounds] = useState<Row[]>([]); // the event's rounds, which carry the fixed map of each round
   const [rosters, setRosters] = useState<Record<string, Row[]>>({}); // the roster each team entrant fields for the event, by entrant id
   const [rosterOpen, setRosterOpen] = useState(false);
   const [rosterSide, setRosterSide] = useState(1);
@@ -102,6 +103,9 @@ export function SeriesView({ id }: { id: string }) {
 
   const mapName = (mapId?: number | null) => maps.find((row) => row.id === mapId)?.name;
 
+  // The map a fixed game plays: the map of its round, else the map an import wrote on the fixture
+  const fixedMapId: number | null = fixedMapOf(series?.rules?.map_rules, rounds.find((row) => row.playday === series?.match?.playday)) ?? series?.match?.fixed_map_id ?? null;
+
   // One row per game of the best-of: its rule, the map it was played on or the one the
   // rule offers, and the side that won it
   const gameRows = rules.map((rule, index) => {
@@ -109,7 +113,8 @@ export function SeriesView({ id }: { id: string }) {
     return {
       game_no: index + 1,
       rule: titleOf(MAP_RULES, rule),
-      map: mapName(game?.map_id ?? game?.offered_map_id) || "—",
+      // a fixed game names its map before it is played; every other rule waits for the veto or the result
+      map: mapName(game?.map_id ?? game?.offered_map_id ?? (rule === "fixed" ? fixedMapId : null)) || "—",
       winner: game?.winner_side ? sideName(game.winner_side === "A" ? 1 : 2) : null,
     };
   });
@@ -126,6 +131,8 @@ export function SeriesView({ id }: { id: string }) {
     const eventId = loaded.match?.season_id ?? loaded.match?.season?.id;
     if (!loaded.match_id || !eventId) return;
     const answer = await eventStore.fetchFixture(eventId, loaded.match_id).catch(() => null);
+    // the same read answers the event, whose rounds name the fixed map of this round
+    setRounds(answer?.event?.rounds || []);
     if (!answer?.series?.length) return;
     setFixture(answer.series);
     const teams = await teamStore.fetchTeamsBySeason(eventId).catch(() => []);

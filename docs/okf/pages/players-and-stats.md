@@ -47,7 +47,7 @@ sources:
 
 **Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series and the games won as a count with its share under a column title that names what it counts, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and flags. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one, adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
 
-The Next.js port preserves that filter/query contract, the 25-row pagination and the complete admin action set. Its country flags and race/MMR chips retain tap-accessible tooltips on touch screens.
+The list pages 25 rows at a time, and its country flags and race/MMR chips carry tap-accessible tooltips on a touch screen.
 
 **One player (`/player/:id`).** The header with the flag, name, races, MMR and channels; the owner and an admin edit it. The owner also reads "Waiting for you", one line per open job under its context label: a series to take the next step on, a round to check in for. The Events card lists every event the player took part in, newest first, with the result; the running GNL season opens on its round cards, which name the opponent with his race, carry the compact series action bar, and answer each round with "Check in" or "Sit out". Tonight's KOTH night joins the owner's list. The head-to-head card closes the page. The same profile opens as a side panel over a drafting page, without the owner's actions.
 
@@ -76,4 +76,4 @@ The Next.js port preserves that filter/query contract, the 25-row pagination and
 - A player reads as flag, name, race, MMR, and the name links to this page: [one player name standard](../decisions/player-name-standard.md).
 - The panel and the page render one profile; the panel carries no owner action: [the player panel opens only on drafting pages](../decisions/player-panel-drafting-only.md).
 - The season ladder read is cached at the edge: [the edge-cached read must carry no bearer](../pitfalls/edge-cache-no-bearer.md).
-- The "Main race" column is labelled, so the profile race may show there: [a race icon needs a race for the row](../pitfalls/race-icon-context.md).
+- The race chips of the players list stand on ladder games, one chip per race the player has games on: [a race icon needs a race for the row](../pitfalls/race-icon-context.md).

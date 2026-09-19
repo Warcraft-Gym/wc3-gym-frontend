@@ -126,7 +126,7 @@ export function SeasonSignupDialog({ onAdded, ref }: { onAdded?: () => void; ref
             disabled={!!presetPlayer}
             row={(item) => {
               const player = players.find((row) => String(row.id) === item.value);
-              return player ? <PlayerName player={player} plain /> : item.title;
+              return player ? <PlayerName player={player} plain mmr={false} /> : item.title;
             }}
           />
 

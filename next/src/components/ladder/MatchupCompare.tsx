@@ -49,11 +49,11 @@ export function MatchupCompare({
   return (
     <div className="grid grid-cols-[236px_70px_236px] items-center gap-y-1 text-sm tnum">
       <div className="text-right font-medium">
-        <PlayerName player={a} race={raceA} />
+        <PlayerName player={a} race={raceA} mmr={false} />
       </div>
       <div className={label}>vs</div>
       <div className="font-medium">
-        <PlayerName player={b} race={raceB} />
+        <PlayerName player={b} race={raceB} mmr={false} />
       </div>
 
       <div className="text-right">{la?.mmr?.current ?? "—"}</div>

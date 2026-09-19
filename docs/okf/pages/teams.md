@@ -1,10 +1,10 @@
 ---
 type: Page
 title: Teams
-description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's round grid.
+description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's check-in.
 resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
 tags: [pages, teams]
-generated: { by: claude-code/claude-opus-5, at: 2026-09-19T19:40:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T00:30:00Z }
 sources:
   - id: teams
     resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
@@ -48,7 +48,7 @@ sources:
 
 **The team in one season (`/team/:id/season/:season_id`).** The season points. The team's W3Champions ladder card: points, rank, games, and per player the ladder points, the achievements, the total, wins, losses, the MMR and its change since the season start, with when the card was last synced. The roster: the captains, and the members as the player line, which carries the signup race and the MMR, with the battle tag and the Discord name in columns beside it and the synced time under the name; each group is its own block inside the roster card. The page reads no series, so this roster draws no round strip. An admin picks the captains from every player and saves them; the answer names the captains whose Discord role is missing. An admin syncs the roster from W3Champions, adds players from the season's signups and removes one. A captain of this team, or an admin, gets the "Team rounds" button.
 
-**The round grid (`/team/:id/season/:season_id/rounds`).** One row per player and one column per round, each with a check-in button and a sit-out button; the caption says who set the answer. A second press on the set answer clears it. "Out to round n" sets every round to out. A phone shows one round at a time. The view sends anyone who is not a captain of this team, or an admin, to `/profile`.
+**The check-in of one team (`/team/:id/season/:season_id/rounds`).** A round picker and a "One round / All rounds" switch over one read of the team's answers. One round is the roster as a list: the player line, the state as a tonal chip, the "set by" note and the row menu. All rounds is a matrix of players by rounds, one chip per cell, from the same read. The chip reads "Checked in", "Out", "Out (blocked times)" or "No answer"; a blocked state is derived from the player's blocked times, so no menu offers it as a value to set. The row menu, and the same menu on a cell, offers "Check in for `<name>`", "Sit out this round", "Clear" and "Sit out all remaining rounds"; the last one asks once and writes every round that has not ended in one call. A round nobody answered offers no "Clear", and a derived state offers only the check-in that overrides it. The view sends anyone who is not a captain of this team, or an admin, to `/profile`.
 
 # Writes
 
@@ -63,6 +63,7 @@ sources:
 | `team.removePlayersFromTeamForSeason` | `DELETE /events/{season_id}/teams/{id}/players` |
 | `team.syncPlayersW3C` | `POST /events/{season_id}/teams/{id}/ladder-sync` |
 | `availability.setTeamAvailability` | `PUT /events/{season_id}/teams/{id}/availability` |
+| `availability.setTeamAvailabilityAll` | `PUT /events/{season_id}/teams/{id}/availability/all` |
 
 A team belongs to one league. The team store reads the league from the team row, or resolves the GNL league when the page gives none, and the team lists read `GET /leagues/{league_id}/teams` and `GET /events/{season_id}/teams`.
 

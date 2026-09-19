@@ -20,6 +20,7 @@ import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { myNight, myRaces } from "@/helpers/koth.mjs";
 import { roundCards, waitingLines } from "@/helpers/rounds.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
+import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -133,7 +134,9 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
   }, [owner]);
 
   const seriesOf = (row: Row) => seasonData[row.season.id]?.series ?? row.series;
-  const answersOf = (seasonId: number | string): Row[] => seasonData[seasonId]?.availability ?? [];
+  // Null until the season read lands, so the check-in draws no answer it has not read
+  const answersOf = (seasonId: number | string): Row[] | null =>
+    seasonData[seasonId] ? seasonData[seasonId].availability ?? [] : null;
 
   // What he still owes, over every season he is in
   const waiting: Row[] = waitingLines(
@@ -168,7 +171,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
 
   // The check-in, from the waiting card and from the round cards alike
   const [savingWeek, setSavingWeek] = useState<string | null>(null);
-  const rowOfWeek = (seasonId: number | string, week: number) => answersOf(seasonId).find((row) => row.playday === week);
+  const rowOfWeek = (seasonId: number | string, week: number) => answersOf(seasonId)?.find((row) => row.playday === week);
 
   const setByLine = (seasonId: number | string, week: number) => {
     const row = rowOfWeek(seasonId, week);
@@ -326,11 +329,13 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                   ) : undefined}
                   question={owner ? (card) => (
                     <>
+                      {/* A pending card has not read its answer, so both buttons stay inert and keep their size */}
                       <div className="mt-2 flex gap-2">
                         <Button
                           className={card.answer === true ? "bg-success text-on-success" : "text-success"}
                           variant={card.answer === true ? "default" : "outline"}
-                          disabled={savingWeek !== null}
+                          aria-busy={card.pending}
+                          disabled={card.pending || savingWeek !== null}
                           onClick={() => setWeek(row.season.id, card.playday, true)}
                         >
                           {savingWeek === weekKey(row.season.id, card.playday) ? <Icon name="mdi-loading mdi-spin" /> : null}
@@ -339,14 +344,17 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                         <Button
                           className={card.answer === false ? "bg-error text-on-error" : "text-error"}
                           variant={card.answer === false ? "default" : "outline"}
-                          disabled={savingWeek !== null}
+                          aria-busy={card.pending}
+                          disabled={card.pending || savingWeek !== null}
                           onClick={() => setWeek(row.season.id, card.playday, false)}
                         >
                           {savingWeek === weekKey(row.season.id, card.playday) ? <Icon name="mdi-loading mdi-spin" /> : null}
                           Can&apos;t play
                         </Button>
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground">{setByLine(row.season.id, card.playday)}</div>
+                      <div className={cn("mt-2 text-xs text-muted-foreground", card.pending && "invisible")}>
+                        {setByLine(row.season.id, card.playday)}
+                      </div>
                     </>
                   ) : undefined}
                 />

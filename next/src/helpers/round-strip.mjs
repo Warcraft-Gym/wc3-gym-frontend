@@ -14,6 +14,8 @@ const sideOf = (series, playerId) => {
     score: `${me}-${them}`,
     opponent: (mine ? series.player2 : series.player1) ?? null,
     opponentRace: mine ? series.player2_race : series.player1_race,
+    // the rating the row names on that race; null where the payload carries none
+    opponentMmr: (mine ? series.player2_mmr : series.player1_mmr) ?? null,
   };
 };
 

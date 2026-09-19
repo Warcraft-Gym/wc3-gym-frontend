@@ -4,7 +4,7 @@ title: Players and stats
 description: The players list, one player's page with the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../next/src/app/(app)/players/PlayersView.tsx
 tags: [pages, players]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T20:10:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T23:10:00Z }
 sources:
   - id: players
     resource: ../../../next/src/app/(app)/players/PlayersView.tsx
@@ -49,7 +49,7 @@ sources:
 
 The list pages 25 rows at a time, and its country flags and race/MMR chips carry tap-accessible tooltips on a touch screen.
 
-**One player (`/player/:id`).** The header with the flag, name, races, MMR and channels; the owner and an admin edit it. The owner also reads "Waiting for you", one line per open job under its context label: a series to take the next step on, a round to check in for. The Events card lists every event the player took part in, newest first, with the result; the running GNL season opens on its round cards, which name the opponent with his race, carry the compact series action bar, and answer each round with "Check in" or "Sit out". Tonight's KOTH night joins the owner's list. The head-to-head card closes the page. The same profile opens as a side panel over a drafting page, without the owner's actions.
+**One player (`/player/:id`).** The header with the flag, name, races, MMR and channels; the owner and an admin edit it. The owner also reads "Waiting for you", one line per open job under its context label: a series to take the next step on, a round to check in for. The Events card lists every event the player took part in, newest first, with the result; the running GNL season opens on its round cards, which name the opponent with his race and the rating the row names on it, carry the compact series action bar, and answer each round with "Check in" or "Sit out". Tonight's KOTH night joins the owner's list. The head-to-head card closes the page. The same profile opens as a side panel over a drafting page, without the owner's actions.
 
 **Ladder (`/ladder`).** The season picker, then the team standings of the season's W3Champions ladder (points, achievement points, games, players, badges), the player leaderboards, the badge rarity, and the player table with filters. An admin syncs the season from W3Champions; the sync runs one chunk of players per request and shows its progress.
 

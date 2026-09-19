@@ -100,8 +100,8 @@ export function RoundStrip({
             <TooltipContent className="max-w-none flex-col items-start gap-1">
               {mark.series.length ? (
                 mark.series.map((one, at) => {
-                  // the line draws the MMR itself, on the race this series names, not the signup race
-                  const mmr = one.opponent ? getW3CMMR(one.opponent, undefined, one.opponentRace ?? undefined) : null;
+                  // the rating the row names on the race this series played, else the one the opponent's own stats give on it
+                  const mmr = one.opponentMmr ?? (one.opponent ? getW3CMMR(one.opponent, undefined, one.opponentRace ?? undefined) : null);
                   return (
                     <span key={at} className="block">
                       <span className="block">{seriesHead_(mark.round, one)}</span>

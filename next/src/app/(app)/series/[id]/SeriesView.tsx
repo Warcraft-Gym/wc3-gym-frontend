@@ -26,7 +26,7 @@ import { moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { eventLabel, MAP_RULES, titleOf } from "@/helpers/event-labels.mjs";
 import { fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster } from "@/helpers/fixture.mjs";
 import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
-import { actsForSeries, seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
+import { seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
 import { isScored, sideName as nameOfSide } from "@/helpers/stage-view.mjs";
 import { useAuth, useEventStore, useMapStore, useMatchStore, useTeamStore } from "@/stores";
 
@@ -138,8 +138,7 @@ export function SeriesView({ id }: { id: string }) {
   // A replay moves inside the games the series played, so an unreported series moves none
   const playedGames = scored ? replaysNeeded(series?.player1_score || 0, series?.player2_score || 0) : 0;
   const hasReplay = (game: number) => replays.some((row) => row.game_no === game);
-  // The move route acts for a side alone, so an admin who is on neither side sees no control
-  const canMove = playedGames > 1 && actsForSeries(actionRow, { ...viewer, isAdmin: false });
+  const canMove = playedGames > 1 && canReport;
 
   // Only a viewer who may move a replay reads the fixture's replay list
   const loadReplays = async (matchId: number, seriesId: number) => {

@@ -20,6 +20,8 @@ export function SeriesCard({
 }) {
   // the race each side played, which is his signup race unless he reported another
   const races: (string | undefined)[] = [series.player1_race, series.player2_race];
+  // the rating the row names on that race; a row without the field lets the line read its own
+  const mmrs: (number | null | undefined)[] = [series.player1_mmr, series.player2_mmr];
 
   const { player1_score: a = 0, player2_score: b = 0 } = series;
   const winner = a === b ? null : a > b ? 0 : 1;
@@ -34,7 +36,7 @@ export function SeriesCard({
       {[series.player1, series.player2].map((player: Player, n) => (
         <div key={n} className={cn("flex items-center gap-2", winner === n && "font-bold")}>
           <span className="flex-1">
-            <PlayerName player={player} race={races[n]} host={series.host_player_id === player.id} />
+            <PlayerName player={player} race={races[n]} mmr={mmrs[n]} host={series.host_player_id === player.id} />
           </span>
           {side?.({ player, race: races[n], n, won: winner === n })}
         </div>

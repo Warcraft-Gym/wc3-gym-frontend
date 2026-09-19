@@ -17,6 +17,16 @@ test('a mark names the winner of the round, from either side of the series', () 
   assert.deepEqual(roundMarks(rows, 7, 5).map((mark) => mark.state), ['won', 'lost', 'pending', 'none', 'none']);
 });
 
+test('the mark reads the opponent MMR from the side he played, and null where the row names none', () => {
+  const rows = [
+    { match: { playday: 1 }, player1_id: 7, player2_id: 3, player2: them(3, 'Scorch'), player1_mmr: 1400, player2_mmr: 1320, player1_score: 2, player2_score: 1 },
+    { match: { playday: 2 }, player1_id: 4, player2_id: 7, player1: them(4, 'Taro'), player1_score: 2, player2_score: 0 },
+  ];
+  const marks = roundMarks(rows, 7, 2);
+  assert.equal(marks[0].series[0].opponentMmr, 1320);
+  assert.equal(marks[1].series[0].opponentMmr, null);
+});
+
 test('one won and one lost in the same round is the split square', () => {
   const rows = [series(2, true, 3, 2, them(3, 'Farrow')), series(2, false, 2, 3, them(4, 'Scorch'))];
   assert.equal(roundMarks(rows, 7, 2)[1].state, 'mixed');

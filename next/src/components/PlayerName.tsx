@@ -31,7 +31,7 @@ export function PlayerName({
   race?: string;
   host?: boolean;
   plain?: boolean; // text only: a form in a dialog must not lose its input to a click
-  mmr?: number | false; // false where a column of its own sorts by MMR; a number the caller already holds
+  mmr?: number | false | null; // false where a column of its own sorts by MMR; a number the caller already holds, null where its payload names none
   games?: number | null; // the current w3champions season: draws the games-rule mark on a draft surface
   onClick?: () => void;
   children?: React.ReactNode;

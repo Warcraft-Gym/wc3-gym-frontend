@@ -75,6 +75,8 @@ export function RoundCards({
   const opponentZone = (s: Row) => zoneLabel(opponent(s).timezone, viewerZone(), s.date_time);
   // the race the opponent played in that series, not the one he signed the season up on
   const opponentRace = (s: Row) => (mine(s) ? s.player2_race : s.player1_race);
+  // the rating the row names on that race, not the one the opponent's profile carries
+  const opponentMmr = (s: Row) => (mine(s) ? s.player2_mmr : s.player1_mmr);
 
   // The maps of the series, read from the player's side: game 1 is the season's
   // fixed map, and each side picks the map it takes after a loss
@@ -119,8 +121,7 @@ export function RoundCards({
                 // A series replaces the question: the round is already accounted for
                 <>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {/* The reduced series row names no rating, so the card draws the name and the race alone */}
-                    <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
+                    <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} mmr={opponentMmr(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
                     {!isUnscored(card.series) ? (
                       <Badge variant="outline" className={cn("tnum", SCORE[scoreColor(card.series)])}>
                         {myScore(card.series)} - {theirScore(card.series)}

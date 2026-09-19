@@ -110,8 +110,8 @@ export function UpcomingView() {
                     {roundLink(row)}
                     {teamsOf(row) ? <div className="text-xs text-muted-foreground">{teamsOf(row)}</div> : null}
                   </td>
-                  <td className="p-2"><PlayerName player={row.player1} race={row.player1_race} /></td>
-                  <td className="p-2"><PlayerName player={row.player2} race={row.player2_race} /></td>
+                  <td className="p-2"><PlayerName player={row.player1} race={row.player1_race} mmr={row.player1_mmr} /></td>
+                  <td className="p-2"><PlayerName player={row.player2} race={row.player2_race} mmr={row.player2_mmr} /></td>
                   <td className="p-2 whitespace-nowrap">{scoreOf(row)}</td>
                   <td className="p-2"><CastChips series={row} /></td>
                 </tr>

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import process from 'node:process';
 
 import {
-  dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, SEED_SOURCES, seriesPerEntrant, seriesPerFixture,
+  dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, ROUND_END_ZONES, SEED_SOURCES, seriesPerEntrant, seriesPerFixture,
   STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf,
 } from './event-labels.mjs';
 
@@ -73,6 +73,12 @@ test('the two series settings each read only where they apply', () => {
   assert.equal(seriesPerFixture({ entrant_kind: 'team' }), 1);
   assert.equal(seriesPerFixture({ entrant_kind: 'solo', series_per_round: 2 }), null);
   assert.equal(seriesPerFixture(null), null);
+});
+
+test('the round end zones open on the clear item and offer UTC', () => {
+  assert.equal(ROUND_END_ZONES[0].value, '');
+  assert.ok(ROUND_END_ZONES.some((item) => item.value === 'UTC'));
+  assert.equal(ROUND_END_ZONES.filter((item) => item.value === 'UTC').length, 1);
 });
 
 test('no seed source offers a qualifier, and the previous stage stays', () => {

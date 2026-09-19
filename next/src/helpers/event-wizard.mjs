@@ -58,8 +58,11 @@ export const blankForm = (league = null) => ({
   entrant_cap: '',
   mmr_max: '',
   min_games: '',
+  min_games_seasons: '',
   checkin_enabled: false,
   checkin_days: 3,
+  early_checkin: false,
+  round_end_zone: '',
   multi_entry: false,
   series_per_round: 1,
   division_count: 0,
@@ -89,8 +92,14 @@ export const eventPayload = (form) => ({
   entrant_cap: count(form.entrant_cap),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
+  // How many of the newest W3C seasons the games floor counts over; nothing counts them all
+  min_games_seasons: count(form.min_games_seasons),
   checkin_enabled: !!form.checkin_enabled,
   checkin_days: form.checkin_enabled ? count(form.checkin_days) : null,
+  // On, a player answers a round that has not ended before its window opens
+  early_checkin: !!form.checkin_enabled && !!form.early_checkin,
+  // An IANA name; a round of this event ends at midnight in this zone
+  round_end_zone: text(form.round_end_zone),
   // On, a player may enter once per race; each row seeds on its own race
   multi_entry: !!form.multi_entry,
   // A fixture pairs two team entrants, so a solo event always holds one series a pairing
@@ -124,6 +133,24 @@ export const stagesPayload = (form) => (form.stages || []).map((stage) => ({
   swiss_rounds: stage.format === 'swiss' ? count(stage.swiss_rounds) : null,
   group_size: stage.format === 'round_robin' ? count(stage.group_size) : null,
   group_advance: stage.format === 'round_robin' ? count(stage.group_advance) : null,
+}));
+
+// The fields PUT /events/{id}/stages takes; a read also carries an id, a position and a seed lock
+const STAGE_WRITE_FIELDS = [
+  'name', 'format', 'best_of', 'series_per_entrant_per_round', 'swiss_rounds', 'points_by_place',
+  'lobby_size', 'group_advance', 'map_rules', 'scheduling_mode', 'ranking_rule',
+  'points_series_won', 'points_series_drawn', 'points_game_won', 'advance_count', 'group_size',
+  'auto_advance', 'third_place', 'grand_final_modifier',
+];
+
+// The write replaces every field of every stage, so each stage goes back as it was read
+export const readStagesPayload = (stages, edits = {}) => (stages || []).map((stage) => ({
+  ...Object.fromEntries(
+    STAGE_WRITE_FIELDS.filter((field) => stage[field] !== undefined).map((field) => [field, stage[field]]),
+  ),
+  max_mmr_difference: stage.format === 'gnl'
+    ? count(stage.id in edits ? edits[stage.id] : stage.max_mmr_difference)
+    : null,
 }));
 
 // The body POST /events takes: the event and its stages in one write, so a later failure
@@ -175,6 +202,9 @@ export const stepProblem = (form, key) => {
   if (key === 'entrants') {
     if (form.entrant_cap !== '' && Number(form.entrant_cap) < 2) return 'A cap holds at least two entrants.';
     if (form.checkin_enabled && !(Number(form.checkin_days) > 0)) return 'Say how many days before a round check-in opens.';
+    if (count(form.min_games_seasons) !== null && !(Number(form.min_games_seasons) >= 1)) {
+      return 'Count the recent games over one W3C season or more.';
+    }
     return null;
   }
   if (key === 'stages') {

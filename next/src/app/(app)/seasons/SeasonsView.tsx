@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/Combobox";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
@@ -23,9 +24,10 @@ import { RowActions } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { PHASE_LABEL } from "@/helpers/season-phase.mjs";
-import { SERIES_PER_FIXTURE } from "@/helpers/event-labels.mjs";
+import { NO_ROUND_END_ZONE, ROUND_END_ZONES, SERIES_PER_FIXTURE } from "@/helpers/event-labels.mjs";
+import { readStagesPayload } from "@/helpers/event-wizard.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
-import { useAuth, useMapStore, useSeason } from "@/stores";
+import { useAuth, useEventStore, useMapStore, useSeason } from "@/stores";
 
 // The scale the series points use, as the backend stores it
 const SCORE_SYSTEMS = [
@@ -34,6 +36,7 @@ const SCORE_SYSTEMS = [
 ];
 
 type Season = Record<string, any>;
+type Stage = Record<string, any>;
 type MapRow = { id: number; name: string };
 // A column marked mobile:false hides below the md breakpoint. CSS does it, not a JS breakpoint,
 // so the server and the first client paint draw the same row.
@@ -43,6 +46,7 @@ type Column = { title: string; value: string; sortable: boolean; mobile?: boolea
 export function SeasonsView() {
   const router = useRouter();
   const { seasons, fetchSeasons, createSeason, updateSeason, deleteSeason, addMapsToSeason, removeMapsFromSeason, uploadSeasonFile, exportSeason } = useSeason();
+  const eventStore = useEventStore();
   const mapStore = useMapStore();
   const { isAdmin } = useAuth();
 
@@ -60,8 +64,18 @@ export function SeasonsView() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [selectedSeasonMapIds, setSelectedSeasonMapIds] = useState<number[]>([]);
+  // The stages of the season being edited, as read, and the largest MMR difference typed per stage id
+  const [stages, setStages] = useState<Stage[]>([]);
+  // The season the dialog holds now, so a stage read that lands late is dropped
+  const dialogSeasonId = useRef<number | null>(null);
+  const [maxMmr, setMaxMmr] = useState<Record<number, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [sort, setSort] = useState<{ value: string; desc: boolean }>({ value: "", desc: false });
+  // A stored zone the browser does not name still shows in the select
+  const storedZone: string | null = selectedSeason?.round_end_zone ?? null;
+  const zoneItems = storedZone && !ROUND_END_ZONES.some((item: { value: string }) => item.value === storedZone)
+    ? [...ROUND_END_ZONES, { value: storedZone, title: storedZone }]
+    : ROUND_END_ZONES;
 
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
@@ -109,21 +123,44 @@ export function SeasonsView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A GNL season opens early check-in and asks for 20 games over the last 2 W3C seasons
   const addNewSeason = () => {
-    setSelectedSeason({ name: "", round_count: 0, pick_ban: "", series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_days: 3 });
+    setSelectedSeason({ name: "", round_count: 0, pick_ban: "", series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_days: 3, early_checkin: true, round_end_zone: null, min_games: 20, min_games_seasons: 2 });
+    dialogSeasonId.current = null;
     setSelectedSeasonMapIds([]);
+    setStages([]);
+    setMaxMmr({});
     setFormError("");
     setIsEditing(false);
     setSeasonDialogOpen(true);
   };
 
-  // a cleared number field holds an empty string; null is the season that stays open all season
-  const normalizeCheckin = (season: Season): Season => ({ ...season, checkin_days: season.checkin_days === "" ? null : season.checkin_days });
+  // A cleared field is null: check-in all season, a floor over every W3C season, a round that ends where the reader is
+  const blanksAsNull = (season: Season): Season => ({
+    ...season,
+    checkin_days: season.checkin_days === "" ? null : season.checkin_days,
+    min_games: season.min_games === "" ? null : season.min_games,
+    min_games_seasons: season.min_games_seasons === "" ? null : season.min_games_seasons,
+    round_end_zone: season.round_end_zone || null,
+  });
+
+  // What the season settings still need, as the API bounds them, or nothing when they are ready
+  const settingsProblem = (): string | null => {
+    const over = selectedSeason?.min_games_seasons;
+    if (over !== "" && over != null && !(Number(over) >= 1)) return "Count the recent games over one W3C season or more.";
+    if (Object.values(maxMmr).some((value) => value !== "" && !(Number(value) >= 1))) return "The largest MMR difference is 1 or more.";
+    return null;
+  };
 
   const createNewSeason = async () => {
     setFormError("");
+    const problem = settingsProblem();
+    if (problem) {
+      setFormError(problem);
+      return;
+    }
     try {
-      const createdSeason = await createSeason(normalizeCheckin(selectedSeason!));
+      const createdSeason = await createSeason(blanksAsNull(selectedSeason!));
 
       // Add maps to the season if any were selected
       if (selectedSeasonMapIds.length > 0) await addMapsToSeason(createdSeason.id, selectedSeasonMapIds);
@@ -136,19 +173,42 @@ export function SeasonsView() {
     }
   };
 
-  const editSeason = (season: Season) => {
+  // The list read carries no stage, so the settings of a stage come from the event itself
+  const editSeason = async (season: Season) => {
     setSelectedSeason({ ...season });
     setSelectedSeasonMapIds(season.maps ? season.maps.map((m: MapRow) => m.id) : []);
+    setStages([]);
+    setMaxMmr({});
     setFormError("");
     setIsEditing(true);
     setSeasonDialogOpen(true);
+    dialogSeasonId.current = season.id;
+    try {
+      const full = await eventStore.fetchEvent(season.id);
+      // A read that lands after the dialog moved on belongs to another season, so it is dropped
+      if (dialogSeasonId.current === season.id && full?.id === season.id) setStages(full.stages || []);
+    } catch (err) {
+      if (dialogSeasonId.current === season.id) setFormError("Error reading the stages: " + (err as Error).message);
+    }
   };
 
   const saveSeason = async () => {
     setFormError("");
+    const problem = settingsProblem();
+    if (problem) {
+      setFormError(problem);
+      return;
+    }
+    // The stages in hand belong to the season in the dialog, or no stage is written at all
+    if (Object.keys(maxMmr).length && dialogSeasonId.current !== selectedSeason!.id) {
+      setFormError("The stages of this season are not loaded. Close the dialog and open it again.");
+      return;
+    }
     try {
-      const season = normalizeCheckin(selectedSeason!);
+      const season = blanksAsNull(selectedSeason!);
       await updateSeason(season);
+      // The stage write replaces every field of every stage, so it carries them back as read
+      if (Object.keys(maxMmr).length) await eventStore.setStages(season.id, readStagesPayload(stages, maxMmr));
 
       // Update map pool - first get current maps, then determine what to add/remove
       const currentMapIds: number[] = season.maps ? season.maps.map((m: MapRow) => m.id) : [];
@@ -167,9 +227,12 @@ export function SeasonsView() {
   };
 
   const closeSeasonDialog = () => {
+    dialogSeasonId.current = null;
     setSeasonDialogOpen(false);
     setSelectedSeason(null);
     setSelectedSeasonMapIds([]);
+    setStages([]);
+    setMaxMmr({});
   };
 
   const removeSeason = async (id?: number | string) => {
@@ -466,6 +529,35 @@ export function SeasonsView() {
                 <Switch checked={!!selectedSeason.scheduling_enabled} onCheckedChange={(checked) => set({ scheduling_enabled: checked })} />
                 Availability tools
               </Label>
+              <Field label="Round end zone" hint="A round ends at midnight in this zone." htmlFor="edit-round-end-zone">
+                <Combobox
+                  id="edit-round-end-zone"
+                  items={zoneItems}
+                  value={selectedSeason.round_end_zone || null}
+                  placeholder={NO_ROUND_END_ZONE}
+                  onChange={(zone) => set({ round_end_zone: zone || null })}
+                  className={selectedSeason.round_end_zone ? undefined : "text-muted-foreground"}
+                />
+              </Field>
+              <Field label="Recent games at least" hint="Blank asks for no games at all." htmlFor="edit-min-games">
+                <Input
+                  id="edit-min-games"
+                  type="number"
+                  min={0}
+                  value={selectedSeason.min_games ?? ""}
+                  onChange={(e) => set({ min_games: e.target.value === "" ? "" : Number(e.target.value) })}
+                />
+              </Field>
+              <Field label="Count the games over" hint="Count games over the last N W3C seasons" htmlFor="edit-min-games-seasons">
+                <Input
+                  id="edit-min-games-seasons"
+                  type="number"
+                  min={1}
+                  placeholder="Every W3C season"
+                  value={selectedSeason.min_games_seasons ?? ""}
+                  onChange={(e) => set({ min_games_seasons: e.target.value === "" ? "" : Number(e.target.value) })}
+                />
+              </Field>
               <Field label="Check-in opens (days before a round)" hint="Blank keeps check-in open all season." htmlFor="edit-checkin">
                 <Input
                   id="edit-checkin"
@@ -475,6 +567,33 @@ export function SeasonsView() {
                   onChange={(e) => set({ checkin_days: e.target.value === "" ? "" : Number(e.target.value) })}
                 />
               </Field>
+              <div className="flex flex-col gap-1.5">
+                <Label className="flex items-center gap-2">
+                  <Switch aria-describedby="edit-early-checkin-help" checked={!!selectedSeason.early_checkin} onCheckedChange={(checked) => set({ early_checkin: checked })} />
+                  Early check-in
+                </Label>
+                <p id="edit-early-checkin-help" className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
+              </div>
+              {/* The largest MMR difference belongs to a captain draft, so every other stage format leaves it out */}
+              {stages
+                .filter((stage) => stage.format === "gnl")
+                .map((stage) => (
+                  <Field
+                    key={stage.id}
+                    label={stages.length > 1 ? `Largest MMR difference (${stage.name || `stage ${stage.position}`})` : "Largest MMR difference"}
+                    hint="A captain draft pairs inside this difference."
+                    htmlFor={`edit-max-mmr-${stage.id}`}
+                  >
+                    <Input
+                      id={`edit-max-mmr-${stage.id}`}
+                      type="number"
+                      min={1}
+                      placeholder="100"
+                      value={maxMmr[stage.id] ?? stage.max_mmr_difference ?? ""}
+                      onChange={(e) => setMaxMmr({ ...maxMmr, [stage.id]: e.target.value })}
+                    />
+                  </Field>
+                ))}
               <div className="flex flex-col gap-1.5">
                 <Label className="flex items-center gap-2">
                   <Checkbox checked={!!selectedSeason.fantasy_grind} onCheckedChange={(checked) => set({ fantasy_grind: checked })} />

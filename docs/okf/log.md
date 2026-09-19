@@ -2,6 +2,7 @@
 
 ## 2026-09-19
 
+* **Update**: the event settings carry early check-in, the round end zone, the W3C seasons the recent games count over, and the largest MMR difference of a captain draft stage. The event management and GNL season page concepts state the fields, their bounds and the stage write the season dialog makes.
 * **Update**: the series page moves an uploaded replay to another game the series played; the fixtures and series page states the control and its write, the backend contract and the stores concept name the route in the match store.
 * **Update**: a stage series row names the MMR of the race it plays, and the payloads that name a team name its logo. The shared-component concept states how `SeriesBox` fills the player line, which payloads carry `team_icon_url`, and which team lines are plain.
 * **Update**: one component draws a team name and one draws a round strip, and the team roster is one aligned list. The shared-component concept states the three, and the teams and players page concepts state the roster, the season team roster and the round cards.

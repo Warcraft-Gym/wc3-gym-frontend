@@ -4,7 +4,7 @@ title: Players and stats
 description: The players list, one player's page with the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../next/src/app/(app)/players/PlayersView.tsx
 tags: [pages, players]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T16:30:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T20:10:00Z }
 sources:
   - id: players
     resource: ../../../next/src/app/(app)/players/PlayersView.tsx
@@ -45,7 +45,7 @@ sources:
 
 # What it does
 
-**Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series and games records with win rates, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and flags. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one, adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
+**Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series and the games won as a count with its share under a column title that names what it counts, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and flags. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one, adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
 
 The Next.js port preserves that filter/query contract, the 25-row pagination and the complete admin action set. Its country flags and race/MMR chips retain tap-accessible tooltips on touch screens.
 

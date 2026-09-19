@@ -71,6 +71,11 @@ export function SeasonsView() {
   const [maxMmr, setMaxMmr] = useState<Record<number, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [sort, setSort] = useState<{ value: string; desc: boolean }>({ value: "", desc: false });
+  // A stored zone the browser does not name still shows in the select
+  const storedZone: string | null = selectedSeason?.round_end_zone ?? null;
+  const zoneItems = storedZone && !ROUND_END_ZONES.some((item: { value: string }) => item.value === storedZone)
+    ? [...ROUND_END_ZONES, { value: storedZone, title: storedZone }]
+    : ROUND_END_ZONES;
 
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
@@ -527,7 +532,7 @@ export function SeasonsView() {
               <Field label="Round end zone" hint="A round ends at midnight in this zone." htmlFor="edit-round-end-zone">
                 <Combobox
                   id="edit-round-end-zone"
-                  items={ROUND_END_ZONES}
+                  items={zoneItems}
                   value={selectedSeason.round_end_zone || null}
                   placeholder={NO_ROUND_END_ZONE}
                   onChange={(zone) => set({ round_end_zone: zone || null })}

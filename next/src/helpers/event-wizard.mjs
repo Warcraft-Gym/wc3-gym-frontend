@@ -143,9 +143,7 @@ const STAGE_WRITE_FIELDS = [
   'auto_advance', 'third_place', 'grand_final_modifier',
 ];
 
-// The body PUT /events/{id}/stages takes when a settings form changes the largest MMR difference alone
 // The write replaces every field of every stage, so each stage goes back as it was read
-// `edits` holds the typed value per stage id; a blank one writes nothing, which a captain draft reads as 100
 export const readStagesPayload = (stages, edits = {}) => (stages || []).map((stage) => ({
   ...Object.fromEntries(
     STAGE_WRITE_FIELDS.filter((field) => stage[field] !== undefined).map((field) => [field, stage[field]]),

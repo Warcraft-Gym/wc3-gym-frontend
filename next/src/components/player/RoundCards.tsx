@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { CastChips, type CastSeries } from "@/components/CastChips";
 import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
 import { useMatchStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
-import { roundCards, roundStateChip } from "@/helpers/rounds.mjs";
+import { checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
 import { cn } from "@/lib/utils";
@@ -17,6 +19,13 @@ type Row = Record<string, any>;
 
 const CAPTION = "text-xs text-muted-foreground";
 const SCORE: Record<string, string> = { win: "text-win border-win", loss: "text-loss border-loss", draw: "text-draw border-draw" };
+// The four check-in answers, each with its own icon; a pairing state chip stays neutral
+const CHIP: Record<string, { tone: string | null; icon: string }> = {
+  "Checked in": { tone: "success", icon: "mdi-check" },
+  "Out": { tone: "error", icon: "mdi-close" },
+  "Out (blocked times)": { tone: "error", icon: "mdi-calendar-remove" },
+  "No answer": { tone: null, icon: "mdi-clock-outline" },
+};
 
 /** One card per round of a season: the window, the team faced, and the player's
  *  series of that round. The player's own page fills `seriesActions` and `question`
@@ -50,6 +59,9 @@ export function RoundCards({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seasonId]);
 
+  // The event's own clock: it decides when a round is over and what the end line reads
+  const zone: string | null = season?.round_end_zone ?? null;
+
   const cards: Row[] = roundCards({
     rounds: season?.rounds ?? [],
     series,
@@ -57,6 +69,8 @@ export function RoundCards({
     teamId,
     answers,
     checkinDays: season?.checkin_days ?? null,
+    earlyCheckin: !!season?.early_checkin,
+    zone,
   } as any);
 
   // The check-in belongs to the player himself, and only while the season runs the scheduling tools
@@ -67,6 +81,24 @@ export function RoundCards({
   const answered = asking.filter((card) => card.answer !== null).length;
   // The answers are still on their way, so the count would read every round as unanswered
   const pending = cards.some((card) => card.pending);
+
+  // The round's own clock beside the reader's; an event with no zone shows neither
+  const endLine = (card: Row) => roundEndLine(card.endsAt, zone, viewerZone());
+
+  // The answer, as one chip; a derived "Out (blocked times)" opens the blocked times that made it
+  const stateChip = (card: Row) => {
+    const text: string = roundStateChip(card, asks);
+    const mark = CHIP[text] ?? { tone: null, icon: "" };
+    const badge = (
+      <Badge className={cn(toneClass(mark.tone), asks && card.pending && "invisible")}>
+        {mark.icon ? <Icon name={mark.icon} size={12} /> : null}
+        {text}
+      </Badge>
+    );
+    return card.blocked && !card.pending
+      ? <Link href="/availability" title="Blocked times cover this round">{badge}</Link>
+      : badge;
+  };
 
   const mine = (s: Row) => s.player1_id === player.id;
   // the other side of a series; the id is the fallback when the payload carries no player row
@@ -143,16 +175,21 @@ export function RoundCards({
                   {/* A scored series keeps its actions: the backend takes a second report */}
                   {seriesActions?.(card.series)}
                 </>
-              ) : card.over || !asks || !card.open ? (
-                // the check-in belongs to the player himself; a visitor reads the state
-                <div className="mt-2">
-                  <Badge className={cn(toneClass(card.answer === false ? "error" : null), asks && card.pending && "invisible")}>
-                    {roundStateChip(card, asks)}
-                  </Badge>
-                </div>
               ) : (
-                question?.(card)
+                // the check-in belongs to the player himself; a visitor reads the state
+                <div className="mt-2 flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {stateChip(card)}
+                    {asks && !card.pending && card.setBy && card.setById !== player.id ? (
+                      <span className={CAPTION}>set by {card.setBy}</span>
+                    ) : null}
+                  </div>
+                  {asks && card.takes ? question?.(card) : null}
+                  {asks && card.takes && checkinOpensLine(card) ? <div className={CAPTION}>{checkinOpensLine(card)}</div> : null}
+                </div>
               )}
+              {/* The round closes at midnight in the event's zone, so the reader gets both clocks */}
+              {!card.over && endLine(card) ? <div className={cn(CAPTION, "mt-2")}>{endLine(card)}</div> : null}
             </div>
           ))}
         </div>

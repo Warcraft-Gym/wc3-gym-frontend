@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { currentRound, roundCards, roundLabel, roundLine, roundOver, roundStateChip, waitingLines } from './rounds.mjs';
+import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundLine, roundOver, roundStateChip, waitingLines } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -177,11 +177,59 @@ test('the state chip reads the round before it reads the window', () => {
   // 1 Oct: round 1 is over and unpaired, round 2 is open, and both carry a window
   const [past, open] = windowCards('2026-10-01T10:00');
   assert.equal(roundStateChip(past), 'Not paired');
-  assert.equal(roundStateChip(open), 'Not paired yet');
+  assert.equal(roundStateChip(open), 'No answer');
+  assert.equal(roundStateChip(open, false), 'Not paired yet');
   // before its window a round names the day it opens, but only to the player who checks in
   const [ahead] = windowCards('2026-09-15T10:00');
   assert.equal(roundStateChip(ahead), 'Check-in opens 17 Sep');
   assert.equal(roundStateChip(ahead, false), 'Not paired yet');
   assert.equal(roundStateChip({ ...ahead, answer: true }), 'Checked in');
   assert.equal(roundStateChip({ ...ahead, answer: false }), 'Out');
+});
+
+test('a derived answer reads as out through the blocked times', () => {
+  const [card] = roundCards(
+    { rounds: WINDOW_ROUNDS, answers: [{ playday: 1, available: false, blocked_out: true, set_by_user_id: null }], checkinDays: 3 },
+    DateTime.fromISO('2026-09-22T10:00'),
+  );
+  assert.equal(card.blocked, true);
+  assert.equal(card.setBy, null);
+  assert.equal(roundStateChip(card), 'Out (blocked times)');
+  // a stored answer is not derived, and names who set it
+  const [stored] = roundCards(
+    { rounds: WINDOW_ROUNDS, answers: [{ playday: 1, available: false, set_by_user_id: 9, set_by_name: 'Peterian' }], checkinDays: 3 },
+    DateTime.fromISO('2026-09-22T10:00'),
+  );
+  assert.equal(stored.blocked, false);
+  assert.equal(stored.setBy, 'Peterian');
+  assert.equal(roundStateChip(stored), 'Out');
+});
+
+test('early check-in takes an answer before the window opens', () => {
+  const ahead = DateTime.fromISO('2026-09-15T10:00');
+  assert.deepEqual(roundCards({ rounds: WINDOW_ROUNDS, answers: [], checkinDays: 3 }, ahead).map(c => c.takes), [false, false]);
+  const early = roundCards({ rounds: WINDOW_ROUNDS, answers: [], checkinDays: 3, earlyCheckin: true }, ahead);
+  assert.deepEqual(early.map(c => c.takes), [true, true]);
+  // the chip still names the day the window opens, under the buttons
+  assert.equal(roundStateChip(early[0]), 'No answer');
+  assert.equal(checkinOpensLine(early[0]), 'Check-in opens 17 Sep');
+  // a round that is over takes no answer, early check-in or not
+  assert.deepEqual(
+    roundCards({ rounds: WINDOW_ROUNDS, answers: [], checkinDays: 3, earlyCheckin: true }, DateTime.fromISO('2026-10-04T10:00')).map(c => c.takes),
+    [false, false],
+  );
+});
+
+test('a round ends at midnight in the event zone', () => {
+  const round = { playday: 1, start_date: '2026-09-20', end_date: '2026-09-26' };
+  // 27 Sep 00:00 in Berlin is 26 Sep 15:00 in Los Angeles
+  const end = roundEnd(round, 'Europe/Berlin');
+  assert.equal(roundEndLine(end, 'Europe/Berlin', 'America/Los_Angeles'), 'Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 15:00 your time');
+  assert.equal(roundEndLine(end, 'Europe/Berlin', 'Europe/Berlin'), 'Ends 27 Sep 00:00 Europe/Berlin');
+  assert.equal(roundEndLine(end, null, 'Europe/Berlin'), '');
+  assert.equal(roundEndLine(roundEnd({ playday: 2 }, 'Europe/Berlin'), 'Europe/Berlin'), '');
+  // the zone decides when the round is over: Berlin midnight has passed, Los Angeles has three hours left
+  const midnight = DateTime.fromISO('2026-09-26T22:30Z');
+  assert.equal(roundOver(round, midnight, 'Europe/Berlin'), true);
+  assert.equal(roundOver(round, midnight, 'America/Los_Angeles'), false);
 });

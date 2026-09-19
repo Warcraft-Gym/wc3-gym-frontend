@@ -5,6 +5,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { BlockedTimesEditor } from "@/components/BlockedTimesEditor";
+import { BlockedRounds } from "./BlockedRounds";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
@@ -77,6 +78,9 @@ export function AvailabilityView() {
           <BlockedTimesEditor zone={profileZone} onZone={onZone} />
         </CardContent>
       </Card>
+
+      {/* The answer itself belongs to the round, so this list only reads */}
+      <BlockedRounds />
     </div>
   );
 }

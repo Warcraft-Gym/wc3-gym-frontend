@@ -10,6 +10,7 @@ import { PlayerHeader } from "@/components/player/PlayerHeader";
 import { PlayerSeasons } from "@/components/player/PlayerSeasons";
 import { RoundCards } from "@/components/player/RoundCards";
 import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/ScheduleDialog";
+import { SitOutRestDialog } from "@/components/player/SitOutRestDialog";
 import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/ReportResultDialog";
 import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -19,7 +20,6 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { myNight, myRaces } from "@/helpers/koth.mjs";
 import { roundCards, waitingLines } from "@/helpers/rounds.mjs";
-import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -137,23 +137,30 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
   const answersOf = (seasonId: number | string): Row[] | null =>
     seasonData[seasonId] ? seasonData[seasonId].availability ?? [] : null;
 
+  // The event row of the season list carries the check-in settings; the /me entry may not
+  const fullSeason = (season: Row): Row => (seasons ?? []).find((row: Row) => row.id === season.id) ?? season;
+
+  // The rounds of one season the player is in, or null while its read is out
+  const seasonCards = (season: Row): Row[] | null => {
+    const answer = seasonData[season.id];
+    if (!answer) return null;
+    const full = fullSeason(season);
+    return roundCards({
+      rounds: answer.rounds ?? [],
+      series: answer.series ?? [],
+      answers: answer.availability ?? [],
+      checkinDays: full.checkin_days ?? season.checkin_days ?? null,
+      earlyCheckin: !!full.early_checkin,
+      zone: full.round_end_zone ?? null,
+    });
+  };
+
   // What he still owes, over every season he is in
   const waiting: Row[] = waitingLines(
     openSeasons
       .map((season) => {
-        const answer = seasonData[season.id];
-        if (!answer) return null;
-        const full = (seasons ?? []).find((row: Row) => row.id === season.id) ?? season;
-        return {
-          season,
-          asks: full.scheduling_enabled !== false,
-          cards: roundCards({
-            rounds: answer.rounds ?? [],
-            series: answer.series ?? [],
-            answers: answer.availability ?? [],
-            checkinDays: full.checkin_days ?? season.checkin_days ?? null,
-          }),
-        };
+        const cards = seasonCards(season);
+        return cards && { season, asks: fullSeason(season).scheduling_enabled !== false, cards };
       })
       .filter(Boolean),
     player?.id,
@@ -165,12 +172,6 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
   // The check-in, from the waiting card and from the round cards alike
   const [savingWeek, setSavingWeek] = useState<string | null>(null);
   const rowOfWeek = (seasonId: number | string, week: number) => answersOf(seasonId)?.find((row) => row.playday === week);
-
-  const setByLine = (seasonId: number | string, week: number) => {
-    const row = rowOfWeek(seasonId, week);
-    if (!row || row.available == null) return "No answer";
-    return `Set by ${row.set_by_user_id === player?.id ? "You" : row.set_by_name} · tap again to clear`;
-  };
 
   // a second click on the state already set clears the week back to no answer
   const setWeek = async (seasonId: number | string, week: number, want: boolean) => {
@@ -188,6 +189,17 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
       setErrorMessage((error as Error).message || "Error saving availability.");
     } finally {
       setSavingWeek(null);
+    }
+  };
+
+  // One answer for every round of the event that has not ended
+  const sitOutRest = async (seasonId: number | string) => {
+    setErrorMessage(null);
+    try {
+      const rows = await availabilityStore.setAllPlayerAvailability({ season_id: Number(seasonId), available: false });
+      setSeasonData((was) => ({ ...was, [seasonId]: { ...was[seasonId], availability: rows } }));
+    } catch (error) {
+      setErrorMessage((error as Error).message || "Error saving availability.");
     }
   };
 
@@ -294,36 +306,42 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
               night={night}
               nightRaces={nightRaces}
               current={(row) => (
-                <RoundCards
-                  player={player}
-                  season={row.season}
-                  series={seriesOf(row)}
-                  teamId={row.teamId}
-                  answers={answersOf(row.season.id)}
-                  seriesActions={owner ? (item) => (
-                    <SeriesActionBar
-                      className="mt-2"
-                      variant="compact"
-                      series={item}
-                      viewer={viewer}
-                      onSchedule={() => scheduleDialog.current?.open(item)}
-                      onReport={() => reportDialog.current?.open(item)}
-                    />
+                <>
+                  {/* The write covers rounds whose own window is still shut, so only early check-in offers it */}
+                  {owner && row.season?.early_checkin ? (
+                    <SitOutRestDialog label={row.label} cards={seasonCards(row.season) ?? []} onConfirm={() => sitOutRest(row.season.id)} />
+                  ) : null}
+                  <RoundCards
+                    player={player}
+                    season={row.season}
+                    series={seriesOf(row)}
+                    teamId={row.teamId}
+                    answers={answersOf(row.season.id)}
+                    seriesActions={owner ? (item) => (
+                      <SeriesActionBar
+                        className="mt-2"
+                        variant="compact"
+                        series={item}
+                        viewer={viewer}
+                        onSchedule={() => scheduleDialog.current?.open(item)}
+                        onReport={() => reportDialog.current?.open(item)}
+                      />
                   ) : undefined}
                   question={owner ? (card) => (
-                    <>
-                      {/* A pending card has not read its answer, so both buttons stay inert and keep their size */}
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          className={card.answer === true ? "bg-success text-on-success" : "text-success"}
-                          variant={card.answer === true ? "default" : "outline"}
-                          aria-busy={card.pending}
-                          disabled={card.pending || savingWeek !== null}
-                          onClick={() => setWeek(row.season.id, card.playday, true)}
-                        >
-                          {savingWeek === weekKey(row.season.id, card.playday) ? <Icon name="mdi-loading mdi-spin" /> : null}
-                          Check in
-                        </Button>
+                    // A pending card has not read its answer, so both buttons stay inert and keep their size
+                    <div className="flex gap-2">
+                      <Button
+                        className={card.answer === true ? "bg-success text-on-success" : "text-success"}
+                        variant={card.answer === true ? "default" : "outline"}
+                        aria-busy={card.pending}
+                        disabled={card.pending || savingWeek !== null}
+                        onClick={() => setWeek(row.season.id, card.playday, true)}
+                      >
+                        {savingWeek === weekKey(row.season.id, card.playday) ? <Icon name="mdi-loading mdi-spin" /> : null}
+                        Check in
+                      </Button>
+                      {/* Blocked times already answer the round, so it offers the way back in only */}
+                      {card.blocked ? null : (
                         <Button
                           className={card.answer === false ? "bg-error text-on-error" : "text-error"}
                           variant={card.answer === false ? "default" : "outline"}
@@ -334,13 +352,11 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                           {savingWeek === weekKey(row.season.id, card.playday) ? <Icon name="mdi-loading mdi-spin" /> : null}
                           Sit out
                         </Button>
-                      </div>
-                      <div className={cn("mt-2 text-xs text-muted-foreground", card.pending && "invisible")}>
-                        {setByLine(row.season.id, card.playday)}
-                      </div>
-                    </>
+                      )}
+                    </div>
                   ) : undefined}
                 />
+                </>
               )}
             />
           </Card>

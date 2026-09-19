@@ -2,27 +2,27 @@
 type: Page
 title: Site admin
 description: The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
-resource: ../../../src/views/ConfigView.vue
+resource: ../../../next/src/app/(app)/config/ConfigView.tsx
 tags: [pages]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
 sources:
   - id: config
-    resource: ../../../src/views/ConfigView.vue
+    resource: ../../../next/src/app/(app)/config/ConfigView.tsx
     title: The settings
   - id: roles
-    resource: ../../../src/views/DiscordRolesView.vue
+    resource: ../../../next/src/app/(app)/config/discord-roles/DiscordRolesView.tsx
     title: The Discord role bindings
   - id: access
-    resource: ../../../src/views/AccessView.vue
+    resource: ../../../next/src/app/(app)/config/access/AccessView.tsx
     title: The admin list
   - id: maps
-    resource: ../../../src/views/MapsView.vue
+    resource: ../../../next/src/app/(app)/maps/MapsView.tsx
     title: The map catalogue
   - id: guide
-    resource: ../../../src/views/UserGuideView.vue
+    resource: ../../../next/src/app/(app)/user-guide/UserGuideView.tsx
     title: The user guide page
   - id: store
-    resource: ../../../src/stores/config.store.js
+    resource: ../../../next/src/stores/config.ts
     title: Every config write
 ---
 

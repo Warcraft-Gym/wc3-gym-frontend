@@ -6,7 +6,7 @@ tags: [components, series]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source
-    resource: ../../../src/components/ReportResultDialog.vue
+    resource: ../../../next/src/components/ReportResultDialog.tsx
     title: The dialog
 ---
 

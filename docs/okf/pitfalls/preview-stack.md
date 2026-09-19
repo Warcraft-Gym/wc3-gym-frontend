@@ -6,7 +6,7 @@ tags: [session, deploy]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
 sources:
   - id: source
-    resource: ../../../src/App.vue
+    resource: ../../../next/src/components/layout/AppShell.tsx
     title: The session watch
 ---
 

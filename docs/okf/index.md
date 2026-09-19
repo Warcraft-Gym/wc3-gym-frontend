@@ -8,7 +8,7 @@ This directory is an [Open Knowledge Format](https://github.com/GoogleCloudPlatf
 
 # Sections
 
-* [Overview](overview.md) - The Vue 3 web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
+* [Overview](overview.md) - The Next.js web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
 * [Start here by question](questions.md) - The questions a new contributor or an agent asks first, each with the concept that answers it; the list is also the benchmark the bundle is read against.
 * [conventions](conventions/index.md) - Code style, git and pull requests, testing, and this bundle.
 * [concepts](concepts/index.md) - The app shell and routing, the session, the backend contract as consumed here, the stores, the shared components, the read-only embed, the theme.

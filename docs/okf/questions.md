@@ -3,7 +3,7 @@ type: Guide
 title: Start here by question
 description: The questions a new contributor or an agent asks first, each with the concept that answers it; the list is also the benchmark the bundle is read against.
 tags: [tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T17:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
 sources:
   - id: index
     resource: index.md
@@ -27,7 +27,6 @@ sources:
 - When does a player name open the side panel instead of linking? [Shared components](concepts/shared-components.md), by [the panel decision](decisions/player-panel-drafting-only.md).
 - Which table draws grouped rows? [One grouped table](decisions/grouped-table.md).
 - Why does Clerk run in proxy mode on this domain? [Clerk proxy mode](decisions/clerk-proxy-mode.md).
-- How does the public site embed a report? [Read-only embed](concepts/readonly-embed.md).
 
 # The pages
 

@@ -2,27 +2,27 @@
 type: Page
 title: Member self-service
 description: The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
-resource: ../../../src/views/HomeView.vue
+resource: ../../../next/src/app/(app)/HomeView.tsx
 tags: [pages]
 generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T22:30:00Z }
 sources:
   - id: home
-    resource: ../../../src/views/HomeView.vue
+    resource: ../../../next/src/app/(app)/HomeView.tsx
     title: The home page
   - id: profile
-    resource: ../../../src/views/ProfileView.vue
+    resource: ../../../next/src/app/(app)/profile/ProfileView.tsx
     title: The profile switch
   - id: signup
-    resource: ../../../src/views/PublicSignupView.vue
+    resource: ../../../next/src/app/(app)/signup/PublicSignupView.tsx
     title: The season signup form
   - id: availability
-    resource: ../../../src/views/AvailabilityView.vue
+    resource: ../../../next/src/app/(app)/availability/AvailabilityView.tsx
     title: The availability page
   - id: events-helper
-    resource: ../../../src/helpers/events.mjs
+    resource: ../../../next/src/helpers/events.mjs
     title: The home cards and the action words
   - id: blocks
-    resource: ../../../src/components/BlockedTimesEditor.vue
+    resource: ../../../next/src/components/BlockedTimesEditor.tsx
     title: The blocked times editor
 ---
 

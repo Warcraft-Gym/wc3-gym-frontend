@@ -2,39 +2,39 @@
 type: Page
 title: Fixtures and series
 description: The GNL fixture page with its published and draft series, one series of any event, the map veto, the upcoming series, and the Report Result, schedule and cast dialogs.
-resource: ../../../src/views/MatchDetailsView.vue
+resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
 tags: [pages, events, series]
 generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
 sources:
   - id: match
-    resource: ../../../src/views/MatchDetailsView.vue
+    resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
     title: The fixture page
   - id: series
-    resource: ../../../src/views/SeriesView.vue
+    resource: ../../../next/src/app/(app)/series/[id]/SeriesView.tsx
     title: One series
   - id: veto
-    resource: ../../../src/views/VetoBoardView.vue
+    resource: ../../../next/src/app/(app)/player-series/[id]/veto/VetoBoardView.tsx
     title: The veto page
   - id: veto-board
-    resource: ../../../src/components/VetoBoard.vue
+    resource: ../../../next/src/components/VetoBoard.tsx
     title: The veto board
   - id: upcoming
-    resource: ../../../src/views/UpcomingView.vue
+    resource: ../../../next/src/app/(app)/upcoming/UpcomingView.tsx
     title: The upcoming series
   - id: report
-    resource: ../../../src/components/ReportResultDialog.vue
+    resource: ../../../next/src/components/ReportResultDialog.tsx
     title: The Report Result dialog
   - id: schedule
-    resource: ../../../src/components/ScheduleDialog.vue
+    resource: ../../../next/src/components/player/ScheduleDialog.tsx
     title: The schedule dialog
   - id: casts
-    resource: ../../../src/components/CastChips.vue
+    resource: ../../../next/src/components/CastChips.tsx
     title: The cast claims
   - id: fixture-helper
-    resource: ../../../src/helpers/fixture.mjs
+    resource: ../../../next/src/helpers/fixture.mjs
     title: Who may name a roster
   - id: store
-    resource: ../../../src/stores/series.store.js
+    resource: ../../../next/src/stores/series.ts
     title: The series and draft series writes
 ---
 

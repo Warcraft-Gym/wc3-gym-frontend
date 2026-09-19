@@ -2,30 +2,30 @@
 type: Page
 title: The GNL season
 description: The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
-resource: ../../../src/views/SeasonsView.vue
+resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events]
-generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
 sources:
   - id: seasons
-    resource: ../../../src/views/SeasonsView.vue
+    resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
     title: The seasons list and the season dialog
   - id: season
-    resource: ../../../src/views/SeasonDetailsView.vue
+    resource: ../../../next/src/app/(app)/seasons/[id]/SeasonDetailsView.tsx
     title: One season
   - id: assign
-    resource: ../../../src/views/SeasonTeamAssignView.vue
+    resource: ../../../next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx
     title: The draft
   - id: maps
-    resource: ../../../src/views/SeasonMapsView.vue
+    resource: ../../../next/src/app/(app)/seasons/[id]/maps/SeasonMapsView.tsx
     title: The season maps
   - id: achievements
-    resource: ../../../src/views/SeasonAchievementsView.vue
+    resource: ../../../next/src/app/(app)/seasons/[id]/achievements/SeasonAchievementsView.tsx
     title: The achievement rules
   - id: report
-    resource: ../../../src/views/SeasonReportView.vue
+    resource: ../../../next/src/app/(app)/report/SeasonReportView.tsx
     title: The season report
   - id: store
-    resource: ../../../src/stores/season.store.js
+    resource: ../../../next/src/stores/season.ts
     title: Every season write
 ---
 
@@ -93,5 +93,4 @@ A GNL season is the GNL-kind event of the GNL league. It keeps these pages of it
 - The race on a season page is the signup race: [a race icon needs a race for the row](../pitfalls/race-icon-context.md).
 - The unscored list is a grouped table: [one grouped table component](../decisions/grouped-table.md).
 - The season slug in the path: [app shell and routing](../concepts/app-shell-and-routing.md).
-- The report inside the public site: [read-only embed](../concepts/readonly-embed.md).
 - The phases and the season payload fields: [the backend contract](../concepts/backend-contract.md).

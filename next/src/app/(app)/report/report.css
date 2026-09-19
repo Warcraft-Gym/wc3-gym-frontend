@@ -1,0 +1,101 @@
+/* The season report: the parts Tailwind has no utility for — the hero sheen, the collapse that
+   only holds on screen, the phone table rules, and the print sheet. */
+
+.report-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top right, rgba(var(--v-theme-on-hero), 0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* A collapsed section hides its body on screen only, so a print holds the whole report */
+@media screen {
+  .report-section.collapsed > :not(.section-title) {
+    display: none;
+  }
+}
+
+/* A phone has no width to spare for a fixed win-rate column or an unbroken name */
+@media (max-width: 959px) {
+  .standings-table .win-rate-cell {
+    min-width: 0;
+  }
+  .standings-table .player-name {
+    white-space: normal;
+  }
+  /* A name with no space in it breaks mid-word rather than push the table off the screen */
+  .standings-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* The 0-games swatch is the page's own surface, so every swatch carries a hairline */
+.heat-swatch {
+  box-shadow: inset 0 0 0 1px rgba(var(--v-theme-on-surface), 0.12);
+}
+
+@media print {
+  /* Remove browser-generated headers and footers (URL, date, page numbers).
+     A zero margin leaves no space for the browser to render them. */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+
+  /* The app shell chrome and the content gutter */
+  body header,
+  body footer,
+  [data-slot="sheet-content"] {
+    display: none !important;
+  }
+  #main > div {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Hero: full bleed side to side, a small gap from the page edge */
+  .report-hero {
+    margin: 12mm 12mm 0;
+    padding: 2rem 1.5rem 1.75rem;
+    border-radius: 8px;
+    break-inside: avoid;
+  }
+
+  /* Card shadows become borders for print */
+  .card {
+    box-shadow: none !important;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+  }
+
+  /* Avoid breaking sections across pages */
+  .report-section,
+  .race-card {
+    break-inside: avoid;
+  }
+
+  /* Body: inset from the page edges */
+  .report-body {
+    max-width: 100% !important;
+    padding: 1rem 12mm 12mm !important;
+  }
+}
+
+.print-only {
+  display: none;
+}

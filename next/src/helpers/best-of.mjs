@@ -14,6 +14,14 @@ export const isValidResult = (p1, p2, wins) => p1 >= 0 && p2 >= 0 && ((p1 === wi
 // One replay per map played
 export const replaysNeeded = (p1, p2) => p1 + p2;
 
+// The games an uploaded replay may move to: every game the series played but the one it sits on
+export const moveTargets = (played, from) =>
+  Array.from({ length: Math.max(played || 0, 0) }, (_, index) => index + 1).filter((game) => game !== from);
+
+// What a move did. A target game that already holds a replay swaps the two files
+export const moveMessage = (from, to, swapped) =>
+  swapped ? `Replay moved to game ${to}; the replay of game ${to} moved to game ${from}` : `Replay moved to game ${to}`;
+
 // 0-0 records a series that was never played. Only an admin may store it: voiding
 // his own series would drop a game a player was losing out of the standings
 export const neverPlayed = (p1, p2) => p1 === 0 && p2 === 0;

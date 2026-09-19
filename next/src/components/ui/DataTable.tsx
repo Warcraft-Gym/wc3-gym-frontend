@@ -9,12 +9,16 @@ import {
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import type { ColumnDef, ColumnVisibilityState, RowData, SortingState } from "@tanstack/react-table";
+import type { Column, ColumnDef, ColumnVisibilityState, RowData, SortingState } from "@tanstack/react-table";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
+
+/** What a column may carry beyond its definition: the short label a stacked row and the phone
+ *  sort select read, for a column whose header is a component and not a string. */
+type ColumnLabel = { label?: React.ReactNode };
 
 // Only the three features this table needs: sort, page and column visibility.
 const features = tableFeatures({
@@ -23,9 +27,17 @@ const features = tableFeatures({
   rowPaginationFeature,
   paginatedRowModel: createPaginatedRowModel(),
   columnVisibilityFeature,
+  // A type-only slot: it declares the type of columnDef.meta and is stripped at runtime.
+  columnMeta: {} as ColumnLabel,
 });
 
 const ALL_ROWS = Number.MAX_SAFE_INTEGER;
+
+/** The column's label: its own meta.label, else a string header, else nothing. */
+function labelOf<T extends RowData>(column: Column<typeof features, T, unknown>): React.ReactNode {
+  const { meta, header } = column.columnDef;
+  return meta?.label ?? (typeof header === "string" ? header : null);
+}
 
 /** Sort, page and column visibility over one column list.
  *  `rowCount` puts the table in server mode: the caller holds the page and reads it.
@@ -72,8 +84,14 @@ export function DataTable<T extends RowData>({
   className?: string;
 }) {
   const [ownSorting, setOwnSorting] = useState<SortingState>([]);
+  const [ownPage, setOwnPage] = useState(0);
   const [opened, setOpened] = useState<Set<string>>(new Set());
+  // A table with no page size shows every row and draws no pager.
   const size = pageSize == null || pageSize === -1 ? ALL_ROWS : pageSize;
+  // The page lives in the table state, so a caller that changes pageSize resizes the page it shows.
+  // The page never passes the last one, so a larger page size or a shorter list cannot leave an empty page.
+  const lastPage = Math.max(0, Math.ceil((rowCount ?? data.length) / size) - 1);
+  const pagination = { pageIndex: Math.min(page ?? ownPage, lastPage), pageSize: size };
   const table = useTable({
     features,
     data,
@@ -83,25 +101,20 @@ export function DataTable<T extends RowData>({
     state: {
       sorting: sorting ?? ownSorting,
       columnVisibility,
-      ...(page == null ? {} : { pagination: { pageIndex: page, pageSize: size } }),
+      pagination,
     },
     onSortingChange: (updater) => {
       const next = typeof updater === "function" ? updater(sorting ?? ownSorting) : updater;
       if (onSortingChange) onSortingChange(next);
       else setOwnSorting(next);
     },
-    ...(onPageChange == null
-      ? {}
-      : {
-          onPaginationChange: (updater) => {
-            const was = { pageIndex: page ?? 0, pageSize: size };
-            onPageChange((typeof updater === "function" ? updater(was) : updater).pageIndex);
-          },
-        }),
+    onPaginationChange: (updater) => {
+      const next = typeof updater === "function" ? updater(pagination) : updater;
+      onPageChange?.(next.pageIndex);
+      if (page == null) setOwnPage(next.pageIndex);
+    },
     // Every column sorts ascending on the first click.
     sortDescFirst: false,
-    // A table with no page size shows every row and draws no pager.
-    initialState: { pagination: { pageSize: size, pageIndex: 0 } },
     ...(rowCount == null ? {} : { manualPagination: true, manualSorting: true, rowCount }),
   });
 
@@ -123,9 +136,40 @@ export function DataTable<T extends RowData>({
   const first = total === 0 ? 0 : pageIndex * rows + 1;
   const last = Math.min(total, (pageIndex + 1) * rows);
   const span = columns.length + (expand ? 1 : 0);
+  // A stacked table hides its head row, so the phone sorts through a select instead.
+  const sortable = mobileStack ? table.getVisibleFlatColumns().filter((column) => column.getCanSort()) : [];
+  const active = table.state.sorting?.[0];
+  const activeColumn = sortable.find((column) => column.id === active?.id);
 
   return (
     <>
+      {sortable.length > 0 ? (
+        <div className="table-sort-select items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
+          Sort by
+          <Select value={activeColumn?.id ?? ""} onValueChange={(value) => table.getColumn(value as string)?.toggleSorting(false)}>
+            <SelectTrigger size="sm" aria-label="Sort by" className="w-[150px]">
+              <SelectValue>{() => (activeColumn ? labelOf(activeColumn) : "None")}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {sortable.map((column) => (
+                <SelectItem key={column.id} value={column.id}>
+                  {labelOf(column)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* the second control flips the direction, the way a Vuetify sort chip does */}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Sort direction"
+            disabled={!activeColumn}
+            onClick={() => activeColumn?.toggleSorting(!active?.desc)}
+          >
+            <Icon name={active?.desc ? "mdi-arrow-down" : "mdi-arrow-up"} />
+          </Button>
+        </div>
+      ) : null}
       <div className={cn("table-scroll overflow-x-auto", className)}>
         <table className={cn("w-full caption-bottom text-sm", mobileStack && "table-stack")}>
           <TableHeader>
@@ -134,7 +178,7 @@ export function DataTable<T extends RowData>({
                 {expand ? <TableHead style={{ width: "48px" }} /> : null}
                 {group.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
-                  const title = header.column.columnDef.header;
+                  const title = labelOf(header.column);
                   return (
                     <TableHead
                       key={header.id}
@@ -150,6 +194,7 @@ export function DataTable<T extends RowData>({
                         <button
                           type="button"
                           aria-label={typeof title === "string" ? `Sort by ${title}` : "Sort"}
+                          className="rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                           onClick={(event) => {
                             event.stopPropagation();
                             header.column.getToggleSortingHandler()?.(event);
@@ -199,8 +244,10 @@ export function DataTable<T extends RowData>({
                         </TableCell>
                       ) : null}
                       {row.getVisibleCells().map((cell) => (
-                        // a stacked row reads the column title off the cell, where the head row is hidden
-                        <TableCell key={cell.id} data-label={typeof cell.column.columnDef.header === "string" ? cell.column.columnDef.header : undefined}>
+                        <TableCell key={cell.id}>
+                          {/* a stacked row carries the column label as an element, where the head row is
+                              hidden, so a screen reader reads the label with the value */}
+                          {mobileStack ? <span className="stack-label">{labelOf(cell.column)}</span> : null}
                           {/* a stacked cell wraps its value, so a cell with two lines stays one flex item next to the label */}
                           {mobileStack ? (
                             <div>

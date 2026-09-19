@@ -228,8 +228,17 @@
 }
 
 /* A stacked table reads one row as a block of label and value lines below the sm breakpoint,
-   because six columns do not fit a phone. The label is the column title, on the cell. */
+   because six columns do not fit a phone. The label is the column title, in a span on the cell,
+   and the sort select stands in for the hidden head row. Both show only where the table stacks. */
+.stack-label,
+.table-sort-select { display: none; }
 @media (max-width: 599.98px) {
+  .stack-label {
+    display: inline;
+    font-weight: 500;
+    opacity: var(--v-medium-emphasis-opacity);
+  }
+  .table-sort-select { display: flex; }
   .table-stack,
   .table-stack tbody,
   .table-stack tbody tr { display: block; }
@@ -245,11 +254,6 @@
     border: 0;
   }
   .table-stack tbody td > div { text-align: right; }
-  .table-stack tbody td::before {
-    content: attr(data-label);
-    font-weight: 500;
-    opacity: var(--v-medium-emphasis-opacity);
-  }
 }
 
 /* The grouped table tints its group header row and the gutter cell of every detail row, so a

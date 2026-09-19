@@ -3,7 +3,7 @@ type: Decision
 title: One player name standard
 description: A player reads flag, name, race, MMR, in that order, on every page and on every Discord card, through one component.
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:30:54Z }
 sources:
   - id: source
     resource: ../../../next/src/components/PlayerName.tsx
@@ -22,3 +22,6 @@ Three design sets drew a name three ways and read as three apps. One fragment, r
 
 - Never draw a name by hand in a view. Use `PlayerName`.
 - A race shows only when the row has one. See [the pitfall](../pitfalls/race-icon-context.md).
+- One 6 px gap sits between every part, and the MMR reads at every width.
+- A captain shows his race and his MMR only when he plays in the event.
+- The plain line is the default on every surface. Since 2026-09-19 one variation puts the games icon before the flag, and it shows only on the draft surfaces of an event that sets a games rule.

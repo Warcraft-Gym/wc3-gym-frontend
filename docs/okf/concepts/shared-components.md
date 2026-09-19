@@ -1,10 +1,10 @@
 ---
 type: Domain Concept
 title: Shared components
-description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, and how the veto board knows its side.
+description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, how the veto board knows its side, how a team name and the series action bar are drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:07:32Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:30:54Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -23,15 +23,29 @@ sources:
     title: VetoBoard
 ---
 
-`DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle.
+`DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle. Its known gaps name the rules the code does not meet yet.
 
 # PlayerName
 
 A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards included, and the name links to the player page. That is the one standard; no page draws a name its own way. See [the decision](../decisions/player-name-standard.md).
 
+- One 6 px gap sits between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in the event.
+- The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats, and it shows only on the draft surfaces of an event that sets a games rule.
 - By default `PlayerName` is a `Link` to the player page.
 - On a drafting page, where the page holds unsaved work, the page wraps its body in `PanelLinksContext.Provider` with the value `true` (`next/src/hooks/player-panel.ts`). Under it the name opens the side panel instead and shows a dock icon in the primary colour with the title "Opens in a side panel". The providers today: the season team assign page, the match page's series draft, and the panel itself. No other page opens the panel. See [the decision](../decisions/player-panel-drafting-only.md).
 - Inside a form dialog on any other page, pass `plain`, because a link would drop the typed input: the veto board in report mode, the fantasy bet dialog, the add-players dialog.
+
+# Team name
+
+A team reads as its logo and its name, and the name always links to the team page. A team with no logo takes a neutral placeholder of the same size, so a column of names stays aligned.
+
+# The series action bar
+
+One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result". It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled and the one after it outlined. The two players, their captains and an admin act on it, and another reader sees the steps without buttons. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
+
+# Loading
+
+A control draws no default before its data arrives. Until the data lands the control is inert, a skeleton or a disabled control with `aria-busy`, so a tap cannot write a value the reader never picked.
 
 # RaceIcon
 

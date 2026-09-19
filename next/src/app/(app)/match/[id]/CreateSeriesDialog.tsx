@@ -10,10 +10,10 @@ import { Label } from "@/components/ui/label";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
+import { TeamName } from "@/components/TeamName";
 import { W3CIcon } from "@/components/W3CIcon";
 import { W3CMmr } from "@/components/W3CMmr";
 import { mmrSeasonLabel } from "@/helpers/w3c-stats";
-import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image";
 import { SyncedLine, mmrOf, type Row } from "./match-cells";
 
 export type SideTeam = { team: Row; roster: Row[]; isOut: (player: Row) => boolean };
@@ -78,10 +78,8 @@ export function CreateSeriesDialog({
             <div key={i} className="flex flex-1 flex-col gap-4 min-[960px]:flex-row">
               <div className="card flex flex-1 flex-col overflow-hidden rounded">
                 <div className="flex flex-wrap items-center gap-2 bg-primary px-3 py-2 text-on-primary">
-                  {side.team.id ? (
-                    <img className="size-7 rounded-full object-cover" alt="" src={teamImageUrl(side.team)} onError={showDefaultTeamImage} />
-                  ) : null}
-                  <span className="font-bold">{side.team.name}</span>
+                  {/* the dialog holds unsaved picks, so the team reads as plain text */}
+                  <TeamName team={side.team} plain className="font-bold" />
                   <Input
                     className="ms-auto max-w-[300px] bg-surface text-foreground"
                     aria-label={`Search Team ${i + 1}`}

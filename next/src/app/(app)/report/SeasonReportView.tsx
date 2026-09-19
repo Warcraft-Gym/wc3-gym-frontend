@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TapTooltip } from "@/components/ui/TapTooltip";
 import { ColumnNote } from "@/components/ColumnNote";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { StatusAlert } from "@/components/StatusAlert";
 import { useAuth, useSeason, useTeamStore, useSeriesStore, useFantasyStore, useLadderStore } from "@/stores";
@@ -26,7 +26,6 @@ import { playerPath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { isUnscored } from "@/helpers/season-phase.mjs";
 import { findSeason } from "@/helpers/season-slug.mjs";
-import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image.js";
 import { cn } from "@/lib/utils";
 import "./report.css";
 
@@ -110,6 +109,8 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
   const mayOpenPlayer = !!me && canSeeRole(me.role, "member");
 
   const season = current_season;
+  // Every team name on the page links to the team page of the season the report shows
+  const seasonSlug = season?.id ? slugOf(season.id) : null;
   const fantasyTeams = fantasyAll.filter((t) => t.season_id === selectedSeasonId);
   const reportReady = !!season?.id && teams.length > 0;
 
@@ -217,7 +218,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
         if (seen.has(player.id)) continue;
         seen.add(player.id);
         const seasonStats = player.gnl_stats?.find((s: any) => s.season_id === season.id) || null;
-        result.push({ ...player, seasonStats, teamName: team.name, team });
+        result.push({ ...player, seasonStats, team });
       }
     }
     return result;
@@ -363,15 +364,6 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
     </button>
   );
 
-  const teamAvatar = (team: any, className = "", alt = "") => (
-    <img
-      src={teamImageUrl(team)}
-      alt={alt}
-      className={cn("size-6 shrink-0 rounded-sm object-cover", className)}
-      onError={showDefaultTeamImage}
-    />
-  );
-
   return (
     <>
       {isLoading ? (
@@ -474,10 +466,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center">
-                              {teamAvatar(team, "mr-2")}
-                              <span className="font-medium">{team.name}</span>
-                            </div>
+                            <TeamName team={team} seasonKey={seasonSlug} className="font-medium" />
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge className="font-bold tnum">{team.finalScore}</Badge>
@@ -509,7 +498,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                       <Th className="w-11">#</Th>
                       <TableHead>Player</TableHead>
                       <Th>Race</Th>
-                      <Th className={WIDE}>Team</Th>
+                      <TableHead className={WIDE}>Team</TableHead>
                       <Th>W-L</Th>
                       <Th className={WIDE}>Played</Th>
                       <Th className={WIDE}>Win %</Th>
@@ -530,11 +519,12 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         <TableCell className="text-center">
                           {player.signup_race ? <RaceIcon raceIdentifier={player.signup_race} /> : <span className="text-xs">–</span>}
                         </TableCell>
-                        <TableCell className={cn(WIDE, "text-center")}>
+                        <TableCell className={WIDE}>
                           {player.team ? (
-                            <TapTooltip content={player.teamName} className="inline-flex">
-                              {teamAvatar(player.team, "", player.teamName)}
-                            </TapTooltip>
+                            /* the row opens the player, so the team name stops that click on its way up */
+                            <span onClick={(event) => event.stopPropagation()}>
+                              <TeamName team={player.team} seasonKey={seasonSlug} />
+                            </span>
                           ) : (
                             <span className="text-xs">–</span>
                           )}
@@ -698,7 +688,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         <Th className="w-14">#</Th>
                         <TableHead>Fantasy team</TableHead>
                         <Th>Captain</Th>
-                        <Th className={WIDE}>Drafted team</Th>
+                        <TableHead className={WIDE}>Drafted team</TableHead>
                         <Th className={WIDE}>Drafted race</Th>
                         <Th className={WIDE}>Player pts</Th>
                         <Th className={WIDE}>Team pts</Th>
@@ -720,7 +710,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                             </TableCell>
                             <TableCell className="font-medium">{ft.name}</TableCell>
                             <TableCell className="text-center text-xs">{ft.captain?.name || "–"}</TableCell>
-                            <TableCell className={cn(WIDE, "text-center text-xs")}>{ft.drafted_team?.name || "–"}</TableCell>
+                            <TableCell className={cn(WIDE, "text-xs")}>{ft.drafted_team ? <TeamName team={ft.drafted_team} seasonKey={seasonSlug} /> : "–"}</TableCell>
                             <TableCell className={cn(WIDE, "text-center")}>
                               {ft.drafted_race ? <RaceIcon raceIdentifier={ft.drafted_race} /> : <span className="text-xs">–</span>}
                             </TableCell>

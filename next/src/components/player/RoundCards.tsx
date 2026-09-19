@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { toneClass } from "@/components/ui/tone";
 import { CastChips, type CastSeries } from "@/components/CastChips";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { useMatchStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
 import { roundCards, roundStateChip } from "@/helpers/rounds.mjs";
@@ -104,9 +105,14 @@ export function RoundCards({
           {cards.map((card) => (
             <div key={card.playday} className={cn("card min-w-[230px] grow rounded p-3", card.current && "border-primary!")}>
               <div className="text-sm font-medium">{card.label}</div>
-              <div className={CAPTION}>
-                Round {card.playday}
-                {card.opponentTeam ? ` · vs ${card.opponentTeam.name}` : null}
+              <div className={cn(CAPTION, "flex flex-wrap items-center gap-1")}>
+                <span>Round {card.playday}</span>
+                {card.opponentTeam ? (
+                  <>
+                    <span>· vs</span>
+                    <TeamName team={card.opponentTeam} />
+                  </>
+                ) : null}
               </div>
 
               {card.series ? (

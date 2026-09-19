@@ -1,6 +1,7 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/Icon";
+import { TeamName } from "@/components/TeamName";
 import { roundLabel } from "@/helpers/rounds.mjs";
 import bannerImg from "@/assets/media/match-banner.jpg";
 import type { Row } from "./match-cells";
@@ -16,7 +17,10 @@ const SCORE_FILL: Record<string, string> = {
 function Side({ team, own, other }: { team: Row; own?: number; other?: number }) {
   return (
     <div className="flex basis-5/12 flex-col items-center gap-2">
-      <h2 className="text-2xl tracking-wide text-on-band [text-shadow:2px_2px_4px_rgba(var(--v-theme-band),0.8)] min-[960px]:text-4xl">{team.name}</h2>
+      <h2 className="text-2xl tracking-wide text-on-band [text-shadow:2px_2px_4px_rgba(var(--v-theme-band),0.8)] min-[960px]:text-4xl">
+        {/* the banner stacks the logo over the name, so a name that wraps stays centred over its score */}
+        <TeamName team={team} className="flex-col gap-1" />
+      </h2>
       <Badge className={`tnum min-w-[60px] justify-center px-3 py-1 text-2xl font-bold min-[960px]:min-w-[80px] min-[960px]:text-3xl ${SCORE_FILL[resultColor(own, other)]}`}>
         {own || 0}
       </Badge>

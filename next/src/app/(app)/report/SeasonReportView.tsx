@@ -525,7 +525,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                             <span className="text-xs">–</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center tnum">
+                        <TableCell className="text-center tnum whitespace-nowrap">
                           {record(player.wins, player.losses) ?? "—"}
                         </TableCell>
                         <TableCell className={cn(WIDE, "text-center tnum")}>{player.played}</TableCell>

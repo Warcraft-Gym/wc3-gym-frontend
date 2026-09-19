@@ -19,3 +19,8 @@ test('nothing played answers nothing, so the cell prints its own dash', () => {
   assert.equal(record(0, undefined), null);
   assert.equal(record(undefined, undefined), null);
 });
+
+test('a missing side counts as zero', () => {
+  assert.equal(record(3, undefined), '3 – 0');
+  assert.equal(record(null, 2), '0 – 2');
+});

@@ -73,11 +73,14 @@ export function LadderView() {
   const [syncDialog, setSyncDialog] = useState(false);
   const [syncEntries, setSyncEntries] = useState<SyncEntry[]>([]);
   const [fullPlayers, setFullPlayers] = useState<Record<number, Row>>({});
+  const [reloads, setReloads] = useState(0); // the DataTable's key, so a read closes every open row with its dropped player
   const [sorting, setSorting] = useState<SortingState>([{ id: "points", desc: true }]);
 
   const loadLadder = async (seasonId: number) => {
     setIsLoading(true);
     setErrorMessage(null);
+    setFullPlayers({});
+    setReloads((count) => count + 1);
     try {
       setLadder(await ladderStore.seasonLadder(seasonId));
     } catch (error) {
@@ -316,9 +319,9 @@ export function LadderView() {
               <Icon name="mdi-account-group" />
               <span>Players</span>
             </CardTitle>
-            {/* The season change remounts the table, so no row of the season before stays open */}
+            {/* Every read remounts the table, so no row of the read before stays open */}
             <DataTable
-              key={selectedSeasonId}
+              key={reloads}
               className="tnum"
               data={filtered}
               pageSize={10}

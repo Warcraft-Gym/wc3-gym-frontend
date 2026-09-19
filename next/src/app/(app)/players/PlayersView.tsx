@@ -142,7 +142,7 @@ export function PlayersView() {
   };
 
   return <div className="p-4">
-    {loading ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60"><Icon name="mdi-loading" size={64} className="animate-spin text-primary" /></div> : null}
+    {loading && !players.length ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60" role="status" aria-label="Loading"><Icon name="mdi-loading" size={64} className="animate-spin text-primary" /></div> : null}
     <div className="flex flex-wrap items-start justify-between gap-3"><PageHeader title={<span className="inline-flex items-center gap-2"><Icon name="mdi-account-group" />Players</span>} />{isAdmin ? <Button onClick={() => { setNewPlayer(emptyPlayer()); setCreationError(null); setNewOpen(true); }}><Icon name="mdi-plus" />Add Player</Button> : null}</div>
     <FilterPanel
       seasons={seasonStore.seasons as { id: number; name: string }[]} searchName={name} onSearchNameChange={(value) => { setName(value); setPage(0); }} searchRace={race} onSearchRaceChange={(value) => { setRace(value); setPage(0); }}
@@ -152,7 +152,7 @@ export function PlayersView() {
       </DropdownMenuContent></DropdownMenu>}
     />
     <Card className="card gap-0 py-0">
-      <StatusAlert modelValue={error} className="m-4" />
+      <StatusAlert modelValue={error} className="m-4" onClose={() => setError(null)} />
       {!error ? <div className="table-scroll overflow-x-auto"><Table className="tnum"><TableHeader><TableRow>
         {head("Name", "name")}{head(<W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series", "series_winrate", "text-right")}{head("Games", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
       </TableRow></TableHeader><TableBody>

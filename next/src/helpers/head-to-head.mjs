@@ -41,7 +41,8 @@ export const opponentRows = (opponents = []) => opponents.map((opponent) => {
   const events = [...met.values()].sort((a, b) => a.id - b.id);
   // The reads answer newest first, so the first meeting is the one last_season_name names
   const lastMet = [eventLabel(meetings[0] ?? { season_name: opponent.last_season_name }),
-    opponent.last_playday ? `round ${opponent.last_playday}` : null]
+    // a no-break space, so the round and its number stay on one line in a narrow column
+    opponent.last_playday ? `round\u00a0${opponent.last_playday}` : null]
     .filter(Boolean).join(', ');
   return { opponent, record, games, matchups, events, lastMet };
 });

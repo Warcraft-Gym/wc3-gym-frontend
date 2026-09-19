@@ -18,7 +18,7 @@ test('the record and the games skip a meeting with no score', () => {
   }]);
   assert.deepEqual(row.record, { won: 1, lost: 1 });
   assert.deepEqual(row.games, { mine: 3, theirs: 2 });
-  assert.equal(row.lastMet, 'GNL S19, round 4');
+  assert.equal(row.lastMet, 'GNL S19, round\u00a04');
 });
 
 test('matchups aggregate by race pair and sort by count', () => {
@@ -76,7 +76,7 @@ test('the chips and the last-met line print the league beside the event', () => 
     meetings: [met(4, 'Season 19'), met(3, 'Season 18')],
   }]);
   assert.deepEqual(row.events.map((e) => e.name), ['GNL · Season 18', 'GNL · Season 19']);
-  assert.equal(row.lastMet, 'GNL · Season 19, round 4');
+  assert.equal(row.lastMet, 'GNL · Season 19, round\u00a04');
 });
 
 test('a mixed list counts a cup and a KOTH beside the season', () => {

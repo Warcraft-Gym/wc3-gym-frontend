@@ -8,6 +8,15 @@ import { RACES } from "@/helpers/ladder-days.mjs";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type SeasonPlayer = { vs_race?: Record<string, number[]> } & Record<string, any>;
 
+/** The column title over a VsRaces cell: the W3C mark ahead of what the figure counts. */
+export function VsRacesHead() {
+  return (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap">
+      <W3CIcon size={14} /> Games won vs race
+    </span>
+  );
+}
+
 /** A player's ladder games won against one race; the tooltip shows every race. */
 export function VsRaces({ player, race }: { player?: SeasonPlayer; race?: string }) {
   const rec = (against: string) => {

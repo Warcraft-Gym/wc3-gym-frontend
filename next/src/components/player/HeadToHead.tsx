@@ -140,7 +140,8 @@ export function HeadToHead({ playerId }: { playerId: number }) {
                   ))}
                 </div>
               </td>
-              <td className={`${CELL} ${CAPTION}`}>{group.row.lastMet}</td>
+              {/* the narrowest width the event and its round read on two lines at 390 px */}
+              <td className={`${CELL} ${CAPTION} min-w-[140px]`}>{group.row.lastMet}</td>
             </>
           )}
           rows={({ group }) =>

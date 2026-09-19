@@ -9,8 +9,7 @@ const store = {
   async getMatchReplays(matchId: number) {
     return await fetchWrapper.get(`${backendUrl}/matches/${matchId}/replays`);
   },
-  // Move one game's replay to another game of the same series; a target that holds a replay
-  // swaps with it. The answer is every replay of that series, in game order.
+  // Moves one game's replay; a target that holds a replay swaps; answers every replay of the series
   async moveSeriesReplay(seriesId: number, gameNo: number, toGame: number) {
     return await fetchWrapper.put(`${backendUrl}/player-series/${seriesId}/replays/${gameNo}/move/${toGame}`);
   },

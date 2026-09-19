@@ -26,7 +26,7 @@ import { moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { eventLabel, MAP_RULES, titleOf } from "@/helpers/event-labels.mjs";
 import { fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster } from "@/helpers/fixture.mjs";
 import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
-import { seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
+import { actsForSeries, seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
 import { isScored, sideName as nameOfSide } from "@/helpers/stage-view.mjs";
 import { useAuth, useEventStore, useMapStore, useMatchStore, useTeamStore } from "@/stores";
 
@@ -138,10 +138,10 @@ export function SeriesView({ id }: { id: string }) {
   // A replay moves inside the games the series played, so an unreported series moves none
   const playedGames = scored ? replaysNeeded(series?.player1_score || 0, series?.player2_score || 0) : 0;
   const hasReplay = (game: number) => replays.some((row) => row.game_no === game);
-  const canMove = canReport && playedGames > 1;
+  // The move route acts for a side alone, so an admin who is on neither side sees no control
+  const canMove = playedGames > 1 && actsForSeries(actionRow, { ...viewer, isAdmin: false });
 
-  // The move control is the one reader of the replay list, and the fixture read is the one route
-  // that lists them, so the page reads it only for a viewer who may act on the series
+  // Only a viewer who may move a replay reads the fixture's replay list
   const loadReplays = async (matchId: number, seriesId: number) => {
     const rows: Row[] = await matchStore.getMatchReplays(matchId).catch(() => []);
     setReplays((rows || []).filter((row: Row) => row.series_id === seriesId));
@@ -205,7 +205,7 @@ export function SeriesView({ id }: { id: string }) {
     // the loader sets state, so it runs just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(() => loadReplays(matchId, seriesId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canMove, series?.id]);
+  }, [canMove, series]); // load() sets a new series row on every save, so the list is read again
 
   // A link from one series to the next keeps the page, so the read follows the route
   useEffect(() => {
@@ -329,7 +329,7 @@ export function SeriesView({ id }: { id: string }) {
                         <TableCell className="text-right">
                           {hasReplay(row.game_no) ? (
                             <DropdownMenu>
-                              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Move the replay of game ${row.game_no}`} disabled={moving !== null} />}>
+                              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Move the replay of game ${row.game_no}`} aria-busy={moving === row.game_no} disabled={moving !== null} />}>
                                 <Icon name={moving === row.game_no ? "mdi-loading mdi-spin" : "mdi-file-move-outline"} />
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">

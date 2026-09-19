@@ -107,7 +107,7 @@ function RosterCard({
               accessorKey: "name",
               header: "Name",
               cell: ({ row }) => (
-                <PlayerName player={row.original} race={row.original.signup_race}>
+                <PlayerName player={row.original} race={row.original.signup_race} mmr={false}>
                   {isOut(row.original) ? (
                     <Badge variant="outline" className="text-secondary border-secondary">Out</Badge>
                   ) : hasSeries(row.original.id) ? (

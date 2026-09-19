@@ -715,19 +715,21 @@ export function FantasyDashboardView() {
                   <Field label="Draft a team *" htmlFor="drafted-team">
                     <Combobox
                       id="drafted-team"
-                      label="Draft a team *"
+                      label="Draft a team"
                       items={teamItems}
                       value={teamForm.drafted_team_id == null ? null : String(teamForm.drafted_team_id)}
                       onChange={(value) => setTeamForm({ ...teamForm, drafted_team_id: value == null ? null : Number(value) })}
                       row={teamRow}
                     />
                   </Field>
-                  <RaceSelect
-                    id="drafted-race"
-                    label="Draft a race *"
-                    value={teamForm.drafted_race}
-                    onChange={(value) => setTeamForm({ ...teamForm, drafted_race: value })}
-                  />
+                  <Field label="Draft a race *" htmlFor="drafted-race">
+                    <RaceSelect
+                      id="drafted-race"
+                      label="Draft a race"
+                      value={teamForm.drafted_race}
+                      onChange={(value) => setTeamForm({ ...teamForm, drafted_race: value })}
+                    />
+                  </Field>
                   {season?.fantasy_grind ? (
                     <Field label="Grind team" htmlFor="grind-team">
                       <div className="flex items-center gap-1">

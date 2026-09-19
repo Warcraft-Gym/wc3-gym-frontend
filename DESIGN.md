@@ -148,6 +148,7 @@ Use these instead of drawing the same thing again.
 | Component | What it shows |
 |---|---|
 | `PlayerName` | A player as flag, name, race icon and MMR. It links to the player page. On a drafting page and inside the side panel, it opens the panel instead and shows a dock icon. Inside a form dialog, pass `plain`. |
+| `TeamName` | A team as its logo and its name, linked to its team page. On a drafting page it is plain text; pass `plain` inside another link, a button or the team's own heading. |
 | `RaceIcon`, `FlagIcon` | One race or one country. Show a race only when the row has one: this game, a scheduled series, or a KOTH signup. A player's profile race is not a race for a row. |
 | `GroupedTable` | Groups of rows, each under one header row that opens and closes. Detail rows share the group's columns, so they add up under its total. Never put a table inside a table cell. |
 | `RowActions` | The buttons at the end of a row. Three or more fold into a menu. |
@@ -159,7 +160,8 @@ Use these instead of drawing the same thing again.
 
 - The player line is flag, name, race icon, MMR, with one 6 px gap between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in that event. This plain line is the default on every surface.
 - A second version of the player line puts the games icon before the flag: a warning triangle when the player is under the event's games rule, with the count in its tooltip, and the same mark in `error` when W3C holds no stats for him. It shows only on the draft surfaces of an event that sets a games rule. It is never the default, because the icon is noise on a surface that does not pair players.
-- A team is drawn as its logo and its name, and the name always links to the team page. A team with no logo shows a neutral placeholder of the same size, so the names in a column stay aligned.
+- A team is drawn as its logo and its name, and the name links to the team page. A team with no logo shows a neutral placeholder of the same size, so the names in a column stay aligned. A long name truncates and carries the full name in its title.
+- On a drafting page, the match page and the season assign page, and inside the player panel, a team name is plain text with no link, for the same reason the player name is there: a link would leave unsaved work.
 - One shared action bar carries the steps of a series, in order, with the words "Schedule", "Veto maps" and "Report result". The full bar shows all three steps where the series is the subject of the surface: the "Waiting for you" list and the series page. The compact bar shows two active steps where a series is one item among many: the next step filled and the one after it outlined. The two players, their captains and an admin act on it; another reader sees the steps without buttons. Its context label reads "League - Event - Stage - Round - Opponent", and a part the series carries no value for is left out with its separator.
 - The W3C data line is the W3C mark and "synced 3 days ago", with the detail in a tooltip. It reads the same way everywhere in the app.
 
@@ -241,7 +243,6 @@ These parts of the app break a rule above today.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The app bar title reads "GNL APP" and links to `/report` (`next/src/components/layout/AppShell.tsx`).
 - The round grid and the home card ask a player to sit out with "Confirm I can't play" (`next/src/helpers/events.mjs`, `next/src/app/(app)/team/[id]/season/[season_id]/rounds/TeamRoundsView.tsx`).
-- No component draws a team logo, so a team reads as its name alone.
 - No component draws the series action bar, and `PlayerName` has no version that carries the games icon.
 - No surface draws the W3C data line as the mark beside a synced time: the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page prints the synced time with a tooltip but no W3C mark (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`).
 - `FORMATS` in `next/src/helpers/event-labels.mjs` holds no captain-draft format, so nothing prints "Captain draft" yet.

@@ -8,8 +8,7 @@ test('a team reads by its long name and falls back to its tag', () => {
   assert.equal(teamLabel(null), '');
 });
 
-// A season page names the team page of that season; a page with no season context
-// links the plain team page. A payload with no id carries no link at all.
+// No season context links the plain team page, and a payload with no id carries no link.
 test('a season key picks the season team page', () => {
   assert.equal(teamPath({ id: 5 }, 'gnl-s18'), '/team/5/season/gnl-s18');
   assert.equal(teamPath({ id: 5 }, 4), '/team/5/season/4');

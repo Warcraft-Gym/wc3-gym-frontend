@@ -588,7 +588,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
           {teams.map((team) => (
             <Card key={team.id} className="card gap-0 py-0">
               <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-                <TeamName team={team} seasonKey={id} />
+                <TeamName team={team} />
               </CardTitle>
               <CardContent className="py-3">
                 {getTeamPlayersForSeason(team).length ? (

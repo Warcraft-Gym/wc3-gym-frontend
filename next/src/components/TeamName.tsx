@@ -37,12 +37,13 @@ export function TeamName({
           <Icon name="mdi-shield-outline" size={20} className="opacity-60" />
         )}
       </span>
-      <span className="name">{label}</span>
+      {/* a long name truncates, so it cannot widen a bracket box or a phone column */}
+      <span className="name min-w-0 truncate" title={label}>{label}</span>
     </>
   );
 
   // A team header sits on the primary colour, so the hover cue is the underline, never a colour
-  const classes = cn("inline-flex items-center gap-1.5 text-inherit no-underline", to && "[&:hover_.name]:underline", className);
+  const classes = cn("inline-flex min-w-0 items-center gap-1.5 text-inherit no-underline", to && "[&:hover_.name]:underline", className);
   if (to) return <Link href={to} className={classes}>{body}</Link>;
   return <span className={classes}>{body}</span>;
 }

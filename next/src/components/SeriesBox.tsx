@@ -1,5 +1,6 @@
 "use client";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { Icon } from "@/components/ui/Icon";
 import { useHideResults } from "@/components/hide-results";
 import { sideRoster } from "@/helpers/fixture.mjs";
@@ -104,7 +105,7 @@ export function SeriesBox({
           {crown && side === 1 ? <Icon name="mdi-crown" size={14} className="text-primary-text" /> : null}
           {team(side) ? (
             <div className="flex min-w-0 flex-col gap-px">
-              <span>{team(side).name}</span>
+              <TeamName team={team(side)} plain={!readonly} />
               {roster(side).length ? (
                 <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
                   {roster(side).map((seat) => (

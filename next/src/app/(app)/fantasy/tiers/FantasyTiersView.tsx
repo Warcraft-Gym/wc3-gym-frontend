@@ -12,6 +12,7 @@ import { DivisionBracketing } from "@/components/DivisionBracketing";
 import { GroupedTable, type GroupedColumn } from "@/components/GroupedTable";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { SeasonSelect } from "@/components/SeasonSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
@@ -41,13 +42,13 @@ const TIER_CHIP: Record<string, string> = {
   tag: "bg-tag text-on-tag",
 };
 
-type Row = { id: number; player: any; race: string | null; mmr: number; team: string };
+type Row = { id: number; player: any; race: string | null; mmr: number; team: any };
 
 // The pool: every signup on a team this season, with its team name
 const poolRows = (signups: any[], teams: any[], seasonId: number | null, w3cSeason: any): Row[] => {
-  const teamOf = new Map<number, string>();
+  const teamOf = new Map<number, any>();
   for (const team of teams || []) {
-    for (const player of team.player_by_season?.[seasonId as number] || []) teamOf.set(player.id, team.name);
+    for (const player of team.player_by_season?.[seasonId as number] || []) teamOf.set(player.id, team);
   }
   return signups
     .filter((player) => teamOf.has(player.id))
@@ -56,7 +57,7 @@ const poolRows = (signups: any[], teams: any[], seasonId: number | null, w3cSeas
       player,
       race: player.signup_race,
       mmr: (getW3CStatsWithFallback(player, player.signup_race, w3cSeason) as any)?.mmr ?? 0,
-      team: teamOf.get(player.id) as string,
+      team: teamOf.get(player.id),
     }));
 };
 
@@ -292,7 +293,7 @@ export function FantasyTiersView() {
                   <PlayerName player={row.player} race={row.race ?? undefined} />
                 </TableCell>
                 <TableCell className="tnum text-right">{row.mmr || "—"}</TableCell>
-                <TableCell>{row.team}</TableCell>
+                <TableCell><TeamName team={row.team} /></TableCell>
                 <TableCell>
                   {row.player.fantasy_tier ? (
                     <Badge variant={row.player.fantasy_tier_pinned ? "secondary" : "outline"} className="text-xs">

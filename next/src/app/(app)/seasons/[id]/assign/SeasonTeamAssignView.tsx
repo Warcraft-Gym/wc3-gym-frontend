@@ -14,6 +14,7 @@ import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { EditPlayerDialog, type EditPlayerDialogHandle } from "@/components/EditPlayerDialog";
 import { FilterPanel } from "@/components/FilterPanel";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { SeasonSignupDialog, type SeasonSignupDialogHandle } from "@/components/SeasonSignupDialog";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -587,8 +588,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
           {teams.map((team) => (
             <Card key={team.id} className="card gap-0 py-0">
               <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-                <Icon name="mdi-shield-account" />
-                {team.name}
+                <TeamName team={team} seasonKey={id} />
               </CardTitle>
               <CardContent className="py-3">
                 {getTeamPlayersForSeason(team).length ? (

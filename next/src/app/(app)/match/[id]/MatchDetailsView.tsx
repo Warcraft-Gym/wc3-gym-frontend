@@ -633,7 +633,9 @@ export function MatchDetailsView({ id }: { id: string }) {
     { icon: "mdi-delete", label: "Delete Draft", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
   ];
 
-  const seasonHref = `/seasons/${match.season ? seasonSlug(match.season) : match.season_id}`;
+  // The season key the season pages link with; the team links on this page carry it too
+  const seasonKey = match.season ? seasonSlug(match.season) : match.season_id;
+  const seasonHref = `/seasons/${seasonKey}`;
 
   return (
     <PanelLinksContext.Provider value={true}>
@@ -643,7 +645,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <MatchBanner match={match} team1={team1} team2={team2} round={roundOf(match.playday)} />
+      <MatchBanner match={match} team1={team1} team2={team2} round={roundOf(match.playday)} seasonKey={seasonKey} />
 
       <div className="p-4">
         <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
@@ -732,6 +734,7 @@ export function MatchDetailsView({ id }: { id: string }) {
           <TeamRostersPanel
             team1={team1}
             team2={team2}
+            seasonKey={seasonKey}
             roster1={roster1}
             roster2={roster2}
             selected1={proposePlayersTeam1}

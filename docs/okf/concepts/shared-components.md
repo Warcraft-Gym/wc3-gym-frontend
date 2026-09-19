@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T18:30:00Z }
+generated: { by: claude-code/claude-opus-5, at: 2026-09-19T19:40:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -32,16 +32,16 @@ sources:
     title: TeamRoster
 ---
 
-`DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle. Its known gaps name the rules the code does not meet yet.
+`DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle.
 
 # PlayerName
 
 A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards included, and the name links to the player page. That is the one standard; no page draws a name its own way. See [the decision](../decisions/player-name-standard.md).
 
 - One 6 px gap sits between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in the event.
-- The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats, and it shows only on the draft surfaces of an event that sets a games rule: the players page and the season team assign page. It is the `games` prop, the current w3champions season, and `gamesWarning` in `next/src/helpers/games-rule.mjs` is the rule. A line that meets the rule keeps an empty slot of the mark's width, so the flags stay in one column, and the mark carries its text for a screen reader.
-- The line reads the MMR itself, with `getW3CMMR` over the `w3c_stats` the payload carries, on the race the player signed up on. It asks for nothing of its own, so a payload without `w3c_stats` simply shows no number. `mmr={false}` leaves it out where a column of its own sorts by MMR; a number fills it where the surface already holds one, as the KOTH night page does with the MMR its entries store.
-- Known gap: two reduced builders leave `w3c_stats` empty, so those surfaces show no MMR until a reduced row carries one MMR per side: `StageSeriesRow.from_series_reduced` for `SeriesBox` on an event page and `StageView`, and `SeriesPublic.from_series_reduced` for `UpcomingView` and for the round cards on a player page, which `GET /player-series` fills.
+- The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats, and it shows on the two surfaces that pass the `games` prop, the players page and the season team assign page. The prop is the current w3champions season, and `gamesWarning` in `next/src/helpers/games-rule.mjs` is the rule: twenty ladder games on that race over the current and the previous w3champions season, the threshold a parameter of the helper. A line that meets the rule keeps an empty slot of the mark's width, so the flags stay in one column, and the mark carries its text for a screen reader.
+- The line reads the MMR itself, with `getW3CMMR` over the `w3c_stats` the payload carries, on the race the player signed up on. It asks for nothing of its own, so a payload without `w3c_stats` shows no number. `mmr={false}` leaves it out where a column of its own sorts by MMR; a number fills it where the surface already holds one, as the KOTH night page does with the MMR its entries store.
+- A reduced series row carries no `w3c_stats`, so a line drawn from one ends after the race icon: the series boxes of an event page and of `StageView`, the upcoming list, and the round cards on a player page, which read `GET /player-series`.
 - By default `PlayerName` is a `Link` to the player page.
 - On a drafting page, where the page holds unsaved work, the page wraps its body in `PanelLinksContext.Provider` with the value `true` (`next/src/hooks/player-panel.ts`). Under it the name opens the side panel instead and shows a dock icon in the primary colour with the title "Opens in a side panel". The providers today: the season team assign page, the match page's series draft, and the panel itself. No other page opens the panel. See [the decision](../decisions/player-panel-drafting-only.md).
 - Inside a form dialog on any other page, pass `plain`, because a link would drop the typed input: the veto board in report mode, the fantasy bet dialog, the add-players dialog.
@@ -56,6 +56,7 @@ A team is drawn as `{logo} {name}` everywhere, and it links to the team page. Th
 - `seasonKey` picks the season team page, the path the team cards and the ladder already use; without one the link is the plain team page.
 - On a drafting page (the match page and the season team assign page) and inside the player panel, under `PanelLinksContext` with the value `true`, the name is plain text with no link, for the same reason the player name is: a click would leave unsaved work.
 - Pass `plain` for text only: inside another link or a button, inside a form dialog that holds unsaved work, and in the `h1` of the team's own page. A select option stays a plain option.
+- A series box draws the team plain while the box itself opens the series, and links it where the box opens nothing, because a link inside a link cannot be reached.
 - The veto board's sides and a player's event history carry a team name alone and read as unlinked text. The fantasy score breakdown draws its own logo and name, unlinked. The ladder teams carry an id, and link like every other team.
 
 # The series action bar

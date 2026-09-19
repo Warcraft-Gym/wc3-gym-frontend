@@ -308,7 +308,7 @@ export function FantasyScoreBreakdown({
                         <span className="flex flex-wrap items-center gap-1">
                           <span className={WEEK_LABEL}>{idx ? "" : `Round ${week.week}`}</span>
                           <span className="opacity-(--v-medium-emphasis-opacity)">vs</span>
-                          <PlayerName player={resolve(series.opponent)} race={series.opponent_race} />
+                          <PlayerName player={resolve(series.opponent)} race={series.opponent_race} mmr={false} />
                         </span>
                       </td>
                       <td className="text-right">{opponentMmr(series) || "N/A"}</td>

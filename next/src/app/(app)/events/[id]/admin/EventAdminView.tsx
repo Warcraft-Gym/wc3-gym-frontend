@@ -157,7 +157,6 @@ export function EventAdminView({ id }: { id: string }) {
   // The picker needs a plain string for a row that PlayerName draws itself; a row with no
   // name at all still reads as something
   const challengerTitle = (row: Row) => entrantName(row) || "Unnamed";
-  const entrantLine = (row: Row) => [divisionName(row.division_id), row.mmr ? `${row.mmr} MMR` : ""].filter(Boolean).join(" · ");
 
   const loadStage = async (ofEvent: Row | null = event, ofStage: Row | null = stage) => {
     setSeries([]);
@@ -354,7 +353,7 @@ export function EventAdminView({ id }: { id: string }) {
   };
 
   const entrantRow = (row: Row) =>
-    row.user ? <PlayerName player={row.user} race={row.race} plain /> : <span>{entrantName(row)}</span>;
+    row.user ? <PlayerName player={row.user} race={row.race} plain mmr={row.mmr || false} /> : <span>{entrantName(row)}</span>;
 
   return (
     <>
@@ -523,7 +522,7 @@ export function EventAdminView({ id }: { id: string }) {
           row={(item) => (
             <span className="flex flex-col">
               {entrantRow(item.row)}
-              <span className="text-xs text-muted-foreground">{entrantLine(item.row)}</span>
+              <span className="text-xs text-muted-foreground">{divisionName(item.row.division_id)}</span>
             </span>
           )}
         />

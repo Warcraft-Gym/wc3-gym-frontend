@@ -22,7 +22,6 @@ const scoreBadge = (value: number | null | undefined, won: boolean) => <Badge cl
 export function PublishedSeries({
   series,
   smAndDown,
-  w3cSeason,
   isAdmin,
   formateDate,
   seriesActions,
@@ -31,7 +30,6 @@ export function PublishedSeries({
 }: {
   series: Row[];
   smAndDown: boolean;
-  w3cSeason?: number;
   isAdmin: boolean;
   formateDate: (value?: string | null) => string | null | undefined;
   seriesActions: (item: Row) => RowAction[];

@@ -340,7 +340,7 @@ export function FantasyBetsView() {
           <div className="inline-grid grid-cols-[max-content_max-content] items-center gap-x-3 gap-y-0.5 min-[960px]:grid-cols-[max-content_max-content_max-content]">
             {sides(row.original.series).map((side: any, i: number) => (
               <div key={i} className="col-span-full grid grid-cols-subgrid items-center">
-                {side.player ? <PlayerName player={side.player} race={side.race} /> : <span>Player {i + 1}</span>}
+                {side.player ? <PlayerName player={side.player} race={side.race} mmr={false} /> : <span>Player {i + 1}</span>}
                 <span className="whitespace-nowrap">
                   <W3CIcon size={14} /> {mmrOf(side.player) ?? "—"}
                 </span>

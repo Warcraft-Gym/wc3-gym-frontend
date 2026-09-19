@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/Icon";
 import { navItems } from "@/components/layout/nav-items";
+import { PlayerPanel } from "@/components/player/PlayerPanel";
 import { ViewAsDialog } from "@/components/layout/ViewAsDialog";
 import { ClerkBridge } from "@/lib/clerk-bridge";
 import { Guard } from "@/lib/guard";
@@ -189,6 +190,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Guard>{children}</Guard>
         </div>
         {/* A player name opens the panel over the page, so nothing typed is lost: the panel slot. */}
+        <PlayerPanel />
       </main>
 
       <footer className="flex justify-end px-3 py-1 text-xs">

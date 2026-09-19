@@ -19,6 +19,7 @@ import { SeasonSignupDialog, type SeasonSignupDialogHandle } from "@/components/
 import { StatusAlert } from "@/components/StatusAlert";
 import { SyncProgress } from "@/components/SyncProgress";
 import { W3CIcon } from "@/components/W3CIcon";
+import { W3CMmr } from "@/components/W3CMmr";
 import { W3CSyncResultDialog, type SyncEntry } from "@/components/W3CSyncResultDialog";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { PanelLinksContext } from "@/hooks/player-panel";
@@ -358,9 +359,8 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
             />
           </CardContent>
 
-          {/* One page is one round, so the table starts over when the team count arrives */}
+          {/* One page is one round, so the page size follows the team count */}
           <DataTable
-            key={roundSize}
             data={availablePlayers}
             pageSize={roundSize}
             mobileStack
@@ -381,8 +381,10 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
               {
                 id: "w3c_mmr",
                 accessorFn: (row: Row) => positionOf.get(row.id) ?? 0,
-                // A stacked phone row reads this title off the cell, so the title is a string
-                header: "MMR",
+                // The head row shows the W3C mark; meta.label names the column where the mark cannot go:
+                // the stacked phone row and the sort select.
+                header: () => <W3CMmr />,
+                meta: { label: "MMR" },
                 cell: ({ row }) => (
                   <>
                     <div className="tnum">{getW3CMMR(row.original, currentW3CSeason, row.original.signup_race) ?? "N/A"}</div>

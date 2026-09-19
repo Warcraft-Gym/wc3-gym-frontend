@@ -173,6 +173,15 @@ test('an answered round drops out of the check-in lines', () => {
   ]);
 });
 
+test('a card whose answers are still being read is pending and asks nothing', () => {
+  const cards = roundCards({ rounds: WINDOW_ROUNDS, checkinDays: 3 }, DateTime.fromISO('2026-09-24T10:00'));
+  assert.deepEqual(cards.map(card => [card.pending, card.answer]), [[true, null], [true, null]]);
+  assert.deepEqual(waitingLines([{ season: { id: 5, name: 'GNL Ladder Season' }, cards }], ME), []);
+  // an answer that has arrived, empty or not, ends the pending state and asks again
+  assert.deepEqual(windowCards('2026-09-24T10:00').map(card => card.pending), [false, false]);
+  assert.equal(checkinLines('2026-09-24T10:00').length, 2);
+});
+
 test('a season without checkin_days asks the round in play, as before', () => {
   assert.deepEqual(checkinLines('2026-09-22T10:00', null), ['Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep']);
 });

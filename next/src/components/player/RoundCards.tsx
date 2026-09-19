@@ -25,7 +25,7 @@ export function RoundCards({
   season,
   series = [],
   teamId = null,
-  answers = [],
+  answers = null,
   seriesActions,
   question,
 }: {
@@ -33,7 +33,7 @@ export function RoundCards({
   season: Row; // carries the rounds
   series?: Row[]; // the player's series of this season
   teamId?: number | null;
-  answers?: Row[]; // availability, the player's own page only
+  answers?: Row[] | null; // availability, the player's own page only; null while it is read
   seriesActions?: (series: Row) => React.ReactNode;
   question?: (card: Row) => React.ReactNode;
 }) {
@@ -64,6 +64,8 @@ export function RoundCards({
   // The check-in is open on a round with no series that is not over
   const asking = cards.filter((card) => !card.series && !card.over && card.open);
   const answered = asking.filter((card) => card.answer !== null).length;
+  // The answers are still on their way, so the count would read every round as unanswered
+  const pending = cards.some((card) => card.pending);
 
   const mine = (s: Row) => s.player1_id === player.id;
   // the other side of a series; the id is the fallback when the payload carries no player row
@@ -93,7 +95,7 @@ export function RoundCards({
   return (
     <>
       {asks && asking.length ? (
-        <Badge className={cn("mb-3", toneClass("primary"))}>
+        <Badge className={cn("mb-3", toneClass("primary"), pending && "invisible")}>
           {answered} of {asking.length} answered
         </Badge>
       ) : null}
@@ -135,7 +137,9 @@ export function RoundCards({
               ) : card.over || !asks || !card.open ? (
                 // the check-in belongs to the player himself; a visitor reads the state
                 <div className="mt-2">
-                  <Badge className={toneClass(card.answer === false ? "error" : null)}>{roundStateChip(card, asks)}</Badge>
+                  <Badge className={cn(toneClass(card.answer === false ? "error" : null), asks && card.pending && "invisible")}>
+                    {roundStateChip(card, asks)}
+                  </Badge>
                 </div>
               ) : (
                 question?.(card)

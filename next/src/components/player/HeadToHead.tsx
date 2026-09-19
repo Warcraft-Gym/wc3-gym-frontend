@@ -89,7 +89,8 @@ export function HeadToHead({ playerId }: { playerId: number }) {
         </div>
         {opponents.length ? (
           <Badge variant="outline" className="h-auto whitespace-normal border-current text-on-primary">
-            {opponents.length} player{opponents.length === 1 ? "" : "s"} faced in {eventCount} event{eventCount === 1 ? "" : "s"}, lifetime
+            {/* one string, so the count and its plural stay one text node, as the Vue chip reads */}
+            {`${opponents.length} player${opponents.length === 1 ? "" : "s"} faced in ${eventCount} event${eventCount === 1 ? "" : "s"}, lifetime`}
           </Badge>
         ) : null}
       </CardTitle>

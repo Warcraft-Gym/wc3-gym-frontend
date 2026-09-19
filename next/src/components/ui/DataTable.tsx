@@ -89,7 +89,9 @@ export function DataTable<T extends RowData>({
   // A table with no page size shows every row and draws no pager.
   const size = pageSize == null || pageSize === -1 ? ALL_ROWS : pageSize;
   // The page lives in the table state, so a caller that changes pageSize resizes the page it shows.
-  const pagination = { pageIndex: page ?? ownPage, pageSize: size };
+  // The page never passes the last one, so a larger page size or a shorter list cannot leave an empty page.
+  const lastPage = Math.max(0, Math.ceil((rowCount ?? data.length) / size) - 1);
+  const pagination = { pageIndex: Math.min(page ?? ownPage, lastPage), pageSize: size };
   const table = useTable({
     features,
     data,

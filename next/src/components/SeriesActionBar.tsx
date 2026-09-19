@@ -37,7 +37,8 @@ export function SeriesActionBar({
   const active = live.filter((step) => step.state === "next" || step.state === "later");
   // The compact bar has room for the two active steps alone, and a reported series, which has no active step, keeps its result button
   const compact = active.length ? active.slice(0, 2) : live.filter((step) => step.step === "report");
-  const shown = !mayAct ? [] : variant === "full" ? live : compact;
+  // The full bar shows every step while one is left to take; a reported series keeps its result button alone in both bars
+  const shown = !mayAct ? [] : variant === "full" && active.length ? live : compact;
   // A step already taken states what it left behind; the score is drawn beside the series on every surface, so the report step states no fact
   const facts = live.filter((step) => step.state === "done" && step.step !== "report");
 

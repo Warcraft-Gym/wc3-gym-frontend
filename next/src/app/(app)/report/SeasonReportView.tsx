@@ -497,7 +497,6 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                     <TableRow>
                       <Th className="w-11">#</Th>
                       <TableHead>Player</TableHead>
-                      <Th>Race</Th>
                       <TableHead className={WIDE}>Team</TableHead>
                       <Th>W-L</Th>
                       <Th className={WIDE}>Played</Th>
@@ -513,11 +512,9 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         onClick={() => mayOpenPlayer && router.push(playerPath(player))}
                       >
                         <TableCell className="text-center text-xs tnum text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell>
-                          <PlayerName player={player} plain={!mayOpenPlayer} />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {player.signup_race ? <RaceIcon raceIdentifier={player.signup_race} /> : <span className="text-xs">–</span>}
+                        {/* the line carries the race, so a long name truncates and the MMR after it never breaks */}
+                        <TableCell className="overflow-hidden [&_.player-name]:max-w-full [&_.name]:truncate">
+                          <PlayerName player={player} race={player.signup_race} plain={!mayOpenPlayer} />
                         </TableCell>
                         <TableCell className={WIDE}>
                           {player.team ? (

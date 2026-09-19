@@ -16,14 +16,14 @@
 ### Before you commit
 
 1. Read your own diff once as a stranger on the internet. For each sentence ask: does it name a person, tell a story, hold a value, describe a posture, or expose a weakness? Rewrite it as the current rule.
-2. Run `npm test`. The bundle test fails on an id-shaped number, an email, a connection string, a token, a deployment hostname or an IP address. It cannot see meaning. Step 1 is the real check.
+2. Run `pnpm test` from `next/`. The bundle test fails on an id-shaped number, an email, a connection string, a token, a deployment hostname or an IP address. It cannot see meaning. Step 1 is the real check.
 3. A change to a fact the bundle states changes the concept in the same pull request and updates `generated.at`.
 
 The review that merges the pull request repeats step 1.
 
 ## Working in this repository
 
-- `npm test` runs the tests and `npx vite build` builds the app. There is no CI on a pull request, so run both before you push.
+- The app is `next/`. From there, `pnpm test` runs the tests and `pnpm build` builds the app. There is no CI on a pull request, so run both before you push.
 - The code rules live in the bundle: [code style](docs/okf/conventions/code-style.md), [testing](docs/okf/conventions/testing.md), [git and pull requests](docs/okf/conventions/git-and-pull-requests.md).
-- `just okf-validate` checks the bundle with a third-party OKF validator. `just okf-drift` lists the concepts to re-read after a code change.
+- `just okf-validate` checks the bundle with a third-party OKF validator, and `just okf-drift` lists the concepts to re-read after a code change. Both run from the repository root.
 - A pull request that changes a page, a store action, a contract or a decision rewrites the concept in `docs/okf/` that states it, in the same pull request.

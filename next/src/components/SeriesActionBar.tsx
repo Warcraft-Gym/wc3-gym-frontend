@@ -24,7 +24,7 @@ export function SeriesActionBar({
   className,
 }: {
   series: Row | null;
-  viewer: { id?: number | null; isAdmin?: boolean };
+  viewer: { id?: number | null; isAdmin?: boolean; seats?: { team_id: number; season_id: number }[] };
   variant?: "full" | "compact";
   onSchedule?: () => void;
   onReport?: () => void;

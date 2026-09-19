@@ -12,18 +12,28 @@ export const needsVeto = (series) => rulesOf(series?.rules?.map_rules).some((rul
 // The board is done once both sides have picked; the series payload carries one pick a side
 const vetoDone = (series) => !!series?.player1_pick_map && !!series?.player2_pick_map;
 
-// A team side names no player of its own, so any signed-in member may act and the API answers whether he acts for the side
-const teamSided = (series) => !!series
-  && (!!series.entrant1_id || !!series.entrant2_id || (!series.match && !series.player1_id && !series.player2_id));
+// A side whose entrant names no player is the team itself, so any member of its roster acts; no payload names the roster, so the API answers for the member
+const unnamedSide = (series) => [1, 2].some((side) => series[`entrant${side}_id`] && !series[`player${side}_id`]);
 
-/** Who may act on a series: the two players and a rostered member of a team side, the rule the API gate `acts_for_side` applies, and an admin, who takes the admin routes instead.
+// The team and the event behind each side: the team an entrant side names, else the two teams of the fixture. A side row names no event of its own, so an entrant side matches a seat on its team alone.
+const teamSides = (series) => {
+  const entrants = [1, 2].filter((side) => series[`entrant${side}_id`]);
+  if (entrants.length) return entrants.map((side) => [series[`team${side}`]?.id, null]);
+  return series.match ? [1, 2].map((side) => [series.match[`team${side}_id`], series.match.season_id]) : [];
+};
+
+// The viewer captains the team a side fields: `/me` lists one seat per (team, event) pair he captains
+const captainOfSide = (series, seats) => teamSides(series).some(([team, event]) => team != null
+  && seats.some((seat) => Number(seat.team_id) === Number(team) && (event == null || Number(seat.season_id) === Number(event))));
+
+/** Who may act on a series, the rule the API gate `acts_for_side` applies: the player a side names, a captain of the team that fields a side, a member of the roster of a side that names no player, and an admin, who acts for either side on the same routes.
  *  @param {any} series
- *  @param {{ id?: number|null, isAdmin?: boolean }} [viewer] */
-export const actsForSeries = (series, { id = null, isAdmin = false } = {}) => {
+ *  @param {{ id?: number|null, isAdmin?: boolean, seats?: { team_id: number, season_id: number }[] }} [viewer] */
+export const actsForSeries = (series, { id = null, isAdmin = false, seats = [] } = {}) => {
   if (isAdmin) return true;
   if (id == null || !series) return false;
   if (series.player1_id === id || series.player2_id === id) return true;
-  return teamSided(series);
+  return captainOfSide(series, seats) || unnamedSide(series);
 };
 
 // A series is played once its booked time has passed; one with no time never is

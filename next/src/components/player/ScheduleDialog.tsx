@@ -11,21 +11,19 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { authHeader } from "@/helpers/fetch-wrapper";
 import { commonHours, freeLines } from "@/helpers/blocks.mjs";
-import { actsForSeries } from "@/helpers/series-actions.mjs";
 import { pickedInstant, pickerParts, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
-type Picked = { id?: number; date?: Date | null; time?: string; opponent?: Row; asAdmin?: boolean };
+type Picked = { id?: number; date?: Date | null; time?: string; opponent?: Row };
 
 export type ScheduleDialogHandle = { open: (item: Row) => void };
 
 const HINT_LINES = 6;
 const CAPTION = "text-xs text-muted-foreground";
 
-/** The player sets the time of one of his series, in his own clock. The hours both
+/** Whoever acts for a series sets its time, in his own clock. The hours both
  *  sides are open are a hint under the pickers, never a reason to refuse a save. */
 export function ScheduleDialog({
   playerId = null,
@@ -36,7 +34,6 @@ export function ScheduleDialog({
   onSaved?: (message: string) => void;
   ref?: React.Ref<ScheduleDialogHandle>;
 }) {
-  const { isAdmin } = useAuth();
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -62,8 +59,6 @@ export function ScheduleDialog({
         id: item.id,
         ...(item.date_time ? pickerParts(item.date_time, userTimezone) : { date: null, time: "" }),
         opponent: (mine ? item.player2 : item.player1) ?? { name: "your opponent" },
-        // Only an admin the side gate answers nothing for writes the admin route; a member of a team side keeps the player route
-        asAdmin: isAdmin && !actsForSeries(item, { id: playerId }),
       });
       setFreeTime(null);
       setShow(true);
@@ -85,12 +80,7 @@ export function ScheduleDialog({
   const save = async () => {
     setSaving(true);
     try {
-      if (series.asAdmin) {
-        await fetchWrapper.put(`${backendUrl}/series/${series.id}`, { date_time: chosen?.toUTC().toISO() });
-        setShow(false);
-        onSaved?.("Schedule updated successfully!");
-        return;
-      }
+      // One route for every writer, an admin included, because it is the one that refreshes the bot's post of the series
       const formData = new FormData();
       const utcDateTime = chosen?.toUTC().toFormat("yyyy-MM-dd HH:mm:ss") ?? null;
       if (utcDateTime) formData.append("date_time", utcDateTime);

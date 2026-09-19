@@ -160,7 +160,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
   );
 
   // The one viewer the action bar gates on, as the backend gates the writes
-  const viewer = { id: me?.user?.id ?? null, isAdmin };
+  const viewer = { id: me?.user?.id ?? null, isAdmin, seats: me?.seats ?? [] };
 
   // The check-in, from the waiting card and from the round cards alike
   const [savingWeek, setSavingWeek] = useState<string | null>(null);

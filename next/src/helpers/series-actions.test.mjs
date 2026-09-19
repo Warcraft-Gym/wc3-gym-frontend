@@ -53,18 +53,31 @@ test('the veto step is needed whenever a game draws its map from the board', () 
   });
 });
 
-test('the two players, a member of a team side and an admin may act', () => {
+test('the two players, a captain of a side and an admin may act', () => {
   assert.equal(actsForSeries(OPEN, { id: ME }), true);
   assert.equal(actsForSeries(OPEN, { id: 4 }), true);
   assert.equal(actsForSeries(OPEN, { id: 77 }), false);
-  // an admin who plays no side acts, and the schedule write takes the admin route
+  // an admin who plays no side acts, on the same routes as the two players
   assert.equal(actsForSeries(OPEN, { id: 77, isAdmin: true }), true);
   assert.equal(actsForSeries(OPEN, {}), false);
-  // a team side names no player, so the API answers for the member
+  // a side that names no player is its team, so the API answers for the member of the roster
   assert.equal(actsForSeries({ id: 3, entrant1_id: 8 }, { id: 77 }), true);
   assert.equal(actsForSeries({ id: 3, entrant1_id: 8 }, {}), false);
-  // a fixture series names both players and its team entrants, and a member of a side acts on it
-  assert.equal(actsForSeries({ id: 3, match: { id: 5 }, player1_id: 1, player2_id: 2, entrant1_id: 8 }, { id: 77 }), true);
+  // both sides named: the captain of the team that fields one acts, a member of it does not
+  const named = { id: 3, match: { id: 5 }, player1_id: 1, player2_id: 2, entrant1_id: 8, team1: { id: 21 } };
+  assert.equal(actsForSeries(named, { id: 77 }), false);
+  assert.equal(actsForSeries(named, { id: 77, seats: [{ team_id: 21, season_id: 19 }] }), true);
+  assert.equal(actsForSeries(named, { id: 77, seats: [{ team_id: 22, season_id: 19 }] }), false);
+});
+
+test('a captain of a fixture team acts for the side his team fields, in that event alone', () => {
+  const fixture = { ...OPEN, match: { id: 5, team1_id: 21, team2_id: 22, season_id: 19 } };
+  assert.equal(actsForSeries(fixture, { id: 77, seats: [{ team_id: 21, season_id: 19 }] }), true);
+  assert.equal(actsForSeries(fixture, { id: 77, seats: [{ team_id: 22, season_id: 19 }] }), true);
+  // a seat of the same team in another event reaches nothing, and neither does a seat of a third team
+  assert.equal(actsForSeries(fixture, { id: 77, seats: [{ team_id: 21, season_id: 18 }] }), false);
+  assert.equal(actsForSeries(fixture, { id: 77, seats: [{ team_id: 23, season_id: 19 }] }), false);
+  assert.equal(actsForSeries(fixture, { id: 77 }), false);
 });
 
 test('the context label skips a part the series names no value for', () => {

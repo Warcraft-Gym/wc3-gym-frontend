@@ -115,10 +115,18 @@ export function SeriesView({ id }: { id: string }) {
     };
   });
 
-  // The stage row names the team entrants, which the series read does not carry, so the
-  // action bar gates on the two together
-  const viewer = { id: auth.me?.user?.id ?? null, isAdmin: auth.isAdmin };
-  const actionRow = series ? { ...series, entrant1_id: stageRow?.entrant1_id ?? null, entrant2_id: stageRow?.entrant2_id ?? null } : null;
+  // The stage row names the team entrants and the team behind each side, which the series
+  // read does not carry, so the action bar gates on the two together
+  const viewer = { id: auth.me?.user?.id ?? null, isAdmin: auth.isAdmin, seats: auth.me?.seats ?? [] };
+  const actionRow = series
+    ? {
+        ...series,
+        entrant1_id: stageRow?.entrant1_id ?? null,
+        entrant2_id: stageRow?.entrant2_id ?? null,
+        team1: stageRow?.team1 ?? null,
+        team2: stageRow?.team2 ?? null,
+      }
+    : null;
   const canReport = seriesSteps(actionRow, viewer).mayAct;
 
   // The fixture this series plays, once the event runs it through the events module: its

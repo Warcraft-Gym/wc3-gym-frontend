@@ -37,7 +37,7 @@ export function PlayerName({
   children?: React.ReactNode;
 }) {
   // The ladder MMR reads the signup race alone, so a profile race prints no number
-  const rating = mmr === false ? null : (mmr ?? getW3CMMR(player, undefined, player.signup_race));
+  const rating = mmr === false ? null : (mmr ?? getW3CMMR(player, undefined, player.signup_race ?? undefined));
   // The games mark falls back to the profile race, the race the players page signs a player up on
   const warning = games ? gamesWarning(player, games, player.signup_race || player.race || null) : null;
   // A series where the player played another race marks him, so a reader on a
@@ -57,9 +57,13 @@ export function PlayerName({
       {warning ? (
         <span className="inline-flex" onClick={(event) => { event.preventDefault(); event.stopPropagation(); }}>
           <TapTooltip content={warning.text}>
-            <Icon name="mdi-alert" size={16} title={warning.text} className={warning.colour === "error" ? "text-error" : "text-warning"} />
+            <Icon name="mdi-alert" size={16} className={warning.colour === "error" ? "text-error" : "text-warning"} />
+            <span className="sr-only">{warning.text}</span>
           </TapTooltip>
         </span>
+      ) : games !== undefined ? (
+        /* a line that meets the rule keeps the empty slot, so the flags stay in one column */
+        <span className="inline-block w-4" />
       ) : null}
       {player.country ? <FlagIcon countryIdentifier={player.country} /> : <span className="fp" />}
       <span className="name">{player.name}</span>

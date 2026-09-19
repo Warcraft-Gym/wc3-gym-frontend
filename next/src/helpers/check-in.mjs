@@ -1,6 +1,4 @@
-// The check-in state of one round, read from a RoundAvailabilityPublic row. A row with
-// `blocked_out` is derived from the player's blocked times: the API never stores it, so
-// no screen offers it as a value to set.
+// A `blocked_out` row is derived from the blocked times and never stored, so no screen offers it as a value
 
 const NO_ANSWER = { title: 'No answer', short: 'No answer', color: null, icon: 'mdi-clock-outline', derived: false };
 

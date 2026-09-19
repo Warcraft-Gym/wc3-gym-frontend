@@ -3,6 +3,7 @@
 ## 2026-09-20
 
 * **Update**: the team check-in page shows one round as a roster list or every round as a matrix, both from one read, and the captain edits from a row menu. The teams page concept states the two views, the four states, the derived block and the write that sits out every round that has not ended.
+* **Update**: the season dialog turns check-in off for an existing event and hides the check-in days and the early check-in switch while it is off. The GNL season page concept states the field and the new-season default.
 
 ## 2026-09-19
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/Icon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,9 +33,7 @@ function StatusChip({ status, short = false }: { status: Status; short?: boolean
   );
 }
 
-/** The captain's edits of one player and one round. The one-round list opens it from the row
- *  menu, the matrix from the cell. A derived state is no stored value, so it offers only the
- *  check-in that overrides it. */
+/** The captain's edits of one player and one round, from the row menu or from a matrix cell. */
 function RoundMenu({
   player,
   round,
@@ -58,24 +56,29 @@ function RoundMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={trigger}>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{`${player.name} · Round ${round}`}</DropdownMenuLabel>
-        <DropdownMenuItem disabled={busy} onClick={() => onSet(true)}>
-          <Icon name="mdi-check" className="text-success" />
-          {`Check in for ${player.name}`}
-        </DropdownMenuItem>
-        {status.derived ? null : (
-          <DropdownMenuItem disabled={busy} onClick={() => onSet(false)}>
-            <Icon name="mdi-close" className="text-error" />
-            Sit out this round
-          </DropdownMenuItem>
-        )}
-        {status.derived || status.title === "No answer" ? null : (
-          <DropdownMenuItem disabled={busy} onClick={() => onSet(null)}>
-            <Icon name="mdi-backspace-outline" />
-            Clear
-          </DropdownMenuItem>
-        )}
+      {/* The label is a group part, so the one-round items carry the group it asks for */}
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{`${player.name} · Round ${round}`}</DropdownMenuLabel>
+          {status.title === "Checked in" ? null : (
+            <DropdownMenuItem disabled={busy} onClick={() => onSet(true)}>
+              <Icon name="mdi-check" className="text-success" />
+              {`Check in for ${player.name}`}
+            </DropdownMenuItem>
+          )}
+          {status.derived || status.title === "Out" ? null : (
+            <DropdownMenuItem disabled={busy} onClick={() => onSet(false)}>
+              <Icon name="mdi-close" className="text-error" />
+              Sit out this round
+            </DropdownMenuItem>
+          )}
+          {status.derived || status.title === "No answer" ? null : (
+            <DropdownMenuItem disabled={busy} onClick={() => onSet(null)}>
+              <Icon name="mdi-backspace-outline" />
+              Clear
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={busy} onClick={onSitOutAll}>
           <Icon name="mdi-calendar-remove" className="text-error" />
@@ -307,16 +310,25 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                     <TableCell>
                       <PlayerName player={player} race={player.signup_race} />
                     </TableCell>
-                    {rounds.map((item) => (
-                      <TableCell key={item} className="text-center">
-                        {menuFor(
-                          player,
-                          item,
-                          <button type="button" className="cursor-pointer" aria-label={`Check-in menu for ${player.name}, round ${item}`} disabled={!!saving} />,
-                          <StatusChip status={statusOf(player.id, item)} short />,
-                        )}
-                      </TableCell>
-                    ))}
+                    {rounds.map((item) => {
+                      // the cell reads the short word, so the label carries the state the chip stands for
+                      const status = statusOf(player.id, item);
+                      return (
+                        <TableCell key={item} className="text-center">
+                          {menuFor(
+                            player,
+                            item,
+                            <button
+                              type="button"
+                              className="cursor-pointer"
+                              aria-label={`${player.name}, round ${item}: ${status.title}. Open the check-in menu`}
+                              disabled={!!saving}
+                            />,
+                            <StatusChip status={status} short />,
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
               </TableBody>

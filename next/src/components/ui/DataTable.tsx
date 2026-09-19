@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 
-// Only the three features a v-data-table used: sort, page and column visibility.
+// Only the three features this table needs: sort, page and column visibility.
 const features = tableFeatures({
   rowSortingFeature,
   sortedRowModel: createSortedRowModel(),
@@ -98,7 +98,7 @@ export function DataTable<T extends RowData>({
             onPageChange((typeof updater === "function" ? updater(was) : updater).pageIndex);
           },
         }),
-    // Every column starts ascending, as a `v-data-table` header did.
+    // Every column sorts ascending on the first click.
     sortDescFirst: false,
     // A table with no page size shows every row and draws no pager.
     initialState: { pagination: { pageSize: size, pageIndex: 0 } },
@@ -134,17 +134,29 @@ export function DataTable<T extends RowData>({
                 {expand ? <TableHead style={{ width: "48px" }} /> : null}
                 {group.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
+                  const title = header.column.columnDef.header;
                   return (
                     <TableHead
                       key={header.id}
+                      aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
                       onClick={header.column.getToggleSortingHandler()}
                       // The column the table is sorted by reads in the primary colour.
                       className={cn(header.column.getCanSort() && "cursor-pointer select-none", sorted && "text-primary")}
                     >
                       {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                      {/* An unsorted sortable column shows a faint sort icon. */}
+                      {/* An unsorted sortable column shows a faint sort icon. The arrow is the keyboard
+                          route into the sort; the header click stays for the mouse. */}
                       {header.column.getCanSort() ? (
-                        <Icon name={sorted === "desc" ? "mdi-arrow-down" : "mdi-arrow-up"} className={cn("ml-0.5 text-sm", !sorted && "opacity-25")} />
+                        <button
+                          type="button"
+                          aria-label={typeof title === "string" ? `Sort by ${title}` : "Sort"}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            header.column.getToggleSortingHandler()?.(event);
+                          }}
+                        >
+                          <Icon name={sorted === "desc" ? "mdi-arrow-down" : "mdi-arrow-up"} className={cn("ml-0.5 text-sm", !sorted && "opacity-25")} />
+                        </button>
                       ) : null}
                     </TableHead>
                   );

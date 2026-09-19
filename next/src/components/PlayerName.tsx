@@ -24,6 +24,7 @@ export function PlayerName({
   plain,
   mmr,
   games,
+  warning,
   onClick,
   children,
 }: {
@@ -33,13 +34,14 @@ export function PlayerName({
   plain?: boolean; // text only: a form in a dialog must not lose its input to a click
   mmr?: number | false | null; // false where a column of its own sorts by MMR; a number the caller already holds, null where its payload names none
   games?: number | null; // the current w3champions season: draws the games-rule mark on a draft surface
+  warning?: { colour: "error" | "warning"; text: string } | null; // the same mark from a read that already applies the event's rule
   onClick?: () => void;
   children?: React.ReactNode;
 }) {
   // The ladder MMR reads the signup race alone, so a profile race prints no number
   const rating = mmr === false ? null : (mmr ?? getW3CMMR(player, undefined, player.signup_race ?? undefined));
   // The games mark falls back to the profile race, the race the players page signs a player up on
-  const warning = games ? gamesWarning(player, games, player.signup_race || player.race || null) : null;
+  const mark = warning !== undefined ? warning : games ? gamesWarning(player, games, player.signup_race || player.race || null) : null;
   // A series where the player played another race marks him, so a reader on a
   // phone sees the exception without hovering anything
   const offRace = !!race && !!player.signup_race && race !== player.signup_race;
@@ -54,14 +56,14 @@ export function PlayerName({
   const body = (
     <>
       {/* the mark leads the line, and its tap opens the tooltip instead of the player page */}
-      {warning ? (
+      {mark ? (
         <span className="inline-flex" onClick={(event) => { event.preventDefault(); event.stopPropagation(); }}>
-          <TapTooltip content={warning.text}>
-            <Icon name="mdi-alert" size={16} className={warning.colour === "error" ? "text-error" : "text-warning"} />
-            <span className="sr-only">{warning.text}</span>
+          <TapTooltip content={mark.text}>
+            <Icon name="mdi-alert" size={16} className={mark.colour === "error" ? "text-error" : "text-warning"} />
+            <span className="sr-only">{mark.text}</span>
           </TapTooltip>
         </span>
-      ) : games !== undefined ? (
+      ) : games !== undefined || warning !== undefined ? (
         /* a line that meets the rule keeps the empty slot, so the flags stay in one column */
         <span className="inline-block h-4 w-4" />
       ) : null}

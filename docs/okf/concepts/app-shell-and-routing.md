@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:38:38Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -42,6 +42,10 @@ A season in a path is its slug, `gnl-s18`, made from its name; a bare id still r
 # The app bar
 
 `AppShell.tsx` draws the navigation from `/me`: the name and avatar, the role, the current season by slug, the team link (the captained seat in the current season, else the roster row), and the theme menu (light, dark, system, stored in `localStorage`). On a phone the links sit in a drawer. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
+
+# The app icon
+
+`next/src/app/favicon.ico` and `next/src/app/icon.png` are the icon of the browser tab, and the hosting dashboard draws the project with the same file. The icon is a placeholder: the letters GNL in the display face, in the dark theme's `primary` on its `background`. Replace both files together.
 
 # No embed mode
 

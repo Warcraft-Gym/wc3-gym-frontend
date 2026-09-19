@@ -124,8 +124,8 @@ export function FantasyScoreBreakdown({
         <AccordionItem value="team">
           <AccordionTrigger className="items-center gap-2 font-normal hover:no-underline">
             <span className="flex w-full flex-wrap items-center gap-2">
-              {/* inside the accordion button, so the team line is plain text */}
-              <TeamName team={draftedTeam(breakdown.team_breakdown)} plain />
+              {/* inside the accordion button, so the team line is plain text, and it reads as quiet as the grind name under it */}
+              <TeamName team={draftedTeam(breakdown.team_breakdown)} plain className="opacity-(--v-medium-emphasis-opacity)" />
               <strong>Team Points Details</strong>
               <Badge className="ml-auto mr-2">{breakdown.totals.team_points} points</Badge>
             </span>

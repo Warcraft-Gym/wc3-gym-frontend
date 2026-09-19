@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T21:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T22:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -52,12 +52,12 @@ A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards 
 A team is drawn as `{logo} {name}` everywhere, and it links to the team page. The name is the team's long name, and its short tag when it carries no long name.
 
 - A few surfaces draw the team themselves: a card or row that already links as a whole (the teams table, the season match cards and the team cards), the `TeamChip` badge in the propose dialog, the role group button, and the `h1` of a team's own page.
-- The logo is the `icon_url` the payload names, at one fixed size on every surface, so names in a column line up. The component asks the backend for no image: a team whose payload names no `icon_url` reads a muted shield outline of that same size. Every payload that names a team names its logo: the ladder read answers `teams[].icon_url`, the ladder players read `rows[].team_icon_url`, the veto board `player1/player2.team_icon_url`, a player's history `events[].team_icon_url`, and the fantasy breakdown `team_breakdown.team_icon_url`.
+- The logo is the `icon_url` the payload names, at one fixed size on every surface, so names in a column line up. The component asks the backend for no image: a team whose payload names no `icon_url` reads a muted shield outline of that same size. The payloads that name a team name its logo: the ladder read answers `teams[].icon_url`, the ladder players read `rows[].team_icon_url`, the veto board `player1/player2.team_icon_url`, a player's history `events[].team_icon_url`, and the fantasy breakdown `team_breakdown.team_icon_url`; `grind_breakdown` is the one exception and names none.
 - The name truncates inside a narrow cell and carries the full name in its `title`, so a long name cannot widen a bracket box or a phone column.
 - `seasonKey` picks the season team page, the path the team cards and the ladder already use; without one the link is the plain team page.
 - On a drafting page (the match page and the season team assign page) and inside the player panel, under `PanelLinksContext` with the value `true`, the name is plain text with no link, for the same reason the player name is: a click would leave unsaved work.
 - Pass `plain` for text only: inside another link or a button, inside a form dialog that holds unsaved work, and in the `h1` of the team's own page. A select option stays a plain option.
-- The veto board's sides, a player's event history and the fantasy draft table read as plain lines, because each sits inside a button or a page that holds unsaved work. The fantasy score breakdown's drafted team reads as a team line; its grind team draws its own logo, because that part of the payload names none. The ladder teams carry an id, and link like every other team.
+- The veto board's sides are plain in report mode only, where the board sits inside the result form, and they link on the veto page. A player's event history reads as a plain line, because it sits inside the accordion button. The fantasy score breakdown's drafted team reads as a team line; its grind team draws its own logo, because that part of the payload names none. The ladder teams and the fantasy draft table carry an id, and link like every other team.
 
 # The series action bar
 

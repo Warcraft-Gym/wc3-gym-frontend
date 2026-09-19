@@ -801,8 +801,7 @@ export function FantasyDashboardView() {
                             <PlayerName player={row} race={row.signup_race} mmr={false} />
                           </TableCell>
                           <TableCell className={cn(phoneCell, "text-muted-foreground")}>
-                            {/* a drafting table, so the team line is plain text */}
-                            {row.ladder?.team ? <TeamName team={{ id: row.ladder.team_id, name: row.ladder.team, icon_url: row.ladder.team_icon_url }} plain /> : null}
+                            {row.ladder?.team ? <TeamName team={{ id: row.ladder.team_id, name: row.ladder.team, icon_url: row.ladder.team_icon_url }} /> : null}
                           </TableCell>
                           <TableCell className="tnum text-right">{row.ladder?.mmr?.current ?? "—"}</TableCell>
                           <TableCell className={cn(phoneCell, "tnum text-right")}>{row.ladder ? `${row.ladder.wins}–${row.ladder.losses}` : "—"}</TableCell>

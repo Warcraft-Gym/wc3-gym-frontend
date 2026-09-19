@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { multiSelectTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toneClass } from "@/components/ui/tone";
@@ -362,7 +362,7 @@ export function SeriesView({ id }: { id: string }) {
                 <StatusAlert modelValue={rosterError} onClose={() => setRosterError(null)} />
                 <Field label={teamName(rosterSide)} htmlFor="series-roster" hint={`Pick ${sideSize} ${sideSize === 1 ? "player" : "players"}.`}>
                   <Select multiple value={picked} onValueChange={(value) => setPicked(value as number[])}>
-                    <SelectTrigger id="series-roster" className="h-auto min-h-8 w-full py-1.5">
+                    <SelectTrigger id="series-roster" className={`${multiSelectTrigger} w-full`}>
                       <SelectValue>{(ids: number[]) => ids.map((one) => rosterItems.find((item) => item.id === one)?.name ?? one).join(", ")}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>

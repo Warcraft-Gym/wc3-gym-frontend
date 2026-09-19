@@ -157,7 +157,7 @@ export function KothDashboard() {
               ) : null}
               <Badge className={toneClass(null)}>
                 <Icon name="mdi-account-multiple" />
-                {players} entrants
+                {`${players} ${players === 1 ? "entrant" : "entrants"}`}
               </Badge>
             </div>
           ) : null}

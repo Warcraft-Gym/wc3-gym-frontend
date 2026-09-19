@@ -288,7 +288,7 @@ export function EventWizardView() {
               min="1"
               label="Count the games over"
               placeholder="Every W3C season"
-              hint="Count games over the last N W3C seasons"
+              hint="Blank counts every W3C season."
               value={form.min_games_seasons}
               onChange={(e) => set({ min_games_seasons: e.target.value })}
             />
@@ -299,7 +299,7 @@ export function EventWizardView() {
             {form.checkin_enabled ? (
               <>
                 <TextField className={MD4} type="number" label="Check-in opens how many days before" value={form.checkin_days} onChange={(e) => set({ checkin_days: e.target.value })} />
-                <div className={cn(MD6, "flex flex-col gap-1.5")}>
+                <div className={cn(MD6, "flex flex-col gap-1.5 self-end")}>
                   <Label className="flex items-center gap-2">
                     <Switch aria-describedby="wizard-early-checkin-help" checked={!!form.early_checkin} onCheckedChange={(early_checkin) => set({ early_checkin })} />
                     Early check-in

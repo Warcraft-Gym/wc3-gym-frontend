@@ -7,7 +7,7 @@ import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { multiSelectTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
 import { RaceIcon } from "@/components/RaceIcon";
@@ -217,7 +217,7 @@ export function RandomStatsView() {
             <Field className="md:col-span-5" label="W3C seasons" hint="Select one or more seasons to analyse" htmlFor="w3c-seasons">
               {/* one open list, so a season leaves the choice the same way it joined it */}
               <Select multiple value={selectedSeasons} onValueChange={setSelectedSeasons}>
-                <SelectTrigger id="w3c-seasons" className="h-auto min-h-8 w-full py-1.5">
+                <SelectTrigger id="w3c-seasons" className={`${multiSelectTrigger} w-full`}>
                   <Icon name="mdi-calendar-range" className="text-muted-foreground" />
                   <SelectValue>
                     {(seasons: number[]) => (

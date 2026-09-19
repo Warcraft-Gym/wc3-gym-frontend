@@ -15,11 +15,8 @@
   }
 }
 
-/* A phone has no width to spare for a fixed win-rate column or an unbroken name */
+/* A phone has no width to spare for an unbroken name */
 @media (max-width: 959px) {
-  .standings-table .win-rate-cell {
-    min-width: 0;
-  }
   .standings-table .player-name {
     white-space: normal;
   }

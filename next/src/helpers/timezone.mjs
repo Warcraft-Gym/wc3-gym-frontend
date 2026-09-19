@@ -25,6 +25,7 @@ export const gmt = (offset) => {
 };
 
 // "Europe/Paris · GMT+2 · 1 h ahead of you", both offsets taken at the instant; '' for no zone
+/** @param {import('luxon').DateTime|Date|string|null} [at] */
 export const zoneLabel = (zone, viewer = viewerZone(), at = null) => {
   const when = instant(at);
   const theirs = zone && when.setZone(zone);

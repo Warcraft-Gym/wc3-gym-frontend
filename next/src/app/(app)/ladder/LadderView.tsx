@@ -356,7 +356,7 @@ export function LadderView() {
                   accessorKey: "name",
                   header: "Name",
                   cell: ({ row }) => (
-                    <PlayerName player={row.original}>
+                    <PlayerName player={row.original} mmr={false}>
                       {!row.original.synced_at ? (
                         <TapTooltip content="not fully synced" className="inline-flex">
                           <Icon name="mdi-sync-alert" size={12} className="text-warning" />

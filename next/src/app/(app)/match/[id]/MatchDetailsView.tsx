@@ -698,7 +698,6 @@ export function MatchDetailsView({ id }: { id: string }) {
               <PublishedSeries
                 series={enrichedSeries}
                 smAndDown={smAndDown}
-                w3cSeason={currentW3CSeason}
                 isAdmin={auth.isAdmin}
                 formateDate={formateDate}
                 seriesActions={seriesActions}

@@ -798,7 +798,7 @@ export function FantasyDashboardView() {
                             />
                           </TableCell>
                           <TableCell>
-                            <PlayerName player={row} race={row.signup_race} />
+                            <PlayerName player={row} race={row.signup_race} mmr={false} />
                           </TableCell>
                           <TableCell className={cn(phoneCell, "text-muted-foreground")}>{row.ladder?.team ?? ""}</TableCell>
                           <TableCell className="tnum text-right">{row.ladder?.mmr?.current ?? "—"}</TableCell>

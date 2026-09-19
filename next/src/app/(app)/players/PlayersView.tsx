@@ -11,7 +11,6 @@ import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CareerStatsDialog, type CareerStatsDialogHandle } from "@/components/CareerStatsDialog";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { CountrySelect } from "@/components/CountrySelect";
@@ -29,7 +28,7 @@ import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { findSeason } from "@/helpers/season-slug.mjs";
 import { filterByMmrRange, matchesPlayerSearch, playerPath, playersWithCareers } from "@/helpers/players.mjs";
-import { getAllRaceStats, getW3CGamesCount, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from "@/helpers/w3c-stats.js";
+import { getAllRaceStats, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from "@/helpers/w3c-stats.js";
 import { useAuth, usePlayerCareerStatsStore, usePlayerStore, useSeason } from "@/stores";
 
 type Row = Record<string, any>;
@@ -38,14 +37,6 @@ const WIDE = "hidden min-[960px]:table-cell";
 const PAGE_SIZE = 25;
 
 const emptyPlayer = () => ({ name: "", battleTag: "", country: "", discordTag: "", discordId: "", mmr: 0, race: "" });
-
-function Warning({ row, season }: { row: Row; season: number | null }) {
-  const missing = !hasW3CStatsTwoSeasons(row, season ?? 0, row.race);
-  const low = !missing && hasLowGamesTwoSeasons(row, season ?? 0, row.race);
-  if (!missing && !low) return null;
-  const text = missing ? `No W3C stats found for ${row.race}` : `Less than 20 games (${getW3CGamesCount(row, season ?? 0, row.race)} games) for ${row.race}`;
-  return <Tooltip><TooltipTrigger render={<span tabIndex={0}><Icon name="mdi-alert" className={missing ? "text-error" : "text-warning"} /></span>} /><TooltipContent>{text}</TooltipContent></Tooltip>;
-}
 
 export function PlayersView() {
   const router = useRouter();
@@ -160,7 +151,7 @@ export function PlayersView() {
           if ((event.target as Element).closest('[data-slot="tooltip-trigger"]')) return;
           if (row.id != null) router.push(playerPath(row));
         }}>
-          <TableCell>{row.id != null ? <PlayerName player={row}><Warning row={row} season={w3cSeason} /></PlayerName> : <span className="text-muted-foreground">{row.name}</span>}</TableCell>
+          <TableCell>{row.id != null ? <PlayerName player={row} mmr={false} games={w3cSeason} /> : <span className="text-muted-foreground">{row.name}</span>}</TableCell>
           <TableCell className={WIDE}>{row.id != null ? <RaceMmrChips player={row} w3cSeason={w3cSeason ?? undefined} max={2} /> : null}</TableCell>
           <TableCell className="text-right">{row.rating ?? "—"}</TableCell>
           <TableCell className="text-right">{row.career ? <>{row.career.series_won}-{row.career.series_lost} <span className="text-muted-foreground">{row.career.series_winrate}%</span></> : "—"}</TableCell>

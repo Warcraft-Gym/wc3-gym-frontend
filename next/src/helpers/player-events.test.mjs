@@ -29,7 +29,7 @@ const history = {
   events: [
     {
       season_id: 18, season_name: 'Season 18', league_short_name: 'GNL', kind: 'gnl',
-      team_id: 4, team_name: 'Stone Wolves', played: 6, won: 4, lost: 2, place: 2, team_count: 10, running: true,
+      team_id: 4, team_name: 'Stone Wolves', team_icon_url: 'https://blob/4.png', played: 6, won: 4, lost: 2, place: 2, team_count: 10, running: true,
     },
     {
       season_id: 21, season_name: 'Autumn Cup', league_short_name: null, kind: 'cup',
@@ -55,6 +55,7 @@ test('a GNL row keeps its team, race, record and season row', () => {
   const [, gnl] = eventRows({ history, player, seasons });
   assert.equal(gnl.team, 'Stone Wolves');
   assert.equal(gnl.teamId, 4);
+  assert.equal(gnl.teamIcon, 'https://blob/4.png');
   assert.equal(gnl.race, 'UD');
   assert.deepEqual([gnl.wins, gnl.losses], [4, 2]);
   assert.equal(gnl.champion, true);
@@ -68,6 +69,7 @@ test('a cup row stands without a season row, a team or a signup race', () => {
   const [cup] = eventRows({ history, player, seasons });
   assert.equal(cup.season.name, 'Autumn Cup');
   assert.equal(cup.team, null);
+  assert.equal(cup.teamIcon, null);
   assert.equal(cup.race, null);
   assert.equal(cup.placing, null);
   assert.equal(cup.kindLabel, 'Cup');

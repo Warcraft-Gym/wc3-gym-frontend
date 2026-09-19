@@ -2,6 +2,7 @@
 
 ## 2026-09-19
 
+* **Update**: a stage series row names the MMR of the race it plays, and every payload that names a team names its logo. The shared-component concept states how `SeriesBox` fills the player line, which payloads carry `team_icon_url`, and which team lines are plain.
 * **Update**: the Report Result dialog folds the veto under a disclosure row and warns in a heading; the fixtures and series page and the veto decision state the row, the wording and the one dialog width.
 * **Update**: the series page names the map of a fixed game before it is played, and the edit-series race opens on the race the side signed the season up on.
 * **Update**: the player line draws the MMR and the games mark itself. The shared-component concept and the player name decision state how the line reads the MMR, when a surface leaves it out, and that the stage series payload carries no `w3c_stats` yet.

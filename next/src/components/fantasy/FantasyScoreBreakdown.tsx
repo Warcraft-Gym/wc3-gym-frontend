@@ -10,6 +10,7 @@ import { BetIcon } from "@/components/fantasy/BetIcon";
 import { GroupedTable, type GroupedColumn } from "@/components/GroupedTable";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
+import { TeamName } from "@/components/TeamName";
 import { W3CMmr } from "@/components/W3CMmr";
 import { raceWrapper } from "@/helpers/races.js";
 import { teamImageUrl, showDefaultTeamImage } from "@/helpers/team-image.js";
@@ -37,6 +38,9 @@ const NARROW = "[&_table]:w-auto";
 // The label keeps its width, so the round names line up over the opponents.
 const WEEK_LABEL = "inline-block min-w-16 opacity-(--v-medium-emphasis-opacity)";
 const ICON = "size-6 object-contain";
+
+// The breakdown names the drafted GNL team flat, so the team line is built from the three fields it carries
+const draftedTeam = (part: any) => ({ id: part.team_id, name: part.team_name, icon_url: part.team_icon_url });
 
 type RosterRow = { key: string | number; label: string; player: any; mmr: any; record: string; bench: number; total: number; weeks: any[] };
 type BetWeek = { key: number; label: string; week: number; bets: any[]; summary: string; net: number };
@@ -120,9 +124,9 @@ export function FantasyScoreBreakdown({
         <AccordionItem value="team">
           <AccordionTrigger className="items-center gap-2 font-normal hover:no-underline">
             <span className="flex w-full flex-wrap items-center gap-2">
-              <img className={ICON} src={teamImageUrl(breakdown.team_breakdown.team_id)} onError={showDefaultTeamImage} alt="" />
+              {/* inside the accordion button, so the team line is plain text */}
+              <TeamName team={draftedTeam(breakdown.team_breakdown)} plain />
               <strong>Team Points Details</strong>
-              <span className="opacity-(--v-medium-emphasis-opacity)">{breakdown.team_breakdown.team_name}</span>
               <Badge className="ml-auto mr-2">{breakdown.totals.team_points} points</Badge>
             </span>
           </AccordionTrigger>
@@ -139,10 +143,7 @@ export function FantasyScoreBreakdown({
               <TableBody>
                 <TableRow>
                   <TableCell className="font-bold">
-                    <span className="inline-flex items-center gap-2">
-                      <img className={ICON} src={teamImageUrl(breakdown.team_breakdown.team_id)} onError={showDefaultTeamImage} alt="" />
-                      {breakdown.team_breakdown.team_name}
-                    </span>
+                    <TeamName team={draftedTeam(breakdown.team_breakdown)} />
                   </TableCell>
                   <TableCell>{breakdown.team_breakdown.final_score}</TableCell>
                   <TableCell>{breakdown.team_breakdown.points_against}</TableCell>

@@ -115,12 +115,12 @@ export function HeadToHead({ playerId }: { playerId: number }) {
                     {group.row.record.won ? <span className="min-w-1 rounded bg-win" style={{ flexGrow: group.row.record.won }} /> : null}
                     {group.row.record.lost ? <span className="min-w-1 rounded bg-loss" style={{ flexGrow: group.row.record.lost }} /> : null}
                   </span>
-                  <span className="tnum" title={`${group.row.record.won} won, ${group.row.record.lost} lost`}>
+                  <span className="tnum whitespace-nowrap" title={`${group.row.record.won} won, ${group.row.record.lost} lost`}>
                     {recordFigure(group.row.record.won, group.row.record.lost) ?? "—"}
                   </span>
                 </div>
               </td>
-              <td className={`${CELL} ${CAPTION} ${PHONE_HIDDEN}`}>
+              <td className={`${CELL} ${CAPTION} ${PHONE_HIDDEN} whitespace-nowrap`}>
                 {recordFigure(group.row.games.mine, group.row.games.theirs) ?? "—"}
               </td>
               <td className={CELL}>

@@ -497,7 +497,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                       <Th className="w-11">#</Th>
                       <TableHead>Player</TableHead>
                       <TableHead className={WIDE}>Team</TableHead>
-                      <Th>W-L</Th>
+                      <Th>Series record</Th>
                       <Th className={WIDE}>Played</Th>
                       <Th className={WIDE}>Win %</Th>
                       <Th>Points</Th>
@@ -589,7 +589,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                           <div className="text-lg font-bold tnum">
                             {record(raceEntry.wins, raceEntry.losses) ?? "—"}
                           </div>
-                          <div className="text-xs text-muted-foreground">W-L</div>
+                          <div className="text-xs text-muted-foreground">Series</div>
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-bold tnum">{raceEntry.points}</div>

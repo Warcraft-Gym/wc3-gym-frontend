@@ -8,20 +8,24 @@ async function handler(request: Request, ctx: { params: Promise<{ p: string[] }>
 
   const headers = new Headers(request.headers);
   headers.delete("host");
-  // Node fetch unpacks a compressed answer, so a forwarded content-encoding would mislabel the body
-  headers.delete("accept-encoding");
   headers.set("Clerk-Proxy-Url", process.env.NEXT_PUBLIC_CLERK_PROXY_URL ?? "");
   headers.set("Clerk-Secret-Key", process.env.CLERK_SECRET_KEY ?? "");
   headers.set("X-Forwarded-For", request.headers.get("x-forwarded-for") || "");
 
   const hasBody = !["GET", "HEAD"].includes(request.method);
-  return fetch(`${FRONTEND_API}/${path}${url.search}`, {
+  const answer = await fetch(`${FRONTEND_API}/${path}${url.search}`, {
     method: request.method,
     headers,
     body: hasBody ? request.body : undefined,
     duplex: hasBody ? "half" : undefined,
     redirect: "manual",
   } as RequestInit);
+
+  // Node fetch asks for a compressed answer and unpacks it, so the two headers that describe the packed body go
+  const answerHeaders = new Headers(answer.headers);
+  answerHeaders.delete("content-encoding");
+  answerHeaders.delete("content-length");
+  return new Response(answer.body, { status: answer.status, statusText: answer.statusText, headers: answerHeaders });
 }
 
 export { handler as GET, handler as POST, handler as PUT, handler as PATCH, handler as DELETE, handler as HEAD, handler as OPTIONS };

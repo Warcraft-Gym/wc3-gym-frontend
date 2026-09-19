@@ -31,7 +31,6 @@ export function TeamRoster({
   series,
   rounds = 0,
   round,
-  w3cSeason,
   // The empty lines name the run of the league the roster belongs to; a GNL page says season
   noCaptains = "No captains recorded for this event.",
   noMembers = "No members recorded for this event.",
@@ -44,14 +43,13 @@ export function TeamRoster({
   series?: Row[]; // the event's series; without them the list draws no round strip
   rounds?: number; // how many rounds the event plays
   round?: number | null; // the round in play, named in the head
-  w3cSeason?: number; // the W3C season the MMR is read from; the newest one without it
   noCaptains?: string;
   noMembers?: string;
   captainsActions?: React.ReactNode;
   renderCaptains?: (args: { captains: Player[] }) => React.ReactNode;
   renderMembers?: (args: { members: Player[] }) => React.ReactNode;
 }) {
-  const mmrOf = (player: Player) => getW3CMMR(player, w3cSeason ?? null, player.signup_race ?? null) as number | null;
+  const mmrOf = (player: Player) => getW3CMMR(player, undefined, player.signup_race ?? null) as number | null;
   // a captain is rostered on his member row when he plays, so the row carries his race and MMR
   const rowOf = (player: Player) => members.find((member) => member.id === player.id) ?? player;
   const sorted = [...members].sort((a, b) => (mmrOf(b) ?? -1) - (mmrOf(a) ?? -1));
@@ -76,7 +74,8 @@ export function TeamRoster({
           <span className="block">
             <span className="block text-xs text-muted-foreground">Rounds</span>
             <span
-              className="grid gap-x-[3px] text-center text-[10px] leading-none text-muted-foreground sm:ms-[2.6em]"
+              // the numbers stand over their marks: the offset is the width of the record in RoundStrip
+              className="grid gap-x-[3px] text-center text-[10px] leading-none text-muted-foreground sm:ms-8"
               style={{ gridTemplateColumns: `repeat(${rounds}, 12px)` }}
               aria-hidden
             >
@@ -94,7 +93,8 @@ export function TeamRoster({
 
   const line = (player: Player) => {
     const row = rowOf(player);
-    const plays = row.signup_race != null;
+    // a member plays this event; a captain plays only when he is rostered as a member too
+    const plays = members.some((member) => member.id === player.id);
     return (
       <Fragment key={player.id}>
         <span className={cn(CELL, "pe-1.5")}>{player.country ? <FlagIcon countryIdentifier={player.country} /> : null}</span>
@@ -107,7 +107,7 @@ export function TeamRoster({
             <span className="min-w-0 truncate">{player.name}</span>
           )}
         </span>
-        <span className={cn(CELL, "pe-1.5")}>{plays ? <RaceIcon raceIdentifier={row.signup_race} /> : null}</span>
+        <span className={cn(CELL, "pe-1.5")}>{row.signup_race ? <RaceIcon raceIdentifier={row.signup_race} /> : null}</span>
         {plays ? (
           <>
             <span className={cn(CELL, "tnum min-w-[3.1em] justify-end pe-1.5")}>{mmrOf(row) ?? "—"}</span>
@@ -130,7 +130,7 @@ export function TeamRoster({
         <Icon name="mdi-account-group" />
         <span>Roster</span>
         <span className="tnum ms-auto text-sm font-normal">
-          {captains.length} captains, {members.length} members
+          {captains.length} captain{captains.length === 1 ? "" : "s"}, {members.length} member{members.length === 1 ? "" : "s"}
         </span>
       </CardTitle>
       {captainsActions}
@@ -138,7 +138,7 @@ export function TeamRoster({
         {renderCaptains ? (
           <>
             <span className={cn(CELL, "col-span-5 pt-0 pb-1 font-medium")}>Captains</span>
-            <span className="col-span-5 py-2">{renderCaptains({ captains })}</span>
+            <div className="col-span-5 min-w-0 py-2">{renderCaptains({ captains })}</div>
           </>
         ) : (
           <>
@@ -149,7 +149,7 @@ export function TeamRoster({
         {renderMembers ? (
           <>
             <span className={cn(CELL, "col-span-5 pt-5 pb-1 font-medium")}>Members</span>
-            <span className="col-span-5 py-2">{renderMembers({ members })}</span>
+            <div className="col-span-5 min-w-0 py-2">{renderMembers({ members })}</div>
           </>
         ) : (
           <>

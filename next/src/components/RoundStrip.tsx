@@ -47,8 +47,7 @@ export function RoundStrip({
   const { wins, losses } = stripRecord_(marks);
   if (!rounds) return null;
 
-  // the group holds the tab stop, so the arrows move the focus from mark to mark inside it.
-  // The strip sits inside an accordion trigger, which reads the same keys, so the event stops here.
+  // the group holds the tab stop and the arrows walk its marks; the accordion trigger around it reads the same keys, so the event stops here
   const walk = (event: React.KeyboardEvent<HTMLSpanElement>) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     const list = [...event.currentTarget.querySelectorAll<HTMLElement>("[data-mark]")];
@@ -60,8 +59,9 @@ export function RoundStrip({
 
   return (
     <span className={cn("inline-flex items-center", className)}>
+      {/* w-8 is the track the round numbers in a roster head offset by */}
       {record ? (
-        <span className="tnum hidden w-[2.6em] flex-none text-xs sm:inline-block">
+        <span className="tnum hidden w-8 flex-none text-xs sm:inline-block">
           {wins || losses ? (
             <>
               <span className="text-win">{wins}</span> – <span className="text-loss">{losses}</span>
@@ -73,7 +73,7 @@ export function RoundStrip({
         role="group"
         tabIndex={0}
         aria-label={stripLabel_(marks)}
-        className="inline-flex gap-[3px] rounded-[3px] outline-offset-[3px]"
+        className="inline-flex gap-[3px] rounded-[3px] outline-offset-[3px] focus-within:outline-2 focus-within:outline-primary"
         onKeyDown={walk}
       >
         {marks.map((mark, index) => (
@@ -101,7 +101,7 @@ export function RoundStrip({
               {mark.series.length ? (
                 mark.series.map((one, at) => {
                   // the payload of a series carries the opponent's ladder stats on some surfaces only
-                  const mmr = one.opponent ? getW3CMMR(one.opponent, null, one.opponentRace ?? null) : null;
+                  const mmr = one.opponent ? getW3CMMR(one.opponent, undefined, one.opponentRace ?? null) : null;
                   return (
                     <span key={at} className="block">
                       <span className="block">{seriesHead_(mark.round, one)}</span>

@@ -4,7 +4,7 @@ title: Session and auth
 description: Clerk signs a member in with Discord, the backend's /me answer is the session the app reads, a legacy admin token has its own login page, and the fetch wrapper sends the bearer.
 resource: ../../../next/src/stores/auth.ts
 tags: [session]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:56:13Z }
 sources:
   - id: auth-store
     resource: ../../../next/src/stores/auth.ts
@@ -43,4 +43,4 @@ An admin picks a role, and for a captain a set of seats, to see the app as that 
 
 # Production proxy
 
-Clerk cannot own a `vercel.app` subdomain, so production runs the Clerk production instance in proxy mode: `next.config.ts` rewrites `/__clerk/*` to the route handler `next/src/app/clerk-proxy/[...p]/route.ts`, which forwards to Clerk's API with the proxy URL and the secret key. The handler asks Clerk for an uncompressed answer, so the body and the headers it passes back agree. Previews and local use the dev instance. See [the decision](../decisions/clerk-proxy-mode.md).
+Clerk cannot own a `vercel.app` subdomain, so production runs the Clerk production instance in proxy mode: `next.config.ts` rewrites `/__clerk/*` to the route handler `next/src/app/clerk-proxy/[...p]/route.ts`, which forwards to Clerk's API with the proxy URL and the secret key. Node `fetch` unpacks Clerk's compressed answer, so the handler returns the body without the `content-encoding` and `content-length` headers; every other header and each `set-cookie` passes through. See [the pitfall](../pitfalls/proxy-answer-keeps-encoding-header.md). Previews and local use the dev instance. See [the decision](../decisions/clerk-proxy-mode.md).

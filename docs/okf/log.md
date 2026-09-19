@@ -2,6 +2,7 @@
 
 ## 2026-09-19
 
+* **Update**: the Report Result dialog folds the veto under a disclosure row and warns in a heading; the fixtures and series page and the veto decision state the row, the wording and the one dialog width.
 * **Update**: the series page names the map of a fixed game before it is played, and the edit-series race opens on the race the side signed the season up on.
 * **Update**: the player line draws the MMR and the games mark itself. The shared-component concept and the player name decision state how the line reads the MMR, when a surface leaves it out, and that the stage series payload carries no `w3c_stats` yet.
 * **Update**: the design rules of the next phase. `DESIGN.md` states the player line and its games-icon version, the team name, the series action bar, the check-in words, the app bar title, the loading rule, the card padding, the W3C data line, the figure formats and the legend rule, and names what the code does not meet yet; the shared-component concept and the player name decision state the same rules.

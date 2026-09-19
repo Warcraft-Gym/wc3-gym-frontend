@@ -1,11 +1,11 @@
 "use client";
 import { useImperativeHandle, useRef, useState } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
+import { Note } from "@/components/ui/Note";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { RaceSelect } from "@/components/RaceSelect";
@@ -17,7 +17,6 @@ import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helper
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
 import { useMapStore } from "@/stores";
-import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -47,19 +46,6 @@ const EMPTY: Form = { replays: {}, races: {}, winners: [], maps: {}, reads: {}, 
 const REPLAY_MAGIC = "Warcraft III recorded game";
 const isW3g = (file?: File | null) => !file || file.name.toLowerCase().endsWith(".w3g");
 
-/** A note the reader cannot close: what the veto or a replay says about the report. */
-function Note({ type, children }: { type: "success" | "warning"; children: React.ReactNode }) {
-  const tone = type === "success" ? "text-success" : "text-warning";
-  return (
-    <Alert className={cn("alert", tone)}>
-      <AlertDescription className="flex items-start gap-2 text-foreground">
-        <Icon name={type === "success" ? "mdi-check-circle-outline" : "mdi-alert-outline"} className={tone} />
-        {children}
-      </AlertDescription>
-    </Alert>
-  );
-}
-
 // A file input that mounts again shows the file the form still holds for its game
 const showHeld = (file?: File | null) => (input: HTMLInputElement | null) => {
   if (!input || !file || input.files?.length) return;
@@ -81,6 +67,8 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
 
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
+  // the veto sits under a disclosure row, folded away until the reporter opens it
+  const [vetoOpen, setVetoOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [maps, setMaps] = useState<Row[]>([]);
   const [series, setSeries] = useState<Form>(EMPTY);
@@ -96,7 +84,9 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   // What a side is called: the team or the player of the series, else the name the veto
   // board answers, because GET /series/{id} names no team behind a team entrant yet
   const name = (side: 1 | 2) => series[`player${side}_name`] || scoreVeto?.[`player${side}`]?.name || `Side ${side}`;
-  const vetoMissing = scoreVeto !== null && !scoreVeto.complete;
+  // A series whose rules play no veto answers an empty order, and shows neither the row nor the warning
+  const hasVeto = (scoreVeto?.order?.length ?? 0) > 0;
+  const vetoMissing = hasVeto && !scoreVeto?.complete;
 
   const mapOf = (game: number) => mapOfIn(series, scoreVeto, game);
 
@@ -148,6 +138,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
         storedGames: "[]",
       });
       setScoreVeto(null);
+      setVetoOpen(false);
       setShow(true);
       if (!maps.length) mapStore.fetchMaps().then((rows: Row[]) => setMaps(rows || [])).catch(() => {}); // names the maps each game offers
       loadGames(item.id);
@@ -219,6 +210,13 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   const reportedScore: number[] = scoreOf(series.winners || []);
   const seriesGames = gamesOf(series.map_rules);
   const seriesWins = winsFor(seriesGames);
+  // What the folded row says the veto stands at
+  const vetoSteps = (scoreVeto?.steps || []).length;
+  const vetoLine = scoreVeto?.complete
+    ? "Map veto complete"
+    : vetoSteps
+      ? `Map veto: ${vetoSteps} of ${scoreVeto?.order?.length} steps done`
+      : "No veto recorded";
   const hasReplay = (game: number) => series.replays?.[game] instanceof File;
   // A first report needs every game's file; a fix keeps the stored ones unless a new file is picked
   const needsFile = (game: number) => game > (series.reported || 0);
@@ -307,21 +305,40 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
     }
   };
 
-  const width = vetoMissing ? "max-w-[960px] sm:max-w-[960px]" : "max-w-[600px] sm:max-w-[600px]";
-
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : saving ? null : close())}>
-      <DialogContent showCloseButton={false} className={cn("max-h-[90vh] gap-0 overflow-y-auto p-0", width)}>
+      {/* One width in every state: the fold holds the board, so a missing veto never widens the dialog */}
+      <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 md:max-w-[600px]">
         <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
           <Icon name="mdi-trophy" />
           Report result
         </DialogTitle>
         <div className="flex flex-col gap-3 p-4">
           <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
-          {scoreVeto ? (
-            <Note type={scoreVeto.complete ? "success" : "warning"}>{scoreVeto.complete ? "Map veto complete" : "Enter the map veto below, or report without it."}</Note>
+          {vetoMissing ? (
+            <div>
+              <h3 className="flex items-center gap-2 text-warning">
+                <Icon name="mdi-alert-outline" />
+                The map veto is not complete
+              </h3>
+              <div className="text-sm">Enter it below, or report the result without it.</div>
+            </div>
           ) : null}
-          {series.id ? <VetoBoard key={series.id} seriesId={series.id} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} /> : null}
+          {hasVeto ? (
+            <Button variant="outline" aria-expanded={vetoOpen} className="h-auto w-full justify-between px-3 py-2" onClick={() => setVetoOpen(!vetoOpen)}>
+              <span className="flex items-center gap-2">
+                <Icon name={scoreVeto?.complete ? "mdi-check-circle-outline" : "mdi-alert-outline"} className={scoreVeto?.complete ? "text-success" : "text-warning"} />
+                {vetoLine}
+              </span>
+              <Icon name={vetoOpen ? "mdi-chevron-up" : "mdi-chevron-down"} />
+            </Button>
+          ) : null}
+          {/* The board stays mounted while it is folded, and shows its loader or error until it answers */}
+          {series.id ? (
+            <div hidden={!!scoreVeto && (!hasVeto || !vetoOpen)}>
+              <VetoBoard key={series.id} seriesId={series.id} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} />
+            </div>
+          ) : null}
 
           {series.solo && !series.raceOpen ? (
             <div>
@@ -411,7 +428,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
           </Button>
           <Button variant={vetoMissing ? "outline" : "default"} className={vetoMissing ? "text-warning" : undefined} disabled={!isValid || saving} onClick={save}>
             <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
-            {vetoMissing ? "Report without a veto" : "Save Result"}
+            {vetoMissing ? "Report without a veto" : "Save result"}
           </Button>
         </div>
       </DialogContent>

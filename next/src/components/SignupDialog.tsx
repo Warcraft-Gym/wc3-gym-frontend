@@ -103,7 +103,7 @@ export function SignupDialog({
                   ))}
                 </div>
               ) : null}
-              <RaceSelect id="signup-race" value={race} onChange={setRace} exclude={taken} label="Race" />
+              <RaceSelect value={race} onChange={setRace} exclude={taken} label="Race" />
               {takesNote ? (
                 <Field label="Note" hint="What you want to work on" htmlFor="signup-note">
                   <Input id="signup-note" value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} />

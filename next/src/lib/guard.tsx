@@ -16,19 +16,20 @@ export function Guard({ children }: { children: React.ReactNode }) {
   const { ensureSeasons } = useSeasonStore();
   const meta = metaOf(path);
 
-  // A season in the path is a slug; the page reads its id off the loaded list.
-  const [seasonsFor, setSeasonsFor] = useState<string | null>(null);
+  // A season in the path is a slug; the page reads its id off the loaded list. The flag stays
+  // true once the list settles, so a page that rewrites its own path is not remounted.
+  const [seasonsLoaded, setSeasonsLoaded] = useState(false);
   useEffect(() => {
-    if (!meta.season) return;
+    if (!meta.season || seasonsLoaded) return;
     let alive = true;
     // A failed season list must not abort the navigation; the view shows its own error.
     ensureSeasons()
       .catch(() => {})
-      .then(() => alive && setSeasonsFor(path));
+      .then(() => alive && setSeasonsLoaded(true));
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meta.season, path]);
-  const seasonsReady = !meta.season || seasonsFor === path;
+  }, [meta.season, seasonsLoaded]);
+  const seasonsReady = !meta.season || seasonsLoaded;
 
   const signedInOnLogin = (path === "/login" || path === "/admin-login") && !!me;
   const allowed = !signedInOnLogin && (meta.role === "public" || (!!me && canSeeRole(me.role, meta.role)));

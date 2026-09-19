@@ -65,7 +65,7 @@ export function LoginView() {
         <CardHeader className="bg-primary p-4">
           <CardTitle className="flex items-center gap-2 text-on-primary">
             <Icon name="mdi-lock" />
-            GNL Login
+            Log in to WC3 Gym Dashboard
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">

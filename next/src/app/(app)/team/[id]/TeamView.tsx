@@ -14,6 +14,7 @@ import { TeamRoster } from "@/components/TeamRoster";
 import { POINTS_NOTES } from "@/helpers/achievements.js";
 import { loadSeasons, resolveCurrentSeasonId } from "@/helpers/current-season.js";
 import { seasonRank, roundResults, seasonTabs as tabsOf, seriesRecord } from "@/helpers/team-record.mjs";
+import { currentRound } from "@/helpers/rounds.mjs";
 import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image.js";
 import { rosterOf } from "@/helpers/team-roster.mjs";
 import { useSeason, useSeriesStore, useTeamStore } from "@/stores";
@@ -38,6 +39,9 @@ export function TeamView({ id }: { id: string }) {
   const info = (team?.seasons_info || []).find((row: Row) => row.season_id === seasonId) || null;
   const label = tabs.find((tab) => tab.id === seasonId)?.label || "";
   const roster = rosterOf(seasonTeam, seasonId);
+  // the roster strip reads the series the page already loaded, over the rounds the event plays
+  const seasonRow: Row | null = (seasonStore.seasons || []).find((row: Row) => row.id === seasonId) || null;
+  const roundInPlay: Row | null = currentRound(seasonRow?.rounds ?? []);
   const rank = seasonRank(standings, teamId, seasonId);
   const rounds: Row[] = roundResults(series, teamId);
   const record = seriesRecord(rounds);
@@ -78,7 +82,7 @@ export function TeamView({ id }: { id: string }) {
       {info ? <CardContent className="grid grid-cols-[repeat(auto-fit,minmax(104px,1fr))] gap-x-4 gap-y-3 pb-4">{stats.map((stat) => <div key={stat.label} className="text-right"><div className="text-xs text-muted-foreground">{pointsNotes[stat.label] ? <ColumnNote title={stat.label} note={pointsNotes[stat.label]} /> : stat.label}</div><div className="tnum text-lg">{stat.value}</div></div>)}</CardContent> : null}
     </Card> : null}
     {team && rounds.length ? <Card className="card mb-4 gap-0 py-0"><CardTitle className="flex items-center gap-2 bg-primary p-4 text-on-primary"><Icon name="mdi-sword-cross" />Rounds</CardTitle><div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead className="w-[72px] text-right">Round</TableHead><TableHead>Opponent</TableHead><TableHead className="text-right">Series</TableHead><TableHead className="text-right">Points</TableHead></TableRow></TableHeader><TableBody>{rounds.map((row) => <TableRow key={row.matchId}><TableCell className="tnum text-right">{row.playday}</TableCell><TableCell><TeamName team={row.opponent} seasonKey={slug} /></TableCell><TableCell className="tnum whitespace-nowrap text-right">{row.wins}–{row.losses}{row.toPlay ? <span className="text-muted-foreground"> of {row.wins + row.losses + row.toPlay}</span> : null}</TableCell><TableCell className={`tnum whitespace-nowrap text-right ${row.pointsFor > row.pointsAgainst ? "font-bold" : ""}`}>{row.pointsFor}–{row.pointsAgainst}</TableCell></TableRow>)}</TableBody></Table></div></Card> : null}
-    {team ? <TeamRoster captains={roster.captains} members={roster.members} /> : null}
+    {team ? <TeamRoster captains={roster.captains} members={roster.members} series={series} rounds={seasonRow?.round_count ?? 0} round={roundInPlay?.playday ?? null} /> : null}
   </div>;
 }
 

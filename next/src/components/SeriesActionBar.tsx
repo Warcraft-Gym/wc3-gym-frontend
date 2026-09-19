@@ -13,11 +13,8 @@ const ICON: Record<string, string> = { schedule: "mdi-calendar-edit", veto: "mdi
 
 type Step = { step: string; label: string; state: string };
 
-/** The steps of one series, in order, with the next one filled. The full bar carries all
- *  three steps where the series is the subject of the surface; the compact bar carries the
- *  two active steps where a series is one item among many, and reads the steps behind it as
- *  quiet facts. A viewer who may not act reads the facts alone. The bar draws nothing until
- *  the series has loaded, so a tap cannot act on a series the reader never saw. */
+/** The steps of one series, in order, with the next one filled: all three where the series is the subject of the surface, the two active ones where a series is one item among many, and the steps already taken as quiet facts before them.
+ *  A viewer who may not act reads the facts alone, and the bar draws nothing until the series has loaded. */
 export function SeriesActionBar({
   series,
   viewer,
@@ -38,15 +35,13 @@ export function SeriesActionBar({
 
   const live = steps.filter((step) => step.state !== "not needed");
   const active = live.filter((step) => step.state === "next" || step.state === "later");
-  // The full bar keeps a step it has taken as a button, because a booked time and a veto
-  // are both changed from there; the compact bar has room for the two active steps alone,
-  // and a reported series, which has no active step, keeps its result button.
+  // The compact bar has room for the two active steps alone, and a reported series, which has no active step, keeps its result button
   const compact = active.length ? active.slice(0, 2) : live.filter((step) => step.step === "report");
   const shown = !mayAct ? [] : variant === "full" ? live : compact;
-  // The score is drawn beside the series on every surface, so the report step states no fact
-  const facts = live.filter((step) => step.state === "done" && step.step !== "report" && !shown.includes(step));
+  // A step already taken states what it left behind; the score is drawn beside the series on every surface, so the report step states no fact
+  const facts = live.filter((step) => step.state === "done" && step.step !== "report");
 
-  const word = (step: Step) => (step.step === "schedule" && step.state === "done" ? formatDateTime(series.date_time) : step.label);
+  const fact = (step: Step) => (step.step === "schedule" ? formatDateTime(series.date_time) : "Veto done");
 
   const button = (step: Step) => {
     const filled = step.state === "next";
@@ -55,13 +50,13 @@ export function SeriesActionBar({
       return (
         <Button key={step.step} {...look} nativeButton={false} render={<Link href={`/player-series/${series.id}/veto`} />}>
           <Icon name={ICON.veto} />
-          {word(step)}
+          {step.label}
         </Button>
       );
     return (
       <Button key={step.step} {...look} onClick={step.step === "schedule" ? onSchedule : onReport}>
         <Icon name={ICON[step.step]} />
-        {word(step)}
+        {step.label}
       </Button>
     );
   };
@@ -72,7 +67,7 @@ export function SeriesActionBar({
       {facts.map((step) => (
         <span key={step.step} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <Icon name={ICON[step.step]} size={16} />
-          {word(step)}
+          {fact(step)}
         </span>
       ))}
       {shown.map(button)}

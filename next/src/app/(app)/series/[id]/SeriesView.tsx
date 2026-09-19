@@ -201,7 +201,7 @@ export function SeriesView({ id }: { id: string }) {
             <SeriesActionBar
               series={actionRow}
               viewer={viewer}
-              onSchedule={() => scheduleDialog.current?.open(series)}
+              onSchedule={() => actionRow && scheduleDialog.current?.open(actionRow)}
               onReport={() => reportDialog.current?.open(series)}
             />
           </PageHeader>

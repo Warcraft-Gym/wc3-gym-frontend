@@ -14,6 +14,7 @@ import { commonHours, freeLines } from "@/helpers/blocks.mjs";
 import { actsForSeries } from "@/helpers/series-actions.mjs";
 import { pickedInstant, pickerParts, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -35,6 +36,7 @@ export function ScheduleDialog({
   onSaved?: (message: string) => void;
   ref?: React.Ref<ScheduleDialogHandle>;
 }) {
+  const { isAdmin } = useAuth();
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -60,8 +62,8 @@ export function ScheduleDialog({
         id: item.id,
         ...(item.date_time ? pickerParts(item.date_time, userTimezone) : { date: null, time: "" }),
         opponent: (mine ? item.player2 : item.player1) ?? { name: "your opponent" },
-        // A caller the side gate answers nothing for is an admin, who writes the admin route
-        asAdmin: !actsForSeries(item, { id: playerId }),
+        // Only an admin the side gate answers nothing for writes the admin route; a member of a team side keeps the player route
+        asAdmin: isAdmin && !actsForSeries(item, { id: playerId }),
       });
       setFreeTime(null);
       setShow(true);

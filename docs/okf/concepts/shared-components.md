@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T16:30:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T17:15:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -52,7 +52,7 @@ A team is drawn as `{logo} {name}` everywhere, and it links to the team page. Th
 
 # The series action bar
 
-One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result"; the report step reads "Edit result" once the series is scored. It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled, the one after it outlined, and a step already taken reads as a quiet fact before them. The steps of one series, their state and who may act are answered in one place, `next/src/helpers/series-actions.mjs`, which mirrors the API gate: the two players and any member of the team that fields a side. An admin acts too and writes the admin route. Another reader sees the steps without buttons. A series whose rules draw no map from the veto board leaves that step out, a series whose booked time has passed asks for the result next, and a reported series keeps its result button alone. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
+One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result"; the report step reads "Edit result" once the series is scored. It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled and the one after it outlined. In both bars a button keeps the word of its step, and a step already taken reads as a quiet fact before the buttons: the booked time, and "Veto done". The steps of one series, their state and who may act are answered in one place, `next/src/helpers/series-actions.mjs`, which mirrors the API gate: the two players and any member of the team that fields a side. An admin acts too and schedules through the admin route. Another reader sees the steps without buttons. A series whose rules draw no map from the veto board leaves that step out, a series whose booked time has passed asks for the result next, and a reported series keeps its result button alone. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
 
 # Loading
 

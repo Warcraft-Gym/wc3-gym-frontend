@@ -29,11 +29,14 @@ test('a time that has passed asks for the result, veto or no veto', () => {
 test('both picks finish the veto step', () => {
   const vetoed = { ...OPEN, date_time: '2026-09-22T18:00:00Z', player1_pick_map: 'Echo Isles', player2_pick_map: 'Terenas' };
   assert.deepEqual(stateOf(vetoed), { schedule: 'done', veto: 'done', report: 'next' });
+  // a step it has taken keeps its own button word, so no button is named after a date or a state
+  assert.deepEqual(seriesSteps(vetoed, { id: ME }, NOW).steps.map((step) => step.label), ['Schedule', 'Veto maps', 'Report result']);
 });
 
 test('a reported series has no step left to take', () => {
   const scored = { ...OPEN, player1_score: 2, player2_score: 1 };
   assert.equal(seriesSteps(scored, { id: ME }, NOW).next, null);
+  assert.equal(seriesSteps(scored, { id: ME }, NOW).steps.find((step) => step.step === 'report').label, 'Edit result');
   assert.deepEqual(stateOf(scored), { schedule: 'not needed', veto: 'not needed', report: 'done' });
   // a step it did take keeps its state, so the bar still names the time it was played at
   assert.deepEqual(stateOf({ ...scored, date_time: '2026-09-22T18:00:00Z' }),
@@ -60,6 +63,8 @@ test('the two players, a member of a team side and an admin may act', () => {
   // a team side names no player, so the API answers for the member
   assert.equal(actsForSeries({ id: 3, entrant1_id: 8 }, { id: 77 }), true);
   assert.equal(actsForSeries({ id: 3, entrant1_id: 8 }, {}), false);
+  // a fixture series names both players and its team entrants, and a member of a side acts on it
+  assert.equal(actsForSeries({ id: 3, match: { id: 5 }, player1_id: 1, player2_id: 2, entrant1_id: 8 }, { id: 77 }), true);
 });
 
 test('the context label skips a part the series names no value for', () => {

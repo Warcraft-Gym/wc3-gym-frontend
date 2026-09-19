@@ -82,7 +82,14 @@ function RosterCard({
                 <Checkbox
                   checked={allShown}
                   aria-label="Select every player shown"
-                  onCheckedChange={(checked) => onSelectedChange(checked ? shown.map((player) => player.id) : [])}
+                  // the header acts on the rows shown, so a pick the search hides survives a tick or an untick
+                  onCheckedChange={(checked) =>
+                    onSelectedChange(
+                      checked
+                        ? [...new Set([...selected, ...shown.map((player) => player.id)])]
+                        : selected.filter((playerId) => !shown.some((player) => player.id === playerId)),
+                    )
+                  }
                 />
               ),
               enableSorting: false,

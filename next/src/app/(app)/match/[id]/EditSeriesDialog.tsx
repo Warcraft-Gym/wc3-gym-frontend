@@ -105,7 +105,6 @@ export function EditSeriesDialog({
                 <RaceSelect
                   id={`off-race-${n}`}
                   value={series[`player${n}_off_race`] ?? null}
-                  label={`${series[`player${n}`]?.name} played`}
                   onChange={(value) => onPatch({ [`player${n}_off_race`]: value })}
                 />
                 {/* The picker itself offers no empty row, so the race played goes back to the signup race here */}

@@ -114,7 +114,7 @@ export function CreateSeriesDialog({
                       accessorKey: "name",
                       header: "Name",
                       cell: ({ row }) => (
-                        <PlayerName player={row.original} race={row.original.signup_race} plain>
+                        <PlayerName player={row.original} race={row.original.signup_race}>
                           {side.isOut(row.original) ? <Badge variant="outline" className="text-secondary border-secondary">Out</Badge> : null}
                         </PlayerName>
                       ),

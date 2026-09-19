@@ -79,7 +79,7 @@ export function ProposeSeriesDialog({
     proposed.some((other) => other.key !== row.key && selected.includes(other.key) && other[`player${n}`]?.id === row[`player${n}`]?.id);
 
   const nameCell = (row: Row, n: 1 | 2) => (
-    <PlayerName player={row[`player${n}`]} race={row[`player${n}_race`]} plain>
+    <PlayerName player={row[`player${n}`]} race={row[`player${n}_race`]}>
       {hasSeries(row[`player${n}`]?.id) ? <Badge variant="outline" className="text-secondary border-secondary">Has series</Badge> : null}
       {pickedElsewhere(row, n) ? <Badge variant="outline" className="text-warning border-warning">Already picked</Badge> : null}
     </PlayerName>
@@ -171,7 +171,14 @@ export function ProposeSeriesDialog({
                       <Checkbox
                         checked={allShown}
                         aria-label="Select every pair shown"
-                        onCheckedChange={(checked) => onSelectedChange(checked ? shown.map((row) => row.key) : [])}
+                        // the header acts on the rows shown, so a pick the search hides survives a tick or an untick
+                        onCheckedChange={(checked) =>
+                          onSelectedChange(
+                            checked
+                              ? [...new Set([...selected, ...shown.map((row) => row.key)])]
+                              : selected.filter((key) => !shown.some((row) => row.key === key)),
+                          )
+                        }
                       />
                     ),
                     enableSorting: false,

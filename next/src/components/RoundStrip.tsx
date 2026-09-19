@@ -101,7 +101,7 @@ export function RoundStrip({
               {mark.series.length ? (
                 mark.series.map((one, at) => {
                   // the payload of a series carries the opponent's ladder stats on some surfaces only
-                  const mmr = one.opponent ? getW3CMMR(one.opponent, undefined, one.opponentRace ?? null) : null;
+                  const mmr = one.opponent ? getW3CMMR(one.opponent, undefined, one.opponentRace ?? undefined) : null;
                   return (
                     <span key={at} className="block">
                       <span className="block">{seriesHead_(mark.round, one)}</span>

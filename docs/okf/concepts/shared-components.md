@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T16:20:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T14:35:31Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -100,6 +100,7 @@ The roster of one team in one event is one card: the captains, then the members,
 - The members run by MMR, highest first, and a player with no MMR last, because the list carries no sort control. The MMR head is the W3C form with the synced time in its tooltip.
 - A long name truncates and carries the full name in its title; the MMR never truncates.
 - A captain shows his race, his MMR and his strip only when he plays in that event, and reads "Not playing this season" across those columns when he does not. The race comes from the player's signup race for that event, so a player with none shows no race.
+- A captain reads under Captains alone, so the members list and the member count leave his member row out.
 - A page that edits the roster fills `renderCaptains` and `renderMembers` with its own controls, and that group draws its own block under the group name instead of the aligned list.
 
 # VetoBoard

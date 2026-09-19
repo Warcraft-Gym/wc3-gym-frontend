@@ -49,10 +49,15 @@ export function TeamRoster({
   renderCaptains?: (args: { captains: Player[] }) => React.ReactNode;
   renderMembers?: (args: { members: Player[] }) => React.ReactNode;
 }) {
-  const mmrOf = (player: Player) => getW3CMMR(player, undefined, player.signup_race ?? null) as number | null;
+  const mmrOf = (player: Player) => getW3CMMR(player, undefined, player.signup_race ?? undefined) as number | null;
   // a captain is rostered on his member row when he plays, so the row carries his race and MMR
   const rowOf = (player: Player) => members.find((member) => member.id === player.id) ?? player;
-  const sorted = [...members].sort((a, b) => (mmrOf(b) ?? -1) - (mmrOf(a) ?? -1));
+  // a captain reads under Captains only, so the Members list leaves his member row out
+  const sorted = members
+    .filter((member) => !captains.some((captain) => captain.id === member.id))
+    .sort((a, b) => (mmrOf(b) ?? -1) - (mmrOf(a) ?? -1));
+  // the head counts the rows the card lists: a page with its own member list draws every member
+  const memberCount = renderMembers ? members.length : sorted.length;
   const strip = !!series && rounds > 0;
   // the card is as synced as its least synced player, the way every other W3C line reads
   const synced = agoFromIso([...captains, ...members].map((player: Row) => player.w3c_synced_at).filter(Boolean).sort()[0] ?? null);
@@ -130,7 +135,7 @@ export function TeamRoster({
         <Icon name="mdi-account-group" />
         <span>Roster</span>
         <span className="tnum ms-auto text-sm font-normal">
-          {captains.length} captain{captains.length === 1 ? "" : "s"}, {members.length} member{members.length === 1 ? "" : "s"}
+          {captains.length} captain{captains.length === 1 ? "" : "s"}, {memberCount} member{memberCount === 1 ? "" : "s"}
         </span>
       </CardTitle>
       {captainsActions}
@@ -153,7 +158,7 @@ export function TeamRoster({
           </>
         ) : (
           <>
-            {head("Members", String(members.length), false)}
+            {head("Members", String(memberCount), false)}
             {sorted.length ? sorted.map(line) : empty(noMembers)}
           </>
         )}

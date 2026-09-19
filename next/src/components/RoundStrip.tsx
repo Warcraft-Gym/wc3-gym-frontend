@@ -100,7 +100,7 @@ export function RoundStrip({
             <TooltipContent className="max-w-none flex-col items-start gap-1">
               {mark.series.length ? (
                 mark.series.map((one, at) => {
-                  // the payload of a series carries the opponent's ladder stats on some surfaces only
+                  // the line draws the MMR itself, on the race this series names, not the signup race
                   const mmr = one.opponent ? getW3CMMR(one.opponent, undefined, one.opponentRace ?? undefined) : null;
                   return (
                     <span key={at} className="block">
@@ -108,8 +108,7 @@ export function RoundStrip({
                       {one.opponent ? (
                         <span className="flex items-center gap-1.5">
                           vs
-                          <PlayerName player={one.opponent} race={one.opponentRace ?? undefined} plain />
-                          {mmr != null ? <span className="tnum">{mmr}</span> : null}
+                          <PlayerName player={one.opponent} race={one.opponentRace ?? undefined} mmr={mmr ?? undefined} plain />
                         </span>
                       ) : null}
                     </span>

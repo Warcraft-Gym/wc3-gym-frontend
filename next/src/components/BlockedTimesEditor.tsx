@@ -146,9 +146,9 @@ export function BlockedTimesEditor({
     </div>
   );
 
-  // The label wraps above its line on a phone
+  // The label wraps above its line on a phone, and the week lines below share this label column
   const line = <R extends Row>(row: R, fallback: string, text: string, onEdit: () => void, onDelete: () => void) => (
-    <div key={row.key} className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-border py-1 text-sm min-[601px]:grid-cols-[minmax(5rem,8rem)_1fr_auto]">
+    <div key={row.key} className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-border py-2 text-sm last:border-b-0 min-[601px]:grid-cols-[minmax(5rem,8rem)_1fr_auto]">
       <span className="text-muted-foreground max-[600px]:col-span-full">{row.label || fallback}</span>
       <span>{text}</span>
       <span className="flex gap-1">
@@ -246,10 +246,10 @@ export function BlockedTimesEditor({
       </div>
 
       {!isLoading && !errorMessage ? (
-        <div className="mt-6">
-          <h3 className="mb-2 text-base font-medium">What a round leaves open</h3>
+        <div className="mt-6 border-t border-border pt-4">
+          <h3 className="mb-2">What a round leaves open</h3>
           {week.map((day: { day: number; name: string; line: string }) => (
-            <div key={day.day} className="grid grid-cols-[3rem_1fr] gap-2 py-0.5 text-sm">
+            <div key={day.day} className="grid grid-cols-[3rem_1fr] gap-3 py-1 text-sm min-[601px]:grid-cols-[minmax(5rem,8rem)_1fr]">
               <span className="text-muted-foreground">{day.name}</span>
               <span>{day.line}</span>
             </div>

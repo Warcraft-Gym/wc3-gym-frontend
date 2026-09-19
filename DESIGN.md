@@ -62,7 +62,7 @@ Status colours mean a state of the app. Never use one as a chart series.
 | `info` | `#2F6690` | `#7FB0DA` | A note, the "In progress" chip. |
 | `success` | `#2A6B36` | `#5FA870` | A saved action, the "Check in" button. |
 
-In dark, `on-error`, `on-info` and `on-success` are ink.
+In dark, `on-error`, `on-info`, `on-success` and `on-warning` are ink.
 
 ### Results
 
@@ -222,7 +222,7 @@ These parts of the app break a rule above today.
 
 - `index.html` still loads Bootstrap 4.5 from a CDN. `base.css` overrides its link colour, its `code` colour and its hover colour on filled buttons.
 - Page titles use three sizes. Most pages use a bare `<h1>`. The event, events, league, leagues, season, seasons, teams and KOTH pages use `text-h5 text-md-h3`.
-- In light, `win`, `loss`, `draw`, `error`, `info`, `success` and `warning` name no `on-*` ink. In dark, `warning` names none. Vuetify picks the text colour on those fills.
+- In light, `win`, `loss`, `draw`, `error`, `info`, `success` and `warning` name no `on-*` ink. Vuetify picks the text colour on those fills.
 - Status colours mark things that are not app states. The fantasy week rank chips use `success`, `info` and `warning`. The MMR chips on the match page use `info`. Bench points use `warning`.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.

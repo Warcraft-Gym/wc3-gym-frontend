@@ -27,9 +27,9 @@ const features = tableFeatures({
 
 const ALL_ROWS = Number.MAX_SAFE_INTEGER;
 
-/** The port of `v-data-table`: sort, page and column visibility over one column list.
- *  `rowCount` puts the table in server mode, as `v-data-table-server` was. `expand` draws a
- *  chevron column and one detail row under the row it opens, as `show-expand` did. */
+/** Sort, page and column visibility over one column list.
+ *  `rowCount` puts the table in server mode: the caller holds the page and reads it.
+ *  `expand` draws a chevron column and one detail row under the row it opens. */
 export function DataTable<T extends RowData>({
   columns,
   data,
@@ -40,6 +40,8 @@ export function DataTable<T extends RowData>({
   rowCount,
   sorting,
   onSortingChange,
+  mustSort,
+  mobileStack,
   columnVisibility,
   page,
   onPageChange,
@@ -52,12 +54,14 @@ export function DataTable<T extends RowData>({
   columns: ColumnDef<typeof features, T>[];
   data: T[];
   empty?: React.ReactNode;
-  pageSize?: number; // -1 shows every row the server answered, as the 'All' option did
+  pageSize?: number; // -1 shows every row the server answered
   pageSizeOptions?: { value: number; title: string }[];
   onPageSizeChange?: (pageSize: number) => void;
   rowCount?: number;
   sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
+  mustSort?: boolean; // a third click on the sorted column keeps the sort, so the read always names one
+  mobileStack?: boolean; // below the sm breakpoint every row reads as a block of label and value lines
   columnVisibility?: ColumnVisibilityState;
   page?: number; // the page the caller holds, from 0; server mode reads it back through onPageChange
   onPageChange?: (page: number) => void;
@@ -74,6 +78,7 @@ export function DataTable<T extends RowData>({
     features,
     data,
     columns,
+    enableSortingRemoval: !mustSort,
     ...(rowId ? { getRowId: (row: T) => rowId(row) } : {}),
     state: {
       sorting: sorting ?? ownSorting,
@@ -122,7 +127,7 @@ export function DataTable<T extends RowData>({
   return (
     <>
       <div className={cn("table-scroll overflow-x-auto", className)}>
-        <table className="w-full caption-bottom text-sm">
+        <table className={cn("w-full caption-bottom text-sm", mobileStack && "table-stack")}>
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id}>
@@ -171,7 +176,7 @@ export function DataTable<T extends RowData>({
                 return (
                   <Fragment key={row.id}>
                     <TableRow
-                      // The whole row opens the detail, as `expand-on-click` did.
+                      // The whole row opens the detail.
                       className={cn(expand && "cursor-pointer")}
                       onClick={expand ? () => toggle(row.id, row.original) : undefined}
                     >
@@ -193,8 +198,16 @@ export function DataTable<T extends RowData>({
                         </TableCell>
                       ) : null}
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          <table.FlexRender cell={cell} />
+                        // a stacked row reads the column title off the cell, where the head row is hidden
+                        <TableCell key={cell.id} data-label={typeof cell.column.columnDef.header === "string" ? cell.column.columnDef.header : undefined}>
+                          {/* a stacked cell wraps its value, so a cell with two lines stays one flex item next to the label */}
+                          {mobileStack ? (
+                            <div>
+                              <table.FlexRender cell={cell} />
+                            </div>
+                          ) : (
+                            <table.FlexRender cell={cell} />
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -213,11 +226,11 @@ export function DataTable<T extends RowData>({
         </table>
       </div>
       {pageSize == null ? null : (
-        /* The footer of `v-data-table`: the page size, the row range and the two arrows. */
+        /* The footer: the page size, the row range and the two arrows. */
         <div className="flex items-center justify-end gap-4 px-4 py-2 text-sm text-muted-foreground">
           {pageSizeOptions ? (
             <span className="flex items-center gap-2">
-              Items per page
+              Items per page:
               <Select value={pageSize} onValueChange={(value) => onPageSizeChange?.(value as number)}>
                 <SelectTrigger size="sm" aria-label="Items per page" className="w-[84px]">
                   <SelectValue>{(chosen: number) => pageSizeOptions.find((option) => option.value === chosen)?.title ?? String(chosen)}</SelectValue>

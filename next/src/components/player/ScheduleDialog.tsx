@@ -57,8 +57,7 @@ export function ScheduleDialog({
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [series, setSeries] = useState<Picked>({});
-  // The round window and the hours both players have open; one read per opening.
-  // undefined while the read is in flight, null when it failed, the answer once it is in
+  // one read per opening: undefined in flight, null failed, the answer once in
   const [freeTime, setFreeTime] = useState<Row | null | undefined>(undefined);
   const [view, setView] = useState<"calendar" | "tracks">("calendar");
   const [booked, setBooked] = useState<DateTime | null>(null);
@@ -104,7 +103,9 @@ export function ScheduleDialog({
   // One entry a day of the window, each with its half-hour cells; both views draw these
   const grid = (freeTime ? daysOf(freeTime.start, freeTime.end, viewer) : []).map((day) => {
     const cells = cellsOf(day, blocked);
-    return { day, cells, first: cells.findIndex((cell) => !cell.outside) };
+    // the tab stop of a day is its picked cell, or its first cell inside the window
+    const picked = cells.findIndex((cell) => cell.at.toMillis() === pickedAt);
+    return { day, cells, first: picked >= 0 ? picked : cells.findIndex((cell) => !cell.outside) };
   });
   const rows = grid.reduce((most, one) => Math.max(most, one.cells.length), 0);
   const inBlocked = isBlocked(chosen, blocked);
@@ -263,7 +264,7 @@ export function ScheduleDialog({
         <span className="text-sm">
           {clock ? (
             <>
-              <span className={cn(clock.differs && "text-warning")}>{clock.date}</span>
+              <span className={cn(clock.differs && cn("rounded px-1", toneClass("warning")))}>{clock.date}</span>
               <span className="ml-2 font-medium">{clock.time}</span>
             </>
           ) : (

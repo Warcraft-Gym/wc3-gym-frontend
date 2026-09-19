@@ -3,7 +3,7 @@ type: Decision
 title: One player name standard
 description: A player reads flag, name, race, MMR, in that order, on every page and on every Discord card, through one component.
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T14:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:30:54Z }
 sources:
   - id: source
     resource: ../../../next/src/components/PlayerName.tsx

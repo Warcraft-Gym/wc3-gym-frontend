@@ -1,10 +1,10 @@
 ---
 type: Domain Concept
 title: Shared components
-description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, and how the veto board knows its side.
+description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, how the veto board knows its side, how a team name and the series action bar are drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T14:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:30:54Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md

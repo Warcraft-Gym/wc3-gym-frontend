@@ -63,6 +63,8 @@ export function SeriesBox({
   const player = (side: number) => shownPlayer(series, side, hidden);
   const team = (side: number) => shownTeam(series, side, hidden);
   const race = (side: number) => series[`player${side}_race`] || undefined;
+  // The stage row carries the rating of the race it names; a row without the field lets the line read its own
+  const mmr = (side: number) => series[`player${side}_mmr`];
   const score = (side: number) => (hidden ? "" : series[`player${side}_score`] ?? "");
   // A side with no feeder and no entrant can never fill: the other side passes through
   const empty = (side: number) => (isByeSide(series, side) ? "Bye" : "To be decided");
@@ -74,7 +76,7 @@ export function SeriesBox({
     const named = sideRoster(series, side);
     if (named.length) return named.map((one: Row) => ({ player: one, race: one.signup_race }));
     const drafted = player(side);
-    if (drafted) return [{ player: drafted, race: race(side) }];
+    if (drafted) return [{ player: drafted, race: race(side), mmr: mmr(side) }];
     if (series.pick_rule) return [];
     return rosters[series[`entrant${side}_id`]] || [];
   };
@@ -110,7 +112,7 @@ export function SeriesBox({
               {roster(side).length ? (
                 <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
                   {roster(side).map((seat) => (
-                    <PlayerName key={seat.player.id} player={seat.player} race={seat.race || undefined} plain={!readonly} />
+                    <PlayerName key={seat.player.id} player={seat.player} race={seat.race || undefined} mmr={seat.mmr} plain={!readonly} />
                   ))}
                 </span>
               ) : series.pick_rule ? (
@@ -118,7 +120,7 @@ export function SeriesBox({
               ) : null}
             </div>
           ) : player(side) ? (
-            <PlayerName player={player(side)} race={race(side)} plain={!readonly} />
+            <PlayerName player={player(side)} race={race(side)} mmr={mmr(side)} plain={!readonly} />
           ) : (
             <span className="text-[0.8125rem] text-muted-foreground">{empty(side)}</span>
           )}

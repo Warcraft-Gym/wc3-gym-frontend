@@ -2,6 +2,7 @@
 
 ## 2026-09-19
 
+* **Update**: a stage series row names the MMR of the race it plays, and the payloads that name a team name its logo. The shared-component concept states how `SeriesBox` fills the player line, which payloads carry `team_icon_url`, and which team lines are plain.
 * **Update**: one component draws a team name and one draws a round strip, and the team roster is one aligned list. The shared-component concept states the three, and the teams and players page concepts state the roster, the season team roster and the round cards.
 * **Update**: a round is answered with "Check in" and "Sit out". The home, event, player and round-grid page concepts state the words.
 * **Update**: the Report Result dialog folds the veto under a disclosure row and warns in a heading; the fixtures and series page and the veto decision state the row, the wording and the one dialog width.

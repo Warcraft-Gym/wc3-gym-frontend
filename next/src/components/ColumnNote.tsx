@@ -31,6 +31,7 @@ export function ColumnNote({
             // a tap opens it as well as a hover, so the note is reachable on a phone
             <button
               type="button"
+              aria-label={note}
               className="note-icon ml-1 cursor-help opacity-60 hover:opacity-100"
               onClick={(event) => {
                 event.stopPropagation();

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,12 @@ export function MapsView() {
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
   // the picked file while one is picked, else the picture the map already has
   const picturePreview = useMemo(() => (pictureFile ? URL.createObjectURL(pictureFile) : selectedMap?.image), [pictureFile, selectedMap?.image]);
+  // the file input holds the picked file itself, so clearing the state clears the input as well
+  const pictureInput = useRef<HTMLInputElement>(null);
+  const clearPicture = () => {
+    setPictureFile(null);
+    if (pictureInput.current) pictureInput.current.value = "";
+  };
 
   // Delete dialog state
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
@@ -255,7 +261,14 @@ export function MapsView() {
                   {picturePreview ? <img src={picturePreview} alt={selectedMap.name} onError={hideMissingImage} className="block h-full w-full object-cover" /> : null}
                 </span>
                 <Field className="flex-1" label="Picture" htmlFor="map-picture">
-                  <Input id="map-picture" type="file" accept="image/png,image/jpeg" onChange={(e) => setPictureFile(e.target.files?.[0] ?? null)} />
+                  <div className="flex items-center gap-1">
+                    <Input ref={pictureInput} id="map-picture" type="file" accept="image/png,image/jpeg" onChange={(e) => setPictureFile(e.target.files?.[0] ?? null)} />
+                    {pictureFile ? (
+                      <Button variant="ghost" size="icon-sm" aria-label="Clear the picture" onClick={clearPicture}>
+                        <Icon name="mdi-close" />
+                      </Button>
+                    ) : null}
+                  </div>
                 </Field>
               </div>
             </div>

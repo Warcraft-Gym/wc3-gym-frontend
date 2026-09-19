@@ -167,7 +167,8 @@ export function PublicSignupView() {
           ) : state === "joined" && !editing ? (
             <>
               <Note type="success" className="mb-4">
-                <strong>You are signed up</strong> for {seasonName}.
+                {/* the name and its stop stay one text run, so nothing can break the line between them */}
+                <strong>You are signed up</strong> {`for ${seasonName}.`}
               </Note>
               {entry ? (
                 <dl className="mb-4 grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-2 [&_dd]:flex [&_dd]:items-center [&_dd]:gap-1.5 [&_dt]:text-muted-foreground">

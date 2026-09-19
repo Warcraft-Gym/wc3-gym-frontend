@@ -6,6 +6,10 @@ import {
   createSortedRowModel,
   rowPaginationFeature,
   rowSortingFeature,
+  sortFn_alphanumeric,
+  sortFn_basic,
+  sortFn_datetime,
+  sortFn_text,
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
@@ -27,6 +31,8 @@ const features = tableFeatures({
   rowPaginationFeature,
   paginatedRowModel: createPaginatedRowModel(),
   columnVisibilityFeature,
+  // The names `sortFn: 'auto'` picks from: a text column sorts case-insensitively, not by code unit.
+  sortFns: { alphanumeric: sortFn_alphanumeric, basic: sortFn_basic, datetime: sortFn_datetime, text: sortFn_text },
   // A type-only slot: it declares the type of columnDef.meta and is stripped at runtime.
   columnMeta: {} as ColumnLabel,
 });

@@ -37,9 +37,10 @@ export function Combobox<T extends ComboboxItem>({
   const chosen = items.find((i) => i.value === value) ?? null;
   return (
     <Popover open={open} onOpenChange={setOpen}>
+      {/* an id names the Field label that titles this control, so the aria-label stays for the rest */}
       <PopoverTrigger
         render={
-          <Button id={id} variant="outline" role="combobox" aria-label={label} disabled={disabled} className={cn("w-full justify-between font-normal", className)}>
+          <Button id={id} variant="outline" role="combobox" aria-label={id ? undefined : label} disabled={disabled} className={cn("w-full justify-between font-normal", className)}>
             <span className="flex items-center gap-2 truncate">{chosen ? (row ? row(chosen) : chosen.title) : (label ?? placeholder)}</span>
             <Icon name="mdi-chevron-down" className="opacity-60" />
           </Button>

@@ -249,7 +249,8 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
         {seasonLabel ? <div className="mt-1 text-muted-foreground">{seasonLabel}</div> : null}
       </div>
 
-      <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
+      {/* the season list is loaded by the guard, so a null id here is a slug that names no season */}
+      <StatusAlert modelValue={errorMessage ?? (seasonId ? null : "Failed to load team. Please try again later.")} onClose={() => setErrorMessage(null)} />
 
       {/* Team Overview */}
       {team ? (

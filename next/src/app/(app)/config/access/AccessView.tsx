@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/Combobox";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerName } from "@/components/PlayerName";
@@ -45,6 +46,11 @@ export function AccessView() {
 
   // An admin is usually a player, so the name carries the flag and the link the rest of the app gives it
   const playerOf = (row: Admin) => players.find((p) => String(p.discordId) === String(row.discord_id));
+
+  // The pick list: a name to read, the Discord tag under it, and the id the write sends
+  const playerItems = players
+    .filter((player) => player.discordId)
+    .map((player) => ({ value: String(player.discordId), title: player.name, tag: player.discordTag || String(player.discordId) }));
 
   // env rows are granted outside the app, and an admin cannot remove themself
   const canRemove = (row: Admin) => row.source === "app" && row.discord_id !== me?.discord_id;
@@ -195,14 +201,15 @@ export function AccessView() {
           <StatusAlert modelValue={dialogError} className="mx-4 my-2" onClose={() => setDialogError(null)} />
 
           <div className="p-4">
-            {/* The port of the free-text combobox: a native list, so a Discord ID nobody signed up with still goes in */}
+            {/* The port of the free-text combobox: the list carries the names, the field below the raw id */}
             <Field label="User" hint="Pick a user or type a Discord ID" htmlFor="admin-user">
-              <Input id="admin-user" list="admin-players" value={picked} onChange={(event) => setPicked(event.target.value)} />
-              <datalist id="admin-players">
-                {players.map((player) => (
-                  <option key={player.id} value={String(player.discordId ?? "")} label={player.name} />
-                ))}
-              </datalist>
+              <Combobox label="Pick a user" items={playerItems} value={picked || null} onChange={(value) => setPicked(value ?? "")} row={(item) => (
+                <span className="flex flex-col text-left">
+                  <span>{item.title}</span>
+                  <span className="text-xs text-muted-foreground">{item.tag}</span>
+                </span>
+              )} />
+              <Input id="admin-user" value={picked} placeholder="Discord ID" onChange={(event) => setPicked(event.target.value)} />
             </Field>
           </div>
 

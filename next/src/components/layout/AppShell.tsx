@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +34,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { slugOf } = useSeason();
   const { themeMode, activeTheme, setThemeMode } = useTheme();
   const [drawer, setDrawer] = useState(false);
+  // useAuth answers the signed-out server snapshot until hydration, so the account slot waits for it
+  const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
   // view-as: an admin sees the app as a lower role; the legacy token session cannot
   const canViewAs = me?.actual_role === "admin" && !user;
@@ -129,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         ) : null}
         {/* the session menu sits outside the link tree, so a meta.nav route keeps it */}
-        {me ? (
+        {hydrated && me ? (
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -161,7 +163,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </DropdownMenu>
         ) : null}
         {/* a signed-out visitor lands on the public pages; this is his way in */}
-        {!me ? <Button variant="ghost" nativeButton={false} render={<Link href="/login" />}>Sign in</Button> : null}
+        {hydrated && !me ? <Button variant="ghost" nativeButton={false} render={<Link href="/login" />}>Sign in</Button> : null}
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="Theme"><Icon name={themeIcon} /></Button>} />
           <DropdownMenuContent align="end">

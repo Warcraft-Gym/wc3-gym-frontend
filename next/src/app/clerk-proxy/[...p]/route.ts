@@ -8,6 +8,8 @@ async function handler(request: Request, ctx: { params: Promise<{ p: string[] }>
 
   const headers = new Headers(request.headers);
   headers.delete("host");
+  // Node fetch unpacks a compressed answer, so a forwarded content-encoding would mislabel the body
+  headers.delete("accept-encoding");
   headers.set("Clerk-Proxy-Url", process.env.NEXT_PUBLIC_CLERK_PROXY_URL ?? "");
   headers.set("Clerk-Secret-Key", process.env.CLERK_SECRET_KEY ?? "");
   headers.set("X-Forwarded-For", request.headers.get("x-forwarded-for") || "");

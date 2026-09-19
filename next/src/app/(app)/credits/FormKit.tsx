@@ -57,7 +57,7 @@ export function FormKit() {
 
       <section>
         <h3>CountrySelect</h3>
-        <CountrySelect id="kit-country" value={country} onChange={setCountry} />
+        <CountrySelect value={country} onChange={setCountry} />
       </section>
 
       <section>

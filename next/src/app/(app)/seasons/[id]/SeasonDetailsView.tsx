@@ -129,9 +129,10 @@ export function SeasonDetailsView({ id }: { id: string }) {
   };
 
   useEffect(() => {
-    if (!seasonId) return;
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
+      // the season list is loaded by the guard, so a null id here is a slug that names no season
+      if (!seasonId) return setIsLoading(false);
       setIsLoading(true);
       try {
         const hashRound = roundFromHash();
@@ -289,6 +290,9 @@ export function SeasonDetailsView({ id }: { id: string }) {
         </div>
       ) : null}
 
+      {/* the season list is loaded by the guard, so a null id here is a slug that names no season */}
+      <StatusAlert modelValue={seasonId ? null : "Failed to load the season. Please try again later."} closable={false} />
+
       {/* The season is one event of the GNL league, so it wears the shared event header */}
       <EventHeader event={season} />
       <div className="mt-3 mb-4 flex flex-wrap gap-2">
@@ -396,7 +400,8 @@ export function SeasonDetailsView({ id }: { id: string }) {
           {matches.map((match) => (
             <Card key={match.id} className="card gap-0 py-0 transition-colors hover:border-primary">
               <CardContent className="p-4">
-                <div className="flex items-center gap-2">
+                {/* the whole card body opens the match, as the season team cards below do */}
+                <Link href={`/match/${match.id}`} className="flex items-center gap-2 text-inherit no-underline">
                   {[
                     { team: match.team1, score: match.team1_score, other: match.team2_score },
                     null,
@@ -407,9 +412,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
                         <span className="mx-auto block size-20 overflow-hidden rounded-full border-[3px] border-primary/20 max-[959.98px]:size-15">
                           <img className="size-full object-cover" src={teamImageUrl(side.team)} alt="" onError={showDefaultTeamImage} />
                         </span>
-                        <Link href={`/match/${match.id}`} className="mt-3 block font-semibold text-inherit no-underline hover:underline">
-                          {side.team.name}
-                        </Link>
+                        <div className="mt-3 font-semibold">{side.team.name}</div>
                         <Badge className={`tnum mt-2 min-w-15 justify-center text-2xl ${scoreClass(side.score, side.other)}`}>{side.score}</Badge>
                       </div>
                     ) : (
@@ -419,7 +422,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
                       </div>
                     ),
                   )}
-                </div>
+                </Link>
 
                 <Separator className="my-3" />
                 <div className="flex items-center gap-2">

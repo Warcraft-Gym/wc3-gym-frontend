@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 
-import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, groupProblem, stagesPayload, stepProblem, stepsFor } from './event-wizard.mjs';
+import { blankForm, createPayload, divisionsPayload, eventPayload, gameRules, groupProblem, readStagesPayload, stagesPayload, stepProblem, stepsFor } from './event-wizard.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -39,7 +39,9 @@ test('the new event fields ride along, and a blank number is nothing', () => {
   assert.equal(body.mmr_max, null);
   assert.equal(body.min_games, null);
   assert.equal(body.checkin_days, null);  // check-in is off, so its window is not sent
-  assert.ok(!('min_games_seasons' in body));  // the API has no such field
+  assert.equal(body.min_games_seasons, null);  // nothing counts every W3C season
+  assert.equal(body.early_checkin, false);
+  assert.equal(body.round_end_zone, null);
 });
 
 test('one entry per race starts off and sends its switch', () => {
@@ -48,9 +50,47 @@ test('one entry per race starts off and sends its switch', () => {
 });
 
 test('check-in sends its window and a games floor sends its count', () => {
-  const body = eventPayload({ ...blankForm(), checkin_enabled: true, checkin_days: 2, min_games: '20' });
+  const body = eventPayload({ ...blankForm(), checkin_enabled: true, checkin_days: 2, min_games: '20', min_games_seasons: '2' });
   assert.equal(body.checkin_days, 2);
   assert.equal(body.min_games, 20);
+  assert.equal(body.min_games_seasons, 2);
+});
+
+test('early check-in rides the check-in switch, and a zone is trimmed or nothing', () => {
+  const on = eventPayload({ ...blankForm(), checkin_enabled: true, early_checkin: true, round_end_zone: ' Europe/Berlin ' });
+  assert.equal(on.early_checkin, true);
+  assert.equal(on.round_end_zone, 'Europe/Berlin');
+  // check-in off carries no early check-in, as it carries no window
+  assert.equal(eventPayload({ ...blankForm(), checkin_enabled: false, early_checkin: true }).early_checkin, false);
+  assert.equal(eventPayload({ ...blankForm(), round_end_zone: '' }).round_end_zone, null);
+});
+
+test('the entrants step counts the games over one W3C season or more', () => {
+  assert.equal(stepProblem({ ...blankForm(), min_games_seasons: '2' }, 'entrants'), null);
+  assert.equal(stepProblem({ ...blankForm(), min_games_seasons: '' }, 'entrants'), null);
+  assert.match(stepProblem({ ...blankForm(), min_games_seasons: '0' }, 'entrants'), /one W3C season or more/);
+});
+
+test('a stage write carries back what the read gave, and the MMR limit is a captain draft setting', () => {
+  const read = [
+    { id: 7, position: 1, format: 'gnl', name: 'Season', best_of: 3, map_rules: 'veto,loser,loser', auto_advance: false, seeds_locked_at: '2026-09-01T00:00:00Z', max_mmr_difference: 100 },
+    { id: 8, position: 2, format: 'single_elimination', best_of: 5, max_mmr_difference: null },
+  ];
+  const [draft, bracket] = readStagesPayload(read, { 7: '150' });
+  assert.equal(draft.max_mmr_difference, 150);
+  assert.equal(draft.name, 'Season');
+  assert.equal(draft.map_rules, 'veto,loser,loser');
+  assert.equal(draft.best_of, 3);
+  // the id, the position and the seed lock are read-only, so the write never carries them
+  for (const field of ['id', 'position', 'seeds_locked_at']) assert.ok(!(field in draft), field);
+  // every other format refuses the field, so it goes out as nothing
+  assert.equal(bracket.max_mmr_difference, null);
+  assert.equal(bracket.best_of, 5);
+  // a cleared box writes nothing, which a captain draft reads as its default
+  assert.equal(readStagesPayload(read, { 7: '' })[0].max_mmr_difference, null);
+  // an untouched stage carries the value it was read with
+  assert.equal(readStagesPayload(read, {})[0].max_mmr_difference, 100);
+  assert.deepEqual(readStagesPayload(null), []);
 });
 
 test('a map rule writes one word per game, and a veto runs once for the series', () => {

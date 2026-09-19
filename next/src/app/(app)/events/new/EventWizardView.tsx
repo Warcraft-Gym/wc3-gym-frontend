@@ -2,6 +2,7 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/Combobox";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
@@ -14,8 +15,8 @@ import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import {
-  dateRange, dateText, FORMATS, MAP_RULES, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND,
-  SERIES_PER_FIXTURE, seriesPerEntrant, SIGNUP_POLICIES, titleOf,
+  dateRange, dateText, FORMATS, MAP_RULES, NO_ROUND_END_ZONE, ROUND_END_ZONES, SCHEDULING_MODES,
+  SERIES_PER_ENTRANT_PER_ROUND, SERIES_PER_FIXTURE, seriesPerEntrant, SIGNUP_POLICIES, titleOf,
 } from "@/helpers/event-labels.mjs";
 import {
   BEST_OF, blankForm, blankStage, createPayload, divisionsPayload, eventPayload,
@@ -116,6 +117,7 @@ export function EventWizardView() {
           { k: "Part of", v: parentEvents.find((e) => e.id === it.parent_id)?.name || "Nothing" },
           { k: "Starts", v: dateRange_({ starts_at: body.starts_at, start_date: body.start_date }) || "No date" },
           { k: "Ends", v: body.end_date ? dateText(body.end_date) : "No end date" },
+          { k: "Round end zone", v: body.round_end_zone || NO_ROUND_END_ZONE },
           { k: "Region", v: orNone(it.region) },
           { k: "Description", v: orNone(it.description) },
           { k: "Page link", v: orNone(it.page_url) },
@@ -132,7 +134,9 @@ export function EventWizardView() {
           { k: "Entrant cap", v: orNone(it.entrant_cap) },
           { k: "MMR maximum", v: orNone(it.mmr_max) },
           { k: "Recent games at least", v: orNone(it.min_games) },
+          { k: "Count the games over", v: body.min_games_seasons ? `${body.min_games_seasons} W3C seasons` : "Every W3C season" },
           { k: "Check-in", v: it.checkin_enabled ? `${it.checkin_days} days before a round` : "Off" },
+          ...(it.checkin_enabled ? [{ k: "Early check-in", v: body.early_checkin ? "On" : "Off" }] : []),
           { k: "One entry per race", v: it.multi_entry ? "On" : "Off" },
         ],
       },
@@ -252,6 +256,16 @@ export function EventWizardView() {
             <div className={MD4}>
               <SimpleTimePicker modelValue={form.start_time} label="Start time" onUpdateModelValue={(start_time) => set({ start_time })} />
             </div>
+            <Field className={MD6} label="Round end zone" hint="A round ends at midnight in this zone." htmlFor="wizard-round-end-zone">
+              <Combobox
+                id="wizard-round-end-zone"
+                items={ROUND_END_ZONES}
+                value={form.round_end_zone || null}
+                placeholder={NO_ROUND_END_ZONE}
+                onChange={(round_end_zone) => set({ round_end_zone: round_end_zone || "" })}
+                className={form.round_end_zone ? undefined : "text-muted-foreground"}
+              />
+            </Field>
             <Field className={FULL} label="Description" htmlFor="wizard-description">
               <Textarea id="wizard-description" rows={2} value={form.description} onChange={(e) => set({ description: e.target.value })} />
             </Field>
@@ -268,12 +282,31 @@ export function EventWizardView() {
             <TextField className={MD4} type="number" label="Entrant cap" placeholder="No cap" value={form.entrant_cap} onChange={(e) => set({ entrant_cap: e.target.value })} />
             <TextField className={MD4} type="number" label="MMR maximum" placeholder="No maximum" value={form.mmr_max} onChange={(e) => set({ mmr_max: e.target.value })} />
             <TextField className={MD4} type="number" label="Recent games at least" placeholder="No floor" value={form.min_games} onChange={(e) => set({ min_games: e.target.value })} />
+            <TextField
+              className={MD4}
+              type="number"
+              min="1"
+              label="Count the games over"
+              placeholder="Every W3C season"
+              hint="Count games over the last N W3C seasons"
+              value={form.min_games_seasons}
+              onChange={(e) => set({ min_games_seasons: e.target.value })}
+            />
             <Label className={cn(FULL, "flex items-center gap-2")}>
               <Switch checked={!!form.checkin_enabled} onCheckedChange={(checkin_enabled) => set({ checkin_enabled })} />
               Ask entrants to check in before each round
             </Label>
             {form.checkin_enabled ? (
-              <TextField className={MD4} type="number" label="Check-in opens how many days before" value={form.checkin_days} onChange={(e) => set({ checkin_days: e.target.value })} />
+              <>
+                <TextField className={MD4} type="number" label="Check-in opens how many days before" value={form.checkin_days} onChange={(e) => set({ checkin_days: e.target.value })} />
+                <div className={cn(MD6, "flex flex-col gap-1.5")}>
+                  <Label className="flex items-center gap-2">
+                    <Switch checked={!!form.early_checkin} onCheckedChange={(early_checkin) => set({ early_checkin })} />
+                    Early check-in
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
+                </div>
+              </>
             ) : null}
             <Label className={cn(FULL, "flex items-center gap-2")}>
               <Switch checked={!!form.multi_entry} onCheckedChange={(multi_entry) => set({ multi_entry })} />

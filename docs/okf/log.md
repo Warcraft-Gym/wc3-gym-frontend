@@ -2,6 +2,8 @@
 
 ## 2026-09-19
 
+* **Update**: the event settings carry early check-in, the round end zone, the W3C seasons the recent games count over, and the largest MMR difference of a captain draft stage. The event management and GNL season page concepts state the fields, their bounds and the stage write the season dialog makes.
+
 * **Update**: the Report Result dialog folds the veto under a disclosure row and warns in a heading; the fixtures and series page and the veto decision state the row, the wording and the one dialog width.
 * **Update**: the series page names the map of a fixed game before it is played, and the edit-series race opens on the race the side signed the season up on.
 * **Update**: the player line draws the MMR and the games mark itself. The shared-component concept and the player name decision state how the line reads the MMR, when a surface leaves it out, and that the stage series payload carries no `w3c_stats` yet.

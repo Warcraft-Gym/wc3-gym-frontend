@@ -1,10 +1,10 @@
 ---
 type: Domain Concept
 title: Shared components
-description: The pieces every page reuses, with the rules that decide when a player name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, how the veto board knows its side, how a team name and the series action bar are drawn, and what a control shows before its data arrives.
+description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:30:54Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:57:51Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -12,6 +12,9 @@ sources:
   - id: player-name
     resource: ../../../next/src/components/PlayerName.tsx
     title: PlayerName
+  - id: team-name
+    resource: ../../../next/src/components/TeamName.tsx
+    title: TeamName
   - id: grouped-table
     resource: ../../../next/src/components/GroupedTable.tsx
     title: GroupedTable
@@ -35,9 +38,17 @@ A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards 
 - On a drafting page, where the page holds unsaved work, the page wraps its body in `PanelLinksContext.Provider` with the value `true` (`next/src/hooks/player-panel.ts`). Under it the name opens the side panel instead and shows a dock icon in the primary colour with the title "Opens in a side panel". The providers today: the season team assign page, the match page's series draft, and the panel itself. No other page opens the panel. See [the decision](../decisions/player-panel-drafting-only.md).
 - Inside a form dialog on any other page, pass `plain`, because a link would drop the typed input: the veto board in report mode, the fantasy bet dialog, the add-players dialog.
 
-# Team name
+# TeamName
 
-A team reads as its logo and its name, and the name always links to the team page. A team with no logo takes a neutral placeholder of the same size, so a column of names stays aligned.
+A team is drawn as `{logo} {name}` everywhere, and it links to the team page. The name is the team's long name, and its short tag when it carries no long name.
+
+- A few surfaces draw the team themselves: a card or row that already links as a whole (the teams table, the season match cards and the team cards), the `TeamChip` badge in the propose dialog, the role group button, and the `h1` of a team's own page.
+- The logo is the `icon_url` the payload names, at one fixed size on every surface, so names in a column line up. The component asks the backend for no image: a team whose payload names no `icon_url` reads a muted shield outline of that same size. The ladder payload carries no `icon_url` field, so the ladder page passes the team image route it already read.
+- The name truncates inside a narrow cell and carries the full name in its `title`, so a long name cannot widen a bracket box or a phone column.
+- `seasonKey` picks the season team page, the path the team cards and the ladder already use; without one the link is the plain team page.
+- On a drafting page (the match page and the season team assign page) and inside the player panel, under `PanelLinksContext` with the value `true`, the name is plain text with no link, for the same reason the player name is: a click would leave unsaved work.
+- Pass `plain` for text only: inside another link or a button, inside a form dialog that holds unsaved work, and in the `h1` of the team's own page. A select option stays a plain option.
+- The veto board's sides and a player's event history carry a team name alone and read as unlinked text. The fantasy score breakdown draws its own logo and name, unlinked. The ladder teams carry an id, and link like every other team.
 
 # The series action bar
 

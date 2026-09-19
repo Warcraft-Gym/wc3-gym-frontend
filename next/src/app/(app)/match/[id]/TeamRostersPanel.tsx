@@ -9,9 +9,9 @@ import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { W3CMmr } from "@/components/W3CMmr";
 import { mmrSeasonLabel } from "@/helpers/w3c-stats";
-import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image";
 import { SyncedLine, mmrOf, type Row } from "./match-cells";
 
 // The search matches the name or the Discord name, as the table filter does
@@ -50,8 +50,7 @@ function RosterCard({
   return (
     <Card className="card gap-0 py-0">
       <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-        {team.id ? <img className="size-7 rounded-full object-cover" alt="" src={teamImageUrl(team)} onError={showDefaultTeamImage} /> : null}
-        {team.name}
+        <TeamName team={team} />
         <Badge variant="outline" className="border-on-primary text-on-primary">
           {selected.length} selected
         </Badge>

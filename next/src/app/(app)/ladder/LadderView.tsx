@@ -2,7 +2,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AchievementChip } from "@/components/AchievementChip";
 import { ColumnNote } from "@/components/ColumnNote";
@@ -36,7 +35,9 @@ import w3cLogoWhite from "@/assets/media/w3c-logo-white.png";
 import { ACHIEVEMENTS_NOTE, LADDER_NOTE, SCORED_NOTE, TEAM_BADGES_NOTE, achievementPoints } from "@/helpers/achievements.js";
 import { playerPath } from "@/helpers/players.mjs";
 import { roundLabel } from "@/helpers/rounds.mjs";
-import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image.js";
+import { TeamName } from "@/components/TeamName";
+import { teamImageUrl } from "@/helpers/team-image.js";
+import { teamLabel } from "@/helpers/teams.mjs";
 import { agoFromIso, localFromIso } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
 
@@ -114,7 +115,11 @@ export function LadderView() {
   // The round label formats a start/end pair exactly as every other date on the page reads
   const season = ladder?.season;
   const seasonDates = season?.start_date && season?.end_date ? roundLabel(season) : "";
-  const teams: Row[] = ladder?.teams ?? [];
+  // The ladder team payload names no icon_url, so the logo reads the team image route this page already read
+  const teams: Row[] = useMemo(
+    () => ((ladder?.teams ?? []) as Row[]).map((team) => ({ ...team, icon_url: teamImageUrl(team) })),
+    [ladder],
+  );
   const seasonPoints = teams.reduce((sum, team) => sum + team.points, 0);
   const seasonBadgePoints = teams.reduce((sum, team) => sum + teamBadgePoints(team), 0);
   const seasonPlayers = teams.reduce((sum, team) => sum + team.players.length, 0);
@@ -123,18 +128,20 @@ export function LadderView() {
   // One row per player of the season, carrying the team he plays for; one array per ladder read
   const allPlayers: Row[] = useMemo(
     () =>
-      ((ladder?.teams ?? []) as Row[]).flatMap((team) =>
+      teams.flatMap((team) =>
         team.players.map((player: Row) => ({
           ...player,
           teamId: team.id,
-          teamName: team.name,
+          team,
+          // the sort key reads what the Team column draws, so the order follows the names on screen
+          teamName: teamLabel(team),
           badgePoints: player.points - player.ladder_points,
           mmr: player.mmr?.current ?? null,
           // A player still in his placement games has no MMR, so there is no span to subtract
           mmrDiff: player.mmr?.current != null && player.mmr?.start != null ? player.mmr.current - player.mmr.start : null,
         })),
       ),
-    [ladder],
+    [teams],
   );
 
   // The backend leaves the season stamp null until every signup is stamped, so the
@@ -188,12 +195,6 @@ export function LadderView() {
         <img src={syncMark.src} alt="W3C" className="ml-1 h-[1.4em] translate-y-[3%]" />
       </TapTooltip>
     </Button>
-  );
-
-  const teamAvatar = (team: Row | number, size: string) => (
-    <span className={cn("block shrink-0 overflow-hidden rounded-sm", size)}>
-      <img className="size-full object-contain" src={teamImageUrl(team)} alt="" onError={showDefaultTeamImage} />
-    </span>
   );
 
   return (
@@ -257,8 +258,7 @@ export function LadderView() {
                     <TableRow key={team.id} className={cn(idx === 0 && "bg-primary/6")}>
                       <TableCell>
                         <div className="flex items-center">
-                          {teamAvatar(team, "mr-2 size-6")}
-                          <Link href={`/team/${team.id}/season/${slugOf(selectedSeasonId as number)}`}>{team.long_name || team.name}</Link>
+                          <TeamName team={team} seasonKey={slugOf(selectedSeasonId as number)} />
                         </div>
                       </TableCell>
                       <TableCell className="text-center font-bold">{team.points}</TableCell>
@@ -376,10 +376,7 @@ export function LadderView() {
                   accessorKey: "teamName",
                   header: "Team",
                   cell: ({ row }) => (
-                    <div className="flex items-center">
-                      {teamAvatar(row.original.teamId, "mr-2 size-5")}
-                      <span>{row.original.teamName}</span>
-                    </div>
+                    <TeamName team={row.original.team} seasonKey={slugOf(selectedSeasonId as number)} />
                   ),
                 },
                 {

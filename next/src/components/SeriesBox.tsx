@@ -1,8 +1,10 @@
 "use client";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { Icon } from "@/components/ui/Icon";
 import { useHideResults } from "@/components/hide-results";
 import { sideRoster } from "@/helpers/fixture.mjs";
+import { teamLabel } from "@/helpers/teams.mjs";
 import { isByeSide, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, winnerSide } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +80,7 @@ export function SeriesBox({
   };
 
   // What a screen reader hears for the box: where it sits, who plays, and the state
-  const sideName = (side: number) => team(side)?.name || player(side)?.name || empty(side);
+  const sideName = (side: number) => (team(side) ? teamLabel(team(side)) : player(side)?.name) || empty(side);
   const where = [round, label].filter(Boolean).join(", ");
   const who = seats.length ? `${seats.length} seats` : `${sideName(1)} vs ${sideName(2)}`;
   const name = `${where ? `${where}: ` : ""}${who}, ${stateWord}`;
@@ -104,7 +106,7 @@ export function SeriesBox({
           {crown && side === 1 ? <Icon name="mdi-crown" size={14} className="text-primary-text" /> : null}
           {team(side) ? (
             <div className="flex min-w-0 flex-col gap-px">
-              <span>{team(side).name}</span>
+              <TeamName team={team(side)} plain={!readonly} />
               {roster(side).length ? (
                 <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
                   {roster(side).map((seat) => (

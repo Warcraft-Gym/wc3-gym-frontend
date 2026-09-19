@@ -19,6 +19,7 @@ import { TableCell } from "@/components/ui/table";
 import { GroupedTable, type GroupedColumn } from "@/components/GroupedTable";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamName } from "@/components/TeamName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RaceSelect } from "@/components/RaceSelect";
 import { SeasonSelect } from "@/components/SeasonSelect";
@@ -619,8 +620,9 @@ export function FantasyDashboardView() {
                     <div className="mb-2">
                       <strong>Season:</strong> {eventLabel(existingTeam.season) || "N/A"}
                     </div>
-                    <div className="mb-2">
-                      <strong>Drafted team:</strong> {existingTeam.drafted_team?.name || "N/A"}
+                    <div className="mb-2 flex flex-wrap items-center gap-1">
+                      <strong>Drafted team:</strong>
+                      {existingTeam.drafted_team ? <TeamName team={existingTeam.drafted_team} /> : "N/A"}
                     </div>
                     {season?.fantasy_grind ? (
                       <div className="mb-2">

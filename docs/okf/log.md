@@ -3,15 +3,17 @@
 ## 2026-09-19
 
 * **Update**: a stage series row names the MMR of the race it plays, and the payloads that name a team name its logo. The shared-component concept states how `SeriesBox` fills the player line, which payloads carry `team_icon_url`, and which team lines are plain.
+* **Update**: one component draws a team name and one draws a round strip, and the team roster is one aligned list. The shared-component concept states the three, and the teams and players page concepts state the roster, the season team roster and the round cards.
+* **Update**: a round is answered with "Check in" and "Sit out". The home, event, player and round-grid page concepts state the words.
 * **Update**: the Report Result dialog folds the veto under a disclosure row and warns in a heading; the fixtures and series page and the veto decision state the row, the wording and the one dialog width.
 * **Update**: the series page names the map of a fixed game before it is played, and the edit-series race opens on the race the side signed the season up on.
-* **Update**: the player line draws the MMR and the games mark itself. The shared-component concept and the player name decision state how the line reads the MMR, when a surface leaves it out, and that the stage series payload carries no `w3c_stats` yet.
-* **Update**: the design rules of the next phase. `DESIGN.md` states the player line and its games-icon version, the team name, the series action bar, the check-in words, the app bar title, the loading rule, the card padding, the W3C data line, the figure formats and the legend rule, and names what the code does not meet yet; the shared-component concept and the player name decision state the same rules.
+* **Update**: the player line draws the MMR and the games mark itself. The shared-component concept and the player name decision state how the line reads the MMR, when a surface leaves it out, and which payloads carry no `w3c_stats`.
+* **Update**: the routing concept states the app title, "WC3 Gym Dashboard", its link to `/` and the browser tab title.
+* **Update**: the design rules of the next phase. `DESIGN.md` states the player line and its games-icon version, the team name, the series action bar, the check-in words, the app bar title, the loading rule, the card padding, the W3C data line, the figure formats and the legend rule; the shared-component concept and the player name decision state the same rules.
 * **Creation**: the pitfall of a proxy route that keeps the encoding headers of a fetched answer; the session concept states what the Clerk proxy route returns.
 * **Update**: the app is the Next.js app in `next/`. Every source names its file there; the overview, code style, testing, the run, build and deploy runbooks, the routing, session, stores, theme and shared-component concepts and the Clerk proxy decision state the Next.js stack, pnpm and the `NEXT_PUBLIC_` variable names.
 * **Deprecation**: the read-only embed concept and the Vite dependency-cache pitfall.
 * **Update**: the deploy runbook states which branches build, how a variable name changes and how the Clerk secret key is stored; the routing concept states the app icon.
-* **Update**: the routing concept states the app title, "WC3 Gym Dashboard", its link to `/` and the browser tab title.
 
 ## 2026-09-17
 

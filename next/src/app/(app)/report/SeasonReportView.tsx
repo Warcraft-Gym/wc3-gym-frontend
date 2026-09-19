@@ -498,7 +498,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                       <Th className="w-11">#</Th>
                       <TableHead>Player</TableHead>
                       <Th>Race</Th>
-                      <Th className={WIDE}>Team</Th>
+                      <TableHead className={WIDE}>Team</TableHead>
                       <Th>W-L</Th>
                       <Th className={WIDE}>Played</Th>
                       <Th className={WIDE}>Win %</Th>
@@ -519,7 +519,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         <TableCell className="text-center">
                           {player.signup_race ? <RaceIcon raceIdentifier={player.signup_race} /> : <span className="text-xs">–</span>}
                         </TableCell>
-                        <TableCell className={cn(WIDE, "text-center")}>
+                        <TableCell className={WIDE}>
                           {player.team ? (
                             /* the row opens the player, so the team name stops that click on its way up */
                             <span onClick={(event) => event.stopPropagation()}>
@@ -688,7 +688,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         <Th className="w-14">#</Th>
                         <TableHead>Fantasy team</TableHead>
                         <Th>Captain</Th>
-                        <Th className={WIDE}>Drafted team</Th>
+                        <TableHead className={WIDE}>Drafted team</TableHead>
                         <Th className={WIDE}>Drafted race</Th>
                         <Th className={WIDE}>Player pts</Th>
                         <Th className={WIDE}>Team pts</Th>
@@ -710,7 +710,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                             </TableCell>
                             <TableCell className="font-medium">{ft.name}</TableCell>
                             <TableCell className="text-center text-xs">{ft.captain?.name || "–"}</TableCell>
-                            <TableCell className={cn(WIDE, "text-center text-xs")}>{ft.drafted_team ? <TeamName team={ft.drafted_team} seasonKey={seasonSlug} /> : "–"}</TableCell>
+                            <TableCell className={cn(WIDE, "text-xs")}>{ft.drafted_team ? <TeamName team={ft.drafted_team} seasonKey={seasonSlug} /> : "–"}</TableCell>
                             <TableCell className={cn(WIDE, "text-center")}>
                               {ft.drafted_race ? <RaceIcon raceIdentifier={ft.drafted_race} /> : <span className="text-xs">–</span>}
                             </TableCell>

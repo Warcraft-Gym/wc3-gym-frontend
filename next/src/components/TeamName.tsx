@@ -7,11 +7,9 @@ import { teamLabel, teamPath } from "@/helpers/teams.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type Team = { id?: number | string | null; name?: string; long_name?: string | null; icon_url?: string | null; league_id?: number | null } & Record<string, any>;
+export type Team = { id?: number | string | null; name?: string; long_name?: string | null; icon_url?: string | null } & Record<string, any>;
 
-/** A team as its logo and its name. It links to the team page, of the season a season key names.
- *  A team a payload carries no logo for reads a shield of the same size, so rows stay aligned.
- *  On a drafting page the name is plain text, so a click never drops unsaved picks. */
+/** A team as its logo and its name, linked to its team page; a team with no logo reads a shield of the same size. */
 export function TeamName({
   team,
   seasonKey,
@@ -24,7 +22,10 @@ export function TeamName({
   className?: string;
 }) {
   const inPanelMode = usePanelLinks();
+  const label = teamLabel(team);
   const to = plain || inPanelMode ? null : teamPath(team, seasonKey);
+  // A payload that names no team draws nothing, so a loading page shows no lone shield
+  if (!label) return null;
   const body = (
     <>
       <span className="inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-sm">
@@ -32,10 +33,11 @@ export function TeamName({
         {team?.icon_url ? (
           <img className="size-full object-contain" src={team.icon_url} alt="" onError={showDefaultTeamImage} />
         ) : (
-          <Icon name="mdi-shield-outline" size={20} className="text-muted-foreground" />
+          /* the shield takes the text colour, so it reads on a card, a primary head and the band */
+          <Icon name="mdi-shield-outline" size={20} className="opacity-60" />
         )}
       </span>
-      <span className="name">{teamLabel(team)}</span>
+      <span className="name">{label}</span>
     </>
   );
 

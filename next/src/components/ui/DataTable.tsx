@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 
-// Only the three features a v-data-table used: sort, page and column visibility.
+// Only the three features this table needs: sort, page and column visibility.
 const features = tableFeatures({
   rowSortingFeature,
   sortedRowModel: createSortedRowModel(),
@@ -98,7 +98,7 @@ export function DataTable<T extends RowData>({
             onPageChange((typeof updater === "function" ? updater(was) : updater).pageIndex);
           },
         }),
-    // Every column starts ascending, as a `v-data-table` header did.
+    // Every column sorts ascending on the first click.
     sortDescFirst: false,
     // A table with no page size shows every row and draws no pager.
     initialState: { pagination: { pageSize: size, pageIndex: 0 } },
@@ -134,6 +134,7 @@ export function DataTable<T extends RowData>({
                 {expand ? <TableHead style={{ width: "48px" }} /> : null}
                 {group.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
+                  const title = header.column.columnDef.header;
                   return (
                     <TableHead
                       key={header.id}
@@ -148,7 +149,7 @@ export function DataTable<T extends RowData>({
                       {header.column.getCanSort() ? (
                         <button
                           type="button"
-                          aria-label="Sort"
+                          aria-label={typeof title === "string" ? `Sort by ${title}` : "Sort"}
                           onClick={(event) => {
                             event.stopPropagation();
                             header.column.getToggleSortingHandler()?.(event);

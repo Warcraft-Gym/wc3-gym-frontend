@@ -64,7 +64,7 @@ function eventPrimary(row, me, slug) {
 // blocks cover the whole round window. Blocks inform: the hint offers the answer and the
 // player writes it, so nothing here refuses anyone.
 export const blocksHint = (row) => (row?.availability_hint === 'blocked_by_blocks'
-  ? { title: 'Your blocks cover this round', text: "Confirm I can't play" }
+  ? { title: 'Your blocks cover this round', text: 'Sit out' }
   : null);
 
 // One card per event GET /me/events answers, of any kind. A finished event is not

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { eventLabel } from './event-labels.mjs';
+import { seriesContext } from './series-actions.mjs';
 import { isUnscored } from './season-phase.mjs';
 
 // "13 to 19 Sep", "28 Sep to 4 Oct", "13 Sep", or "Round n" for a round with no date
@@ -84,14 +84,10 @@ export const roundLine = (card, playerId, when = '') => {
   return `Played · ${my > theirs ? 'won' : my < theirs ? 'lost' : 'drew'} vs ${name}`;
 };
 
-// A series is played once its scheduled time has passed; one with no time never is
-const seriesPlayed = (series, today) =>
-  !!series.date_time && DateTime.fromISO(series.date_time, { zone: 'utc' }) <= today;
-
 // What the player still owes, over every season he is in: a series with no result,
 // and every round whose check-in window is open and unanswered. One line each, in
 // round order. `asks` is false for a season that does not run the check-in.
-export const waitingLines = (seasons = [], playerId = null, today = DateTime.now()) =>
+export const waitingLines = (seasons = [], playerId = null) =>
   seasons.flatMap(({ season, cards = [], asks = true }) => cards.flatMap((card) => {
     if (card.series) {
       return isUnscored(card.series)
@@ -99,9 +95,7 @@ export const waitingLines = (seasons = [], playerId = null, today = DateTime.now
             key: `s${card.series.id}`,
             kind: 'series',
             series: card.series,
-            // Only a series whose time has passed owes a result; before that it owes a time
-            played: seriesPlayed(card.series, today),
-            text: `Round ${card.playday} · ${eventLabel(season)} · vs ${opponentName(card.series, playerId)}`,
+            text: seriesContext(card.series, { event: season, round: card.playday, playerId }),
           }]
         : [];
     }
@@ -112,6 +106,6 @@ export const waitingLines = (seasons = [], playerId = null, today = DateTime.now
       kind: 'round',
       seasonId: season.id,
       playday: card.playday,
-      text: `Round ${card.playday} · ${eventLabel(season)} · Check in for ${card.label}`,
+      text: [seriesContext(null, { event: season, round: card.playday }), `Check in for ${card.label}`].join(' - '),
     }];
   }));

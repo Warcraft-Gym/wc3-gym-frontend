@@ -15,6 +15,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RoundStrip } from "@/components/RoundStrip";
 import { StatusAlert } from "@/components/StatusAlert";
+import { TeamName } from "@/components/TeamName";
 import { W3CMmr } from "@/components/W3CMmr";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useLadderStore, usePlayerStore, useSeason, useSeasonStore, useSeriesStore } from "@/stores";
@@ -231,7 +232,8 @@ export function PlayerSeasons({
                     {row.team ? (
                       <span className={FACT}>
                         <span className={CAPTION}>Team</span>
-                        <span>{row.team}</span>
+                        {/* inside the accordion button, so the line is plain text */}
+                        <TeamName team={{ id: row.teamId, name: row.team, icon_url: row.teamIcon }} plain />
                       </span>
                     ) : null}
                     {row.race ? (

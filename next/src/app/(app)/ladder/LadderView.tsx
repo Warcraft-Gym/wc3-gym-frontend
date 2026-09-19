@@ -36,7 +36,6 @@ import { ACHIEVEMENTS_NOTE, LADDER_NOTE, SCORED_NOTE, TEAM_BADGES_NOTE, achievem
 import { playerPath } from "@/helpers/players.mjs";
 import { roundLabel } from "@/helpers/rounds.mjs";
 import { TeamName } from "@/components/TeamName";
-import { teamImageUrl } from "@/helpers/team-image.js";
 import { teamLabel } from "@/helpers/teams.mjs";
 import { agoFromIso, localFromIso } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
@@ -115,11 +114,8 @@ export function LadderView() {
   // The round label formats a start/end pair exactly as every other date on the page reads
   const season = ladder?.season;
   const seasonDates = season?.start_date && season?.end_date ? roundLabel(season) : "";
-  // The ladder team payload names no icon_url, so the logo reads the team image route this page already read
-  const teams: Row[] = useMemo(
-    () => ((ladder?.teams ?? []) as Row[]).map((team) => ({ ...team, icon_url: teamImageUrl(team) })),
-    [ladder],
-  );
+  // The ladder read names icon_url per team, so the logo costs no request of its own
+  const teams: Row[] = useMemo(() => (ladder?.teams ?? []) as Row[], [ladder]);
   const seasonPoints = teams.reduce((sum, team) => sum + team.points, 0);
   const seasonBadgePoints = teams.reduce((sum, team) => sum + teamBadgePoints(team), 0);
   const seasonPlayers = teams.reduce((sum, team) => sum + team.players.length, 0);

@@ -4,7 +4,7 @@ title: The GNL season
 description: The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
 resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events]
-generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
 sources:
   - id: seasons
     resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
@@ -93,5 +93,4 @@ A GNL season is the GNL-kind event of the GNL league. It keeps these pages of it
 - The race on a season page is the signup race: [a race icon needs a race for the row](../pitfalls/race-icon-context.md).
 - The unscored list is a grouped table: [one grouped table component](../decisions/grouped-table.md).
 - The season slug in the path: [app shell and routing](../concepts/app-shell-and-routing.md).
-- The report inside the public site: [read-only embed](../concepts/readonly-embed.md).
 - The phases and the season payload fields: [the backend contract](../concepts/backend-contract.md).

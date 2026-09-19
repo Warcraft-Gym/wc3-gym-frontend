@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -45,4 +45,4 @@ A season in a path is its slug, `gnl-s18`, made from its name; a bare id still r
 
 # No embed mode
 
-Every page draws the full shell. `?readonly=1` is ignored since 2026-09-16. See [read-only embed](readonly-embed.md), which is deprecated.
+Every page draws the full shell. `?readonly=1` is ignored since 2026-09-16.

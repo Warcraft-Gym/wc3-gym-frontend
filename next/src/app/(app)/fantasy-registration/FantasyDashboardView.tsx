@@ -594,15 +594,15 @@ export function FantasyDashboardView() {
         <CardContent className="p-4">
           {/* No team, and why the form is not here */}
           {!season && !existingTeam && !isLoading ? (
-            <StatusAlert modelValue="The season did not load, so registration is unavailable. Please try again later." type="info" />
+            <StatusAlert modelValue="The season did not load, so registration is unavailable. Please try again later." type="info" closable={false} />
           ) : ended && !existingTeam ? (
-            <StatusAlert modelValue={`You had no fantasy team in ${seasonName}.`} type="info" />
+            <StatusAlert modelValue={`You had no fantasy team in ${seasonName}.`} type="info" closable={false} />
           ) : phase !== "open" && !existingTeam ? (
-            <StatusAlert modelValue={`Team creation closed when ${seasonName} started.`} type="info" />
+            <StatusAlert modelValue={`Team creation closed when ${seasonName} started.`} type="info" closable={false} />
           ) : !isCreationEnabled && !existingTeam ? (
-            <StatusAlert modelValue="Team creation is closed" type="warning" />
+            <StatusAlert modelValue="Team creation is closed" type="warning" closable={false} />
           ) : !tierCount && !existingTeam ? (
-            <StatusAlert modelValue={`The player tiers for ${seasonName} are not cut yet. Registration opens once they are.`} type="info" />
+            <StatusAlert modelValue={`The player tiers for ${seasonName} are not cut yet. Registration opens once they are.`} type="info" closable={false} />
           ) : null}
 
           {/* Existing team */}
@@ -761,6 +761,7 @@ export function FantasyDashboardView() {
                   <StatusAlert
                     modelValue={`Pick one player from each tier. Records and games are W3C ladder${windowLabel ? `, ${windowLabel}` : ""}.`}
                     type="info"
+                    closable={false}
                   />
 
                   <GroupedTable
@@ -864,17 +865,18 @@ export function FantasyDashboardView() {
         <CardContent className="p-4">
           {/* No team, so no bets */}
           {!existingTeam && (ended || phase !== "open") ? (
-            <StatusAlert modelValue={`No team in ${seasonName}, so no bets.`} type="info" />
+            <StatusAlert modelValue={`No team in ${seasonName}, so no bets.`} type="info" closable={false} />
           ) : !existingTeam ? (
-            <StatusAlert modelValue="Register a team first. You need to register a fantasy team before you can place bets on matches." type="info" />
+            <StatusAlert modelValue="Register a team first. You need to register a fantasy team before you can place bets on matches." type="info" closable={false} />
           ) : fantasySeries.length === 0 ? (
-            <StatusAlert modelValue="No fantasy matches yet. No fantasy matches are scheduled for betting. They appear once the round is drawn." type="info" />
+            <StatusAlert modelValue="No fantasy matches yet. No fantasy matches are scheduled for betting. They appear once the round is drawn." type="info" closable={false} />
           ) : (
             <DataTable
               data={fantasySeriesWithBets}
               columns={betColumns}
               rowId={(series: any) => String(series.id)}
               pageSize={10}
+              mobileStack
               columnVisibility={{ score: mdAndUp }}
               empty="No fantasy matches yet"
             />
@@ -924,7 +926,7 @@ export function FantasyDashboardView() {
                 />
               </Field>
             ) : (
-              <StatusAlert modelValue={`This bet will be worth ${fixedBetPointsValue} points`} type="info" />
+              <StatusAlert modelValue={`This bet will be worth ${fixedBetPointsValue} points`} type="info" closable={false} />
             )}
           </div>
 

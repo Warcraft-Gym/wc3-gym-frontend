@@ -261,7 +261,7 @@ export function FantasyTiersView() {
         </Button>
       </PageHeader>
 
-      {tierState || phase !== "open" ? <StatusAlert modelValue={`${phaseText}${tierState?.text ?? ""}`} type={tierState?.type ?? "info"} /> : null}
+      {tierState || phase !== "open" ? <StatusAlert modelValue={`${phaseText}${tierState?.text ?? ""}`} type={tierState?.type ?? "info"} closable={false} /> : null}
       <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
       <StatusAlert modelValue={successMessage} type="success" onClose={() => setSuccessMessage(null)} />
 
@@ -281,7 +281,7 @@ export function FantasyTiersView() {
               <span className="mr-2 text-muted-foreground">
                 {group.rows.length} {group.rows.length === 1 ? "player" : "players"}
               </span>
-              <span className="text-muted-foreground opacity-(--v-medium-emphasis-opacity)">{group.range}</span>
+              <span className="text-[rgba(var(--v-theme-on-surface),0.38)]">{group.range}</span>
             </TableCell>
           )}
           rows={({ group }) =>
@@ -295,7 +295,7 @@ export function FantasyTiersView() {
                 <TableCell>{row.team}</TableCell>
                 <TableCell>
                   {row.player.fantasy_tier ? (
-                    <Badge variant={row.player.fantasy_tier_pinned ? "default" : "outline"} className="text-xs">
+                    <Badge variant={row.player.fantasy_tier_pinned ? "secondary" : "outline"} className="text-xs">
                       {row.player.fantasy_tier_pinned ? <Icon name="mdi-pin" size={12} /> : null}T{row.player.fantasy_tier}
                     </Badge>
                   ) : null}

@@ -470,7 +470,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                   cell: ({ row }) => (
                     <>
                       <PlayerName player={row.original} race={row.original.signup_race} />
-                      {syncCell(row.original)}
+                      <div>{syncCell(row.original)}</div>
                     </>
                   ),
                 },

@@ -56,7 +56,9 @@ export function PublishedSeries({
   const nameCell = (item: Row, n: 1 | 2) => (
     <>
       <PlayerName player={item[`player${n}`]} race={item[`player${n}_race`]} host={item.host_player_id === item[`player${n}`]?.id} />
-      <SyncedLine player={item[`player${n}`]} />
+      <div>
+        <SyncedLine player={item[`player${n}`]} />
+      </div>
     </>
   );
 

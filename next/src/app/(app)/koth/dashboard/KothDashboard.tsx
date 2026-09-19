@@ -175,7 +175,7 @@ export function KothDashboard() {
                       <Icon name="mdi-crown" size={28} className="text-primary-text" aria-hidden="true" />
                       <div>
                         <span className="text-xl font-medium">
-                          <PlayerName player={bracket.king.user} race={bracket.king.race} mmr={bracket.king.mmr ?? false} />
+                          <PlayerName player={bracket.king.user} race={bracket.king.race} mmr={bracket.king.mmr || false} />
                         </span>
                         <div className="text-xs text-muted-foreground">Holds the throne</div>
                       </div>

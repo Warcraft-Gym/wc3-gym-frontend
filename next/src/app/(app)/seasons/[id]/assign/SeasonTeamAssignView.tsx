@@ -42,8 +42,7 @@ const SYNC_ICON: Record<string, { icon: string; className: string; note?: string
   error: { icon: "mdi-alert-circle", className: "text-error" },
 };
 
-/** The sync state of one signup, as the icon that rides beside his name. The games mark
- *  is drawn by the player line itself. */
+/** The sync state of one signup, as the icon beside his name; the player line draws the games mark */
 function PlayerCues({ status }: { status?: SyncStatus }) {
   const cue = status ? SYNC_ICON[status.state] : null;
   // Only the skipped and the error cue carry text, so the other two draw a bare icon

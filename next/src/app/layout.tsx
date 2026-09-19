@@ -20,8 +20,8 @@ const sans = Alegreya_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "GNL",
-    template: "%s · GNL",
+    default: "WC3 Gym Dashboard",
+    template: "%s · WC3 Gym Dashboard",
   },
   description: "The Gym Newbie League app: seasons, series, the ladder and fantasy.",
 };

@@ -89,8 +89,7 @@ function RoundMenu({
   );
 }
 
-/** The check-in of one team: one round as a roster list, or every round as a matrix.
- *  A captain of the team, or any admin, writes an answer for a player who did not. */
+/** The check-in of one team, one round or every round; a captain of the team or an admin writes for a player. */
 export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: string }) {
   const router = useRouter();
   const auth = useAuth();
@@ -268,6 +267,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
             {players.map((player) => {
               const status = statusOf(player.id, round);
               const note = setByText(rowFor(player.id, round), auth.me?.user?.id);
+              const busy = saving === `${player.id}|${round}` || saving === `${player.id}|all`;
               return (
                 <div key={player.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-2 last:border-b-0">
                   <PlayerName player={player} race={player.signup_race} />
@@ -277,8 +277,8 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                     {menuFor(
                       player,
                       round,
-                      <Button variant="ghost" size="icon-sm" aria-label={`Check-in menu for ${player.name}`} disabled={!!saving} />,
-                      <Icon name={saving === `${player.id}|${round}` || saving === `${player.id}|all` ? "mdi-loading mdi-spin" : "mdi-dots-vertical"} />,
+                      <Button variant="ghost" size="icon-sm" aria-label={`Check-in menu for ${player.name}`} aria-busy={busy} disabled={!!saving} />,
+                      <Icon name={busy ? "mdi-loading mdi-spin" : "mdi-dots-vertical"} />,
                     )}
                   </span>
                 </div>
@@ -313,6 +313,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                     {rounds.map((item) => {
                       // the cell reads the short word, so the label carries the state the chip stands for
                       const status = statusOf(player.id, item);
+                      const busy = saving === `${player.id}|${item}` || saving === `${player.id}|all`;
                       return (
                         <TableCell key={item} className="text-center">
                           {menuFor(
@@ -322,6 +323,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                               type="button"
                               className="cursor-pointer"
                               aria-label={`${player.name}, round ${item}: ${status.title}. Open the check-in menu`}
+                              aria-busy={busy}
                               disabled={!!saving}
                             />,
                             <StatusChip status={status} short />,

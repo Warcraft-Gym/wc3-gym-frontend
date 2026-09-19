@@ -15,11 +15,11 @@ export function pairIndex(board) {
 const better = (x, y) => {
   if (x.count !== y.count) return y.count - x.count;
   if (x.total !== y.total) return x.total - y.total;
-  for (let i = 0; i < x.widest.length; i++) if (x.widest[i] !== y.widest[i]) return x.widest[i] - y.widest[i];
+  if (x.widest !== y.widest) return x.widest - y.widest;
   return y.hours - x.hours;
 };
 
-const EMPTY = { count: 0, total: 0, widest: [], hours: 0, pairs: [] };
+const EMPTY = { count: 0, total: 0, widest: 0, hours: 0, took: null };
 
 const made = (a, b, difference) => ({ player1_id: a.user_id, player2_id: b.user_id, difference });
 
@@ -40,38 +40,71 @@ function greedy(left, right, open, maxDifference) {
   return pairs;
 }
 
-// ponytail: exact search up to 18 free players on the second team, greedy above that
+// ponytail: the exact search runs to 12 free rated players a side, its worst case measured at 77 ms
+// in node; above that greedy takes over and can leave a place open. A worker would raise the ceiling.
+const EXACT = 12;
+
 function best(left, right, open, maxDifference, hoursOf) {
   if (!open || !left.length || !right.length) return [];
-  if (right.length > 18) return greedy(left, right, open, maxDifference);
+  if (left.length > EXACT || right.length > EXACT) return greedy(left, right, open, maxDifference);
   const memo = new Map();
+  // A state holds its own figures and the one pairing it took, so no state copies the list.
+  // Every take fills one place and one right player, so the mask already carries the room left.
   const go = (i, mask, room) => {
     if (i === left.length || room === 0) return EMPTY;
-    const key = `${i},${mask},${room}`;
+    const key = i * (1 << right.length) + mask;
     const found = memo.get(key);
     if (found) return found;
     let win = go(i + 1, mask, room);
-    right.forEach((b, j) => {
-      const difference = mmrGap(left[i], b);
-      if (mask & (1 << j) || difference > maxDifference) return;
+    for (let j = 0; j < right.length; j++) {
+      const difference = mmrGap(left[i], right[j]);
+      if (mask & (1 << j) || difference > maxDifference) continue;
       const rest = go(i + 1, mask | (1 << j), room - 1);
       const take = {
         count: rest.count + 1,
         total: rest.total + difference,
-        widest: [...rest.widest, difference].sort((p, q) => q - p),
-        hours: rest.hours + (hoursOf(left[i].user_id, b.user_id) || 0),
-        pairs: [made(left[i], b, difference), ...rest.pairs],
+        widest: Math.max(rest.widest, difference),
+        hours: rest.hours + (hoursOf(left[i].user_id, right[j].user_id) || 0),
+        took: { i, j, difference, rest },
       };
       if (better(take, win) < 0) win = take;
-    });
+    }
     memo.set(key, win);
     return win;
   };
-  return go(0, 0, open).pairs;
+  const pairs = [];
+  for (let state = go(0, 0, open); state.took; state = state.took.rest) {
+    const { i, j, difference } = state.took;
+    pairs.push(made(left[i], right[j], difference));
+  }
+  return pairs;
+}
+
+// The most pairings a difference allows, by augmenting paths. The count alone, so the fill steps
+// never run the exact search.
+function reach(left, right, open, maxDifference) {
+  const partner = new Array(right.length).fill(-1);
+  let count = 0;
+  for (let i = 0; i < left.length && count < open; i++) {
+    const seen = new Array(right.length).fill(false);
+    const grow = (a) => {
+      for (let j = 0; j < right.length; j++) {
+        if (seen[j] || mmrGap(left[a], right[j]) > maxDifference) continue;
+        seen[j] = true;
+        if (partner[j] === -1 || grow(partner[j])) {
+          partner[j] = a;
+          return true;
+        }
+      }
+      return false;
+    };
+    if (grow(i)) count++;
+  }
+  return count;
 }
 
 // The smallest differences above the working value at which one more place fills
-function fillSteps(left, right, open, maxDifference, hoursOf, filled) {
+function fillSteps(left, right, open, maxDifference, filled) {
   const gaps = new Set();
   for (const a of left) for (const b of right) gaps.add(mmrGap(a, b));
   const steps = [...gaps].filter((gap) => gap > maxDifference && Number.isFinite(gap)).sort((x, y) => x - y).slice(0, 40);
@@ -79,7 +112,7 @@ function fillSteps(left, right, open, maxDifference, hoursOf, filled) {
   let count = filled;
   for (const difference of steps) {
     if (count >= open || fills.length >= 3) break;
-    const reached = best(left, right, open, difference, hoursOf).length;
+    const reached = reach(left, right, open, difference);
     if (reached > count) {
       fills.push({ difference, pairs: reached });
       count = reached;
@@ -101,11 +134,5 @@ export function suggestPairings(board, maxDifference, drafted = []) {
   const pairOf = pairIndex(board);
   const hoursOf = (player1Id, player2Id) => pairOf(player1Id, player2Id)?.hours;
   const pairs = best(left, right, open, maxDifference, hoursOf);
-  const paired = new Set(pairs.flatMap((pair) => [pair.player1_id, pair.player2_id]));
-  return {
-    pairs,
-    rest: free.filter((player) => !paired.has(player.user_id)),
-    open,
-    fills: fillSteps(left, right, open, maxDifference, hoursOf, pairs.length),
-  };
+  return { pairs, open, fills: fillSteps(left, right, open, maxDifference, pairs.length) };
 }

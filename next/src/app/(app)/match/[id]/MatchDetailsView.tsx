@@ -95,8 +95,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   const [extraPlayersById, setExtraPlayersById] = useState<Record<number, Row>>({});
   const [draftBoard, setDraftBoard] = useState<Row | null>(null);
   const [draftState, setDraftState] = useState<Row | null>(null);
-  // The stamp of the first read of this visit, so a pairing added since it stays marked new
-  const [seenAt, setSeenAt] = useState<string | null>(null);
+  // The stamp of the last visit: undefined until the state read answers, null when this team never opened the draft
+  const [seenAt, setSeenAt] = useState<string | null | undefined>(undefined);
   const [seenSent, setSeenSent] = useState(false);
   const [availability1, setAvailability1] = useState<Row[]>([]);
   const [availability2, setAvailability2] = useState<Row[]>([]);
@@ -182,6 +182,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   });
   const enrichedSeries = series.map(withFullPlayers);
   const enrichedDraftSeries = draftSeries.map(withFullPlayers);
+  // The working largest difference of this match, which the board and the draft table both read
+  const maxDifference = draftState?.max_mmr_difference ?? draftBoard?.max_mmr_difference ?? 0;
 
   const newSeriesPlayer1 = playersById(roster1, newSeriesPlayers[0])[0];
   const newSeriesPlayer2 = playersById(roster2, newSeriesPlayers[1])[0];
@@ -266,18 +268,22 @@ export function MatchDetailsView({ id }: { id: string }) {
     return [a1, a2] as Row[][];
   };
 
+  const mayDraft = (row: Row) =>
+    !!row?.id && (auth.isAdmin || [row.team1_id, row.team2_id].some((teamId) => teamId != null && auth.isCaptainOf(teamId, row.season_id)));
+
+  // The state alone: the working difference, the Ready marks and the last visit
+  const fetchDraftState = async (row: Row, fresh = false) => {
+    if (!mayDraft(row)) return;
+    const stateRow = await seriesStore.getDraftState(row.id, fresh).catch(() => null);
+    setDraftState(stateRow);
+    if (stateRow) setSeenAt((was) => (was === undefined ? stateRow.seen_at ?? null : was));
+  };
+
   // One read fills the draft board and one the draft state; both are captain-only
   const fetchDraftBoard = async (row: Row, fresh = false) => {
-    if (!row?.id) return;
-    const mayDraft = auth.isAdmin || [row.team1_id, row.team2_id].some((teamId) => teamId != null && auth.isCaptainOf(teamId, row.season_id));
-    if (!mayDraft) return;
-    const [boardRow, stateRow] = await Promise.all([
-      seriesStore.getDraftBoard(row.id, fresh).catch(() => null),
-      seriesStore.getDraftState(row.id, fresh).catch(() => null),
-    ]);
+    if (!mayDraft(row)) return;
+    const [boardRow] = await Promise.all([seriesStore.getDraftBoard(row.id, fresh).catch(() => null), fetchDraftState(row, fresh)]);
     setDraftBoard(boardRow);
-    setDraftState(stateRow);
-    setSeenAt((was) => was ?? stateRow?.seen_at ?? null);
   };
 
   // The visit is stamped when the Draft tab first opens, so reading the published table alone
@@ -568,12 +574,13 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  const runDraftWrite = async (write: () => Promise<unknown>) => {
+  // A write that moves a pairing reads the whole series list; another write names the lighter read it needs
+  const runDraftWrite = async (write: () => Promise<unknown>, read: () => Promise<unknown> = fetchMatchSeries) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
       await write();
-      await fetchMatchSeries();
+      await read();
     } catch (error: any) {
       console.error("Failed to write the draft:", error);
       setErrorMessage(error?.error || error?.message || String(error));
@@ -603,13 +610,15 @@ export function MatchDetailsView({ id }: { id: string }) {
     return runDraftWrite(() => seriesStore.updateDraftSeries(row));
   };
 
-  const setMaxMmrDifference = (value: number | null) => runDraftWrite(() => seriesStore.setDraftMaxMmrDifference(matchId, value));
-  const setTeamReady = (teamId: number, ready: boolean) => runDraftWrite(() => seriesStore.setDraftReady(matchId, teamId, ready));
+  const setMaxMmrDifference = (value: number | null) =>
+    runDraftWrite(() => seriesStore.setDraftMaxMmrDifference(matchId, value), () => fetchDraftState(match, true));
+  const setTeamReady = (teamId: number, ready: boolean) =>
+    runDraftWrite(() => seriesStore.setDraftReady(matchId, teamId, ready), () => fetchDraftState(match, true));
   const checkInFor = (teamId: number, playerId: number) =>
-    runDraftWrite(async () => {
-      await availabilityStore.setTeamAvailability(teamId, match.season_id, { user_id: playerId, playday: match.playday, available: true });
-      await fetchAvailability(match);
-    });
+    runDraftWrite(
+      () => availabilityStore.setTeamAvailability(teamId, match.season_id, { user_id: playerId, playday: match.playday, available: true }),
+      () => fetchAvailability(match),
+    );
   const meetingsOf = (userA: number, userB: number) => seriesStore.playerMeetings(userA, userB);
 
   const toggleDraftFantasyMatch = async (draftSeriesItem: Row) => {
@@ -805,6 +814,7 @@ export function MatchDetailsView({ id }: { id: string }) {
                 <RoundDraftBoard
                   board={draftBoard}
                   state={draftState}
+                  maxDifference={maxDifference}
                   drafted={draftSeries}
                   team1={team1}
                   team2={team2}
@@ -830,6 +840,7 @@ export function MatchDetailsView({ id }: { id: string }) {
                   isAdmin={auth.isAdmin}
                   canDraft={canDraft}
                   board={draftBoard}
+                  maxDifference={maxDifference}
                   seenAt={seenAt}
                   viewerId={auth.me?.user?.id ?? null}
                   onMeetings={meetingsOf}

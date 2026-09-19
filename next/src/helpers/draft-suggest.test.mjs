@@ -34,9 +34,8 @@ test('the suggestion takes the set with the smallest total difference, not the g
 });
 
 test('a player with no MMR is never suggested', () => {
-  const { pairs, rest } = suggestPairings(BOARD, 500);
-  assert.ok(!pairs.some((p) => p.player1_id === 13));
-  assert.ok(rest.some((p) => p.user_id === 13));
+  const { pairs } = suggestPairings(BOARD, 500);
+  assert.ok(!pairs.some((p) => p.player1_id === 13 || p.player2_id === 13));
 });
 
 test('no suggested pairing is wider than the working difference', () => {
@@ -80,4 +79,12 @@ test('the pair index reads a pairing by its two ids', () => {
   const pairOf = pairIndex(BOARD);
   assert.equal(pairOf(11, 21).hours, 4);
   assert.equal(pairOf(21, 11), undefined);
+});
+
+test('over the exact ceiling the greedy path still fills every open place', () => {
+  const players = [];
+  for (let i = 0; i < 13; i++) players.push(player(100 + i, 1, 1500 + i * 10));
+  for (let i = 0; i < 13; i++) players.push(player(200 + i, 2, 1505 + i * 10));
+  const { pairs } = suggestPairings({ team1_id: 1, team2_id: 2, series_per_round: 13, players, pairs: [] }, 100);
+  assert.equal(pairs.length, 13);
 });

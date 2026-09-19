@@ -19,6 +19,8 @@ type Row = Record<string, any>;
 const BOARD_WIDTH = 640;
 const LEFT_EDGE = 280; // where a team 1 lead line meets the scale
 const RIGHT_EDGE = 360;
+const LABEL_END = 268; // the right edge of a team 1 label, where its lead line starts
+const LABEL_START = 372; // the left edge of a team 2 label
 const MIN_ROW = 26;
 const PAD = 14;
 
@@ -51,6 +53,8 @@ function placeRows(players: Row[], scale: { high: number; low: number }, height:
     return { player, at, top: at };
   });
   for (let i = 1; i < rows.length; i++) if (rows[i].top - rows[i - 1].top < MIN_ROW) rows[i].top = rows[i - 1].top + MIN_ROW;
+  // the forward pass can push a low cluster past the board, so the last row is held inside it
+  if (rows.length) rows[rows.length - 1].top = Math.min(rows[rows.length - 1].top, height - PAD);
   for (let i = rows.length - 2; i >= 0; i--) if (rows[i + 1].top - rows[i].top < MIN_ROW) rows[i].top = rows[i + 1].top - MIN_ROW;
   return rows;
 }
@@ -160,6 +164,7 @@ function DifferenceControl({ value, stageValue, busy, onChange }: { value: numbe
 export function RoundDraftBoard({
   board,
   state,
+  maxDifference,
   drafted,
   team1,
   team2,
@@ -178,6 +183,7 @@ export function RoundDraftBoard({
 }: {
   board: Row | null;
   state: Row | null;
+  maxDifference: number; // the working value of the match, which the page holds for the board and the table
   drafted: Row[];
   team1: Row;
   team2: Row;
@@ -211,7 +217,6 @@ export function RoundDraftBoard({
     country: playerById[one.user_id]?.country ?? null,
   }));
   const byId = new Map<number, Row>(players.map((player) => [player.user_id, player]));
-  const maxDifference = state?.max_mmr_difference ?? board.max_mmr_difference ?? 0;
   const stageDifference = state?.stage_max_mmr_difference ?? null;
   const seriesPerRound = board.series_per_round || 0;
   const filled = (board.published_series || 0) + drafted.length;
@@ -256,7 +261,7 @@ export function RoundDraftBoard({
   const nearest = far.find((player) => Number.isFinite(gapTo(player)));
   const pickedPartner = picked ? partnerOf(picked.user_id) : null;
 
-  // a player who sits out this round is not on the board, so Suggest never reaches him
+  // a player who sits out this round is not on the board, so Suggest never picks that player
   const runSuggest = () => {
     setDropped([]);
     setSuggested(suggestPairings({ ...board, players: [...left, ...right] }, maxDifference, drafted));
@@ -550,17 +555,25 @@ export function RoundDraftBoard({
                       );
                     })
                   : null}
-                {[...leftRows, ...rightRows].map((row) => (
-                  <circle
-                    key={row.player.user_id}
-                    cx={sideOf(row.player) === 1 ? LEFT_EDGE : RIGHT_EDGE}
-                    cy={row.at}
-                    r={pick === row.player.user_id ? 5 : 3}
-                    fill={pick === row.player.user_id ? stroke("primary") : stroke("on-surface")}
-                    stroke={stroke("surface")}
-                    strokeWidth={2}
-                  />
-                ))}
+                {[...leftRows, ...rightRows].map((row) => {
+                  const own = sideOf(row.player) === 1;
+                  return (
+                    <g key={row.player.user_id}>
+                      {/* a name pushed off its MMR keeps a lead line back to its own dot */}
+                      {Math.abs(row.top - row.at) > 1 ? (
+                        <line x1={own ? LEFT_EDGE : RIGHT_EDGE} y1={row.at} x2={own ? LABEL_END : LABEL_START} y2={row.top} stroke={stroke("on-surface")} opacity={0.4} />
+                      ) : null}
+                      <circle
+                        cx={own ? LEFT_EDGE : RIGHT_EDGE}
+                        cy={row.at}
+                        r={pick === row.player.user_id ? 5 : 3}
+                        fill={pick === row.player.user_id ? stroke("primary") : stroke("on-surface")}
+                        stroke={stroke("surface")}
+                        strokeWidth={2}
+                      />
+                    </g>
+                  );
+                })}
                 {shelf ? <line x1={0} y1={height + 8} x2={BOARD_WIDTH} y2={height + 8} stroke={stroke("on-surface")} strokeDasharray="2 4" opacity={0.3} /> : null}
               </svg>
               {leftRows.map((row) => label(row.player, 1, row.top))}
@@ -598,7 +611,7 @@ export function RoundDraftBoard({
                 {pickedPartner ? (
                   <div className={`mx-3 mb-2 flex items-center gap-2 rounded px-3 py-2 ${toneClass("warning")}`}>
                     <Icon name="mdi-alert" />
-                    {picked.name} already has a pairing this round, vs {pickedPartner.name}. A second one is allowed and gives him two series in round {playday}.
+                    {picked.name} already has a pairing this round, vs {pickedPartner.name}. A second one is allowed and gives {picked.name} two series in round {playday}.
                   </div>
                 ) : null}
                 {picked.mmr == null ? (
@@ -716,5 +729,3 @@ function placeAt(mmr: number, scale: { high: number; low: number }, height: numb
   const span = Math.max(1, scale.high - scale.low);
   return PAD + ((scale.high - mmr) / span) * (height - 2 * PAD);
 }
-
-export default RoundDraftBoard;

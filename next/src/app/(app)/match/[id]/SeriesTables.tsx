@@ -150,13 +150,15 @@ export function PublishedSeries({
 
 /** Who put a pairing in the draft, and whether it is new since this team last looked. */
 function PairingNote({ item, fresh }: { item: Row; fresh: boolean }) {
-  const who = item.updated_by_name || item.created_by_name;
+  // a create stamps updated_at with created_at, so only a later stamp reads as a change
+  const changed = !!item.updated_by_name && item.updated_at !== item.created_at;
+  const who = changed ? item.updated_by_name : item.created_by_name || item.updated_by_name;
   if (!who && !fresh) return null;
   return (
     <div className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
       {who ? (
         <span>
-          {item.updated_by_name ? "Changed" : "Added"} by {who}
+          {changed ? "Changed" : "Added"} by {who}
           {item.updated_at ? `, ${formatDateTime(item.updated_at)}` : ""}
         </span>
       ) : null}
@@ -179,6 +181,7 @@ export function DraftSeries({
   isAdmin,
   canDraft,
   board,
+  maxDifference,
   seenAt,
   viewerId,
   draftActions,
@@ -195,8 +198,9 @@ export function DraftSeries({
   isAdmin: boolean;
   canDraft: boolean;
   board?: Row | null; // the draft board read: the difference, the shared hours and the head to head of a pairing
-  seenAt?: string | null; // when the viewer's own team last opened this draft
-  viewerId?: number | null; // the reader, whose own pairings are never new to him
+  maxDifference?: number | null; // the working largest difference of the match, which the page holds
+  seenAt?: string | null; // when the viewer's own team last opened this draft; null when it never did
+  viewerId?: number | null; // the reader, whose own pairings are never new
   draftActions: (item: Row) => RowAction[];
   onAddDraftSeries: () => void;
   onPublishAll: () => void;
@@ -205,10 +209,11 @@ export function DraftSeries({
 }) {
   const pairOf = pairIndex(board);
   const boardPlayer = new Map<number, Row>((board?.players || []).map((player: Row) => [player.user_id, player]));
-  // A pairing another captain added or changed since this team last opened the draft
+  // A pairing the other captain moved since this team last opened the draft; seen_at null means it never did
   const isFresh = (item: Row) => {
+    if (seenAt === undefined) return false;
     const by = item.updated_by_user_id ?? item.created_by_user_id ?? null;
-    return !!seenAt && !!item.updated_at && item.updated_at > seenAt && (by == null || by !== viewerId);
+    return !!item.updated_at && (seenAt === null || item.updated_at > seenAt) && (by == null || by !== viewerId);
   };
   if (!draftSeries.length) {
     return (
@@ -284,7 +289,7 @@ export function DraftSeries({
       enableSorting: false,
       cell: ({ row }: { row: { original: Row } }) => {
         const difference = differenceOf(row.original);
-        const limit = board?.max_mmr_difference ?? null;
+        const limit = maxDifference ?? null;
         const over = limit != null && Number.isFinite(difference) && difference > limit ? difference - limit : 0;
         return (
           <div className="text-right">

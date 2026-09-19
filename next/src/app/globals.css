@@ -72,6 +72,7 @@
   --color-on-error: rgb(var(--v-theme-on-error));
   --color-on-info: rgb(var(--v-theme-on-info));
   --color-on-success: rgb(var(--v-theme-on-success));
+  --color-on-warning: rgb(var(--v-theme-on-warning));
   --color-on-win: rgb(var(--v-theme-on-win));
   --color-on-loss: rgb(var(--v-theme-on-loss));
   --color-on-draw: rgb(var(--v-theme-on-draw));
@@ -224,6 +225,31 @@
 .table-scroll th { white-space: nowrap; }
 @media (max-width: 959px) {
   .table-scroll th { white-space: normal; }
+}
+
+/* A stacked table reads one row as a block of label and value lines below the sm breakpoint,
+   because six columns do not fit a phone. The label is the column title, on the cell. */
+@media (max-width: 599.98px) {
+  .table-stack,
+  .table-stack tbody,
+  .table-stack tbody tr { display: block; }
+  .table-stack thead { display: none; }
+  .table-stack tbody tr { padding: 0.5rem 0; }
+  .table-stack tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 2rem;
+    white-space: normal;
+    border: 0;
+  }
+  .table-stack tbody td > div { text-align: right; }
+  .table-stack tbody td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    opacity: var(--v-medium-emphasis-opacity);
+  }
 }
 
 /* The grouped table tints its group header row and the gutter cell of every detail row, so a

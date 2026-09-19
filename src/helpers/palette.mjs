@@ -120,6 +120,7 @@ export const themes = {
             'on-error': '#1A241E',
             'on-info': '#1A241E',
             'on-success': '#1A241E',
+            'on-warning': '#1A241E',
             'on-win': '#1A241E',
             'on-loss': '#1A241E',
             'on-draw': '#1A241E',

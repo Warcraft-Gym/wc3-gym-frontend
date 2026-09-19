@@ -57,8 +57,9 @@ export function ScheduleDialog({
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [series, setSeries] = useState<Picked>({});
-  // The round window and the hours both players have open; one read per opening
-  const [freeTime, setFreeTime] = useState<Row | null>(null);
+  // The round window and the hours both players have open; one read per opening.
+  // undefined while the read is in flight, null when it failed, the answer once it is in
+  const [freeTime, setFreeTime] = useState<Row | null | undefined>(undefined);
   const [view, setView] = useState<"calendar" | "tracks">("calendar");
   const [booked, setBooked] = useState<DateTime | null>(null);
   // the series the dialog holds now, so a late free-time answer for another one is dropped
@@ -69,7 +70,7 @@ export function ScheduleDialog({
   // A season with the tools off, or a series the backend will not answer for, shows no hours
   const readFreeTime = async (seriesId: number) => {
     const found = await fetchWrapper.get(`${backendUrl}/player-series/${seriesId}/free-time`).catch(() => null);
-    if (held.current === seriesId) setFreeTime(found);
+    if (held.current === seriesId) setFreeTime(found ?? null);
   };
 
   useImperativeHandle(ref, () => ({
@@ -81,7 +82,7 @@ export function ScheduleDialog({
         id: item.id,
         ...(item.date_time ? pickerParts(item.date_time, viewer) : { date: null, time: "" }),
       });
-      setFreeTime(null);
+      setFreeTime(undefined);
       setBooked(null);
       // the calendar reads best on a desktop, one day track a row at 390 px
       setView(phone ? "tracks" : "calendar");
@@ -141,7 +142,7 @@ export function ScheduleDialog({
     const picked = pickedAt === cell.at.toMillis();
     return (
       <button
-        key={cell.label}
+        key={index}
         type="button"
         data-cell={`${day.key}|${index}`}
         tabIndex={index === first ? 0 : -1}
@@ -166,7 +167,35 @@ export function ScheduleDialog({
       <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-success/25")} />Open for both</span>
       <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light")} />One of you is blocked</span>
       <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-primary")} />Start time</span>
-      <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light opacity-40")} />Already past</span>
+      <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light opacity-40")} />Outside the round</span>
+    </div>
+  );
+
+  // A track cell is a few pixels wide on a phone, so the picked day also lists its half hours
+  const pickedDay = chosen ? chosen.setZone(viewer).toISODate() : null;
+  const startChips = (day: Day, cells: Cell[]) => (
+    <div className="flex flex-col gap-1 min-[600px]:ml-[7.75rem]">
+      <span className={CAPTION}>
+        Start time on {day.label} ({viewer})
+      </span>
+      <div className="flex flex-wrap gap-1">
+        {cells
+          .filter((cell) => !cell.outside)
+          .map((cell) => (
+            <Button
+              key={cell.at.toMillis()}
+              size="sm"
+              variant={pickedAt === cell.at.toMillis() ? "default" : "outline"}
+              className={cn(cell.blocked && "opacity-60")}
+              aria-label={cellTitle(cell.at)}
+              aria-pressed={pickedAt === cell.at.toMillis()}
+              title={cellTitle(cell.at)}
+              onClick={() => setPick(cell.at)}
+            >
+              {cell.label}
+            </Button>
+          ))}
+      </div>
     </div>
   );
 
@@ -174,11 +203,14 @@ export function ScheduleDialog({
   const tracks = (
     <div className="flex flex-col gap-2" onKeyDown={moveFocus}>
       {grid.map(({ day, cells, first }) => (
-        <div key={day.key} className="flex flex-col gap-1 min-[600px]:flex-row min-[600px]:items-center min-[600px]:gap-3">
-          <span className={cn("w-[7rem] shrink-0 text-sm", day.today && "font-medium")}>{day.today ? "Today" : day.label}</span>
-          <div className="grid grow gap-px" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}>
-            {cells.map((cell, index) => cellButton(day, cell, index, first, "h-6"))}
+        <div key={day.key} className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1 min-[600px]:flex-row min-[600px]:items-center min-[600px]:gap-3">
+            <span className={cn("w-[7rem] shrink-0 text-sm", day.today && "font-medium")}>{day.today ? "Today" : day.label}</span>
+            <div className="grid grow gap-px" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}>
+              {cells.map((cell, index) => cellButton(day, cell, index, first, "h-6"))}
+            </div>
           </div>
+          {day.key === pickedDay ? startChips(day, cells) : null}
         </div>
       ))}
       <div className={cn("flex justify-between min-[600px]:ml-[7.75rem]", CAPTION)}>
@@ -203,7 +235,7 @@ export function ScheduleDialog({
             {day.today ? "Today" : day.label}
           </span>
         ))}
-        {/* one row a half hour; the gutter names the full hours only */}
+        {/* one row a half hour; the gutter names the full hours of the first day, so a clock-change day shifts against it */}
         {Array.from({ length: rows }, (_, index) => (
           <div key={index} className="contents">
             <span className={cn("pr-2 text-right", CAPTION)}>{index % 2 ? "" : grid[0]?.cells[index]?.label}</span>
@@ -271,7 +303,10 @@ export function ScheduleDialog({
 
   return (
     <Dialog open={show} onOpenChange={setShow}>
-      <DialogContent showCloseButton={false} className={cn("gap-0 p-0", booked ? "max-w-[520px] sm:max-w-[520px]" : "max-w-[1100px] sm:max-w-[1100px]")}>
+      <DialogContent
+        showCloseButton={false}
+        className={cn("max-h-[90vh] gap-0 overflow-y-auto p-0", booked ? "max-w-[520px] sm:max-w-[520px]" : "max-w-[1100px] sm:max-w-[1100px]")}
+      >
         <DialogTitle className="flex items-start gap-3 bg-primary px-4 py-3 text-on-primary">
           <Icon name="mdi-calendar-edit" className="mt-0.5" />
           <div className="min-w-0">
@@ -307,7 +342,11 @@ export function ScheduleDialog({
           <>
             <div className="flex flex-col gap-3 p-4">
               <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
-              {freeTime ? (
+              {freeTime === undefined ? (
+                <div className={CAPTION} role="status">
+                  Loading the open hours
+                </div>
+              ) : freeTime ? (
                 <>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <span className="text-sm font-medium">{commonHours(freeTime.hours)}</span>
@@ -354,7 +393,7 @@ export function ScheduleDialog({
               <Button variant="ghost" disabled={saving} onClick={() => setShow(false)}>
                 Cancel
               </Button>
-              <Button disabled={!chosen || saving} onClick={save}>
+              <Button aria-busy={saving} disabled={!chosen || saving} onClick={save}>
                 <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-calendar-check"} />
                 Book this time
               </Button>

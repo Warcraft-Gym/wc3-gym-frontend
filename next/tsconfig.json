@@ -19,8 +19,6 @@
       }
     ],
     "paths": {
-      "@/helpers": ["./src/helpers/index.ts"],
-      "@/helpers/*": ["../src/helpers/*"],
       "@/*": ["./src/*"]
     }
   },

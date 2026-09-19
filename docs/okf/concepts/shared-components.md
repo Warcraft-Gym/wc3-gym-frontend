@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5, at: 2026-09-19T19:40:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T20:10:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -101,6 +101,7 @@ One player's event reads as one 12 px square per round: `win` for a round he won
 The roster of one team in one event is one card: the captains, then the members, in one aligned list of flag, name, race, MMR and the round strip.
 
 - The members run by MMR, highest first, and a player with no MMR last, because the list carries no sort control. The MMR head is the W3C form with the synced time in its tooltip.
+- The column head, the MMR and the round numbers, is drawn once for the card, on the head of the first group that lists rows; "Captains" and "Members 7" stay row group heads, and a group with no rows keeps its one line of empty text.
 - A long name truncates and carries the full name in its title; the MMR never truncates.
 - A captain shows his race, his MMR and his strip only when he plays in that event, and reads "Not playing this season" across those columns when he does not. The race comes from the player's signup race for that event, so a player with none shows no race.
 - A captain reads under Captains alone, so the members list and the member count leave his member row out.

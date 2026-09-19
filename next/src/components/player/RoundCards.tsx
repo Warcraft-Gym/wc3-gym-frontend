@@ -119,6 +119,7 @@ export function RoundCards({
                 // A series replaces the question: the round is already accounted for
                 <>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {/* The reduced series row names no rating, so the card draws the name and the race alone */}
                     <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
                     {!isUnscored(card.series) ? (
                       <Badge variant="outline" className={cn("tnum", SCORE[scoreColor(card.series)])}>
@@ -128,7 +129,8 @@ export function RoundCards({
                   </div>
                   {/* The host bans first and hosts game one, so the card names that side */}
                   {card.series.host_player_id === player.id ? <div className="text-xs text-primary-text">You host and ban first</div> : null}
-                  <div className={CAPTION}>{formatDateTime(card.series.date_time)}</div>
+                  {/* The action bar names the booked time for a viewer who acts on it */}
+                  {!seriesActions ? <div className={CAPTION}>{formatDateTime(card.series.date_time)}</div> : null}
                   {opponentZone(card.series) ? <div className={CAPTION}>{opponentZone(card.series)}</div> : null}
                   {/* The three maps of the series once the veto has decided them */}
                   {maps(card.series).map((line) => (

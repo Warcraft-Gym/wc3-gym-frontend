@@ -23,7 +23,7 @@ export type ScheduleDialogHandle = { open: (item: Row) => void };
 const HINT_LINES = 6;
 const CAPTION = "text-xs text-muted-foreground";
 
-/** The player sets the time of one of his series, in his own clock. The hours both
+/** Whoever acts for a series sets its time, in his own clock. The hours both
  *  sides are open are a hint under the pickers, never a reason to refuse a save. */
 export function ScheduleDialog({
   playerId = null,
@@ -80,6 +80,7 @@ export function ScheduleDialog({
   const save = async () => {
     setSaving(true);
     try {
+      // One route for every writer, an admin included, because it is the one that refreshes the bot's post of the series
       const formData = new FormData();
       const utcDateTime = chosen?.toUTC().toFormat("yyyy-MM-dd HH:mm:ss") ?? null;
       if (utcDateTime) formData.append("date_time", utcDateTime);

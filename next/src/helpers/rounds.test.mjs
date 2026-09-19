@@ -105,26 +105,13 @@ test('the waiting lines name the unscored series and the round in play', () => {
     { season: { id: 5, name: 'GNL Ladder Season' }, cards: ASK_CARDS },
   ], ME);
   assert.deepEqual(lines.map(row => row.text), [
-    'Round 2 · GNL Review Season · vs Peterian',
-    'Round 2 · GNL Ladder Season · Check in for 8 to 14 Sep',
+    'GNL Review Season - Round 2 - vs Peterian',
+    'GNL Ladder Season - Round 2 - Check in for 8 to 14 Sep',
   ]);
   assert.deepEqual(lines.map(row => row.kind), ['series', 'round']);
   assert.equal(lines[0].series.id, 12);
   assert.equal(lines[1].seasonId, 5);
   assert.equal(lines[1].playday, 2);
-});
-
-test('a waiting series owes a result only once its time has passed', () => {
-  const card = (date_time) => ({
-    playday: 2, label: '8 to 14 Sep', over: false, current: true, answer: null,
-    series: { id: 12, player2_id: ME, player1: { name: 'Peterian' }, player1_score: null, player2_score: null, date_time },
-  });
-  const played = (date_time) => waitingLines(
-    [{ season: { id: 4, name: 'GNL Review Season' }, cards: [card(date_time)] }], ME, DateTime.fromISO('2026-09-13T10:00Z'),
-  )[0].played;
-  assert.equal(played('2026-09-29T18:00:00Z'), false);
-  assert.equal(played('2026-09-13T09:00:00Z'), true);
-  assert.equal(played(null), false);
 });
 
 test('a season that asks nothing still shows its unscored series', () => {
@@ -160,16 +147,16 @@ test('a card carries the day its check-in opens', () => {
 
 test('a round asks for a check-in only inside its window', () => {
   // round 2 opens 24 Sep: five days out it asks nothing, three days out it asks
-  assert.deepEqual(checkinLines('2026-09-22T10:00'), ['Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep']);
+  assert.deepEqual(checkinLines('2026-09-22T10:00'), ['GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep']);
   assert.deepEqual(checkinLines('2026-09-24T10:00'), [
-    'Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep',
-    'Round 2 · GNL Ladder Season · Check in for 27 Sep to 3 Oct',
+    'GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep',
+    'GNL Ladder Season - Round 2 - Check in for 27 Sep to 3 Oct',
   ]);
 });
 
 test('an answered round drops out of the check-in lines', () => {
   assert.deepEqual(checkinLines('2026-09-24T10:00', 3, [{ playday: 1, available: true }]), [
-    'Round 2 · GNL Ladder Season · Check in for 27 Sep to 3 Oct',
+    'GNL Ladder Season - Round 2 - Check in for 27 Sep to 3 Oct',
   ]);
 });
 
@@ -183,7 +170,7 @@ test('a card whose answers are still being read is pending and asks nothing', ()
 });
 
 test('a season without checkin_days asks the round in play, as before', () => {
-  assert.deepEqual(checkinLines('2026-09-22T10:00', null), ['Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep']);
+  assert.deepEqual(checkinLines('2026-09-22T10:00', null), ['GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep']);
 });
 
 test('the state chip reads the round before it reads the window', () => {

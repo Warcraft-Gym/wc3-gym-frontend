@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T18:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T18:30:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -41,7 +41,7 @@ A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards 
 - One 6 px gap sits between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in the event.
 - The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats, and it shows only on the draft surfaces of an event that sets a games rule: the players page and the season team assign page. It is the `games` prop, the current w3champions season, and `gamesWarning` in `next/src/helpers/games-rule.mjs` is the rule. A line that meets the rule keeps an empty slot of the mark's width, so the flags stay in one column, and the mark carries its text for a screen reader.
 - The line reads the MMR itself, with `getW3CMMR` over the `w3c_stats` the payload carries, on the race the player signed up on. It asks for nothing of its own, so a payload without `w3c_stats` simply shows no number. `mmr={false}` leaves it out where a column of its own sorts by MMR; a number fills it where the surface already holds one, as the KOTH night page does with the MMR its entries store.
-- Known gap: two reduced builders leave `w3c_stats` empty, so those surfaces show no MMR until a reduced row carries one MMR per side: `StageSeriesRow.from_series_reduced` for `SeriesBox` on an event page and `StageView`, and `SeriesPublic.from_series_reduced` for `UpcomingView`.
+- Known gap: two reduced builders leave `w3c_stats` empty, so those surfaces show no MMR until a reduced row carries one MMR per side: `StageSeriesRow.from_series_reduced` for `SeriesBox` on an event page and `StageView`, and `SeriesPublic.from_series_reduced` for `UpcomingView` and for the round cards on a player page, which `GET /player-series` fills.
 - By default `PlayerName` is a `Link` to the player page.
 - On a drafting page, where the page holds unsaved work, the page wraps its body in `PanelLinksContext.Provider` with the value `true` (`next/src/hooks/player-panel.ts`). Under it the name opens the side panel instead and shows a dock icon in the primary colour with the title "Opens in a side panel". The providers today: the season team assign page, the match page's series draft, and the panel itself. No other page opens the panel. See [the decision](../decisions/player-panel-drafting-only.md).
 - Inside a form dialog on any other page, pass `plain`, because a link would drop the typed input: the veto board in report mode, the fantasy bet dialog, the add-players dialog.
@@ -60,7 +60,7 @@ A team is drawn as `{logo} {name}` everywhere, and it links to the team page. Th
 
 # The series action bar
 
-One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result". It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled and the one after it outlined. The two players, their captains and an admin act on it, and another reader sees the steps without buttons. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
+One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result"; the report step reads "Edit result" once the series is scored. It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled and the one after it outlined. In both bars a button keeps the word of its step, and a step already taken reads as a quiet fact before the buttons: the booked time, and "Veto done". The steps of one series, their state and who may act are answered in one place, `next/src/helpers/series-actions.mjs`, which mirrors the API gate: the player a side names, a captain of the team that fields a side, and a member of the roster of a side that names no player. The captain reads off the seats `/me` lists, one per team and event he captains. An admin acts for either side, on the same routes as everyone else, so every schedule write refreshes the bot's post of the series. Another reader sees the steps without buttons. A series whose rules draw no map from the veto board leaves that step out, a series whose booked time has passed asks for the result next, and a reported series keeps its result button alone. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
 
 # Loading
 

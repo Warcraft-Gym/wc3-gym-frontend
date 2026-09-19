@@ -232,7 +232,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                             size={smAndDown ? "icon" : "icon-xs"}
                             variant={answerFor(player.id, round) === false ? "default" : "outline"}
                             className={answerFor(player.id, round) === false ? "bg-error text-on-error" : "text-error"}
-                            aria-label={`${player.name} can't play round ${round}`}
+                            aria-label={`${player.name} sits out round ${round}`}
                             aria-pressed={answerFor(player.id, round) === false}
                             disabled={!!saving}
                             onClick={() => setRound(player.id, round, false)}

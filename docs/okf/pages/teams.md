@@ -48,7 +48,7 @@ sources:
 
 **The team in one season (`/team/:id/season/:season_id`).** The season points. The team's W3Champions ladder card: points, rank, games, and per player the ladder points, the achievements, the total, wins, losses, the MMR and its change since the season start, with when the card was last synced. The roster: the captains, and the members with battle tag, Discord name, MMR and main race, each group as its own block inside the roster card. The page reads no series, so this roster draws no round strip. An admin picks the captains from every player and saves them; the answer names the captains whose Discord role is missing. An admin syncs the roster from W3Champions, adds players from the season's signups and removes one. A captain of this team, or an admin, gets the "Team rounds" button.
 
-**The round grid (`/team/:id/season/:season_id/rounds`).** One row per player and one column per round, each with a check-in button and a can't-play button; the caption says who set the answer. A second press on the set answer clears it. "Out to round n" marks every round as can't play. A phone shows one round at a time. The view sends anyone who is not a captain of this team, or an admin, to `/profile`.
+**The round grid (`/team/:id/season/:season_id/rounds`).** One row per player and one column per round, each with a check-in button and a sit-out button; the caption says who set the answer. A second press on the set answer clears it. "Out to round n" sets every round to out. A phone shows one round at a time. The view sends anyone who is not a captain of this team, or an admin, to `/profile`.
 
 # Writes
 

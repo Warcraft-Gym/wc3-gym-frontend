@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { PlayerSeasons } from "@/components/player/PlayerSeasons";
 import { RoundCards } from "@/components/player/RoundCards";
 import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/ScheduleDialog";
 import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/ReportResultDialog";
+import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { StatusAlert } from "@/components/StatusAlert";
 import { usePanelLinks } from "@/hooks/player-panel";
 import { useAuth, useAvailabilityStore, useEventStore, usePlayerStore, useSeason } from "@/stores";
@@ -19,7 +19,6 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { myNight, myRaces } from "@/helpers/koth.mjs";
 import { roundCards, waitingLines } from "@/helpers/rounds.mjs";
-import { isUnscored } from "@/helpers/season-phase.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -160,14 +159,8 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
     player?.id,
   );
 
-  // Until the series time has passed the job is to agree a time, so Schedule leads
-  const seriesActions = (row: Row): Row[] => {
-    const schedule = { label: "Schedule", icon: "mdi-calendar-edit", lead: !row.played, dialog: "schedule" };
-    const report = { label: "Report result", icon: "mdi-trophy", lead: row.played, dialog: "report" };
-    return row.played ? [report, schedule] : [schedule, report];
-  };
-  const openSeries = (dialog: string, series: Row) =>
-    (dialog === "schedule" ? scheduleDialog : reportDialog).current?.open(series);
+  // The one viewer the action bar gates on, as the backend gates the writes
+  const viewer = { id: me?.user?.id ?? null, isAdmin, seats: me?.seats ?? [] };
 
   // The check-in, from the waiting card and from the round cards alike
   const [savingWeek, setSavingWeek] = useState<string | null>(null);
@@ -252,14 +245,12 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                     <div key={row.key} className={WAITING}>
                       <div className="min-w-0 grow">{row.text}</div>
                       {row.kind === "series" ? (
-                        <div className="flex flex-wrap gap-2">
-                          {seriesActions(row).map((action) => (
-                            <Button key={action.label} size="sm" variant={action.lead ? "default" : "ghost"} onClick={() => openSeries(action.dialog, row.series)}>
-                              <Icon name={action.icon} />
-                              {action.label}
-                            </Button>
-                          ))}
-                        </div>
+                        <SeriesActionBar
+                          series={row.series}
+                          viewer={viewer}
+                          onSchedule={() => scheduleDialog.current?.open(row.series)}
+                          onReport={() => reportDialog.current?.open(row.series)}
+                        />
                       ) : (
                         <div className="flex gap-2">
                           <Button
@@ -280,7 +271,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                             onClick={() => setWeek(row.seasonId, row.playday, false)}
                           >
                             {savingWeek === weekKey(row.seasonId, row.playday) ? <Icon name="mdi-loading mdi-spin" /> : null}
-                            Can&apos;t play
+                            Sit out
                           </Button>
                         </div>
                       )}
@@ -310,22 +301,14 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                   teamId={row.teamId}
                   answers={answersOf(row.season.id)}
                   seriesActions={owner ? (item) => (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {isUnscored(item) ? (
-                        <Button variant="outline" size="sm" className="text-primary-text" onClick={() => scheduleDialog.current?.open(item)}>
-                          <Icon name="mdi-calendar-edit" />
-                          Edit schedule
-                        </Button>
-                      ) : null}
-                      <Button size="sm" onClick={() => reportDialog.current?.open(item)}>
-                        <Icon name="mdi-trophy" />
-                        {isUnscored(item) ? "Report result" : "Edit result"}
-                      </Button>
-                      <Button variant="outline" size="sm" className="text-primary-text" nativeButton={false} render={<Link href={`/player-series/${item.id}/veto`} />}>
-                        <Icon name="mdi-map-outline" />
-                        Maps
-                      </Button>
-                    </div>
+                    <SeriesActionBar
+                      className="mt-2"
+                      variant="compact"
+                      series={item}
+                      viewer={viewer}
+                      onSchedule={() => scheduleDialog.current?.open(item)}
+                      onReport={() => reportDialog.current?.open(item)}
+                    />
                   ) : undefined}
                   question={owner ? (card) => (
                     <>
@@ -349,7 +332,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                           onClick={() => setWeek(row.season.id, card.playday, false)}
                         >
                           {savingWeek === weekKey(row.season.id, card.playday) ? <Icon name="mdi-loading mdi-spin" /> : null}
-                          Can&apos;t play
+                          Sit out
                         </Button>
                       </div>
                       <div className={cn("mt-2 text-xs text-muted-foreground", card.pending && "invisible")}>

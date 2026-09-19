@@ -247,7 +247,6 @@ These parts of the app break a rule above today.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
-- An admin who plays no side schedules and reports through the player route, which answers 403 until the API takes an admin there (`next/src/components/player/ScheduleDialog.tsx`).
 - The opponent line on `/upcoming` and on the round cards of a player page names the race alone. Both read a reduced series row, which carries no ladder stats, so no MMR draws beside the name.
 - The games mark draws a fixed twenty-game rule, and one of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).
 - No surface draws the W3C data line as the mark beside a synced time: the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), the season assign page prints the synced time with a tooltip but no W3C mark (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`), and the roster head draws the mark with the synced time in its tooltip (`next/src/components/TeamRoster.tsx`).

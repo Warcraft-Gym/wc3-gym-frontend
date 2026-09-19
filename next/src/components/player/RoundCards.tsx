@@ -137,7 +137,9 @@ export function RoundCards({
               ) : card.over || !asks || !card.open ? (
                 // the check-in belongs to the player himself; a visitor reads the state
                 <div className="mt-2">
-                  <Badge className={cn(toneClass(card.answer === false ? "error" : null), asks && card.pending && "invisible")}>{roundStateChip(card, asks)}</Badge>
+                  <Badge className={cn(toneClass(card.answer === false ? "error" : null), asks && card.pending && "invisible")}>
+                    {roundStateChip(card, asks)}
+                  </Badge>
                 </div>
               ) : (
                 question?.(card)

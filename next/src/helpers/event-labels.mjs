@@ -125,8 +125,8 @@ export const MAP_RULES = [
   { value: 'fixed', title: 'Fixed map' },
 ];
 
-// The zone a round of an event ends at midnight in. The first item clears the setting, and
-// a round of an event that names no zone ends at midnight where the reader is.
+// The zone a round of an event ends at midnight in; the first item clears the setting
+// A round of an event that names no zone ends at midnight where the reader is
 export const NO_ROUND_END_ZONE = "Each reader's own zone";
 export const ROUND_END_ZONES = [
   { value: '', title: NO_ROUND_END_ZONE },

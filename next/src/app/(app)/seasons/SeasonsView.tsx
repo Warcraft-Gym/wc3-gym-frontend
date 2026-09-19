@@ -36,6 +36,7 @@ const SCORE_SYSTEMS = [
 ];
 
 type Season = Record<string, any>;
+type Stage = Record<string, any>;
 type MapRow = { id: number; name: string };
 // A column marked mobile:false hides below the md breakpoint. CSS does it, not a JS breakpoint,
 // so the server and the first client paint draw the same row.
@@ -64,7 +65,9 @@ export function SeasonsView() {
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [selectedSeasonMapIds, setSelectedSeasonMapIds] = useState<number[]>([]);
   // The stages of the season being edited, as read, and the largest MMR difference typed per stage id
-  const [stages, setStages] = useState<Season[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
+  // The season the dialog holds now, so a stage read that lands late is dropped
+  const dialogSeasonId = useRef<number | null>(null);
   const [maxMmr, setMaxMmr] = useState<Record<number, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [sort, setSort] = useState<{ value: string; desc: boolean }>({ value: "", desc: false });
@@ -115,8 +118,10 @@ export function SeasonsView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A GNL season opens early check-in and asks for 20 games over the last 2 W3C seasons
   const addNewSeason = () => {
-    setSelectedSeason({ name: "", round_count: 0, pick_ban: "", series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_days: 3, early_checkin: false, round_end_zone: null });
+    setSelectedSeason({ name: "", round_count: 0, pick_ban: "", series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_days: 3, early_checkin: true, round_end_zone: null, min_games: 20, min_games_seasons: 2 });
+    dialogSeasonId.current = null;
     setSelectedSeasonMapIds([]);
     setStages([]);
     setMaxMmr({});
@@ -125,9 +130,7 @@ export function SeasonsView() {
     setSeasonDialogOpen(true);
   };
 
-  // A cleared number field holds an empty string and a cleared zone an empty one; null is
-  // the check-in that stays open all season, the games floor that counts every W3C season,
-  // and the round that ends where the reader is.
+  // A cleared field is null: check-in all season, a floor over every W3C season, a round that ends where the reader is
   const blanksAsNull = (season: Season): Season => ({
     ...season,
     checkin_days: season.checkin_days === "" ? null : season.checkin_days,
@@ -174,8 +177,14 @@ export function SeasonsView() {
     setFormError("");
     setIsEditing(true);
     setSeasonDialogOpen(true);
-    const full = await eventStore.fetchEvent(season.id).catch(() => null);
-    setStages(full?.stages || []);
+    dialogSeasonId.current = season.id;
+    try {
+      const full = await eventStore.fetchEvent(season.id);
+      // A read that lands after the dialog moved on belongs to another season, so it is dropped
+      if (dialogSeasonId.current === season.id && full?.id === season.id) setStages(full.stages || []);
+    } catch (err) {
+      if (dialogSeasonId.current === season.id) setFormError("Error reading the stages: " + (err as Error).message);
+    }
   };
 
   const saveSeason = async () => {
@@ -185,11 +194,15 @@ export function SeasonsView() {
       setFormError(problem);
       return;
     }
+    // The stages in hand belong to the season in the dialog, or no stage is written at all
+    if (Object.keys(maxMmr).length && dialogSeasonId.current !== selectedSeason!.id) {
+      setFormError("The stages of this season are not loaded. Close the dialog and open it again.");
+      return;
+    }
     try {
       const season = blanksAsNull(selectedSeason!);
       await updateSeason(season);
-      // The stage write replaces every field of every stage, so it goes out only when a
-      // largest MMR difference was typed, and carries the stages back as they were read
+      // The stage write replaces every field of every stage, so it carries them back as read
       if (Object.keys(maxMmr).length) await eventStore.setStages(season.id, readStagesPayload(stages, maxMmr));
 
       // Update map pool - first get current maps, then determine what to add/remove
@@ -209,6 +222,7 @@ export function SeasonsView() {
   };
 
   const closeSeasonDialog = () => {
+    dialogSeasonId.current = null;
     setSeasonDialogOpen(false);
     setSelectedSeason(null);
     setSelectedSeasonMapIds([]);
@@ -550,10 +564,10 @@ export function SeasonsView() {
               </Field>
               <div className="flex flex-col gap-1.5">
                 <Label className="flex items-center gap-2">
-                  <Switch checked={!!selectedSeason.early_checkin} onCheckedChange={(checked) => set({ early_checkin: checked })} />
+                  <Switch aria-describedby="edit-early-checkin-help" checked={!!selectedSeason.early_checkin} onCheckedChange={(checked) => set({ early_checkin: checked })} />
                   Early check-in
                 </Label>
-                <p className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
+                <p id="edit-early-checkin-help" className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
               </div>
               {/* The largest MMR difference belongs to a captain draft, so every other stage format leaves it out */}
               {stages

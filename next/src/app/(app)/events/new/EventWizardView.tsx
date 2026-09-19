@@ -301,10 +301,10 @@ export function EventWizardView() {
                 <TextField className={MD4} type="number" label="Check-in opens how many days before" value={form.checkin_days} onChange={(e) => set({ checkin_days: e.target.value })} />
                 <div className={cn(MD6, "flex flex-col gap-1.5")}>
                   <Label className="flex items-center gap-2">
-                    <Switch checked={!!form.early_checkin} onCheckedChange={(early_checkin) => set({ early_checkin })} />
+                    <Switch aria-describedby="wizard-early-checkin-help" checked={!!form.early_checkin} onCheckedChange={(early_checkin) => set({ early_checkin })} />
                     Early check-in
                   </Label>
-                  <p className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
+                  <p id="wizard-early-checkin-help" className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
                 </div>
               </>
             ) : null}

@@ -135,8 +135,7 @@ export const stagesPayload = (form) => (form.stages || []).map((stage) => ({
   group_advance: stage.format === 'round_robin' ? count(stage.group_advance) : null,
 }));
 
-// The fields PUT /events/{id}/stages takes; a stage as read also carries its id, its
-// position and its seed lock, which the write does not take.
+// The fields PUT /events/{id}/stages takes; a read also carries an id, a position and a seed lock
 const STAGE_WRITE_FIELDS = [
   'name', 'format', 'best_of', 'series_per_entrant_per_round', 'swiss_rounds', 'points_by_place',
   'lobby_size', 'group_advance', 'map_rules', 'scheduling_mode', 'ranking_rule',
@@ -144,10 +143,9 @@ const STAGE_WRITE_FIELDS = [
   'auto_advance', 'third_place', 'grand_final_modifier',
 ];
 
-// The body PUT /events/{id}/stages takes when a settings form changes the largest MMR
-// difference alone. The write replaces every field of every stage, so each stage goes back
-// as it was read. `edits` holds the typed value per stage id; a blank one writes nothing,
-// which a captain draft reads as its default, and every other format writes nothing at all.
+// The body PUT /events/{id}/stages takes when a settings form changes the largest MMR difference alone
+// The write replaces every field of every stage, so each stage goes back as it was read
+// `edits` holds the typed value per stage id; a blank one writes nothing, which a captain draft reads as 100
 export const readStagesPayload = (stages, edits = {}) => (stages || []).map((stage) => ({
   ...Object.fromEntries(
     STAGE_WRITE_FIELDS.filter((field) => stage[field] !== undefined).map((field) => [field, stage[field]]),

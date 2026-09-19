@@ -129,6 +129,8 @@ export function PlayerSeasons({
   const opponent = (series: Row) => (mine(series) ? series.player2 : series.player1) ?? { name: "—" };
   // the race the opponent played in that series, not the one he signed the season up on
   const opponentRace = (series: Row) => (mine(series) ? series.player2_race : series.player1_race);
+  // the rating the row names on that race, not the one the opponent's profile carries
+  const opponentMmr = (series: Row) => (mine(series) ? series.player2_mmr : series.player1_mmr);
   const opponentTeam = (series: Row, row: Row) => {
     const match = series.match;
     if (!match) return "";
@@ -329,7 +331,7 @@ export function PlayerSeasons({
                                 <TableRow key={series.id}>
                                   <TableCell>{series.match?.playday ?? "—"}</TableCell>
                                   <TableCell>
-                                    <PlayerName player={opponent(series)} race={opponentRace(series)} />
+                                    <PlayerName player={opponent(series)} race={opponentRace(series)} mmr={opponentMmr(series)} />
                                     {!mdAndUp ? <span className="ml-1 text-muted-foreground">{opponentTeam(series, row)}</span> : null}
                                   </TableCell>
                                   {mdAndUp ? <TableCell>{opponentTeam(series, row)}</TableCell> : null}

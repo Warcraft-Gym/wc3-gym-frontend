@@ -340,10 +340,10 @@ export function SeasonDetailsView({ id }: { id: string }) {
                     </Link>
                   </td>
                   <td>
-                    <PlayerName player={row.player1} race={row.player1_race} />
+                    <PlayerName player={row.player1} race={row.player1_race} mmr={row.player1_mmr} />
                   </td>
                   <td>
-                    <PlayerName player={row.player2} race={row.player2_race} />
+                    <PlayerName player={row.player2} race={row.player2_race} mmr={row.player2_mmr} />
                   </td>
                   <td className="whitespace-nowrap">{row.date_time ? formatDateTime(row.date_time) : "Not scheduled"}</td>
                   <td>

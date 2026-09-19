@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSignupRace, kingPlayer, myProfilePath, playerPath, playersWithCareers } from './players.mjs';
+import { defaultSignupRace, kingPlayer, myProfilePath, playersWithCareers } from './players.mjs';
 
 // A signup needs the race of THIS season, and the profile race cannot carry
 // that for a player who plays two. The last signup is his own answer; the

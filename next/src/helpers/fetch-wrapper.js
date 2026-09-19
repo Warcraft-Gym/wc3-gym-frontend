@@ -139,7 +139,7 @@ async function handleResponse(response, receiveBinary, receivePage = false) {
         try {
             const parsed = text ? JSON.parse(text) : null;
             body = parsed && typeof parsed === 'object' ? parsed : null;
-        } catch (parseError) {
+        } catch {
             body = null; // the raw text carries the message
         }
 
@@ -154,7 +154,7 @@ async function handleResponse(response, receiveBinary, receivePage = false) {
     let data;
     try {
         data = text ? JSON.parse(text) : text;
-    } catch (parseError) {
+    } catch {
         data = text;
     }
 

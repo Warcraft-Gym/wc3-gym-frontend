@@ -7,6 +7,9 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Team, map and avatar images come from the backend and the Discord CDN, so they stay <img>.
   { rules: { "@next/next/no-img-element": "off" } },
+  // A helper is framework-free. It reads a store through a `use*` accessor, which is a plain
+  // function, not a React hook.
+  { files: ["src/helpers/**"], rules: { "react-hooks/rules-of-hooks": "off" } },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

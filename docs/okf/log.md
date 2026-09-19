@@ -2,6 +2,7 @@
 
 ## 2026-09-19
 
+* **Update**: the series page names the map of a fixed game before it is played, and the edit-series race opens on the race the side signed the season up on.
 * **Creation**: the pitfall of a proxy route that keeps the encoding headers of a fetched answer; the session concept states what the Clerk proxy route returns.
 * **Update**: the app is the Next.js app in `next/`. Every source names its file there; the overview, code style, testing, the run, build and deploy runbooks, the routing, session, stores, theme and shared-component concepts and the Clerk proxy decision state the Next.js stack, pnpm and the `NEXT_PUBLIC_` variable names.
 * **Deprecation**: the read-only embed concept and the Vite dependency-cache pitfall.

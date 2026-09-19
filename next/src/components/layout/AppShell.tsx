@@ -175,8 +175,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main id="main" className="flex-1">
+        {/* w-auto, so the 8 px margin comes off the width and a phone page never scrolls sideways */}
         {viewAs ? (
-          <Alert className="alert m-2 text-warning">
+          <Alert className="alert m-2 w-auto text-warning">
             <AlertDescription className="flex items-center gap-2 text-foreground">
               <span className="flex-1">Viewing as {viewAsLabel}</span>
               <Button size="sm" variant="outline" onClick={() => setViewAs(null)}>Exit</Button>

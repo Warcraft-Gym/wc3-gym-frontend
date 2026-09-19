@@ -72,7 +72,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
   const [maps, setMaps] = useState<Row[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
-  // Series with no result: on from ?unscored=1, held here because the week hash push drops the query
+  // Series with no result: on from ?unscored=1; the chip turns it off for this visit
   const [unscoredOnly, setUnscoredOnly] = useState(useSearchParams().get("unscored") === "1");
   const [unscoredSeries, setUnscoredSeries] = useState<Row[]>([]);
 
@@ -172,8 +172,9 @@ export function SeasonDetailsView({ id }: { id: string }) {
   // The back button moves the open round, as the tab click does
   useEffect(() => {
     const onHashChange = () => {
-      const round = roundFromHash() ?? 1;
-      if (selectedWeek && round !== selectedWeek) fetchMatches(round);
+      // An empty hash names no round, so the open one stays
+      const round = roundFromHash();
+      if (round && selectedWeek && round !== selectedWeek) fetchMatches(round);
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);

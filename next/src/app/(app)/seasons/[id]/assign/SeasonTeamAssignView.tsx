@@ -19,7 +19,6 @@ import { SeasonSignupDialog, type SeasonSignupDialogHandle } from "@/components/
 import { StatusAlert } from "@/components/StatusAlert";
 import { SyncProgress } from "@/components/SyncProgress";
 import { W3CIcon } from "@/components/W3CIcon";
-import { W3CMmr } from "@/components/W3CMmr";
 import { W3CSyncResultDialog, type SyncEntry } from "@/components/W3CSyncResultDialog";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { PanelLinksContext } from "@/hooks/player-panel";
@@ -364,6 +363,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
             key={roundSize}
             data={availablePlayers}
             pageSize={roundSize}
+            mobileStack
             sorting={sorting}
             onSortingChange={setSorting}
             empty="No available signed-up players for this season."
@@ -372,7 +372,6 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
                 id: "name",
                 accessorKey: "name",
                 header: "Name",
-                enableSorting: false,
                 cell: ({ row }) => (
                   <PlayerName player={row.original}>
                     <PlayerCues player={row.original} w3cSeason={currentW3CSeason} status={perPlayerSyncStatus[row.original.id]} />
@@ -382,7 +381,8 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
               {
                 id: "w3c_mmr",
                 accessorFn: (row: Row) => positionOf.get(row.id) ?? 0,
-                header: () => <W3CMmr />,
+                // A stacked phone row reads this title off the cell, so the title is a string
+                header: "MMR",
                 cell: ({ row }) => (
                   <>
                     <div className="tnum">{getW3CMMR(row.original, currentW3CSeason, row.original.signup_race) ?? "N/A"}</div>
@@ -473,7 +473,8 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
                             onValueChange={(value) => setPlayerTeamSelection((was) => ({ ...was, [row.original.id]: value as number | null }))}
                           >
                             <SelectTrigger size="sm" aria-label="Team" className="w-full min-w-[150px]">
-                              <SelectValue placeholder="Team" />
+                              {/* the trigger shows the team or nothing; the column title names it */}
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               {teamItems.map((team) => (
@@ -554,7 +555,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
             <CardContent className="px-4 py-4">
               <Button onClick={assignAllPlayers} disabled={assignAllLoading || playersWithTeamSelected === 0}>
                 <Icon name={assignAllLoading ? "mdi-loading mdi-spin" : "mdi-account-multiple-plus"} />
-                Assign {playersWithTeamSelected} player{playersWithTeamSelected !== 1 ? "s" : ""} to teams
+                {`Assign ${playersWithTeamSelected} player${playersWithTeamSelected === 1 ? "" : "s"} to teams`}
               </Button>
             </CardContent>
           ) : null}

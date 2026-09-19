@@ -244,6 +244,7 @@
     white-space: normal;
     border: 0;
   }
+  .table-stack tbody td > div { text-align: right; }
   .table-stack tbody td::before {
     content: attr(data-label);
     font-weight: 500;

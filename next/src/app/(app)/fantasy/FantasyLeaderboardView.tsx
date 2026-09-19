@@ -378,6 +378,7 @@ export function FantasyLeaderboardView() {
             rowId={(team: any) => String(team.id)}
             columnVisibility={columnVisibility}
             empty={auth.isAdmin ? "No fantasy teams in this season yet. Create the first one." : "No fantasy teams in this season yet."}
+            expandLabel="Score breakdown"
             onExpand={loadBreakdown}
             expand={(team: any) => (
               // sticky: stays in view when the summary row scrolls sideways on a narrow window

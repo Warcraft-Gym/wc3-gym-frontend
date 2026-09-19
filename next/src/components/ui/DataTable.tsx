@@ -47,6 +47,7 @@ export function DataTable<T extends RowData>({
   onPageChange,
   rowId,
   expand,
+  expandLabel = "Show detail",
   onExpand,
   className,
 }: {
@@ -66,6 +67,7 @@ export function DataTable<T extends RowData>({
   onPageChange?: (page: number) => void;
   rowId?: (row: T) => string; // the row's own key, so an open row follows its data through a sort
   expand?: (row: T) => React.ReactNode;
+  expandLabel?: string; // what the chevron opens, for the screen reader
   onExpand?: (row: T) => void; // the row just opened, so the caller can fetch its detail
   className?: string;
 }) {
@@ -96,6 +98,8 @@ export function DataTable<T extends RowData>({
             onPageChange((typeof updater === "function" ? updater(was) : updater).pageIndex);
           },
         }),
+    // Every column starts ascending, as a `v-data-table` header did.
+    sortDescFirst: false,
     // A table with no page size shows every row and draws no pager.
     initialState: { pagination: { pageSize: size, pageIndex: 0 } },
     ...(rowCount == null ? {} : { manualPagination: true, manualSorting: true, rowCount }),
@@ -172,7 +176,7 @@ export function DataTable<T extends RowData>({
                             variant="ghost"
                             size="icon-sm"
                             aria-expanded={open}
-                            aria-label="Row detail"
+                            aria-label={expandLabel}
                             onClick={(event) => {
                               event.stopPropagation();
                               toggle(row.id, row.original);
@@ -185,7 +189,14 @@ export function DataTable<T extends RowData>({
                       {row.getVisibleCells().map((cell) => (
                         // a stacked row reads the column title off the cell, where the head row is hidden
                         <TableCell key={cell.id} data-label={typeof cell.column.columnDef.header === "string" ? cell.column.columnDef.header : undefined}>
-                          <table.FlexRender cell={cell} />
+                          {/* a stacked cell wraps its value, so a cell with two lines stays one flex item next to the label */}
+                          {mobileStack ? (
+                            <div>
+                              <table.FlexRender cell={cell} />
+                            </div>
+                          ) : (
+                            <table.FlexRender cell={cell} />
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -204,7 +215,7 @@ export function DataTable<T extends RowData>({
         </table>
       </div>
       {pageSize == null ? null : (
-        /* The footer of `v-data-table`: the page size, the row range and the two arrows. */
+        /* The footer: the page size, the row range and the two arrows. */
         <div className="flex items-center justify-end gap-4 px-4 py-2 text-sm text-muted-foreground">
           {pageSizeOptions ? (
             <span className="flex items-center gap-2">

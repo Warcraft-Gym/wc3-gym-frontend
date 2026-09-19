@@ -14,7 +14,7 @@ import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { multiSelectTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -498,7 +498,7 @@ export function SeasonsView() {
               <Field label="Map Pool" htmlFor="edit-map-pool">
                 {/* one open list, so a map leaves the pool the same way it joined it */}
                 <Select multiple value={selectedSeasonMapIds} onValueChange={setSelectedSeasonMapIds}>
-                  <SelectTrigger id="edit-map-pool" className="h-auto min-h-8 w-full py-1.5">
+                  <SelectTrigger id="edit-map-pool" className={`${multiSelectTrigger} w-full`}>
                     <Icon name="mdi-map" className="text-muted-foreground" />
                     <SelectValue>
                       {(ids: number[]) => (
@@ -548,7 +548,7 @@ export function SeasonsView() {
                   onChange={(e) => set({ min_games: e.target.value === "" ? "" : Number(e.target.value) })}
                 />
               </Field>
-              <Field label="Count the games over" hint="Count games over the last N W3C seasons" htmlFor="edit-min-games-seasons">
+              <Field label="Count the games over" hint="Blank counts every W3C season." htmlFor="edit-min-games-seasons">
                 <Input
                   id="edit-min-games-seasons"
                   type="number"
@@ -581,14 +581,13 @@ export function SeasonsView() {
                   <Field
                     key={stage.id}
                     label={stages.length > 1 ? `Largest MMR difference (${stage.name || `stage ${stage.position}`})` : "Largest MMR difference"}
-                    hint="A captain draft pairs inside this difference."
+                    hint="Blank uses 100."
                     htmlFor={`edit-max-mmr-${stage.id}`}
                   >
                     <Input
                       id={`edit-max-mmr-${stage.id}`}
                       type="number"
                       min={1}
-                      placeholder="100"
                       value={maxMmr[stage.id] ?? stage.max_mmr_difference ?? ""}
                       onChange={(e) => setMaxMmr({ ...maxMmr, [stage.id]: e.target.value })}
                     />

@@ -7,7 +7,7 @@ import { CastChips, type CastSeries } from "@/components/CastChips";
 import { PlayerName } from "@/components/PlayerName";
 import { RowActions, type RowAction } from "@/components/RowActions";
 import { SeriesCard } from "@/components/SeriesCard";
-import { VsRaces } from "@/components/VsRaces";
+import { VsRaces, VsRacesHead } from "@/components/VsRaces";
 import { W3CMmr } from "@/components/W3CMmr";
 import { toneClass } from "@/components/ui/tone";
 import { FacedRaces, SyncedLine, getHighestW3CMMR, mmrOf, type Row } from "./match-cells";
@@ -204,7 +204,7 @@ export function DraftSeries({
     },
     {
       id: `p${n}_vs_race`,
-      header: "vs race",
+      header: () => <VsRacesHead />,
       enableSorting: false,
       cell: ({ row }: { row: { original: Row } }) => (
         <VsRaces player={ladderById.get(row.original[`player${n}`]?.id)} race={row.original[`player${n === 1 ? 2 : 1}_race`]} />

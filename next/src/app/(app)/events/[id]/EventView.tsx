@@ -194,7 +194,7 @@ export function EventView({ id }: { id: string }) {
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Badge className={toneClass(null)}>
               <Icon name="mdi-account-multiple" />
-              {entered} entrants
+              {`${entered} ${entered === 1 ? "entrant" : "entrants"}`}
             </Badge>
             {fixtureSeries ? (
               <Badge className={toneClass(null)}>

@@ -475,10 +475,8 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                           <TableCell className={cn(WIDE, "text-center tnum")}>{team.pointsAgainst}</TableCell>
                           <TableCell className={cn(WIDE, "text-center tnum")}>{team.playerCount}</TableCell>
                           <TableCell className="text-center">
-                            <div className="win-rate-cell flex min-w-[100px] items-center">
-                              <RateBar value={team.winRate ?? 0} height="h-2" color="bg-win" />
-                              <span className="ml-2 text-xs tnum">{team.winRate != null ? `${team.winRate}%` : "–"}</span>
-                            </div>
+                            {/* the figure alone: a table cell carries no bar */}
+                            <span className="text-xs tnum whitespace-nowrap">{team.winRate != null ? `${team.winRate}%` : "–"}</span>
                           </TableCell>
                         </TableRow>
                       );

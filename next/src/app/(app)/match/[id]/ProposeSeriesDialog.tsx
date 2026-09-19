@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
-import { VsRaces } from "@/components/VsRaces";
+import { VsRaces, VsRacesHead } from "@/components/VsRaces";
 import { W3CMmr } from "@/components/W3CMmr";
 import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image";
 import { FacedRaces, SyncedLine, getHighestW3CMMR, mmrOf, type Row } from "./match-cells";
@@ -100,7 +100,7 @@ export function ProposeSeriesDialog({
     },
     {
       id: `p${n}_vs_race`,
-      header: "vs race",
+      header: () => <VsRacesHead />,
       enableSorting: false,
       cell: ({ row }: { row: { original: Row } }) => (
         <VsRaces player={ladderById.get(row.original[`player${n}`]?.id)} race={row.original[`player${n === 1 ? 2 : 1}_race`]} />

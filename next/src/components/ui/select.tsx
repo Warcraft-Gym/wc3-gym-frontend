@@ -27,6 +27,11 @@ function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
   )
 }
 
+/** The trigger of a multiple select: it grows with the chips its value draws, which the one-line
+ *  height, the nowrap and the line clamp of the default trigger would otherwise cut. */
+export const multiSelectTrigger =
+  "h-auto min-h-8 py-1.5 whitespace-normal data-[size=default]:h-auto *:data-[slot=select-value]:line-clamp-none"
+
 function SelectTrigger({
   className,
   size = "default",

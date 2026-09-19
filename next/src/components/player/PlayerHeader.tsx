@@ -99,7 +99,7 @@ export function PlayerHeader({
         </Avatar>
         <div className="min-w-0 grow">
           <div className="font-heading text-2xl font-bold">
-            <PlayerName player={player} race={signupRace} plain />
+            <PlayerName player={player} race={signupRace} plain mmr={false} />
           </div>
           {player.battleTag ? (
             <a href={w3cPlayerUrl(player.battleTag)} target="_blank" rel="noopener noreferrer" className={`${ID_LINK_HOVER} text-muted-foreground`}>

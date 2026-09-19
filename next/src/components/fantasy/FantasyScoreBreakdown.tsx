@@ -265,7 +265,7 @@ export function FantasyScoreBreakdown({
             group={({ group: row }) => (
               <>
                 <TableCell className="font-bold">
-                  <PlayerName player={row.player} race={row.player.signup_race} />
+                  <PlayerName player={row.player} race={row.player.signup_race} mmr={false} />
                 </TableCell>
                 <TableCell className="text-right">{row.mmr || "N/A"}</TableCell>
                 <TableCell className="text-right">{row.record}</TableCell>

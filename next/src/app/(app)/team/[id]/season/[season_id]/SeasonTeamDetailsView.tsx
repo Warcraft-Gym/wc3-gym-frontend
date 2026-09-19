@@ -328,7 +328,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                 {(ladderTeam.players ?? []).map((row: Row) => (
                   <TableRow key={row.id}>
                     <TableCell>
-                      <PlayerName player={row} />
+                      <PlayerName player={row} mmr={false} />
                     </TableCell>
                     <TableCell>{row.race ? <RaceIcon raceIdentifier={row.race} /> : null}</TableCell>
                     <TableCell className="tnum hidden text-right min-[960px]:table-cell">{row.ladder_points}</TableCell>
@@ -463,26 +463,19 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                 )
               }
               columns={[
-                { id: "name", accessorKey: "name", header: "Name", cell: ({ row }) => <PlayerName player={row.original} /> },
-                { id: "battleTag", accessorKey: "battleTag", header: "Battletag" },
-                { id: "discordTag", accessorKey: "discordTag", header: "Discord name" },
                 {
-                  id: "mmr",
-                  header: () => <W3CMmr />,
-                  enableSorting: false,
+                  id: "name",
+                  accessorKey: "name",
+                  header: "Name",
                   cell: ({ row }) => (
                     <>
-                      <div className="tnum">{getW3CMMR(row.original, currentW3CSeason, row.original.signup_race) ?? "N/A"}</div>
+                      <PlayerName player={row.original} race={row.original.signup_race} />
                       {syncCell(row.original)}
                     </>
                   ),
                 },
-                {
-                  id: "race",
-                  accessorKey: "signup_race",
-                  header: "Main race",
-                  cell: ({ row }) => (row.original.signup_race ? <RaceIcon raceIdentifier={row.original.signup_race} /> : null),
-                },
+                { id: "battleTag", accessorKey: "battleTag", header: "Battletag" },
+                { id: "discordTag", accessorKey: "discordTag", header: "Discord name" },
                 {
                   id: "actions",
                   header: "",
@@ -546,14 +539,8 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                     />
                   ),
                 },
-                { id: "name", accessorKey: "name", header: "Name", cell: ({ row }) => <PlayerName player={row.original} plain /> },
+                { id: "name", accessorKey: "name", header: "Name", cell: ({ row }) => <PlayerName player={row.original} race={row.original.signup_race} plain /> },
                 { id: "battleTag", accessorKey: "battleTag", header: "Battletag" },
-                {
-                  id: "mmr",
-                  header: () => <W3CMmr />,
-                  enableSorting: false,
-                  cell: ({ row }) => <span className="tnum">{getW3CMMR(row.original, currentW3CSeason, row.original.signup_race) ?? "N/A"}</span>,
-                },
               ]}
             />
           </div>

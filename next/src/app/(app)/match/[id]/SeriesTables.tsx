@@ -56,10 +56,7 @@ export function PublishedSeries({
   const nameCell = (item: Row, n: 1 | 2) => (
     <>
       <PlayerName player={item[`player${n}`]} race={item[`player${n}_race`]} host={item.host_player_id === item[`player${n}`]?.id} />
-      <div className="flex items-center gap-2">
-        <Badge className="bg-info text-on-info tnum">{mmrOf(item[`player${n}`], item[`player${n}_race`], w3cSeason) ?? "N/A"}</Badge>
-        <SyncedLine player={item[`player${n}`]} />
-      </div>
+      <SyncedLine player={item[`player${n}`]} />
     </>
   );
 
@@ -196,7 +193,7 @@ export function DraftSeries({
       accessorFn: (row: Row) => row[`player${n}`]?.name ?? "",
       header: `Player ${n}`,
       cell: ({ row }: { row: { original: Row } }) => (
-        <PlayerName player={row.original[`player${n}`]} race={row.original[`player${n}_race`]} host={row.original.host_player_id === row.original[`player${n}`]?.id} />
+        <PlayerName player={row.original[`player${n}`]} race={row.original[`player${n}_race`]} host={row.original.host_player_id === row.original[`player${n}`]?.id} mmr={false} />
       ),
     },
     {
@@ -287,7 +284,6 @@ export function DraftSeries({
               series={item}
               title={item.is_fantasy_match ? <Icon name="mdi-star" className="text-primary" title="Marked to count for fantasy when published" /> : null}
               actions={canDraft ? <RowActions actions={draftActions(item)} /> : null}
-              side={({ player, race }) => <Badge className="bg-info text-on-info tnum">{mmrOf(player, race, w3cSeason) || "—"}</Badge>}
             />
           ))}
         </div>

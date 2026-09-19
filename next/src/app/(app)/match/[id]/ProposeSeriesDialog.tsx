@@ -79,7 +79,7 @@ export function ProposeSeriesDialog({
     proposed.some((other) => other.key !== row.key && selected.includes(other.key) && other[`player${n}`]?.id === row[`player${n}`]?.id);
 
   const nameCell = (row: Row, n: 1 | 2) => (
-    <PlayerName player={row[`player${n}`]} race={row[`player${n}_race`]}>
+    <PlayerName player={row[`player${n}`]} race={row[`player${n}_race`]} mmr={false}>
       {hasSeries(row[`player${n}`]?.id) ? <Badge variant="outline" className="text-secondary border-secondary">Has series</Badge> : null}
       {pickedElsewhere(row, n) ? <Badge variant="outline" className="text-warning border-warning">Already picked</Badge> : null}
     </PlayerName>

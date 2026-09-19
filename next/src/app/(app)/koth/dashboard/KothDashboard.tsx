@@ -175,9 +175,9 @@ export function KothDashboard() {
                       <Icon name="mdi-crown" size={28} className="text-primary-text" aria-hidden="true" />
                       <div>
                         <span className="text-xl font-medium">
-                          <PlayerName player={bracket.king.user} race={bracket.king.race} />
+                          <PlayerName player={bracket.king.user} race={bracket.king.race} mmr={bracket.king.mmr ?? false} />
                         </span>
-                        <div className="text-xs text-muted-foreground">{bracket.king.mmr ? `${bracket.king.mmr} MMR` : "Holds the throne"}</div>
+                        <div className="text-xs text-muted-foreground">Holds the throne</div>
                       </div>
                     </>
                   ) : (
@@ -192,8 +192,11 @@ export function KothDashboard() {
                     {bracket.entrants.map((entrant: Row) => (
                       <li key={entrant.id} className="px-4 py-1">
                         <div className="flex items-center gap-3">
-                          {entrant.user ? <PlayerName player={entrant.user} race={solo(entrant) ? entrant.race : undefined} /> : <span>{entrantName(entrant)}</span>}
-                          {solo(entrant) && entrant.mmr ? <span className="tnum text-xs text-muted-foreground">{entrant.mmr} MMR</span> : null}
+                          {entrant.user ? (
+                            <PlayerName player={entrant.user} race={solo(entrant) ? entrant.race : undefined} mmr={(solo(entrant) && entrant.mmr) || false} />
+                          ) : (
+                            <span>{entrantName(entrant)}</span>
+                          )}
                         </div>
                         {/* A player on two races of one bracket sits once in its chain and reads once here */}
                         {raceRows(entrant).map((race: Row) => (

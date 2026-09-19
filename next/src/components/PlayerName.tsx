@@ -63,7 +63,7 @@ export function PlayerName({
         </span>
       ) : games !== undefined ? (
         /* a line that meets the rule keeps the empty slot, so the flags stay in one column */
-        <span className="inline-block w-4" />
+        <span className="inline-block h-4 w-4" />
       ) : null}
       {player.country ? <FlagIcon countryIdentifier={player.country} /> : <span className="fp" />}
       <span className="name">{player.name}</span>

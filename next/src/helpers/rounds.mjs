@@ -23,8 +23,9 @@ export const currentRound = (rounds = [], today = DateTime.now()) => rounds.find
 // One card per round of a season: the round window, the team the player's team
 // meets, the player's series of that round, the answer they gave and the check-in
 // window. A season with no rounds falls back to the weeks its unplayed series carry.
+// `answers` of null means the read is still in flight, and every card is pending.
 export const roundCards = (
-  { rounds = [], series = [], matches = [], teamId = null, answers = [], checkinDays = null },
+  { rounds = [], series = [], matches = [], teamId = null, answers = null, checkinDays = null },
   today = DateTime.now(),
 ) => {
   const weeks = rounds.length ? rounds : [...new Set(
@@ -50,7 +51,9 @@ export const roundCards = (
       opens,
       open: opens === null ? true : today >= opens && !over,
       series: series.find(s => s.match?.playday === round.playday) ?? null,
-      answer: answers.find(a => a.playday === round.playday)?.available ?? null,
+      // An unread answer is not "no answer": a pending card draws no state of its own
+      pending: answers === null,
+      answer: answers?.find(a => a.playday === round.playday)?.available ?? null,
       opponentTeam: (match && (match.team1_id === teamId ? match.team2 : match.team1)) ?? null,
     };
   });
@@ -102,8 +105,9 @@ export const waitingLines = (seasons = [], playerId = null, today = DateTime.now
           }]
         : [];
     }
-    // Without a window only the round in play asks, as it did before check-ins
-    if (!(card.opens ? card.open : card.current) || card.answer !== null || !asks) return [];
+    // Without a window only the round in play asks, as it did before check-ins;
+    // a round whose answer is still being read asks nothing until it arrives
+    if (card.pending || !(card.opens ? card.open : card.current) || card.answer !== null || !asks) return [];
     return [{
       key: `r${season.id}-${card.playday}`,
       kind: 'round',

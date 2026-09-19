@@ -213,7 +213,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   // What the folded row says the veto stands at
   const vetoSteps = (scoreVeto?.steps || []).length;
   const vetoLine = scoreVeto?.complete
-    ? `Map veto complete: ${seriesGames} maps`
+    ? "Map veto complete"
     : vetoSteps
       ? `Map veto: ${vetoSteps} of ${scoreVeto?.order?.length} steps done`
       : "No veto recorded";
@@ -308,7 +308,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : saving ? null : close())}>
       {/* One width in every state: the fold holds the board, so a missing veto never widens the dialog */}
-      <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 sm:max-w-[600px]">
+      <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 md:max-w-[600px]">
         <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
           <Icon name="mdi-trophy" />
           Report result
@@ -333,9 +333,9 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
               <Icon name={vetoOpen ? "mdi-chevron-up" : "mdi-chevron-down"} />
             </Button>
           ) : null}
-          {/* The board stays mounted while it is folded: it names the map each game offers */}
+          {/* The board stays mounted while it is folded, and shows its loader or error until it answers */}
           {series.id ? (
-            <div hidden={!hasVeto || !vetoOpen}>
+            <div hidden={!!scoreVeto && (!hasVeto || !vetoOpen)}>
               <VetoBoard key={series.id} seriesId={series.id} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} />
             </div>
           ) : null}

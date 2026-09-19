@@ -4,13 +4,13 @@ title: Git and pull requests
 description: One branch and one pull request per change, squash merged, pushes batched because every push builds a preview, and the merged combination built before a second merge.
 resource: ../../../.github/workflows/staging-branch.yml
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: staging
     resource: ../../../.github/workflows/staging-branch.yml
     title: The only workflow
   - id: vercel
-    resource: ../../../vercel.json
+    resource: ../../../next/vercel.json
     title: Which branches deploy
 ---
 
@@ -30,8 +30,8 @@ Every push to a branch creates a Vercel preview deployment, and the Hobby plan c
 
 This repository runs no lint, test or build on a pull request. The only workflow force-pushes `staging` to the merged commit. Vercel builds after the merge. So:
 
-- run `npm run lint`, `npm test` and `npm run build` yourself before pushing;
-- before the second merge of a batch, build the combination: refresh the branch from `main` (or make a local merge) and run `npm run build`, gated on the build's exit code, never on a grep of its output. Two green branches once broke `main` together when one removed a helper the other imported. See [the pitfall](../pitfalls/no-ci-build-the-merged-pair.md).
+- run `pnpm lint`, `pnpm tsc --noEmit`, `pnpm test` and `pnpm build` from `next/` yourself before pushing;
+- before the second merge of a batch, build the combination: refresh the branch from `main` (or make a local merge) and run `pnpm build`, gated on the build's exit code, never on a grep of its output. Two green branches once broke `main` together when one removed a helper the other imported. See [the pitfall](../pitfalls/no-ci-build-the-merged-pair.md).
 - when a unit of a batch renames or removes a shared helper, merge it first and cut the others from its tip.
 
 # Backend and frontend together

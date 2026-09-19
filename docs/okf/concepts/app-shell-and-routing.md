@@ -2,24 +2,24 @@
 type: Domain Concept
 title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
-resource: ../../../src/helpers/router.js
+resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
 sources:
   - id: router
-    resource: ../../../src/helpers/router.js
+    resource: ../../../next/src/lib/routes.ts
     title: The routes and the guard
   - id: app
-    resource: ../../../src/App.vue
+    resource: ../../../next/src/components/layout/AppShell.tsx
     title: The app bar and the session watch
   - id: return-url
-    resource: ../../../src/helpers/return-url.mjs
+    resource: ../../../next/src/helpers/return-url.mjs
     title: Where a login lands
 ---
 
 # Routes and roles
 
-`src/helpers/router.js` lists every route with `meta.role`, the lowest session role that may open it, ranked `public < guest < member < captain < admin`. `meta.nav: false` hides a route from the navigation. `meta.season: true` says the path carries a season slug, so the guard loads the season list first.
+`next/src/lib/routes.ts` lists every route with `meta.role`, the lowest session role that may open it, ranked `public < guest < member < captain < admin`. `meta.nav: false` hides a route from the navigation. `meta.season: true` says the path carries a season slug, so the guard loads the season list first. The pages themselves are folders under `next/src/app/(app)/`; a new route needs its folder and its line in the table, and a path the table does not name is public.
 
 | Role | Routes |
 |---|---|
@@ -31,9 +31,9 @@ sources:
 
 `/player-dashboard` redirects to the member's own player page and `/player-stats` to `/players`. What each page does is in the [pages](../pages/index.md) directory.
 
-The guard: a public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path lands on `/` rather than a blank page, because old links from Discord and the website exist.
+The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/report` and `/player/:id` do, is not drawn again.
 
-Routing is history mode on plain paths since 2026-09-04; there is no bridge for old `/#/x` links. See [the decision](../decisions/history-routing.md).
+Routes are plain paths since 2026-09-04; there is no bridge for old `/#/x` links. See [the decision](../decisions/history-routing.md).
 
 # Season slugs
 
@@ -41,8 +41,8 @@ A season in a path is its slug, `gnl-s18`, made from its name; a bare id still r
 
 # The app bar
 
-`App.vue` draws the navigation from `/me`: the name and avatar, the role, the current season by slug, the team link (the captained seat in the current season, else the roster row), and the theme menu (light, dark, system, stored in `localStorage`). It hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
+`AppShell.tsx` draws the navigation from `/me`: the name and avatar, the role, the current season by slug, the team link (the captained seat in the current season, else the roster row), and the theme menu (light, dark, system, stored in `localStorage`). On a phone the links sit in a drawer. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
 
-# Read-only embed
+# No embed mode
 
-A page opened with `?readonly=1` hides the chrome, is always light, and posts its height to the parent window, so the WordPress site can embed a report in an iframe. See [read-only embed](readonly-embed.md).
+Every page draws the full shell. `?readonly=1` is ignored since 2026-09-16.

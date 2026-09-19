@@ -2,18 +2,18 @@
 type: Page
 title: KOTH
 description: The KOTH nights list an admin opens tonight from, and the public dashboard that draws tonight's brackets for the stream.
-resource: ../../../src/views/KothView.vue
+resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T17:30:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
 sources:
   - id: nights
-    resource: ../../../src/views/KothView.vue
+    resource: ../../../next/src/app/(app)/koth/KothView.tsx
     title: The nights list
   - id: dashboard
-    resource: ../../../src/views/KothDashboard.vue
+    resource: ../../../next/src/app/(app)/koth/dashboard/KothDashboard.tsx
     title: The public dashboard
   - id: helper
-    resource: ../../../src/helpers/koth.mjs
+    resource: ../../../next/src/helpers/koth.mjs
     title: Which night is tonight's
 ---
 
@@ -43,5 +43,4 @@ A KOTH night is one event of the KOTH league. Its brackets are its divisions, an
 # Rules
 
 - The chain is drawn by `StageView`: [shared components](../concepts/shared-components.md).
-- `?readonly=1` drops the app chrome on this page as on every other: [read-only embed](../concepts/readonly-embed.md).
 - A player reads as flag, name, race, MMR: [one player name standard](../decisions/player-name-standard.md).

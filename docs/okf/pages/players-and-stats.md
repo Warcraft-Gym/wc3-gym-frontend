@@ -2,12 +2,12 @@
 type: Page
 title: Players and stats
 description: The players list, one player's page with the owner's actions, the season ladder and the Random stats helper.
-resource: ../../../src/views/PlayersView.vue
+resource: ../../../next/src/app/(app)/players/PlayersView.tsx
 tags: [pages, players]
 generated: { by: openai/gpt-5, at: 2026-09-17T07:27:31Z }
 sources:
   - id: players
-    resource: ../../../src/views/PlayersView.vue
+    resource: ../../../next/src/app/(app)/players/PlayersView.tsx
     title: The players list
   - id: next-players
     resource: ../../../next/src/app/(app)/players/PlayersView.tsx
@@ -16,19 +16,19 @@ sources:
     resource: ../../../next/src/components/CareerStatsDialog.tsx
     title: The Next.js career stats editor
   - id: player
-    resource: ../../../src/views/PlayerView.vue
+    resource: ../../../next/src/app/(app)/player/[id]/PlayerView.tsx
     title: The player page
   - id: profile
-    resource: ../../../src/components/PlayerProfile.vue
+    resource: ../../../next/src/components/player/PlayerProfile.tsx
     title: The profile the page and the panel render
   - id: edit
-    resource: ../../../src/components/EditPlayerDialog.vue
+    resource: ../../../next/src/components/EditPlayerDialog.tsx
     title: The edit dialog
   - id: ladder
-    resource: ../../../src/views/LadderView.vue
+    resource: ../../../next/src/app/(app)/ladder/LadderView.tsx
     title: The season ladder
   - id: random
-    resource: ../../../src/views/RandomStatsView.vue
+    resource: ../../../next/src/app/(app)/random-stats/RandomStatsView.tsx
     title: The Random stats helper
 ---
 

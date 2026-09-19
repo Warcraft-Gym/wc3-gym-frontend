@@ -2,15 +2,15 @@
 type: Page
 title: Teams
 description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's round grid.
-resource: ../../../src/views/TeamsView.vue
+resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
 tags: [pages, teams]
-generated: { by: openai/gpt-5, at: 2026-09-17T07:27:31Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: teams
-    resource: ../../../src/views/TeamsView.vue
+    resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
     title: The teams list
   - id: team
-    resource: ../../../src/views/TeamView.vue
+    resource: ../../../next/src/app/(app)/team/[id]/TeamView.tsx
     title: One team
   - id: next-teams
     resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
@@ -19,13 +19,13 @@ sources:
     resource: ../../../next/src/app/(app)/team/[id]/TeamView.tsx
     title: One team in Next.js
   - id: season-team
-    resource: ../../../src/views/SeasonTeamDetailsView.vue
+    resource: ../../../next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx
     title: The team in one season
   - id: rounds
-    resource: ../../../src/views/TeamRoundsView.vue
+    resource: ../../../next/src/app/(app)/team/[id]/season/[season_id]/rounds/TeamRoundsView.tsx
     title: The round grid
   - id: store
-    resource: ../../../src/stores/team.store.js
+    resource: ../../../next/src/stores/team.ts
     title: Every team write
 ---
 
@@ -45,8 +45,6 @@ sources:
 **Teams (`/teams`).** Every team, the current season's teams first and the past teams under them: icon, long name, handle, and a chip per season played. A row opens the team. An admin adds a team (name, long name, icon), edits one and deletes one.
 
 **One team (`/team/:id`).** One tab per event the team played, opening on the current season. The tab links to the event page and to the season team page, and shows the rank, the series record, the points, the points against and the points available. A rounds table lists each round's opponent, series score and points. The roster of the tab, captains and members, closes the page.
-
-The Next.js list and team page use the same league-scoped team reads and writes, current-event grouping, event tabs, points notes, round aggregation and shared roster component as the Vue views.
 
 **The team in one season (`/team/:id/season/:season_id`).** The season points. The team's W3Champions ladder card: points, rank, games, and per player the ladder points, the achievements, the total, wins, losses, the MMR and its change since the season start, with when the card was last synced. The roster: the captains, and the members with battle tag, Discord name, MMR and main race. An admin picks the captains from every player and saves them; the answer names the captains whose Discord role is missing. An admin syncs the roster from W3Champions, adds players from the season's signups and removes one. A captain of this team, or an admin, gets the "Team rounds" button.
 

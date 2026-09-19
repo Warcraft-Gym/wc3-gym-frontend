@@ -1,6 +1,5 @@
-// The barrel `App.vue` and 12 views import. The Vue app's own barrel adds router and theme,
-// which have no module-level shape here: the route table is in `@/lib/routes` and the theme
-// choice is a hook.
+// The barrel the shell and 12 views import. The route table is in `@/lib/routes` and the
+// theme choice is a hook.
 export { backendUrl } from "@/helpers/backend-url.js";
 export { fetchWrapper, authHeader, pageQuery, PAGE_LIMIT } from "@/helpers/fetch-wrapper.js";
 export { canSeeRole, homePath } from "@/lib/routes";

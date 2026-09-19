@@ -1,22 +1,21 @@
 FROM node:lts-alpine
 
-# install simple http server for serving static content
-RUN npm install -g http-server
+RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
 
-# make the 'app' folder the current working directory
-WORKDIR /app
+# The app is next/. The /user-guide page reads ADMIN_UI_USER_GUIDE.md one folder up.
+WORKDIR /app/next
 
-# copy both 'package.json' and 'package-lock.json' (if available)
-COPY package*.json ./
+COPY next/package.json next/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# install project dependencies
-RUN npm install
+COPY ADMIN_UI_USER_GUIDE.md /app/
+COPY next/ ./
 
-# copy project files and folders to the current working directory (i.e. 'app' folder)
-COPY . .
-
-# build app for production with minification
-RUN npm run build
+# Next inlines every NEXT_PUBLIC_ value into the browser bundle at build time.
+ARG NEXT_PUBLIC_BACKEND_URL
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_CLERK_PROXY_URL
+RUN pnpm build
 
 EXPOSE 5003
-CMD ["http-server", "dist", "-p", "5003"]
+CMD ["pnpm", "start", "-p", "5003"]

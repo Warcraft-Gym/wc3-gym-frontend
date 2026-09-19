@@ -1,21 +1,21 @@
 ---
 type: Pitfall
-title: Worktrees inherit node_modules and lose the icon font
-description: A worktree's node_modules is empty and works by resolving up; the dev server then refuses the icon font, so every icon is an empty box in a screenshot.
+title: A worktree needs its own install and env file
+description: A worktree has no node_modules and no env file of its own; install and copy the env file inside its next/ folder before the first run.
 tags: [tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:05:19Z }
 sources:
   - id: source
-    resource: ../../../vite.config.js
+    resource: ../../../next/next.config.ts
     title: The dev server
 ---
 
-# What happened
+# What happens
 
-Screenshots from a dev server inside a worktree showed every Material icon as an empty rectangle, and the boxes were reported as a rendering bug more than once. The font was refused with 403 because it resolved into the parent checkout, outside the project root the dev server allows.
+The packages live in `next/node_modules`. A git worktree is a sibling tree, so node's walk up from its `next/` folder never reaches the main checkout's `next/node_modules`, and the first command fails on a missing package. The env file is untracked, so a new worktree has none, and the app throws at load on the missing backend URL.
 
 # The rule
 
-- Never `npm install` in a worktree. Node walks up; `npm test`, `npm run build` and `npx vite` all work.
-- Read a package's source from the main checkout's `node_modules`.
-- A boxed glyph from a worktree dev server is the harness. Confirm the glyph name in the icon font's CSS, or build and serve `dist` to see it.
+- In a new worktree: `cd next`, `pnpm install --frozen-lockfile`, `cp .env.example .env` and fill in the dev key. pnpm links from its store, so the install is cheap.
+- Every package, the icon font included, then resolves inside the worktree, so a worktree dev server draws the same page as the main checkout.
+- Never commit a lockfile change from a worktree install; `--frozen-lockfile` makes none.

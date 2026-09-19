@@ -3,7 +3,7 @@ type: Pitfall
 title: "No CI on pull requests: build the merged pair"
 description: Two green branches broke main together because one removed a helper the other imported, and Vercel builds only after the merge.
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: source
     resource: ../../../.github/workflows/staging-branch.yml
@@ -16,4 +16,4 @@ Twice in two days. One branch renamed an export and another still imported the o
 
 # The rule
 
-Before the second merge of a batch, build the combination (refresh the branch from `main` or merge locally) and gate on the build's exit code: `npx vite build > log 2>&1; test $? -eq 0`. When one unit renames or removes a shared helper, merge it first and cut the others from its tip.
+Before the second merge of a batch, build the combination (refresh the branch from `main` or merge locally) and gate on the build's exit code: `pnpm build > log 2>&1; test $? -eq 0`, with `pnpm tsc --noEmit` before it. When one unit renames or removes a shared helper, merge it first and cut the others from its tip.

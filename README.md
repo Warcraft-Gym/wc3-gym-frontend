@@ -1,306 +1,97 @@
 # GNL Admin Frontend
 
-Vue.js-based dashboard for managing GNL esports leagues, including team management, match scheduling, fantasy betting, and player statistics. Built with Vue 3, Vuetify 3, and Vite.
+Dashboard for managing GNL esports leagues: team management, match scheduling, fantasy betting and player statistics. The app is a Next.js App Router app in `next/`, with shadcn/ui components and Tailwind.
 
 ## Prerequisites
 
 - **Node.js** (LTS version) - [Download](https://nodejs.org/en)
+- **pnpm** - `corepack enable`
 - **Docker Desktop** (optional, for containerized deployment) - [Install Docker](https://www.docker.com/products/docker-desktop)
-- **Visual Studio Code** (recommended) - [Download](https://code.visualstudio.com/)
-- **VS Code Extensions** (optional):
-  - Volar (Vue Language Features)
-  - Docker (Microsoft)
 
-## Quick Start - Local Development
-
-> **⚠️ Recommended for Development:** Use `npm run dev` locally instead of Docker during development. The Vite dev server provides automatic proxy configuration to the backend, hot-reload, and faster iteration. Docker is primarily for production builds and deployment testing.
-
-### 1. Clone Repository
+## Quick start
 
 ```bash
 git clone <repository-url>
-cd wc3-gym-frontend
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
+cd wc3-gym-frontend/next
+pnpm install
 cp .env.example .env
+pnpm dev
 ```
 
-`.env` is not tracked. See [Environment Variables](#environment-variables).
+The app runs at http://localhost:3000. `.env` is not tracked; copy `.env.example` once per clone.
 
-### 3. Start Development Server
+Point the app at a backend in one of two ways:
 
-```bash
-npm run dev
-```
+- **A running backend:** set `NEXT_PUBLIC_BACKEND_URL=/api` and start with `PROXY_TARGET=http://localhost:5002 pnpm dev`. The dev server sends `/api/*` to that target with the prefix stripped.
+- **A deployed backend:** set `NEXT_PUBLIC_BACKEND_URL` to its absolute URL and leave `PROXY_TARGET` unset.
 
-The application will be available at:
-- **Frontend:** http://localhost:5003
-- **Backend API (proxy):** http://localhost:5002
+### Environment variables
 
-**Note:** The dev server is configured to proxy API requests to `http://localhost:5002`. Ensure the GNL backend is running before accessing the frontend.
+Next inlines every `NEXT_PUBLIC_` value into the public bundle at build time. Do not put a secret in one.
 
-## Docker Development Setup
+| Name | Purpose |
+|------|---------|
+| `NEXT_PUBLIC_BACKEND_URL` | Base URL for API calls: `/api` behind the proxy, else the backend's absolute URL. |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key. |
+| `NEXT_PUBLIC_CLERK_PROXY_URL` | Clerk proxy URL. Set on the production project only. |
+| `CLERK_SECRET_KEY` | Read by the Clerk proxy route on the server. It never reaches the browser. |
+| `PROXY_TARGET` | Backend the dev server proxies `/api/*` to. Read from the shell, not from `.env`. |
 
-> **Note:** Docker setup is primarily for production builds and deployment testing. For active development, use `npm run dev` locally instead (see Quick Start above) for better performance and automatic backend proxy handling.
+Vercel holds its own values for the production and preview builds.
 
-### Using VS Code Docker Tasks
+## Scripts
 
-The project includes VS Code tasks for Docker-based development.
-
-#### 1. Configure tasks.json
-
-Tasks are configured in `.vscode/tasks.json`. The Docker debug task is already set up:
-
-```json
-{
-  "type": "docker-run",
-  "label": "docker-run: debug",
-  "dependsOn": ["docker-build"],
-  "dockerRun": {
-    "command": "npm run dev",
-    "ports": [{ "hostPort": 5003, "containerPort": 5003 }]
-  },
-  "node": {
-    "enableDebugging": true
-  }
-}
-```
-
-**Key Configuration Points:**
-- `command`: Runs `npm run dev` inside the container for hot-reload development
-- `ports`: Maps container port 5003 to host port 5003
-- `enableDebugging`: Enables Node.js debugging in VS Code
-
-#### 2. Run with Docker
-
-1. Open **Run and Debug** panel (Ctrl+Shift+D)
-2. Select **"docker-run: debug"** from the dropdown
-3. Press F5 or click the green play button
-
-This will:
-- Build the Docker image (`eashibby/gnl_admin_ui:latest`)
-- Start the container with Vite dev server
-- Enable hot-reload for development
-- Attach debugger for breakpoint support
-
-### Manual Docker Commands
-
-```bash
-# Build image
-docker build -t eashibby/gnl_admin_ui:latest .
-
-# Run container for production (serves static build)
-docker run -d -p 5003:5003 eashibby/gnl_admin_ui:latest
-
-# Run container for development (with volume mounting for hot-reload)
-docker run -d \
-  -p 5003:5003 \
-  -v $(pwd):/app \
-  -v /app/node_modules \
-  eashibby/gnl_admin_ui:latest \
-  npm run dev
-```
-
-## Backend API Configuration
-
-### Development Mode (Vite Dev Server)
-
-The Vite dev server uses a proxy configuration in `vite.config.js`:
-
-```javascript
-proxy: {
-  '/api': {
-    target: 'http://localhost:5002',  // Backend API URL
-    changeOrigin: true,
-    secure: false,
-    rewrite: path => path.replace(/^\/api/, '')
-  }
-}
-```
-
-**How it works:**
-- Frontend makes requests to `/api/users`
-- Vite proxies to `http://localhost:5002/users`
-- No CORS issues during development
-
-**Backend URL Options:**
-- **Local backend in Docker:** Use `http://host.docker.internal:5002` (if frontend is also in Docker)
-- **Local backend not in Docker:** Use `http://localhost:5002` (default)
-- **Remote backend:** Update target to backend URL (e.g., `https://backend.warcraft-gym.com`)
-
-### Environment Variables
-
-Vite reads `.env` at build time and inlines every `VITE_` value into the public bundle. Do not put a secret in it.
-
-| Name | Local value | Purpose |
-|------|-------------|---------|
-| `VITE_BACKEND_URL` | `/api` | Base URL for API calls. The dev server proxies `/api` to the backend. |
-| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_test_...` | Clerk publishable key. The dev instance key in `.env.example` is public. |
-| `VITE_CLERK_PROXY_URL` | unset | Clerk proxy URL. Set only on the Vercel production project. |
-| `VITE_PROXY_TARGET` | unset | Dev-server proxy target. Read from the shell, not from `.env`. Defaults to `http://localhost:5002`. |
-
-`.env` is not tracked. Copy `.env.example` to `.env` once per clone. Vercel holds its own values for production and preview builds.
-
-## Available Scripts
+Run these from `next/`.
 
 | Command | Description |
 |---------|-------------|
-| `npm install` | Install all dependencies |
-| `npm run dev` | Start Vite dev server (http://localhost:5003) |
-| `npm run build` | Build for production (outputs to `dist/`) |
-| `npm run preview` | Preview production build locally (http://localhost:5050) |
-| `npm run lint` | Run ESLint and auto-fix issues |
+| `pnpm dev` | Start the dev server (http://localhost:3000) |
+| `pnpm build` | Build for production |
+| `pnpm start` | Serve the production build |
+| `pnpm test` | Run the helper, store and knowledge-bundle tests |
+| `pnpm lint` | Run ESLint |
 
-## Project Structure
+## Project structure
 
 ```
-admin_frontend/
-├── public/                 # Static assets (served as-is)
-├── src/
-│   ├── App.vue            # Root component with navigation
-│   ├── main.js            # Application entry point
-│   ├── assets/            # Images, styles, media
-│   │   ├── base.css       # Global styles
-│   │   ├── media/         # Logos, icons
-│   │   └── raceIcons/     # Warcraft 3 race icons
-│   ├── components/        # Reusable Vue components
-│   │   ├── CountrySelect.vue
-│   │   ├── PlayerDetailsDialog.vue
-│   │   ├── RaceIcon.vue
-│   │   └── ...
-│   ├── helpers/           # Utility modules
-│   │   ├── fetch-wrapper.js  # API request wrapper
-│   │   └── router.js         # Vue Router configuration
-│   ├── stores/            # Pinia state management
-│   │   ├── auth.store.js
-│   │   ├── users.store.js
-│   │   ├── teams.store.js
-│   │   └── ...
-│   └── views/             # Page components
-│       ├── HomeView.vue
-│       ├── UsersView.vue
-│       ├── TeamsView.vue
-│       └── ...
-├── .vscode/
-│   └── tasks.json         # VS Code Docker tasks
-├── Dockerfile             # Docker image definition
-├── vite.config.js         # Vite configuration
-├── package.json           # Dependencies and scripts
-└── index.html             # HTML entry point
+wc3-gym-frontend/
+├── next/                   # the app
+│   ├── src/app/            # routes, layouts and views
+│   ├── src/components/     # shared components
+│   ├── src/helpers/        # framework-free logic, with its tests
+│   ├── src/hooks/          # client state: theme, player panel, delete dialog
+│   ├── src/lib/            # route table, session guard, Clerk wiring
+│   ├── src/stores/         # API clients, one module per resource
+│   ├── next.config.ts      # rewrites and redirects
+│   └── vercel.json         # Vercel reads this file; the project root is next/
+├── docs/okf/               # the public knowledge bundle
+├── ADMIN_UI_USER_GUIDE.md  # the /user-guide page renders this file
+├── DESIGN.md               # design rules
+└── Dockerfile              # builds and serves the app on port 5003
 ```
 
-## Development Workflow
-
-1. **Start backend API** (see [backend README](../backend/README.md))
-   ```bash
-   # Backend should be running at http://localhost:5002
-   ```
-
-2. **Start frontend dev server**
-   ```bash
-   npm run dev
-   ```
-
-3. **Make changes** - Vite hot-reloads automatically
-
-4. **Test in browser** - http://localhost:5003
-
-5. **Lint code** before committing
-   ```bash
-   npm run lint
-   ```
-
-## Building for Production
-
-### Build Static Assets
+## Docker
 
 ```bash
-npm run build
+docker build -t gnl_admin_ui:latest --build-arg NEXT_PUBLIC_BACKEND_URL=<backend url> .
+docker run -d -p 5003:5003 gnl_admin_ui:latest
 ```
 
-Output is generated in `dist/` directory.
-
-### Preview Production Build Locally
-
-```bash
-npm run preview
-# Access at http://localhost:5050
-```
-
-### Deploy Production Build
-
-The `dist/` folder can be:
-- Served by any static file server (nginx, Apache, http-server)
-- Deployed to hosting platforms (Netlify, Vercel, AWS S3)
-- Containerized with Docker (using the provided Dockerfile)
-
-## Troubleshooting
-
-### API Requests Failing (404/CORS Errors)
-
-**Symptom:** Network errors or CORS issues in browser console
-
-**Solutions:**
-1. Verify backend is running at `http://localhost:5002`
-2. Check Swagger docs accessible: `http://localhost:5002/apidocs/`
-3. Verify proxy configuration in `vite.config.js` matches backend URL
-4. For Docker: Ensure backend URL uses `host.docker.internal` if both services are in Docker
-
-### Port 5003 Already in Use
-
-**Solution:** Kill existing process or change port
-
-```bash
-# Find process using port (Windows)
-netstat -ano | findstr :5003
-
-# Kill process
-taskkill /PID <pid> /F
-
-# Or change port in vite.config.js
-server: { port: 5004 }
-```
-
-### Hot Reload Not Working
-
-**Solutions:**
-1. Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
-2. Clear Vite cache: `npm run dev -- --force`
-3. Restart Vite dev server
-
-### Build Fails with Memory Error
-
-**Solution:** Increase Node.js memory limit
-
-```bash
-# Windows
-set NODE_OPTIONS=--max-old-space-size=4096 && npm run build
-
-# Mac/Linux
-export NODE_OPTIONS=--max-old-space-size=4096 && npm run build
-```
+The image builds `next/` and serves it on port 5003. Every `NEXT_PUBLIC_` value is baked in at build time, so a new backend URL needs a new image.
 
 ## Authentication
 
-The admin UI requires authentication via JWT tokens:
+Sign-in runs through Clerk. The admin-token login at `/admin-login` still works: the token is the one the backend reads from `ADMIN_TOKEN`, and every API request carries `Authorization: Bearer <token>`.
 
-1. Login with admin token at login page
-2. Token is stored in Pinia auth store
-3. All API requests include `Authorization: Bearer <token>` header
-4. Token auto-refreshes using refresh token
+## Troubleshooting
 
-**Admin Token:** Same token configured in backend's `ADMIN_TOKEN` environment variable.
+- **API requests fail with 404 or a CORS error.** Check the backend is running, and that `NEXT_PUBLIC_BACKEND_URL` and `PROXY_TARGET` agree with each other.
+- **Port already in use.** `pnpm dev --port <port>`, or stop the process holding it.
+- **A dependency looks stale.** Delete `next/node_modules` and run `pnpm install` again.
 
-## Additional Resources
+## Additional resources
 
-- [Frontend Architecture Guide](.github/copilot-instructions.md)
 - [User Guide](ADMIN_UI_USER_GUIDE.md)
 - [Design Rules](DESIGN.md)
-- [Backend Setup](../backend/README.md)
-- [Vuetify Documentation](https://vuetifyjs.com/)
-- [Vue 3 Documentation](https://vuejs.org/)
-- [Vite Documentation](https://vitejs.dev/)
+- [Guide for agents and contributors](AGENTS.md)
+- [Next.js Documentation](https://nextjs.org/docs)

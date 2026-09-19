@@ -4,7 +4,7 @@ title: How this bundle is written
 description: The rules for every file under docs/okf, and the one rule for talking about the other repositories.
 resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
 tags: [tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T16:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: okf-spec
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
@@ -47,7 +47,7 @@ A value that holds `: ` is written in double quotes, because YAML reads a bare o
 
 # Sources and links
 
-A concept names what it was written from in `sources`. A source inside this repository is a relative path from the concept file, for example `../../../src/helpers/router.js`, so the link works on GitHub and survives a rename of the repository. A source outside the repository is a URL, or a short description when there is no URL, for example `Maintainers' decision, 2026-09-08`.
+A concept names what it was written from in `sources`. A source inside this repository is a relative path from the concept file, for example `../../../next/src/lib/routes.ts`, so the link works on GitHub and survives a rename of the repository. A source outside the repository is a URL, or a short description when there is no URL, for example `Maintainers' decision, 2026-09-08`.
 
 Links between concepts are relative markdown links, for example `../decisions/derived-not-stored.md`. The OKF spec prefers bundle-absolute links that start with `/`. This bundle uses relative links because GitHub renders them and bundle-absolute ones break there.
 
@@ -81,4 +81,4 @@ The bundle is public. Never write a secret, a token, a database URL, an account 
 - A concept that no longer holds gets `status: deprecated` and one line naming what replaced it. It is not deleted, so links keep working.
 - `log.md` gets one line per change, newest first.
 - GitHub Pages serves a graph viewer of this bundle, built from the bundle by the `pages.yml` workflow on every push to `main` with the viewer from the OKF reference repository. Nothing is committed for it: `just okf-graph` writes a local preview to `docs/okf/index.html`, which git ignores.
-- `npm test` runs `docs/okf/okf.test.mjs`. It checks that every concept has a `type`, a `title`, a `description` and a `tags` list, that no value holds an unquoted `: `, that `index.md` files carry no frontmatter except the root one, that every concept is listed in its directory index with its own description, and that every relative link resolves to a file. `just okf-validate` checks the bundle with a third-party validator as well. `just okf-drift` lists the concepts whose sources changed after they were written.
+- `pnpm test`, from `next/`, runs `docs/okf/okf.test.mjs`. It checks that every concept has a `type`, a `title`, a `description` and a `tags` list, that no value holds an unquoted `: `, that `index.md` files carry no frontmatter except the root one, that every concept is listed in its directory index with its own description, and that every relative link and every `resource` path resolves to a file, so a moved or deleted source fails the test until the concept names the new file. `just okf-validate` checks the bundle with a third-party validator as well. `just okf-drift` lists the concepts whose sources changed after they were written.

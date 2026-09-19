@@ -92,6 +92,7 @@ export function CreateSeriesDialog({
                 </div>
                 <DataTable
                   data={side.roster.filter((player) => matchesQuery(player, search[i] ?? ""))}
+                  pageSize={10}
                   rowId={(row: Row) => String(row.id)}
                   empty="No player of this roster matches the search."
                   columns={[

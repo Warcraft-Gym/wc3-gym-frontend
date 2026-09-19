@@ -58,7 +58,13 @@ export function MatchRoundNav({
               <DropdownMenuContent align="start" className="max-w-[400px]">
                 <DropdownMenuLabel>Round {round.roundNumber} Matches</DropdownMenuLabel>
                 {round.matches.map((matchItem) => (
-                  <DropdownMenuItem key={matchItem.id} onClick={() => onOpenMatch(matchItem.id)}>
+                  <DropdownMenuItem
+                    key={matchItem.id}
+                    onClick={() => onOpenMatch(matchItem.id)}
+                    /* the match you are reading is named, so weight and not colour alone marks the row */
+                    className={cn(matchItem.id === match.id && "font-medium")}
+                    aria-current={matchItem.id === match.id ? "page" : undefined}
+                  >
                     <span className="flex w-full items-center justify-between gap-2">
                       <span className="flex w-[45%] flex-col items-center gap-1">
                         <img className="size-8 rounded-full object-cover" alt="" src={teamImageUrl(matchItem.team1_id)} onError={hideMissingImage} />

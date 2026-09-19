@@ -161,6 +161,7 @@ export function ProposeSeriesDialog({
               </div>
               <DataTable
                 data={shown}
+                pageSize={10}
                 rowId={(row: Row) => String(row.key)}
                 empty="No pair matches the search."
                 columns={[

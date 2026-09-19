@@ -72,6 +72,7 @@ function RosterCard({
         </div>
         <DataTable
           data={shown}
+          pageSize={10}
           rowId={(row: Row) => String(row.id)}
           empty="No player of this roster matches the search."
           columns={[

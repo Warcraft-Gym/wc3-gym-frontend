@@ -28,7 +28,7 @@ function Side({ team, own, other }: { team: Row; own?: number; other?: number })
  *  The band is dark in both themes, so its text reads the on-band token. */
 export function MatchBanner({ match, team1, team2, round }: { match: Row; team1: Row; team2: Row; round: Row }) {
   return (
-    <div className="relative min-h-[250px] bg-cover bg-center text-on-band">
+    <div className="relative min-h-[250px] text-on-band">
       {/* The photograph is a backdrop, so it sits under a wash of the band colour and carries no alt text */}
       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bannerImg.src})` }} />
       <div className="absolute inset-0 bg-gradient-to-b from-band/40 to-band/70" />

@@ -105,9 +105,9 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
   };
 
   useEffect(() => {
-    if (!seasonId) return;
+    // the Guard loads the season list before this page draws, so a null id is a slug of no season
     // same gate as the link that leads here: admins, or the captain of this team
-    if (!auth.isCaptainOf(teamId, seasonId)) {
+    if (!seasonId || !auth.isCaptainOf(teamId, seasonId)) {
       router.replace("/profile");
       return;
     }

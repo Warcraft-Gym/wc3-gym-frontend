@@ -1,21 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { DateTime } from 'luxon';
 import { actsForSeries, needsVeto, seriesContext, seriesSteps } from './series-actions.mjs';
 
 const ME = 9;
 const OPEN = { id: 12, player1_id: ME, player2_id: 4, player1_score: null, player2_score: null };
+const NOW = DateTime.fromISO('2026-09-20T10:00:00Z');
 const stateOf = (series, viewer = { id: ME }) =>
-  Object.fromEntries(seriesSteps(series, viewer).steps.map((step) => [step.step, step.state]));
+  Object.fromEntries(seriesSteps(series, viewer, NOW).steps.map((step) => [step.step, step.state]));
 
 test('the steps run schedule, veto, report and name the next one', () => {
   assert.deepEqual(stateOf(OPEN), { schedule: 'next', veto: 'later', report: 'later' });
-  assert.equal(seriesSteps(OPEN, { id: ME }).next, 'schedule');
+  assert.equal(seriesSteps(OPEN, { id: ME }, NOW).next, 'schedule');
 });
 
 test('a booked time offers the veto step next', () => {
   const booked = { ...OPEN, date_time: '2026-09-22T18:00:00Z' };
   assert.deepEqual(stateOf(booked), { schedule: 'done', veto: 'next', report: 'later' });
-  assert.equal(seriesSteps(booked, { id: ME }).next, 'veto');
+  assert.equal(seriesSteps(booked, { id: ME }, NOW).next, 'veto');
+});
+
+test('a time that has passed asks for the result, veto or no veto', () => {
+  const played = { ...OPEN, date_time: '2026-09-19T18:00:00Z' };
+  assert.equal(seriesSteps(played, { id: ME }, NOW).next, 'report');
+  assert.deepEqual(stateOf(played), { schedule: 'done', veto: 'later', report: 'next' });
 });
 
 test('both picks finish the veto step', () => {
@@ -25,7 +33,7 @@ test('both picks finish the veto step', () => {
 
 test('a reported series has no step left to take', () => {
   const scored = { ...OPEN, player1_score: 2, player2_score: 1 };
-  assert.equal(seriesSteps(scored, { id: ME }).next, null);
+  assert.equal(seriesSteps(scored, { id: ME }, NOW).next, null);
   assert.deepEqual(stateOf(scored), { schedule: 'not needed', veto: 'not needed', report: 'done' });
   // a step it did take keeps its state, so the bar still names the time it was played at
   assert.deepEqual(stateOf({ ...scored, date_time: '2026-09-22T18:00:00Z' }),
@@ -46,6 +54,7 @@ test('the two players, a member of a team side and an admin may act', () => {
   assert.equal(actsForSeries(OPEN, { id: ME }), true);
   assert.equal(actsForSeries(OPEN, { id: 4 }), true);
   assert.equal(actsForSeries(OPEN, { id: 77 }), false);
+  // an admin who plays no side acts, and the schedule write takes the admin route
   assert.equal(actsForSeries(OPEN, { id: 77, isAdmin: true }), true);
   assert.equal(actsForSeries(OPEN, {}), false);
   // a team side names no player, so the API answers for the member
@@ -59,6 +68,8 @@ test('the context label skips a part the series names no value for', () => {
   assert.equal(seriesContext(series, { playerId: ME, stage: { name: 'Regular season' } }),
     'GNL - Season 19 - Regular season - Round 2 - vs Scorch');
   assert.equal(seriesContext(series), 'GNL - Season 19 - Round 2');
+  // the series page titles the event, so its eyebrow leaves the event out
+  assert.equal(seriesContext(series, { event: false, playerId: ME }), 'Round 2 - vs Scorch');
   // an event named after its own league says it once
   assert.equal(seriesContext({ match: { playday: 2, season: { league_short_name: 'GNL', name: 'GNL S18' } } }), 'GNL S18 - Round 2');
   assert.equal(seriesContext(series, { playerId: 77 }), 'GNL - Season 19 - Round 2');

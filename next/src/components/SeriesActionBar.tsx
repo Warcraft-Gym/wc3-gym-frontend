@@ -22,7 +22,6 @@ export function SeriesActionBar({
   series,
   viewer,
   variant = "full",
-  loading = false,
   onSchedule,
   onReport,
   className,
@@ -30,13 +29,12 @@ export function SeriesActionBar({
   series: Row | null;
   viewer: { id?: number | null; isAdmin?: boolean };
   variant?: "full" | "compact";
-  loading?: boolean;
   onSchedule?: () => void;
   onReport?: () => void;
   className?: string;
 }) {
   const { steps, mayAct } = seriesSteps(series, viewer) as { steps: Step[]; mayAct: boolean };
-  if (loading || !series) return null;
+  if (!series) return null;
 
   const live = steps.filter((step) => step.state !== "not needed");
   const active = live.filter((step) => step.state === "next" || step.state === "later");

@@ -300,7 +300,6 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                   series={seriesOf(row)}
                   teamId={row.teamId}
                   answers={answersOf(row.season.id)}
-                  w3cSeason={currentW3CSeason}
                   seriesActions={owner ? (item) => (
                     <SeriesActionBar
                       className="mt-2"

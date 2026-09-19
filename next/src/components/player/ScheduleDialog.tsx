@@ -11,12 +11,13 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { authHeader } from "@/helpers/fetch-wrapper";
 import { commonHours, freeLines } from "@/helpers/blocks.mjs";
+import { actsForSeries } from "@/helpers/series-actions.mjs";
 import { pickedInstant, pickerParts, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
-type Picked = { id?: number; date?: Date | null; time?: string; opponent?: Row };
+type Picked = { id?: number; date?: Date | null; time?: string; opponent?: Row; asAdmin?: boolean };
 
 export type ScheduleDialogHandle = { open: (item: Row) => void };
 
@@ -59,6 +60,8 @@ export function ScheduleDialog({
         id: item.id,
         ...(item.date_time ? pickerParts(item.date_time, userTimezone) : { date: null, time: "" }),
         opponent: (mine ? item.player2 : item.player1) ?? { name: "your opponent" },
+        // A caller the side gate answers nothing for is an admin, who writes the admin route
+        asAdmin: !actsForSeries(item, { id: playerId }),
       });
       setFreeTime(null);
       setShow(true);
@@ -80,6 +83,12 @@ export function ScheduleDialog({
   const save = async () => {
     setSaving(true);
     try {
+      if (series.asAdmin) {
+        await fetchWrapper.put(`${backendUrl}/series/${series.id}`, { date_time: chosen?.toUTC().toISO() });
+        setShow(false);
+        onSaved?.("Schedule updated successfully!");
+        return;
+      }
       const formData = new FormData();
       const utcDateTime = chosen?.toUTC().toFormat("yyyy-MM-dd HH:mm:ss") ?? null;
       if (utcDateTime) formData.append("date_time", utcDateTime);

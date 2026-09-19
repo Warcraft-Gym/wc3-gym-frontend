@@ -1,5 +1,6 @@
 // The three steps two sides take on a series, in order: agree a time, veto the maps,
 // report the result. One rule set answers them for every surface that draws them.
+import { DateTime } from 'luxon';
 import { rulesOf } from './map-order.mjs';
 import { isUnscored } from './season-phase.mjs';
 
@@ -22,9 +23,12 @@ export const vetoDone = (series) => !!series?.player1_pick_map && !!series?.play
 export const teamSided = (series) => !!series
   && (!!series.entrant1_id || !!series.entrant2_id || (!series.match && !series.player1_id && !series.player2_id));
 
-/** Who may act on a series, as the backend gates it (`acts_for_side`): the two players,
- *  a rostered member of the team that fields a side, and an admin. A stricter rule here
- *  would draw buttons that answer 403 or hide ones that work, so it stays one function.
+/** Who may act on a series: the two players and a rostered member of the team that fields
+ *  a side, which is the rule the API gate `acts_for_side` applies, and an admin, who takes
+ *  the admin routes instead. A stricter rule here would draw buttons that answer 403 or
+ *  hide ones that work, so it stays one function.
+ *  An admin who plays no side schedules through `PUT /series/{id}`; his report still writes
+ *  `PUT /player-series/{id}`, which answers 403 until the API takes an admin there.
  *  @param {any} series
  *  @param {{ id?: number|null, isAdmin?: boolean }} [viewer] */
 export const actsForSeries = (series, { id = null, isAdmin = false } = {}) => {
@@ -34,12 +38,17 @@ export const actsForSeries = (series, { id = null, isAdmin = false } = {}) => {
   return teamSided(series);
 };
 
+// A series is played once its booked time has passed; one with no time never is
+const seriesPlayed = (series, now) =>
+  !!series?.date_time && DateTime.fromISO(series.date_time, { zone: 'utc' }) <= now;
+
 /** The three steps of one series for one viewer: each with its word and its state
  *  (`done`, `next`, `later`, `not needed`), which step comes next, and whether the
  *  viewer may act at all.
  *  @param {any} series
- *  @param {{ id?: number|null, isAdmin?: boolean }} [viewer] */
-export const seriesSteps = (series, viewer = {}) => {
+ *  @param {{ id?: number|null, isAdmin?: boolean }} [viewer]
+ *  @param {any} [now] */
+export const seriesSteps = (series, viewer = {}, now = DateTime.now()) => {
   // ponytail: a scheduling mode of assigned or immediate needs no time from the players,
   // and no payload carries it yet, so the schedule step is always needed
   const needed = { schedule: true, veto: needsVeto(series), report: true };
@@ -48,8 +57,11 @@ export const seriesSteps = (series, viewer = {}) => {
     veto: vetoDone(series),
     report: !!series && !isUnscored(series),
   };
-  // A reported series has nothing left to take, so the steps it never took fall away
-  const next = done.report ? null : STEP_ORDER.find((step) => needed[step] && !done[step]) ?? null;
+  // A reported series has nothing left to take, so the steps it never took fall away. Once
+  // the booked time has passed the result leads, because a missing veto warns and never blocks.
+  const next = done.report ? null
+    : seriesPlayed(series, now) ? 'report'
+    : STEP_ORDER.find((step) => needed[step] && !done[step]) ?? null;
   const steps = STEP_ORDER.map((step) => ({
     step,
     label: (done[step] && DONE_LABEL[step]) || STEP_LABEL[step],
@@ -69,11 +81,12 @@ export const opponentOf = (series, playerId) => {
 
 /** Where a series sits: "GNL - Season 19 - Regular season - Round 2 - vs Scorch". A part
  *  the series names no value for is left out with its separator. The opponent shows only
- *  for a player of the series.
+ *  for a player of the series. `event` of false leaves the event out, where the page
+ *  title already names it.
  *  @param {any} series
  *  @param {{ event?: any, stage?: any, round?: number|null, playerId?: number|null }} [options] */
 export const seriesContext = (series, { event = null, stage = null, round = null, playerId = null } = {}) => {
-  const run = event ?? series?.match?.season ?? null;
+  const run = event === false ? null : event ?? series?.match?.season ?? null;
   const playday = round ?? series?.match?.playday ?? null;
   const mine = playerId != null && [series?.player1_id, series?.player2_id].includes(playerId);
   const league = run?.league_short_name || run?.league_name || null;

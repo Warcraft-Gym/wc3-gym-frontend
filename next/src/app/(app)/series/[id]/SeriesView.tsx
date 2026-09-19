@@ -196,8 +196,8 @@ export function SeriesView({ id }: { id: string }) {
 
       {series ? (
         <>
-          {/* The eyebrow says where the series sits; the action bar names the booked time */}
-          <PageHeader kicker={seriesContext(series, { playerId: viewer.id }) || undefined} title={title}>
+          {/* The title names the event, so the eyebrow says the round and the opponent alone */}
+          <PageHeader kicker={seriesContext(series, { event: false, playerId: viewer.id }) || undefined} title={title}>
             <SeriesActionBar
               series={actionRow}
               viewer={viewer}

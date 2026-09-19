@@ -27,8 +27,8 @@ const STEPS = [
   { value: "Pick_B", label: "+ Pick B", color: "text-success" },
 ];
 
-// Picking this item clears the round's fixed map.
-const NO_MAP = "none";
+// What the page asks before it drops the map rules and the order it holds unsaved.
+const LEAVE_UNSAVED = "The map rules and the pick and ban order are not saved. Leave the page?";
 
 type MapRow = Record<string, any>;
 type Round = Record<string, any>;
@@ -138,6 +138,11 @@ export function SeasonMapsView({ id }: { id: string }) {
   const removeMap = (mapId: number) => apply(() => removeMapsFromSeason(seasonId!, [mapId]));
   const setRound = (playday: number, fields: Round) => apply(() => setSeasonRound(seasonId!, { playday, ...fields }));
 
+  // A date input fires onChange on every segment, so the save waits for the commit on blur or Enter.
+  const saveDate = (round: Round, field: string, input: HTMLInputElement) => {
+    if (input.value !== (round[field] ?? "")) setRound(round.playday, { [field]: input.value || null });
+  };
+
   const moveMap = (index: number, step: number) => {
     const ids = pool.map((m) => m.id);
     ids.splice(index + step, 0, ids.splice(index, 1)[0]);
@@ -186,12 +191,23 @@ export function SeasonMapsView({ id }: { id: string }) {
       setImportOpen(false);
     });
 
-  // An unsaved page asks before the browser leaves it
+  // An unsaved page asks before the browser or a link leaves it
   useEffect(() => {
     if (!isDirty) return;
     const ask = (event: BeforeUnloadEvent) => event.preventDefault();
+    // every in-app route is an anchor, so one capture listener covers the nav bar as well
+    const askOnLink = (event: MouseEvent) => {
+      const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!anchor || (anchor as HTMLAnchorElement).target === "_blank") return;
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      if (!window.confirm(LEAVE_UNSAVED)) event.preventDefault();
+    };
     window.addEventListener("beforeunload", ask);
-    return () => window.removeEventListener("beforeunload", ask);
+    document.addEventListener("click", askOnLink, true);
+    return () => {
+      window.removeEventListener("beforeunload", ask);
+      document.removeEventListener("click", askOnLink, true);
+    };
   }, [isDirty]);
 
   useEffect(() => {
@@ -235,14 +251,7 @@ export function SeasonMapsView({ id }: { id: string }) {
           <div className="text-muted-foreground">{season.name}</div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            nativeButton={false}
-            render={<Link href={`/seasons/${id}`} />}
-            onClick={(e) => {
-              if (isDirty && !window.confirm("The map rules and the pick and ban order are not saved. Leave the page?")) e.preventDefault();
-            }}
-          >
+          <Button variant="ghost" nativeButton={false} render={<Link href={`/seasons/${id}`} />}>
             <Icon name="mdi-arrow-left" />
             Back to season
           </Button>
@@ -372,13 +381,13 @@ export function SeasonMapsView({ id }: { id: string }) {
                   <div className="mb-1 font-medium">Round {round.playday}</div>
                   <div className="flex gap-2">
                     <Field className="flex-1" label="Start" htmlFor={`start-${round.playday}`}>
-                      {/* a date input fires onChange on every segment, so the save waits for the commit on blur */}
                       <Input
                         id={`start-${round.playday}`}
                         type="date"
                         key={round.start_date ?? ""}
                         defaultValue={round.start_date ?? ""}
-                        onBlur={(e) => e.target.value !== (round.start_date ?? "") && setRound(round.playday, { start_date: e.target.value || null })}
+                        onBlur={(e) => saveDate(round, "start_date", e.currentTarget)}
+                        onKeyDown={(e) => e.key === "Enter" && saveDate(round, "start_date", e.currentTarget)}
                       />
                     </Field>
                     <Field className="flex-1" label="End" htmlFor={`end-${round.playday}`}>
@@ -387,21 +396,20 @@ export function SeasonMapsView({ id }: { id: string }) {
                         type="date"
                         key={round.end_date ?? ""}
                         defaultValue={round.end_date ?? ""}
-                        onBlur={(e) => e.target.value !== (round.end_date ?? "") && setRound(round.playday, { end_date: e.target.value || null })}
+                        onBlur={(e) => saveDate(round, "end_date", e.currentTarget)}
+                        onKeyDown={(e) => e.key === "Enter" && saveDate(round, "end_date", e.currentTarget)}
                       />
                     </Field>
                   </div>
                   {usesFixedMap ? (
                     <Field className="mt-2" label="Fixed map" htmlFor={`map-${round.playday}`}>
-                      <Select
-                        value={round.map_id ?? NO_MAP}
-                        onValueChange={(value: number | string) => setRound(round.playday, { map_id: value === NO_MAP ? null : value })}
-                      >
+                      {/* the empty choice carries the null the round stores, so no sentinel word reaches the form */}
+                      <Select value={round.map_id ?? null} onValueChange={(value: number | null) => setRound(round.playday, { map_id: value })}>
                         <SelectTrigger id={`map-${round.playday}`} className="w-full">
-                          <SelectValue>{(value: number | string) => pool.find((m) => m.id === value)?.name ?? ""}</SelectValue>
+                          <SelectValue>{(value: number | null) => pool.find((m) => m.id === value)?.name ?? ""}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={NO_MAP}>No fixed map</SelectItem>
+                          <SelectItem value={null}>No fixed map</SelectItem>
                           {pool.map((m) => (
                             <SelectItem key={m.id} value={m.id}>
                               <span className="flex w-full items-center gap-3">

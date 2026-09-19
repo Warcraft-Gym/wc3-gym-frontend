@@ -61,6 +61,8 @@ export function TeamView({ id }: { id: string }) {
   useEffect(() => {
     if (!seasonId) return;
     let active = true;
+    // the tab shows one season only, so the rows of the season before go before the reads
+    queueMicrotask(() => { setStandings([]); setSeries([]); });
     Promise.all([teamStore.getTeamDetailsSeason(teamId, seasonId).catch(() => null), teamStore.getTeamsSeasonBasic(seasonId).catch(() => []), seriesStore.searchSeriesBySeason(seasonId).catch(() => [])]).then(([one, teams, rows]) => { if (active) { setSeasonTeam(one); setStandings(teams); setSeries(rows); } });
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

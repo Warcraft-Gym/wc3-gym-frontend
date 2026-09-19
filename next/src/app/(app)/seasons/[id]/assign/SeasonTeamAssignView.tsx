@@ -342,7 +342,8 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
           ) : null}
 
           <CardContent className="pt-4">
-            <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
+            {/* the season list is loaded by the guard, so a null id here is a slug that names no season */}
+            <StatusAlert modelValue={errorMessage ?? (seasonId ? null : "Failed to load the season. Please try again later.")} onClose={() => setErrorMessage(null)} />
             <FilterPanel
               searchName={searchName}
               onSearchNameChange={setSearchName}

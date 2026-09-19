@@ -2,11 +2,14 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/Icon";
+import { TapTooltip } from "@/components/ui/TapTooltip";
 import { FlagIcon } from "@/components/FlagIcon";
 import { RaceIcon } from "@/components/RaceIcon";
 import { openPlayer, usePanelLinks } from "@/hooks/player-panel";
+import { gamesWarning } from "@/helpers/games-rule.mjs";
 import { playerPath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
+import { getW3CMMR } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -19,6 +22,8 @@ export function PlayerName({
   race,
   host,
   plain,
+  mmr,
+  games,
   onClick,
   children,
 }: {
@@ -26,9 +31,16 @@ export function PlayerName({
   race?: string;
   host?: boolean;
   plain?: boolean; // text only: a form in a dialog must not lose its input to a click
+  mmr?: number | false; // false where a column of its own sorts by MMR; a number the caller already holds
+  games?: number | null; // the current w3champions season: draws the games-rule mark on a draft surface
   onClick?: () => void;
   children?: React.ReactNode;
 }) {
+  // The ladder MMR reads the race the player signed up on, never the race of one series, and
+  // a payload without w3c_stats simply carries no number: the line asks for nothing of its own.
+  const ladderRace = player.signup_race || player.race || null;
+  const rating = mmr === false ? null : (mmr ?? getW3CMMR(player, undefined, ladderRace));
+  const warning = games ? gamesWarning(player, games, ladderRace) : null;
   // A series where the player played another race marks him, so a reader on a
   // phone sees the exception without hovering anything
   const offRace = !!race && !!player.signup_race && race !== player.signup_race;
@@ -42,9 +54,18 @@ export function PlayerName({
   const className = cn("player-name inline-flex items-center gap-1.5 whitespace-nowrap text-inherit no-underline border-0 bg-transparent p-0", (onClick || clickable) && "cursor-pointer hover:text-primary [&:hover_.name]:underline");
   const body = (
     <>
+      {/* the mark leads the line, and its tap opens the tooltip instead of the player page */}
+      {warning ? (
+        <span className="inline-flex" onClick={(event) => { event.preventDefault(); event.stopPropagation(); }}>
+          <TapTooltip content={warning.text}>
+            <Icon name="mdi-alert" size={16} className={warning.colour === "error" ? "text-error" : "text-warning"} />
+          </TapTooltip>
+        </span>
+      ) : null}
       {player.country ? <FlagIcon countryIdentifier={player.country} /> : <span className="fp" />}
       <span className="name">{player.name}</span>
       {race ? <RaceIcon raceIdentifier={race} /> : race !== undefined ? <span className="fp w-[1.4em]" /> : null}
+      {rating != null ? <span className="tnum text-muted-foreground">{rating}</span> : null}
       {/* the cue is always coloured, so a reader knows before the click that the page stays */}
       {opensPanel ? <Icon name="mdi-dock-right" size={16} className="-ml-0.5 text-primary" /> : null}
       {offRace ? <Badge variant="outline" title={offRaceHint} className="text-warning border-warning">off-race</Badge> : null}

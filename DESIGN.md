@@ -147,7 +147,7 @@ Use these instead of drawing the same thing again.
 
 | Component | What it shows |
 |---|---|
-| `PlayerName` | A player as flag, name, race icon and MMR. It links to the player page. On a drafting page and inside the side panel, it opens the panel instead and shows a dock icon. Inside a form dialog, pass `plain`. |
+| `PlayerName` | A player as flag, name, race icon and MMR. It reads the MMR itself; pass `mmr={false}` where a column of its own sorts by MMR, a number where the surface already holds one, and `games={w3cSeason}` on a draft surface for the games mark. It links to the player page. On a drafting page and inside the side panel, it opens the panel instead and shows a dock icon. Inside a form dialog, pass `plain`. |
 | `TeamName` | A team as its logo and its name, linked to its team page. On a drafting page it is plain text; pass `plain` inside another link, a button or the team's own heading. |
 | `RaceIcon`, `FlagIcon` | One race or one country. Show a race only when the row has one: this game, a scheduled series, or a KOTH signup. A player's profile race is not a race for a row. |
 | `GroupedTable` | Groups of rows, each under one header row that opens and closes. Detail rows share the group's columns, so they add up under its total. Never put a table inside a table cell. |
@@ -159,6 +159,7 @@ Use these instead of drawing the same thing again.
 | `FixtureSeries` | The ordered series one fixture holds, each with its mode, its pick rule and its two sides. |
 
 - The player line is flag, name, race icon, MMR, with one 6 px gap between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in that event. This plain line is the default on every surface.
+- The MMR is the W3C ladder MMR of the race the player signed up on, read by the line itself from the `w3c_stats` the payload already carries, so no surface asks for a number of its own. A player with no stats in the payload ends his line after the race icon: no dash, no placeholder. A table that sorts by MMR keeps its column and passes `mmr={false}`, so the number never reads twice in one row; a ladder table keeps its own MMR and +/- columns, which come from the ladder history and are a different figure.
 - A second version of the player line puts the games icon before the flag: a warning triangle when the player is under the event's games rule, with the count in its tooltip, and the same mark in `error` when W3C holds no stats for him. It shows only on the draft surfaces of an event that sets a games rule. It is never the default, because the icon is noise on a surface that does not pair players.
 - A team is drawn as its logo and its name, and the name links to the team page. A team with no logo shows a neutral placeholder of the same size, so the names in a column stay aligned. A long name truncates and carries the full name in its title.
 - On a drafting page, the match page and the season assign page, and inside the player panel, a team name is plain text with no link, for the same reason the player name is there: a link would leave unsaved work.
@@ -243,7 +244,7 @@ These parts of the app break a rule above today.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The app bar title reads "GNL APP" and links to `/report` (`next/src/components/layout/AppShell.tsx`).
 - The round grid and the home card ask a player to sit out with "Confirm I can't play" (`next/src/helpers/events.mjs`, `next/src/app/(app)/team/[id]/season/[season_id]/rounds/TeamRoundsView.tsx`).
-- No component draws the series action bar, and `PlayerName` has no version that carries the games icon.
+- No component draws the series action bar.
 - No surface draws the W3C data line as the mark beside a synced time: the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page prints the synced time with a tooltip but no W3C mark (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`).
 - `FORMATS` in `next/src/helpers/event-labels.mjs` holds no captain-draft format, so nothing prints "Captain draft" yet.
 - Cards that pad other than 16 px: `UserGuideView.tsx`, `LoginView.tsx`, `AdminLoginView.tsx` and `DiscordJoinCard.tsx` pad 24 px; `LadderView.tsx` pads 32 px; `MatchRoundNav.tsx` and `SeasonTeamAssignView.tsx` pad 12 px; `SeasonDetailsView.tsx` pads 8 px on its action row; `SeasonAchievementsView.tsx` pads 8 px top and bottom.

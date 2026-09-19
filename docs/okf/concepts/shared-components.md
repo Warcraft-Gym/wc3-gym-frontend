@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:57:51Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T16:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -33,7 +33,9 @@ sources:
 A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards included, and the name links to the player page. That is the one standard; no page draws a name its own way. See [the decision](../decisions/player-name-standard.md).
 
 - One 6 px gap sits between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in the event.
-- The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats, and it shows only on the draft surfaces of an event that sets a games rule.
+- The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats, and it shows only on the draft surfaces of an event that sets a games rule: the players page and the season team assign page. It is the `games` prop, the current w3champions season, and `gamesWarning` in `next/src/helpers/games-rule.mjs` is the rule.
+- The line reads the MMR itself, with `getW3CMMR` over the `w3c_stats` the payload carries, on the race the player signed up on. It asks for nothing of its own, so a payload without `w3c_stats` simply shows no number. `mmr={false}` leaves it out where a column of its own sorts by MMR; a number fills it where the surface already holds one, as the KOTH night page does with the MMR its entries store.
+- Known gap: the stage series payload leaves `w3c_stats` empty (`UserPublic.from_user_reduced`), so `SeriesBox` on an event page, `StageView` and `UpcomingView` show no MMR until the reduced row carries one MMR per side.
 - By default `PlayerName` is a `Link` to the player page.
 - On a drafting page, where the page holds unsaved work, the page wraps its body in `PanelLinksContext.Provider` with the value `true` (`next/src/hooks/player-panel.ts`). Under it the name opens the side panel instead and shows a dock icon in the primary colour with the title "Opens in a side panel". The providers today: the season team assign page, the match page's series draft, and the panel itself. No other page opens the panel. See [the decision](../decisions/player-panel-drafting-only.md).
 - Inside a form dialog on any other page, pass `plain`, because a link would drop the typed input: the veto board in report mode, the fantasy bet dialog, the add-players dialog.

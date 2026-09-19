@@ -18,12 +18,15 @@ export function StatusAlert({
   type = "error",
   retry,
   onClose,
+  closable = true,
   className,
 }: {
   modelValue?: string | null;
   type?: "error" | "success" | "info" | "warning";
   retry?: (() => void) | null;
   onClose?: () => void;
+  /** An alert that reads a live state passes false, so the page state stays visible */
+  closable?: boolean;
   className?: string;
 }) {
   // An alert with no retry clears itself, as StatusAlert.vue does, so a caller need pass no handler
@@ -38,7 +41,7 @@ export function StatusAlert({
         <div className="flex items-start gap-2">
           <Icon name={ICON[type]} className={tone} />
           <span className="flex-1">{modelValue}</span>
-          {!retry ? (
+          {!retry && closable ? (
             <Button variant="ghost" size="sm" aria-label="Close" onClick={() => (onClose ? onClose() : setDismissedMessage(modelValue))}>
               ×
             </Button>

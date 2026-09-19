@@ -13,6 +13,7 @@ import { CastChips, type CastSeries } from "@/components/CastChips";
 import { PlayerLadderTab } from "@/components/ladder/PlayerLadderTab";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
+import { RoundStrip } from "@/components/RoundStrip";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
@@ -46,15 +47,6 @@ const OUTLINE: Record<string, string> = {
   info: "text-info border-info",
   warning: "text-warning border-warning",
   draw: "text-draw border-draw",
-};
-
-// One square per round: won, lost, mixed, still to play, or no series
-const ROUND: Record<string, string> = {
-  none: "bg-border",
-  won: "bg-win",
-  lost: "bg-loss",
-  mixed: "bg-[linear-gradient(90deg,rgb(var(--v-theme-win))_50%,rgb(var(--v-theme-loss))_50%)]",
-  pending: "border border-dashed border-foreground/50 bg-transparent",
 };
 
 // the panels' own width, not the window's: the side panel is narrow on a wide screen
@@ -151,20 +143,6 @@ export function PlayerSeasons({
     if (!scored(series)) return "font-normal text-muted-foreground";
     const [me, them] = scores(series);
     return me > them ? "text-win" : me < them ? "text-loss" : "";
-  };
-  const roundSeries = (row: Row, round: number) => row.series.filter((s: Row) => s.match?.playday === round);
-  const roundClass = (row: Row, round: number) => {
-    const list: Row[] = roundSeries(row, round);
-    if (!list.length) return "none";
-    if (list.some((s) => !scored(s))) return "pending";
-    const won = list.filter((s) => { const [me, them] = scores(s); return me > them; }).length;
-    const lost = list.filter((s) => { const [me, them] = scores(s); return me < them; }).length;
-    return won && lost ? "mixed" : won ? "won" : lost ? "lost" : "none";
-  };
-  const roundTitle = (row: Row, round: number) => {
-    const list: Row[] = roundSeries(row, round);
-    if (!list.length) return `Round ${round} · no series`;
-    return list.map((s) => `Round ${round} · vs ${opponent(s).name} · ${result(s)}`).join("\n");
   };
 
   // With no event named, the running GNL season opens onto its rounds
@@ -271,13 +249,7 @@ export function PlayerSeasons({
                         <span className="tnum">
                           <span className="text-win">{row.wins}</span> – <span className="text-loss">{row.losses}</span>
                         </span>
-                        {row.season.round_count ? (
-                          <span className="inline-flex gap-[3px]">
-                            {Array.from({ length: row.season.round_count }, (_, i) => i + 1).map((round) => (
-                              <span key={round} className={cn("box-border size-3 rounded-[2px]", ROUND[roundClass(row, round)])} title={roundTitle(row, round)} />
-                            ))}
-                          </span>
-                        ) : null}
+                        {row.season.round_count ? <RoundStrip series={row.series} playerId={player.id} rounds={row.season.round_count} /> : null}
                       </span>
                     </span>
                     {row.ladder ? (

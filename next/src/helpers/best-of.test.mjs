@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gamesOf, winsFor, isValidResult, replaysNeeded, resultProblem, neverPlayed } from './best-of.mjs';
+import { gamesOf, winsFor, isValidResult, replaysNeeded, resultProblem, neverPlayed, moveTargets, moveMessage } from './best-of.mjs';
 
 test('the games are the rules a season lists', () => {
   assert.equal(gamesOf('veto,veto,veto'), 3);
@@ -37,6 +37,21 @@ test('every map played leaves a replay', () => {
   assert.equal(replaysNeeded(2, 0), 2);
   assert.equal(replaysNeeded(2, 1), 3);
   assert.equal(replaysNeeded(3, 2), 5);
+});
+
+test('a replay moves to any other game the series played', () => {
+  assert.deepEqual(moveTargets(3, 1), [2, 3]);
+  assert.deepEqual(moveTargets(3, 3), [1, 2]);
+  assert.deepEqual(moveTargets(2, 2), [1]);
+  // one game played offers nothing, and so does a series nobody reported
+  assert.deepEqual(moveTargets(1, 1), []);
+  assert.deepEqual(moveTargets(0, 1), []);
+  assert.deepEqual(moveTargets(undefined, 1), []);
+});
+
+test('a move onto a game that holds a replay says both moved', () => {
+  assert.equal(moveMessage(1, 2, false), 'Replay moved to game 2');
+  assert.equal(moveMessage(1, 2, true), 'Replay moved to game 2; the replay of game 2 moved to game 1');
 });
 
 test('a pair that is not a result says why', () => {

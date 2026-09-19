@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Progress } from "@/components/ui/progress";
@@ -21,12 +22,13 @@ import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { SeriesBox } from "@/components/SeriesBox";
 import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
+import { moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { eventLabel, MAP_RULES, titleOf } from "@/helpers/event-labels.mjs";
 import { fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster } from "@/helpers/fixture.mjs";
 import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
-import { seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
+import { actsForSeries, seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
 import { isScored, sideName as nameOfSide } from "@/helpers/stage-view.mjs";
-import { useAuth, useEventStore, useMapStore, useTeamStore } from "@/stores";
+import { useAuth, useEventStore, useMapStore, useMatchStore, useTeamStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -44,6 +46,7 @@ export function SeriesView({ id }: { id: string }) {
   const auth = useAuth();
   const eventStore = useEventStore();
   const mapStore = useMapStore();
+  const matchStore = useMatchStore();
   const teamStore = useTeamStore();
 
   const [series, setSeries] = useState<Row | null>(null);
@@ -59,6 +62,9 @@ export function SeriesView({ id }: { id: string }) {
   const [savingRoster, setSavingRoster] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [replays, setReplays] = useState<Row[]>([]); // the uploaded replay of each game of this series
+  const [moving, setMoving] = useState<number | null>(null); // the game whose replay is on the move
+  const [moved, setMoved] = useState<string | null>(null);
   const reportDialog = useRef<ReportResultDialogHandle>(null);
   const scheduleDialog = useRef<ScheduleDialogHandle>(null);
   const [awardOpen, setAwardOpen] = useState(false);
@@ -129,6 +135,35 @@ export function SeriesView({ id }: { id: string }) {
     : null;
   const canReport = seriesSteps(actionRow, viewer).mayAct;
 
+  // A replay moves inside the games the series played, so an unreported series moves none
+  const playedGames = scored ? replaysNeeded(series?.player1_score || 0, series?.player2_score || 0) : 0;
+  const hasReplay = (game: number) => replays.some((row) => row.game_no === game);
+  // The move route acts for a side alone, so an admin who is on neither side sees no control
+  const canMove = playedGames > 1 && actsForSeries(actionRow, { ...viewer, isAdmin: false });
+
+  // Only a viewer who may move a replay reads the fixture's replay list
+  const loadReplays = async (matchId: number, seriesId: number) => {
+    const rows: Row[] = await matchStore.getMatchReplays(matchId).catch(() => []);
+    setReplays((rows || []).filter((row: Row) => row.series_id === seriesId));
+  };
+
+  // Move one game's replay to another game; the answer is every replay of the series
+  const moveReplay = async (from: number, to: number) => {
+    setMoving(from);
+    setError(null);
+    setMoved(null);
+    try {
+      const rows: Row[] = await matchStore.moveSeriesReplay(series!.id, from, to);
+      setReplays(rows || []);
+      // the answer tells the swap: after a plain move the game the file came from holds nothing
+      setMoved(moveMessage(from, to, (rows || []).some((row) => row.game_no === from)));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setMoving(null);
+    }
+  };
+
   // The fixture this series plays, once the event runs it through the events module: its
   // ordered series with their mode, their pick rule and the roster each side fields.
   const loadFixture = async (loaded: Row) => {
@@ -147,6 +182,8 @@ export function SeriesView({ id }: { id: string }) {
     try {
       const loaded = await fetchWrapper.get(`${backendUrl}/series/${id}`);
       setSeries(loaded);
+      setReplays([]); // the replays of the series the page leaves are not this one's
+      setMoved(null); // and neither is its success line
       // A series nobody reported records no game, and the table shows its rules alone
       setGames(await fetchWrapper.get(`${backendUrl}/series/${id}/games`).catch(() => []));
       await loadFixture(loaded);
@@ -161,6 +198,15 @@ export function SeriesView({ id }: { id: string }) {
     mapStore.fetchMaps().then((rows: Row[]) => setMaps(rows || [])).catch(() => {}); // names the map of each game
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const matchId = series?.match_id;
+    const seriesId = series?.id;
+    if (!canMove || !matchId || !seriesId) return;
+    // the loader sets state, so it runs just outside the effect body (react-hooks/set-state-in-effect)
+    queueMicrotask(() => loadReplays(matchId, seriesId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canMove, series]); // load() sets a new series row on every save, so the list is read again
 
   // A link from one series to the next keeps the page, so the read follows the route
   useEffect(() => {
@@ -200,6 +246,7 @@ export function SeriesView({ id }: { id: string }) {
   return (
     <div className="p-4">
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
+      <StatusAlert modelValue={moved} type="success" onClose={() => setMoved(null)} />
       {loading ? <Progress value={null} /> : null}
 
       {series ? (
@@ -255,6 +302,7 @@ export function SeriesView({ id }: { id: string }) {
                     <TableHead className={wideOnly}>Rule</TableHead>
                     <TableHead>Map</TableHead>
                     <TableHead>Winner</TableHead>
+                    {canMove ? <TableHead className="text-right">Replay</TableHead> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -277,6 +325,25 @@ export function SeriesView({ id }: { id: string }) {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
+                      {/* A file uploaded to the wrong game moves to another game the series played */}
+                      {canMove ? (
+                        <TableCell className="text-right">
+                          {hasReplay(row.game_no) ? (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Move the replay of game ${row.game_no}`} aria-busy={moving === row.game_no} disabled={moving !== null} />}>
+                                <Icon name={moving === row.game_no ? "mdi-loading mdi-spin" : "mdi-file-move-outline"} />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {moveTargets(playedGames, row.game_no).map((to: number) => (
+                                  <DropdownMenuItem key={to} onClick={() => moveReplay(row.game_no, to)}>
+                                    Move to game {to}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          ) : null}
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   ))}
                 </TableBody>

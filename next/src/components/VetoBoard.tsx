@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
+import { TeamName } from "@/components/TeamName";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { DEFAULT_RULES } from "@/helpers/best-of.mjs";
 import { myProfilePath } from "@/helpers/players.mjs";
@@ -22,6 +23,8 @@ type Body = { action: string; map_id?: number };
 
 const entrySide = (entry?: string) => (entry || "").split("_").pop()!.toUpperCase();
 const sideOf = (board: Row | null, side?: string) => (side === "A" ? board?.player1 : board?.player2);
+// A veto side names its team flat, so the team line is built from the three fields it carries
+const teamOf = (one: Row) => ({ id: one.team_id, name: one.team_name, icon_url: one.team_icon_url });
 const MINI = "mr-3 h-10 w-[62px] rounded object-cover";
 
 // The backend answers this one in code; everything else it sends is already a sentence
@@ -268,9 +271,9 @@ export function VetoBoard({
         {/* A team side names a team and no player, so it reads as the team name */}
         {board ? (
           <span className="flex items-center gap-2 text-muted-foreground">
-            {board.player1?.team_name ? <span>{board.player1.team_name}</span> : <PlayerName player={board.player1} plain={report} />}
+            {board.player1?.team_name ? <TeamName team={teamOf(board.player1)} plain={report} /> : <PlayerName player={board.player1} plain={report} />}
             <span>vs</span>
-            {board.player2?.team_name ? <span>{board.player2.team_name}</span> : <PlayerName player={board.player2} plain={report} />}
+            {board.player2?.team_name ? <TeamName team={teamOf(board.player2)} plain={report} /> : <PlayerName player={board.player2} plain={report} />}
           </span>
         ) : null}
         <span className="flex-1" />

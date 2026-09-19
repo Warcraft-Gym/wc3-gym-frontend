@@ -4,7 +4,7 @@ title: The GNL season
 description: The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
 resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:08:28Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T17:40:00Z }
 sources:
   - id: seasons
     resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
@@ -27,6 +27,9 @@ sources:
   - id: store
     resource: ../../../next/src/stores/season.ts
     title: Every season write
+  - id: event-store
+    resource: ../../../next/src/stores/event.ts
+    title: The event read and the stage write the season dialog makes
 ---
 
 # Routes
@@ -47,7 +50,7 @@ sources:
 
 A GNL season is the GNL-kind event of the GNL league. It keeps these pages of its own; the event page links to them.
 
-**Seasons (`/seasons`).** One row per season: name, rounds, pick and ban order, series per fixture, and the phase (open, commenced, overdue, complete), with a warning mark on an overdue season and a chip that counts the series with no result, which opens the season with that list. A row opens the season. The admin dialog, for a new season or an edit, takes the name, the number of rounds, the pick and ban order, the series per fixture, the score system (standard or helpstone), the Discord role id, the start and end date, the map pool, the signups switch, the availability tools switch, the check-in days (blank keeps check-in open all season) and the fantasy grind pick. The row menu also exports the season as a spreadsheet and deletes it. A panel imports a season from a spreadsheet, by season name or id.
+**Seasons (`/seasons`).** One row per season: name, rounds, pick and ban order, series per fixture, and the phase (open, commenced, overdue, complete), with a warning mark on an overdue season and a chip that counts the series with no result, which opens the season with that list. A row opens the season. The admin dialog, for a new season or an edit, takes the name, the number of rounds, the pick and ban order, the series per fixture, the score system (standard or helpstone), the Discord role id, the start and end date, the map pool, the signups switch, the availability tools switch, the round end zone, the recent games floor with how many of the newest W3C seasons it counts over, the check-in days (blank keeps check-in open all season), the early check-in switch, the largest MMR difference of each captain draft stage, and the fantasy grind pick. The round end zone is an IANA name; a round of a season that names none ends at midnight where the reader is. Early check-in lets a player check in for any round that has not ended, and a new season starts with it on and with a floor of 20 games over the last 2 W3C seasons. The dialog writes `PUT /events/{id}`; an edit reads the season again with `GET /events/{id}`, because the list read carries no stage, and writes `PUT /events/{id}/stages` only when a largest MMR difference was typed. That write replaces every field of every stage, so each stage goes back as it was read. A largest MMR difference is 1 or more and belongs to a captain draft stage alone; a blank one reads as the default of 100. A games count is over one W3C season or more, and a blank one counts every synced season. The row menu also exports the season as a spreadsheet and deletes it. A panel imports a season from a spreadsheet, by season name or id.
 
 **One season (`/seasons/:id`).** The event header with the round and team counts. One tab per round; the page opens on the current round. Each match of the round is a card with the two teams, the scores and the round dates, and the fixed map of the round when the season's rules use one; a round with no fixed map warns until the match is played. A member reads the matches and the teams of the season. An admin gets the links to the season maps and the achievements, "Add match" (two teams in the selected round), and the edit and delete of a match. The teams panel shows each team's points; an admin adds teams to the season, and a captain or an admin opens the draft. Opened with `?unscored=1`, the page leads with the series that carry no result, grouped by round.
 
@@ -65,6 +68,7 @@ A GNL season is the GNL-kind event of the GNL league. It keeps these pages of it
 |---|---|
 | `season.createSeason` | `POST /events`, with the GNL league id |
 | `season.updateSeason` | `PUT /events/{id}` |
+| `event.fetchEvent`, `event.setStages` | `GET /events/{id}`, `PUT /events/{id}/stages` |
 | `season.deleteSeason` | `DELETE /events/{id}` |
 | `season.addMapsToSeason` | `POST /events/{id}/maps` |
 | `season.removeMapsFromSeason` | `DELETE /events/{id}/maps` |

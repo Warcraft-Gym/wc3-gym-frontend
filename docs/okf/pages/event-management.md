@@ -4,7 +4,7 @@ title: Event management
 description: The admin's path from an empty league to a finished event with awards; the wizard, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
 resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-16T17:30:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T13:30:00Z }
 sources:
   - id: wizard
     resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
@@ -43,13 +43,13 @@ The steps below take an admin from nothing to a finished event. Each step names 
 
 **2. The event.** On the league page, "New event" opens `/events/new` with the league preset. The wizard makes a cup or a signup-only event; a GNL season and a KOTH night are made elsewhere. Its steps:
 
-- Basics: the league, the name, the kind, "Part of" (an event of the same league that this one feeds, for a qualifier), the region, the start and end date, the start time, the description, a page link and a stream link.
-- Entrants: who may sign up (Discord members with an account, or anyone with a battle tag), what an entrant is (solo players or pre-made teams), the series per fixture on a team event, the entrant cap, the MMR maximum, the recent games floor, and the check-in switch with the days before a round it opens.
+- Basics: the league, the name, the kind, "Part of" (an event of the same league that this one feeds, for a qualifier), the region, the start and end date, the start time, the round end zone, the description, a page link and a stream link. The round end zone is an IANA name from the browser's own list, with UTC always offered; a round of an event that names none ends at midnight where the reader is.
+- Entrants: who may sign up (Discord members with an account, or anyone with a battle tag), what an entrant is (solo players or pre-made teams), the series per fixture on a team event, the entrant cap, the MMR maximum, the recent games floor with how many of the newest W3C seasons it counts over, and the check-in switch with the days before a round it opens and the early check-in switch, which lets a player check in for any round that has not ended.
 - Stages, one or more, each with a name, a format (round robin, single elimination, double elimination, Swiss, KOTH, free for all), a best-of (1, 3, 5, 7), a map rule (veto, loser picks, host picks, fixed map), the format's own fields (players per lobby and the points each place pays for a free for all; the round count for Swiss; the series each entrant plays per round, the group size and the entrants each group advances for a round robin), the scheduling mode (an admin sets the time, the two sides agree, played straight away), the count of entrants who advance, and whether they advance by themselves. A signup-only event skips this step.
 - Divisions: none, or two to six, each named. The MMR bounds are cut later on the entrants page.
 - Review, with an edit link back to each step.
 
-A step with a problem cannot be left: no league or no name, an end before the start, a cap under two, check-in on with no days, no stage, an even best-of, a lobby under two seats, a group under two seats, a group that advances nobody, or one division. "Create event" writes `POST /events` with the stages in the same body, so no event exists without its stages, then `PUT /events/{id}/divisions` when divisions were asked for, and lands on the event page. When the event was written but the divisions write failed, the event page says so.
+A step with a problem cannot be left: no league or no name, an end before the start, a cap under two, check-in on with no days, a games count over fewer than one W3C season, no stage, an even best-of, a lobby under two seats, a group under two seats, a group that advances nobody, or one division. "Create event" writes `POST /events` with the stages in the same body, so no event exists without its stages, then `PUT /events/{id}/divisions` when divisions were asked for, and lands on the event page. When the event was written but the divisions write failed, the event page says so.
 
 **3. The entrants.** Members enter on the event page; see [the public side](leagues-and-events.md). On `/events/:id/entrants` an admin also enters any player or team by hand, whether the signups stand open or not: "Add entrant" takes a player or a team and the race, and writes `POST /events/{id}/entrants/admin`. A row's menu offers "Check in" (`POST /events/{id}/entrants/{entrant_id}/checkin`), "Remove" (`DELETE /events/{id}/entrants/{entrant_id}`) and, for a player, "Ban player" (`PUT /users/{id}/ban`), which warns on every entrant row of every event and refuses no signup.
 

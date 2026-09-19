@@ -129,10 +129,9 @@ export function PlayerLadderTab({ player, seasonId }: { player: any; seasonId: n
               <span className="text-win">{data?.wins ?? 0}</span>
               <span className="text-muted-foreground"> &ndash; </span>
               <span className="text-loss">{data?.losses ?? 0}</span>
+              {games >= 10 ? <span className="text-muted-foreground"> ({winrate})</span> : null}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {winrate} of {games} games
-            </div>
+            <div className="text-xs text-muted-foreground">{games} games</div>
           </div>
           {player?.battleTag ? (
             <a href={w3cStatsUrl} target="_blank" rel="noopener" className="ml-auto inline-flex items-center self-start text-xs">

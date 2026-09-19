@@ -11,6 +11,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { usePlayerStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
 import { eventLabel, EVENT_KINDS, titleOf } from "@/helpers/event-labels.mjs";
+import { record as recordFigure } from "@/helpers/figures.mjs";
 import { opponentRows } from "@/helpers/head-to-head.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -115,12 +116,12 @@ export function HeadToHead({ playerId }: { playerId: number }) {
                     {group.row.record.lost ? <span className="min-w-1 rounded bg-loss" style={{ flexGrow: group.row.record.lost }} /> : null}
                   </span>
                   <span className="tnum" title={`${group.row.record.won} won, ${group.row.record.lost} lost`}>
-                    {group.row.record.won}–{group.row.record.lost}
+                    {recordFigure(group.row.record.won, group.row.record.lost) ?? "—"}
                   </span>
                 </div>
               </td>
               <td className={`${CELL} ${CAPTION} ${PHONE_HIDDEN}`}>
-                {group.row.games.mine}–{group.row.games.theirs}
+                {recordFigure(group.row.games.mine, group.row.games.theirs) ?? "—"}
               </td>
               <td className={CELL}>
                 <div className="flex flex-wrap items-center gap-2">
@@ -157,7 +158,7 @@ export function HeadToHead({ playerId }: { playerId: number }) {
                   {meeting.my_score != null && meeting.their_score != null ? (
                     <>
                       <Badge className={recordTone(meeting.my_score, meeting.their_score)}>
-                        {meeting.my_score}–{meeting.their_score}
+                        {recordFigure(meeting.my_score, meeting.their_score) ?? "—"}
                       </Badge>
                       <span className={`${CAPTION} ml-1`}>games</span>
                     </>

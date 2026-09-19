@@ -21,6 +21,7 @@ import { canSeeRole } from "@/helpers";
 import { POINTS_NOTES } from "@/helpers/achievements.js";
 import { resolveCurrentSeasonId } from "@/helpers/current-season.js";
 import { eventLabel } from "@/helpers/event-labels.mjs";
+import { record } from "@/helpers/figures.mjs";
 import { gamesBarHeight, winRate } from "@/helpers/ladder-days.mjs";
 import { playerPath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
@@ -525,7 +526,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                           )}
                         </TableCell>
                         <TableCell className="text-center tnum">
-                          {player.wins}-{player.losses}
+                          {record(player.wins, player.losses) ?? "—"}
                         </TableCell>
                         <TableCell className={cn(WIDE, "text-center tnum")}>{player.played}</TableCell>
                         <TableCell className={cn(WIDE, "text-center tnum")}>
@@ -586,7 +587,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-bold tnum">
-                            {raceEntry.wins}-{raceEntry.losses}
+                            {record(raceEntry.wins, raceEntry.losses) ?? "—"}
                           </div>
                           <div className="text-xs text-muted-foreground">W-L</div>
                         </div>

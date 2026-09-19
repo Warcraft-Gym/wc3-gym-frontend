@@ -26,7 +26,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
-import { countShare } from "@/helpers/figures.mjs";
+import { record as recordFigure } from "@/helpers/figures.mjs";
 import { findSeason } from "@/helpers/season-slug.mjs";
 import { filterByMmrRange, matchesPlayerSearch, playerPath, playersWithCareers } from "@/helpers/players.mjs";
 import { getAllRaceStats, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from "@/helpers/w3c-stats.js";
@@ -117,8 +117,8 @@ export function PlayersView() {
 
   const toggleSort = (key: string) => { setSort((old) => ({ key, desc: old.key === key ? !old.desc : false })); setPage(0); };
   const head = (label: React.ReactNode, key?: string, className = "") => <TableHead className={className}>{key ? <button type="button" className="whitespace-nowrap" onClick={() => toggleSort(key)}>{label}<Icon name={sort.key === key && sort.desc ? "mdi-arrow-down" : "mdi-arrow-up"} className={`ml-1 text-xs ${sort.key === key ? "text-primary" : "opacity-25"}`} /></button> : label}</TableHead>;
-  // the column title names what the figure counts, so the cell is the count and its share alone
-  const record = (won?: number | null, lost?: number | null) => (won == null || lost == null ? "—" : countShare(won, won + lost) ?? "—");
+  // the column title names what the figure counts, so the cell is the record alone
+  const record = (won?: number | null, lost?: number | null) => (won == null || lost == null ? "—" : recordFigure(won, lost) ?? "—");
   const clear = () => { setName(""); setRace(null); chooseSeason(null); setRange([0, 3000]); setFlags([]); setPage(0); };
   const toggleFlag = (flag: Flag) => { setFlags((old) => old.includes(flag) ? old.filter((item) => item !== flag) : [...old, flag]); setPage(0); };
   const setNew = (key: string, value: unknown) => setNewPlayer((old) => ({ ...old, [key]: value }));

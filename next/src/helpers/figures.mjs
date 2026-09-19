@@ -1,6 +1,7 @@
-// A count with its share: "19/30 (63%)" from ten up, "3/4" under ten; the title names what it counts.
+// A record: "19 – 11 (63%)" from ten up, "3 – 1" under ten; null when nothing was played, so the cell prints its own dash.
 
-export const countShare = (count, total) => {
+export const record = (wins, losses) => {
+  const total = (wins ?? 0) + (losses ?? 0);
   if (!total) return null;
-  return total >= 10 ? `${count}/${total} (${Math.round((100 * count) / total)}%)` : `${count}/${total}`;
+  return total >= 10 ? `${wins} – ${losses} (${Math.round((100 * wins) / total)}%)` : `${wins} – ${losses}`;
 };

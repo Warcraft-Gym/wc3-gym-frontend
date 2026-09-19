@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { RaceIcon } from "@/components/RaceIcon";
+import { W3CIcon } from "@/components/W3CIcon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { getW3CMMR, syncedAgo, syncedAt } from "@/helpers/w3c-stats";
 
@@ -45,11 +46,14 @@ export function FacedRaces({ player, seasonId }: { player?: Row | null; seasonId
   );
 }
 
-/** How long ago the player's w3champions stats were read, with the exact time on tap. */
+/** The W3C data line: the mark and the synced time, with the exact time on tap. */
 export function SyncedLine({ player }: { player?: Row | null }) {
+  // syncedAgo already words the never case, so only a real time takes the verb
+  const ago = syncedAgo(player as Row);
   return (
-    <TapTooltip className="text-xs text-muted-foreground" content={syncedAt(player as Row)}>
-      {syncedAgo(player as Row)}
+    <TapTooltip className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground" content={syncedAt(player as Row)}>
+      <W3CIcon size={14} />
+      {ago === "never synced" ? ago : `synced ${ago}`}
     </TapTooltip>
   );
 }

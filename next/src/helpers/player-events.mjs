@@ -56,6 +56,7 @@ export const eventRows = ({
         champion: champion.has(id),
         team: event.team_name ?? null,
         teamId: event.team_id ?? null,
+        teamIcon: event.team_icon_url ?? null,
         race: races.get(id) ?? null,
         wins: event.won ?? 0,
         losses: event.lost ?? 0,

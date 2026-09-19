@@ -63,36 +63,43 @@ export function TeamRoster({
   const synced = agoFromIso([...captains, ...members].map((player: Row) => player.w3c_synced_at).filter(Boolean).sort()[0] ?? null);
   const mmrNote = `W3C ladder MMR on the signup race, ${synced === "never synced" ? synced : `synced ${synced}`}`;
 
-  const head = (label: string, count: string, first: boolean) => (
+  // the columns are named once for the card, on the head of the first group that lists rows
+  const columnsOn = !renderCaptains && captains.length ? "captains" : !renderMembers && sorted.length ? "members" : null;
+
+  const head = (label: string, count: string, first: boolean, columns: boolean) => (
     <>
-      <span className={cn(CELL, "col-span-3 items-baseline gap-2 pb-1", first ? "pt-0" : "pt-5")}>
+      <span className={cn(CELL, columns ? "col-span-3" : "col-span-5", "items-baseline gap-2 pb-1", first ? "pt-0" : "pt-5")}>
         <span className="font-medium">{label}</span>
         {count ? <span className="tnum text-xs text-muted-foreground">{count}</span> : null}
       </span>
-      <span className={cn(CELL, "justify-end pe-1.5 pb-1 text-xs text-muted-foreground", first ? "pt-0" : "pt-5")}>
-        <TapTooltip content={mmrNote}>
-          <W3CMmr />
-        </TapTooltip>
-      </span>
-      <span className={cn(CELL, "items-end ps-[18px] pb-1", first ? "pt-0" : "pt-5")}>
-        {strip ? (
-          <span className="block">
-            <span className="block text-xs text-muted-foreground">Rounds</span>
-            <span
-              // the numbers stand over their marks: the offset is the width of the record in RoundStrip
-              className="grid gap-x-[3px] text-center text-[10px] leading-none text-muted-foreground sm:ms-8"
-              style={{ gridTemplateColumns: `repeat(${rounds}, 12px)` }}
-              aria-hidden
-            >
-              {Array.from({ length: rounds }, (_, index) => index + 1).map((number) => (
-                <span key={number} className={number === round ? "font-bold text-foreground" : undefined}>
-                  {number}
-                </span>
-              ))}
-            </span>
+      {columns ? (
+        <>
+          <span className={cn(CELL, "justify-end pe-1.5 pb-1 text-xs text-muted-foreground", first ? "pt-0" : "pt-5")}>
+            <TapTooltip content={mmrNote}>
+              <W3CMmr />
+            </TapTooltip>
           </span>
-        ) : null}
-      </span>
+          <span className={cn(CELL, "items-end ps-[18px] pb-1", first ? "pt-0" : "pt-5")}>
+            {strip ? (
+              <span className="block">
+                <span className="block text-xs text-muted-foreground">Rounds</span>
+                <span
+                  // the numbers stand over their marks: the offset is the width of the record in RoundStrip
+                  className="grid gap-x-[3px] text-center text-[10px] leading-none text-muted-foreground sm:ms-8"
+                  style={{ gridTemplateColumns: `repeat(${rounds}, 12px)` }}
+                  aria-hidden
+                >
+                  {Array.from({ length: rounds }, (_, index) => index + 1).map((number) => (
+                    <span key={number} className={number === round ? "font-bold text-foreground" : undefined}>
+                      {number}
+                    </span>
+                  ))}
+                </span>
+              </span>
+            ) : null}
+          </span>
+        </>
+      ) : null}
     </>
   );
 
@@ -142,23 +149,23 @@ export function TeamRoster({
       <CardContent className={GRID}>
         {renderCaptains ? (
           <>
-            <span className={cn(CELL, "col-span-5 pt-0 pb-1 font-medium")}>Captains</span>
+            {head("Captains", "", true, false)}
             <div className="col-span-5 min-w-0 py-2">{renderCaptains({ captains })}</div>
           </>
         ) : (
           <>
-            {head("Captains", "", true)}
+            {head("Captains", "", true, columnsOn === "captains")}
             {captains.length ? captains.map(line) : empty(noCaptains)}
           </>
         )}
         {renderMembers ? (
           <>
-            <span className={cn(CELL, "col-span-5 pt-5 pb-1 font-medium")}>Members</span>
+            {head("Members", "", false, false)}
             <div className="col-span-5 min-w-0 py-2">{renderMembers({ members })}</div>
           </>
         ) : (
           <>
-            {head("Members", String(memberCount), false)}
+            {head("Members", String(memberCount), false, columnsOn === "members")}
             {sorted.length ? sorted.map(line) : empty(noMembers)}
           </>
         )}

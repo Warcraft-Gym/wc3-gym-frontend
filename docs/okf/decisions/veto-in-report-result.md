@@ -3,7 +3,7 @@ type: Decision
 title: The veto is entered inside Report Result
 description: The Report Result dialog holds the veto board under a disclosure row, so a player never leaves the dialog to record the veto, and the veto warns but never blocks.
 tags: [components, series]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T15:40:00Z }
+generated: { by: claude-code/claude-opus-5, at: 2026-09-19T19:40:00Z }
 sources:
   - id: source
     resource: ../../../next/src/components/ReportResultDialog.tsx
@@ -12,7 +12,7 @@ sources:
 
 # Decision
 
-Decided 2026-09-07. Fewer page jumps is a standing rule across the app, so the existing board component embeds inside the dialog instead of a link out or a second popup. The dialog says by default that it records a veto done elsewhere, and still syncs with an opponent stepping live.
+Decided 2026-09-07. Fewer page jumps is a standing rule across the app, so the existing board component sits inside the dialog instead of a link out or a second popup, and it syncs with an opponent stepping live.
 
 Since 2026-09-09 the veto is not a required input: the form warns strongly and never blocks; each game is marked with a winner; the replay upload sits beside its game.
 

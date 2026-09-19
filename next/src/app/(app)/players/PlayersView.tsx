@@ -26,6 +26,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
+import { countShare } from "@/helpers/figures.mjs";
 import { findSeason } from "@/helpers/season-slug.mjs";
 import { filterByMmrRange, matchesPlayerSearch, playerPath, playersWithCareers } from "@/helpers/players.mjs";
 import { getAllRaceStats, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from "@/helpers/w3c-stats.js";
@@ -116,6 +117,8 @@ export function PlayersView() {
 
   const toggleSort = (key: string) => { setSort((old) => ({ key, desc: old.key === key ? !old.desc : false })); setPage(0); };
   const head = (label: React.ReactNode, key?: string, className = "") => <TableHead className={className}>{key ? <button type="button" className="whitespace-nowrap" onClick={() => toggleSort(key)}>{label}<Icon name={sort.key === key && sort.desc ? "mdi-arrow-down" : "mdi-arrow-up"} className={`ml-1 text-xs ${sort.key === key ? "text-primary" : "opacity-25"}`} /></button> : label}</TableHead>;
+  // the column title names what the figure counts, so the cell is the count and its share alone
+  const record = (won?: number | null, lost?: number | null) => (won == null || lost == null ? "—" : countShare(won, won + lost) ?? "—");
   const clear = () => { setName(""); setRace(null); chooseSeason(null); setRange([0, 3000]); setFlags([]); setPage(0); };
   const toggleFlag = (flag: Flag) => { setFlags((old) => old.includes(flag) ? old.filter((item) => item !== flag) : [...old, flag]); setPage(0); };
   const setNew = (key: string, value: unknown) => setNewPlayer((old) => ({ ...old, [key]: value }));
@@ -145,7 +148,7 @@ export function PlayersView() {
     <Card className="card gap-0 py-0">
       <StatusAlert modelValue={error} className="m-4" onClose={() => setError(null)} />
       {!error ? <div className="table-scroll overflow-x-auto"><Table className="tnum"><TableHeader><TableRow>
-        {head("Name", "name")}{head(<W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series", "series_winrate", "text-right")}{head("Games", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
+        {head("Name", "name")}{head(<W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series won", "series_winrate", "text-right")}{head("Games won", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
       </TableRow></TableHeader><TableBody>
         {shown.map((row) => <TableRow key={row.key} className={row.id != null ? "cursor-pointer" : undefined} onClick={(event) => {
           if ((event.target as Element).closest('[data-slot="tooltip-trigger"]')) return;
@@ -154,8 +157,8 @@ export function PlayersView() {
           <TableCell>{row.id != null ? <PlayerName player={row} mmr={false} games={w3cSeason} /> : <span className="text-muted-foreground">{row.name}</span>}</TableCell>
           <TableCell className={WIDE}>{row.id != null ? <RaceMmrChips player={row} w3cSeason={w3cSeason ?? undefined} max={2} /> : null}</TableCell>
           <TableCell className="text-right">{row.rating ?? "—"}</TableCell>
-          <TableCell className="text-right">{row.career ? <>{row.career.series_won}-{row.career.series_lost} <span className="text-muted-foreground">{row.career.series_winrate}%</span></> : "—"}</TableCell>
-          <TableCell className={`${WIDE} text-right`}>{row.career ? <>{row.career.games_won}-{row.career.games_lost} <span className="text-muted-foreground">{row.career.games_winrate}%</span></> : "—"}</TableCell>
+          <TableCell className="whitespace-nowrap text-right">{record(row.career?.series_won, row.career?.series_lost)}</TableCell>
+          <TableCell className={`${WIDE} whitespace-nowrap text-right`}>{record(row.career?.games_won, row.career?.games_lost)}</TableCell>
           <TableCell className={`${WIDE} text-right`}>{row.seasons_played ?? "—"}</TableCell>
           <TableCell className={WIDE}>{row.signup_seasons?.length ? <span className="inline-flex items-center gap-1"><Badge variant="secondary" title={[...row.signup_seasons].sort((a: Row, b: Row) => b.id - a.id)[0].name} className="max-w-[120px] truncate">{[...row.signup_seasons].sort((a: Row, b: Row) => b.id - a.id)[0].name}</Badge>{row.signup_seasons.length > 1 ? <DropdownMenu><DropdownMenuTrigger render={<Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()} />}>+{row.signup_seasons.length - 1}</DropdownMenuTrigger><DropdownMenuContent>{[...row.signup_seasons].sort((a: Row, b: Row) => b.id - a.id).map((season: Row) => <DropdownMenuItem key={season.id}>{season.name}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu> : null}</span> : "—"}</TableCell>
           {isAdmin ? <TableCell onClick={(event) => event.stopPropagation()}><RowActions actions={row.id == null ? [{ icon: "mdi-history", label: "Career stats", onClick: () => careerDialog.current?.open(row.career) }] : [

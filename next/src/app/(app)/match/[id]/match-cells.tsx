@@ -46,8 +46,7 @@ export function FacedRaces({ player, seasonId }: { player?: Row | null; seasonId
   );
 }
 
-/** The W3C data line: the W3C mark and how long ago the player's w3champions stats were
- *  read, with the exact time on tap. */
+/** The W3C data line: the mark and the synced time, with the exact time on tap. */
 export function SyncedLine({ player }: { player?: Row | null }) {
   // syncedAgo already words the never case, so only a real time takes the verb
   const ago = syncedAgo(player as Row);

@@ -1,6 +1,7 @@
 "use client";
 import { RaceIcon } from "@/components/RaceIcon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
+import { W3CIcon } from "@/components/W3CIcon";
 import { countShare } from "@/helpers/figures.mjs";
 import { RACES } from "@/helpers/ladder-days.mjs";
 
@@ -18,6 +19,9 @@ export function VsRaces({ player, race }: { player?: SeasonPlayer; race?: string
       className="inline-flex items-center gap-1 whitespace-nowrap"
       content={
         <div>
+          <div className="mb-1 flex items-center gap-1">
+            <W3CIcon size={14} /> Ladder games won
+          </div>
           {(RACES as string[]).map((r) => (
             <div key={r} className="flex items-center gap-1">
               <RaceIcon raceIdentifier={r} size="1.1em" /> {rec(r)}

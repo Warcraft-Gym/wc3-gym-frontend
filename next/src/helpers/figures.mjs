@@ -1,6 +1,4 @@
-// The one form a count with its share reads on every surface: "19/30 (63%)". The percent
-// shows from ten counted items up; under ten the count stands alone, "3/4". The column
-// title or the icon beside the figure names what it counts, so the figure carries no word.
+// A count with its share: "19/30 (63%)" from ten up, "3/4" under ten; the title names what it counts.
 
 export const countShare = (count, total) => {
   if (!total) return null;

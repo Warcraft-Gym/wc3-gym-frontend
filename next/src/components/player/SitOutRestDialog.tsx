@@ -11,7 +11,7 @@ type Row = Record<string, any>;
  *  only with early check-in on, because the write covers rounds whose window is shut.
  *  The ask names the rounds that change and the rounds that keep the series they have. */
 export function SitOutRestDialog({ label, cards, onConfirm }: {
-  label: string; // the event, as "{League} - {Event}"
+  label: string; // the event label
   cards: Row[]; // the round cards of that event
   onConfirm: () => Promise<void>;
 }) {

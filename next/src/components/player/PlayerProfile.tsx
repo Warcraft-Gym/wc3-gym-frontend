@@ -192,12 +192,40 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
     }
   };
 
+  // The rounds the last bulk sit-out changed, with the answer each held before it
+  const [undo, setUndo] = useState<{ seasonId: number | string; rounds: Row[] } | null>(null);
+
   // One answer for every round of the event that has not ended
   const sitOutRest = async (seasonId: number | string) => {
     setErrorMessage(null);
+    const before = answersOf(seasonId) ?? [];
+    const was = (playday: number) => before.find((row) => row.playday === playday)?.available ?? null;
     try {
       const rows = await availabilityStore.setAllPlayerAvailability({ season_id: Number(seasonId), available: false });
-      setSeasonData((was) => ({ ...was, [seasonId]: { ...was[seasonId], availability: rows } }));
+      setSeasonData((older) => ({ ...older, [seasonId]: { ...older[seasonId], availability: rows } }));
+      setUndo({
+        seasonId,
+        rounds: rows
+          .filter((row: Row) => row.available === false && was(row.playday) !== false)
+          .map((row: Row) => ({ playday: row.playday, available: was(row.playday) })),
+      });
+    } catch (error) {
+      setErrorMessage((error as Error).message || "Error saving availability.");
+    }
+  };
+
+  // Putting the answers back one round at a time, because the bulk write takes one answer for all
+  const undoSitOut = async () => {
+    if (!undo?.rounds.length) return;
+    const { seasonId, rounds } = undo;
+    setUndo(null);
+    setErrorMessage(null);
+    try {
+      let rows: Row[] = [];
+      for (const round of rounds) {
+        rows = await availabilityStore.setPlayerAvailability({ season_id: Number(seasonId), playday: round.playday, available: round.available });
+      }
+      setSeasonData((older) => ({ ...older, [seasonId]: { ...older[seasonId], availability: rows } }));
     } catch (error) {
       setErrorMessage((error as Error).message || "Error saving availability.");
     }
@@ -308,8 +336,15 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
               current={(row) => (
                 <>
                   {/* The write covers rounds whose own window is still shut, so only early check-in offers it */}
-                  {owner && row.season?.early_checkin ? (
+                  {owner && row.season?.early_checkin && row.season?.scheduling_enabled !== false ? (
                     <SitOutRestDialog label={row.label} cards={seasonCards(row.season) ?? []} onConfirm={() => sitOutRest(row.season.id)} />
+                  ) : null}
+                  {/* The way back from the bulk write: every round it changed takes its old answer again */}
+                  {owner && undo?.seasonId === row.season?.id && undo.rounds.length ? (
+                    <div className="mb-3 flex items-center gap-2 text-sm">
+                      <span>{undo.rounds.length} {undo.rounds.length === 1 ? "round" : "rounds"} set to Out</span>
+                      <Button variant="ghost" size="sm" onClick={undoSitOut}>Undo</Button>
+                    </div>
                   ) : null}
                   <RoundCards
                     player={player}

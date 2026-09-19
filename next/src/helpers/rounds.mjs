@@ -13,6 +13,7 @@ export const roundLabel = (round) => {
 
 // The instant a round ends: midnight after its last day, in the event's zone.
 // Null for a round with no date; the viewer's own zone stands in for an event with none.
+/** @param {*} round @param {string|null} [zone] */
 export const roundEnd = (round, zone = null) => {
   const last = round?.end_date || round?.start_date;
   if (!last) return null;
@@ -21,6 +22,7 @@ export const roundEnd = (round, zone = null) => {
 };
 
 // A round is over once that midnight has passed; a round with no date never is
+/** @param {*} round @param {*} [today] @param {string|null} [zone] */
 export const roundOver = (round, today = DateTime.now(), zone = null) => {
   const end = roundEnd(round, zone);
   return !!end && end <= today;
@@ -28,6 +30,7 @@ export const roundOver = (round, today = DateTime.now(), zone = null) => {
 
 // "Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 18:00 your time" for the instant `roundEnd`
 // answers; '' for an event that names no zone, whose rounds end on the reader's own clock
+/** @param {*} end @param {string|null} [zone] @param {string|null} [viewer] */
 export const roundEndLine = (end, zone = null, viewer = null) => {
   if (!end || !zone) return '';
   const stamp = (dt) => dt.toFormat('d LLL HH:mm');

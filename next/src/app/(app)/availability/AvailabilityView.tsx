@@ -24,6 +24,8 @@ export function AvailabilityView() {
   const { me } = useAuth();
   const [zoneError, setZoneError] = useState<string | null>(null);
   const [savingZone, setSavingZone] = useState(false);
+  // A saved block changes the rounds it covers, so the list below reads them again
+  const [savedBlocks, setSavedBlocks] = useState(0);
 
   // The backend reads the blocks against the profile zone; the editor writes it when the profile carries none
   const profileZone: string | null = me?.user?.timezone ?? null;
@@ -75,12 +77,12 @@ export function AvailabilityView() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <BlockedTimesEditor zone={profileZone} onZone={onZone} />
+          <BlockedTimesEditor zone={profileZone} onZone={onZone} onSaved={() => setSavedBlocks((count) => count + 1)} />
         </CardContent>
       </Card>
 
       {/* The answer itself belongs to the round, so this list only reads */}
-      <BlockedRounds />
+      <BlockedRounds refresh={savedBlocks} />
     </div>
   );
 }

@@ -76,8 +76,8 @@ export function RoundCards({
   // The check-in belongs to the player himself, and only while the season runs the scheduling tools
   const asks = !!question && season?.scheduling_enabled !== false;
 
-  // The check-in is open on a round with no series that is not over
-  const asking = cards.filter((card) => !card.series && !card.over && card.open);
+  // The count follows the rounds whose buttons are live, early check-in included
+  const asking = cards.filter((card) => !card.series && card.takes);
   const answered = asking.filter((card) => card.answer !== null).length;
   // The answers are still on their way, so the count would read every round as unanswered
   const pending = cards.some((card) => card.pending);

@@ -18,7 +18,9 @@ type Group = { id: number; label: string; slug: string; rounds: Row[] };
 /** The rounds the blocked times answer on their own: one read per event the player is
  *  signed up to, the same read his player page makes. A derived row is never stored, so
  *  the list is read-only and the answer itself is changed on the round. */
-export function BlockedRounds() {
+export function BlockedRounds({ refresh = 0 }: {
+  refresh?: number; // a block save bumps it, and the list reads the rounds again
+}) {
   const { me } = useAuth();
   const { seasons, slugOf } = useSeason();
   const [groups, setGroups] = useState<Group[] | null>(null);
@@ -27,10 +29,7 @@ export function BlockedRounds() {
   const ids = signedUp.map((season: Row) => season.id).join(",");
 
   useEffect(() => {
-    if (!ids) {
-      setGroups([]);
-      return;
-    }
+    if (!ids) return;
     let live = true;
     (async () => {
       const reads = await Promise.all(signedUp.map((season: Row) =>
@@ -50,10 +49,10 @@ export function BlockedRounds() {
     return () => { live = false; };
     // the read follows the events he is in; the store's members are rebuilt every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids]);
+  }, [ids, refresh]);
 
-  // Nothing to say once the read lands and no round is covered
-  if (groups?.length === 0) return null;
+  // Nothing to say without an event, or once the read lands and no round is covered
+  if (!ids || groups?.length === 0) return null;
 
   return (
     <Card className="mt-6 gap-0 p-0">

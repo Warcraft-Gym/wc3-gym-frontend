@@ -28,17 +28,12 @@ import { resolveCurrentW3CSeason } from "@/helpers/current-season";
 import { draftOrder } from "@/helpers/draft.mjs";
 import { filterByMmrRange, matchesPlayerSearch } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races";
-import { getW3CGamesCount, getW3CMMR, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons, syncedAgo, syncedAt } from "@/helpers/w3c-stats";
+import { getW3CMMR, syncedAgo, syncedAt } from "@/helpers/w3c-stats";
 import { useAuth, useLadderStore, useSeason, useTeamStore } from "@/stores";
 
 type Row = Record<string, any>;
 // { state: 'idle'|'loading'|'success'|'error', message?: string }
 type SyncStatus = { state: string; message?: string };
-
-// The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
-const hasStats = hasW3CStatsTwoSeasons as (player: Row, currentSeason?: number, race?: string | null) => boolean;
-const hasLowGames = hasLowGamesTwoSeasons as (player: Row, currentSeason?: number, race?: string | null) => boolean;
-const gamesCount = getW3CGamesCount as (player: Row, currentSeason?: number, race?: string | null) => number;
 
 const SYNC_ICON: Record<string, { icon: string; className: string; note?: string }> = {
   loading: { icon: "mdi-sync", className: "text-muted-foreground" },
@@ -47,22 +42,13 @@ const SYNC_ICON: Record<string, { icon: string; className: string; note?: string
   error: { icon: "mdi-alert-circle", className: "text-error" },
 };
 
-/** The W3C warnings and the sync state of one signup, as the icons that ride beside his name. */
-function PlayerCues({ player, w3cSeason, status }: { player: Row; w3cSeason?: number; status?: SyncStatus }) {
+/** The sync state of one signup, as the icon beside his name; the player line draws the games mark */
+function PlayerCues({ status }: { status?: SyncStatus }) {
   const cue = status ? SYNC_ICON[status.state] : null;
   // Only the skipped and the error cue carry text, so the other two draw a bare icon
   const cueText = cue ? (cue.note ?? (status?.state === "error" ? status.message || "Sync failed" : null)) : null;
   return (
     <>
-      {!hasStats(player, w3cSeason, player.signup_race) ? (
-        <TapTooltip content={`No W3C stats found for ${player.signup_race}`}>
-          <Icon name="mdi-alert" size={16} className="text-error" />
-        </TapTooltip>
-      ) : hasLowGames(player, w3cSeason, player.signup_race) ? (
-        <TapTooltip content={`Less than 20 games (${gamesCount(player, w3cSeason, player.signup_race)} games) for ${player.signup_race}`}>
-          <Icon name="mdi-alert" size={16} className="text-warning" />
-        </TapTooltip>
-      ) : null}
       {cue ? (
         cueText ? (
           <TapTooltip content={cueText}>
@@ -375,8 +361,8 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
                 accessorKey: "name",
                 header: "Name",
                 cell: ({ row }) => (
-                  <PlayerName player={row.original}>
-                    <PlayerCues player={row.original} w3cSeason={currentW3CSeason} status={perPlayerSyncStatus[row.original.id]} />
+                  <PlayerName player={row.original} mmr={false} games={currentW3CSeason}>
+                    <PlayerCues status={perPlayerSyncStatus[row.original.id]} />
                   </PlayerName>
                 ),
               },
@@ -596,17 +582,8 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
                     <div key={p.id} className="flex items-center justify-between py-1.5">
                       <div>
                         <div className="flex items-center gap-2">
-                          <PlayerName player={p} />
-                          <PlayerCues player={p} w3cSeason={currentW3CSeason} status={perPlayerSyncStatus[p.id]} />
-                        </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <span className="tnum">{getW3CMMR(p, currentW3CSeason, p.signup_race) ?? "N/A"}</span>
-                          {p.signup_race ? (
-                            <>
-                              <span>—</span>
-                              <RaceIcon raceIdentifier={p.signup_race} />
-                            </>
-                          ) : null}
+                          <PlayerName player={p} race={p.signup_race} games={currentW3CSeason} />
+                          <PlayerCues status={perPlayerSyncStatus[p.id]} />
                         </div>
                         <TapTooltip className="text-xs text-muted-foreground" content={syncedAt(p)}>
                           {syncedAgo(p)}

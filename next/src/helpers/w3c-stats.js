@@ -2,10 +2,13 @@ import { DateTime } from 'luxon';
 
 /**
  * W3Champions Stats Helper
- * 
+ *
  * Provides utilities for working with W3C stats including fallback logic
  * to previous season when current season stats are not available.
  */
+
+// The games rule is pure and lives on its own, so node --test reads it without a bundler
+export { gamesWarning, getW3CGamesCount, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from './games-rule.mjs';
 
 /**
  * Get W3C stats for a player with season fallback
@@ -57,46 +60,6 @@ export function getW3CStatsWithFallback(player, race = null, currentSeason = nul
   }
 
   return stats;
-}
-
-/**
- * Get combined games count from W3C stats for current season AND previous season (currentSeason - 1).
- * 
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
- * @param {string} race - Race to count for (required, null gives no games)
- * @returns {number} - Combined games count across both seasons
- */
-export function getW3CGamesCount(player, currentSeason, race = null) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
-    return 0;
-  }
-
-  if (!race) {
-    return 0;
-  }
-
-  let total = 0;
-
-  // Add games from current season
-  const currentStats = player.w3c_stats.find(s =>
-    s.race && s.race.toUpperCase() === race.toUpperCase() &&
-    s.wc3_season === currentSeason
-  );
-  if (currentStats) {
-    total += Number(currentStats.wins || 0) + Number(currentStats.losses || 0);
-  }
-
-  // Add games from previous season
-  const prevStats = player.w3c_stats.find(s =>
-    s.race && s.race.toUpperCase() === race.toUpperCase() &&
-    s.wc3_season === currentSeason - 1
-  );
-  if (prevStats) {
-    total += Number(prevStats.wins || 0) + Number(prevStats.losses || 0);
-  }
-
-  return total;
 }
 
 /**
@@ -170,49 +133,6 @@ export const w3cPlayerUrl = (battleTag) => `https://www.w3champions.com/player/$
 export function mmrSeasonLabel(player, currentSeason, race = null) {
   const season = getW3CMMRSeason(player, currentSeason, race);
   return season && season !== currentSeason ? `S${season}` : '';
-}
-
-/**
- * Check if player has W3C stats for current OR previous season (currentSeason - 1).
- * Used for eligibility warning display.
- *
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
- * @param {string} race - Race to check (required, null gives false)
- * @returns {boolean} - True if stats exist for either season
- */
-export function hasW3CStatsTwoSeasons(player, currentSeason, race = null) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
-    return false;
-  }
-
-  if (!race) {
-    return false;
-  }
-
-  return player.w3c_stats.some(s =>
-    s.race && s.race.toUpperCase() === race.toUpperCase() &&
-    (s.wc3_season === currentSeason || s.wc3_season === currentSeason - 1)
-  );
-}
-
-/**
- * Check if combined games count across current and previous season is below threshold.
- * Used for eligibility warning display.
- *
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
- * @param {string} race - Race to check (required, null gives false)
- * @param {number} threshold - Minimum games threshold (default: 20)
- * @returns {boolean} - True if combined games are below threshold (and player has some stats)
- */
-export function hasLowGamesTwoSeasons(player, currentSeason, race = null, threshold = 20) {
-  if (!hasW3CStatsTwoSeasons(player, currentSeason, race)) {
-    return false;
-  }
-
-  const games = getW3CGamesCount(player, currentSeason, race);
-  return games > 0 && games < threshold;
 }
 
 /**

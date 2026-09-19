@@ -290,7 +290,7 @@ export function FantasyTiersView() {
               <tr key={row.id} className="detail-row border-b">
                 <TableCell />
                 <TableCell>
-                  <PlayerName player={row.player} race={row.race ?? undefined} />
+                  <PlayerName player={row.player} race={row.race ?? undefined} mmr={false} />
                 </TableCell>
                 <TableCell className="tnum text-right">{row.mmr || "—"}</TableCell>
                 <TableCell><TeamName team={row.team} /></TableCell>

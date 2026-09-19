@@ -4,7 +4,7 @@ title: Stores
 description: One store module per area holds every call to the backend; three of them also hold state the pages share. Views never fetch on their own.
 resource: ../../../next/src/stores/index.ts
 tags: [stores]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T19:10:00Z }
 sources:
   - id: index
     resource: ../../../next/src/stores/index.ts
@@ -28,7 +28,7 @@ sources:
 | `event` | leagues, one league, events, one event, the entrants, stages, standings and nights |
 | `player` | players, one player, the player's own series and history |
 | `team` | teams, a team, a team's season page, the availability grid |
-| `match` | fixtures and draft series |
+| `match` | fixtures, draft series and the replays of a fixture |
 | `series` | series, casts, games, the veto board, replay links, free time |
 | `availability` | the round answers and the soft blocks |
 | `map` | maps and the ladder import |

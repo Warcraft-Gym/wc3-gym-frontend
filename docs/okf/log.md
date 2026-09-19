@@ -2,6 +2,7 @@
 
 ## 2026-09-19
 
+* **Update**: the series page moves an uploaded replay to another game the series played; the fixtures and series page states the control and its write, the backend contract and the stores concept name the route in the match store.
 * **Update**: the Report Result dialog folds the veto under a disclosure row and warns in a heading; the fixtures and series page and the veto decision state the row, the wording and the one dialog width.
 * **Update**: the series page names the map of a fixed game before it is played, and the edit-series race opens on the race the side signed the season up on.
 * **Update**: the player line draws the MMR and the games mark itself. The shared-component concept and the player name decision state how the line reads the MMR, when a surface leaves it out, and that the stage series payload carries no `w3c_stats` yet.

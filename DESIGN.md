@@ -137,7 +137,7 @@ Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 - A table that would clip on a phone hides its columns by priority or becomes cards. A clipped row is a bug.
 - The app bar title reads "WC3 Gym Dashboard" and always links to `/`.
 - A round is answered with two buttons, "Check in" and "Sit out". The status reads "Checked in", "Out", "Out (blocked times)" or "No answer". Never "can play" or "can't play".
-- A count with its share reads "19/30 (63%)". The percent shows from ten games up; under ten the count stands alone, "3/4". No bar in a cell, no footnote, and no "won" in a cell, because the column title carries it.
+- A record reads "19 – 11 (63%)", wins then losses. The percent shows from ten games up; under ten the record stands alone, "3 – 1". `record` in `next/src/helpers/figures.mjs` writes it. No bar in a cell, no footnote, and no "won" in a cell, because the column title carries it.
 - A head to head reads as the score in the pairing's order with the last meeting after it: "2-1, last met Season 18".
 - The app shows no win chance for an MMR or for an MMR difference over the whole population. A figure counted from one player's own games is fine.
 
@@ -249,7 +249,7 @@ These parts of the app break a rule above today.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The games mark draws a fixed twenty-game rule over two W3C seasons. The event settings carry a games floor and the number of W3C seasons it counts over, and the mark reads neither. One of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).
 - Some surfaces still print a synced time without the W3C mark, while the match page and the roster head draw it: the player header prints the time as a caption under the MMR chips (`next/src/components/player/PlayerHeader.tsx`), the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page and the season team page print the time with a tooltip alone (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`, `next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx`).
-- Some figures still print the won-lost form instead of `countShare`: the career totals read "Series 12-7 (63%)" (`next/src/components/CareerStatsDialog.tsx`) and the ladder matchup reads "12–7 · 63%" (`next/src/components/ladder/MatchupCompare.tsx`).
+- Some figures write the won-lost form by hand instead of calling `record`: the career totals read "Series 12-7 (63%)" (`next/src/components/CareerStatsDialog.tsx`) and the ladder matchup reads "12–7 · 63%" (`next/src/components/ladder/MatchupCompare.tsx`).
 - `FORMATS` in `next/src/helpers/event-labels.mjs` holds no captain-draft format, so nothing prints "Captain draft" yet.
 - Cards that pad other than 16 px: `UserGuideView.tsx`, `LoginView.tsx`, `AdminLoginView.tsx` and `DiscordJoinCard.tsx` pad 24 px; `LadderView.tsx` pads 32 px; `MatchRoundNav.tsx` and `SeasonTeamAssignView.tsx` pad 12 px; `SeasonDetailsView.tsx` pads 8 px on its action row; `SeasonAchievementsView.tsx` pads 8 px top and bottom.
 - The series page cannot name a team side of a bracket series. `SeriesPublic` carries the players and the fixture alone, so `GET /series/{id}` answers no entrant and no team; a series inside a fixture reads them off the stage read instead, and a bracket series with no fixture still reads "To be decided" until that payload carries them.

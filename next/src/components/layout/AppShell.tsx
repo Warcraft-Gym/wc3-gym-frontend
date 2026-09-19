@@ -107,7 +107,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
         ) : null}
-        <Link href="/report" className="app-title font-heading text-lg font-bold text-foreground no-underline">GNL APP</Link>
+        {/* the app title is the way home from every page, so it always points at /; truncate keeps it on one line */}
+        <Link href="/" className="truncate font-heading text-lg font-bold text-foreground no-underline">WC3 Gym Dashboard</Link>
         <div className="flex-1" />
         {showNavLinks ? (
           <nav className="hidden items-center min-[960px]:flex" aria-label="Main">

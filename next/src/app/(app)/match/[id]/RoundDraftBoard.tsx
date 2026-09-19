@@ -163,11 +163,13 @@ export function RoundDraftBoard({
   drafted,
   team1,
   team2,
+  playerById,
   ownTeamId,
   playday,
+  narrow,
   isOut,
   busy,
-  onAddPairing,
+  onAddPairings,
   onChangeOpponent,
   onSetMaxDifference,
   onSetReady,
@@ -179,11 +181,13 @@ export function RoundDraftBoard({
   drafted: Row[];
   team1: Row;
   team2: Row;
+  playerById: Record<number, Row>; // the rosters the page holds: the board read names no player
   ownTeamId: number | null;
   playday?: number;
+  narrow: boolean; // under 960 px the scale becomes two roster lists
   isOut: (playerId: number, teamId: number) => boolean;
   busy: boolean;
-  onAddPairing: (player1Id: number, player2Id: number) => Promise<void>;
+  onAddPairings: (pairs: { player1_id: number; player2_id: number }[]) => Promise<void>;
   onChangeOpponent: (draft: Row, side: 1 | 2, playerId: number) => Promise<void>;
   onSetMaxDifference: (value: number | null) => Promise<void>;
   onSetReady: (teamId: number, ready: boolean) => Promise<void>;
@@ -193,14 +197,19 @@ export function RoundDraftBoard({
   const [pick, setPick] = useState<number | null>(null);
   const [breaking, setBreaking] = useState<number | null>(null);
   const [showPaired, setShowPaired] = useState(false);
-  const [showSitting, setShowSitting] = useState(false);
+  const [sittingOpen, setSittingOpen] = useState<number | null>(null);
   const [suggested, setSuggested] = useState<Row | null>(null);
   const [dropped, setDropped] = useState<number[]>([]);
 
   if (!board) return null;
 
   const pairOf = pairIndex(board);
-  const players: Row[] = board.players || [];
+  // The board read carries no name and no flag, so both come from the rosters the page holds
+  const players: Row[] = (board.players || []).map((one: Row) => ({
+    ...one,
+    name: playerById[one.user_id]?.name,
+    country: playerById[one.user_id]?.country ?? null,
+  }));
   const byId = new Map<number, Row>(players.map((player) => [player.user_id, player]));
   const maxDifference = state?.max_mmr_difference ?? board.max_mmr_difference ?? 0;
   const stageDifference = state?.stage_max_mmr_difference ?? null;
@@ -253,17 +262,16 @@ export function RoundDraftBoard({
     setSuggested(suggestPairings({ ...board, players: [...left, ...right] }, maxDifference, drafted));
   };
 
+  // The whole set goes in one write, so the board and the state are read once for all of it
   const addSuggested = async () => {
-    for (const pair of suggested?.pairs || []) {
-      if (dropped.includes(pair.player1_id)) continue;
-      await onAddPairing(pair.player1_id, pair.player2_id);
-    }
+    const pairs = (suggested?.pairs || []).filter((pair: Row) => !dropped.includes(pair.player1_id));
+    await onAddPairings(pairs.map((pair: Row) => ({ player1_id: pair.player1_id, player2_id: pair.player2_id })));
     setSuggested(null);
   };
 
   const add = async (opponent: Row) => {
     const [one, two] = sideOf(opponent) === 2 ? [picked as Row, opponent] : [opponent, picked as Row];
-    await onAddPairing(one.user_id, two.user_id);
+    await onAddPairings([{ player1_id: one.user_id, player2_id: two.user_id }]);
     setPick(null);
   };
 
@@ -294,23 +302,33 @@ export function RoundDraftBoard({
     />
   );
 
-  const label = (player: Row, side: 1 | 2, top: number) => {
+  // A row on the scale sets its own top; a row of the narrow roster list takes no top and flows
+  const label = (player: Row, side: 1 | 2, top: number | null) => {
     const isPicked = pick === player.user_id;
     const isTaken = takenIds.has(player.user_id);
+    const placed = top == null ? "w-full py-1" : `absolute w-[268px] ${side === 1 ? "left-0 justify-end" : "left-[372px]"}`;
     return (
       <button
         key={player.user_id}
         type="button"
         title={`Opponents for ${player.name}`}
         aria-pressed={isPicked}
-        className={`absolute flex w-[268px] items-center gap-1 rounded px-1 text-sm ${side === 1 ? "left-0 justify-end" : "left-[372px]"} ${isPicked ? "bg-primary/12" : ""} ${isTaken && !isPicked ? "opacity-60" : ""}`}
-        style={{ top: top - 11 }}
+        className={`flex items-center gap-1 rounded px-1 text-sm ${placed} ${isPicked ? "bg-primary/12" : ""} ${isTaken && !isPicked ? "opacity-60" : ""}`}
+        style={top == null ? undefined : { top: top - 11 }}
         onClick={() => setPick(isPicked ? null : player.user_id)}
       >
         {playerLine(player, true)}
       </button>
     );
   };
+
+  // Under 960 px the scale would clip, so each roster reads as an ordered list of the same lines
+  const rosterList = (team: Row, teamId: number, rows: Row[], side: 1 | 2) => (
+    <div key={teamId}>
+      <div className="mb-1 border-b pb-1">{teamHead(team, teamId, rows.length)}</div>
+      {rows.map((player) => label(player, side, null))}
+    </div>
+  );
 
   const teamHead = (team: Row, teamId: number, count: number) => (
     <span className="flex items-center gap-2">
@@ -403,13 +421,15 @@ export function RoundDraftBoard({
   const sittingGroup = (teamId: number) => {
     const names = sitting(teamId);
     const own = ownTeamId === teamId;
+    const open = sittingOpen === teamId;
+    if (!names.length) return null;
     return (
       <div>
-        <Button variant="ghost" size="sm" className="text-primary-text" aria-expanded={showSitting} onClick={() => setShowSitting((was) => !was)}>
-          <Icon name={showSitting ? "mdi-chevron-down" : "mdi-chevron-right"} />
+        <Button variant="ghost" size="sm" className="text-primary-text" aria-expanded={open} onClick={() => setSittingOpen(open ? null : teamId)}>
+          <Icon name={open ? "mdi-chevron-down" : "mdi-chevron-right"} />
           Sitting out ({names.length})
         </Button>
-        {showSitting
+        {open
           ? names.map((player) => (
               <div key={player.user_id} className="flex flex-wrap items-center gap-2 px-3 py-1">
                 {playerLine(player)}
@@ -443,6 +463,7 @@ export function RoundDraftBoard({
         {ownTeamId ? (
           <Button
             variant={readyOf(ownTeamId)?.ready_at ? "outline" : "default"}
+            aria-pressed={!!readyOf(ownTeamId)?.ready_at}
             disabled={busy}
             onClick={() => onSetReady(ownTeamId, !readyOf(ownTeamId)?.ready_at)}
           >
@@ -453,6 +474,8 @@ export function RoundDraftBoard({
       </div>
 
       <div className="grid gap-4 min-[1280px]:grid-cols-[auto_minmax(0,1fr)]">
+        {/* on a phone the panel takes the screen, and Close brings the rosters back */}
+        {narrow && picked ? null : (
         <Card className="card gap-0 py-0">
           <CardTitle className="flex flex-wrap items-center gap-3 bg-primary px-4 py-3 text-on-primary">
             Draft board
@@ -461,7 +484,14 @@ export function RoundDraftBoard({
               <W3CIcon size={14} /> MMR of the signup race
             </span>
           </CardTitle>
-          <div className="overflow-x-auto p-4">
+          <div className={narrow ? "p-4" : "overflow-x-auto p-4"}>
+            {narrow ? (
+              <div className="grid gap-4">
+                {rosterList(team1, board.team1_id, left, 1)}
+                {rosterList(team2, board.team2_id, right, 2)}
+              </div>
+            ) : (
+            <>
             <div className="mb-2 flex justify-between gap-2" style={{ width: BOARD_WIDTH }}>
               {teamHead(team1, board.team1_id, left.length)}
               {teamHead(team2, board.team2_id, right.length)}
@@ -543,12 +573,15 @@ export function RoundDraftBoard({
                 </span>
               ) : null}
             </div>
-            <div className="mt-3 grid gap-2 min-[960px]:grid-cols-2" style={{ width: BOARD_WIDTH }}>
+            </>
+            )}
+            <div className="mt-3 grid gap-2 min-[960px]:grid-cols-2" style={narrow ? undefined : { width: BOARD_WIDTH }}>
               {sittingGroup(board.team1_id)}
               {sittingGroup(board.team2_id)}
             </div>
           </div>
         </Card>
+        )}
 
         <div>
           {picked ? (

@@ -58,6 +58,13 @@ test('fills names the difference at which one more place would fill', () => {
   assert.equal(fills[0].pairs, 2);
 });
 
+test('the published series of the match take places of the round too', () => {
+  const drafted = [{ player1_id: 12, player2_id: 22 }];
+  const { pairs, open } = suggestPairings({ ...BOARD, series_per_round: 3, published_series: 2 }, 100, drafted);
+  assert.equal(open, 0);
+  assert.deepEqual(pairs, []);
+});
+
 test('a board with no open place suggests nothing', () => {
   const { pairs, open } = suggestPairings({ ...BOARD, series_per_round: 1 }, 100, [{ player1_id: 11, player2_id: 21 }]);
   assert.equal(open, 0);

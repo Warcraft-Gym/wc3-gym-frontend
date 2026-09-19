@@ -97,6 +97,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   const [draftState, setDraftState] = useState<Row | null>(null);
   // The stamp of the first read of this visit, so a pairing added since it stays marked new
   const [seenAt, setSeenAt] = useState<string | null>(null);
+  const [seenSent, setSeenSent] = useState(false);
   const [availability1, setAvailability1] = useState<Row[]>([]);
   const [availability2, setAvailability2] = useState<Row[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -143,7 +144,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   // a captain writes the draft of the matches their own team plays; an admin any
   const canDraft = auth.isAdmin || [match.team1_id, match.team2_id].some((teamId) => teamId != null && auth.isCaptainOf(teamId, match.season_id));
 
-  // The team the viewer captains in this fixture; only that team may write a seen or a ready mark
+  // The team the viewer captains in this fixture; only that team may write a seen or a ready mark,
+  // and an admin passes isCaptainOf but holds no seat
   const seatTeamOf = (row: Row) => {
     const seats = (auth.me?.seats ?? []) as Row[];
     const seat = seats.find(
@@ -276,9 +278,14 @@ export function MatchDetailsView({ id }: { id: string }) {
     setDraftBoard(boardRow);
     setDraftState(stateRow);
     setSeenAt((was) => was ?? stateRow?.seen_at ?? null);
-    // Only the viewer's own team may stamp the visit, so no other caller asks
-    const seat = seatTeamOf(row);
-    if (seat && !fresh) await seriesStore.markDraftSeen(row.id, seat).catch(() => undefined);
+  };
+
+  // The visit is stamped when the Draft tab first opens, so reading the published table alone
+  // never clears the marks; only the viewer's own team may write it
+  const markDraftSeen = () => {
+    if (seenSent || !ownTeamId || !match.id) return;
+    setSeenSent(true);
+    seriesStore.markDraftSeen(match.id, ownTeamId).catch(() => undefined);
   };
 
   const fetchTeamDetails = async (row: Row) => {
@@ -350,12 +357,13 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
+  // Every write of the draft lands here, and a write moves the board and the state as well
   const fetchMatchSeries = async () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
       const { rows, drafts } = await fetchSeriesRows();
-      await loadMissingSeriesPlayers(rows, drafts, seriesPlayerById);
+      await Promise.all([loadMissingSeriesPlayers(rows, drafts, seriesPlayerById), fetchDraftBoard(match, true)]);
     } catch (error) {
       console.error("Failed to fetch match series:", error);
     } finally {
@@ -560,18 +568,12 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  // Every draft write reads the board and the state again, because a write moves both
-  const afterDraftWrite = async () => {
-    await fetchMatchSeries();
-    await fetchDraftBoard(match, true);
-  };
-
   const runDraftWrite = async (write: () => Promise<unknown>) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
       await write();
-      await afterDraftWrite();
+      await fetchMatchSeries();
     } catch (error: any) {
       console.error("Failed to write the draft:", error);
       setErrorMessage(error?.error || error?.message || String(error));
@@ -580,17 +582,17 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  const addPairing = (player1Id: number, player2Id: number) => {
-    const { team1Hosts, team2Hosts } = countTeamHosts([...series, ...draftSeries]);
-    return runDraftWrite(() =>
-      seriesStore.createDraftSeries({
-        match_id: match.id,
-        season_id: match.season_id,
-        player1_id: player1Id,
-        player2_id: player2Id,
-        host_player_id: team1Hosts > team2Hosts ? player2Id : player1Id,
-      }),
-    );
+  // A whole suggested set writes in one go: the hosts count as it goes, and one read follows
+  const addPairings = (pairs: { player1_id: number; player2_id: number }[]) => {
+    let { team1Hosts, team2Hosts } = countTeamHosts([...series, ...draftSeries]);
+    return runDraftWrite(async () => {
+      for (const pair of pairs) {
+        const hostId = team1Hosts > team2Hosts ? pair.player2_id : pair.player1_id;
+        await seriesStore.createDraftSeries({ match_id: match.id, season_id: match.season_id, ...pair, host_player_id: hostId });
+        if (hostId === pair.player1_id) team1Hosts++;
+        else team2Hosts++;
+      }
+    });
   };
 
   // The pairing keeps its row, so the note says it changed and who changed it
@@ -766,7 +768,13 @@ export function MatchDetailsView({ id }: { id: string }) {
             </Button>
           </CardTitle>
 
-          <Tabs value={seriesViewTab} onValueChange={(value) => setSeriesViewTab(value as string)}>
+          <Tabs
+            value={seriesViewTab}
+            onValueChange={(value) => {
+              setSeriesViewTab(value as string);
+              if (value === "draft") markDraftSeen();
+            }}
+          >
             <TabsList variant="line" className="w-full justify-center bg-surface-light">
               <TabsTrigger value="published" className="flex-none px-3">
                 <Icon name="mdi-check-circle" />
@@ -800,11 +808,13 @@ export function MatchDetailsView({ id }: { id: string }) {
                   drafted={draftSeries}
                   team1={team1}
                   team2={team2}
+                  playerById={seriesPlayerById}
                   ownTeamId={ownTeamId}
                   playday={match.playday}
+                  narrow={smAndDown}
                   isOut={isOutOnTeam}
                   busy={isLoading}
-                  onAddPairing={addPairing}
+                  onAddPairings={addPairings}
                   onChangeOpponent={changeOpponent}
                   onSetMaxDifference={setMaxMmrDifference}
                   onSetReady={setTeamReady}
@@ -821,6 +831,7 @@ export function MatchDetailsView({ id }: { id: string }) {
                   canDraft={canDraft}
                   board={draftBoard}
                   seenAt={seenAt}
+                  viewerId={auth.me?.user?.id ?? null}
                   onMeetings={meetingsOf}
                   draftActions={draftActions}
                   onAddDraftSeries={openCreateNewDraftSeries}

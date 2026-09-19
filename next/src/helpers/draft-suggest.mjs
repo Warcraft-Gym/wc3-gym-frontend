@@ -94,7 +94,8 @@ function fillSteps(left, right, open, maxDifference, hoursOf, filled) {
 export function suggestPairings(board, maxDifference, drafted = []) {
   const taken = new Set(drafted.flatMap((row) => [row.player1_id, row.player2_id]));
   const free = (board?.players || []).filter((player) => !taken.has(player.user_id));
-  const open = Math.max(0, (board?.series_per_round || 0) - drafted.length);
+  // The places of the round the published series and the drafts leave
+  const open = Math.max(0, (board?.series_per_round || 0) - (board?.published_series || 0) - drafted.length);
   const left = free.filter((player) => player.team_id === board?.team1_id && player.mmr != null);
   const right = free.filter((player) => player.team_id === board?.team2_id && player.mmr != null);
   const pairOf = pairIndex(board);

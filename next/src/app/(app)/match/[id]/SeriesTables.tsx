@@ -180,6 +180,7 @@ export function DraftSeries({
   canDraft,
   board,
   seenAt,
+  viewerId,
   draftActions,
   onAddDraftSeries,
   onPublishAll,
@@ -195,6 +196,7 @@ export function DraftSeries({
   canDraft: boolean;
   board?: Row | null; // the draft board read: the difference, the shared hours and the head to head of a pairing
   seenAt?: string | null; // when the viewer's own team last opened this draft
+  viewerId?: number | null; // the reader, whose own pairings are never new to him
   draftActions: (item: Row) => RowAction[];
   onAddDraftSeries: () => void;
   onPublishAll: () => void;
@@ -204,7 +206,10 @@ export function DraftSeries({
   const pairOf = pairIndex(board);
   const boardPlayer = new Map<number, Row>((board?.players || []).map((player: Row) => [player.user_id, player]));
   // A pairing another captain added or changed since this team last opened the draft
-  const isFresh = (item: Row) => !!seenAt && !!item.updated_at && item.updated_at > seenAt;
+  const isFresh = (item: Row) => {
+    const by = item.updated_by_user_id ?? item.created_by_user_id ?? null;
+    return !!seenAt && !!item.updated_at && item.updated_at > seenAt && (by == null || by !== viewerId);
+  };
   if (!draftSeries.length) {
     return (
       <div className="p-8 text-center">

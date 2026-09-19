@@ -105,8 +105,8 @@ test('the waiting lines name the unscored series and the round in play', () => {
     { season: { id: 5, name: 'GNL Ladder Season' }, cards: ASK_CARDS },
   ], ME);
   assert.deepEqual(lines.map(row => row.text), [
-    'Round 2 · GNL Review Season · vs Peterian',
-    'Round 2 · GNL Ladder Season · Check in for 8 to 14 Sep',
+    'GNL Review Season - Round 2 - vs Peterian',
+    'GNL Ladder Season - Round 2 - Check in for 8 to 14 Sep',
   ]);
   assert.deepEqual(lines.map(row => row.kind), ['series', 'round']);
   assert.equal(lines[0].series.id, 12);
@@ -160,16 +160,16 @@ test('a card carries the day its check-in opens', () => {
 
 test('a round asks for a check-in only inside its window', () => {
   // round 2 opens 24 Sep: five days out it asks nothing, three days out it asks
-  assert.deepEqual(checkinLines('2026-09-22T10:00'), ['Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep']);
+  assert.deepEqual(checkinLines('2026-09-22T10:00'), ['GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep']);
   assert.deepEqual(checkinLines('2026-09-24T10:00'), [
-    'Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep',
-    'Round 2 · GNL Ladder Season · Check in for 27 Sep to 3 Oct',
+    'GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep',
+    'GNL Ladder Season - Round 2 - Check in for 27 Sep to 3 Oct',
   ]);
 });
 
 test('an answered round drops out of the check-in lines', () => {
   assert.deepEqual(checkinLines('2026-09-24T10:00', 3, [{ playday: 1, available: true }]), [
-    'Round 2 · GNL Ladder Season · Check in for 27 Sep to 3 Oct',
+    'GNL Ladder Season - Round 2 - Check in for 27 Sep to 3 Oct',
   ]);
 });
 
@@ -183,7 +183,7 @@ test('a card whose answers are still being read is pending and asks nothing', ()
 });
 
 test('a season without checkin_days asks the round in play, as before', () => {
-  assert.deepEqual(checkinLines('2026-09-22T10:00', null), ['Round 1 · GNL Ladder Season · Check in for 20 to 26 Sep']);
+  assert.deepEqual(checkinLines('2026-09-22T10:00', null), ['GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep']);
 });
 
 test('the state chip reads the round before it reads the window', () => {

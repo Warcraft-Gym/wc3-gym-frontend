@@ -220,7 +220,7 @@ test('a browser with storage blocked shows the results and swallows the write', 
 
 test('blocks that cover the next round read as a hint with one answer, and nothing else does', () => {
   assert.deepEqual(blocksHint({ availability_hint: 'blocked_by_blocks' }),
-    { title: 'Your blocks cover this round', text: "Confirm I can't play" });
+    { title: 'Your blocks cover this round', text: 'Sit out' });
   assert.equal(blocksHint({ availability_hint: 'open' }), null);
   assert.equal(blocksHint({ availability_hint: 'answered_yes' }), null);
   assert.equal(blocksHint({ availability_hint: 'answered_no' }), null);

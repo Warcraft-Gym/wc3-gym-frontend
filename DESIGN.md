@@ -157,12 +157,13 @@ Use these instead of drawing the same thing again.
 | `EventHeader`, `PlayerHeader` | The top of an event page and of a player page. |
 | `TeamRoster` | The captains and the members of one team in one event, as two cards. A page that edits the roster fills its slots, and a GNL page passes the two empty lines that say season. |
 | `FixtureSeries` | The ordered series one fixture holds, each with its mode, its pick rule and its two sides. |
+| `SeriesActionBar` | The steps of one series as buttons, full or compact. A step already taken reads as a quiet fact where the bar has no room for it. |
 
 - The player line is flag, name, race icon, MMR, with one 6 px gap between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in that event. This plain line is the default on every surface.
 - A second version of the player line puts the games icon before the flag: a warning triangle when the player is under the event's games rule, with the count in its tooltip, and the same mark in `error` when W3C holds no stats for him. It shows only on the draft surfaces of an event that sets a games rule. It is never the default, because the icon is noise on a surface that does not pair players.
 - A team is drawn as its logo and its name, and the name links to the team page. A team with no logo shows a neutral placeholder of the same size, so the names in a column stay aligned. A long name truncates and carries the full name in its title.
 - On a drafting page, the match page and the season assign page, and inside the player panel, a team name is plain text with no link, for the same reason the player name is there: a link would leave unsaved work.
-- One shared action bar carries the steps of a series, in order, with the words "Schedule", "Veto maps" and "Report result". The full bar shows all three steps where the series is the subject of the surface: the "Waiting for you" list and the series page. The compact bar shows two active steps where a series is one item among many: the next step filled and the one after it outlined. The two players, their captains and an admin act on it; another reader sees the steps without buttons. Its context label reads "League - Event - Stage - Round - Opponent", and a part the series carries no value for is left out with its separator.
+- One shared action bar carries the steps of a series, in order, with the words "Schedule", "Veto maps" and "Report result"; the report step reads "Edit result" once the series is scored. The full bar shows all three steps where the series is the subject of the surface: the "Waiting for you" list and the series page. The compact bar shows two active steps where a series is one item among many: the next step filled and the one after it outlined, with the steps already taken as quiet facts before them. A series that needs no veto leaves that step out, and a reported series keeps its result button alone. The two players, any member of a team that fields a side, and an admin act on it, which is the rule the API applies; another reader sees the steps without buttons. Its context label reads "League - Event - Stage - Round - Opponent", and a part the series carries no value for is left out with its separator.
 - The W3C data line is the W3C mark and "synced 3 days ago", with the detail in a tooltip. It reads the same way everywhere in the app.
 
 ## Events
@@ -242,8 +243,7 @@ These parts of the app break a rule above today.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The app bar title reads "GNL APP" and links to `/report` (`next/src/components/layout/AppShell.tsx`).
-- The round grid and the home card ask a player to sit out with "Confirm I can't play" (`next/src/helpers/events.mjs`, `next/src/app/(app)/team/[id]/season/[season_id]/rounds/TeamRoundsView.tsx`).
-- No component draws the series action bar, and `PlayerName` has no version that carries the games icon.
+- `PlayerName` has no version that carries the games icon.
 - No surface draws the W3C data line as the mark beside a synced time: the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page prints the synced time with a tooltip but no W3C mark (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`).
 - `FORMATS` in `next/src/helpers/event-labels.mjs` holds no captain-draft format, so nothing prints "Captain draft" yet.
 - Cards that pad other than 16 px: `UserGuideView.tsx`, `LoginView.tsx`, `AdminLoginView.tsx` and `DiscordJoinCard.tsx` pad 24 px; `LadderView.tsx` pads 32 px; `MatchRoundNav.tsx` and `SeasonTeamAssignView.tsx` pad 12 px; `SeasonDetailsView.tsx` pads 8 px on its action row; `SeasonAchievementsView.tsx` pads 8 px top and bottom.

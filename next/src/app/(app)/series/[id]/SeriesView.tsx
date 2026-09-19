@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,13 +15,16 @@ import { CastChips, type CastSeries } from "@/components/CastChips";
 import { FixtureSeries } from "@/components/FixtureSeries";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerName } from "@/components/PlayerName";
+import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/ScheduleDialog";
 import { ReportResultDialog, SIDE_BUTTON, type ReportResultDialogHandle } from "@/components/ReportResultDialog";
+import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { SeriesBox } from "@/components/SeriesBox";
 import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
-import { eventLabel, MAP_RULES, timeText, titleOf } from "@/helpers/event-labels.mjs";
+import { eventLabel, MAP_RULES, titleOf } from "@/helpers/event-labels.mjs";
 import { fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster } from "@/helpers/fixture.mjs";
 import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
+import { seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
 import { isScored, sideName as nameOfSide } from "@/helpers/stage-view.mjs";
 import { useAuth, useEventStore, useMapStore, useTeamStore } from "@/stores";
 
@@ -58,6 +60,7 @@ export function SeriesView({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const reportDialog = useRef<ReportResultDialogHandle>(null);
+  const scheduleDialog = useRef<ScheduleDialogHandle>(null);
   const [awardOpen, setAwardOpen] = useState(false);
   const [awardSide, setAwardSide] = useState<number | null>(null);
   const [awardError, setAwardError] = useState<string | null>(null);
@@ -68,16 +71,9 @@ export function SeriesView({ id }: { id: string }) {
   const title = event ? eventLabel(event) : "Series";
   const scored = isScored(series);
 
-  // The line under the title: where the series is played and when
-  const place = [
-    series?.match?.playday ? { icon: "mdi-tournament", text: `Round ${series.match.playday}` } : null,
-    series?.date_time ? { icon: "mdi-calendar-clock", text: timeText(series.date_time) } : null,
-  ].filter(Boolean) as { icon: string; text: string }[];
-
   // One rule per game, so their count is the best-of
   const rules: string[] = rulesOf(series?.rules?.map_rules);
   const bestOfLine = `Best of ${series?.rules?.best_of || rules.length}`;
-  const hasVeto = rules.includes("veto");
 
   // The stage row of this series carries what it plays and who fields it; GET /series/{id}
   // answers neither, so a series inside a fixture reads them off the fixture.
@@ -119,11 +115,11 @@ export function SeriesView({ id }: { id: string }) {
     };
   });
 
-  // A team side names no player of its own, so any logged-in member may open the report
-  // and the API answers whether he acts for the side; the 403 reads as the dialog's alert.
-  const teamSided = !!series && ((!series.match && !series.player1_id && !series.player2_id) || !!stageRow?.entrant1_id);
-  // A side of the series reports it, and so does an admin
-  const canReport = auth.isAdmin || (!!auth.me?.user?.id && [series?.player1_id, series?.player2_id].includes(auth.me.user.id)) || (!!auth.me && teamSided);
+  // The stage row names the team entrants, which the series read does not carry, so the
+  // action bar gates on the two together
+  const viewer = { id: auth.me?.user?.id ?? null, isAdmin: auth.isAdmin };
+  const actionRow = series ? { ...series, entrant1_id: stageRow?.entrant1_id ?? null, entrant2_id: stageRow?.entrant2_id ?? null } : null;
+  const canReport = seriesSteps(actionRow, viewer).mayAct;
 
   // The fixture this series plays, once the event runs it through the events module: its
   // ordered series with their mode, their pick rule and the roster each side fields.
@@ -200,16 +196,14 @@ export function SeriesView({ id }: { id: string }) {
 
       {series ? (
         <>
-          <PageHeader title={title}>
-            {/* One gap for every icon-and-text pair, as the event header sets them */}
-            {place.length
-              ? place.map((part) => (
-                  <span key={part.text} className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted-foreground">
-                    <Icon name={part.icon} size={18} />
-                    <span>{part.text}</span>
-                  </span>
-                ))
-              : null}
+          {/* The eyebrow says where the series sits; the action bar names the booked time */}
+          <PageHeader kicker={seriesContext(series, { playerId: viewer.id }) || undefined} title={title}>
+            <SeriesActionBar
+              series={actionRow}
+              viewer={viewer}
+              onSchedule={() => scheduleDialog.current?.open(series)}
+              onReport={() => reportDialog.current?.open(series)}
+            />
           </PageHeader>
 
           <div className="grid gap-6 min-[960px]:grid-cols-12">
@@ -227,18 +221,6 @@ export function SeriesView({ id }: { id: string }) {
               <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
                 <CastChips series={series as CastSeries} />
                 <span className="flex-1" />
-                {hasVeto && canReport ? (
-                  <Button nativeButton={false} variant="outline" size="sm" className="text-primary-text" render={<Link href={`/player-series/${series.id}/veto`} />}>
-                    <Icon name="mdi-map-outline" />
-                    Map veto
-                  </Button>
-                ) : null}
-                {canReport ? (
-                  <Button size="sm" onClick={() => reportDialog.current?.open(series)}>
-                    <Icon name="mdi-trophy" />
-                    {scored ? "Edit result" : "Report result"}
-                  </Button>
-                ) : null}
                 {rosterSides.map((side) => (
                   <Button key={side} variant="outline" size="sm" className="text-primary-text" onClick={() => openRoster(side)}>
                     <Icon name="mdi-account-group" />
@@ -359,7 +341,12 @@ export function SeriesView({ id }: { id: string }) {
             </DialogContent>
           </Dialog>
 
-          {canReport ? <ReportResultDialog ref={reportDialog} onSaved={load} /> : null}
+          {canReport ? (
+            <>
+              <ScheduleDialog ref={scheduleDialog} playerId={auth.me?.user?.id ?? null} onSaved={load} />
+              <ReportResultDialog ref={reportDialog} onSaved={load} />
+            </>
+          ) : null}
         </>
       ) : null}
     </div>

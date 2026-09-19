@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { eventLabel } from './event-labels.mjs';
+import { seriesContext } from './series-actions.mjs';
 import { isUnscored } from './season-phase.mjs';
 
 // "13 to 19 Sep", "28 Sep to 4 Oct", "13 Sep", or "Round n" for a round with no date
@@ -101,7 +101,7 @@ export const waitingLines = (seasons = [], playerId = null, today = DateTime.now
             series: card.series,
             // Only a series whose time has passed owes a result; before that it owes a time
             played: seriesPlayed(card.series, today),
-            text: `Round ${card.playday} · ${eventLabel(season)} · vs ${opponentName(card.series, playerId)}`,
+            text: seriesContext(card.series, { event: season, round: card.playday, playerId }),
           }]
         : [];
     }
@@ -112,6 +112,6 @@ export const waitingLines = (seasons = [], playerId = null, today = DateTime.now
       kind: 'round',
       seasonId: season.id,
       playday: card.playday,
-      text: `Round ${card.playday} · ${eventLabel(season)} · Check in for ${card.label}`,
+      text: [seriesContext(null, { event: season, round: card.playday }), `Check in for ${card.label}`].join(' - '),
     }];
   }));

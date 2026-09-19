@@ -4,7 +4,7 @@ title: Teams
 description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's round grid.
 resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
 tags: [pages, teams]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T14:10:00Z }
 sources:
   - id: teams
     resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
@@ -48,7 +48,7 @@ sources:
 
 **The team in one season (`/team/:id/season/:season_id`).** The season points. The team's W3Champions ladder card: points, rank, games, and per player the ladder points, the achievements, the total, wins, losses, the MMR and its change since the season start, with when the card was last synced. The roster: the captains, and the members with battle tag, Discord name, MMR and main race. An admin picks the captains from every player and saves them; the answer names the captains whose Discord role is missing. An admin syncs the roster from W3Champions, adds players from the season's signups and removes one. A captain of this team, or an admin, gets the "Team rounds" button.
 
-**The round grid (`/team/:id/season/:season_id/rounds`).** One row per player and one column per round, each with a check-in button and a can't-play button; the caption says who set the answer. A second press on the set answer clears it. "Out to round n" marks every round as can't play. A phone shows one round at a time. The view sends anyone who is not a captain of this team, or an admin, to `/profile`.
+**The round grid (`/team/:id/season/:season_id/rounds`).** One row per player and one column per round, each with a check-in button and a sit-out button; the caption says who set the answer. A second press on the set answer clears it. "Out to round n" sets every round to out. A phone shows one round at a time. The view sends anyone who is not a captain of this team, or an admin, to `/profile`.
 
 # Writes
 

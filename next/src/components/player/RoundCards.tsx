@@ -8,6 +8,7 @@ import { TeamName } from "@/components/TeamName";
 import { useMatchStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
 import { roundCards, roundStateChip } from "@/helpers/rounds.mjs";
+import { getW3CMMR } from "@/helpers/w3c-stats";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ export function RoundCards({
   series = [],
   teamId = null,
   answers = null,
+  w3cSeason = null,
   seriesActions,
   question,
 }: {
@@ -35,6 +37,7 @@ export function RoundCards({
   series?: Row[]; // the player's series of this season
   teamId?: number | null;
   answers?: Row[] | null; // availability, the player's own page only; null while it is read
+  w3cSeason?: number | null; // the W3C season every MMR on the page reads
   seriesActions?: (series: Row) => React.ReactNode;
   question?: (card: Row) => React.ReactNode;
 }) {
@@ -75,6 +78,8 @@ export function RoundCards({
   const opponentZone = (s: Row) => zoneLabel(opponent(s).timezone, viewerZone(), s.date_time);
   // the race the opponent played in that series, not the one he signed the season up on
   const opponentRace = (s: Row) => (mine(s) ? s.player2_race : s.player1_race);
+  // his MMR on that race; the series payload carries his W3C stats
+  const opponentMmr = (s: Row): number | null => getW3CMMR(opponent(s), w3cSeason as number, opponentRace(s) as string);
 
   // The maps of the series, read from the player's side: game 1 is the season's
   // fixed map, and each side picks the map it takes after a loss
@@ -119,7 +124,11 @@ export function RoundCards({
                 // A series replaces the question: the round is already accounted for
                 <>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
+                    {/* The MMR sits after the name as its own element until the player line carries it */}
+                    <span className="inline-flex items-center gap-1.5">
+                      <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
+                      {opponentMmr(card.series) != null ? <span className="tnum text-sm text-muted-foreground">{opponentMmr(card.series)}</span> : null}
+                    </span>
                     {!isUnscored(card.series) ? (
                       <Badge variant="outline" className={cn("tnum", SCORE[scoreColor(card.series)])}>
                         {myScore(card.series)} - {theirScore(card.series)}
@@ -128,7 +137,8 @@ export function RoundCards({
                   </div>
                   {/* The host bans first and hosts game one, so the card names that side */}
                   {card.series.host_player_id === player.id ? <div className="text-xs text-primary-text">You host and ban first</div> : null}
-                  <div className={CAPTION}>{formatDateTime(card.series.date_time)}</div>
+                  {/* The action bar names the booked time for a viewer who acts on it */}
+                  {!seriesActions ? <div className={CAPTION}>{formatDateTime(card.series.date_time)}</div> : null}
                   {opponentZone(card.series) ? <div className={CAPTION}>{opponentZone(card.series)}</div> : null}
                   {/* The three maps of the series once the veto has decided them */}
                   {maps(card.series).map((line) => (

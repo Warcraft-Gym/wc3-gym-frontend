@@ -3,7 +3,7 @@ type: Decision
 title: Clerk in proxy mode on production
 description: Production runs the Clerk production instance through an edge function on this domain, because Clerk cannot own a vercel.app subdomain.
 tags: [session]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: source
     resource: ../../../next/src/app/clerk-proxy/[...p]/route.ts
@@ -12,7 +12,7 @@ sources:
 
 # Decision
 
-Since 2026-08-30. `api/clerk-proxy.js` forwards `/__clerk/*` to Clerk's API with the proxy URL and the secret key, and `vercel.json` rewrites the path to it before the SPA catch-all. Previews and local development stay on the dev instance.
+Since 2026-08-30. The route handler `next/src/app/clerk-proxy/[...p]/route.ts` forwards `/__clerk/*` to Clerk's API with the proxy URL and the secret key, and `next.config.ts` rewrites the path to it, because an app folder whose name starts with `_` is private. Previews and local development stay on the dev instance.
 
 # Why
 

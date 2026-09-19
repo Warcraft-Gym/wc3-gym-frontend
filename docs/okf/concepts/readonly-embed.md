@@ -4,13 +4,14 @@ title: Read-only embed
 description: A page opened with readonly=1 drops the chrome, stays light, and reports its height to the parent frame so the public site can embed it.
 resource: ../../../next/src/components/layout/AppShell.tsx
 tags: [router]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+status: deprecated
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:07:56Z }
 sources:
   - id: app
     resource: ../../../next/src/components/layout/AppShell.tsx
     title: isReadonly and sendHeight
 ---
 
-The public site at warcraft-gym.com embeds the season report in an iframe. `App.vue` reads `?readonly=1` (or `true`): the app bar and navigation are hidden, the theme is forced light because the site is light, and a `ResizeObserver` posts `{ type: 'gnl-iframe-height', height }` to the parent on every size change so the frame fits. The route is public, so no session is needed.
+The app has no embed mode. Since 2026-09-16 every page draws the same shell for every reader and `?readonly=1` is ignored. The public `/report` page replaces the embedded report.
 
-The site's own code lives in another repository and calls the backend directly for its tables; only the report page is embedded from here.
+While the mode existed, `?readonly=1` hid the app bar and the navigation, forced the light theme, and posted `{ type: 'gnl-iframe-height', height }` to the parent frame on every size change.

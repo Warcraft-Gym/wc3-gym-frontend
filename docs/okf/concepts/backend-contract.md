@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -21,7 +21,7 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 
 # The base URL
 
-`VITE_BACKEND_URL`, read once in `src/helpers/backend-url.js`, which throws at load when it is unset. Locally it is `/api`, which the Vite dev server proxies. On a Vercel target it is the backend's absolute URL, set on the project per environment. `/api` on Vercel would fall through to the SPA and return HTML. See [the pitfall](../pitfalls/env-not-tracked.md).
+`NEXT_PUBLIC_BACKEND_URL`, read once in `next/src/helpers/backend-url.js`, which throws at load and at build when it is unset. Locally it is `/api`, which Next proxies to the backend that `PROXY_TARGET` names. On a Vercel target it is the backend's absolute URL, set on the project per environment and inlined at build time. `/api` on Vercel has no route and never reaches the backend. See [the pitfall](../pitfalls/env-not-tracked.md).
 
 # Rules relied on everywhere
 

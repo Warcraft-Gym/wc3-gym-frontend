@@ -1,10 +1,10 @@
 ---
 type: Domain Concept
 title: Stores
-description: One Pinia store per area holds the fetched rows and every call to the backend; views never fetch on their own.
+description: One store module per area holds every call to the backend; three of them also hold state the pages share. Views never fetch on their own.
 resource: ../../../next/src/stores/index.ts
 tags: [stores]
-generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: index
     resource: ../../../next/src/stores/index.ts
@@ -19,13 +19,13 @@ sources:
 
 # Shape
 
-`src/stores/index.js` re-exports every store. A store is `defineStore` with `state` for the rows it holds (`seasons`, `current_season`, `events`, `event` and so on) and `actions` that call `fetchWrapper` and assign the answer. A store method returns the answer too, so a view can await it without reading the state. A store holds no derived numbers; the backend answers them.
+`next/src/stores/index.ts` re-exports every store. A store is a plain module: `use<Area>Store()` returns the methods that call `fetchWrapper`, and each method returns the answer, so a view awaits it and keeps the rows in its own state. `use<Area>Store` is a plain function, not a React hook, so the fetch wrapper and the guard call it outside React. Three stores also hold state that several pages share, in a small `box` (`next/src/stores/box.ts`) that React reads through `useSyncExternalStore`: `useAuth()` for the session, `useSeason()` for the season list and the current season, `useLadder()` for the ladder reads and the sync progress. A store holds no derived numbers; the backend answers them.
 
-| Store | Holds |
+| Store | Owns the calls for |
 |---|---|
 | `auth` | the session: `user` (the admin token), `me`, `viewAs`, `loginError` |
 | `season` | the season list, the current season, its maps, rounds, signups, achievements, ladder |
-| `event` | leagues, one league, events, one event; the entrants, stages, standings and nights are returned to the view, not held |
+| `event` | leagues, one league, events, one event, the entrants, stages, standings and nights |
 | `player` | players, one player, the player's own series and history |
 | `team` | teams, a team, a team's season page, the availability grid |
 | `match` | fixtures and draft series |
@@ -40,8 +40,9 @@ sources:
 # Rules
 
 - A view calls a store; a component receives props. Neither imports `fetchWrapper`.
-- `ensureSeasons()` loads the season list once; the router guard calls it for routes that carry a slug.
+- `ensureSeasons()` loads the season list once; the guard calls it for routes that carry a slug.
 - The season store selects the league whose kind is `gnl`, reads its rows through `/events`, and translates the common event phase into the four season-page lifecycle words.
 - The team store uses that GNL league id for team identity routes and an event id for rosters, captains, availability and standings.
-- `resolveCurrentSeasonId()` in `src/helpers/current-season.js` reads the `current_gnl_season` setting and falls back to the newest season, the same rule the backend applies.
-- A store method that writes returns the backend's answer and lets the view refetch what it shows. There is no optimistic update.
+- `resolveCurrentSeasonId()` in `next/src/helpers/current-season.js` reads the `current_gnl_season` setting and falls back to the newest season, the same rule the backend applies.
+- A store method that writes returns the backend's answer and lets the view refetch what it shows. A store makes no optimistic update.
+- `next/src/stores/season-api.test.mjs` reads the store sources and fails when one calls a season route the event API replaced.

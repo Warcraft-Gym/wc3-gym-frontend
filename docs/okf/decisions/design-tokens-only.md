@@ -1,9 +1,9 @@
 ---
 type: Decision
 title: Colours are tokens, in one file
-description: Every colour is a theme token from palette.mjs with a light and a dark value; no hex value or Vuetify palette name in a view.
+description: Every colour is a theme token from palette.mjs with a light and a dark value; no hex value or Tailwind palette name in a view.
 tags: [design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: source
     resource: ../../../DESIGN.md

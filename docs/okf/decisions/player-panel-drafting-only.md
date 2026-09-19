@@ -3,7 +3,7 @@ type: Decision
 title: The player panel opens only on drafting pages
 description: A player name links to the player page everywhere except on a page that holds unsaved draft work, where it opens a side panel and shows a dock icon.
 tags: [components]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:07:32Z }
 sources:
   - id: source
     resource: ../../../next/src/components/PlayerName.tsx
@@ -16,5 +16,5 @@ Made 2026-09-10. The panel exists so that reading a profile never costs a page i
 
 # Consequences
 
-- A new page with unsaved work and player names calls `provide(panelLinks, true)`. Nothing else opens the panel.
+- A new page with unsaved work and player names wraps its body in `PanelLinksContext.Provider` with the value `true`. Nothing else opens the panel.
 - A name in a form dialog on another page is `plain`.

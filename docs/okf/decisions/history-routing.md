@@ -3,7 +3,7 @@ type: Decision
 title: History routing, no hash bridge
 description: The router runs on plain paths, and old hash links get no redirect.
 tags: [router]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
 sources:
   - id: source
     resource: ../../../next/src/lib/routes.ts
@@ -16,6 +16,6 @@ Since 2026-09-04. Hash routing came with the starter template, not with a reason
 
 # Consequences
 
-- Deep links are plain paths; Vite and Vercel serve `index.html` for every path.
+- Deep links are plain paths, and each one is a real page of the Next.js app; an unknown path redirects to `/`.
 - Clerk needs no dashboard change for a same-origin path change.
-- vue-router parses `?` before `#`; read `to.fullPath` if a hash ever matters.
+- A page reads its query with `useSearchParams()` inside a `Suspense` boundary; the server never sees a hash.

@@ -36,6 +36,8 @@ import { ACHIEVEMENTS_NOTE, LADDER_NOTE, SCORED_NOTE, TEAM_BADGES_NOTE, achievem
 import { playerPath } from "@/helpers/players.mjs";
 import { roundLabel } from "@/helpers/rounds.mjs";
 import { TeamName } from "@/components/TeamName";
+import { teamImageUrl } from "@/helpers/team-image.js";
+import { teamLabel } from "@/helpers/teams.mjs";
 import { agoFromIso, localFromIso } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
 
@@ -113,7 +115,11 @@ export function LadderView() {
   // The round label formats a start/end pair exactly as every other date on the page reads
   const season = ladder?.season;
   const seasonDates = season?.start_date && season?.end_date ? roundLabel(season) : "";
-  const teams: Row[] = ladder?.teams ?? [];
+  // The ladder team payload names no icon_url, so the logo reads the team image route this page already read
+  const teams: Row[] = useMemo(
+    () => ((ladder?.teams ?? []) as Row[]).map((team) => ({ ...team, icon_url: teamImageUrl(team) })),
+    [ladder],
+  );
   const seasonPoints = teams.reduce((sum, team) => sum + team.points, 0);
   const seasonBadgePoints = teams.reduce((sum, team) => sum + teamBadgePoints(team), 0);
   const seasonPlayers = teams.reduce((sum, team) => sum + team.players.length, 0);
@@ -122,20 +128,20 @@ export function LadderView() {
   // One row per player of the season, carrying the team he plays for; one array per ladder read
   const allPlayers: Row[] = useMemo(
     () =>
-      ((ladder?.teams ?? []) as Row[]).flatMap((team) =>
+      teams.flatMap((team) =>
         team.players.map((player: Row) => ({
           ...player,
           teamId: team.id,
           team,
           // the sort key reads what the Team column draws, so the order follows the names on screen
-          teamName: team.long_name || team.name,
+          teamName: teamLabel(team),
           badgePoints: player.points - player.ladder_points,
           mmr: player.mmr?.current ?? null,
           // A player still in his placement games has no MMR, so there is no span to subtract
           mmrDiff: player.mmr?.current != null && player.mmr?.start != null ? player.mmr.current - player.mmr.start : null,
         })),
       ),
-    [ladder],
+    [teams],
   );
 
   // The backend leaves the season stamp null until every signup is stamped, so the

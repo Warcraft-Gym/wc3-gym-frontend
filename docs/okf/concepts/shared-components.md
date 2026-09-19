@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, where the standings sit in a stage, and how the veto board knows its side.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T18:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T12:57:51Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -40,10 +40,11 @@ A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards 
 
 A team is drawn as `{logo} {name}` everywhere, and it links to the team page. No view draws a team name by hand. The name is the team's long name, and its short tag when it carries no long name.
 
-- The logo is the team's `icon_url`, at one fixed size on every surface, so names in a column line up. A payload that names a team without a logo and without an id reads a muted shield outline of that same size instead, and asks the backend for nothing.
+- The logo is the `icon_url` the payload names, at one fixed size on every surface, so names in a column line up. The component asks the backend for no image: a team whose payload names no `icon_url` reads a muted shield outline of that same size. The ladder payload carries no `icon_url` field, so the ladder page passes the team image route it already read.
 - `seasonKey` picks the season team page, the path the team cards and the ladder already use; without one the link is the plain team page.
+- On a drafting page, under `PanelLinksContext` with the value `true`, the name is plain text, because a click would drop unsaved picks.
 - Pass `plain` for text only: inside another link or a button, inside a form dialog that holds unsaved work, and in the `h1` of the team's own page. A select option stays a plain option.
-- Some payloads carry a team as a name alone: the veto board's sides, a player's event history, the fantasy score breakdown and the ladder rows. There the team reads without a link, because the payload names no team to link to.
+- The veto board's sides and a player's event history carry a team name alone and read as unlinked text. The fantasy score breakdown draws its own logo and name, unlinked. The ladder teams carry an id, and link like every other team.
 
 # RaceIcon
 

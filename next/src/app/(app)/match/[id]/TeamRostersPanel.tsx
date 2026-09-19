@@ -23,7 +23,6 @@ const matchesQuery = (player: Row, search: string) => {
 
 function RosterCard({
   team,
-  seasonKey,
   roster,
   selected,
   onSelectedChange,
@@ -35,7 +34,6 @@ function RosterCard({
   w3cSeason,
 }: {
   team: Row;
-  seasonKey?: string | number | null;
   roster: Row[];
   selected: number[];
   onSelectedChange: (ids: number[]) => void;
@@ -52,7 +50,7 @@ function RosterCard({
   return (
     <Card className="card gap-0 py-0">
       <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-        <TeamName team={team} seasonKey={seasonKey} />
+        <TeamName team={team} />
         <Badge variant="outline" className="border-on-primary text-on-primary">
           {selected.length} selected
         </Badge>
@@ -144,7 +142,6 @@ function RosterCard({
 export function TeamRostersPanel({
   team1,
   team2,
-  seasonKey,
   roster1,
   roster2,
   selected1,
@@ -166,7 +163,6 @@ export function TeamRostersPanel({
 }: {
   team1: Row;
   team2: Row;
-  seasonKey?: string | number | null;
   roster1: Row[];
   roster2: Row[];
   selected1: number[];
@@ -211,7 +207,6 @@ export function TeamRostersPanel({
           <div className="grid grid-cols-1 gap-4 min-[960px]:grid-cols-2">
             <RosterCard
               team={team1}
-              seasonKey={seasonKey}
               roster={roster1}
               selected={selected1}
               onSelectedChange={onSelected1Change}
@@ -224,7 +219,6 @@ export function TeamRostersPanel({
             />
             <RosterCard
               team={team2}
-              seasonKey={seasonKey}
               roster={roster2}
               selected={selected2}
               onSelectedChange={onSelected2Change}

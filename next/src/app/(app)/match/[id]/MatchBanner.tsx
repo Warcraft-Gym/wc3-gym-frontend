@@ -14,11 +14,11 @@ const SCORE_FILL: Record<string, string> = {
   draw: "bg-draw text-on-draw",
 };
 
-function Side({ team, own, other, seasonKey }: { team: Row; own?: number; other?: number; seasonKey?: string | number | null }) {
+function Side({ team, own, other }: { team: Row; own?: number; other?: number }) {
   return (
     <div className="flex basis-5/12 flex-col items-center gap-2">
       <h2 className="text-2xl tracking-wide text-on-band [text-shadow:2px_2px_4px_rgba(var(--v-theme-band),0.8)] min-[960px]:text-4xl">
-        <TeamName team={team} seasonKey={seasonKey} />
+        <TeamName team={team} />
       </h2>
       <Badge className={`tnum min-w-[60px] justify-center px-3 py-1 text-2xl font-bold min-[960px]:min-w-[80px] min-[960px]:text-3xl ${SCORE_FILL[resultColor(own, other)]}`}>
         {own || 0}
@@ -29,7 +29,7 @@ function Side({ team, own, other, seasonKey }: { team: Row; own?: number; other?
 
 /** The dark band at the top of the match: the round it belongs to, the two teams and the score.
  *  The band is dark in both themes, so its text reads the on-band token. */
-export function MatchBanner({ match, team1, team2, round, seasonKey }: { match: Row; team1: Row; team2: Row; round: Row; seasonKey?: string | number | null }) {
+export function MatchBanner({ match, team1, team2, round }: { match: Row; team1: Row; team2: Row; round: Row }) {
   return (
     <div className="relative min-h-[250px] text-on-band">
       {/* The photograph is a backdrop, so it sits under a wash of the band colour and carries no alt text */}
@@ -50,11 +50,11 @@ export function MatchBanner({ match, team1, team2, round, seasonKey }: { match: 
         </div>
 
         <div className="mt-8 flex w-full max-w-3xl items-center justify-center gap-2">
-          <Side team={team1} own={match.team1_score} other={match.team2_score} seasonKey={seasonKey} />
+          <Side team={team1} own={match.team1_score} other={match.team2_score} />
           <div className="flex basis-2/12 justify-center">
             <Icon name="mdi-sword-cross" size={48} className="text-on-band" />
           </div>
-          <Side team={team2} own={match.team2_score} other={match.team1_score} seasonKey={seasonKey} />
+          <Side team={team2} own={match.team2_score} other={match.team1_score} />
         </div>
       </div>
     </div>

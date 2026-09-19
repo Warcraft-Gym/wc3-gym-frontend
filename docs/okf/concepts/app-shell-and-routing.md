@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:38:38Z }
+generated: { by: claude-code/claude-opus-5, at: 2026-09-19T12:16:46Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -40,6 +40,8 @@ Routes are plain paths since 2026-09-04; there is no bridge for old `/#/x` links
 A season in a path is its slug, `gnl-s18`, made from its name; a bare id still resolves for old links. The view reads the id off the loaded season list.
 
 # The app bar
+
+The bar opens with the app title, "WC3 Gym Dashboard", which links to `/` from every page and is the way home. The same words are the default title of the browser tab, and a page title reads `<page> · WC3 Gym Dashboard`.
 
 `AppShell.tsx` draws the navigation from `/me`: the name and avatar, the role, the current season by slug, the team link (the captained seat in the current season, else the roster row), and the theme menu (light, dark, system, stored in `localStorage`). On a phone the links sit in a drawer. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
 

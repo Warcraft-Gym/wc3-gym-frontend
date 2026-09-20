@@ -42,7 +42,8 @@ function Versus({ row }: { row: Row }) {
 }
 
 // The platform of a cast is read off its link, the way the series pages read it
-const castIcon = (url: string | null | undefined) => PLATFORM_ICONS[platformOf(url)] || "mdi-video-outline";
+type Platform = keyof typeof PLATFORM_ICONS;
+const castIcon = (url: string | null | undefined) => PLATFORM_ICONS[platformOf(url) as Platform] || "mdi-video-outline";
 
 /** The caster who claimed a row, as a chip that opens the stream. */
 const CastChip = ({ cast }: { cast: Row }) => (

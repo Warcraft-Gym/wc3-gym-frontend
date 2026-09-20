@@ -24,7 +24,8 @@ export function HomePanel({
     <Card className="card gap-0 py-0" style={{ order }}>
       <CardTitle className="flex flex-wrap items-center gap-2 bg-primary p-4 text-on-primary">
         <Icon name={icon} />
-        {title}
+        {/* The title is a heading, so a screen reader jumps from panel to panel */}
+        <h2 className="contents">{title}</h2>
         {chip}
         {action ? <span className="ml-auto text-sm font-normal">{action}</span> : null}
       </CardTitle>

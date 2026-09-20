@@ -24,6 +24,12 @@ const buildCards = homeCards as unknown as (input: { events: Row[]; me: Row | nu
 // The season the leaderboard names: the latest GNL season that has started, else the latest of all
 const boardOf = (seasons: Row[]) => [...seasons].reverse().find((season) => season.phase !== "open") ?? seasons[seasons.length - 1] ?? null;
 
+// The seasons that hold the member's own series: the ones /me names, or, off-season, the finished board season
+const ownSeasons = (mine: Row[], board: Row | null): Row[] => {
+  const entered = mine.filter((season) => season.signed_up);
+  return entered.length || board?.phase !== "complete" ? entered : board ? [board] : [];
+};
+
 /** The home hub: five panels over one page. The member's own next series and last result, the next
  *  matches of the whole app, the signups still open, the latest season's standings and the casts. */
 export function HomeView() {
@@ -49,7 +55,8 @@ export function HomeView() {
   const playerId = me?.user?.id ?? null;
   // The one viewer the action bar gates on, as the backend gates the writes
   const viewer = { id: playerId, isAdmin, seats: me?.seats ?? [] };
-  const mySeasons: Row[] = (me?.seasons ?? []).filter((season: Row) => season.signed_up);
+  const board = boardOf(seasons);
+  const mySeasons: Row[] = ownSeasons((me?.seasons ?? []) as Row[], board);
 
   // The member's own two series: the first season that still pairs him, else the last he played in
   const mine = mySeasons.map((entry) => {
@@ -58,11 +65,9 @@ export function HomeView() {
   });
   const own = mine.find((row) => row.next) ?? mine.find((row) => row.last) ?? null;
 
-  const board = boardOf(seasons);
   const nextSeason = [...seasons].reverse().find((season: Row) => season.phase === "open" && season.id !== board?.id) ?? null;
 
-  // /me/events names every published event with the caller's own state; the signup rows keep
-  // the card the home has always built, so the dialog, the GNL link and the withdraw stay put
+  // The signup rows reuse the home card, so the dialog, the GNL link and the withdraw stay
   const cards = buildCards({ events: myEvents, me, seasons });
   const signupRows = openSignups(myEvents)
     .map((row: Row) => {
@@ -94,8 +99,7 @@ export function HomeView() {
     return rows;
   };
 
-  // One action word, one thing to do. The signup dialog is the home's own, because the
-  // member read carries no signup policy; every other word goes through the shared act.
+  // A sign up opens the home's own dialog; every other action word goes through the shared act
   const act = async (card: Row) => {
     if (card.primary.act === "sign_up") {
       setSignupEvent(await eventStore.fetchEvent(card.id));
@@ -129,7 +133,7 @@ export function HomeView() {
         setMyEvents(rows);
         setHub(series);
         const season = boardOf(known);
-        const entries = (me?.seasons ?? []).filter((entry: Row) => entry.signed_up);
+        const entries = ownSeasons((me?.seasons ?? []) as Row[], season);
         const [teams] = await Promise.all([
           season ? teamStore.fetchTeamsBySeasonBasic(season.id).catch(() => []) : Promise.resolve([]),
           loadOwn(entries),

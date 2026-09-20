@@ -21,8 +21,7 @@ const store = {
   async unclaimSeries(seriesId: number, castId: number) {
     await fetchWrapper.delete(`${backendUrl}/series/${seriesId}/casts/${castId}`);
   },
-  // The home hub's one read: the next series, the claimed casts and the recent VODs.
-  // Public and edge cached, so it is sent without a bearer.
+  // The home hub's one read, public and edge cached, so it is sent without a bearer
   async homeSeries() {
     return await fetchWrapper.get(`${backendUrl}/home/series`);
   },

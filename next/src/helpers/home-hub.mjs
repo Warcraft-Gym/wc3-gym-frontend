@@ -1,11 +1,9 @@
-// The pure parts of the home hub: the order of its five panels, the signup chip, the
-// member's own two series, and the words a captain's fixture row reads.
+// The pure parts of the home hub: the panel order, the signup chip, the member's two series, the captain row.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
 import { isUnscored } from './season-phase.mjs';
 
-// One order per panel drives both layouts: the phone stacks them in this order, and each
-// desktop column keeps the same order among the panels it holds.
+// One order per panel drives both layouts: the phone stack and the panels inside each desktop column.
 const WITH_SERIES = { own: 1, next: 2, signup: 3, board: 4, cast: 5 };
 const NO_SERIES = { signup: 1, board: 2, own: 3, next: 4, cast: 5 };
 
@@ -23,8 +21,8 @@ export const closesIn = (closesAt, now = DateTime.now()) => {
   return ['closes today', 'closes tomorrow', 'closes in 2 days'][days];
 };
 
-/** The events whose signups stand open for the member, soonest closing first; a row with no
- *  close time falls back to the day the event starts. A row the member entered keeps its place.
+/** The events whose signups stand open for the member, in the order they close; a row with no
+ *  close time reads in the order the event starts, which is every row the member read sends today.
  *  @param {any[]} [rows] the GET /me/events rows */
 export const openSignups = (rows = []) => rows
   .filter((row) => row.action === 'sign_up' || (row.action === 'withdraw' && row.signups_open))

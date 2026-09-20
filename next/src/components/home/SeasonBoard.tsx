@@ -33,7 +33,7 @@ export function SeasonBoard({
   order: number;
 }) {
   const rounds: Row[] = season?.rounds ?? [];
-  const round = currentRound(rounds);
+  const round = currentRound(rounds, DateTime.now(), season?.round_end_zone ?? null);
   const total = season?.round_count ?? rounds.length ?? 0;
   const ends = round ? roundEnd(round, season?.round_end_zone ?? null) : null;
   const line = ends

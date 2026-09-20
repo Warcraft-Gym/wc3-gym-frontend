@@ -16,13 +16,18 @@ test('a replay on another game\'s map names that game', () => {
   assert.deepEqual(mapMismatches([8, 7, null], VETO), [{ game: 1, to: 2 }, { game: 2, to: 1 }]);
   assert.equal(
     reportWarning(false, mapMismatches([8, 7, null], VETO)),
-    'The replay of games 1, 2 was played on another map than its game plays.',
+    'The replays of games 1 and 2 were played on other maps than the veto gives them.',
+  );
+  // three games list with commas and "and"
+  assert.equal(
+    reportWarning(false, mapMismatches([8, 9, 7], VETO)),
+    'The replays of games 1, 2 and 3 were played on other maps than the veto gives them.',
   );
 });
 
 test('a replay on a map the veto gives nobody names no game to move to', () => {
   assert.deepEqual(mapMismatch(1, [42], VETO), { game: 1, to: null });
-  assert.equal(reportWarning(false, mapMismatches([42], VETO)), 'The replay of game 1 was played on another map than its game plays.');
+  assert.equal(reportWarning(false, mapMismatches([42], VETO)), 'The replay of game 1 was played on another map than the veto gives it.');
 });
 
 test('a series that plays a veto and records none warns once and names no game', () => {

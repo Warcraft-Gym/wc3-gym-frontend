@@ -22,7 +22,8 @@ export function HeadToHeadCell({ pair, onMeetings }: { pair?: Row; onMeetings: (
   if (!score) return <span className="text-muted-foreground">no series</span>;
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <span className="tnum">{score}</span>
+      {/* the comma rides on the score, because the gap already spaces the two parts */}
+      <span className="tnum">{score}{pair?.last_event ? "," : ""}</span>
       {pair?.last_event ? <span className="text-xs text-muted-foreground">last met {pair.last_event}</span> : null}
       <Button variant="ghost" size="sm" className="text-primary-text" onClick={show} aria-expanded={open}>
         <Icon name={open ? "mdi-chevron-up" : "mdi-chevron-down"} />

@@ -39,6 +39,10 @@ function DialogOverlay({
   )
 }
 
+/** A confirm is a small centred panel on a phone too, not the full-height sheet a form gets. */
+const dialogCompact =
+  "max-md:inset-auto max-md:top-1/2 max-md:left-1/2 max-md:h-auto max-md:max-w-[calc(100%-2rem)] max-md:-translate-x-1/2 max-md:-translate-y-1/2 max-md:rounded-xl"
+
 function DialogContent({
   className,
   children,
@@ -147,6 +151,7 @@ function DialogDescription({
 }
 
 export {
+  dialogCompact,
   Dialog,
   DialogClose,
   DialogContent,

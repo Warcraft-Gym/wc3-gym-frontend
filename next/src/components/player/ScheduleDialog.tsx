@@ -41,6 +41,8 @@ const contextOf = seriesContext as unknown as (series: Row, options: { playerId?
 
 const CAPTION = "text-xs text-muted-foreground";
 const SWATCH = "h-3 w-3 rounded-sm";
+// The days one calendar page holds, so the grid never widens the dialog; the pager walks the window
+const PAGE_DAYS = { phone: 3, wide: 7 };
 
 /** Whoever acts for a series sets its time over the round window, as a calendar or one track a day; a pick inside a blocked hour is named and still booked. */
 export function ScheduleDialog({
@@ -59,6 +61,7 @@ export function ScheduleDialog({
   // one read per opening: undefined in flight, null failed, the answer once in
   const [freeTime, setFreeTime] = useState<Row | null | undefined>(undefined);
   const [view, setView] = useState<"calendar" | "tracks">("calendar");
+  const [page, setPage] = useState(0);
   const [booked, setBooked] = useState<DateTime | null>(null);
   // the series the dialog holds now, so a late free-time answer for another one is dropped
   const held = useRef<number | null>(null);
@@ -82,6 +85,7 @@ export function ScheduleDialog({
       });
       setFreeTime(undefined);
       setBooked(null);
+      setPage(0);
       // the calendar reads best on a desktop, one day track a row at 390 px
       setView(phone ? "tracks" : "calendar");
       setShow(true);
@@ -109,6 +113,11 @@ export function ScheduleDialog({
   });
   const rows = grid.reduce((most, one) => Math.max(most, one.cells.length), 0);
   const inBlocked = isBlocked(chosen, blocked);
+  // The calendar draws one page of days, so its columns stay inside the dialog at every width
+  const perPage = phone ? PAGE_DAYS.phone : PAGE_DAYS.wide;
+  const pages = Math.max(1, Math.ceil(grid.length / perPage));
+  const atPage = Math.min(page, pages - 1);
+  const shown = grid.slice(atPage * perPage, atPage * perPage + perPage);
 
   // One row a side, the viewer's own side first; a captain or an admin reads them in play order
   const sides: Row[] = [row.player1 ?? {}, row.player2 ?? {}];
@@ -141,6 +150,13 @@ export function ScheduleDialog({
     next.focus();
   };
 
+  // The pick is a start time, not a half hour, so it reads as a point on the track and never as a fill
+  const startMark = (
+    <span className="pointer-events-none absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-primary">
+      <span className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary" />
+    </span>
+  );
+
   const cellButton = (day: Day, cell: Cell, index: number, first: number, size: string) => {
     const picked = pickedAt === cell.at.toMillis();
     return (
@@ -154,14 +170,15 @@ export function ScheduleDialog({
         aria-pressed={picked}
         title={cellTitle(cell.at)}
         className={cn(
-          "border-0 p-0",
+          "relative border-0 p-0",
           size,
-          cell.outside ? "bg-surface-light opacity-40" : cell.blocked ? "bg-surface-light" : "bg-success/25",
+          cell.outside ? "bg-surface-light hatched" : cell.blocked ? "bg-surface-light" : "bg-success/25",
           !cell.outside && "hover:bg-primary/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
-          picked && "bg-primary",
         )}
         onClick={() => setPick(cell.at)}
-      />
+      >
+        {picked ? startMark : null}
+      </button>
     );
   };
 
@@ -169,8 +186,11 @@ export function ScheduleDialog({
     <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1", CAPTION)}>
       <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-success/25")} />Open for both</span>
       <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light")} />One of you is blocked</span>
-      <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-primary")} />Start time</span>
-      <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light opacity-40")} />Outside the round</span>
+      <span className="inline-flex items-center gap-1.5">
+        <i className="relative h-3 w-4"><span className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-primary" /><span className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary" /></i>
+        Start time
+      </span>
+      <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light hatched")} />Outside the round</span>
     </div>
   );
 
@@ -189,7 +209,8 @@ export function ScheduleDialog({
               key={cell.at.toMillis()}
               size="sm"
               variant={pickedAt === cell.at.toMillis() ? "default" : "outline"}
-              className={cn(cell.blocked && "opacity-60")}
+              // the picked chip never wears the faint blocked style, or the one chosen chip reads as the disabled one
+              className={cn(cell.blocked && pickedAt !== cell.at.toMillis() && "opacity-60")}
               aria-label={cellTitle(cell.at)}
               aria-pressed={pickedAt === cell.at.toMillis()}
               title={cellTitle(cell.at)}
@@ -224,29 +245,40 @@ export function ScheduleDialog({
     </div>
   );
 
-  // One column a day, the hours down: the view a desktop reads
+  // One column a day, the hours down, one page of days at a time: the view a desktop reads
   const calendar = (
-    <div className="max-h-[420px] overflow-auto">
-      <div
-        className="grid min-w-max gap-px"
-        style={{ gridTemplateColumns: `3.5rem repeat(${grid.length}, minmax(4.5rem, 1fr))` }}
-        onKeyDown={moveFocus}
-      >
-        <span className="sticky top-0 z-10 bg-surface" />
-        {grid.map(({ day }) => (
-          <span key={day.key} className={cn("sticky top-0 z-10 bg-surface px-1 pb-1 text-center text-xs", day.today && "font-medium")}>
-            {day.today ? "Today" : day.label}
+    <div className="flex min-w-0 flex-col gap-1">
+      {pages > 1 ? (
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon-sm" aria-label="Earlier days" disabled={atPage === 0} onClick={() => setPage(atPage - 1)}>
+            <Icon name="mdi-chevron-left" />
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Later days" disabled={atPage >= pages - 1} onClick={() => setPage(atPage + 1)}>
+            <Icon name="mdi-chevron-right" />
+          </Button>
+          <span className="text-sm font-medium">
+            {shown[0]?.day.day.toFormat("d LLL")} to {shown[shown.length - 1]?.day.day.toFormat("d LLL")}
           </span>
-        ))}
-        {/* one row a half hour; the gutter names the full hours of the first day, so a clock-change day shifts against it */}
-        {Array.from({ length: rows }, (_, index) => (
-          <div key={index} className="contents">
-            <span className={cn("pr-2 text-right", CAPTION)}>{index % 2 ? "" : grid[0]?.cells[index]?.label}</span>
-            {grid.map(({ day, cells, first }) =>
-              cells[index] ? cellButton(day, cells[index], index, first, "h-3 w-full") : <span key={day.key} />,
-            )}
-          </div>
-        ))}
+        </div>
+      ) : null}
+      <div className="max-h-[420px] min-w-0 overflow-y-auto">
+        <div className="grid gap-px" style={{ gridTemplateColumns: `2.75rem repeat(${shown.length}, minmax(0, 1fr))` }} onKeyDown={moveFocus}>
+          <span className="sticky top-0 z-10 bg-surface" />
+          {shown.map(({ day }) => (
+            <span key={day.key} className={cn("sticky top-0 z-10 truncate bg-surface px-1 pb-1 text-center text-xs", day.today && "font-medium")}>
+              {day.today ? "Today" : day.label}
+            </span>
+          ))}
+          {/* one row a half hour, every row the same height; the gutter names the full hours of the page's first day */}
+          {Array.from({ length: rows }, (_, index) => (
+            <div key={index} className="contents">
+              <span className={cn("h-3 whitespace-nowrap pr-1 text-right leading-3 tnum", CAPTION)}>{index % 2 ? "" : shown[0]?.cells[index]?.label}</span>
+              {shown.map(({ day, cells, first }) =>
+                cells[index] ? cellButton(day, cells[index], index, first, "h-3 w-full") : <span key={day.key} />,
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -343,7 +375,8 @@ export function ScheduleDialog({
           </>
         ) : (
           <>
-            <div className="flex flex-col gap-3 p-4">
+            {/* min-w-0 keeps the grid inside the dialog: without it a wide grid widens this column */}
+            <div className="flex min-w-0 flex-col gap-3 p-4">
               <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
               {freeTime === undefined ? (
                 <div className={CAPTION} role="status">

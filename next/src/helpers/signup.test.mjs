@@ -83,7 +83,7 @@ test('the heading follows the state: a profile-only form is not a signup', () =>
 });
 
 test('a battle tag passes with 3 to 8 digits after the name, and the space around it is cut', () => {
-  for (const tag of ['Mirren#4410', ' Mirren#4410 ', 'Grubby#123', 'Player1#12345678', 'Müller#4410']) {
+  for (const tag of ['Mirren#4410', ' Mirren#4410 ', 'Grubby#123', 'Player1#12345678', 'Müller#4410', 'นักรบ#4410', 'Mir-ren#4410']) {
     assert.equal(battleTagError(tag), null, tag);
   }
 });

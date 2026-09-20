@@ -99,7 +99,7 @@ export function SignupDialog({
           const board = await fetchWrapper.get(`${backendUrl}/koth/nights/${event.id}/board`);
           setPlace(signupPlace(board, row.id));
         } catch {
-          setPlace(null); // the night answers no board, so the dialog says the signup stands
+          setPlace(null); // no board answered, so the event row names the bracket alone
         }
       }
     } catch (e) {
@@ -165,7 +165,7 @@ export function SignupDialog({
                   </>
                 )}
                 {entrant.user ? (
-                  <PlayerName player={entrant.user} race={entrant.race} mmr={entrant.mmr ?? false} warning={placed ? null : noStats} plain />
+                  <PlayerName player={entrant.user} race={entrant.race} mmr={entrant.mmr ?? false} warning={placed ? undefined : noStats} plain />
                 ) : null}
               </div>
             </div>

@@ -77,8 +77,8 @@ export function signupTitles(state, seasonName) {
   };
 }
 
-// The shape every door takes: a name of letters and digits, then # and 3 to 8 digits
-const BATTLE_TAG = /^[\p{L}\p{N}]+#\d{3,8}$/u;
+// The shape every door takes: a name with no space and no hash, then # and 3 to 8 digits
+const BATTLE_TAG = /^[^\s#]+#\d{3,8}$/;
 
 // The sentence the battle tag field prints, or null when the tag is shaped right
 export function battleTagError(tag) {

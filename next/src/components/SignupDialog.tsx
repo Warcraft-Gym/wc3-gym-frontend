@@ -7,13 +7,17 @@ import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { toneClass } from "@/components/ui/tone";
+import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { warningLabel } from "@/helpers/entrants.mjs";
 import { eventLabel } from "@/helpers/event-labels.mjs";
+import { noStatsWarning } from "@/helpers/games-rule.mjs";
+import { bracketName, signupPlace } from "@/helpers/koth-signup.mjs";
 import { defaultSignupRace } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
+import { battleTagError, isTagError } from "@/helpers/signup.mjs";
 import { useAuthStore, useEventStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -25,7 +29,9 @@ const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race
  *  battle tag when the event takes anyone and the caller has no linked account, and the
  *  eligibility warnings the API answered. On an event that takes one entry per race a member
  *  already in enters another race, and the races he holds are not offered again. A warning
- *  never blocks: the entrant is in, and the chips say what an admin will look at. */
+ *  never blocks: the entrant is in, and the chips say what an admin will look at.
+ *  A KOTH night ends on its own state instead: the bracket and the place in line the board
+ *  read answers, or the note that W3Champions rated no race yet and an admin places the row. */
 export function SignupDialog({
   event,
   held = [], // the races the caller already entered on
@@ -46,6 +52,8 @@ export function SignupDialog({
   const needsTag = event.signup_policy === "anyone" && !auth.me?.user;
   // A signup-only event is a list of what people want to work on, so it asks for the note
   const takesNote = event.kind === "signup";
+  // The event kind picks the end state: a KOTH night says where the entrant stands tonight
+  const koth = event.kind === "koth";
   // The races the dialog leaves out: only an event that takes one entry per race holds any
   const taken: string[] = event.multi_entry ? held : [];
   const another = taken.length > 0;
@@ -55,14 +63,28 @@ export function SignupDialog({
   const [battleTag, setBattleTag] = useState("");
   const [note, setNote] = useState("");
   const [entrant, setEntrant] = useState<Row | null>(null);
+  const [place, setPlace] = useState<{ bracket: string; placeWord: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tagError, setTagError] = useState<string | null>(null);
 
   const ready = !!race && (!needsTag || battleTag.trim().length > 2);
   const warnings: string[] = entrant?.warnings ?? [];
+  // The signup answered a bracket, so the line the board draws names the place
+  const placed = entrant?.division_id != null;
+  // The event row already carries its divisions, so the bracket has a name without a second read
+  const divisions: Row[] = event.divisions || [];
+  const at = placed ? divisions.findIndex((one: Row) => one.id === entrant?.division_id) : -1;
+  const bracket: string | null = place?.bracket || (at < 0 ? null : bracketName(divisions[at], at));
+  const tag = entrant?.user?.battleTag || battleTag.trim();
+  // The one mark the app draws for a race W3Champions holds no stats on
+  const noStats = entrant?.race ? noStatsWarning(entrant.race) : null;
 
   const submit = async () => {
     setError(null);
+    const shape = needsTag ? battleTagError(battleTag) : null;
+    setTagError(shape);
+    if (shape) return;
     setSaving(true);
     try {
       const row = await store.signUp(event.id, {
@@ -70,10 +92,22 @@ export function SignupDialog({
         note: note.trim() || null,
         battle_tag: needsTag ? battleTag.trim() : null,
       });
-      setEntrant(row);
       onSignedUp?.(row);
+      // One public read, edge cached: where the night put the new row in its bracket's line
+      if (koth && row?.division_id != null) {
+        try {
+          setPlace(signupPlace(await store.fetchBoard(event.id), row.id));
+        } catch {
+          setPlace(null); // no board answered, so the event row names the bracket alone
+        }
+      }
+      // Last, so the form holds its spinner until the place is known and the end state prints once
+      setEntrant(row);
     } catch (e) {
-      setError(`The signup did not go through: ${(e as Error).message}`);
+      const failed = e as Error & { status?: number };
+      // A refusal that names the battle tag lands under the field; every other one is a dialog error
+      if (needsTag && failed.status === 400 && isTagError(failed.message)) setTagError(failed.message);
+      else setError(`The signup did not go through: ${failed.message}`);
     } finally {
       setSaving(false);
     }
@@ -110,11 +144,32 @@ export function SignupDialog({
                 </Field>
               ) : null}
               {needsTag ? (
-                <Field label="Battle tag" hint="Your w3champions name, as Name#1234" htmlFor="signup-tag">
-                  <Input id="signup-tag" value={battleTag} onChange={(e) => setBattleTag(e.target.value)} />
+                <Field label="Battle tag" hint="Your w3champions name, as Name#1234" error={tagError} htmlFor="signup-tag">
+                  <Input id="signup-tag" aria-invalid={!!tagError} value={battleTag} onChange={(e) => { setBattleTag(e.target.value); setTagError(null); }} />
                 </Field>
               ) : null}
             </>
+          ) : koth ? (
+            <div className="flex items-start gap-2">
+              <Icon name={placed ? "mdi-check" : "mdi-clock-outline"} className={placed ? "text-success" : "text-info"} />
+              <div className="flex flex-col gap-1">
+                {placed ? (
+                  <p>
+                    {bracket
+                      ? `You are in ${bracket}${place?.placeWord ? `, ${place.placeWord} in line` : ""}.`
+                      : "You are in. See you on the ladder."}
+                  </p>
+                ) : (
+                  <>
+                    <p>You are signed up.</p>
+                    <p>W3Champions gave us no rating for {tag} yet, so an admin places you in a bracket.</p>
+                  </>
+                )}
+                {entrant.user ? (
+                  <PlayerName player={entrant.user} race={entrant.race} mmr={entrant.mmr ?? false} warning={placed ? undefined : noStats} plain />
+                ) : null}
+              </div>
+            </div>
           ) : (
             <>
               <p>You are in. See you on the ladder.</p>

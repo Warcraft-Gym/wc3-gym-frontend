@@ -84,16 +84,16 @@ function RaceRows({ seat, admin }: { seat: Row; admin?: BracketAdmin }) {
         const body = (
           <>
             {admin ? <Icon name={on ? "mdi-check-circle" : "mdi-circle-outline"} size={14} className={on ? "text-primary-text" : "text-muted-foreground"} /> : null}
-            <RaceIcon raceIdentifier={row.race} />
-            <span className="flex-1 truncate text-left">{raceName(row.race)}</span>
-            {row.mmr != null ? (
-              <span className="tnum text-muted-foreground">{row.mmr}</span>
-            ) : (
+            {/* the mark leads the race as it leads a name line, and the MMR slot of the row stays empty */}
+            {row.mmr == null ? (
               <TapTooltip content={noStatsWarning(row.race).text}>
                 <Icon name="mdi-alert" size={14} className="text-error" />
                 <span className="sr-only">{noStatsWarning(row.race).text}</span>
               </TapTooltip>
-            )}
+            ) : null}
+            <RaceIcon raceIdentifier={row.race} />
+            <span className="flex-1 truncate text-left">{raceName(row.race)}</span>
+            {row.mmr != null ? <span className="tnum text-muted-foreground">{row.mmr}</span> : null}
           </>
         );
         return admin ? (
@@ -157,6 +157,8 @@ export function KingBlock({ bracket, admin }: { bracket: Row; admin?: BracketAdm
 export function OpenSeries({ bracket, admin }: { bracket: Row; admin?: BracketAdmin }) {
   const live: Row | null = bracket.open_series;
   if (live) {
+    // both sides keep the mark slot while either wears the mark, so the flags line up where the second wraps
+    const slot = live.side1.mmr == null || live.side2.mmr == null;
     return (
       <div className="mx-4 mb-3 rounded-lg border p-3">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -164,9 +166,9 @@ export function OpenSeries({ bracket, admin }: { bracket: Row; admin?: BracketAd
           Now playing
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <BoardPlayer row={live.side1} />
+          <BoardPlayer row={live.side1} slot={slot} />
           <span className="text-xs text-muted-foreground">vs</span>
-          <BoardPlayer row={live.side2} />
+          <BoardPlayer row={live.side2} slot={slot} />
         </div>
         {admin ? (
           <>
@@ -319,8 +321,9 @@ export function LeftRows({ bracket, admin }: { bracket: Row; admin?: BracketAdmi
   return (
     <div className="px-4 pb-2">
       <div className="py-1 text-xs font-medium text-muted-foreground">Left tonight</div>
+      {/* the name fades, the mark keeps its strength: a player who left is still a player with no stats */}
       {seats.map((seat: Row) => (
-        <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 opacity-(--v-medium-emphasis-opacity)">
+        <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 [&_.name]:opacity-(--v-medium-emphasis-opacity)">
           <BoardPlayer row={seat} warn={(seat.rows ?? []).every((one: Row) => one.mmr == null)} />
           {admin ? (
             <Button

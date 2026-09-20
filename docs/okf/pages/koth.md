@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list, the run page an admin drives one night from, and the public board that draws tonight's brackets for the stream.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T23:10:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T23:55:00Z }
 sources:
   - id: nights
     resource: ../../../next/src/app/(app)/koth/KothView.tsx
@@ -72,8 +72,8 @@ A refused write shows the sentence of its error envelope in the page's `StatusAl
 
 # Rules
 
-- A player the board answers no rating for wears the one games mark, `noStatsWarning` in `next/src/helpers/games-rule.mjs`, beside the name on every line that names him, and never a second wording. The mark names the race where the line holds one and drops it where it holds none, such as a signup waiting for a bracket. A player with two races in one bracket wears the mark on the race row of each race with no rating, and on his name line only when no race of his holds one.
-- A player reads as flag, name, race, MMR: [one player name standard](../decisions/player-name-standard.md). The line keeps the empty mark slot only inside a column of player lines, which is the queue and the pass-the-crown list; a line that stands on its own drops it, so its flag lines up with the caption under it.
+- A player the board answers no rating for wears the one games mark, `noStatsWarning` in `next/src/helpers/games-rule.mjs`, beside the name on every line that names him, and never a second wording. The mark names the race where the line holds one and drops it where it holds none, such as a signup waiting for a bracket. A player with two races in one bracket wears the mark beside the race name on the race row of each race with no rating, which leaves that row's MMR slot empty, and on his name line only when no race of his holds one.
+- A player reads as flag, name, race, MMR: [one player name standard](../decisions/player-name-standard.md). The line keeps the empty mark slot only inside a column of player lines, which is the queue, the pass-the-crown list and the two sides of an open series while either side wears the mark; a line that stands on its own drops it, so its flag lines up with the caption under it.
 - `next/src/helpers/koth-board.mjs` holds the parts that are only data: the bracket band, the default pair, the text of the start button, a place in line as a word, the throne word of a played row, the players who left folded to one row each, the ordered ids one queue write sends and the checked body of the bounds write.
 - `next/src/helpers/koth-signup.mjs` reads that one board answer back to the bracket and the place of a new entrant, and takes the place word from `koth-board.mjs`, which holds the one copy. What the dialog prints from it is in [leagues and events](leagues-and-events.md).
 - Only the close ends a night, so `nightState` in `next/src/helpers/koth.mjs` reads a night the admin has not closed as running, whatever the event read computes from its dates.

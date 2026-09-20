@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 type Row = Record<string, any>;
 type Viewer = { id?: number | null; isAdmin?: boolean; seats?: { team_id: number; season_id: number }[] };
 
-const LABEL = "block text-xs font-medium tracking-wide text-muted-foreground uppercase";
+const LABEL = "block text-xs font-medium tracking-wide text-muted-foreground";
 
 /** The member's own side of a series: where it sits, the team it meets and the player he faces. */
 function SeriesHead({ series, season, teamId, playerId }: { series: Row; season: Row | null; teamId: number | null; playerId: number | null }) {

@@ -112,7 +112,11 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
               <Versus row={row} />
             </div>
           ))}
-          {!rows.length && !fixtures.length && !failed ? <p className="text-sm">No series is booked. A booked time shows here as soon as two players agree one.</p> : null}
+          {rows.length || fixtures.length ? null : failed ? (
+            <Quiet>Could not be loaded.</Quiet>
+          ) : (
+            <p className="text-sm">No series is booked. A booked time shows here as soon as two players agree one.</p>
+          )}
           {rows.length ? <Quiet>Times in your zone, {gmt(DateTime.local().offset)}</Quiet> : null}
         </>
       )}
@@ -122,10 +126,10 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
 
 /** What a caster claimed: the streams still to come, then the VODs of the games already played. */
 export function CastedGames({ upcoming, recent, loading, failed, order }: { upcoming: Row[]; recent: Row[]; loading: boolean; failed?: boolean; order: number }) {
-  const group = (title: string, rows: Row[], watch: { label: string; icon: string }) =>
+  const group = (title: string, rows: Row[], watch: { label: string; icon: string }, when: (row: Row) => string) =>
     rows.length ? (
       <div key={title} className="mt-3 first:mt-0">
-        <span className="text-xs font-medium text-muted-foreground uppercase">{title}</span>
+        <span className="text-xs font-medium text-muted-foreground">{title}</span>
         {rows.map((row) => (
           <div key={row.id} className={ROW}>
             <div className="flex flex-wrap items-center gap-2">
@@ -139,7 +143,7 @@ export function CastedGames({ upcoming, recent, loading, failed, order }: { upco
             </div>
             <Versus row={row} />
             <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-              <span className="tnum">{dayText(row)}</span>
+              <span className="tnum">{when(row)}</span>
               {row.player1_score != null && row.player2_score != null ? (
                 <span className="tnum">· {record(row.player1_score, row.player2_score)}</span>
               ) : null}
@@ -155,9 +159,14 @@ export function CastedGames({ upcoming, recent, loading, failed, order }: { upco
         <SkeletonRows rows={3} />
       ) : (
         <>
-          {group("Upcoming", upcoming, { label: "Watch", icon: "mdi-video-outline" })}
-          {group("Recent", recent, { label: "VOD", icon: "mdi-play-circle-outline" })}
-          {!upcoming.length && !recent.length && !failed ? <p className="text-sm">No cast is claimed yet.</p> : null}
+          {/* a stream still to come names its start time; a recording names the day it was played */}
+          {group("Upcoming", upcoming, { label: "Watch", icon: "mdi-video-outline" }, seriesWhen)}
+          {group("Recent", recent, { label: "VOD", icon: "mdi-play-circle-outline" }, dayText)}
+          {upcoming.length || recent.length ? null : failed ? (
+            <Quiet>Could not be loaded.</Quiet>
+          ) : (
+            <p className="text-sm">No cast is claimed yet.</p>
+          )}
         </>
       )}
     </HomePanel>

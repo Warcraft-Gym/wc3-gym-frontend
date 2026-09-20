@@ -89,7 +89,7 @@ Win is blue, not green. Green and red cannot be told apart by a reader with red-
 
 ### Races, medals and the heat map
 
-These tokens are used on the season report only. The Random race uses `draw`.
+The race and medal tokens are used on the season report. The `heat-*` ramp fills the heat map of the season report and the division bands of the entrants page. The Random race uses `draw`.
 
 | Token | Light | Dark |
 |---|---|---|
@@ -216,6 +216,75 @@ The events module names things the same way on every page. A league is what repe
 - A cell the reader cannot use wears a 45° hatch, the `.hatched` utility in `globals.css`, so it reads apart from a plain fill in both themes.
 - A control draws no default before its data arrives. Until the data lands the control is inert: a skeleton, or a disabled control with `aria-busy`, so a tap cannot write a value the reader never picked.
 
+## Data display
+
+This section states how the app picks a figure, a mark or a chart, and which piece already draws it. The words of a figure are in "Words on the page". The mark rules are in "Charts". An agent loads the `dataviz` skill and the `frontend-design` skill before it draws data, and this file outranks a general rule of a skill.
+
+### Pick the form from the question
+
+Start from what the reader of that page wants to decide. Then pick the form. Pick the colour last. When one figure answers the question, print the figure and draw no chart. Reuse the piece in this table before you draw a new one.
+
+| The reader asks | Form | Piece |
+|---|---|---|
+| How did a player or a team do? | A record figure | `record` in `next/src/helpers/figures.mjs` |
+| How did each round go? | One square per round, with the record beside it | `next/src/components/RoundStrip.tsx` |
+| How do two players stand against each other? | A score and the last meeting, the meetings on demand | `next/src/components/HeadToHeadCell.tsx` |
+| Who fits against whom by MMR? | Every player on one linear MMR scale | `RoundDraftBoard.tsx`, `next/src/components/DivisionBracketing.tsx` |
+| How does a rating move? | A line on a date scale, in a plot of its own | `next/src/components/ladder/LadderPlots.tsx` |
+| How much did a player play, day by day? | Stacked win and loss bars. In a table, a small row of bars on one shared height | `LadderPlots.tsx`, `next/src/components/ladder/LadderDayBars.tsx` |
+| When are games played? | A heat map in one hue | `SeasonReportView.tsx` |
+| What share was won? | One bar in `win` beside the record. Never inside a table cell | `RateBar` in `SeasonReportView.tsx` |
+| How does a player do against each race? | A race icon and a record per race | `next/src/components/VsRaces.tsx` |
+| Which MMR does a player hold? | One chip per ladder race | `next/src/components/RaceMmrChips.tsx` |
+| When can two players meet? | Half-hour cells, the pick as a point | `next/src/components/player/ScheduleDialog.tsx` |
+| One headline number | A stat tile: the figure, its label, its scope | `SeasonReportView.tsx`, `TeamView.tsx` |
+
+### Give each colour one job
+
+| Job | Tokens | Rule |
+|---|---|---|
+| A result | `win`, `loss`, `draw` | The only colours of a result mark. |
+| An identity | `race-*`, `tier-*` | A race colour is a stripe beside the race icon. A tier colour is a labelled chip. |
+| An amount | `heat-1` to `heat-5` | One hue, light to dark. |
+| A state of the app | `error`, `warning`, `info`, `success` | Never a chart series. Always with an icon and a label. |
+| A control | `primary`, `secondary` | Never a data mark. |
+
+The `dataviz` skill ships a palette validator, `validate_palette.js`. It measures how far apart two colours stand, as ΔE, for full colour vision and for three kinds of colour blindness. A pair passes from ΔE 15 for full vision and from ΔE 8 for a colour-blind reader. The measured values of this palette:
+
+| Set | Light, on `surface` | Dark, on `surface` | Result |
+|---|---|---|---|
+| `win` with `loss` | 27.1 full vision, 18.7 colour blind | 25.8 and 19.3 | Passes. |
+| The four `race-*` | 19.9 and 9.1 | 19.9 and 9.2 | Passes as a set of four. |
+| The four `race-*` with `win` and `loss` | | 10.7 and 1.5 | Fails. A race colour and a result colour never share one set of marks. |
+| The six `tier-*` | 13.0 and 3.7 | | Fails. A tier is always a chip with its label, never a bare mark. |
+| `primary` with `loss` | 7.9 and 1.5 | | Fails. Bronze is a control colour and never a mark. |
+
+### A player has many races
+
+- A player holds one ladder row per race per W3Champions season, in `w3c_stats`. No surface reduces a player to one race or to one MMR without the race of that MMR beside it.
+- Three race facts exist, and a surface names the one it shows. The row's race is the race of this game or this series. The signup race is the race of one event entry, and the MMR of the player line reads that race alone (`next/src/components/PlayerName.tsx`). The profile race is one value the player declared, and it is a fallback only.
+- `RaceMmrChips` draws one chip per race with ladder games, sorted by MMR from high to low. A race without games draws no chip. A row from an older season carries its season, "S22".
+- A race icon needs a race source for its row: this game, this scheduled series or this signup. With no source, the row draws no icon.
+- `next/src/helpers/w3c-stats.js` reads the rows. With no race it answers no MMR, so a surface without a race prints no number.
+
+### Show a result from the reader's side
+
+- A result seen from one side puts that side's score first and draws the score in `win`, `loss` or `draw`. The order of the score is the second channel beside the colour (`next/src/components/player/RoundCards.tsx`).
+- A result never wears an alert icon and never the words "You won" or "You lost". An alert icon is for a fault or a call to action: too few ladder games, no W3C stats, a replay on another map than the veto gives.
+- A rule that the data breaks warns and never blocks. The warning names the figure: "3 over the largest difference".
+- Urgency is information, never weight. The order of a list and one chip carry it.
+
+### Move figures, not rows
+
+- One screen reads one aggregated answer. The draft board is one read. The roster matrix uses the team read it already holds.
+- The server sends the figure. The browser may sum figures and never computes a rule: points arrive per series, and the MMR at the time of a series arrives from the server.
+- Detail loads on demand. The meetings of a head to head load when the reader opens them.
+- A slow read carries cache headers.
+
+### The public league site
+
+The public league site, the `wc3-gnl-website` repository, shows the same league data in its own look, black and gold. A reader who moves between the two sites must find one way to read a record, a result and a race. Each site keeps its own look. The dark values of `win`, `loss` and the four `race-*` tokens also pass the validator on a black ground, so both sites can share them. Propose a change to a rule of this section to that repository too.
+
 ## Charts
 
 - Use d3 to compute scales, paths, axes and drag. Draw the marks in JSX.
@@ -226,6 +295,9 @@ The events module names things the same way on every page. A league is what repe
 - Draw lines 2 px wide. Give a dot a 2 px ring in `surface`. Leave a 2 px gap between stacked bars.
 - A scale of amounts uses one hue from light to dark, like the `heat-*` tokens.
 - A legend holds only the marks that carry no hover of their own. A mark the reader can hover for its own label needs no legend row.
+- A value a hover shows is also open to a tap and to the keyboard. A tooltip opens on a tap (`next/src/components/ui/TapTooltip.tsx`). A strip of marks is one keyboard stop, the arrow keys walk its marks, and each mark carries its text as its label, as `RoundStrip` does.
+- A scale a reader compares across draws its grid lines and its tick labels, as the round draft board does every 200 MMR. Marks that share a scale share its maximum, so two rows of bars compare.
+- League MMR runs from about 120 to 1780, with the middle near 1200. Sample data and scale bounds stay inside that range.
 
 ## Light and dark
 
@@ -238,7 +310,7 @@ The events module names things the same way on every page. A league is what repe
 3. Run `pnpm test` from `next/`.
 4. Open the page in light and in dark, and look at it.
 
-The test checks three things. Every declared ink passes 4.5:1 on its fill. A form label passes 4.5:1 on `surface`, `background` and `surface-light`. Dark `error` stays apart from `loss`. It does not check that a new chart colour stays apart from its neighbours for a colour-blind reader. Check that by hand.
+The test checks three things. Every declared ink passes 4.5:1 on its fill. A form label passes 4.5:1 on `surface`, `background` and `surface-light`. Dark `error` stays apart from `loss`. It does not check that a new chart colour stays apart from its neighbours for a colour-blind reader. Run the validator of the `dataviz` skill for that, once per theme, with every colour of the set the new colour joins: `node validate_palette.js "<hex,hex>" --mode light --surface "#F4F5F1" --pairs all`, then `--mode dark --surface "#232420"`. Write the measured values into the table of "Give each colour one job".
 
 ## Known gaps
 
@@ -249,6 +321,8 @@ These parts of the app break a rule above today.
 - Status colours mark things that are not app states. The fantasy week rank chips use `success`, `info` and `warning`. The MMR chips on the match page use `info`. Bench points use `warning`.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.
+- The result score of a round card names no outcome for a screen reader. It carries no "Won 2 – 1" or "Lost 1 – 2" as its title and label (`next/src/components/player/RoundCards.tsx`).
+- The day bars and the MMR line of `LadderPlots` and `LadderDayBars` answer a hover alone. They have no keyboard route.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The games mark draws a fixed twenty-game rule over two W3C seasons. The event settings carry a games floor and the number of W3C seasons it counts over, and the mark reads neither. One of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).
 - Some surfaces still print a synced time without the W3C mark, while the match page and the roster head draw it: the player header prints the time as a caption under the MMR chips (`next/src/components/player/PlayerHeader.tsx`), the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page and the season team page print the time with a tooltip alone (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`, `next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx`).

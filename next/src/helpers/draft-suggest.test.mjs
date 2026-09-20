@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mmrGap, pairIndex, suggestPairings } from './draft-suggest.mjs';
+import { mmrGap, pairIndex, placeTakers, suggestPairings } from './draft-suggest.mjs';
 
 const player = (user_id, team_id, mmr) => ({ user_id, team_id, mmr });
 
@@ -94,4 +94,14 @@ test('a player in a published series of the fixture is never suggested again', (
   const published = [{ player1_id: 11, player2_id: 21 }];
   const { pairs } = suggestPairings({ ...BOARD, series_per_round: 2, published_series: 1 }, 100, [], published);
   assert.deepEqual(keys(pairs), ['12-22']);
+});
+
+test('a draft that replaces a published series leaves the place of that series open', () => {
+  // the round holds 2 places, both published; one draft replaces one of them, so nothing is open
+  const drafted = [{ player1_id: 12, player2_id: 22, replaces_series_id: 7 }];
+  const { open } = suggestPairings({ ...BOARD, series_per_round: 2, published_series: 2 }, 100, drafted);
+  assert.equal(open, 0);
+  assert.deepEqual(placeTakers(drafted), []);
+  // a plain draft still takes a place
+  assert.equal(placeTakers([...drafted, { player1_id: 11, player2_id: 21 }]).length, 1);
 });

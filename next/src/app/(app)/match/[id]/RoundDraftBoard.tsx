@@ -12,7 +12,7 @@ import { RaceIcon } from "@/components/RaceIcon";
 import { TeamName } from "@/components/TeamName";
 import { W3CIcon } from "@/components/W3CIcon";
 import { record } from "@/helpers/figures.mjs";
-import { mmrGap, pairIndex, suggestPairings } from "@/helpers/draft-suggest.mjs";
+import { mmrGap, pairIndex, placeTakers, suggestPairings } from "@/helpers/draft-suggest.mjs";
 
 type Row = Record<string, any>;
 
@@ -177,6 +177,8 @@ export function RoundDraftBoard({
   narrow,
   isOut,
   busy,
+  replacing,
+  onCancelReplace,
   onAddPairings,
   onChangeOpponent,
   onSetMaxDifference,
@@ -197,14 +199,16 @@ export function RoundDraftBoard({
   narrow: boolean; // under 960 px the scale becomes two roster lists
   isOut: (playerId: number, teamId: number) => boolean;
   busy: boolean;
-  onAddPairings: (pairs: { player1_id: number; player2_id: number }[]) => Promise<void>;
+  replacing?: { series: Row; dropId: number } | null; // the published series a captain replaces a player in
+  onCancelReplace?: () => void;
+  onAddPairings: (pairs: { player1_id: number; player2_id: number; replaces_series_id?: number }[]) => Promise<void>;
   onChangeOpponent: (draft: Row, side: 1 | 2, playerId: number) => Promise<void>;
   onSetMaxDifference: (value: number | null) => Promise<void>;
   onSetReady: (teamId: number, ready: boolean) => Promise<void>;
   onCheckIn: (teamId: number, playerId: number) => Promise<void>;
   onMeetings: (userA: number, userB: number) => Promise<Row[]>;
 }) {
-  const [pick, setPick] = useState<number | null>(null);
+  const [pickId, setPickId] = useState<number | null>(null);
   const [breaking, setBreaking] = useState<number | null>(null);
   const [showPaired, setShowPaired] = useState(false);
   const [sittingOpen, setSittingOpen] = useState<number | null>(null);
@@ -233,8 +237,12 @@ export function RoundDraftBoard({
   const byId = new Map<number, Row>(players.map((player) => [player.user_id, player]));
   const stageDifference = state?.stage_max_mmr_difference ?? null;
   const seriesPerRound = board.series_per_round || 0;
-  const filled = (board.published_series || 0) + drafted.length;
+  const filled = (board.published_series || 0) + placeTakers(drafted).length;
   const full = seriesPerRound > 0 && filled >= seriesPerRound;
+
+  // Replacing a player fixes the pick on the player who stays, and the picker lists the other side
+  const replaceStayId = replacing ? (replacing.series.player1_id === replacing.dropId ? replacing.series.player2_id : replacing.series.player1_id) : null;
+  const pick = replacing ? replaceStayId : pickId;
 
   // Who a player is paired against on this fixture, published or draft; only a draft row can move
   const pairings = [...published, ...drafted];
@@ -276,10 +284,12 @@ export function RoundDraftBoard({
   const free = picked ? opponentsOf(picked).filter((player) => !takenIds.has(player.user_id)) : [];
   const near = free.filter((player) => gapTo(player) <= maxDifference).sort((a, b) => gapTo(a) - gapTo(b));
   const far = free.filter((player) => gapTo(player) > maxDifference).sort((a, b) => gapTo(a) - gapTo(b));
-  const pairedOther = picked ? opponentsOf(picked).filter((player) => takenIds.has(player.user_id)) : [];
+  // the player who drops out holds the series that is replaced, so he is never an opponent
+  const pairedOther = picked ? opponentsOf(picked).filter((player) => takenIds.has(player.user_id) && player.user_id !== replacing?.dropId) : [];
   const nearest = far.find((player) => Number.isFinite(gapTo(player)));
   const pickedPartner = picked ? partnerOf(picked.user_id) : null;
-  const pickedDraft = picked ? draftOf(picked.user_id) : undefined;
+  const pickedDraft = replacing ? undefined : picked ? draftOf(picked.user_id) : undefined;
+  const dropPlayer = replacing ? byId.get(replacing.dropId) || null : null;
 
   const runSuggest = () => {
     setDropped([]);
@@ -293,10 +303,12 @@ export function RoundDraftBoard({
     setSuggestOpen(false);
   };
 
+  // A replacement draft names the published series it replaces, so the publish removes that one
   const add = async (opponent: Row) => {
     const [one, two] = sideOf(opponent) === 2 ? [picked as Row, opponent] : [opponent, picked as Row];
-    await onAddPairings([{ player1_id: one.user_id, player2_id: two.user_id }]);
-    setPick(null);
+    await onAddPairings([{ player1_id: one.user_id, player2_id: two.user_id, ...(replacing ? { replaces_series_id: replacing.series.id } : {}) }]);
+    setPickId(null);
+    if (replacing) onCancelReplace?.();
   };
 
   // Moving the picked player's own pairing keeps the row and writes the new opponent into it
@@ -304,7 +316,7 @@ export function RoundDraftBoard({
     const row = draftOf((picked as Row).user_id);
     if (!row) return add(opponent);
     await onChangeOpponent(row, sideOf(opponent) as 1 | 2, opponent.user_id);
-    setPick(null);
+    setPickId(null);
   };
 
   // Taking an opponent who is already paired writes the picked player into that other row
@@ -312,7 +324,7 @@ export function RoundDraftBoard({
     const row = draftOf(opponent.user_id);
     if (!row) return;
     await onChangeOpponent(row, pickedSide as 1 | 2, (picked as Row).user_id);
-    setPick(null);
+    setPickId(null);
   };
 
   // plain inside the board button, because a link inside a button is not a control
@@ -339,7 +351,10 @@ export function RoundDraftBoard({
         aria-pressed={isPicked}
         className={`flex items-center gap-1 rounded px-1 text-sm ${placed} ${isPicked ? "bg-primary/12" : ""} ${isTaken && !isPicked ? "opacity-60" : ""}`}
         style={top == null ? undefined : { top: top - 11 }}
-        onClick={() => setPick(isPicked ? null : player.user_id)}
+        onClick={() => {
+          if (replacing) onCancelReplace?.(); // a pick on the board leaves the replacement
+          setPickId(isPicked && !replacing ? null : player.user_id);
+        }}
       >
         {playerLine(player, true)}
       </button>
@@ -408,8 +423,8 @@ export function RoundDraftBoard({
           ) : (
             <>
               <Button size="sm" disabled={busy} onClick={() => (pickedDraft ? changeTo(opponent) : add(opponent))}>
-                <Icon name={pickedDraft ? "mdi-swap-horizontal" : "mdi-plus"} />
-                {pickedDraft ? `Change to ${opponent.name}` : "Add to draft"}
+                <Icon name={pickedDraft || replacing ? "mdi-swap-horizontal" : "mdi-plus"} />
+                {replacing ? `Replace with ${opponent.name}` : pickedDraft ? `Change to ${opponent.name}` : "Add to draft"}
               </Button>
               {pickedDraft ? (
                 <Button variant="outline" size="sm" disabled={busy} onClick={() => add(opponent)}>
@@ -445,8 +460,8 @@ export function RoundDraftBoard({
     );
   };
 
-  const sittingGroup = (teamId: number) => {
-    const names = sitting(teamId);
+  const sittingGroup = (teamId: number, except?: number | null) => {
+    const names = sitting(teamId).filter((player) => player.user_id !== except);
     const own = ownTeamId === teamId;
     const open = sittingOpen === teamId;
     if (!names.length) return null;
@@ -557,6 +572,13 @@ export function RoundDraftBoard({
                     ))}
                   </>
                 ) : null}
+                {/* a published pairing keeps a line of its own, quieter than a draft pairing */}
+                {published.map((row) => {
+                  const one = topOf.get(row.player1_id);
+                  const two = topOf.get(row.player2_id);
+                  if (one == null || two == null) return null;
+                  return <line key={`published-${row.id}`} x1={LEFT_EDGE} y1={one} x2={RIGHT_EDGE} y2={two} strokeWidth={1} stroke={stroke("on-surface")} opacity={0.3} />;
+                })}
                 {drafted.map((row) => {
                   const one = topOf.get(row.player1_id);
                   const two = topOf.get(row.player2_id);
@@ -635,6 +657,12 @@ export function RoundDraftBoard({
                 Pairing in the draft
               </span>
               <span className="inline-flex items-center gap-1.5">
+                <svg width={16} height={6} aria-hidden="true">
+                  <line x1={0} y1={3} x2={16} y2={3} strokeWidth={1} stroke={stroke("on-surface")} opacity={0.3} />
+                </svg>
+                Published pairing
+              </span>
+              <span className="inline-flex items-center gap-1.5">
                 <i className="h-3 w-3 rounded-sm bg-primary/12" />
                 Within the largest difference
               </span>
@@ -657,15 +685,39 @@ export function RoundDraftBoard({
           {picked ? (
             <Card className="card gap-0 py-0">
               <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-                {pickedDraft ? `Change opponent for ${picked.name}` : `Opponents for ${picked.name}`}
+                {replacing
+                  ? `Replace ${dropPlayer?.name ?? "a player"}, vs ${picked.name}`
+                  : pickedDraft
+                    ? `Change opponent for ${picked.name}`
+                    : `Opponents for ${picked.name}`}
                 <span className="flex-1" />
-                <Button variant="ghost" size="sm" className="text-on-primary" onClick={() => setPick(null)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-on-primary"
+                  onClick={() => {
+                    setPickId(null);
+                    onCancelReplace?.();
+                  }}
+                >
                   <Icon name="mdi-close" />
-                  Close
+                  {replacing ? "Cancel" : "Close"}
                 </Button>
               </CardTitle>
               <div className="py-2">
-                {pickedPartner ? (
+                {replacing ? (
+                  <div className="mx-3 mb-2 border-b pb-2 text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-muted-foreground">Stays in the series</span>
+                      {playerLine(picked)}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className="text-muted-foreground">Drops out</span>
+                      {dropPlayer ? playerLine(dropPlayer) : null}
+                    </div>
+                  </div>
+                ) : null}
+                {pickedPartner && !replacing ? (
                   <div className={`mx-3 mb-2 flex items-center gap-2 rounded px-3 py-2 ${toneClass("warning")}`}>
                     <Icon name="mdi-alert" />
                     {picked.name} already has a pairing this round, vs {pickedPartner.name}. A second one is allowed and gives {picked.name} two series in round {playday}.
@@ -701,6 +753,12 @@ export function RoundDraftBoard({
                 </div>
                 ) : null}
                 {showPaired ? pairedOther.map((opponent) => candidate(opponent, "paired")) : null}
+                {replacing && dropPlayer ? (
+                  <div className="px-3 pt-2">
+                    <p className="text-sm text-muted-foreground">A player who sits out can replace {dropPlayer.name} after a check-in.</p>
+                    {sittingGroup(dropPlayer.team_id, dropPlayer.user_id)}
+                  </div>
+                ) : null}
               </div>
             </Card>
           ) : (

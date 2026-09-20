@@ -72,6 +72,9 @@ export function SignupDialog({
   const warnings: string[] = entrant?.warnings ?? [];
   // The signup answered a bracket, so the line the board draws names the place
   const placed = entrant?.division_id != null;
+  // The event row already carries its divisions, so the bracket has a name without a second read
+  const bracket =
+    place?.bracket || (event.divisions || []).find((one: Row) => one.id === entrant?.division_id)?.name;
   const tag = entrant?.user?.battleTag || battleTag.trim();
   // The mark the app draws for a race W3Champions holds no stats on, in the same words
   const noStats = entrant?.race ? { colour: "error" as const, text: `No W3C stats found for ${entrant.race}` } : null;
@@ -141,7 +144,7 @@ export function SignupDialog({
               ) : null}
               {needsTag ? (
                 <Field label="Battle tag" hint="Your w3champions name, as Name#1234" error={tagError} htmlFor="signup-tag">
-                  <Input id="signup-tag" value={battleTag} onChange={(e) => { setBattleTag(e.target.value); setTagError(null); }} />
+                  <Input id="signup-tag" aria-invalid={!!tagError} value={battleTag} onChange={(e) => { setBattleTag(e.target.value); setTagError(null); }} />
                 </Field>
               ) : null}
             </>
@@ -151,8 +154,8 @@ export function SignupDialog({
               <div className="flex flex-col gap-1">
                 {placed ? (
                   <p>
-                    {place?.bracket
-                      ? `You are in ${place.bracket}${place.placeWord ? `, ${place.placeWord} in line` : ""}.`
+                    {bracket
+                      ? `You are in ${bracket}${place?.placeWord ? `, ${place.placeWord} in line` : ""}.`
                       : "You are in. See you on the ladder."}
                   </p>
                 ) : (

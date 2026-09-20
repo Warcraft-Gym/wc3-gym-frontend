@@ -55,7 +55,8 @@ const free = (seat) => !!seat && !seat.busy && !!(seat.rows ?? []).length;
 
 /**
  * The pair the one filled start button plays: the king against the first seat of the queue
- * that is not busy, and the first two seats when the throne stands empty.
+ * that is not busy. With an empty throne the king from the last event defends first, at his
+ * own place in the line, and the first two seats play when the bracket has no defender.
  *
  * @param {Object} bracket - One bracket of the board
  * @returns {Array|null} - The two seats, or null when the bracket cannot pair anyone
@@ -63,7 +64,10 @@ const free = (seat) => !!seat && !seat.busy && !!(seat.rows ?? []).length;
 export function defaultPair(bracket) {
   const waiting = (bracket?.queue ?? []).filter(free);
   if (free(bracket?.king)) return waiting[0] ? [bracket.king, waiting[0]] : null;
-  return waiting.length > 1 ? [waiting[0], waiting[1]] : null;
+  if (waiting.length < 2) return null;
+  const defender = bracket?.defender?.user_id ?? null;
+  const at = Math.max(0, waiting.findIndex((seat) => defender !== null && seat.user_id === defender));
+  return [waiting[at], waiting[at === 0 ? 1 : 0]];
 }
 
 // The seat the default pair stepped over, so the admin reads why the first in line waits

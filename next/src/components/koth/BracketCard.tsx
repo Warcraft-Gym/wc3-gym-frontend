@@ -47,14 +47,16 @@ const seatOf = (bracket: Row, key: number): Row | null =>
 
 /** One player of the board as the app draws a player line: flag, name, race, one MMR. A race
  *  W3Champions holds no rating for wears the games mark instead of a number. */
-export function BoardPlayer({ row, race, plain }: { row: Row; race?: string | null; plain?: boolean }) {
+export function BoardPlayer({ row, race, plain, slot }: { row: Row; race?: string | null; plain?: boolean; slot?: boolean }) {
   const shown = race === undefined ? row.race : race;
+  const warning = row.mmr == null && shown ? noStatsWarning(shown) : null;
+  // only a line in a column of player lines keeps the empty mark slot, so its flags read as one column
   return (
     <PlayerName
       player={{ id: row.user_id ?? null, name: row.name, country: row.country }}
       race={shown || undefined}
       mmr={row.mmr ?? false}
-      warning={row.mmr == null && shown ? noStatsWarning(shown) : null}
+      warning={warning ?? (slot ? null : undefined)}
       plain={plain}
     />
   );
@@ -219,7 +221,9 @@ export function QueueRow({
   onDragged?: (key: number | null) => void;
 }) {
   const key = seatKey(seat) as number;
-  const picked = !!admin && admin.picked.includes(key);
+  // a bracket that plays a series draws no start button, so a pick on its line would do nothing
+  const live = !!bracket.open_series;
+  const picked = !!admin && !live && admin.picked.includes(key);
   const row = seatRow(seat, admin?.picks ?? {});
   const single = (seat.rows ?? []).length < 2;
   const queue: Row[] = bracket.queue ?? [];
@@ -242,25 +246,23 @@ export function QueueRow({
       <div className="flex items-center gap-2 py-1 pl-1 pr-1">
         {admin ? <Icon name="mdi-drag-horizontal-variant" size={16} className="shrink-0 cursor-grab text-muted-foreground" /> : null}
         <span className="tnum w-4 shrink-0 text-right text-xs text-muted-foreground">{place}</span>
-        {admin ? (
-          <PlayerName
-            player={{ id: seat.user_id, name: seat.name, country: seat.country }}
-            race={single ? row?.race || undefined : undefined}
-            mmr={single ? (row?.mmr ?? false) : false}
-            warning={single && row && row.mmr == null && row.race ? noStatsWarning(row.race) : null}
-            onClick={() => admin.onPickSeat(seat)}
-          >
-            {picked ? <><Icon name="mdi-check" size={16} className="text-primary-text" /><span className="sr-only">picked</span></> : null}
-          </PlayerName>
-        ) : (
-          <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} />
-        )}
-        {seat.busy ? (
-          <Badge variant="outline" className="shrink-0">
-            <Icon name="mdi-play" />
-            playing in another bracket
-          </Badge>
-        ) : null}
+        {/* a long name truncates here, so the step buttons and Remove stay inside the card */}
+        <span className="min-w-0 flex-1 overflow-hidden [&_.name]:truncate [&_.player-name]:max-w-full">
+          {admin ? (
+            <PlayerName
+              player={{ id: seat.user_id, name: seat.name, country: seat.country }}
+              race={single ? row?.race || undefined : undefined}
+              mmr={single ? (row?.mmr ?? false) : false}
+              warning={single && row && row.mmr == null && row.race ? noStatsWarning(row.race) : null}
+              plain={live}
+              onClick={live ? undefined : () => admin.onPickSeat(seat)}
+            >
+              {picked ? <><Icon name="mdi-check" size={16} className="text-primary-text" /><span className="sr-only">picked</span></> : null}
+            </PlayerName>
+          ) : (
+            <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} slot />
+          )}
+        </span>
         {you != null && seat.user_id === you ? (
           <Badge className={cn(toneClass("info"), "shrink-0")}>
             <Icon name="mdi-account-multiple" />
@@ -281,6 +283,15 @@ export function QueueRow({
           </span>
         ) : null}
       </div>
+      {/* the chip takes a line of its own, at the indent of the race rows, so no control leaves the card */}
+      {seat.busy ? (
+        <div className="pb-1 pl-6">
+          <Badge variant="outline">
+            <Icon name="mdi-play" />
+            playing in another bracket
+          </Badge>
+        </div>
+      ) : null}
       <RaceRows seat={seat} admin={admin} />
     </li>
   );
@@ -317,7 +328,7 @@ export function LeftRows({ bracket, admin }: { bracket: Row; admin?: BracketAdmi
 
 /** One series the bracket played tonight: the winner beat the loser, and the crown says what
  *  the throne did. A best of one carries no score worth printing. */
-export function PlayedRow({ played, admin }: { played: Row; admin?: BracketAdmin }) {
+export function PlayedRow({ played, admin, clean }: { played: Row; admin?: BracketAdmin; clean?: boolean }) {
   const throne = throneWord(played);
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t py-1">
@@ -332,7 +343,8 @@ export function PlayedRow({ played, admin }: { played: Row; admin?: BracketAdmin
             <span className="sr-only">{throne}</span>
           </TapTooltip>
         ) : null}
-        {played.replay ? (
+        {/* nobody clicks a link on a stream, so the clean view drops the chip */}
+        {played.replay && !clean ? (
           <Badge variant="outline" render={<Link href={`/series/${played.series_id}`} />}>
             <Icon name="mdi-filmstrip" />
             Replay
@@ -379,8 +391,9 @@ export function BracketCard({
   const played: Row[] = bracket.played ?? [];
   // one card is dragged at a time, so the drag belongs to the card and not to the page
   const [dragged, setDragged] = useState<number | null>(null);
+  // a stream reads from further away, so every small label of the card grows one step too
   return (
-    <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem]")}>
+    <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm")}>
       <CardHeader className={cn("flex items-center gap-2 bg-primary p-3", clean && "p-4")}>
         <CardTitle className={cn("flex-1 text-on-primary", clean && "text-[1.375rem]")}>{name}</CardTitle>
         <span className="tnum text-xs text-on-primary/80">{band}</span>
@@ -388,11 +401,14 @@ export function BracketCard({
 
       <KingBlock bracket={bracket} admin={admin} />
       <Separator />
-      <OpenSeries bracket={bracket} admin={admin} />
 
-      <div className="flex items-baseline gap-2 px-4 pb-1">
-        <span className="text-xs font-medium text-muted-foreground">Queue</span>
-        <span className="tnum text-xs text-muted-foreground">{queue.length} waiting</span>
+      {/* the throne keeps its air: whatever comes first under the line stands 12 px off it */}
+      <div className="pt-3">
+        <OpenSeries bracket={bracket} admin={admin} />
+        <div className="flex items-baseline gap-2 px-4 pb-1">
+          <span className="text-xs font-medium text-muted-foreground">Queue</span>
+          <span className="tnum text-xs text-muted-foreground">{queue.length} waiting</span>
+        </div>
       </div>
       {queue.length ? (
         <ul className="mb-2 flex flex-col px-3">
@@ -431,7 +447,7 @@ export function BracketCard({
             <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
           </div>
           {played.map((row: Row) => (
-            <PlayedRow key={row.series_id} played={row} admin={admin} />
+            <PlayedRow key={row.series_id} played={row} admin={admin} clean={clean} />
           ))}
         </div>
       ) : null}

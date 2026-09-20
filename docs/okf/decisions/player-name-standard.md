@@ -3,7 +3,7 @@ type: Decision
 title: One player name standard
 description: A player reads flag, name, race, MMR, in that order, on every page and on every Discord card, through one component.
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5, at: 2026-09-19T19:40:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T05:20:00Z }
 sources:
   - id: source
     resource: ../../../next/src/components/PlayerName.tsx
@@ -24,5 +24,5 @@ Three design sets drew a name three ways and read as three apps. One fragment, r
 - A race shows only when the row has one. See [the pitfall](../pitfalls/race-icon-context.md).
 - One 6 px gap sits between every part, and the MMR reads at every width.
 - A captain shows his race and his MMR only when he plays in the event.
-- The plain line is the default on every surface. Since 2026-09-19 one variation puts the games icon before the flag, and it shows on the two surfaces that ask for it, the players page and the season team assign page.
+- The plain line is the default on every surface. Since 2026-09-19 one variation puts the games icon before the flag. It shows on the three surfaces that ask for it: the players page and the season team assign page pass `games`, the current w3champions season the line works the rule out over, and the round draft board passes `warning`, the mark its own read already worked out.
 - The line reads the MMR itself from the payload it is given and asks for nothing of its own. A surface that sorts by MMR in a column keeps the column and leaves the number out of the line.

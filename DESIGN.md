@@ -17,7 +17,7 @@ The app uses one look, stone and bronze, in a light and a dark theme. This file 
 ## Rules
 
 - Use a theme token for every colour: `class="bg-primary"`, `class="text-win"`, `rgb(var(--v-theme-loss))`. Never write a hex value or a Tailwind palette name such as `red-500` in a view. Two exceptions are allowed: the Discord brand colours on the Discord buttons (`LoginView.tsx`, `DiscordJoinCard.tsx`), and the trophy artwork in `TrophyIcon.tsx`.
-- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text. One exception: the score of a result seen from one side is itself the mark, and it wears `win`, `loss` or `draw`.
+- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text. Two exceptions, where the figure is itself the mark: the score of a result seen from one side wears `win`, `loss` or `draw`, and a wins count and a losses count may wear `win` and `loss` in a column of their own or inside a record, because the column title or the order of the record is the second channel.
 - Colour never carries meaning alone. Pair it with an icon, a label or a position.
 - A fill that carries text names its own ink as `on-<fill>`. The test checks that every such pair passes 4.5:1 (WCAG AA).
 - Dark is its own set of values, not an inverted light theme. A new token gets a light and a dark value.
@@ -68,7 +68,7 @@ In dark, `on-error`, `on-info`, `on-success` and `on-warning` are ink.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `win` | `#1F63A6` | `#4F95D8` | A won game, series or bar. Win-rate bars use `win` only. |
+| `win` | `#1F63A6` | `#4F95D8` | A won game, series or bar. |
 | `loss` | `#B8432C` | `#DE6E52` | A lost game, series or bar. |
 | `draw` | `#5F6B61` | `#9DA89E` | A draw, no result, the Random race, a neutral bar. |
 
@@ -233,7 +233,7 @@ Start from what the reader of that page wants to decide. Then pick the form. Pic
 | How does a rating move? | A line on a date scale, in a plot of its own | `next/src/components/ladder/LadderPlots.tsx` |
 | How much did a player play, day by day? | Stacked win and loss bars. In a table, a small row of bars on one shared height | `LadderPlots.tsx`, `next/src/components/ladder/LadderDayBars.tsx` |
 | When are games played? | A heat map in one hue | `SeasonReportView.tsx` |
-| What share was won? | One bar in `win` beside the record. Never inside a table cell | `RateBar` in `SeasonReportView.tsx` |
+| What share was won? | The record with its percent. No bar | `record` in `next/src/helpers/figures.mjs` |
 | How does a player do against each race? | A race icon and a record per race | `next/src/components/VsRaces.tsx` |
 | Which MMR does a player hold? | One chip per ladder race | `next/src/components/RaceMmrChips.tsx` |
 | When can two players meet? | Half-hour cells, the pick as a point | `next/src/components/player/ScheduleDialog.tsx` |
@@ -274,6 +274,10 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 - `RaceMmrChips` draws one chip per race with ladder games, sorted by MMR from high to low. A race without games draws no chip. A row from an older season carries its season, "S22".
 - A race icon needs a race source for its row: this game, this scheduled series or this signup. With no source, the row draws no icon.
 - `next/src/helpers/w3c-stats.js` reads the rows. With no race it answers no MMR, so a surface without a race prints no number.
+
+### A win rate gets no bar
+
+- The record carries the percent, so a bar beside it says the same thing twice and invites a comparison of bar lengths between records of very different sizes. Add no new bar for a win rate. A bar is for an amount against a maximum, such as points against the top team.
 
 ### Show a result from the reader's side
 
@@ -345,10 +349,10 @@ These parts of the app break a rule above today.
 - No shared piece draws a result chip, a points pair, a stat tile or the result legend. Nine surfaces write their own `bg-win` and `bg-loss` chip, six write a points pair or a series score by hand, in three forms, and three write the result legend.
 - `primary` draws data in the games-per-day bars of the season report, `BadgeRarity`, `LadderLeaderboards`, the first row of the ladder table and the race rank badge of `FantasyScoreBreakdown`. `tier-5` draws achievement points in `LadderLeaderboards`.
 - A status token carries a data value, not a state, in the rank scale of `FantasyScoreBreakdown`, the MMR badges of the draft series tables and `TeamRostersPanel`, the points badge of the season page, and the ban and pick marks of `VetoBoard`. `secondary` marks data in four more places.
-- Coloured text carries a result outside the one exception: the wins and losses columns of the season team page and the random stats page, the weekly net and the bet results of `FantasyScoreBreakdown`, the record chip of the head to head table, and the record digits of `PlayerLadderTab`. `win` and `loss` also colour a rating change, which is not a result.
+- Coloured text carries a result outside the two exceptions: the weekly net and the bet results of `FantasyScoreBreakdown`, and the record chip of the head to head table. `win` and `loss` also colour a rating change, which is not a result.
 - The random stats page and `MatchupCompare` show ladder figures with no W3C mark and no sync time.
 - The fantasy leaderboard and the ladder table do not right-align their numeric columns. The team page prints "0 – 0" for a round nobody played. The fantasy bets page writes a series score with a colon, and the fantasy dashboard sends a series score through `record`.
-- A win rate still gets a bar on the season report and in `PlayerLadderTab`. The review of the public site of 20 September 2026 rejects a bar for a win rate, and the app has no decision yet.
+- A win rate still gets a bar on the race cards of the season report (`RateBar`) and in the per-race table of `PlayerLadderTab`. A bar for a win rate is discouraged, by the maintainers' decision of 20 September 2026.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The games mark draws a fixed twenty-game rule over two W3C seasons. The event settings carry a games floor and the number of W3C seasons it counts over, and the mark reads neither. One of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).
 - Some surfaces still print a synced time without the W3C mark, while the match page and the roster head draw it: the player header prints the time as a caption under the MMR chips (`next/src/components/player/PlayerHeader.tsx`), the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page and the season team page print the time with a tooltip alone (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`, `next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx`).

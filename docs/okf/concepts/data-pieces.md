@@ -4,7 +4,7 @@ title: Data pieces
 description: Every shared piece that shows league data, by group, with where it lives, when to use it and which piece to use instead.
 resource: ../../../DESIGN.md
 tags: [design, components]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T12:10:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T13:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -60,8 +60,8 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | `SeriesBox` side mark | `next/src/components/SeriesBox.tsx` | The surface draws one series of a stage or a fixture. | The surface is a phone list of scheduled series; then `SeriesCard`. |
 | Stage legend | `next/src/components/StageView.tsx` | A mark carries no hover of its own. | Every mark already names itself on hover; the design rules say such a mark needs no legend row. |
 | Round card score badge | `next/src/components/player/RoundCards.tsx` | The reader is one side of the series. | The surface is neutral between the two sides; then `SeriesBox`. |
-| Head to head record bar | `next/src/components/player/HeadToHead.tsx` | The reader compares many opponents down a column. | The cell is inside a table that already prints the figure and has no room; the design rules say a win-rate bar never goes inside a table cell. |
-| `RateBar` | `next/src/app/(app)/report/SeasonReportView.tsx` | The reader asks what share was won. | The bar would sit in a table cell. |
+| Head to head record bar | `next/src/components/player/HeadToHead.tsx` | The reader compares many opponents down one column of the head to head table. | Anywhere new. A win rate gets no bar, and the record carries the percent. |
+| `RateBar` | `next/src/app/(app)/report/SeasonReportView.tsx` | An amount stands against a maximum, such as points against the top race. | The figure is a win rate. The record carries the percent, and a win rate gets no bar. |
 | Achievement badge row | `next/src/components/AchievementChip.tsx` | A row lists what a player earned. | The page compares how rare each badge is; then `BadgeRarity`. |
 | `TrophyIcon` and `PlayerTrophies` | `next/src/components/player/TrophyIcon.tsx` | A player page shows career wins. | The surface names a place in one event; then the place chip from `awards.mjs`. |
 | Place chip and medal | `next/src/helpers/awards.mjs` | An event is finished. | The event is still running; then the state chip. |

@@ -14,6 +14,10 @@ const store = {
   async setTeamAvailability(team_id: number, season_id: number, answer: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${season_id}/teams/${team_id}/availability`, answer);
   },
+  // { user_id, available }; one call writes every round of the event that has not ended
+  async setTeamAvailabilityAll(team_id: number, season_id: number, answer: any) {
+    return await fetchWrapper.put(`${backendUrl}/events/${season_id}/teams/${team_id}/availability/all`, answer);
+  },
 };
 
 export const useAvailabilityStore = () => store;

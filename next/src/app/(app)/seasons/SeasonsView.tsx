@@ -125,7 +125,7 @@ export function SeasonsView() {
 
   // A GNL season opens early check-in and asks for 20 games over the last 2 W3C seasons
   const addNewSeason = () => {
-    setSelectedSeason({ name: "", round_count: 0, pick_ban: "", series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_days: 3, early_checkin: true, round_end_zone: null, min_games: 20, min_games_seasons: 2 });
+    setSelectedSeason({ name: "", round_count: 0, pick_ban: "", series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null, fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_enabled: true, checkin_days: 3, early_checkin: true, round_end_zone: null, min_games: 20, min_games_seasons: 2 });
     dialogSeasonId.current = null;
     setSelectedSeasonMapIds([]);
     setStages([]);
@@ -558,22 +558,31 @@ export function SeasonsView() {
                   onChange={(e) => set({ min_games_seasons: e.target.value === "" ? "" : Number(e.target.value) })}
                 />
               </Field>
-              <Field label="Check-in opens (days before a round)" hint="Blank keeps check-in open all season." htmlFor="edit-checkin">
-                <Input
-                  id="edit-checkin"
-                  type="number"
-                  min={0}
-                  value={selectedSeason.checkin_days ?? ""}
-                  onChange={(e) => set({ checkin_days: e.target.value === "" ? "" : Number(e.target.value) })}
-                />
-              </Field>
-              <div className="flex flex-col gap-1.5">
-                <Label className="flex items-center gap-2">
-                  <Switch aria-describedby="edit-early-checkin-help" checked={!!selectedSeason.early_checkin} onCheckedChange={(checked) => set({ early_checkin: checked })} />
-                  Early check-in
-                </Label>
-                <p id="edit-early-checkin-help" className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
-              </div>
+              <Label className="flex items-center gap-2">
+                <Switch checked={!!selectedSeason.checkin_enabled} onCheckedChange={(checked) => set({ checkin_enabled: checked })} />
+                Check-in
+              </Label>
+              {/* A season with no check-in asks nobody, so the days and the early switch belong to it */}
+              {selectedSeason.checkin_enabled ? (
+                <>
+                  <Field label="Check-in opens (days before a round)" hint="Blank keeps check-in open all season." htmlFor="edit-checkin">
+                    <Input
+                      id="edit-checkin"
+                      type="number"
+                      min={0}
+                      value={selectedSeason.checkin_days ?? ""}
+                      onChange={(e) => set({ checkin_days: e.target.value === "" ? "" : Number(e.target.value) })}
+                    />
+                  </Field>
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="flex items-center gap-2">
+                      <Switch aria-describedby="edit-early-checkin-help" checked={!!selectedSeason.early_checkin} onCheckedChange={(checked) => set({ early_checkin: checked })} />
+                      Early check-in
+                    </Label>
+                    <p id="edit-early-checkin-help" className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
+                  </div>
+                </>
+              ) : null}
               {/* The largest MMR difference belongs to a captain draft, so every other stage format leaves it out */}
               {stages
                 .filter((stage) => stage.format === "gnl")

@@ -136,7 +136,7 @@ Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 - A hint is one short instruction, or nothing. It never explains how the code works.
 - A table that would clip on a phone hides its columns by priority or becomes cards. A clipped row is a bug.
 - The app bar title reads "WC3 Gym Dashboard" and always links to `/`.
-- A round is answered with two buttons, "Check in" and "Sit out". The status reads "Checked in", "Out", "Out (blocked times)" or "No answer". Never "can play" or "can't play".
+- A player answers his own round with two buttons, "Check in" and "Sit out"; a captain answers for a player from a row menu. The status reads "Checked in", "Out", "Out (blocked times)" or "No answer". Never "can play" or "can't play".
 - A record reads wins then losses around an en dash with one space on each side: "19 – 11 (63%)" from ten played up, "3 – 1" under ten, an em dash when nothing was played. Never "19/30". One helper writes it, `next/src/helpers/figures.mjs`. No bar in a cell, no footnote, and no "won" and no W or L letters in a cell, because the column title carries them.
 - A series is a best of three; a ladder game is one game. A column title, a caption and a tooltip name the one they count and never mix them.
 - A head to head reads as the score in the pairing's order with the last meeting after it: "2 – 1, last met Season 18".

@@ -41,9 +41,7 @@ const contextOf = seriesContext as unknown as (series: Row, options: { playerId?
 const CAPTION = "text-xs text-muted-foreground";
 const SWATCH = "h-3 w-3 rounded-sm";
 
-/** Whoever acts for a series sets its time. Both sides' blocked hours are drawn over the round
- *  window, as a calendar or as one track a day; a pick inside a blocked hour is named and still
- *  booked. The manual date and time move the same pick. */
+/** Whoever acts for a series sets its time over the round window, as a calendar or one track a day; a pick inside a blocked hour is named and still booked. */
 export function ScheduleDialog({
   playerId = null,
   onSaved,
@@ -94,6 +92,7 @@ export function ScheduleDialog({
   // the instant the date and time name, read on the viewer's clock
   const chosen = series.date instanceof Date && series.time ? pickedInstant(series.date, series.time, viewer) : null;
   const pickedAt = chosen ? chosen.toMillis() : null;
+  // ponytail: a pick holds "HH:mm", so a repeated hour on a clock-change day resolves to the first one; store the instant if that matters
   const setPick = (at: DateTime) => {
     const local = at.setZone(viewer);
     setSeries((was) => ({ ...was, date: local.toJSDate(), time: local.toFormat("HH:mm") }));
@@ -105,7 +104,7 @@ export function ScheduleDialog({
     const cells = cellsOf(day, blocked);
     // the tab stop of a day is its picked cell, or its first cell inside the window
     const picked = cells.findIndex((cell) => cell.at.toMillis() === pickedAt);
-    return { day, cells, first: picked >= 0 ? picked : cells.findIndex((cell) => !cell.outside) };
+    return { day, cells, first: picked >= 0 && !cells[picked].outside ? picked : cells.findIndex((cell) => !cell.outside) };
   });
   const rows = grid.reduce((most, one) => Math.max(most, one.cells.length), 0);
   const inBlocked = isBlocked(chosen, blocked);
@@ -143,7 +142,7 @@ export function ScheduleDialog({
     const picked = pickedAt === cell.at.toMillis();
     return (
       <button
-        key={index}
+        key={`${day.key}|${index}`}
         type="button"
         data-cell={`${day.key}|${index}`}
         tabIndex={index === first ? 0 : -1}
@@ -306,7 +305,7 @@ export function ScheduleDialog({
     <Dialog open={show} onOpenChange={setShow}>
       <DialogContent
         showCloseButton={false}
-        className={cn("max-h-[90vh] gap-0 overflow-y-auto p-0", booked ? "max-w-[520px] sm:max-w-[520px]" : "max-w-[1100px] sm:max-w-[1100px]")}
+        className={cn("max-h-[90vh] gap-0 overflow-y-auto p-0", booked ? "max-w-[520px] md:max-w-[520px]" : "max-w-[1100px] md:max-w-[1100px]")}
       >
         <DialogTitle className="flex items-start gap-3 bg-primary px-4 py-3 text-on-primary">
           <Icon name="mdi-calendar-edit" className="mt-0.5" />

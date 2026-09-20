@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list, the run page an admin drives one night from, and the public board that draws tonight's brackets for the stream.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T13:17:58Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T15:10:00Z }
 sources:
   - id: nights
     resource: ../../../next/src/app/(app)/koth/KothView.tsx
@@ -41,11 +41,11 @@ A KOTH night is one event of the KOTH league. Its brackets are its divisions. An
 
 **Run page (`/koth/nights/:id`).** Admin only. One card per bracket, weakest bracket first, each with the MMR band it takes. The throne reads the standing king, or the king from the last event while nobody has won tonight, or nobody. "Step down" leaves the throne empty for the next series or passes the crown to one player waiting. One filled button starts the next series: the king against the first player in line who is not playing in another bracket, and the first two in line while the throne stands empty. Clicking two rows of the line picks that pair instead, and the button says so; a pair that leaves the king out says the crown stays with him. A running series takes its winner on one of two buttons of equal weight, or is cancelled. A played row reads "winner beat loser" with no score, a crown where the throne moved or was held, one upload for a replay and one button that changes the winner. The line is reordered by dragging a row or by the two step buttons on it, and the whole ordered list of race rows is written at once. A player who left reads under the line and goes back at its end. "Add player" enters a late arrival by battle tag. A strip over the brackets holds the signups W3Champions gave no rating for, each with three equal buttons that place him. "Close the night" names every series nobody scored before it deletes them, and says the standing kings start the next event as King from last event.
 
-**Public board (`/koth/dashboard`).** Open to anyone. It draws the same cards with no controls. A logged-in reader signs up while the signups stand open, or withdraws; a reader on more than one race withdraws one race at a time, and the withdraw names the race in `?race=`. A signed-in reader reads his own place in line on his bracket. A night nobody has opened reads "No KOTH night is open". `?mode=clean` drops every control, so the page can sit on a stream.
+**Public board (`/koth/dashboard`).** Open to anyone. It draws the same cards with no controls. A logged-in reader signs up while the signups stand open, or withdraws; a reader on more than one race withdraws one race at a time, and the withdraw names the race in `?race=`. A signed-in reader reads his own place in line on his bracket. A night nobody has opened reads "No KOTH night is open". `?mode=clean` drops every control, cuts the app bar down to the app title and grows the card face, so the page can sit on a stream.
 
 # Reads
 
-The board read is cached at the edge for fifteen seconds. Both pages read it once on load and again every thirty seconds, and neither asks for it while the tab is hidden. The public board reads the event row once as well, for the signup rules the signup dialog needs. Neither page makes another repeated read.
+The public board read carries no token, so the edge caches it for fifteen seconds and every reader shares that answer; the one read right after a reader's own signup or withdraw adds a query the cache misses, so he sees his own row at once. The run page reads one night with the admin token, which the edge never caches, so every read there answers fresh. Both pages read once on load and again every thirty seconds, and neither asks while the tab is hidden. The public board reads the event row once per night as well, for the signup rules the signup dialog needs. Neither page makes another repeated read.
 
 # Writes
 

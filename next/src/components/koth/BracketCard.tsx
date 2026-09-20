@@ -36,7 +36,7 @@ export type BracketAdmin = {
   onRestore: (entrantId: number) => void;
   onChangeWinner: (played: Row) => void;
   onAddReplay: (played: Row) => void;
-  onAddPlayer: (bracket: Row) => void;
+  onAddPlayer: () => void;
 };
 
 const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
@@ -249,7 +249,7 @@ export function QueueRow({
             warning={single && row && row.mmr == null && row.race ? noStatsWarning(row.race) : null}
             onClick={() => admin.onPickSeat(seat)}
           >
-            {picked ? <Icon name="mdi-check" size={16} className="text-primary-text" /> : null}
+            {picked ? <><Icon name="mdi-check" size={16} className="text-primary-text" /><span className="sr-only">picked</span></> : null}
           </PlayerName>
         ) : (
           <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} />
@@ -354,11 +354,13 @@ export function BracketCard({
   brackets,
   admin,
   you,
+  clean,
 }: {
   bracket: Row;
   brackets: Row[];
   admin?: BracketAdmin;
   you?: number | null;
+  clean?: boolean; // the stream view reads from further away, so the card face grows
 }) {
   const { name, band } = bracketLabel(brackets, bracket);
   const queue: Row[] = bracket.queue ?? [];
@@ -366,9 +368,9 @@ export function BracketCard({
   // one card is dragged at a time, so the drag belongs to the card and not to the page
   const [dragged, setDragged] = useState<number | null>(null);
   return (
-    <Card className="card h-full gap-0 py-0">
-      <CardHeader className="flex items-center gap-2 bg-primary p-3">
-        <CardTitle className="flex-1 text-on-primary">{name}</CardTitle>
+    <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem]")}>
+      <CardHeader className={cn("flex items-center gap-2 bg-primary p-3", clean && "p-4")}>
+        <CardTitle className={cn("flex-1 text-on-primary", clean && "text-[1.375rem]")}>{name}</CardTitle>
         <span className="tnum text-xs text-on-primary/80">{band}</span>
       </CardHeader>
 
@@ -403,7 +405,7 @@ export function BracketCard({
 
       {admin ? (
         <div className="px-4 pb-3">
-          <Button variant="outline" size="sm" className="text-primary-text" disabled={admin.busy} onClick={() => admin.onAddPlayer(bracket)}>
+          <Button variant="outline" size="sm" className="text-primary-text" disabled={admin.busy} onClick={() => admin.onAddPlayer()}>
             <Icon name="mdi-account-plus" />
             Add player
           </Button>

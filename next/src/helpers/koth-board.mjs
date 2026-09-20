@@ -1,8 +1,4 @@
-// The KOTH board read, as the night pages draw it. GET /koth/board answers the night that
-// takes signups and GET /koth/nights/{id}/board answers one night; both answer the same
-// shape, and every admin write answers it again. A bracket holds one king, one open series,
-// an ordered queue of seats, the players who left and the series played tonight. A seat is
-// one PLAYER with one place in line and one row per race he holds in that bracket.
+// The parts of the KOTH board read that are only data; docs/okf/pages/koth.md states the shape
 
 // The brackets weakest first, the way the cards read. The board answers them strongest first.
 export const orderedBrackets = (board) =>

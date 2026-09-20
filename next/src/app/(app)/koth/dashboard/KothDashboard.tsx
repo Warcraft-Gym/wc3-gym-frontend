@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,32 +39,36 @@ export function KothDashboard() {
   const [withdrawing, setWithdrawing] = useState<string | boolean>(false); // true, or the race on its way out
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState(false);
+  const eventFor = useRef<number | null>(null); // the night the event row was read for
 
   const brackets: Row[] = orderedBrackets(board);
   const myId = auth.me?.user?.id;
   const held: string[] = myRacesOnBoard(board, myId);
 
-  // GET /koth/board answers 404 while no night takes signups, which is an empty page
-  const readBoard = async () => setBoard(await store.fetchBoard().catch(() => null));
+  // The one repeated read of the page; fresh skips the edge cache after the reader's own write
+  const readBoard = async (fresh = false) => {
+    try {
+      const answer = await store.fetchBoard(null, fresh);
+      setBoard(answer);
+      setError(null);
+      // the event row carries the signup rules the dialog needs, so it is read once per night
+      if (eventFor.current !== answer.night_id) {
+        eventFor.current = answer.night_id;
+        setEvent(await store.fetchEvent(answer.night_id).catch(() => null));
+      }
+    } catch (e) {
+      // a 404 is the empty page; every other failure keeps the board that is on the screen
+      if ((e as Row).status === 404) setBoard(null);
+      else setError(`The night did not load: ${(e as Error).message}`);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
-    const load = async () => {
-      try {
-        const answer = await store.fetchBoard().catch(() => null);
-        if (!alive) return;
-        setBoard(answer);
-        setError(null);
-        // the event row carries the signup rules the dialog needs; the board carries the night
-        if (answer && !event) setEvent(await store.fetchEvent(answer.night_id).catch(() => null));
-      } catch (e) {
-        if (alive) setError(`The night did not load: ${(e as Error).message}`);
-      }
-    };
-    load().then(() => alive && setLoading(false));
+    readBoard().then(() => alive && setLoading(false));
     // the tab in the background asks for nothing, so a page left on a stream costs nothing
     const timer = setInterval(() => {
-      if (!document.hidden) readBoard().catch(() => {});
+      if (!document.hidden) readBoard();
     }, POLL_MS);
     return () => {
       alive = false;
@@ -78,7 +82,7 @@ export function KothDashboard() {
     setWithdrawing(race ?? true);
     try {
       await store.withdraw(board!.night_id, race);
-      await readBoard();
+      await readBoard(true);
     } catch (e) {
       setError(`The withdraw did not go through: ${(e as Error).message}`);
     } finally {
@@ -135,11 +139,11 @@ export function KothDashboard() {
 
           <div className="grid gap-4 min-[960px]:grid-cols-3">
             {brackets.map((bracket: Row) => (
-              <BracketCard key={bracket.division_id} bracket={bracket} brackets={brackets} you={cleanMode ? null : myId} />
+              <BracketCard key={bracket.division_id} bracket={bracket} brackets={brackets} you={cleanMode ? null : myId} clean={cleanMode} />
             ))}
           </div>
 
-          {dialog && event ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={readBoard} /> : null}
+          {dialog && event ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={() => readBoard(true)} /> : null}
         </>
       ) : null}
     </>

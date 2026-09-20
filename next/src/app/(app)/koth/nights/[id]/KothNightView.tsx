@@ -9,17 +9,13 @@ import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { TapTooltip } from "@/components/ui/TapTooltip";
 import { toneClass } from "@/components/ui/tone";
-import { FlagIcon } from "@/components/FlagIcon";
 import { PageHeader } from "@/components/PageHeader";
-import { RaceIcon } from "@/components/RaceIcon";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { BoardPlayer, BracketCard, type BracketAdmin } from "@/components/koth/BracketCard";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
-import { noStatsWarning } from "@/helpers/games-rule.mjs";
 import { bracketLabel, movedQueue, openSeriesRows, orderedBrackets, queueIds, seatKey, seatRow } from "@/helpers/koth-board.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { useEventStore } from "@/stores";
@@ -28,7 +24,7 @@ import { cn } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-// The board is edge cached for 15 s, so twice a minute is the most the page can learn
+// The night read carries the admin token, so the edge caches none of it and every read is fresh
 const POLL_MS = 30000;
 
 /** The run page of one KOTH night: the admin starts every series by hand, enters its winner,
@@ -50,7 +46,7 @@ export function KothNightView({ id }: { id: string }) {
   const [stepDown, setStepDown] = useState<Row | null>(null);
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
-  const [addTo, setAddTo] = useState<Row | null>(null);
+  const [addTo, setAddTo] = useState(false); // W3Champions picks the bracket, so the dialog is one form
   const [addTag, setAddTag] = useState("");
   const [addRace, setAddRace] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -72,7 +68,8 @@ export function KothNightView({ id }: { id: string }) {
           setError(null);
         }
       } catch (e) {
-        if (alive) setError(`The night did not load: ${(e as Error).message}`);
+        // a night nobody published answers 404, which the page says on its own
+        if (alive && (e as Row).status !== 404) setError(`The night did not load: ${(e as Error).message}`);
       }
     };
     read().then(() => alive && setLoading(false));
@@ -104,8 +101,7 @@ export function KothNightView({ id }: { id: string }) {
     }
   };
 
-  // The board names who won, never which side of the series he was, so the one series read
-  // says it and the flip writes the other side.
+  // The board names who won, never his side, so one series read says it and the flip writes the other
   const changeWinner = async (played: Row) => {
     const series = await fetchWrapper.get(`${backendUrl}/series/${played.series_id}`);
     const side = series.player1_id === played.loser.user_id ? 1 : 2;
@@ -149,11 +145,11 @@ export function KothNightView({ id }: { id: string }) {
       replayFor.current = played.series_id;
       replayInput.current?.click();
     },
-    onAddPlayer: (bracket) => {
+    onAddPlayer: () => {
       setAddTag("");
       setAddRace(null);
       setAddError(null);
-      setAddTo(bracket);
+      setAddTo(true);
     },
   };
 
@@ -176,7 +172,7 @@ export function KothNightView({ id }: { id: string }) {
     try {
       await store.addEntrant(nightId, { battle_tag: addTag.trim(), race: addRace });
       setBoard(await store.fetchBoard(nightId));
-      setAddTo(null);
+      setAddTo(false);
     } catch (e) {
       setAddError((e as Error).message);
     } finally {
@@ -235,15 +231,7 @@ export function KothNightView({ id }: { id: string }) {
           </CardHeader>
           {unplaced.map((row: Row) => (
             <div key={row.entrant_id} className="flex flex-wrap items-center gap-2 border-t p-2">
-              {row.race ? (
-                <TapTooltip content={noStatsWarning(row.race).text}>
-                  <Icon name="mdi-alert" size={16} className="text-error" />
-                  <span className="sr-only">{noStatsWarning(row.race).text}</span>
-                </TapTooltip>
-              ) : null}
-              {row.country ? <FlagIcon countryIdentifier={row.country} /> : null}
-              <span className="tnum">{row.name}</span>
-              <RaceIcon raceIdentifier={row.race} />
+              <BoardPlayer row={row} plain />
               <span className="ml-auto flex flex-wrap items-center gap-2">
                 {brackets.map((bracket: Row) => (
                   <Button
@@ -383,7 +371,7 @@ export function KothNightView({ id }: { id: string }) {
       </Dialog>
 
       {/* A late arrival enters by battle tag; W3Champions picks his bracket, or he waits unplaced */}
-      <Dialog open={!!addTo} onOpenChange={(open) => !open && setAddTo(null)}>
+      <Dialog open={addTo} onOpenChange={setAddTo}>
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[480px]", dialogCompact)}>
           <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Add player</DialogTitle>
           <div className="flex flex-col gap-3 p-4">
@@ -393,7 +381,7 @@ export function KothNightView({ id }: { id: string }) {
             <RaceSelect id="koth-add-race" value={addRace} onChange={setAddRace} label="Race" />
           </div>
           <div className="flex justify-end gap-2 p-4 pt-0">
-            <Button variant="ghost" onClick={() => setAddTo(null)}>
+            <Button variant="ghost" onClick={() => setAddTo(false)}>
               Cancel
             </Button>
             <Button disabled={busy || !addTag.trim() || !addRace} onClick={addPlayer}>

@@ -121,10 +121,11 @@ const store = {
   async closeNight(event_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${event_id}/close`);
   },
-  // The whole night on one read: the brackets, their kings, their queues and what they played.
-  // No id reads the night that takes signups, which answers 404 while none is open.
-  async fetchBoard(night_id: number | null = null) {
-    return await fetchWrapper.get(`${backendUrl}/koth/${night_id ? `nights/${night_id}/board` : "board"}`);
+  // The whole night on one read; no id reads the night that takes signups, which 404s while none is open
+  // fresh adds a query the edge cache pattern misses, for the read after the reader's own write
+  async fetchBoard(night_id: number | null = null, fresh = false) {
+    const path = night_id ? `nights/${night_id}/board` : "board";
+    return await fetchWrapper.get(`${backendUrl}/koth/${path}${fresh ? `?t=${Date.now()}` : ""}`);
   },
   // Every write below answers the whole board again, so a page never re-reads after one
   async startKothSeries(night_id: number, entrant1_id: number, entrant2_id: number) {

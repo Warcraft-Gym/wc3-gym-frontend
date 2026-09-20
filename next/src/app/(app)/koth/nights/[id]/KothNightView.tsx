@@ -74,6 +74,14 @@ export function KothNightView({ id }: { id: string }) {
     setPicked((was) => was.filter((key) => !running.includes(key)));
   };
 
+  // The load effect opens the dialog on the board it read, before that board is state
+  const openBounds = (from?: Row) => {
+    const rows: Row[] = from ? orderedBrackets(from) : brackets;
+    setBoundValues(Object.fromEntries(rows.map((bracket: Row) => [bracket.division_id, String(bracket.lower_bound ?? 0)])));
+    setBoundsError(null);
+    setBoundsOpen(true);
+  };
+
   useEffect(() => {
     let alive = true;
     let first = true; // the event settings page links here with ?bounds=1, which the first board spends
@@ -221,13 +229,6 @@ export function KothNightView({ id }: { id: string }) {
   // The write cuts the rated rows nobody placed by hand again, so it waits for every series to end
   const boundsBlocked = openRows.length > 0;
   const bounds = boundsWrite(brackets, boundValues);
-  // The load effect opens the dialog on the board it read, before that board is state
-  const openBounds = (from?: Row) => {
-    const rows: Row[] = from ? orderedBrackets(from) : brackets;
-    setBoundValues(Object.fromEntries(rows.map((bracket: Row) => [bracket.division_id, String(bracket.lower_bound ?? 0)])));
-    setBoundsError(null);
-    setBoundsOpen(true);
-  };
 
   const saveBounds = async () => {
     setBoundsError(null);
@@ -346,11 +347,15 @@ export function KothNightView({ id }: { id: string }) {
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[480px]", dialogCompact)}>
           <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Bracket MMR</DialogTitle>
           <div className="flex flex-col gap-3 p-4">
-            {[...bounds.rows].reverse().map((row: Row, index: number, all: Row[]) => (
-              <Field key={row.division_id} label={row.name} htmlFor={index === all.length - 1 ? undefined : `koth-bound-${row.division_id}`}>
-                {index === all.length - 1 ? (
+            {[...bounds.rows].reverse().map((row: Row, index: number, all: Row[]) =>
+              // The weakest bracket opens at 0, so its row is text under a plain heading, not a label over a control
+              index === all.length - 1 ? (
+                <div key={row.division_id} className="flex flex-col gap-1.5">
+                  <span className="text-sm leading-none font-medium">{row.name}</span>
                   <p className="mb-0 py-1 text-sm text-muted-foreground">0, the weakest bracket</p>
-                ) : (
+                </div>
+              ) : (
+                <Field key={row.division_id} label={row.name} htmlFor={`koth-bound-${row.division_id}`}>
                   <Input
                     id={`koth-bound-${row.division_id}`}
                     inputMode="numeric"
@@ -360,9 +365,9 @@ export function KothNightView({ id }: { id: string }) {
                       setBoundsError(null);
                     }}
                   />
-                )}
-              </Field>
-            ))}
+                </Field>
+              ),
+            )}
             <div className="flex flex-col text-xs text-muted-foreground">
               {bounds.error ? (
                 <span>{bounds.error}</span>

@@ -123,7 +123,7 @@ test('the close names each open series it deletes', () => {
     ],
   };
   assert.deepEqual(openSeriesRows(board), [
-    { division_id: 8, name: 'Bracket 2', side1: { name: 'Kestrin' }, side2: { name: 'Sablefen' }, text: 'Bracket 2 · Kestrin vs Sablefen' },
+    { division_id: 8, name: 'Bracket 2', side1: { name: 'Kestrin' }, side2: { name: 'Sablefen' } },
   ]);
 });
 

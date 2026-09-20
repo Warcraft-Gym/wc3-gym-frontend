@@ -170,5 +170,4 @@ export const openSeriesRows = (board) =>
       name: bracket.name,
       side1: bracket.open_series.side1,
       side2: bracket.open_series.side2,
-      text: `${bracket.name} · ${bracket.open_series.side1.name} vs ${bracket.open_series.side2.name}`,
     }));

@@ -561,12 +561,10 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                     <CardContent className="p-4 pt-0">
                       <div className="flex items-center gap-3">
                         <span className="min-w-20 text-xs text-muted-foreground">Win rate</span>
+                        {/* the record under the bar carries the percent, so the row prints no number */}
                         <div className="flex-1">
                           <RateBar value={raceEntry.winRate ?? 0} height="h-2.5" color="bg-win" />
                         </div>
-                        <span className="min-w-9 text-right text-sm font-bold tnum">
-                          {raceEntry.winRate != null ? `${raceEntry.winRate}%` : "–"}
-                        </span>
                       </div>
                       <div className="mt-2 flex items-center gap-3">
                         <span className="min-w-20 text-xs text-muted-foreground">Points vs top race</span>

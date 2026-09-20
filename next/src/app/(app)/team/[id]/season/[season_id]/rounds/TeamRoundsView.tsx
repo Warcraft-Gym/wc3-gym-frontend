@@ -307,19 +307,22 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
               const note = setByText(rowFor(player.id, round), auth.me?.user?.id);
               const busy = saving === `${player.id}|${round}` || saving === `${player.id}|all`;
               const versus = opponentOf(seriesOf(player.id, round), player.id);
+              // the pairing wraps inside its own block, so the menu keeps its column on every row
               return (
-                <div key={player.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-2 last:border-b-0">
-                  <PlayerName player={player} race={player.signup_race} />
-                  {versus ? (
-                    <span className="flex items-center gap-1.5 text-sm">
-                      <span className="text-muted-foreground">vs</span>
-                      <PlayerName player={versus.player} race={versus.race} />
-                    </span>
-                  ) : (
-                    <StatusChip status={status} />
-                  )}
-                  {note && !versus ? <span className="text-xs text-muted-foreground">{note}</span> : null}
-                  <span className="ml-auto">
+                <div key={player.id} className="flex gap-3 border-b border-border px-4 py-2 last:border-b-0">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+                    <PlayerName player={player} race={player.signup_race} />
+                    {versus ? (
+                      <span className="flex items-center gap-1.5 text-sm">
+                        <span className="text-muted-foreground">vs</span>
+                        <PlayerName player={versus.player} race={versus.race} />
+                      </span>
+                    ) : (
+                      <StatusChip status={status} />
+                    )}
+                    {note && !versus ? <span className="text-xs text-muted-foreground">{note}</span> : null}
+                  </div>
+                  <span className="flex-none self-center">
                     {menuFor(
                       player,
                       round,
@@ -340,12 +343,12 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                 <TableRow>
                   <TableHead className="sticky left-0 z-10 bg-surface">Player</TableHead>
                   {rounds.map((item) => (
-                    <TableHead key={item} className="text-center">
-                      {/* a phone reads the round number over its dates, one date a line, so three rounds fit 390 px */}
+                    <TableHead key={item} className="align-top text-center">
+                      {/* a phone reads the round number over its dates, one date a line with the range sign, so three rounds fit 390 px */}
                       {phone ? (
                         <>
                           R{item}
-                          <div className="whitespace-pre-line text-xs font-normal text-muted-foreground">{roundLabel(roundOf(item)).replace(" to ", "\n")}</div>
+                          <div className="whitespace-pre-line text-xs font-normal text-muted-foreground">{roundLabel(roundOf(item)).replace(" to ", " –\n")}</div>
                         </>
                       ) : (
                         <>
@@ -356,11 +359,9 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                           </div>
                         </>
                       )}
-                      {/* the words set the column width, so a phone keeps the count and the tooltip holds the words */}
-                      {needsGame(item) ? (
-                        <div className="tnum text-xs font-normal text-muted-foreground" title={`${needsGame(item)} needs a game`}>
-                          {needsGame(item)}<span className="sr-only min-[600px]:not-sr-only"> needs a game</span>
-                        </div>
+                      {/* a bare number reads as nothing, so a phone drops the count and the one round view prints it */}
+                      {needsGame(item) && !phone ? (
+                        <div className="tnum text-xs font-normal text-muted-foreground">{needsGame(item)} needs a game</div>
                       ) : null}
                     </TableHead>
                   ))}

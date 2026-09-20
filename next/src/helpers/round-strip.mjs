@@ -53,8 +53,7 @@ export const stripRecord = (marks = []) => marks.reduce((sum, mark) => {
   return { wins: sum.wins + won, losses: sum.losses + lost, played: sum.played + (won || lost ? 1 : 0) };
 }, { wins: 0, losses: 0, played: 0 });
 
-// The points one player took in this event: the server writes them on each series row, so the
-// browser only sums his side. Null where no series names him, so the cell prints its own dash.
+// The points the server wrote on the player's side, summed; null where no series names him
 export const stripPoints = (series = [], playerId) => {
   const own = series.filter((row) => row.player1_id === playerId || row.player2_id === playerId);
   return own.length ? own.reduce((sum, row) => sum + ((row.player1_id === playerId ? row.player1_points : row.player2_points) ?? 0), 0) : null;

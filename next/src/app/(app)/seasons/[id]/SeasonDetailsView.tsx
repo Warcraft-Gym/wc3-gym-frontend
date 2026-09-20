@@ -30,6 +30,7 @@ import { currentRound, roundLabel } from "@/helpers/rounds.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
 import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image";
 import { useAuth, useMapStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
+import { timeMissing } from "@/helpers/schedule.mjs";
 
 type Row = Record<string, any>;
 
@@ -345,7 +346,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
                   <td>
                     <PlayerName player={row.player2} race={row.player2_race} mmr={row.player2_mmr} />
                   </td>
-                  <td className="whitespace-nowrap">{row.date_time ? formatDateTime(row.date_time) : "Not scheduled"}</td>
+                  <td className="whitespace-nowrap">{row.date_time ? formatDateTime(row.date_time) : timeMissing(row, "Not scheduled")}</td>
                   <td>
                     <CastChips series={row as CastSeries} />
                   </td>

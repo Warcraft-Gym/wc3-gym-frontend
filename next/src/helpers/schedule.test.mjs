@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { scheduleDays } from './schedule.mjs';
+import { scheduleDays, timeMissing } from './schedule.mjs';
 
 const at = (days, hour = 12) => DateTime.utc(2026, 9, 10, hour).plus({ days }).toISO();
 // The reader's own day decides the grouping, so the test reads the zone it runs in
@@ -26,4 +26,13 @@ test('the schedule keeps last week and everything ahead, soonest first', () => {
 
 test('an empty season gives no days', () => {
   assert.deepEqual(scheduleDays([], DateTime.utc(2026, 9, 10)), []);
+});
+
+test('a scored series with no time never had one written down', () => {
+  assert.equal(timeMissing({ player1_score: 2, player2_score: 1 }, 'Not scheduled'), 'Not recorded');
+});
+
+test('an unscored series keeps the words the page already uses', () => {
+  assert.equal(timeMissing({ player1_score: null, player2_score: null }, 'Not scheduled'), 'Not scheduled');
+  assert.equal(timeMissing({}, 'No time booked'), 'No time booked');
 });

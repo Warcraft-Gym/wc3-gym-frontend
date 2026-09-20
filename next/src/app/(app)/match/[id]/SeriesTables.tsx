@@ -104,7 +104,7 @@ export function PublishedSeries({
               cell: ({ row }) => (
                 <>
                   <div className="whitespace-nowrap">
-                    {row.original.date_time ? formateDate(row.original.date_time) : <span className="text-muted-foreground">Not scheduled</span>}
+                    {row.original.date_time ? formateDate(row.original.date_time) : <span className="text-muted-foreground">{timeMissing(row.original, "Not scheduled")}</span>}
                   </div>
                   <CastChips series={row.original as CastSeries} />
                 </>
@@ -140,7 +140,7 @@ export function PublishedSeries({
             <SeriesCard
               key={item.id}
               series={item}
-              title={item.date_time ? formateDate(item.date_time) : "Not scheduled"}
+              title={item.date_time ? formateDate(item.date_time) : timeMissing(item, "Not scheduled")}
               actions={
                 <>
                   <CastChips series={item as CastSeries} />

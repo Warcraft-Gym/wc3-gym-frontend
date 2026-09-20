@@ -358,6 +358,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                   <RoundCards
                     player={player}
                     season={row.season}
+                    rounds={seasonData[row.season.id]?.rounds ?? null}
                     series={seriesOf(row)}
                     teamId={row.teamId}
                     answers={answersOf(row.season.id)}

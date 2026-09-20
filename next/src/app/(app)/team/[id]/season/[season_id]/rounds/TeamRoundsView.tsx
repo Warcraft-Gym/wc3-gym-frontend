@@ -33,7 +33,8 @@ function StatusChip({ status, short = false }: { status: Status; short?: boolean
     return (
       <span className="inline-flex items-center gap-1 text-xs" title={status.hint ?? status.title}>
         <Icon name={status.icon} size={14} className={INK[status.color ?? ""] ?? "text-muted-foreground"} />
-        {status.short}
+        {/* under the XS breakpoint the mark stands alone, and the word stays in the tooltip */}
+        <span className="hidden min-[600px]:inline">{status.short}</span>
       </span>
     );
   return (
@@ -340,11 +341,12 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                   <TableHead className="sticky left-0 z-10 bg-surface">Player</TableHead>
                   {rounds.map((item) => (
                     <TableHead key={item} className="text-center">
-                      {/* a phone reads the round on one short line, so three rounds fit 390 px */}
+                      {/* a phone reads the round number over its dates, one date a line, so three rounds fit 390 px */}
                       {phone ? (
-                        <span className="whitespace-nowrap">
-                          R{item} · {roundLabel(roundOf(item)).replace(" to ", "-")}
-                        </span>
+                        <>
+                          R{item}
+                          <div className="whitespace-pre-line text-xs font-normal text-muted-foreground">{roundLabel(roundOf(item)).replace(" to ", "\n")}</div>
+                        </>
                       ) : (
                         <>
                           Round {item}
@@ -354,7 +356,12 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                           </div>
                         </>
                       )}
-                      {needsGame(item) ? <div className="tnum text-xs font-normal text-muted-foreground">{needsGame(item)} needs a game</div> : null}
+                      {/* the words set the column width, so a phone keeps the count and the tooltip holds the words */}
+                      {needsGame(item) ? (
+                        <div className="tnum text-xs font-normal text-muted-foreground" title={`${needsGame(item)} needs a game`}>
+                          {needsGame(item)}<span className="sr-only min-[600px]:not-sr-only"> needs a game</span>
+                        </div>
+                      ) : null}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -362,8 +369,8 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
               <TableBody>
                 {players.map((player) => (
                   <TableRow key={player.id}>
-                    {/* the names stay in place while the rounds scroll under them */}
-                    <TableCell className="sticky left-0 z-10 bg-surface">
+                    {/* the names stay in place while the rounds scroll under them; the cap sits on the name line, because a table cell ignores max-width */}
+                    <TableCell className="sticky left-0 z-10 overflow-hidden bg-surface [&_.name]:truncate [&_.player-name]:max-w-[5.5rem] min-[600px]:[&_.player-name]:max-w-none">
                       <PlayerName player={player} race={phone ? undefined : player.signup_race} mmr={phone ? false : undefined} />
                     </TableCell>
                     {rounds.map((item) => {
@@ -383,7 +390,12 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                               aria-busy={busy}
                               disabled={!!saving}
                             />,
-                            versus ? <span className="text-sm">{versus.player.name}</span> : <StatusChip status={status} short />,
+                            versus ? (
+                              // the name gives the column its width, so a phone cuts it off
+                              <span className="block max-w-[9ch] truncate text-sm min-[600px]:max-w-none" title={versus.player.name}>{versus.player.name}</span>
+                            ) : (
+                              <StatusChip status={status} short />
+                            ),
                           )}
                         </TableCell>
                       );

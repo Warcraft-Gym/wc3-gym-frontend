@@ -21,6 +21,15 @@ export const blockedSpans = (free = [], start, end) => {
   return spans.filter((span) => span.start < span.end);
 };
 
+/** One side's own blocked ranges as spans, clipped to the window; a range outside it drops. */
+export const sideSpans = (ranges = [], start, end) => {
+  const from = at(start);
+  const to = at(end);
+  return ranges
+    .map((range) => ({ start: DateTime.max(at(range.start), from), end: DateTime.min(at(range.end), to) }))
+    .filter((span) => span.start < span.end);
+};
+
 /** One entry per day of the window on the viewer's clock; a day wholly in the past is dropped. */
 export const windowDays = (start, end, zone, now = DateTime.now()) => {
   const from = DateTime.max(at(start), at(now)).setZone(zone);
@@ -41,8 +50,8 @@ export const windowDays = (start, end, zone, now = DateTime.now()) => {
   return days;
 };
 
-/** The half hours of one day. A day that changes its offset holds 46 or 50 of them. */
-export const dayCells = ({ day, first, last }, blocked = []) => {
+/** The half hours of one day, `sides` one span list a player in draw order; a day that changes its offset holds 46 or 50. */
+export const dayCells = ({ day, first, last }, blocked = [], sides = []) => {
   const end = day.plus({ days: 1 }).startOf('day');
   const cells = [];
   for (let cur = day; cur < end; cur = cur.plus({ minutes: 30 })) {
@@ -51,6 +60,7 @@ export const dayCells = ({ day, first, last }, blocked = []) => {
       label: cur.toFormat('HH:mm'),
       outside: cur < first || cur >= last,
       blocked: insideBlocked(cur, blocked),
+      sides: sides.map((spans) => insideBlocked(cur, spans)),
     });
   }
   return cells;

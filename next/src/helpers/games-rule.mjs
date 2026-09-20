@@ -88,6 +88,14 @@ export function hasLowGamesTwoSeasons(player, currentSeason, race = null, thresh
 }
 
 /**
+ * The one mark for a race W3Champions holds no rating for, so every surface reads the same
+ *
+ * @param {string} race - Race the rating is missing for
+ * @returns {{colour: 'error', text: string}}
+ */
+export const noStatsWarning = (race) => ({ colour: 'error', text: `No W3C stats found for ${race}` });
+
+/**
  * The games-rule mark of one player on one race, as the player line draws it
  *
  * @param {Object} player - Player object
@@ -102,7 +110,7 @@ export function gamesWarning(player, currentSeason, race = null, threshold = 20)
   }
 
   if (!hasW3CStatsTwoSeasons(player, currentSeason, race)) {
-    return { colour: 'error', text: `No W3C stats found for ${race}` };
+    return noStatsWarning(race);
   }
 
   if (hasLowGamesTwoSeasons(player, currentSeason, race, threshold)) {

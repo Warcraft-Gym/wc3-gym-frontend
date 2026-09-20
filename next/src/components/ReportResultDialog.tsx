@@ -16,6 +16,7 @@ import { authHeader, backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, winsFor, isValidResult, moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helpers/map-order.mjs";
 import { mapMismatch, mapMismatches, reportWarning, swapMapFields } from "@/helpers/replay-maps.mjs";
+import { uploadReplay } from "@/helpers/replay-upload";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
 import { useMapStore, useMatchStore } from "@/stores";
@@ -45,7 +46,6 @@ type Form = {
 export type ReportResultDialogHandle = { open: (item: Row) => void };
 
 const EMPTY: Form = { replays: {}, races: {}, winners: [], maps: {}, reads: {}, tags: [] };
-const REPLAY_MAGIC = "Warcraft III recorded game";
 const isW3g = (file?: File | null) => !file || file.name.toLowerCase().endsWith(".w3g");
 
 // A file input that mounts again shows the file the form still holds for its game
@@ -186,19 +186,6 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
     const read = series.reads?.[game];
     const played = read && matchMap(read.mapPath, maps);
     return played && played.id === series.maps[game] ? "Read from the replay" : undefined;
-  };
-
-  // The file goes from the browser straight to the bucket, at a link the backend signs per game
-  const uploadReplay = async (seriesId: number, game: number, file: File) => {
-    const head = new TextDecoder().decode(await file.slice(0, REPLAY_MAGIC.length).arrayBuffer());
-    if (head !== REPLAY_MAGIC) throw new Error(`Game ${game} is not a Warcraft III replay`);
-    const { url } = await fetchWrapper.post(`${backendUrl}/player-series/${seriesId}/replays/${game}/upload-url`);
-    const put = await fetch(url, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": "application/octet-stream", "Content-Disposition": `attachment; filename="game${game}.w3g"` },
-    });
-    if (!put.ok) throw new Error(`Game ${game} replay upload failed`);
   };
 
   // The score the tapped winners add up to, the season's maps to win, and the file picked for a game

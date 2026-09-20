@@ -39,7 +39,8 @@ export function PublishDraftDialog({
 }) {
   const rows = drafts || [];
   const replacement = rows.length === 1 && !!rows[0].replaces_series_id;
-  const title = replacement ? `Publish ${rows[0].player1?.name} vs ${rows[0].player2?.name}?` : `Publish ${rows.length} pairings?`;
+  const noun = rows.length === 1 ? "1 pairing" : `${rows.length} pairings`;
+  const title = replacement ? `Publish ${rows[0].player1?.name} vs ${rows[0].player2?.name}?` : `Publish ${noun}?`;
   return (
     <Dialog open={!!drafts} onOpenChange={(open) => (open ? undefined : onCancel())}>
       <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
@@ -71,7 +72,7 @@ export function PublishDraftDialog({
                   {!lost.date_time && !lost.has_veto ? <span className="text-muted-foreground">No booked time and no map veto</span> : null}
                 </div>
               ) : error ? null : (
-                <p className="text-sm text-muted-foreground">Reading what that series holds…</p>
+                <p role="status" className="text-sm text-muted-foreground">Reading what that series holds…</p>
               )}
               <p className="mt-4 text-sm text-muted-foreground">
                 The new series shows in &quot;Waiting for you&quot; for its two players; the removed series no longer lists.
@@ -92,7 +93,7 @@ export function PublishDraftDialog({
           </Button>
           <Button disabled={busy || !rows.length || (replacement && !lost && !error)} onClick={onConfirm}>
             <Icon name="mdi-publish" />
-            {replacement ? "Publish and replace" : `Publish ${rows.length} pairings`}
+            {replacement ? "Publish and replace" : `Publish ${noun}`}
           </Button>
         </div>
       </DialogContent>

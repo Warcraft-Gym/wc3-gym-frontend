@@ -97,10 +97,10 @@ test('a player in a published series of the fixture is never suggested again', (
 });
 
 test('a draft that replaces a published series leaves the place of that series open', () => {
-  // the round holds 2 places, both published; one draft replaces one of them, so nothing is open
+  // the round holds 3 places, 2 published; one draft replaces one of them, so the third place is open
   const drafted = [{ player1_id: 12, player2_id: 22, replaces_series_id: 7 }];
-  const { open } = suggestPairings({ ...BOARD, series_per_round: 2, published_series: 2 }, 100, drafted);
-  assert.equal(open, 0);
+  const { open } = suggestPairings({ ...BOARD, series_per_round: 3, published_series: 2 }, 100, drafted);
+  assert.equal(open, 1);
   assert.deepEqual(placeTakers(drafted), []);
   // a plain draft still takes a place
   assert.equal(placeTakers([...drafted, { player1_id: 11, player2_id: 21 }]).length, 1);

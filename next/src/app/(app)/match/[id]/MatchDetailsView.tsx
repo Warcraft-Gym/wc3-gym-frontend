@@ -799,6 +799,7 @@ export function MatchDetailsView({ id }: { id: string }) {
 
   // A captain of that side, or an admin, drafts a new player into a published series
   const replaceActions = (item: Row): RowAction[] => {
+    if (item.player1_score != null || item.player2_score != null) return []; // a series that holds a result stays
     const sides = ([1, 2] as const).filter((side) => mayReplace(side));
     return sides.map((side) => ({
       icon: "mdi-swap-horizontal",

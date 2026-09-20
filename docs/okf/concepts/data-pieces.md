@@ -4,7 +4,7 @@ title: Data pieces
 description: Every shared piece that shows league data, by group, with where it lives, when to use it and which piece to use instead.
 resource: ../../../DESIGN.md
 tags: [design, components]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T13:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T17:30:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -146,7 +146,6 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | `formatDateTime` | `next/src/helpers/datetime.js` | The surface prints one series time. | The reader needs the other side's zone too; then `zoneLabel`. |
 | `zoneLabel` and `gmt` | `next/src/helpers/timezone.mjs` | Two sides must agree on a time. | Only one side reads the page. |
 | Round end line and round window | `next/src/helpers/rounds.mjs` | The round closes at midnight in a zone the reader may not be in. | The round is already over. |
-| Date tile | `next/src/app/(app)/HomeView.tsx` | A card leads with a date. | The event runs over many days; the card then prints the range too. |
 | Relative synced time | `next/src/helpers/w3c-stats.js` | The figure beside it is W3Champions data. | The figure is the app's own. |
 
 # Tooltips, legends and help

@@ -4,13 +4,15 @@ import { eventLabel } from './event-labels.mjs';
 const infoOf = (team, seasonId) => team.seasons_info?.find(i => i.season_id === seasonId) || {};
 
 // Most points, then fewest against, then the older team: the order app.services.derived crowns
+export const seasonStandings = (teams = [], seasonId) => teams
+  .map(team => ({ team, ...infoOf(team, seasonId) }))
+  .sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0)
+    || (a.points_against ?? 0) - (b.points_against ?? 0)
+    || a.team.id - b.team.id);
+
 export const seasonRank = (teams = [], teamId, seasonId) => {
-  const order = teams
-    .map(team => ({ id: team.id, ...infoOf(team, seasonId) }))
-    .sort((a, b) => (b.final_score ?? 0) - (a.final_score ?? 0)
-      || (a.points_against ?? 0) - (b.points_against ?? 0)
-      || a.id - b.id);
-  const index = order.findIndex(row => row.id === teamId);
+  const order = seasonStandings(teams, seasonId);
+  const index = order.findIndex(row => row.team.id === teamId);
   return index < 0 ? null : { rank: index + 1, of: order.length };
 };
 

@@ -43,8 +43,9 @@ export const roundEndLine = (end, zone = null, viewer = null) => {
 // "Check-in opens 10 Oct" for a round whose window is still ahead; '' once it has opened
 export const checkinOpensLine = (card) => (card?.opens && !card.open ? `Check-in opens ${card.opens.toFormat('d LLL')}` : '');
 
-// The round in play: the first one not over. Null once every round is done.
-export const currentRound = (rounds = [], today = DateTime.now()) => rounds.find(r => !roundOver(r, today)) ?? null;
+// The round in play: the first one not over in the event's zone. Null once every round is done.
+/** @param {any[]} [rounds] @param {*} [today] @param {string|null} [zone] */
+export const currentRound = (rounds = [], today = DateTime.now(), zone = null) => rounds.find(r => !roundOver(r, today, zone)) ?? null;
 
 // One card per round of a season: the round window, the team the player's team
 // meets, the player's series of that round, the answer they gave and the check-in

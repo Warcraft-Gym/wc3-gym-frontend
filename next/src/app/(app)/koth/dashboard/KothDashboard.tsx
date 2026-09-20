@@ -58,14 +58,20 @@ export function KothDashboard() {
       }
     } catch (e) {
       // a 404 is the empty page; every other failure keeps the board that is on the screen
-      if ((e as Row).status === 404) setBoard(null);
-      else setError(`The night did not load: ${(e as Error).message}`);
+      if ((e as Row).status === 404) {
+        setBoard(null);
+        setError(null);
+      } else setError(`The night did not load: ${(e as Error).message}`);
     }
   };
 
   useEffect(() => {
     let alive = true;
-    readBoard().then(() => alive && setLoading(false));
+    const first = async () => {
+      await readBoard();
+      if (alive) setLoading(false);
+    };
+    first();
     // the tab in the background asks for nothing, so a page left on a stream costs nothing
     const timer = setInterval(() => {
       if (!document.hidden) readBoard();
@@ -98,7 +104,8 @@ export function KothDashboard() {
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
 
-      {!board && !loading ? (
+      {/* only a 404 is the empty night; a read that failed says so in the alert above */}
+      {!board && !loading && !error ? (
         <div className="py-12 text-center text-muted-foreground">
           <Icon name="mdi-crown-outline" size={64} className="opacity-40" />
           <p className="mt-3 mb-0 text-xl font-medium">No KOTH night is open</p>

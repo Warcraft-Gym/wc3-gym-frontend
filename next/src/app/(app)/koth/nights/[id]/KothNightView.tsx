@@ -63,7 +63,8 @@ export function KothNightView({ id }: { id: string }) {
     const read = async () => {
       try {
         const answer = await store.fetchBoard(nightId);
-        if (alive) {
+        // a write that started while this read was in flight holds the newer board
+        if (alive && !writing.current) {
           setBoard(answer);
           setError(null);
         }
@@ -217,8 +218,8 @@ export function KothNightView({ id }: { id: string }) {
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
 
-      {/* the board read answers 404 for a night nobody published */}
-      {!loading && !board ? <p className="py-12 text-center text-muted-foreground">This night is not published</p> : null}
+      {/* the board read answers 404 for a night nobody published; a failed read says so in the alert above */}
+      {!loading && !board && !error ? <p className="py-12 text-center text-muted-foreground">This night is not published</p> : null}
 
       {/* The signups W3Champions gave no rating for wait over the brackets until one is picked */}
       {unplaced.length ? (
@@ -239,13 +240,13 @@ export function KothNightView({ id }: { id: string }) {
                     variant="outline"
                     size="sm"
                     className="text-primary-text"
-                    disabled={busy}
+                    disabled={busy || !!board?.closed}
                     onClick={() => run(() => store.placeEntrant(nightId, row.entrant_id, { division_id: bracket.division_id, manual_placement: true }))}
                   >
                     {bracketLabel(brackets, bracket).name}
                   </Button>
                 ))}
-                <Button variant="ghost" size="icon-xs" className="text-error" disabled={busy} aria-label={`Remove ${row.name}`} onClick={() => run(() => store.removeKothEntrant(nightId, row.entrant_id))}>
+                <Button variant="ghost" size="icon-xs" className="text-error" disabled={busy || !!board?.closed} aria-label={`Remove ${row.name}`} onClick={() => run(() => store.removeKothEntrant(nightId, row.entrant_id))}>
                   <Icon name="mdi-close" />
                 </Button>
               </span>

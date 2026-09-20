@@ -35,7 +35,7 @@ sources:
 
 A KOTH night is one event of the KOTH league. Its brackets are its divisions. An admin pairs every series by hand, live, between two players of one bracket, and a series is a best of one.
 
-**The board read.** `GET /koth/board` answers the night that takes signups and `GET /koth/nights/{id}/board` answers one night. One read carries the whole night: the brackets, each bracket's king, the player who was king when the last night ended, the series it plays now, the ordered queue, the players who left and the series played tonight. A seat of the queue is one player with one place in line and one row per race he holds in that bracket. Every admin write answers the same board, so a page sets its state from the answer and never reads itself again after a write.
+**The board read.** `GET /koth/board` answers the night that takes signups and `GET /koth/nights/{id}/board` answers one night. One read carries the whole night: the brackets, each bracket's king, the player who was king when the last night ended, the series it plays now, the ordered queue, the players who left and the series played tonight. A seat of the queue is one player with one place in line and one row per race he holds in that bracket. Every admin write answers the same board, so a page sets its state from that answer; the few routes that answer their own row read the board back once instead.
 
 **Nights (`/koth`).** Every night, newest first, with its date and its state; each name opens the night's run page. "Settings" on the row opens the event page, which keeps every setting of the night. "Open tonight" takes the start time and the MMR each of the three brackets opens at, prefilled from the night before, and lands on the run page.
 
@@ -45,7 +45,7 @@ A KOTH night is one event of the KOTH league. Its brackets are its divisions. An
 
 # Reads
 
-The public board read carries no token, so the edge caches it for fifteen seconds and every reader shares that answer; the one read right after a reader's own signup or withdraw adds a query the cache misses, so he sees his own row at once. The run page reads one night with the admin token, which the edge never caches, so every read there answers fresh. Both pages read once on load and again every thirty seconds, and neither asks while the tab is hidden. The public board reads the event row once per night as well, for the signup rules the signup dialog needs. Neither page makes another repeated read.
+The public board read carries no token, so the edge caches it for fifteen seconds and every reader shares that answer; the one read right after a reader's own signup or withdraw adds a query the cache misses, so he sees his own row at once. The run page reads one night with the admin token, which the edge never caches, so every read there answers fresh. Both pages read once on load and again every thirty seconds, and neither asks while the tab is hidden. The public board reads the event row once per night as well, for the signup rules the signup dialog needs. Three writes of the run page answer their own row instead of the board: a replay upload, the placement of an unplaced player and an added player. Each of the three reads the board back once. Neither page makes another repeated read.
 
 # Writes
 
@@ -64,6 +64,8 @@ The public board read carries no token, so the edge caches it for fifteen second
 | `event.addEntrant` | `POST /events/{id}/entrants/admin` |
 | `event.signUp` | `POST /events/{id}/entrants` |
 | `event.withdraw` | `DELETE /events/{id}/entrants/me` |
+
+The replay upload of a played row takes the two routes every series replay takes, `POST /player-series/{id}/replays/1/upload-url` and `PUT /player-series/{id}/replays/1`, because a KOTH series is a best of one and its replay is always game one.
 
 A refused write shows the sentence of its error envelope in the page's `StatusAlert`; a bad battle tag shows it as the field error of the add form.
 

@@ -206,6 +206,8 @@
 .chip { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0 0.5rem; font-size: 0.75rem; line-height: 1.5rem; }
 .alert { border-inline-start: 4px solid currentColor; }
 .skeleton { background-color: rgb(var(--v-theme-surface-light)); }
+/* A hatch marks a cell the reader cannot use, so it reads apart from a plain fill in both themes. */
+.hatched { background-image: repeating-linear-gradient(45deg, rgba(var(--v-theme-on-surface), 0.18) 0 2px, transparent 2px 5px); }
 
 /* A table wider than its card shows a shadow at the hidden edge, so the reader knows it scrolls. */
 .table-scroll {

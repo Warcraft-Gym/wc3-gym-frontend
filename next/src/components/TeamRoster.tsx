@@ -84,10 +84,11 @@ export function TeamRoster({
               <W3CMmr />
             </TapTooltip>
           </span>
-          <span className={cn(CELL, "justify-end pe-1.5 pb-1 text-xs text-muted-foreground", first ? "pt-0" : "pt-5")}>
+          <span className={cn(CELL, "justify-end pe-1 pb-1 text-xs text-muted-foreground", first ? "pt-0" : "pt-5")}>
             {strip ? <TapTooltip content="Points from series in this event">Points</TapTooltip> : null}
           </span>
-          <span className={cn(CELL, "items-end ps-[18px] pb-1", first ? "pt-0" : "pt-5")}>
+          {/* the gutter before the strip is tighter on a narrow screen, so a seven round strip still fits the card */}
+          <span className={cn(CELL, "items-end ps-2 pb-1 sm:ps-[18px]", first ? "pt-0" : "pt-5")}>
             {strip ? (
               <span className="block">
                 <span className="block text-xs text-muted-foreground">Rounds</span>
@@ -131,8 +132,8 @@ export function TeamRoster({
         {plays ? (
           <>
             <span className={cn(CELL, "tnum min-w-[3.1em] justify-end pe-1.5")}>{mmrOf(row) ?? "—"}</span>
-            <span className={cn(CELL, "tnum justify-end pe-1.5")}>{strip ? (stripPoints(series as Row[], Number(player.id)) ?? "—") : null}</span>
-            <span className={cn(CELL, "ps-[18px]")}>
+            <span className={cn(CELL, "tnum justify-end pe-1")}>{strip ? (stripPoints(series as Row[], Number(player.id)) ?? "—") : null}</span>
+            <span className={cn(CELL, "ps-2 sm:ps-[18px]")}>
               {strip ? (
                 <RoundStrip series={series as Row[]} playerId={Number(player.id)} rounds={rounds} outRounds={outRoundsOf(row)} record />
               ) : null}

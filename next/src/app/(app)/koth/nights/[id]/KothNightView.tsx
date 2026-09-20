@@ -18,6 +18,7 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { bracketLabel, movedQueue, openSeriesRows, orderedBrackets, queueIds, seatKey, seatRow } from "@/helpers/koth-board.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
+import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +59,15 @@ export function KothNightView({ id }: { id: string }) {
   const brackets: Row[] = orderedBrackets(board);
   const unplaced: Row[] = board?.unplaced ?? [];
 
+  // A bracket that plays a series takes no pair, so a pick left on its line clears with the answer
+  const takeBoard = (answer: Row) => {
+    setBoard(answer);
+    const running = orderedBrackets(answer)
+      .filter((bracket: Row) => bracket.open_series)
+      .flatMap((bracket: Row) => (bracket.queue ?? []).map(seatKey));
+    setPicked((was) => was.filter((key) => !running.includes(key)));
+  };
+
   useEffect(() => {
     let alive = true;
     const read = async () => {
@@ -65,7 +75,7 @@ export function KothNightView({ id }: { id: string }) {
         const answer = await store.fetchBoard(nightId);
         // a write that started while this read was in flight holds the newer board
         if (alive && !writing.current) {
-          setBoard(answer);
+          takeBoard(answer);
           setError(null);
         }
       } catch (e) {
@@ -92,7 +102,7 @@ export function KothNightView({ id }: { id: string }) {
     setError(null);
     try {
       const answer = await call();
-      setBoard(answer?.brackets ? answer : await store.fetchBoard(nightId, true));
+      takeBoard(answer?.brackets ? answer : await store.fetchBoard(nightId, true));
       after?.();
     } catch (e) {
       setError((e as Error).message);
@@ -173,12 +183,15 @@ export function KothNightView({ id }: { id: string }) {
   };
 
   const addPlayer = async () => {
-    setAddError(null);
+    // the shape is read here as well as on the signup door, so both print the one sentence
+    const shape = battleTagError(addTag);
+    setAddError(shape);
+    if (shape) return;
     setBusy(true);
     writing.current = true;
     try {
       await store.addEntrant(nightId, { battle_tag: addTag.trim(), race: addRace });
-      setBoard(await store.fetchBoard(nightId, true));
+      takeBoard(await store.fetchBoard(nightId, true));
       setAddTo(false);
     } catch (e) {
       setAddError((e as Error).message);
@@ -290,7 +303,7 @@ export function KothNightView({ id }: { id: string }) {
               </p>
               <div className="flex flex-col gap-2 p-4">
                 <label className="flex cursor-pointer items-start gap-2 rounded-lg border p-3">
-                  <input type="radio" name="step-down" className="mt-1" checked={passTo === null} onChange={() => setPassTo(null)} />
+                  <input type="radio" name="step-down" className="mt-1 size-[18px] accent-[rgb(var(--v-theme-primary))]" checked={passTo === null} onChange={() => setPassTo(null)} />
                   <span>
                     <span className="font-medium">Leave the throne empty</span>
                     <span className="block text-xs text-muted-foreground">The next series of this bracket crowns its winner.</span>
@@ -302,8 +315,8 @@ export function KothNightView({ id }: { id: string }) {
                     <div className="flex flex-col gap-1">
                       {passOptions.map((seat: Row) => (
                         <label key={seatKey(seat)} className="flex cursor-pointer items-center gap-2">
-                          <input type="radio" name="step-down" checked={passTo === seatKey(seat)} onChange={() => setPassTo(seatKey(seat))} />
-                          <BoardPlayer row={{ ...seat, mmr: seatRow(seat, picks)?.mmr ?? null }} race={seatRow(seat, picks)?.race ?? null} plain />
+                          <input type="radio" name="step-down" className="size-[18px] accent-[rgb(var(--v-theme-primary))]" checked={passTo === seatKey(seat)} onChange={() => setPassTo(seatKey(seat))} />
+                          <BoardPlayer row={{ ...seat, mmr: seatRow(seat, picks)?.mmr ?? null }} race={seatRow(seat, picks)?.race ?? null} plain slot />
                         </label>
                       ))}
                     </div>
@@ -349,14 +362,14 @@ export function KothNightView({ id }: { id: string }) {
               ))}
             </ul>
             {openRows.length ? (
-              <div className="mt-4 flex items-start gap-2 rounded-lg border border-warning p-3 text-sm">
+              <div className={cn("mt-4 flex items-start gap-2 rounded-lg p-3 text-sm", toneClass("warning"))}>
                 <Icon name="mdi-alert-outline" className="text-warning" />
                 <div>
                   <p className="mb-1">
                     {openRows.length === 1 ? "One series was started and never scored. Closing deletes it." : `${openRows.length} series were started and never scored. Closing deletes them.`}
                   </p>
                   {openRows.map((open: Row) => (
-                    <div key={open.division_id} className="text-muted-foreground">
+                    <div key={open.division_id} className="opacity-(--v-medium-emphasis-opacity)">
                       {open.text}
                     </div>
                   ))}
@@ -383,9 +396,11 @@ export function KothNightView({ id }: { id: string }) {
           <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Add player</DialogTitle>
           <div className="flex flex-col gap-3 p-4">
             <Field label="Battle tag" hint="The name and the numbers, like Mirren#4410." error={addError} htmlFor="koth-add-tag">
-              <Input id="koth-add-tag" value={addTag} onChange={(event) => setAddTag(event.target.value)} />
+              <Input id="koth-add-tag" aria-invalid={!!addError} value={addTag} onChange={(event) => { setAddTag(event.target.value); setAddError(null); }} />
             </Field>
-            <RaceSelect id="koth-add-race" value={addRace} onChange={setAddRace} label="Race" />
+            <Field label="Race" htmlFor="koth-add-race">
+              <RaceSelect id="koth-add-race" value={addRace} onChange={setAddRace} label="Race" />
+            </Field>
           </div>
           <div className="flex justify-end gap-2 p-4 pt-0">
             <Button variant="ghost" onClick={() => setAddTo(false)}>

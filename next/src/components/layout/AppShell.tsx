@@ -201,9 +201,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <PlayerPanel />
       </main>
 
-      <footer className="flex justify-end px-3 py-1 text-xs">
-        <Link href="/credits" className="text-muted-foreground no-underline">Credits</Link>
-      </footer>
+      {/* a stream shows the brackets alone, so the clean page carries no footer link either */}
+      {!clean ? (
+        <footer className="flex justify-end px-3 py-1 text-xs">
+          <Link href="/credits" className="text-muted-foreground no-underline">Credits</Link>
+        </footer>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
 import { checkInStatus } from "@/helpers/check-in.mjs";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
+import { placeTakers } from "@/helpers/draft-suggest.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { pickedInstant, pickerParts, storedUtc, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { useAuth, useAvailabilityStore, useEventStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
@@ -29,6 +30,7 @@ import { EditSeriesDialog } from "./EditSeriesDialog";
 import { MatchBanner } from "./MatchBanner";
 import { MatchRoundNav, type RoundMatches } from "./MatchRoundNav";
 import { ProposeSeriesDialog } from "./ProposeSeriesDialog";
+import { PublishDraftDialog } from "./PublishDraftDialog";
 import { RoundDraftBoard } from "./RoundDraftBoard";
 import { DraftSeries, PublishedSeries } from "./SeriesTables";
 import { TeamRostersPanel } from "./TeamRostersPanel";
@@ -119,6 +121,14 @@ export function MatchDetailsView({ id }: { id: string }) {
 
   const [seriesViewTab, setSeriesViewTab] = useState("published");
 
+  // The published series a captain replaces a player in, and the publish confirm over one or more drafts
+  const [replacing, setReplacing] = useState<{ series: Row; dropId: number } | null>(null);
+  const [publishDrafts, setPublishDrafts] = useState<Row[] | null>(null);
+  // Only the answer of the open confirm is kept, so a slow replaces read of an earlier one is dropped
+  const replaceAsk = useRef(0);
+  const [publishLost, setPublishLost] = useState<Row | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
   const [showProposeSeriesModal, setShowProposeSeriesModal] = useState(false);
   const [proposePlayersTeam1, setProposePlayersTeam1] = useState<number[]>([]);
   const [proposePlayersTeam2, setProposePlayersTeam2] = useState<number[]>([]);
@@ -176,13 +186,17 @@ export function MatchDetailsView({ id }: { id: string }) {
 
   // Full players for the series tables: rosters first, fetched extras second
   const seriesPlayerById = { ...playersOf([team1, team2]), ...extraPlayersById };
-  const withFullPlayers = (row: Row) => ({
+  const withFullPlayers = (row: Row): Row => ({
     ...row,
     player1: seriesPlayerById[row.player1_id] || row.player1,
     player2: seriesPlayerById[row.player2_id] || row.player2,
   });
   const enrichedSeries = series.map(withFullPlayers);
   const enrichedDraftSeries = draftSeries.map(withFullPlayers);
+  // A draft that replaces a published series is published on its own, with the confirm that names what is lost
+  const plainDrafts = enrichedDraftSeries.filter((row) => !row.replaces_series_id);
+  // The places of the round the published series leave open; the board read carries both counts
+  const openPlaces = Math.max(0, (draftBoard?.series_per_round || 0) - (draftBoard?.published_series || 0) - placeTakers(draftSeries).length);
   // The working largest difference of this match, which the board and the draft table both read
   const maxDifference = draftState?.max_mmr_difference ?? draftBoard?.max_mmr_difference ?? 0;
 
@@ -381,6 +395,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   useEffect(() => {
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
+      setReplacing(null); // another fixture holds none of the series this replacement names
       // The w3champions season does not depend on the match, so both reads start together
       const [w3cSeason, loaded] = await Promise.all([resolveCurrentW3CSeason(), fetchMatchDetails()]);
       setCurrentW3CSeason(w3cSeason ?? undefined);
@@ -553,12 +568,12 @@ export function MatchDetailsView({ id }: { id: string }) {
   };
 
   const publishAllDraftSeries = async () => {
-    if (!draftSeries.length) return;
+    if (!plainDrafts.length) return;
     setIsLoading(true);
     try {
       // Start host counts from currently published series, then balance as each draft is promoted
       let { team1Hosts, team2Hosts } = countTeamHosts(series);
-      for (const draft of draftSeries) {
+      for (const draft of plainDrafts) {
         const autoHostId = getAutoHostPlayerId(draft.player1, draft.player2, team1Hosts, team2Hosts);
         if (autoHostId !== draft.host_player_id) await seriesStore.updateDraftSeries({ ...draft, host_player_id: autoHostId });
         await seriesStore.promoteDraftSeries(draft.id);
@@ -573,6 +588,76 @@ export function MatchDetailsView({ id }: { id: string }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // The one draft a replacement confirm asks about, and the published series it names
+  const publishOne = publishDrafts && publishDrafts.length === 1 ? publishDrafts[0] : null;
+
+  // The publish confirm. The replaces read fires only here, once, for the one draft it asks about.
+  const openPublishAll = () => {
+    replaceAsk.current++;
+    setPublishError(null);
+    setPublishLost(null);
+    setPublishDrafts(plainDrafts);
+  };
+
+  const openPublishReplace = async (item: Row) => {
+    const ask = ++replaceAsk.current;
+    setPublishError(null);
+    setPublishLost(null);
+    setPublishDrafts([item]);
+    try {
+      const lost = await seriesStore.getDraftReplaces(item.id);
+      if (ask === replaceAsk.current) setPublishLost(lost);
+    } catch (error: any) {
+      // the confirm names what is lost, so a failed read blocks the publish instead of hiding it
+      if (ask === replaceAsk.current) setPublishError(error?.error || error?.message || String(error));
+    }
+  };
+
+  const closePublish = () => {
+    replaceAsk.current++;
+    setPublishDrafts(null);
+    setPublishLost(null);
+    setPublishError(null);
+  };
+
+  // A replacement publishes on its own: the backend makes the new series and removes the old one
+  const confirmPublish = async () => {
+    const rows = publishDrafts || [];
+    setPublishError(null);
+    if (!rows.length) return closePublish();
+    if (!rows[0].replaces_series_id) {
+      await publishAllDraftSeries();
+      return closePublish();
+    }
+    setIsLoading(true);
+    try {
+      await seriesStore.promoteDraftSeries(rows[0].id);
+      await fetchMatchSeries();
+      closePublish();
+    } catch (error: any) {
+      console.error("Failed to publish the replacement:", error);
+      await fetchMatchSeries().catch(() => {});
+      setPublishError(error?.error || error?.message || String(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Replacing a player keeps the other side of the published series and drafts the new pairing
+  const teamOfSide = (side: 1 | 2) => (side === 1 ? match.team1_id : match.team2_id);
+  const mayReplace = (side: 1 | 2) => auth.isAdmin || (ownTeamId != null && Number(ownTeamId) === Number(teamOfSide(side)));
+  const openReplace = (item: Row, side: 1 | 2) => {
+    setReplacing({ series: item, dropId: item[`player${side}_id`] });
+    setSeriesViewTab("draft");
+    markDraftSeen();
+  };
+  // The pairing a replacement draft removes, named from the published series the page already holds
+  const replacedLabel = (item: Row) => {
+    const row = series.find((one) => Number(one.id) === Number(item.replaces_series_id));
+    if (!row) return null;
+    return `${seriesPlayerById[row.player1_id]?.name || row.player1?.name} vs ${seriesPlayerById[row.player2_id]?.name || row.player2?.name}`;
   };
 
   // A write that moves a pairing reads the whole series list; another write names the lighter read it needs
@@ -592,7 +677,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   };
 
   // A whole suggested set writes in one go: the hosts count as it goes, and one read follows
-  const addPairings = (pairs: { player1_id: number; player2_id: number }[]) => {
+  const addPairings = (pairs: { player1_id: number; player2_id: number; replaces_series_id?: number }[]) => {
     let { team1Hosts, team2Hosts } = countTeamHosts([...series, ...draftSeries]);
     return runDraftWrite(async () => {
       for (const pair of pairs) {
@@ -712,9 +797,22 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
+  // A captain of that side, or an admin, drafts a new player into a published series
+  const replaceActions = (item: Row): RowAction[] => {
+    if (item.player1_score != null || item.player2_score != null) return []; // a series that holds a result stays
+    const sides = ([1, 2] as const).filter((side) => mayReplace(side));
+    return sides.map((side) => ({
+      icon: "mdi-swap-horizontal",
+      label: sides.length === 1 ? "Replace a player" : `Replace ${item[`player${side}`]?.name || `player ${side}`}`,
+      public: true,
+      onClick: () => openReplace(item, side),
+    }));
+  };
+
   const seriesActions = (item: Row): RowAction[] => [
     ...replays.filter((r) => r.series_id === item.id).map((r) => ({ icon: "mdi-download", label: `Replay game ${r.game_no}`, href: r.url, public: true })),
     { icon: "mdi-open-in-new", label: "Open series", public: true, onClick: () => router.push(`/series/${item.id}`) },
+    ...replaceActions(item),
     { icon: "mdi-pencil", label: "Edit Series", onClick: () => editSeries(item) },
     { icon: "mdi-map-outline", label: "Map veto", onClick: () => router.push(`/player-series/${item.id}/veto`) },
     { icon: "mdi-delete", label: "Delete Series", color: "error", onClick: () => openDeleteDialog(item.id, removeSeries) },
@@ -728,7 +826,9 @@ export function MatchDetailsView({ id }: { id: string }) {
       color: item.is_fantasy_match ? "warning" : "primary",
       onClick: () => toggleDraftFantasyMatch(item),
     },
-    { icon: "mdi-publish", label: "Publish Series", color: "success", onClick: () => publishDraftSeries(item) },
+    item.replaces_series_id
+      ? { icon: "mdi-publish", label: "Publish and replace", color: "success", onClick: () => openPublishReplace(item) }
+      : { icon: "mdi-publish", label: "Publish Series", color: "success", onClick: () => publishDraftSeries(item) },
     { icon: "mdi-delete", label: "Delete Draft", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
   ];
 
@@ -784,6 +884,7 @@ export function MatchDetailsView({ id }: { id: string }) {
             onValueChange={(value) => {
               setSeriesViewTab(value as string);
               if (value === "draft") markDraftSeen();
+              else setReplacing(null); // the replacement picker lives on the draft tab
             }}
           >
             <TabsList variant="line" className="w-full justify-center bg-surface-light">
@@ -804,9 +905,15 @@ export function MatchDetailsView({ id }: { id: string }) {
                 series={enrichedSeries}
                 smAndDown={smAndDown}
                 isAdmin={auth.isAdmin}
+                canDraft={canDraft}
+                openPlaces={openPlaces}
                 formateDate={formateDate}
                 seriesActions={seriesActions}
                 onAddSeries={openCreateNewSeries}
+                onDraftSeries={() => {
+                  setSeriesViewTab("draft");
+                  markDraftSeen();
+                }}
                 onDeleteAll={() => openDeleteDialog(null, removeAllSeries)}
               />
             </TabsContent>
@@ -827,6 +934,8 @@ export function MatchDetailsView({ id }: { id: string }) {
                   narrow={smAndDown}
                   isOut={isOutOnTeam}
                   busy={isLoading}
+                  replacing={replacing}
+                  onCancelReplace={() => setReplacing(null)}
                   onAddPairings={addPairings}
                   onChangeOpponent={changeOpponent}
                   onSetMaxDifference={setMaxMmrDifference}
@@ -846,10 +955,12 @@ export function MatchDetailsView({ id }: { id: string }) {
                   maxDifference={maxDifference}
                   seenAt={seenAt}
                   viewerId={auth.me?.user?.id ?? null}
+                  replacedLabel={replacedLabel}
+                  publishCount={plainDrafts.length}
                   onMeetings={meetingsOf}
                   draftActions={draftActions}
                   onAddDraftSeries={openCreateNewDraftSeries}
-                  onPublishAll={publishAllDraftSeries}
+                  onPublishAll={openPublishAll}
                   onDeleteAll={() => openDeleteDialog(null, removeAllDraftSeries)}
                 />
               </TabsContent>
@@ -942,6 +1053,17 @@ export function MatchDetailsView({ id }: { id: string }) {
           onCancel={cancelProposeSeries}
         />
       ) : null}
+
+      <PublishDraftDialog
+        drafts={publishDrafts}
+        replaced={publishOne ? enrichedSeries.find((one) => Number(one.id) === Number(publishOne.replaces_series_id)) : null}
+        lost={publishLost}
+        busy={isLoading}
+        error={publishError}
+        onErrorClose={() => setPublishError(null)}
+        onConfirm={confirmPublish}
+        onCancel={closePublish}
+      />
 
       <W3CSyncResultDialog modelValue={syncDialog} entries={syncEntries} onUpdateModelValue={setSyncDialog} />
 

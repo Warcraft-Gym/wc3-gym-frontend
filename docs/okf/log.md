@@ -2,6 +2,7 @@
 
 ## 2026-09-20
 
+* **Update**: a published series offers "Replace a player", which drafts a pairing that names the series it replaces and publishes with one "Publish and replace" confirm; a round with an open place offers "Add a series"; the board draws a published pairing with a quieter line. The fixtures and series page concept states the flow, the count rule and the read the confirm makes.
 * **Update**: the series page states the booked time, the next map and the head to head on three lines, and the report dialog moves a replay between games, warns when a replay's map is not the one its game plays, and asks once before a report that disagrees with the veto. The fixtures and series page concept, the shared-component concept and the veto decision state the three lines, the shared head-to-head cell and the confirm.
 * **Update**: the schedule dialog draws each side's own blocked hours apart by position, the round cards of the player page group under the stage they sit in, and the team check-in matrix fits three round columns on a phone. The fixtures and series, players and stats, and teams page concepts state the lanes, the legend, the stage heading and the narrow matrix.
 * **Update**: the team roster carries a points column summed from the series the page already holds, and a round a player sits out draws as a crossed square in the round strip. The shared-component and teams page concepts state the column, its scope note and the sit-out mark.

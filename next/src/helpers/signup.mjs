@@ -77,6 +77,14 @@ export function signupTitles(state, seasonName) {
   };
 }
 
+// The shape every door takes: a name of letters and digits, then # and 3 to 8 digits
+const BATTLE_TAG = /^[\p{L}\p{N}]+#\d{3,8}$/u;
+
+// The sentence the battle tag field prints, or null when the tag is shaped right
+export function battleTagError(tag) {
+  return BATTLE_TAG.test(String(tag ?? '').trim()) ? null : 'A battle tag looks like Name#1234.';
+}
+
 // What /signup shows: the home page's action, joined, over, or a profile-only form for a member with no users row
 export function signupState(season, signedUp, hasProfile) {
   const action = seasonAction(season);

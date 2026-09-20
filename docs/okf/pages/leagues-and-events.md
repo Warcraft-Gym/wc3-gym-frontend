@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T14:10:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T13:05:16Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -53,7 +53,9 @@ Outside its own page an event is named by its league and its name, "GNL · Seaso
 
 **One event (`/events/:id`).** The header, the description, the entrant count and, on a team event, the series per fixture. Then the one action the backend picked for the caller: sign up opens the signup dialog, withdraw asks once (a caller on more than one race gets one withdraw button per race and gives back that race alone), check in writes the caller's row, view scrolls to the draw, and a caller who is checked in reads a chip. A reader who is not logged in reads "Log in to sign up" while the signups stand open. When the caller's blocks cover the next round, the page shows the hint and the "Sit out" button. A logged-in reader gets a link to the entrants list, and on a GNL season a link to the season page. A table lists every stage with its format, best-of, series per entrant and scheduling. The entrants card lists each entrant with the signup race, the seed once a stage has locked its order, a tick when checked in, and "withdrawn" when withdrawn; on a finished event each row carries its place. A signup-only event plays no stage: the card is titled "Sign-ups", counts the entrants against the cap, lists them in signup order and prints each one's note. Under that, the draw: every stage that holds series, drawn read-only, with a "Hide results" switch the viewer keeps in their own browser. A series box opens the series page; its accessible name is its round, the two sides and the state.
 
-The signup dialog asks for the race, a note on a signup-only event, and a battle tag when the event takes anyone and the caller's account names no player. The eligibility warnings the backend answers show as chips after the signup and never block it.
+The signup dialog asks for the race, a note on a signup-only event, and a battle tag when the event takes anyone and the caller's account names no player. The battle tag is read against the shape every door takes, a name of letters and digits then a hash and three to eight digits, before the request; a tag of another shape, and a refusal the backend answers, print one sentence under the field. The eligibility warnings the backend answers show as chips after the signup and never block it.
+
+On a KOTH night the dialog does not close on the answer: it holds one end state with a "Done" button. An entrant the night placed reads its bracket and its place in line, counted from one read of the public board, and reads the bracket alone when that read answers nothing. An entrant W3Champions rated no race for reads that an admin places it in a bracket, with the no-stats mark on the race. Both states draw the player line the app draws everywhere: the flag, the name, the race and the one rating.
 
 **Entrants (`/events/:id/entrants`).** A grouped table, one group per division: the entrant, the MMR the seed was cut from, the battle tag, the Discord tag, whether W3Champions knows the player, the eligibility warnings (under the game count, over the MMR cap, banned), the seed with its source once locked, and the status (signed up, checked in, withdrawn, and a pin when placed by hand). A team entrant reads as the team name over the roster it fields for this event, captains starred; its MMR is the mean of the roster's ratings. A phone reads one card per entrant. A member reads all of this and none of the controls.
 

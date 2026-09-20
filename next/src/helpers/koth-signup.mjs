@@ -1,0 +1,45 @@
+// Where a KOTH signup landed: the bracket of the board that holds the new entrant row, and
+// its place in that bracket's line. The dialog reads the board once after the signup.
+
+const WORDS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+
+// A place in line as the pages say it: first to tenth as a word, then the ordinal number.
+export function placeWord(place) {
+  if (!Number.isInteger(place) || place < 1) return null;
+  if (place <= WORDS.length) return WORDS[place - 1];
+  const teens = place % 100;
+  const suffix = teens >= 11 && teens <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[place % 10] || 'th';
+  return `${place}${suffix}`;
+}
+
+// The entrant ids one seat of the line holds: a player takes one seat and one row per race.
+const seatIds = (seat) => (seat?.rows ?? []).map((row) => row.entrant_id);
+const playerId = (player) => (player?.entrant_id == null ? [] : [player.entrant_id]);
+
+// Every entrant id the bracket holds, wherever the board draws it.
+const bracketIds = (bracket) => [
+  ...(bracket.queue ?? []).flatMap(seatIds),
+  ...seatIds(bracket.king),
+  ...playerId(bracket.defender),
+  ...(bracket.left ?? []).flatMap(playerId),
+  ...playerId(bracket.open_series?.side1),
+  ...playerId(bracket.open_series?.side2),
+];
+
+/**
+ * The bracket and place in line of one entrant on a KOTH board.
+ *
+ * @param {Object} board - the answer of GET /koth/nights/{id}/board
+ * @param {number} entrantId - the entrant the signup answered
+ * @returns {{bracket: string, placeWord: string|null}|null} - null when no bracket holds the
+ *   row; `placeWord` null when the bracket holds it outside the line
+ */
+export function signupPlace(board, entrantId) {
+  const brackets = board?.brackets ?? [];
+  for (const [index, bracket] of brackets.entries()) {
+    if (!bracketIds(bracket).includes(entrantId)) continue;
+    const at = (bracket.queue ?? []).findIndex((seat) => seatIds(seat).includes(entrantId));
+    return { bracket: bracket.name || `Bracket ${index + 1}`, placeWord: at < 0 ? null : placeWord(at + 1) };
+  }
+  return null;
+}

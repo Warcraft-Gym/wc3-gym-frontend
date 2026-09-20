@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { withExtras } from './countries.mjs';
 import { seasonAction } from './events.mjs';
-import { COUNTRY_ZONE, signupState, signupTitles, startZone } from './signup.mjs';
+import { COUNTRY_ZONE, battleTagError, signupState, signupTitles, startZone } from './signup.mjs';
 
 const base = createRequire(import.meta.url)('country-code-info/data/countries.json');
 
@@ -79,5 +79,17 @@ test('the heading follows the state: a profile-only form is not a signup', () =>
   assert.equal(signupTitles('profile', '').heading, 'Your Profile');
   for (const state of ['signup', 'request', 'joined', 'over']) {
     assert.equal(signupTitles(state, 'GNL S18').heading, 'Your Signup', state);
+  }
+});
+
+test('a battle tag passes with 3 to 8 digits after the name, and the space around it is cut', () => {
+  for (const tag of ['Mirren#4410', ' Mirren#4410 ', 'Grubby#123', 'Player1#12345678', 'Müller#4410']) {
+    assert.equal(battleTagError(tag), null, tag);
+  }
+});
+
+test('every other shape prints the one sentence that shows the form', () => {
+  for (const tag of ['Mirren', 'Mirren#44', 'Mirren#123456789', '#4410', 'Mirren#abc', 'Mir ren#4410', 'Mirren#4410#1', '', null]) {
+    assert.equal(battleTagError(tag), 'A battle tag looks like Name#1234.', String(tag));
   }
 });

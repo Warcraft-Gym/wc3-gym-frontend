@@ -91,7 +91,7 @@ const opponentOf = (series, playerId) => {
   return null;
 };
 
-/** Where a series sits: "GNL - Season 19 - Regular season - Round 2 - vs Scorch". A part the series names no value for is left out with its separator. The opponent shows only for a player of the series. `event` of false leaves the event out, where the page title already names it.
+/** Where a series sits: "GNL - Season 19 - Regular season - Round 2 - vs <name>". A part the series names no value for is left out with its separator. The opponent shows only for a player of the series. `event` of false leaves the event out, where the page title already names it.
  *  @param {any} series
  *  @param {{ event?: any, stage?: any, round?: number|null, playerId?: number|null }} [options] */
 export const seriesContext = (series, { event = null, stage = null, round = null, playerId = null } = {}) => {

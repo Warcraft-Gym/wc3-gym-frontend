@@ -10,7 +10,7 @@ export const checkInStatus = (row) => {
   return NO_ANSWER;
 };
 
-// "set by you", "set by Peterian". A derived row and a round nobody answered carry no note.
+// "set by you", "set by <name>". A derived row and a round nobody answered carry no note.
 export const setByText = (row, viewerId) => {
   if (!row || row.blocked_out || row.available == null || row.set_by_user_id == null) return '';
   return `set by ${row.set_by_user_id === viewerId ? 'you' : row.set_by_name}`;

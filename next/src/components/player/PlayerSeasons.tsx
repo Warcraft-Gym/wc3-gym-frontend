@@ -20,6 +20,7 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useLadderStore, usePlayerStore, useSeason, useSeasonStore, useSeriesStore } from "@/stores";
 import { raceWrapper } from "@/helpers/races.js";
+import { record } from "@/helpers/figures.mjs";
 import { STATE_COLOR as EVENT_STATE_COLOR, STATE_LABEL, timeText } from "@/helpers/event-labels.mjs";
 import { eventActionButton } from "@/helpers/events.mjs";
 import { foldNight } from "@/helpers/koth.mjs";
@@ -261,7 +262,7 @@ export function PlayerSeasons({
                         <span className={FACT}>
                           <span className={CAPTION}>Ladder</span>
                           <span className="tnum">
-                            {row.ladder.points} pts <span className="text-muted-foreground">· {row.ladder.wins} – {row.ladder.losses}</span>
+                            {row.ladder.points} pts <span className="text-muted-foreground">· {record(row.ladder.wins, row.ladder.losses) ?? "—"}</span>
                           </span>
                         </span>
                         <span className={FACT}>
@@ -312,7 +313,7 @@ export function PlayerSeasons({
                     <>
                       <section className="pb-4">
                         <h4 className="mb-2 text-base font-medium">
-                          Series by round <span className="text-xs font-normal text-muted-foreground">{row.wins} – {row.losses}</span>
+                          Series by round <span className="text-xs font-normal text-muted-foreground">{record(row.wins, row.losses) ?? "—"}</span>
                         </h4>
                         <div className="table-scroll overflow-x-auto">
                           <table className="w-full caption-bottom text-sm">

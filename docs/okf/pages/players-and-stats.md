@@ -45,7 +45,7 @@ sources:
 
 # What it does
 
-**Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series and the games won as a count with its share under a column title that names what it counts, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and flags. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one, adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
+**Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series record and the games record as "19 – 11 (63%)" from ten played up and "3 – 1" under ten, under a column title that names what it counts, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and flags. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one, adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
 
 The list pages 25 rows at a time, and its country flags and race/MMR chips carry tap-accessible tooltips on a touch screen.
 

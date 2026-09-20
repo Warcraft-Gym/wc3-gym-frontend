@@ -1,6 +1,10 @@
 import { DateTime } from 'luxon';
 import { seriesContext } from './series-actions.mjs';
 import { isUnscored } from './season-phase.mjs';
+import { checkInStatus } from './check-in.mjs';
+
+// A round card read as the check-in answer it holds, so the card and the captain grid say one thing
+export const cardStatus = (card) => checkInStatus({ available: card?.answer, blocked_out: card?.blocked });
 
 // "13 to 19 Sep", "28 Sep to 4 Oct", "13 Sep", or "Round n" for a round with no date
 export const roundLabel = (round) => {
@@ -94,12 +98,13 @@ export const roundCards = (
 // The chip of a round card with no series: the answer given, the pairing state, or
 // the day the check-in opens, which is of use only to the player who checks in.
 export const roundStateChip = (card, asks = true) => {
-  if (card.answer === false) return card.blocked ? 'Out (blocked times)' : 'Out';
+  const { title } = cardStatus(card);
+  if (card.answer === false) return title;
   if (!asks) return card.over ? 'Not paired' : 'Not paired yet';
-  if (card.answer === true) return 'Checked in';
+  if (card.answer === true) return title;
   if (card.over) return 'Not paired';
   if (!card.takes) return checkinOpensLine(card) || 'Not paired yet';
-  return 'No answer';
+  return title;
 };
 
 const opponentName = (series, playerId) =>

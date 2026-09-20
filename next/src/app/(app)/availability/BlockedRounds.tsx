@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toneClass } from "@/components/ui/tone";
 import { backendUrl, fetchWrapper } from "@/helpers";
+import { checkInStatus } from "@/helpers/check-in.mjs";
 import { eventLabel } from "@/helpers/event-labels.mjs";
 import { roundLabel } from "@/helpers/rounds.mjs";
 import { useAuth, useSeason } from "@/stores";
@@ -14,6 +15,9 @@ import { useAuth, useSeason } from "@/stores";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 type Group = { id: number; label: string; slug: string; rounds: Row[] };
+
+// Every round here is derived out, and wears the chip the round card and the captain grid wear
+const BLOCKED = checkInStatus({ blocked_out: true });
 
 /** The rounds the blocked times answer on their own: one read per event the player is
  *  signed up to, the same read his player page makes. A derived row is never stored, so
@@ -77,9 +81,9 @@ export function BlockedRounds({ changed = false }: {
                     Round {round.playday}
                     {round.start_date ? <span className="text-xs text-muted-foreground"> {roundLabel(round)}</span> : null}
                   </span>
-                  <Badge className={toneClass("error")}>
-                    <Icon name="mdi-calendar-remove" size={12} />
-                    Out (blocked times)
+                  <Badge className={toneClass(BLOCKED.color)}>
+                    <Icon name={BLOCKED.icon} size={12} />
+                    {BLOCKED.title}
                   </Badge>
                   <Link href={`/seasons/${group.slug}`}>Open event</Link>
                 </div>

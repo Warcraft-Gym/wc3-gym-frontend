@@ -3,21 +3,93 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/Icon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
-import { SM_AND_DOWN, useBreakpoint } from "@/hooks/breakpoint";
-import { roundLabel } from "@/helpers/rounds.mjs";
+import { TeamName } from "@/components/TeamName";
+import { checkInCounts, checkInStatus, setByText } from "@/helpers/check-in.mjs";
+import { eventLabel } from "@/helpers/event-labels.mjs";
+import { currentRound, roundLabel } from "@/helpers/rounds.mjs";
 import { useAuth, useAvailabilityStore, useMatchStore, useSeason, useTeamStore } from "@/stores";
 
 type Row = Record<string, any>;
+type Status = { title: string; short: string; color: string | null; icon: string; derived: boolean; hint?: string };
 
-/** The check-in grid of one team: every player against every round of the season.
- *  A captain of the team, or any admin, writes an answer for a player who did not. */
+/** The state of one round as a tonal chip; the matrix cell reads the short word. */
+function StatusChip({ status, short = false }: { status: Status; short?: boolean }) {
+  return (
+    <Badge className={toneClass(status.color)} title={status.hint ?? status.title}>
+      <Icon name={status.icon} />
+      {short ? status.short : status.title}
+    </Badge>
+  );
+}
+
+/** The captain's edits of one player and one round, from the row menu or from a matrix cell. */
+function RoundMenu({
+  player,
+  round,
+  status,
+  busy,
+  trigger,
+  children,
+  onSet,
+  onSitOutAll,
+}: {
+  player: Row;
+  round: number;
+  status: Status;
+  busy: boolean;
+  trigger: React.ReactElement;
+  children: React.ReactNode;
+  onSet: (available: boolean | null) => void;
+  onSitOutAll: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={trigger}>{children}</DropdownMenuTrigger>
+      {/* The label is a group part, so the one-round items carry the group it asks for */}
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{`${player.name} · Round ${round}`}</DropdownMenuLabel>
+          {status.title === "Checked in" ? null : (
+            <DropdownMenuItem disabled={busy} onClick={() => onSet(true)}>
+              <Icon name="mdi-check" className="text-success" />
+              {`Check in for ${player.name}`}
+            </DropdownMenuItem>
+          )}
+          {status.derived || status.title === "Out" ? null : (
+            <DropdownMenuItem disabled={busy} onClick={() => onSet(false)}>
+              <Icon name="mdi-close" className="text-error" />
+              Sit out this round
+            </DropdownMenuItem>
+          )}
+          {status.derived || status.title === "No answer" ? null : (
+            <DropdownMenuItem disabled={busy} onClick={() => onSet(null)}>
+              <Icon name="mdi-backspace-outline" />
+              Clear
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={busy} onClick={onSitOutAll}>
+          <Icon name="mdi-calendar-remove" className="text-error" />
+          Sit out all remaining rounds
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** The check-in of one team, one round or every round; a captain of the team or an admin writes for a player. */
 export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: string }) {
   const router = useRouter();
   const auth = useAuth();
@@ -33,54 +105,36 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
-  // The grid speaks for the answers it read: without them every cell would read 'No answer' and stay writable
+  // The grid speaks for the answers it read: without them every cell would read 'No answer'
   const [loaded, setLoaded] = useState(false);
   const [matches, setMatches] = useState<Row[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
+  const [allRounds, setAllRounds] = useState(false);
+  const [shownRound, setShownRound] = useState<number | null>(null);
 
   // The round labels: the season's round gives the dates, the team's match names the opponent
   const roundOf = (round: number) => season?.rounds?.find((r: Row) => r.playday === round) || { playday: round };
-  const matchOfRound = (round: number) => matches.find((m) => m.playday === round && [m.team1_id, m.team2_id].includes(teamId));
   const opponentOfRound = (round: number) => {
-    const m = matchOfRound(round);
-    return m && (m.team1_id === teamId ? m.team2 : m.team1);
+    const match = matches.find((m) => m.playday === round && [m.team1_id, m.team2_id].includes(teamId));
+    return match && (match.team1_id === teamId ? match.team2 : match.team1);
   };
 
   const players: Row[] = team?.player_by_season?.[seasonId as number] || [];
   const rounds: number[] = Array.from({ length: season?.round_count || 0 }, (_, i) => i + 1);
-  // A phone shows one round at a time; wider screens show them all
-  const smAndDown = useBreakpoint(SM_AND_DOWN);
-  const [shownRound, setShownRound] = useState(1);
-  const shownRounds = smAndDown ? rounds.filter((r) => r === shownRound) : rounds;
-  // the picker names each round the way the column header does
-  const roundItems = rounds.map((round) => ({ value: round, title: `Round ${round} · ${roundLabel(roundOf(round))}` }));
+  // The round in play leads, so a captain lands on the one he answers
+  const round = shownRound ?? currentRound(season?.rounds ?? [])?.playday ?? 1;
+  const roundItems = rounds.map((item) => ({ value: item, label: `Round ${item} · ${roundLabel(roundOf(item))}` }));
 
-  const rowFor = (userId: number, round: number) => rows.find((row) => row.user_id === userId && row.playday === round);
-  const answerFor = (userId: number, round: number): boolean | null => rowFor(userId, round)?.available ?? null;
+  const rowFor = (userId: number, playday: number) => rows.find((row) => row.user_id === userId && row.playday === playday);
+  const statusOf = (userId: number, playday: number): Status => checkInStatus(rowFor(userId, playday));
 
-  const setByLine = (userId: number, round: number) => {
-    const row = rowFor(userId, round);
-    if (!row) return "No answer";
-    if (row.set_by_user_id === userId) return "Player";
-    return row.set_by_user_id === auth.me?.user?.id ? "You" : row.set_by_name;
-  };
-
-  // the route answers every row of the player it wrote, so their old rows go
-  const write = async (userId: number, round: number, available: boolean | null) => {
-    const answered = await availabilityStore.setTeamAvailability(teamId, seasonId as number, {
-      user_id: userId,
-      playday: round,
-      available,
-    });
-    setRows((was) => [...was.filter((row) => row.user_id !== userId), ...answered]);
-  };
-
-  // a second click on the state already set clears the round back to no answer
-  const setRound = async (userId: number, round: number, want: boolean) => {
-    setSaving(`${userId}|${round}`);
+  // every route answers each row of the player it wrote, so their old rows go
+  const write = async (userId: number, key: string, call: () => Promise<Row[]>) => {
+    setSaving(key);
     setErrorMessage(null);
     try {
-      await write(userId, round, answerFor(userId, round) === want ? null : want);
+      const answered = await call();
+      setRows((was) => [...was.filter((row) => row.user_id !== userId), ...answered]);
     } catch (error: any) {
       console.error("Error saving availability:", error);
       setErrorMessage(error.message || "Error saving availability.");
@@ -89,20 +143,32 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
     }
   };
 
-  const outToLastRound = async (userId: number) => {
-    setSaving(`${userId}|all`);
-    setErrorMessage(null);
-    try {
-      for (const round of rounds) {
-        if (answerFor(userId, round) !== false) await write(userId, round, false);
-      }
-    } catch (error: any) {
-      console.error("Error saving availability:", error);
-      setErrorMessage(error.message || "Error saving availability.");
-    } finally {
-      setSaving(null);
-    }
+  const setRound = (userId: number, playday: number, available: boolean | null) =>
+    write(userId, `${userId}|${playday}`, () =>
+      availabilityStore.setTeamAvailability(teamId, seasonId as number, { user_id: userId, playday, available }),
+    );
+
+  // One call writes every round that has not ended; the event owns which those are
+  const sitOutAll = (player: Row) => {
+    if (!globalThis.confirm(`Sit ${player.name} out of every round that has not ended?`)) return;
+    return write(player.id, `${player.id}|all`, () =>
+      availabilityStore.setTeamAvailabilityAll(teamId, seasonId as number, { user_id: player.id, available: false }),
+    );
   };
+
+  const menuFor = (player: Row, playday: number, trigger: React.ReactElement, body: React.ReactNode) => (
+    <RoundMenu
+      player={player}
+      round={playday}
+      status={statusOf(player.id, playday)}
+      busy={!!saving}
+      trigger={trigger}
+      onSet={(available) => setRound(player.id, playday, available)}
+      onSitOutAll={() => sitOutAll(player)}
+    >
+      {body}
+    </RoundMenu>
+  );
 
   useEffect(() => {
     // the Guard loads the season list before this page draws, so a null id is a slug of no season
@@ -143,7 +209,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
         </div>
       ) : null}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h1 className="flex items-center gap-2">
           <Icon name="mdi-calendar-account" />
           Team Rounds
@@ -153,8 +219,42 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
           Back to team
         </Button>
       </div>
+      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        {team ? <TeamName team={team} seasonKey={seasonKey} /> : null}
+        {season?.id ? <span>· {eventLabel(season)}</span> : null}
+      </div>
 
       <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
+
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        {!allRounds && rounds.length ? (
+          <Select items={roundItems} value={round} onValueChange={(value) => setShownRound(value as number)}>
+            <SelectTrigger aria-label="Round" className="w-full sm:w-80">
+              <SelectValue placeholder="Round" />
+            </SelectTrigger>
+            <SelectContent>
+              {roundItems.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+        <ToggleGroup
+          variant="outline"
+          spacing={0}
+          aria-label="Rounds shown"
+          value={[allRounds ? "all" : "one"]}
+          onValueChange={(value) => setAllRounds(value[0] === "all")}
+        >
+          <ToggleGroupItem value="one">One round</ToggleGroupItem>
+          <ToggleGroupItem value="all">All rounds</ToggleGroupItem>
+        </ToggleGroup>
+        {!allRounds && loaded && players.length ? (
+          <span className="tnum text-sm text-muted-foreground sm:ml-auto">{checkInCounts(players, rows, round)}</span>
+        ) : null}
+      </div>
 
       <Card className="card gap-0 py-0">
         <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
@@ -162,39 +262,46 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
           <span>{team?.name}</span>
         </CardTitle>
 
-        {smAndDown && loaded ? (
-          <div className="m-2">
-            <Select items={roundItems.map((item) => ({ value: item.value, label: item.title }))} value={shownRound} onValueChange={(value) => setShownRound(value as number)}>
-              <SelectTrigger aria-label="Round" className="w-full">
-                <SelectValue placeholder="Round" />
-              </SelectTrigger>
-              <SelectContent>
-                {roundItems.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {loaded && !allRounds ? (
+          <div>
+            {players.map((player) => {
+              const status = statusOf(player.id, round);
+              const note = setByText(rowFor(player.id, round), auth.me?.user?.id);
+              const busy = saving === `${player.id}|${round}` || saving === `${player.id}|all`;
+              return (
+                <div key={player.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-2 last:border-b-0">
+                  <PlayerName player={player} race={player.signup_race} />
+                  <StatusChip status={status} />
+                  {note ? <span className="text-xs text-muted-foreground">{note}</span> : null}
+                  <span className="ml-auto">
+                    {menuFor(
+                      player,
+                      round,
+                      <Button variant="ghost" size="icon-sm" aria-label={`Check-in menu for ${player.name}`} aria-busy={busy} disabled={!!saving} />,
+                      <Icon name={busy ? "mdi-loading mdi-spin" : "mdi-dots-vertical"} />,
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : null}
 
-        {loaded ? (
+        {loaded && allRounds ? (
           <div className="table-scroll overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Player</TableHead>
-                  {shownRounds.map((round) => (
-                    <TableHead key={round} className="text-center">
-                      {roundLabel(roundOf(round))}
+                  {rounds.map((item) => (
+                    <TableHead key={item} className="text-center">
+                      {roundLabel(roundOf(item))}
                       <div className="text-xs font-normal text-muted-foreground">
-                        Round {round}
-                        {opponentOfRound(round) ? ` · vs ${opponentOfRound(round).name}` : ""}
+                        Round {item}
+                        {opponentOfRound(item) ? ` · vs ${opponentOfRound(item).name}` : ""}
                       </div>
                     </TableHead>
                   ))}
-                  {!smAndDown ? <TableHead /> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -202,54 +309,28 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                   <TableRow key={player.id}>
                     <TableCell>
                       <PlayerName player={player} race={player.signup_race} />
-                      {smAndDown ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-1 block"
-                          disabled={!!saving || !rounds.length}
-                          onClick={() => outToLastRound(player.id)}
-                        >
-                          Out to round {rounds.length}
-                        </Button>
-                      ) : null}
                     </TableCell>
-                    {shownRounds.map((round) => (
-                      <TableCell key={round} className="text-center">
-                        <div className="flex justify-center gap-2">
-                          <Button
-                            size={smAndDown ? "icon" : "icon-xs"}
-                            variant={answerFor(player.id, round) === true ? "default" : "outline"}
-                            className={answerFor(player.id, round) === true ? "bg-success text-on-success" : "text-success"}
-                            aria-label={`${player.name} checked in for round ${round}`}
-                            aria-pressed={answerFor(player.id, round) === true}
-                            disabled={!!saving}
-                            onClick={() => setRound(player.id, round, true)}
-                          >
-                            <Icon name={saving === `${player.id}|${round}` ? "mdi-loading mdi-spin" : "mdi-check"} />
-                          </Button>
-                          <Button
-                            size={smAndDown ? "icon" : "icon-xs"}
-                            variant={answerFor(player.id, round) === false ? "default" : "outline"}
-                            className={answerFor(player.id, round) === false ? "bg-error text-on-error" : "text-error"}
-                            aria-label={`${player.name} sits out round ${round}`}
-                            aria-pressed={answerFor(player.id, round) === false}
-                            disabled={!!saving}
-                            onClick={() => setRound(player.id, round, false)}
-                          >
-                            <Icon name={saving === `${player.id}|${round}` ? "mdi-loading mdi-spin" : "mdi-close"} />
-                          </Button>
-                        </div>
-                        <div className="text-xs text-muted-foreground">{setByLine(player.id, round)}</div>
-                      </TableCell>
-                    ))}
-                    {!smAndDown ? (
-                      <TableCell>
-                        <Button variant="outline" size="sm" disabled={!!saving || !rounds.length} onClick={() => outToLastRound(player.id)}>
-                          Out to round {rounds.length}
-                        </Button>
-                      </TableCell>
-                    ) : null}
+                    {rounds.map((item) => {
+                      // the cell reads the short word, so the label carries the state the chip stands for
+                      const status = statusOf(player.id, item);
+                      const busy = saving === `${player.id}|${item}` || saving === `${player.id}|all`;
+                      return (
+                        <TableCell key={item} className="text-center">
+                          {menuFor(
+                            player,
+                            item,
+                            <button
+                              type="button"
+                              className="cursor-pointer"
+                              aria-label={`${player.name}, round ${item}: ${status.title}. Open the check-in menu`}
+                              aria-busy={busy}
+                              disabled={!!saving}
+                            />,
+                            <StatusChip status={status} short />,
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
               </TableBody>

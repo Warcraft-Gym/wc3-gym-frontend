@@ -9,7 +9,8 @@ import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
 import { useMatchStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
-import { checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
+import { record } from "@/helpers/figures.mjs";
+import { cardStatus, checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
 import { cn } from "@/lib/utils";
@@ -19,13 +20,6 @@ type Row = Record<string, any>;
 
 const CAPTION = "text-xs text-muted-foreground";
 const SCORE: Record<string, string> = { win: "text-win border-win", loss: "text-loss border-loss", draw: "text-draw border-draw" };
-// The four check-in answers, each with its own icon; a pairing state chip stays neutral
-const CHIP: Record<string, { tone: string | null; icon: string }> = {
-  "Checked in": { tone: "success", icon: "mdi-check" },
-  "Out": { tone: "error", icon: "mdi-close" },
-  "Out (blocked times)": { tone: "error", icon: "mdi-calendar-remove" },
-  "No answer": { tone: null, icon: "mdi-clock-outline" },
-};
 
 /** One card per round of a season: the window, the team faced, and the player's
  *  series of that round. The player's own page fills `seriesActions` and `question`
@@ -88,9 +82,11 @@ export function RoundCards({
   // The answer, as one chip; a derived "Out (blocked times)" opens the blocked times that made it
   const stateChip = (card: Row) => {
     const text: string = roundStateChip(card, asks);
-    const mark = CHIP[text] ?? { tone: null, icon: "" };
+    // An answer keeps the colour and icon the captain grid gives it; a pairing state chip stays neutral
+    const status = cardStatus(card);
+    const mark = text === status.title ? status : { color: null, icon: "" };
     const badge = (
-      <Badge className={cn(toneClass(mark.tone), asks && card.pending && "invisible")}>
+      <Badge className={cn(toneClass(mark.color), asks && card.pending && "invisible")}>
         {mark.icon ? <Icon name={mark.icon} size={12} /> : null}
         {text}
       </Badge>
@@ -156,7 +152,7 @@ export function RoundCards({
                     <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} mmr={opponentMmr(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
                     {!isUnscored(card.series) ? (
                       <Badge variant="outline" className={cn("tnum", SCORE[scoreColor(card.series)])}>
-                        {myScore(card.series)} - {theirScore(card.series)}
+                        {record(myScore(card.series), theirScore(card.series)) ?? "—"}
                       </Badge>
                     ) : null}
                   </div>

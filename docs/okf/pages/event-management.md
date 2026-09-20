@@ -4,7 +4,7 @@ title: Event management
 description: The admin's path from an empty league to a finished event with awards; the wizard, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
 resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T13:30:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T15:10:00Z }
 sources:
   - id: wizard
     resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
@@ -67,7 +67,7 @@ A step with a problem cannot be left: no league or no name, an end before the st
 
 **7. The awards.** On the last stage's tab, "Finish" writes `POST /events/{id}/finish`. The confirm lists every entrant the close awards and the place it takes (Champion, Runner-up, Third, Placed n), because the close freezes that stage's table into the award rows. Finishing again rewrites the places from the table as it stands. The event page then carries each place on the entrant's row, and a first place reaches the player page's trophy shelf.
 
-**KOTH nights.** A night is one event of the KOTH league, so the same pages run it. `/koth` lists every night, newest first, with its date and state, each name a link to its run page. "Open tonight" takes the start time and the three MMR bounds the brackets open at, both prefilled from the night before, and writes `POST /koth/nights`, which lands on the run page. Entrants sign up on the [public dashboard](koth.md) or are entered on the entrants page. On the run page a KOTH stage adds "Add challenger", which picks an entrant no series names yet and writes `POST /events/{id}/stages/{stage_id}/series` with the entrant id, appending that entrant to the end of the bracket's chain, and "Close the night", which writes `POST /koth/nights/{id}/close` and deletes the series nobody played, so every series left carries a result and the night reads finished.
+**KOTH nights.** A night is one event of the KOTH league, so the league, the wizard and the entrants page hold for it. `/koth` lists every night, newest first, and each name opens its own run page `/koth/nights/:id`, where the admin pairs every series by hand, edits the line and closes the night with `POST /koth/nights/{id}/close`; see [KOTH](koth.md). "Open tonight" on `/koth` takes the start time and the three MMR bounds the brackets open at, prefilled from the night before, writes `POST /koth/nights` and lands on the run page, while `/events/:id/admin` keeps the settings, the entrants and the divisions the brackets read.
 
 # Writes
 

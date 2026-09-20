@@ -1,7 +1,7 @@
 "use client";
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -44,8 +44,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const w3cMark = (activeTheme === "dark" ? w3cLogoWhite : w3cLogo).src;
   const themeIcon = THEMES.find((t) => t.value === themeMode)?.icon || "mdi-theme-light-dark";
 
+  // the KOTH board on a stream wears the app title alone: no nav, no account, no theme
+  const mode = useSearchParams().get("mode");
+  const clean = path === "/koth/dashboard" && mode === "clean";
   // the nav links are drawn for a session on any route that does not opt out with meta.nav
-  const showNavLinks = !!me && metaOf(path).nav !== false;
+  const showNavLinks = !!me && metaOf(path).nav !== false && !clean;
   // a link is drawn only when the session role reaches the target route's meta.role
   const canSee = (to: string) => canSeeRole(me?.role, metaOf(to.split("?")[0]).role);
   const nav = navItems(me?.season_id ?? null, slugOf)
@@ -132,7 +135,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         ) : null}
         {/* the session menu sits outside the link tree, so a meta.nav route keeps it */}
-        {hydrated && me ? (
+        {hydrated && me && !clean ? (
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -164,18 +167,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </DropdownMenu>
         ) : null}
         {/* a signed-out visitor lands on the public pages; this is his way in */}
-        {hydrated && !me ? <Button variant="ghost" nativeButton={false} render={<Link href="/login" />}>Sign in</Button> : null}
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="Theme"><Icon name={themeIcon} /></Button>} />
-          <DropdownMenuContent align="end">
-            {THEMES.map((t) => (
-              <DropdownMenuCheckboxItem key={t.value} checked={t.value === themeMode} onClick={() => setThemeMode(t.value)}>
-                <Icon name={t.icon} />
-                {t.title}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {hydrated && !me && !clean ? <Button variant="ghost" nativeButton={false} render={<Link href="/login" />}>Sign in</Button> : null}
+        {!clean ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="Theme"><Icon name={themeIcon} /></Button>} />
+            <DropdownMenuContent align="end">
+              {THEMES.map((t) => (
+                <DropdownMenuCheckboxItem key={t.value} checked={t.value === themeMode} onClick={() => setThemeMode(t.value)}>
+                  <Icon name={t.icon} />
+                  {t.title}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
       </header>
 
       <main id="main" className="flex-1">

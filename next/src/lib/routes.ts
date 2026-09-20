@@ -52,6 +52,7 @@ export const ROUTES: { path: string; meta: RouteMeta }[] = [
   { path: "/fantasy/tiers", meta: { role: "admin" } },
   { path: "/koth", meta: { role: "admin" } },
   { path: "/koth/dashboard", meta: { role: "public" } },
+  { path: "/koth/nights/:id", meta: { role: "admin" } },
   { path: "/user-guide", meta: { role: "admin" } },
   { path: "/report", meta: { role: "public" } },
   { path: "/report/:id", meta: { role: "public", season: true } },

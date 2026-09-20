@@ -121,8 +121,7 @@ const store = {
   async closeNight(event_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${event_id}/close`);
   },
-  // The whole night on one read; no id reads the night that takes signups, which 404s while none is open
-  // fresh adds a query the edge cache pattern misses, for the read after the reader's own write
+  // no id reads the night that takes signups (404 while none is open); fresh adds a query the edge cache pattern misses
   async fetchBoard(night_id: number | null = null, fresh = false) {
     const path = night_id ? `nights/${night_id}/board` : "board";
     return await fetchWrapper.get(`${backendUrl}/koth/${path}${fresh ? `?t=${Date.now()}` : ""}`);

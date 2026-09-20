@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bracketLabel, defaultPair, movedQueue, myRacesOnBoard, openSeriesRows, orderedBrackets,
-  placeInQueue, placeWord, queueIds, seatRow, skippedSeat, startButton, throneWord,
+  bracketLabel, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
+  orderedBrackets, placeInQueue, placeWord, queueIds, seatRow, skippedSeat, startButton,
+  throneWord,
 } from './koth-board.mjs';
 
 const seat = (user_id, name, rows, extra = {}) => ({ user_id, name, country: null, rows, busy: false, ...extra });
@@ -110,4 +111,21 @@ test('the close names each open series it deletes', () => {
     ],
   };
   assert.deepEqual(openSeriesRows(board), [{ division_id: 8, text: 'Bracket 2 · Kestrin vs Sablefen' }]);
+});
+
+test('a player who left on two races reads one row, holding both of them', () => {
+  const left = [
+    { entrant_id: 21, user_id: 3, name: 'Kaldris', race: 'OC', mmr: 1402 },
+    { entrant_id: 22, user_id: 3, name: 'Kaldris', race: 'UD', mmr: 1188 },
+    { entrant_id: 23, user_id: 4, name: 'Sablefen', race: 'HU', mmr: 1310 },
+    { entrant_id: 24, user_id: null, name: 'Guest', race: 'NE', mmr: null },
+  ];
+  const seats = leftSeats({ left });
+  assert.deepEqual(seats.map((seat) => seat.name), ['Kaldris', 'Sablefen', 'Guest']);
+  assert.deepEqual(seats[0].rows.map((row) => row.entrant_id), [21, 22]);
+  assert.equal(seats[0].race, null);
+  assert.equal(seats[0].mmr, null);
+  assert.equal(seats[1].race, 'HU');
+  assert.deepEqual(seats[2].rows.map((row) => row.entrant_id), [24]);
+  assert.deepEqual(leftSeats(null), []);
 });

@@ -51,8 +51,8 @@ export function KothDashboard() {
       const answer = await store.fetchBoard(null, fresh);
       setBoard(answer);
       setError(null);
-      // the event row carries the signup rules the dialog needs, so it is read once per night
-      if (eventFor.current !== answer.night_id) {
+      // the signup dialog needs the event row, so it is read once per night and never on a stream
+      if (!cleanMode && eventFor.current !== answer.night_id) {
         eventFor.current = answer.night_id;
         setEvent(await store.fetchEvent(answer.night_id).catch(() => null));
       }

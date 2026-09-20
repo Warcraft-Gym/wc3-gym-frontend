@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-// The night read carries the admin token, so the edge caches none of it and every read is fresh
+// The night read is edge cached for 15 s, so twice a minute is the most the poll can learn
 const POLL_MS = 30000;
 
 /** The run page of one KOTH night: the admin starts every series by hand, enters its winner,
@@ -85,14 +85,14 @@ export function KothNightView({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nightId]);
 
-  // Every admin write answers the new board; a route that answers its own row is read back once
+  // Every admin write answers the new board; a route that answers its own row reads it back fresh
   const run = async (call: () => Promise<any>, after?: () => void) => {
     setBusy(true);
     writing.current = true;
     setError(null);
     try {
       const answer = await call();
-      setBoard(answer?.brackets ? answer : await store.fetchBoard(nightId));
+      setBoard(answer?.brackets ? answer : await store.fetchBoard(nightId, true));
       after?.();
     } catch (e) {
       setError((e as Error).message);
@@ -140,7 +140,13 @@ export function KothNightView({ id }: { id: string }) {
         for (const row of seat.rows ?? []) answer = await store.removeKothEntrant(nightId, row.entrant_id);
         return answer;
       }),
-    onRestore: (entrantId) => run(() => store.restoreKothEntrant(nightId, entrantId)),
+    // one player holds one row under "Left tonight", so putting him back takes every race row
+    onRestore: (entrantIds) =>
+      run(async () => {
+        let answer = null;
+        for (const entrantId of entrantIds) answer = await store.restoreKothEntrant(nightId, entrantId);
+        return answer;
+      }),
     onChangeWinner: (played) => run(() => changeWinner(played)),
     onAddReplay: (played) => {
       replayFor.current = played.series_id;
@@ -172,7 +178,7 @@ export function KothNightView({ id }: { id: string }) {
     writing.current = true;
     try {
       await store.addEntrant(nightId, { battle_tag: addTag.trim(), race: addRace });
-      setBoard(await store.fetchBoard(nightId));
+      setBoard(await store.fetchBoard(nightId, true));
       setAddTo(false);
     } catch (e) {
       setAddError((e as Error).message);

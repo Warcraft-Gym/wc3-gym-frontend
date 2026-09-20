@@ -1,7 +1,13 @@
 // The KOTH night the member screens draw, off the event reads alone. The list read
 // answers every published event of the kind, so the pages pick from it instead of
 // asking for a stored "active" flag.
-import { EVENT_KINDS, eventLabel, titleOf } from './event-labels.mjs';
+import { EVENT_KINDS, eventLabel, stateOf, titleOf } from './event-labels.mjs';
+
+// Only the close ends a night, so a night with no `closed_at` still runs however old it is
+export const nightState = (night) => {
+  const state = stateOf(night);
+  return state === 'finished' && !night?.closed_at ? 'running' : state;
+};
 
 // Which KOTH event the public page draws tonight: the newest published night that is
 // not finished.

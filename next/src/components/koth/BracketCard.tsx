@@ -11,7 +11,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { noStatsWarning } from "@/helpers/games-rule.mjs";
-import { bracketLabel, placeInQueue, seatKey, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
+import { bracketLabel, leftSeats, placeInQueue, seatKey, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,7 @@ export type BracketAdmin = {
   onStepDown: (bracket: Row) => void;
   onMove: (bracket: Row, from: number, to: number) => void;
   onRemove: (seat: Row) => void;
-  onRestore: (entrantId: number) => void;
+  onRestore: (entrantIds: number[]) => void; // every race row the player left on
   onChangeWinner: (played: Row) => void;
   onAddReplay: (played: Row) => void;
   onAddPlayer: () => void;
@@ -228,12 +228,13 @@ export function QueueRow({
   return (
     <li
       className={cn("border-t", picked && "bg-primary/10", dragged === key && "opacity-40")}
-      draggable={!!admin}
+      draggable={!!admin && !admin.busy}
       onDragStart={() => onDragged?.(key)}
       onDragOver={(event) => admin && event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
-        if (admin && dragged != null && dragged !== key) admin.onMove(bracket, queue.findIndex((one: Row) => seatKey(one) === dragged), at);
+        // a drop while a write runs would start a second one, so the row waits for the answer
+        if (admin && !admin.busy && dragged != null && dragged !== key) admin.onMove(bracket, queue.findIndex((one: Row) => seatKey(one) === dragged), at);
         onDragged?.(null);
       }}
       onDragEnd={() => onDragged?.(null)}
@@ -285,18 +286,25 @@ export function QueueRow({
   );
 }
 
-/** The players who left tonight. An admin puts one back at the end of the line. */
+/** The players who left tonight, one row per player. An admin puts one back at the end of the
+ *  line, on every race he held here. */
 export function LeftRows({ bracket, admin }: { bracket: Row; admin?: BracketAdmin }) {
-  const rows: Row[] = bracket.left ?? [];
-  if (!rows.length) return null;
+  const seats: Row[] = leftSeats(bracket);
+  if (!seats.length) return null;
   return (
     <div className="px-4 pb-2">
       <div className="py-1 text-xs font-medium text-muted-foreground">Left tonight</div>
-      {rows.map((row: Row) => (
-        <div key={row.entrant_id} className="flex items-center gap-2 border-t py-1 opacity-(--v-medium-emphasis-opacity)">
-          <BoardPlayer row={row} />
+      {seats.map((seat: Row) => (
+        <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 opacity-(--v-medium-emphasis-opacity)">
+          <BoardPlayer row={seat} />
           {admin ? (
-            <Button variant="ghost" size="sm" className="ml-auto shrink-0" disabled={admin.busy} onClick={() => admin.onRestore(row.entrant_id)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto shrink-0"
+              disabled={admin.busy}
+              onClick={() => admin.onRestore(seat.rows.map((row: Row) => row.entrant_id))}
+            >
               <Icon name="mdi-arrow-u-left-top" />
               Put back
             </Button>
@@ -333,13 +341,17 @@ export function PlayedRow({ played, admin }: { played: Row; admin?: BracketAdmin
         {admin ? (
           <>
             {played.replay ? null : (
-              <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Add replay" title="Add replay" onClick={() => admin.onAddReplay(played)}>
-                <Icon name="mdi-upload" />
-              </Button>
+              <TapTooltip content="Add replay">
+                <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Add replay" onClick={() => admin.onAddReplay(played)}>
+                  <Icon name="mdi-upload" />
+                </Button>
+              </TapTooltip>
             )}
-            <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Change the winner" title="Change the winner" onClick={() => admin.onChangeWinner(played)}>
-              <Icon name="mdi-swap-horizontal" />
-            </Button>
+            <TapTooltip content="Change the winner">
+              <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Change the winner" onClick={() => admin.onChangeWinner(played)}>
+                <Icon name="mdi-swap-horizontal" />
+              </Button>
+            </TapTooltip>
           </>
         ) : null}
       </span>

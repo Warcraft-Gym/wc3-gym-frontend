@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { foldNight, myNight, myRaces, openNight } from './koth.mjs';
+import { foldNight, myNight, myRaces, nightState, openNight } from './koth.mjs';
 
 test('the night is the newest published event that is not finished', () => {
   const events = [
@@ -78,4 +78,13 @@ test('a night he entered rides on his own history row instead of doubling it', (
 test('no night leaves the events list as it was', () => {
   const history = [{ id: 4, kind: 'gnl' }];
   assert.equal(foldNight(history, null), history);
+});
+
+test('a night reads finished only once the admin closed it', () => {
+  // the event read calls a night with a past start finished; only `closed_at` ends a night
+  assert.equal(nightState({ phase: 'finished', closed_at: null }), 'running');
+  assert.equal(nightState({ phase: 'finished', closed_at: '2026-09-19T22:00:00Z' }), 'finished');
+  assert.equal(nightState({ phase: 'signups_open', closed_at: null }), 'signups_open');
+  assert.equal(nightState({ state: 'finished', closed_at: null }), 'running');
+  assert.equal(nightState(null), null);
 });

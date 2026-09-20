@@ -31,6 +31,25 @@ export const seatRow = (seat, picks = {}) => {
   return rows.find((row) => row.entrant_id === wanted) ?? rows[0] ?? null;
 };
 
+/**
+ * The players who left, one seat each: a player who left on two races reads once, holding both
+ * rows. A row the board names no user for stands on its own, because nothing folds it.
+ *
+ * @param {Object} bracket - One bracket of the board
+ * @returns {Array} - One seat per player, each with the race rows he left on
+ */
+export function leftSeats(bracket) {
+  const seats = new Map();
+  for (const row of bracket?.left ?? []) {
+    const key = row.user_id == null ? `row:${row.entrant_id}` : `user:${row.user_id}`;
+    const seat = seats.get(key);
+    // a player on two races is one player, so the folded seat names neither race nor rating
+    if (seat) Object.assign(seat, { race: null, mmr: null, rows: [...seat.rows, row] });
+    else seats.set(key, { ...row, rows: [row] });
+  }
+  return [...seats.values()];
+}
+
 // A seat can play when it holds a race row and is not in an open series of another bracket
 const free = (seat) => !!seat && !seat.busy && !!(seat.rows ?? []).length;
 

@@ -15,7 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
-import { dateRange, STATE_COLOR, STATE_LABEL, stateOf } from "@/helpers/event-labels.mjs";
+import { dateRange, STATE_COLOR, STATE_LABEL } from "@/helpers/event-labels.mjs";
+import { nightState } from "@/helpers/koth.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -136,7 +137,7 @@ export function KothView() {
                   </TableCell>
                   <TableCell className={cn(phoneCell, "whitespace-nowrap")}>{dateRange(night) || "—"}</TableCell>
                   <TableCell>
-                    <Badge className={toneClass(stateColor[stateOf(night)])}>{stateLabel[stateOf(night)] || "—"}</Badge>
+                    <Badge className={toneClass(stateColor[nightState(night)])}>{stateLabel[nightState(night)] || "—"}</Badge>
                   </TableCell>
                   {/* the run page runs the night; the event page keeps every setting of it */}
                   <TableCell className={cn(phoneCell, "text-right whitespace-nowrap")}>

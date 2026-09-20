@@ -261,6 +261,7 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 
 ### A player has many races
 
+- A race is never a fixed property of a player. It belongs to a ladder season, to the signup of one event, or to one series. A player may sign up with another race for the next event.
 - A player holds one ladder row per race per W3Champions season, in `w3c_stats`. No surface reduces a player to one race or to one MMR without the race of that MMR beside it.
 - Three race facts exist, and a surface names the one it shows. The row's race is the race of this game or this series. The signup race is the race of one event entry, and the MMR of the player line reads that race alone (`next/src/components/PlayerName.tsx`). The profile race is one value the player declared, and it is a fallback only.
 - `RaceMmrChips` draws one chip per race with ladder games, sorted by MMR from high to low. A race without games draws no chip. A row from an older season carries its season, "S22".

@@ -14,6 +14,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { dateRange, EVENT_KINDS, STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf } from "@/helpers/event-labels.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
+import { byNewest } from "@/helpers/season-order.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -57,7 +58,7 @@ export function EventsView() {
     .filter((event) => !leagueId || String(event.league_id) === leagueId)
     .filter((event) => !state || stateOf(event) === state)
     .slice()
-    .sort((a, b) => b.id - a.id);
+    .sort(byNewest);
 
   useEffect(() => {
     const load = async () => {

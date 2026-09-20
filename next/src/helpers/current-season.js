@@ -1,4 +1,5 @@
 import { useConfigStore, useSeasonStore } from '@/stores';
+import { byNewest } from "./season-order.mjs";
 
 // Resolve the season id a page opens on.
 // The `current_gnl_season` config key is optional, so fall back to the newest season.
@@ -17,7 +18,7 @@ export async function resolveCurrentSeasonId() {
 
   try {
     const rows = await seasonStore.fetchSeasons();
-    const newest = (rows || []).slice().sort((a, b) => b.id - a.id)[0];
+    const newest = (rows || []).slice().sort(byNewest)[0];
     return newest ? newest.id : null;
   } catch (error) {
     console.error('Failed to fetch seasons for the current season fallback:', error);

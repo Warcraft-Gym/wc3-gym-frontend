@@ -2,6 +2,7 @@
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { findSeason, seasonSlug } from "@/helpers/season-slug.mjs";
 import { asSeason } from "@/helpers/season-phase.mjs";
+import { byOldest } from "@/helpers/season-order.mjs";
 import { box, useBox } from "./box";
 
 type Season = Record<string, any>;
@@ -26,7 +27,7 @@ const members = ({ seasons, current_season, selectedSeasonId }: SeasonState) => 
   const fetchSeasons = async () => {
     const league = await gnlLeague();
     const resp = await fetchWrapper.get(`${backendUrl}/events?league_id=${league.id}&kind=gnl`);
-    const rows = resp.sort((a: Season, b: Season) => a.id - b.id).map(asSeason);
+    const rows = resp.map(asSeason).sort(byOldest);
     patch({ seasons: rows });
     return rows;
   };

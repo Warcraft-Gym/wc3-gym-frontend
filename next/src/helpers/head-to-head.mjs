@@ -1,6 +1,7 @@
 // One row per opponent for the head to head card: the series record, the games
 // behind it, every race matchup played, and the events of every kind the two met in.
 import { eventLabel } from './event-labels.mjs';
+import { byOldest } from "./season-order.mjs";
 
 const scored = (m) => m.my_score != null && m.their_score != null;
 
@@ -50,7 +51,7 @@ export const opponentRows = (opponents = []) => opponents.map((opponent) => {
       id: meeting.season_id, name: eventLabel(meeting), kind: meeting.kind ?? 'gnl', count: 1,
     });
   }
-  const events = [...met.values()].sort((a, b) => a.id - b.id);
+  const events = [...met.values()].sort(byOldest);
   // The reads answer newest first, so the first meeting is the one last_season_name names
   const lastMet = [eventLabel(meetings[0] ?? { season_name: opponent.last_season_name }),
     // a no-break space, so the round and its number stay on one line in a narrow column

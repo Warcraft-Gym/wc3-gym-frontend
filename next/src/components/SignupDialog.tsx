@@ -165,8 +165,9 @@ export function SignupDialog({
                     <p>W3Champions gave us no rating for {tag} yet, so an admin places you in a bracket.</p>
                   </>
                 )}
+                {/* one line under a sentence, so a guest with no country leaves no flag gap */}
                 {entrant.user ? (
-                  <PlayerName player={entrant.user} race={entrant.race} mmr={entrant.mmr ?? false} warning={placed ? undefined : noStats} plain />
+                  <PlayerName player={entrant.user} race={entrant.race} mmr={entrant.mmr ?? false} warning={placed ? undefined : noStats} plain noFlag />
                 ) : null}
               </div>
             </div>

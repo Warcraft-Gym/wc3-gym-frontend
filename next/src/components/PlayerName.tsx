@@ -22,6 +22,7 @@ export function PlayerName({
   race,
   host,
   plain,
+  noFlag,
   mmr,
   games,
   warning,
@@ -32,6 +33,7 @@ export function PlayerName({
   race?: string;
   host?: boolean;
   plain?: boolean; // text only: a form in a dialog must not lose its input to a click
+  noFlag?: boolean; // a line that stands alone drops the placeholder of a player with no country
   mmr?: number | false | null; // false where a column of its own sorts by MMR; a number the caller already holds, null where its payload names none
   games?: number | null; // the current w3champions season: draws the games-rule mark on a draft surface
   warning?: { colour: "error" | "warning"; text: string } | null; // the same mark from a read that already applies the event's rule
@@ -67,7 +69,7 @@ export function PlayerName({
         /* a line that meets the rule keeps the empty slot, so the flags stay in one column */
         <span className="inline-block h-4 w-4" />
       ) : null}
-      {player.country ? <FlagIcon countryIdentifier={player.country} /> : <span className="fp" />}
+      {player.country ? <FlagIcon countryIdentifier={player.country} /> : noFlag ? null : <span className="fp" />}
       <span className="name">{player.name}</span>
       {race ? <RaceIcon raceIdentifier={race} /> : race !== undefined ? <span className="fp w-[1.4em]" /> : null}
       {/* the MMR never shrinks, so a narrow cell truncates the name and keeps the number whole */}

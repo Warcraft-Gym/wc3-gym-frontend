@@ -162,7 +162,8 @@ export function HomeView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId]);
 
-  const order = panelOrder(!!(own?.next || own?.last));
+  // the reads stand in the with-series order, so a member with a series sees no panel swap
+  const order = panelOrder(loading || !!(own?.next || own?.last));
 
   return (
     <>

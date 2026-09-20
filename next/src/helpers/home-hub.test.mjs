@@ -66,8 +66,8 @@ test('a captain fixture names its round and how much of it is drafted', () => {
 });
 
 test('a home series row names its league once', () => {
-  assert.equal(rowContext({ league: 'GNL', event: 'Season 19', stage: null, round: 'Round 3' }), 'GNL - Season 19 - Round 3');
-  assert.equal(rowContext({ league: 'GNL', event: 'GNL S18', round: 'Round 1' }), 'GNL S18 - Round 1');
-  assert.equal(rowContext({ event: 'Autumn Cup', stage: 'Group stage', round: 'Round 2' }), 'Autumn Cup - Group stage - Round 2');
+  assert.equal(rowContext({ league: 'GNL', event: 'Season 19', stage: null, round: 'Round 3' }), 'GNL · Season 19 · Round 3');
+  assert.equal(rowContext({ league: 'GNL', event: 'GNL S18', round: 'Round 1' }), 'GNL S18 · Round 1');
+  assert.equal(rowContext({ event: 'Autumn Cup', stage: 'Group stage', round: 'Round 2' }), 'Autumn Cup · Group stage · Round 2');
   assert.equal(rowContext({}), '');
 });

@@ -17,7 +17,7 @@ The app uses one look, stone and bronze, in a light and a dark theme. This file 
 ## Rules
 
 - Use a theme token for every colour: `class="bg-primary"`, `class="text-win"`, `rgb(var(--v-theme-loss))`. Never write a hex value or a Tailwind palette name such as `red-500` in a view. Two exceptions are allowed: the Discord brand colours on the Discord buttons (`LoginView.tsx`, `DiscordJoinCard.tsx`), and the trophy artwork in `TrophyIcon.tsx`.
-- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text.
+- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text. One exception: the score of a result seen from one side is itself the mark, and it wears `win`, `loss` or `draw`.
 - Colour never carries meaning alone. Pair it with an icon, a label or a position.
 - A fill that carries text names its own ink as `on-<fill>`. The test checks that every such pair passes 4.5:1 (WCAG AA).
 - Dark is its own set of values, not an inverted light theme. A new token gets a light and a dark value.
@@ -239,6 +239,13 @@ Start from what the reader of that page wants to decide. Then pick the form. Pic
 | When can two players meet? | Half-hour cells, the pick as a point | `next/src/components/player/ScheduleDialog.tsx` |
 | One headline number | A stat tile: the figure, its label, its scope | `SeasonReportView.tsx`, `TeamView.tsx` |
 
+### Name the unit and the scope
+
+- A figure stands beside the word for what it counts, close enough that a crop of the figure still shows the word: "Series record 5 – 2", "Games record 11 – 5 (69%)", "Ladder games 234 – 298 (44%)". A bare pair of numbers is a bug.
+- `record` takes wins and losses alone, so the surface names the unit and the scope: this event, every event, or one W3Champions season. A ladder count always names its W3Champions season. The app prints no all-time ladder total.
+- Name the Gym Newbie League in full or as GNL. "The league" alone is the general term: the GNL and King of the Hill are both leagues.
+- The full list of the pieces that show data, with when to use each one, is `docs/okf/concepts/data-pieces.md`.
+
 ### Give each colour one job
 
 | Job | Tokens | Rule |
@@ -282,6 +289,16 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 - Detail loads on demand. The meetings of a head to head load when the reader opens them.
 - A slow read carries cache headers.
 
+### Rules the code follows everywhere
+
+- The body rule in `globals.css` sets lining, tabular digits for every number. `.tnum` repeats it where a component resets the font. So a missing `tnum` is no fault, and a numeric column that is not right-aligned is.
+- In the light theme, `win`, `loss`, `draw` and the four status tokens name no `on-*` ink. `palette-style.ts` gives each of them the `on-primary` ink, which passes 4.5:1 on all seven, so `bg-win text-on-win` is safe in both themes.
+- A read that failed is not an empty list. An error draws `StatusAlert`, and the empty sentence shows only after a read that worked.
+- A tap on a mark opens its tooltip and never follows the link of its row. `RoundStrip`, `PlayerName` and `FlagIcon` stop the event.
+- A card of players is as synced as its least synced player: `TeamRoster` prints the oldest sync time of the card.
+- A tonal chip is the token as text over a 12% wash of the same token (`next/src/components/ui/tone.ts`).
+- The measured colour values of this section have no test behind them. `pnpm test` checks ink contrast only. Measure again when a mark colour changes.
+
 ### The public league site
 
 The public league site, the `wc3-gnl-website` repository, shows the same league data in its own look, black and gold. A reader who moves between the two sites must find one way to read a record, a result and a race. Each site keeps its own look. The dark values of `win`, `loss` and the four `race-*` tokens also pass the validator on a black ground, so both sites can share them. Propose a change to a rule of this section to that repository too.
@@ -323,7 +340,15 @@ These parts of the app break a rule above today.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.
 - The result score of a round card names no outcome for a screen reader. It carries no "Won 2 – 1" or "Lost 1 – 2" as its title and label (`next/src/components/player/RoundCards.tsx`).
-- The day bars and the MMR line of `LadderPlots` and `LadderDayBars` answer a hover alone. They have no keyboard route.
+- The day bars and the MMR line of `LadderPlots` and `LadderDayBars` answer a hover alone. They have no keyboard route. The same holds for the heat cells and the day bars of the season report, the dots of `DivisionBracketing`, `TrophyIcon`, and every `TapTooltip`, whose trigger is a `span` and not a button.
+- `LadderPlots`, `LadderDayBars`, `DivisionBracketing` and the scale of `RoundDraftBoard` carry no name for a screen reader.
+- No shared piece draws a result chip, a points pair, a stat tile or the result legend. Nine surfaces write their own `bg-win` and `bg-loss` chip, six write a points pair or a series score by hand, in three forms, and three write the result legend.
+- `primary` draws data in the games-per-day bars of the season report, `BadgeRarity`, `LadderLeaderboards`, the first row of the ladder table and the race rank badge of `FantasyScoreBreakdown`. `tier-5` draws achievement points in `LadderLeaderboards`.
+- A status token carries a data value, not a state, in the rank scale of `FantasyScoreBreakdown`, the MMR badges of the draft series tables and `TeamRostersPanel`, the points badge of the season page, and the ban and pick marks of `VetoBoard`. `secondary` marks data in four more places.
+- Coloured text carries a result outside the one exception: the wins and losses columns of the season team page and the random stats page, the weekly net and the bet results of `FantasyScoreBreakdown`, the record chip of the head to head table, and the record digits of `PlayerLadderTab`. `win` and `loss` also colour a rating change, which is not a result.
+- The random stats page and `MatchupCompare` show ladder figures with no W3C mark and no sync time.
+- The fantasy leaderboard and the ladder table do not right-align their numeric columns. The team page prints "0 – 0" for a round nobody played. The fantasy bets page writes a series score with a colon, and the fantasy dashboard sends a series score through `record`.
+- A win rate still gets a bar on the season report and in `PlayerLadderTab`. The review of the public site of 20 September 2026 rejects a bar for a win rate, and the app has no decision yet.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The games mark draws a fixed twenty-game rule over two W3C seasons. The event settings carry a games floor and the number of W3C seasons it counts over, and the mark reads neither. One of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).
 - Some surfaces still print a synced time without the W3C mark, while the match page and the roster head draw it: the player header prints the time as a caption under the MMR chips (`next/src/components/player/PlayerHeader.tsx`), the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page and the season team page print the time with a tooltip alone (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`, `next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx`).

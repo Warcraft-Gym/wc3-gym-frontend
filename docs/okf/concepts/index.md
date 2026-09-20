@@ -2,6 +2,7 @@
 
 * [App shell and routing](app-shell-and-routing.md) - One router on plain paths, a role rank per route, a guard that saves the return path, and an app bar that reads everything from the /me answer.
 * [Data display](data-display.md) - How the app picks a figure, a mark or a chart for league data, gives each colour one job, shows a player with many races, and moves figures instead of rows.
+* [Data pieces](data-pieces.md) - Every shared piece that shows league data, by group, with where it lives, when to use it and which piece to use instead.
 * [Read-only embed](readonly-embed.md) - A page opened with readonly=1 drops the chrome, stays light, and reports its height to the parent frame so the public site can embed it.
 * [Session and auth](session-and-auth.md) - Clerk signs a member in with Discord, the backend's /me answer is the session the app reads, a legacy admin token has its own login page, and the fetch wrapper sends the bearer.
 * [Shared components](shared-components.md) - The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.

@@ -17,6 +17,7 @@ sources:
 - How do I deploy to production? [Deploy on Vercel](runbooks/deploy-vercel.md).
 - Why did main break after two pull requests that each built green? [No CI: build the merged pair](pitfalls/no-ci-build-the-merged-pair.md).
 - Which form shows a record, a rating or a result, and how is a colour set checked for a colour-blind reader? [Data display](concepts/data-display.md).
+- Which piece already draws this figure, mark, table or chart, and when is another piece right? [Data pieces](concepts/data-pieces.md).
 - Where do colours and type come from, and may a page pick its own? [Theme](concepts/theme.md), by [the tokens decision](decisions/design-tokens-only.md).
 
 # How the app is built

@@ -71,3 +71,13 @@ test('a home series row names its league once', () => {
   assert.equal(rowContext({ event: 'Autumn Cup', stage: 'Group stage', round: 'Round 2' }), 'Autumn Cup · Group stage · Round 2');
   assert.equal(rowContext({}), '');
 });
+
+test('a scored series with no time never had one written down', () => {
+  const now = DateTime.fromISO('2026-09-21T12:00:00Z');
+  assert.equal(seriesWhen({ date_time: null, player1_score: 2, player2_score: 0 }, now), 'Not recorded');
+});
+
+test('an unscored series with no time is still waiting on a booking', () => {
+  const now = DateTime.fromISO('2026-09-21T12:00:00Z');
+  assert.equal(seriesWhen({ date_time: null, player1_score: null, player2_score: null }, now), 'No time booked');
+});

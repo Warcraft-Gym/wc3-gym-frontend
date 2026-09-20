@@ -1,7 +1,7 @@
 // The pure parts of the home hub: the panel order, the open signups, the member's two series, the captain row.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
-import { local } from './schedule.mjs';
+import { local, timeMissing } from './schedule.mjs';
 import { isUnscored } from './season-phase.mjs';
 
 // One order per panel drives both layouts: the phone stack and the panels inside each desktop column.
@@ -19,9 +19,13 @@ export const openSignups = (rows = []) => rows
   .sort((a, b) => String(a.start ?? '9999').localeCompare(String(b.start ?? '9999')));
 
 /** When a series row reads: its local day and time, "Started HH:mm" once its time has passed, or no time.
+ *
+ *  A series with no time that is already scored never had one written down,
+ *  and the seasons imported from the old league sheets hold many of those, so
+ *  it reads "Not recorded" rather than promising a booking.
  *  @param {any} row @param {*} [now] */
 export const seriesWhen = (row, now = DateTime.now()) => {
-  if (!row?.date_time) return 'No time booked';
+  if (!row?.date_time) return timeMissing(row, 'No time booked');
   const at = local(row.date_time);
   return at < now ? `Started ${at.toFormat('HH:mm')}` : at.toFormat('ccc d LLL, HH:mm');
 };

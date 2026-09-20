@@ -211,7 +211,7 @@ The events module names things the same way on every page. A league is what repe
 ## Patterns
 
 - A card title bar is `bg-primary`. A dialog that deletes something uses `bg-error`.
-- A filled button marks the one next action of its surface; every other button on it is outlined or quiet. Choices of equal standing wear equal buttons. Urgency is information, never button weight: the order of a list and one chip carry it.
+- A filled button marks the one next action of its surface; every other button on it is outlined or quiet. Choices of equal standing wear equal buttons.
 - A dialog is a full-height sheet under 768 px and a centred panel above it. A confirm keeps the centred panel at both widths, its height its content, so the form it asks about stays in view: pass `dialogCompact` from `next/src/components/ui/dialog.tsx` on its `DialogContent`.
 - Bronze text on a tab, a toolbar button or a card action button uses `primary-text`, because `primary` is 4.21:1 on `surface-light`.
 - The sorted column title of a table is in `primary`. An unsorted sortable column shows a faint sort icon.

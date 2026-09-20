@@ -1,16 +1,7 @@
 // Where a KOTH signup landed: the bracket of the board that holds the new entrant row, and
 // its place in that bracket's line. The dialog reads the board once after the signup.
 
-const WORDS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
-
-// A place in line as the pages say it: first to tenth as a word, then the ordinal number.
-export function placeWord(place) {
-  if (!Number.isInteger(place) || place < 1) return null;
-  if (place <= WORDS.length) return WORDS[place - 1];
-  const teens = place % 100;
-  const suffix = teens >= 11 && teens <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[place % 10] || 'th';
-  return `${place}${suffix}`;
-}
+import { placeWord } from './koth-board.mjs';
 
 // The entrant ids one seat of the line holds: a player takes one seat and one row per race.
 const seatIds = (seat) => (seat?.rows ?? []).map((row) => row.entrant_id);

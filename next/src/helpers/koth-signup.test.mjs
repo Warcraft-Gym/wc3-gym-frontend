@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bracketName, placeWord, signupPlace } from './koth-signup.mjs';
+import { bracketName, signupPlace } from './koth-signup.mjs';
 
 const seat = (...ids) => ({ rows: ids.map((entrant_id) => ({ entrant_id })) });
 
@@ -10,18 +10,6 @@ const board = {
     { division_id: 2, name: null, king: null, defender: { entrant_id: 20 }, queue: [seat(21), seat(22), seat(23)] },
   ],
 };
-
-test('the first ten places read as words and the rest as ordinals', () => {
-  assert.equal(placeWord(1), 'first');
-  assert.equal(placeWord(10), 'tenth');
-  assert.equal(placeWord(11), '11th');
-  assert.equal(placeWord(13), '13th');
-  assert.equal(placeWord(21), '21st');
-  assert.equal(placeWord(22), '22nd');
-  assert.equal(placeWord(23), '23rd');
-  assert.equal(placeWord(111), '111th');
-  assert.equal(placeWord(0), null);
-});
 
 test('a row in the line names its bracket and its place', () => {
   assert.deepEqual(signupPlace(board, 12), { bracket: 'Bracket 1', placeWord: 'first' });

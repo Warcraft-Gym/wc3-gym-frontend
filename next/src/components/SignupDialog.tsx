@@ -11,9 +11,9 @@ import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
-import { backendUrl, fetchWrapper } from "@/helpers";
 import { warningLabel } from "@/helpers/entrants.mjs";
 import { eventLabel } from "@/helpers/event-labels.mjs";
+import { noStatsWarning } from "@/helpers/games-rule.mjs";
 import { bracketName, signupPlace } from "@/helpers/koth-signup.mjs";
 import { defaultSignupRace } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
@@ -77,8 +77,8 @@ export function SignupDialog({
   const at = placed ? divisions.findIndex((one: Row) => one.id === entrant?.division_id) : -1;
   const bracket: string | null = place?.bracket || (at < 0 ? null : bracketName(divisions[at], at));
   const tag = entrant?.user?.battleTag || battleTag.trim();
-  // The mark the app draws for a race W3Champions holds no stats on, in the same words
-  const noStats = entrant?.race ? { colour: "error" as const, text: `No W3C stats found for ${entrant.race}` } : null;
+  // The one mark the app draws for a race W3Champions holds no stats on
+  const noStats = entrant?.race ? noStatsWarning(entrant.race) : null;
 
   const submit = async () => {
     setError(null);
@@ -96,8 +96,7 @@ export function SignupDialog({
       // One public read, edge cached: where the night put the new row in its bracket's line
       if (koth && row?.division_id != null) {
         try {
-          const board = await fetchWrapper.get(`${backendUrl}/koth/nights/${event.id}/board`);
-          setPlace(signupPlace(board, row.id));
+          setPlace(signupPlace(await store.fetchBoard(event.id), row.id));
         } catch {
           setPlace(null); // no board answered, so the event row names the bracket alone
         }

@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list, the run page an admin drives one night from, and the public board that draws tonight's brackets for the stream.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T15:15:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T16:40:00Z }
 sources:
   - id: nights
     resource: ../../../next/src/app/(app)/koth/KothView.tsx
@@ -45,7 +45,7 @@ A KOTH night is one event of the KOTH league. Its brackets are its divisions. An
 
 # Reads
 
-Both board reads carry no token, so the edge caches them for fifteen seconds and every reader shares one answer; the one read right after the reader's own write adds a query the cache misses, so he sees his own row at once. Both pages read once on load and again every thirty seconds, and neither asks while the tab is hidden. The public board reads the event row once per night as well, for the signup rules the signup dialog needs, and `?mode=clean` skips that read because a stream draws no signup button. Three writes of the run page answer their own row instead of the board: a replay upload, the placement of an unplaced player and an added player. Each of the three reads the board back once. "Change the winner" reads `GET /series/{id}` once per click, because the board names the winner but not the side of the series he played. Neither page makes another repeated read.
+Both board reads carry no token, so the edge caches them for fifteen seconds and every reader shares one answer; the one read right after the reader's own write adds a query the cache misses, so he sees his own row at once. Both pages read once on load and again every thirty seconds, and neither asks while the tab is hidden. The public board reads the event row once per night as well, for the signup rules the signup dialog needs, and `?mode=clean` skips that read because a stream draws no signup button. After a signup the dialog reads the night's board once, through the same store action and the same edge cache, for the end state it prints. Three writes of the run page answer their own row instead of the board: a replay upload, the placement of an unplaced player and an added player. Each of the three reads the board back once. "Change the winner" reads `GET /series/{id}` once per click, because the board names the winner but not the side of the series he played. Neither page makes another repeated read.
 
 # Writes
 
@@ -74,4 +74,5 @@ A refused write shows the sentence of its error envelope in the page's `StatusAl
 - A race row the board answers no rating for wears the one games mark, `noStatsWarning` in `next/src/helpers/games-rule.mjs`, and never a second wording.
 - A player reads as flag, name, race, MMR: [one player name standard](../decisions/player-name-standard.md).
 - `next/src/helpers/koth-board.mjs` holds the parts that are only data: the bracket band, the default pair, the text of the start button, a place in line as a word, the throne word of a played row, the players who left folded to one row each and the ordered ids one queue write sends.
+- `next/src/helpers/koth-signup.mjs` reads that one board answer back to the bracket and the place of a new entrant, and takes the place word from `koth-board.mjs`, which holds the one copy. What the dialog prints from it is in [leagues and events](leagues-and-events.md).
 - Only the close ends a night, so `nightState` in `next/src/helpers/koth.mjs` reads a night the admin has not closed as running, whatever the event read computes from its dates.

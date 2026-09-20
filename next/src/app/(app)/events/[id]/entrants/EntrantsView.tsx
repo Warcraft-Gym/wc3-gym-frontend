@@ -137,8 +137,10 @@ export function EntrantsView({ id }: { id: string }) {
   const seedsLocked = !!stage?.seeds_locked_at;
   // The standings of the stage before order these seeds, so the first stage is offered no button
   const hasPreviousStage = (stage?.position ?? 1) > 1;
-  const canReorder = isAdmin && !seedsLocked;
   const takesTeams = event?.entrant_kind === "team";
+  // A division write rebuilds the brackets of a KOTH night and a seed write reorders its live queue
+  const isKoth = event?.kind === "koth";
+  const canReorder = isAdmin && !seedsLocked && !isKoth;
 
   const columns: GroupedColumn[] = [
     { key: "player", title: "Entrant" },
@@ -310,14 +312,17 @@ export function EntrantsView({ id }: { id: string }) {
   const actionsFor = (row: Row, withBan = true): RowAction[] =>
     [
       !row.checked_in_at && !row.withdrawn_at && { icon: "mdi-check", label: "Check in", onClick: () => run("checkin", async () => swap(await store.checkIn(eventId, row.id))) },
-      ...divisions
-        .filter((division) => division.id !== row.division_id)
-        .map((division) => ({
-          icon: "mdi-arrow-right-bold-box-outline",
-          label: `Move to ${division.name || `Division ${division.position}`}`,
-          onClick: () => run("move", async () => swap(await store.placeEntrant(eventId, row.id, { division_id: division.id, manual_placement: true }))),
-        })),
-      {
+      // The run page of a KOTH night places its own entrants, in its brackets and in their order
+      ...(isKoth
+        ? []
+        : divisions
+            .filter((division) => division.id !== row.division_id)
+            .map((division) => ({
+              icon: "mdi-arrow-right-bold-box-outline",
+              label: `Move to ${division.name || `Division ${division.position}`}`,
+              onClick: () => run("move", async () => swap(await store.placeEntrant(eventId, row.id, { division_id: division.id, manual_placement: true }))),
+            }))),
+      !isKoth && {
         icon: row.manual_placement ? "mdi-pin-off" : "mdi-pin",
         label: row.manual_placement ? "Let the MMR place this entrant" : "Keep this entrant where it is",
         onClick: () => run("pin", async () => swap(await store.placeEntrant(eventId, row.id, { division_id: row.division_id, manual_placement: !row.manual_placement }))),
@@ -422,30 +427,44 @@ export function EntrantsView({ id }: { id: string }) {
         <>
           {isAdmin ? (
             <div className="card mt-4 rounded-lg p-4 shadow-sm">
-              <div className="mb-2 flex flex-wrap items-end gap-2">
-                <span className="self-center text-muted-foreground">
-                  Cut the entrants into divisions by <W3CMmr />
-                </span>
-                <span className="flex-1" />
-                <Pick labelAfter className="w-[130px]" label="Divisions" items={DIVISION_COUNTS} value={divisionCount} onChange={pickCount} />
-                <Button variant="outline" disabled={!rated.length} onClick={() => evenSplit()}>
-                  <Icon name="mdi-scale-balance" />
-                  Even split
-                </Button>
-                <Button variant="outline" disabled={busy === "divisions"} onClick={saveDivisions}>
-                  {busyIcon("divisions", "mdi-content-save")}
-                  Save divisions
-                </Button>
-                <Button disabled={busy === "assign" || !divisions.length} onClick={assign}>
-                  {busyIcon("assign", "mdi-arrow-split-vertical")}
-                  Assign from MMR
-                </Button>
-              </div>
-              <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={stripPlayers} names={names} colors={colors} domain={domain} stored={storedCuts} />
+              {/* A KOTH night keeps its brackets and its queue, so it takes no cut here and its cards carry the bands */}
+              {isKoth ? (
+                <p className="text-xs text-muted-foreground">
+                  The brackets of a KOTH night keep their rows and their order, so their MMR and their queue move on{" "}
+                  <Link className="text-primary-text underline" href={`/koth/nights/${eventId}?bounds=1`}>
+                    the run page
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <>
+                  <div className="mb-2 flex flex-wrap items-end gap-2">
+                    <span className="self-center text-muted-foreground">
+                      Cut the entrants into divisions by <W3CMmr />
+                    </span>
+                    <span className="flex-1" />
+                    <Pick labelAfter className="w-[130px]" label="Divisions" items={DIVISION_COUNTS} value={divisionCount} onChange={pickCount} />
+                    <Button variant="outline" disabled={!rated.length} onClick={() => evenSplit()}>
+                      <Icon name="mdi-scale-balance" />
+                      Even split
+                    </Button>
+                    <Button variant="outline" disabled={busy === "divisions"} onClick={saveDivisions}>
+                      {busyIcon("divisions", "mdi-content-save")}
+                      Save divisions
+                    </Button>
+                    <Button disabled={busy === "assign" || !divisions.length} onClick={assign}>
+                      {busyIcon("assign", "mdi-arrow-split-vertical")}
+                      Assign from MMR
+                    </Button>
+                  </div>
+                  <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={stripPlayers} names={names} colors={colors} domain={domain} stored={storedCuts} />
+                </>
+              )}
             </div>
           ) : null}
 
-          {isAdmin ? (
+          {/* A seed write reorders the queue a KOTH night is running, so the night takes none of these */}
+          {isAdmin && !isKoth ? (
             <div className="mt-4 flex flex-wrap items-end gap-2">
               {stages.length > 1 ? (
                 <Pick labelAfter className="w-[240px]" label="Stage" items={stages.map((row) => ({ value: row.id as number, title: row.label as string }))} value={stageId} onChange={setStageId} />

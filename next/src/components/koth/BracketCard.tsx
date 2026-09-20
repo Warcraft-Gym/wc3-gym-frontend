@@ -45,11 +45,20 @@ const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(rac
 const seatOf = (bracket: Row, key: number): Row | null =>
   [bracket.king, ...(bracket.queue ?? [])].find((seat: Row) => seat && seatKey(seat) === key) ?? null;
 
-/** One player of the board as the app draws a player line: flag, name, race, one MMR. A race
+/** The mark a seat's name line wears: only when W3Champions rated no race the player holds in
+ *  this bracket, because each race row of a two-race seat carries its own mark. */
+export const seatMark = (seat: Row, playing: Row | null) => {
+  const rows: Row[] = seat?.rows ?? [];
+  if (rows.length > 1) return rows.every((row: Row) => row.mmr == null) ? noStatsWarning() : null;
+  return playing?.mmr == null ? noStatsWarning(playing?.race ?? null) : null;
+};
+
+/** One player of the board as the app draws a player line: flag, name, race, one MMR. A player
  *  W3Champions holds no rating for wears the games mark instead of a number. */
-export function BoardPlayer({ row, race, plain, slot }: { row: Row; race?: string | null; plain?: boolean; slot?: boolean }) {
+export function BoardPlayer({ row, race, plain, slot, warn }: { row: Row; race?: string | null; plain?: boolean; slot?: boolean; warn?: boolean }) {
   const shown = race === undefined ? row.race : race;
-  const warning = row.mmr == null && shown ? noStatsWarning(shown) : null;
+  const marked = warn === undefined ? row.mmr == null : warn;
+  const warning = marked ? noStatsWarning(shown) : null;
   // only a line in a column of player lines keeps the empty mark slot, so its flags read as one column
   return (
     <PlayerName
@@ -79,12 +88,12 @@ function RaceRows({ seat, admin }: { seat: Row; admin?: BracketAdmin }) {
             <span className="flex-1 truncate text-left">{raceName(row.race)}</span>
             {row.mmr != null ? (
               <span className="tnum text-muted-foreground">{row.mmr}</span>
-            ) : row.race ? (
+            ) : (
               <TapTooltip content={noStatsWarning(row.race).text}>
                 <Icon name="mdi-alert" size={14} className="text-error" />
                 <span className="sr-only">{noStatsWarning(row.race).text}</span>
               </TapTooltip>
-            ) : null}
+            )}
           </>
         );
         return admin ? (
@@ -118,7 +127,11 @@ export function KingBlock({ bracket, admin }: { bracket: Row; admin?: BracketAdm
       <Icon name={king ? "mdi-crown" : "mdi-crown-outline"} size={26} className={king ? "text-primary-text" : "text-muted-foreground"} />
       {king ? (
         <div className="min-w-0 flex-1">
-          <BoardPlayer row={{ user_id: king.user_id, name: king.name, country: king.country, mmr: row?.mmr ?? null }} race={row?.race ?? null} />
+          <BoardPlayer
+            row={{ user_id: king.user_id, name: king.name, country: king.country, mmr: row?.mmr ?? null }}
+            race={row?.race ?? null}
+            warn={!!seatMark(king, row)}
+          />
           <div className="text-xs text-muted-foreground">Holds the throne</div>
           <RaceRows seat={king} admin={admin} />
         </div>
@@ -229,6 +242,7 @@ export function QueueRow({
   const queue: Row[] = bracket.queue ?? [];
   const at = queue.findIndex((one: Row) => seatKey(one) === key);
   const line = { user_id: seat.user_id, name: seat.name, country: seat.country, mmr: single ? (row?.mmr ?? null) : null };
+  const mark = seatMark(seat, row);
   return (
     <li
       className={cn("border-t", picked && "bg-primary/10", dragged === key && "opacity-40")}
@@ -253,14 +267,14 @@ export function QueueRow({
               player={{ id: seat.user_id, name: seat.name, country: seat.country }}
               race={single ? row?.race || undefined : undefined}
               mmr={single ? (row?.mmr ?? false) : false}
-              warning={single && row && row.mmr == null && row.race ? noStatsWarning(row.race) : null}
+              warning={mark}
               plain={live}
               onClick={live ? undefined : () => admin.onPickSeat(seat)}
             >
               {picked ? <><Icon name="mdi-check" size={16} className="text-primary-text" /><span className="sr-only">picked</span></> : null}
             </PlayerName>
           ) : (
-            <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} slot />
+            <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} slot warn={!!mark} />
           )}
         </span>
         {you != null && seat.user_id === you ? (
@@ -307,7 +321,7 @@ export function LeftRows({ bracket, admin }: { bracket: Row; admin?: BracketAdmi
       <div className="py-1 text-xs font-medium text-muted-foreground">Left tonight</div>
       {seats.map((seat: Row) => (
         <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 opacity-(--v-medium-emphasis-opacity)">
-          <BoardPlayer row={seat} />
+          <BoardPlayer row={seat} warn={(seat.rows ?? []).every((one: Row) => one.mmr == null)} />
           {admin ? (
             <Button
               variant="ghost"

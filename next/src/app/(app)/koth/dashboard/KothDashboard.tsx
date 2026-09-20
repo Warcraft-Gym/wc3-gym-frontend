@@ -9,7 +9,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { SignupDialog } from "@/components/SignupDialog";
 import { StatusAlert } from "@/components/StatusAlert";
-import { BracketCard } from "@/components/koth/BracketCard";
+import { BoardPlayer, BracketCard } from "@/components/koth/BracketCard";
 import { dateRange, eventLabel } from "@/helpers/event-labels.mjs";
 import { myRacesOnBoard, orderedBrackets } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
@@ -143,6 +143,19 @@ export function KothDashboard() {
               </>
             ) : null}
           </PageHeader>
+
+          {/* The signups W3Champions rated no race for wait over the brackets; a stream skips them */}
+          {!cleanMode && (board.unplaced ?? []).length ? (
+            <div className="card mt-4 mb-4 rounded-lg p-4 shadow-sm">
+              <div className="pb-1 text-xs font-medium text-muted-foreground">Waiting for a bracket</div>
+              {board.unplaced.map((row: Row) => (
+                <div key={row.entrant_id} className="border-t py-1 first:border-t-0">
+                  <BoardPlayer row={row} slot />
+                </div>
+              ))}
+              <p className="mt-2 mb-0 text-xs text-muted-foreground">An admin places these players.</p>
+            </div>
+          ) : null}
 
           <div className="grid gap-4 min-[960px]:grid-cols-3">
             {brackets.map((bracket: Row) => (

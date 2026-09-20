@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +14,10 @@ import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
-import { BoardPlayer, BracketCard, type BracketAdmin } from "@/components/koth/BracketCard";
+import { BoardPlayer, BracketCard, seatMark, type BracketAdmin } from "@/components/koth/BracketCard";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
-import { bracketLabel, movedQueue, openSeriesRows, orderedBrackets, queueIds, seatKey, seatRow } from "@/helpers/koth-board.mjs";
+import { boundsWrite, bracketLabel, movedQueue, openSeriesRows, orderedBrackets, queueIds, seatKey, seatRow } from "@/helpers/koth-board.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
@@ -35,6 +36,8 @@ const POLL_MS = 30000;
 export function KothNightView({ id }: { id: string }) {
   const nightId = Number(id);
   const store = useEventStore();
+  // The event settings page sends the admin straight into the bounds dialog
+  const wantsBounds = useSearchParams().get("bounds") === "1";
 
   const [board, setBoard] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +50,9 @@ export function KothNightView({ id }: { id: string }) {
   const [stepDown, setStepDown] = useState<Row | null>(null);
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
+  const [boundsOpen, setBoundsOpen] = useState(false);
+  const [boundValues, setBoundValues] = useState<Record<number, string>>({}); // the typed lower bound per bracket
+  const [boundsError, setBoundsError] = useState<string | null>(null);
   const [addTo, setAddTo] = useState(false); // W3Champions picks the bracket, so the dialog is one form
   const [addTag, setAddTag] = useState("");
   const [addRace, setAddRace] = useState<string | null>(null);
@@ -68,8 +74,17 @@ export function KothNightView({ id }: { id: string }) {
     setPicked((was) => was.filter((key) => !running.includes(key)));
   };
 
+  // The load effect opens the dialog on the board it read, before that board is state
+  const openBounds = (from?: Row) => {
+    const rows: Row[] = from ? orderedBrackets(from) : brackets;
+    setBoundValues(Object.fromEntries(rows.map((bracket: Row) => [bracket.division_id, String(bracket.lower_bound ?? 0)])));
+    setBoundsError(null);
+    setBoundsOpen(true);
+  };
+
   useEffect(() => {
     let alive = true;
+    let first = true; // the event settings page links here with ?bounds=1, which the first board spends
     const read = async () => {
       try {
         const answer = await store.fetchBoard(nightId);
@@ -77,6 +92,8 @@ export function KothNightView({ id }: { id: string }) {
         if (alive && !writing.current) {
           takeBoard(answer);
           setError(null);
+          if (first && wantsBounds && !answer.closed && !openSeriesRows(answer).length) openBounds(answer);
+          first = false;
         }
       } catch (e) {
         // a night nobody published answers 404, which the page says on its own
@@ -112,8 +129,12 @@ export function KothNightView({ id }: { id: string }) {
     }
   };
 
-  // The board names who won, never his side, so one series read says it and the flip writes the other
+  // The played row names the side the winner played, so the flip writes the other side
   const changeWinner = async (played: Row) => {
+    if (played.winner_side === 1 || played.winner_side === 2) {
+      return await store.setKothWinner(nightId, played.series_id, played.winner_side === 1 ? 2 : 1);
+    }
+    // a board answered before the side landed in the read still needs the series row
     const series = await fetchWrapper.get(`${backendUrl}/series/${played.series_id}`);
     const side = series.player1_id === played.loser.user_id ? 1 : 2;
     return await store.setKothWinner(nightId, played.series_id, side);
@@ -205,6 +226,25 @@ export function KothNightView({ id }: { id: string }) {
   const passName = passOptions.find((seat: Row) => seatKey(seat) === passTo)?.name;
   const openRows: Row[] = openSeriesRows(board);
 
+  // The write cuts the rated rows nobody placed by hand again, so it waits for every series to end
+  const boundsBlocked = openRows.length > 0;
+  const bounds = boundsWrite(brackets, boundValues);
+
+  const saveBounds = async () => {
+    setBoundsError(null);
+    setBusy(true);
+    writing.current = true;
+    try {
+      takeBoard(await store.setKothBounds(nightId, bounds.body.bounds));
+      setBoundsOpen(false);
+    } catch (e) {
+      setBoundsError((e as Error).message);
+    } finally {
+      writing.current = false;
+      setBusy(false);
+    }
+  };
+
   return (
     <>
       <PageHeader title={board?.name || "KOTH Night"} lead={board ? dateRange(board) : undefined}>
@@ -221,6 +261,12 @@ export function KothNightView({ id }: { id: string }) {
             <Icon name="mdi-eye-outline" />
             Public page
           </Button>
+          <span title={boundsBlocked ? "Finish or cancel the open series first." : undefined}>
+            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy || boundsBlocked || !board || !!board.closed} onClick={() => openBounds()}>
+              <Icon name="mdi-tune-variant" />
+              Bracket MMR
+            </Button>
+          </span>
           <Button nativeButton={false} variant="outline" size="sm" className="text-primary-text" render={<Link href={`/events/${nightId}/admin`} />}>
             <Icon name="mdi-cog-outline" />
             Event settings
@@ -236,6 +282,10 @@ export function KothNightView({ id }: { id: string }) {
 
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
+
+      {board && !board.closed && boundsBlocked ? (
+        <p className="mb-2 text-xs text-muted-foreground">Bracket MMR waits: finish or cancel the open series first.</p>
+      ) : null}
 
       {/* the board read answers 404 for a night nobody published; a failed read says so in the alert above */}
       {!loading && !board && !error ? <p className="py-12 text-center text-muted-foreground">This night is not published</p> : null}
@@ -292,6 +342,61 @@ export function KothNightView({ id }: { id: string }) {
         }}
       />
 
+      {/* The MMR each bracket opens at, moved in place: every bracket keeps its rows and its series */}
+      <Dialog open={boundsOpen} onOpenChange={setBoundsOpen}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[480px]", dialogCompact)}>
+          <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Bracket MMR</DialogTitle>
+          <div className="flex flex-col gap-3 p-4">
+            {[...bounds.rows].reverse().map((row: Row, index: number, all: Row[]) =>
+              // The weakest bracket opens at 0, so its row is text under a plain heading, not a label over a control
+              index === all.length - 1 ? (
+                <div key={row.division_id} className="flex flex-col gap-1.5">
+                  <span className="text-sm leading-none font-medium">{row.name}</span>
+                  <p className="mb-0 py-1 text-sm text-muted-foreground">0, the weakest bracket</p>
+                </div>
+              ) : (
+                <Field key={row.division_id} label={row.name} htmlFor={`koth-bound-${row.division_id}`}>
+                  <Input
+                    id={`koth-bound-${row.division_id}`}
+                    inputMode="numeric"
+                    value={boundValues[row.division_id] ?? ""}
+                    onChange={(event) => {
+                      setBoundValues((was) => ({ ...was, [row.division_id]: event.target.value }));
+                      setBoundsError(null);
+                    }}
+                  />
+                </Field>
+              ),
+            )}
+            <div className="flex flex-col text-xs text-muted-foreground">
+              {bounds.error ? (
+                <span>{bounds.error}</span>
+              ) : (
+                [...bounds.rows].reverse().map((row: Row) => <span key={row.division_id}>{row.line}</span>)
+              )}
+            </div>
+            <p className="mb-0 text-xs text-muted-foreground">
+              Players nobody placed by hand move to the bracket of their MMR. A player an admin placed stays where he is.
+            </p>
+            {boundsError ? (
+              <p className={cn("mb-0 flex items-start gap-2 rounded-lg p-3 text-sm", toneClass("error"))}>
+                <Icon name="mdi-alert" className="text-error" />
+                {boundsError}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setBoundsOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={busy || !!bounds.error} onClick={saveBounds}>
+              <Icon name="mdi-content-save" />
+              Save the bounds
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* The king leaves the throne empty for the next series, or hands the crown to one player */}
       <Dialog open={!!stepDown} onOpenChange={(open) => !open && setStepDown(null)}>
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
@@ -316,7 +421,13 @@ export function KothNightView({ id }: { id: string }) {
                       {passOptions.map((seat: Row) => (
                         <label key={seatKey(seat)} className="flex cursor-pointer items-center gap-2">
                           <input type="radio" name="step-down" className="size-[18px] accent-[rgb(var(--v-theme-primary))]" checked={passTo === seatKey(seat)} onChange={() => setPassTo(seatKey(seat))} />
-                          <BoardPlayer row={{ ...seat, mmr: seatRow(seat, picks)?.mmr ?? null }} race={seatRow(seat, picks)?.race ?? null} plain slot />
+                          <BoardPlayer
+                            row={{ ...seat, mmr: seatRow(seat, picks)?.mmr ?? null }}
+                            race={seatRow(seat, picks)?.race ?? null}
+                            warn={!!seatMark(seat, seatRow(seat, picks))}
+                            plain
+                            slot
+                          />
                         </label>
                       ))}
                     </div>
@@ -369,8 +480,11 @@ export function KothNightView({ id }: { id: string }) {
                     {openRows.length === 1 ? "One series was started and never scored. Closing deletes it." : `${openRows.length} series were started and never scored. Closing deletes them.`}
                   </p>
                   {openRows.map((open: Row) => (
-                    <div key={open.division_id} className="opacity-(--v-medium-emphasis-opacity)">
-                      {open.text}
+                    <div key={open.division_id} className="flex flex-wrap items-center gap-x-2 opacity-(--v-medium-emphasis-opacity)">
+                      <span>{open.name} ·</span>
+                      <BoardPlayer row={open.side1} plain />
+                      <span className="text-xs">vs</span>
+                      <BoardPlayer row={open.side2} plain />
                     </div>
                   ))}
                 </div>

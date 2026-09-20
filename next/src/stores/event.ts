@@ -137,6 +137,10 @@ const store = {
   async setKothWinner(night_id: number, series_id: number, winner: 1 | 2) {
     return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/series/${series_id}/result`, { winner });
   },
+  // Moves the MMR band of each bracket in place and cuts the rated rows nobody placed by hand again
+  async setKothBounds(night_id: number, bounds: { division_id: number; lower_bound: number }[]) {
+    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/bounds`, { bounds });
+  },
   async setKothQueue(night_id: number, division_id: number, entrant_ids: number[]) {
     return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/brackets/${division_id}/queue`, { entrant_ids });
   },

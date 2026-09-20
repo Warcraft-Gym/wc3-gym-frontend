@@ -363,10 +363,19 @@ export function EventAdminView({ id }: { id: string }) {
       {event ? (
         <>
           <EventHeader event={event} league={league} />
-          <Button nativeButton={false} size="sm" variant="outline" className="mt-3 text-primary-text" render={<Link href={`/events/${event.id}`} />}>
-            <Icon name="mdi-eye-outline" />
-            Public page
-          </Button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/events/${event.id}`} />}>
+              <Icon name="mdi-eye-outline" />
+              Public page
+            </Button>
+            {/* the bounds of a live night move only on its run page, which keeps every bracket in place */}
+            {event.kind === "koth" ? (
+              <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/koth/nights/${event.id}?bounds=1`} />}>
+                <Icon name="mdi-tune-variant" />
+                Bracket MMR bounds
+              </Button>
+            ) : null}
+          </div>
 
           {stages.length > 1 ? (
             <Tabs value={tab} onValueChange={(value) => pickTab(value as number)} className="mt-4">

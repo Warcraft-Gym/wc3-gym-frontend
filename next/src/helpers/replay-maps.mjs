@@ -23,8 +23,9 @@ export const reportWarning = (vetoMissing, off = []) => {
   if (vetoMissing) return 'No map veto is recorded for this series, so nothing says which map each game plays.';
   if (!off.length) return null;
   const games = off.map((one) => one.game);
-  const which = games.length > 1 ? `games ${games.join(', ')}` : `game ${games[0]}`;
-  return `The replay of ${which} was played on another map than its game plays.`;
+  if (games.length === 1) return `The replay of game ${games[0]} was played on another map than the veto gives it.`;
+  const list = `${games.slice(0, -1).join(', ')} and ${games[games.length - 1]}`;
+  return `The replays of games ${list} were played on other maps than the veto gives them.`;
 };
 
 /** The map field of each game after the replays of two games swap: a field the replay wrote travels

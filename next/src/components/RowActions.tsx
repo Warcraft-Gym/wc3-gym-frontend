@@ -40,7 +40,8 @@ export function RowActions({ actions, inline = false }: { actions: RowAction[]; 
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Row actions" />}>
             <Icon name="mdi-dots-vertical" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          {/* the trigger is one icon button, so the menu takes its own width and an item never wraps */}
+          <DropdownMenuContent align="end" className="w-auto whitespace-nowrap">
             {visible.map((action) => (
               <DropdownMenuItem
                 key={action.label}

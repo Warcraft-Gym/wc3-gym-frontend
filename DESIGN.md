@@ -137,7 +137,7 @@ Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 - A table that would clip on a phone hides its columns by priority or becomes cards. A clipped row is a bug.
 - The app bar title reads "WC3 Gym Dashboard" and always links to `/`.
 - A player answers his own round with two buttons, "Check in" and "Sit out"; a captain answers for a player from a row menu. The status reads "Checked in", "Out", "Out (blocked times)" or "No answer". Never "can play" or "can't play".
-- A record reads wins then losses around an en dash with one space on each side: "19 – 11 (63%)" from ten played up, "3 – 1" under ten, an em dash when nothing was played. Never "19/30". One helper writes it, `next/src/helpers/figures.mjs`. No bar in a cell, no footnote, and no "won" and no W or L letters in a cell, because the column title carries them.
+- A record reads wins then losses around an en dash with one space on each side: "19 – 11 (63%)" from ten played up, "3 – 1" under ten, an em dash when nothing was played. Never "19/30". One helper writes it, `next/src/helpers/figures.mjs`. A points pair wears the same spaced en dash, "1 – 3", but it is not a record: it takes no percent and it prints its zeroes, so the surface writes it and the helper does not. No bar in a cell, no footnote, and no "won" and no W or L letters in a cell, because the column title carries them.
 - A series is a best of three; a ladder game is one game. A column title, a caption and a tooltip name the one they count and never mix them.
 - A head to head reads as the score in the pairing's order with the last meeting after it: "2 – 1, last met Season 18".
 - The app shows no win chance for an MMR or for an MMR difference over the whole population. A figure counted from one player's own games is fine.
@@ -208,6 +208,7 @@ The events module names things the same way on every page. A league is what repe
 ## Patterns
 
 - A card title bar is `bg-primary`. A dialog that deletes something uses `bg-error`.
+- A dialog is a full-height sheet under 768 px and a centred panel above it. A confirm keeps the centred panel at both widths, its height its content, so the form it asks about stays in view: pass `dialogCompact` from `next/src/components/ui/dialog.tsx` on its `DialogContent`.
 - Bronze text on a tab, a toolbar button or a card action button uses `primary-text`, because `primary` is 4.21:1 on `surface-light`.
 - The sorted column title of a table is in `primary`. An unsorted sortable column shows a faint sort icon.
 - A table wider than its card shows a shadow at the hidden edge.
@@ -251,6 +252,7 @@ These parts of the app break a rule above today.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The games mark draws a fixed twenty-game rule over two W3C seasons. The event settings carry a games floor and the number of W3C seasons it counts over, and the mark reads neither. One of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).
 - Some surfaces still print a synced time without the W3C mark, while the match page and the roster head draw it: the player header prints the time as a caption under the MMR chips (`next/src/components/player/PlayerHeader.tsx`), the entrants table reads "Read from w3champions ..." or "Never read from w3champions" (`next/src/app/(app)/events/[id]/entrants/EntrantsView.tsx`), and the season assign page and the season team page print the time with a tooltip alone (`next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx`, `next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx`).
+- Only the report confirm and the publish-draft confirm pass `dialogCompact`. Every other confirm, `ConfirmDeleteDialog` among them, is still a full-height sheet under 768 px.
 - `FORMATS` in `next/src/helpers/event-labels.mjs` holds no captain-draft format, so nothing prints "Captain draft" yet.
 - Cards that pad other than 16 px: `UserGuideView.tsx`, `LoginView.tsx`, `AdminLoginView.tsx` and `DiscordJoinCard.tsx` pad 24 px; `LadderView.tsx` pads 32 px; `MatchRoundNav.tsx` and `SeasonTeamAssignView.tsx` pad 12 px; `SeasonDetailsView.tsx` pads 8 px on its action row; `SeasonAchievementsView.tsx` pads 8 px top and bottom.
 - The series page cannot name a team side of a bracket series. `SeriesPublic` carries the players and the fixture alone, so `GET /series/{id}` answers no entrant and no team; a series inside a fixture reads them off the stage read instead, and a bracket series with no fixture still reads "To be decided" until that payload carries them.

@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T22:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T23:55:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -30,6 +30,9 @@ sources:
   - id: team-roster
     resource: ../../../next/src/components/TeamRoster.tsx
     title: TeamRoster
+  - id: head-to-head
+    resource: ../../../next/src/components/HeadToHeadCell.tsx
+    title: HeadToHeadCell
 ---
 
 `DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle.
@@ -62,7 +65,7 @@ A team is drawn as `{logo} {name}` everywhere, and it links to the team page. Th
 
 # The series action bar
 
-One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result"; the report step reads "Edit result" once the series is scored. It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled and the one after it outlined. In both bars a button keeps the word of its step, and a step already taken reads as a quiet fact before the buttons: the booked time, and "Veto done". The steps of one series, their state and who may act are answered in one place, `next/src/helpers/series-actions.mjs`, which mirrors the API gate: the player a side names, a captain of the team that fields a side, and a member of the roster of a side that names no player. The captain reads off the seats `/me` lists, one per team and event he captains. An admin acts for either side, on the same routes as everyone else, so every schedule write refreshes the bot's post of the series. Another reader sees the steps without buttons. A series whose rules draw no map from the veto board leaves that step out, a series whose booked time has passed asks for the result next, and a reported series keeps its result button alone. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
+One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result"; the report step reads "Edit result" once the series is scored. It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled and the one after it outlined. In both bars a button keeps the word of its step, and a step already taken reads as a quiet fact before the buttons: the booked time, and "Veto done"; a surface that states the booked time in a line of its own hides that one fact and keeps the other. The steps of one series, their state and who may act are answered in one place, `next/src/helpers/series-actions.mjs`, which mirrors the API gate: the player a side names, a captain of the team that fields a side, and a member of the roster of a side that names no player. The captain reads off the seats `/me` lists, one per team and event he captains. An admin acts for either side, on the same routes as everyone else, so every schedule write refreshes the bot's post of the series. Another reader sees the steps without buttons. A series whose rules draw no map from the veto board leaves that step out, a series whose booked time has passed asks for the result next, and a reported series keeps its result button alone. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
 
 # Loading
 
@@ -97,6 +100,14 @@ One player's event reads as one 12 px square per round: `win` for a round he won
 - One strip is one keyboard stop. The group carries the name "Won 2, lost 1, played 3 of 7 rounds" and the arrow keys walk its marks, so a roster of twelve players never holds a hundred tab stops.
 - `roundMarks`, `seriesHead`, `markText`, `stripRecord`, `stripPoints` and `stripLabel` in `next/src/helpers/round-strip.mjs` hold the state of a round, the points and the words; the component holds only the marks and the focus.
 - It is drawn on the team page roster and on the player page's Events row. A surface that does not load the event's series draws the roster without it.
+
+# HeadToHeadCell
+
+The head to head of two players is one cell: the record in the order of the pairing, the event they last met in, and a "Meetings" button that opens the meetings under it.
+
+- The caller hands the meetings over, so the cell makes no read of its own. A surface that already holds them opens the list with no request; the draft board reads them the first time a reader opens one pairing.
+- A pairing that never met reads "no series". The record wears the app's form, `{wins} – {losses}`, with the percent from ten up.
+- It is drawn on the round draft board, on the draft table of a fixture and under the title of a series of two players.
 
 # TeamRoster
 

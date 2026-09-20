@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { markText, roundMarks, seriesHead, stripLabel, stripRecord } from './round-strip.mjs';
+import { markText, roundMarks, seriesHead, stripLabel, stripPoints, stripRecord } from './round-strip.mjs';
 
 const them = (id, name) => ({ id, name });
 // one series of round `playday`, the player on side one unless `mine` is false
@@ -45,6 +45,27 @@ test('the head names the round and the margin, and a round with no series says s
   assert.equal(seriesHead(2, marks[1].series[0]), 'Round 2 · To play');
   assert.equal(markText(marks[0]), 'Round 1 · Won 2 – 1, vs Scorch');
   assert.equal(markText(marks[2]), 'Round 3 · No series');
+});
+
+test('a round the player sits out is the crossed mark, and a series of that round wins over it', () => {
+  const marks = roundMarks([series(2, true, 2, 1, them(3, 'Scorch'))], 7, 4, [1, 2, 3]);
+  assert.deepEqual(marks.map((mark) => mark.state), ['out', 'won', 'out', 'none']);
+  assert.equal(markText(marks[0]), 'Round 1 · Sat out');
+  assert.equal(markText(marks[3]), 'Round 4 · No series');
+  assert.deepEqual(roundMarks([], 7, 2).map((mark) => mark.state), ['none', 'none']);
+});
+
+test('the points of a player are the sum the server wrote on his side, and null with no series', () => {
+  const rows = [
+    { player1_id: 7, player2_id: 3, player1_points: 3, player2_points: 1 },
+    { player1_id: 4, player2_id: 7, player1_points: 2, player2_points: 2 },
+    { player1_id: 7, player2_id: 5, player1_points: null, player2_points: 4 },
+    { player1_id: 8, player2_id: 9, player1_points: 9, player2_points: 9 },
+  ];
+  assert.equal(stripPoints(rows, 7), 5);
+  assert.equal(stripPoints(rows, 4), 2);
+  assert.equal(stripPoints(rows, 11), null);
+  assert.equal(stripPoints([], 7), null);
 });
 
 test('the strip carries one label, counting the rounds with a result', () => {

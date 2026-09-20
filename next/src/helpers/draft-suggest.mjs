@@ -3,8 +3,7 @@
 /** The MMR distance of two board players. A player with no MMR is never inside a difference. */
 export const mmrGap = (a, b) => (a?.mmr == null || b?.mmr == null ? Infinity : Math.abs(a.mmr - b.mmr));
 
-/** The drafts that take a place of the round. A draft that replaces a published series takes the
- *  place of that series, so it never counts as a new one. */
+/** The drafts that take a place of the round; a replacement takes the place of the series it replaces. */
 export const placeTakers = (drafted = []) => drafted.filter((row) => !row.replaces_series_id);
 
 /** The board answers one row per possible pairing; this reads one of them by the two ids. */

@@ -284,7 +284,7 @@ export function RoundDraftBoard({
   const free = picked ? opponentsOf(picked).filter((player) => !takenIds.has(player.user_id)) : [];
   const near = free.filter((player) => gapTo(player) <= maxDifference).sort((a, b) => gapTo(a) - gapTo(b));
   const far = free.filter((player) => gapTo(player) > maxDifference).sort((a, b) => gapTo(a) - gapTo(b));
-  // the player who drops out holds the series that is replaced, so he is never an opponent
+  // the player who drops out holds the series that is replaced, so that player is never an opponent
   const pairedOther = picked ? opponentsOf(picked).filter((player) => takenIds.has(player.user_id) && player.user_id !== replacing?.dropId) : [];
   const nearest = far.find((player) => Number.isFinite(gapTo(player)));
   const pickedPartner = picked ? partnerOf(picked.user_id) : null;
@@ -404,8 +404,8 @@ export function RoundDraftBoard({
           <SharedHours hours={pair?.hours} />
           <span className="flex-1" />
           {kind === "paired" ? (
-            // a published pairing is not moved here, so only a draft opponent offers the change
-            draftOf(opponent.user_id) ? (
+            // a published pairing and a replacement are not moved here, so only a draft opponent offers the change
+            draftOf(opponent.user_id) && !replacing ? (
             <Button
               variant="outline"
               size="sm"
@@ -748,7 +748,7 @@ export function RoundDraftBoard({
                 <div className="px-3 pt-2">
                   <Button variant="ghost" size="sm" className="text-primary-text" aria-expanded={showPaired} onClick={() => setShowPaired((was) => !was)}>
                     <Icon name={showPaired ? "mdi-chevron-down" : "mdi-chevron-right"} />
-                    Already paired ({pairedOther.length})
+                    {replacing ? "Already in a series" : "Already paired"} ({pairedOther.length})
                   </Button>
                 </div>
                 ) : null}

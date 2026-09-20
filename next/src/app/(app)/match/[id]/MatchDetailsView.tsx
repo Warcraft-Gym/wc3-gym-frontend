@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
@@ -124,6 +124,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   // The published series a captain replaces a player in, and the publish confirm over one or more drafts
   const [replacing, setReplacing] = useState<{ series: Row; dropId: number } | null>(null);
   const [publishDrafts, setPublishDrafts] = useState<Row[] | null>(null);
+  // Only the answer of the open confirm is kept, so a slow replaces read of an earlier one is dropped
+  const replaceAsk = useRef(0);
   const [publishLost, setPublishLost] = useState<Row | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
 
@@ -184,7 +186,7 @@ export function MatchDetailsView({ id }: { id: string }) {
 
   // Full players for the series tables: rosters first, fetched extras second
   const seriesPlayerById = { ...playersOf([team1, team2]), ...extraPlayersById };
-  const withFullPlayers = (row: Row) => ({
+  const withFullPlayers = (row: Row): Row => ({
     ...row,
     player1: seriesPlayerById[row.player1_id] || row.player1,
     player2: seriesPlayerById[row.player2_id] || row.player2,
@@ -393,6 +395,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   useEffect(() => {
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
+      setReplacing(null); // another fixture holds none of the series this replacement names
       // The w3champions season does not depend on the match, so both reads start together
       const [w3cSeason, loaded] = await Promise.all([resolveCurrentW3CSeason(), fetchMatchDetails()]);
       setCurrentW3CSeason(w3cSeason ?? undefined);
@@ -592,19 +595,28 @@ export function MatchDetailsView({ id }: { id: string }) {
 
   // The publish confirm. The replaces read fires only here, once, for the one draft it asks about.
   const openPublishAll = () => {
+    replaceAsk.current++;
     setPublishError(null);
     setPublishLost(null);
     setPublishDrafts(plainDrafts);
   };
 
   const openPublishReplace = async (item: Row) => {
+    const ask = ++replaceAsk.current;
     setPublishError(null);
     setPublishLost(null);
     setPublishDrafts([item]);
-    setPublishLost(await seriesStore.getDraftReplaces(item.id).catch(() => null));
+    try {
+      const lost = await seriesStore.getDraftReplaces(item.id);
+      if (ask === replaceAsk.current) setPublishLost(lost);
+    } catch (error: any) {
+      // the confirm names what is lost, so a failed read blocks the publish instead of hiding it
+      if (ask === replaceAsk.current) setPublishError(error?.error || error?.message || String(error));
+    }
   };
 
   const closePublish = () => {
+    replaceAsk.current++;
     setPublishDrafts(null);
     setPublishLost(null);
     setPublishError(null);
@@ -871,6 +883,7 @@ export function MatchDetailsView({ id }: { id: string }) {
             onValueChange={(value) => {
               setSeriesViewTab(value as string);
               if (value === "draft") markDraftSeen();
+              else setReplacing(null); // the replacement picker lives on the draft tab
             }}
           >
             <TabsList variant="line" className="w-full justify-center bg-surface-light">

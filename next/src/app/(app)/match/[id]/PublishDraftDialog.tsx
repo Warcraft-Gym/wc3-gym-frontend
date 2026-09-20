@@ -17,8 +17,7 @@ const pairLine = (row: Row) => (
   </span>
 );
 
-/** The one ask before an admin publishes a draft. A draft that replaces a published series names
- *  the series it removes and what is lost with it. */
+/** The one ask before an admin publishes a draft, which names the series a replacement removes. */
 export function PublishDraftDialog({
   drafts,
   replaced,
@@ -71,10 +70,12 @@ export function PublishDraftDialog({
                   ) : null}
                   {!lost.date_time && !lost.has_veto ? <span className="text-muted-foreground">No booked time and no map veto</span> : null}
                 </div>
-              ) : (
+              ) : error ? null : (
                 <p className="text-sm text-muted-foreground">Reading what that series holds…</p>
               )}
-              <p className="mt-4 text-sm text-muted-foreground">The three players see the change in &quot;Waiting for you&quot;.</p>
+              <p className="mt-4 text-sm text-muted-foreground">
+                The new series shows in &quot;Waiting for you&quot; for its two players; the removed series no longer lists.
+              </p>
             </>
           ) : (
             <>
@@ -89,7 +90,7 @@ export function PublishDraftDialog({
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button disabled={busy || !rows.length} onClick={onConfirm}>
+          <Button disabled={busy || !rows.length || (replacement && !lost && !error)} onClick={onConfirm}>
             <Icon name="mdi-publish" />
             {replacement ? "Publish and replace" : `Publish ${rows.length} pairings`}
           </Button>
@@ -98,5 +99,3 @@ export function PublishDraftDialog({
     </Dialog>
   );
 }
-
-export default PublishDraftDialog;

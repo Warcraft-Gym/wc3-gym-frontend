@@ -45,7 +45,8 @@ export function PublishedSeries({
   onDraftSeries?: () => void; // the draft board is where a captain fills an open place
   onDeleteAll: () => void;
 }) {
-  const room = canDraft && openPlaces > 0;
+  // an admin fills an open place from the admin add, so the draft entry is the captain's
+  const room = canDraft && !isAdmin && openPlaces > 0;
   if (!series.length) {
     return (
       <div className="p-8 text-center">
@@ -169,8 +170,7 @@ export function PublishedSeries({
   );
 }
 
-/** Who put a pairing in the draft, the series it replaces, and whether it is new since this team
- *  last looked. */
+/** Who put a pairing in the draft, the series it replaces, and whether it is new to this team. */
 function PairingNote({ item, fresh, replaces }: { item: Row; fresh: boolean; replaces?: string | null }) {
   // a create stamps updated_at with created_at, so only a later stamp reads as a change
   const changed = !!item.updated_by_name && item.updated_at !== item.created_at;

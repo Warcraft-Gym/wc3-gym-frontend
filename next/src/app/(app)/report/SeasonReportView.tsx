@@ -499,7 +499,6 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                       <TableHead className={WIDE}>Team</TableHead>
                       <Th>Series record</Th>
                       <Th className={WIDE}>Played</Th>
-                      <Th className={WIDE}>Win %</Th>
                       <Th>Points</Th>
                     </TableRow>
                   </TableHeader>
@@ -529,9 +528,6 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                           {record(player.wins, player.losses) ?? "—"}
                         </TableCell>
                         <TableCell className={cn(WIDE, "text-center tnum")}>{player.played}</TableCell>
-                        <TableCell className={cn(WIDE, "text-center tnum")}>
-                          {player.winRate != null ? `${player.winRate}%` : <span className="text-xs text-muted-foreground">–</span>}
-                        </TableCell>
                         <TableCell className="text-center">
                           {player.totalPoints > 0 ? (
                             <Badge className="text-[0.625rem] tnum">{player.totalPoints}</Badge>

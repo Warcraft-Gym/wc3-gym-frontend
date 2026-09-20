@@ -70,7 +70,9 @@ export function PlayerLadderTab({ player, seasonId }: { player: any; seasonId: n
   const w3cStatsUrl = `${w3cPlayerUrl(player?.battleTag ?? "")}/statistics`;
 
   const games = data?.games ?? 0;
-  const winrate = games ? `${Math.round((data.wins / games) * 100)}%` : "0%";
+  // the record reads off wins plus losses, the same two numbers the helper takes
+  const played = (data?.wins ?? 0) + (data?.losses ?? 0);
+  const winrate = played ? `${Math.round((data.wins / played) * 100)}%` : "0%";
 
   // Where his MMR opened, its range and where it stands; absent until he plays
   const mmr = data?.mmr ?? {};
@@ -129,7 +131,7 @@ export function PlayerLadderTab({ player, seasonId }: { player: any; seasonId: n
               <span className="text-win">{data?.wins ?? 0}</span>
               <span className="text-muted-foreground"> &ndash; </span>
               <span className="text-loss">{data?.losses ?? 0}</span>
-              {games >= 10 ? <span className="text-muted-foreground"> ({winrate})</span> : null}
+              {played >= 10 ? <span className="text-muted-foreground"> ({winrate})</span> : null}
             </div>
             <div className="text-xs text-muted-foreground">{games} games</div>
           </div>

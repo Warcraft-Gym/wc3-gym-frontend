@@ -16,13 +16,15 @@ import { mmrGap, pairIndex, suggestPairings } from "@/helpers/draft-suggest.mjs"
 
 type Row = Record<string, any>;
 
-const BOARD_WIDTH = 640;
-const LEFT_EDGE = 280; // where a team 1 lead line meets the scale
-const RIGHT_EDGE = 360;
-const LABEL_END = 268; // the right edge of a team 1 label, where its lead line starts
-const LABEL_START = 372; // the left edge of a team 2 label
+const TICKS = 36; // the left gutter the MMR tick labels read in
+const BOARD_WIDTH = 676;
+const LEFT_EDGE = 316; // where a team 1 lead line meets the scale
+const RIGHT_EDGE = 396;
+const LABEL_END = 304; // the right edge of a team 1 label, where its lead line starts
+const LABEL_START = 408; // the left edge of a team 2 label
 const MIN_ROW = 26;
 const PAD = 14;
+const TICK_STEP = 200; // one grid line and one label per this many MMR
 
 const WARNING_TEXT: Record<string, string> = {
   under_min_games: "Fewer W3C ladder games than the event asks for",
@@ -255,12 +257,16 @@ export function RoundDraftBoard({
   const shelfLeft = left.filter((player) => player.mmr == null);
   const shelfRight = right.filter((player) => player.mmr == null);
   const shelf = Math.max(shelfLeft.length, shelfRight.length);
-  const height = Math.max(320, Math.max(left.length, right.length) * MIN_ROW + 2 * PAD);
+  // half again the rows it needs, so few names are pushed off their own MMR
+  const height = Math.max(480, Math.max(left.length, right.length) * MIN_ROW * 1.5);
   const leftRows = scale ? placeRows(left.filter((player) => player.mmr != null), scale, height) : [];
   const rightRows = scale ? placeRows(right.filter((player) => player.mmr != null), scale, height) : [];
   const topOf = new Map<number, number>();
   for (const row of [...leftRows, ...rightRows]) topOf.set(row.player.user_id, row.at);
   const total = height + (shelf ? shelf * MIN_ROW + 16 : 0);
+  // One grid line and one label per 200 MMR, so the two rosters read against one scale
+  const firstTick = scale ? Math.ceil(scale.low / TICK_STEP) : 0;
+  const ticks = scale ? Array.from({ length: Math.floor(scale.high / TICK_STEP) - firstTick + 1 }, (_, i) => (firstTick + i) * TICK_STEP) : [];
 
   const picked = pick != null ? byId.get(pick) || null : null;
   const pickedSide = picked ? sideOf(picked) : null;
@@ -324,7 +330,7 @@ export function RoundDraftBoard({
   const label = (player: Row, side: 1 | 2, top: number | null) => {
     const isPicked = pick === player.user_id;
     const isTaken = takenIds.has(player.user_id);
-    const placed = top == null ? "w-full py-1" : `absolute w-[268px] ${side === 1 ? "left-0 justify-end" : "left-[372px]"}`;
+    const placed = top == null ? "w-full py-1" : `absolute w-[268px] ${side === 1 ? "left-[36px] justify-end" : "left-[408px]"}`;
     return (
       <button
         key={player.user_id}
@@ -493,7 +499,7 @@ export function RoundDraftBoard({
         ) : null}
       </div>
 
-      <div className="grid gap-4 min-[1280px]:grid-cols-[auto_minmax(0,1fr)]">
+      <div className="grid items-start gap-4 min-[1280px]:grid-cols-[auto_minmax(0,1fr)]">
         {/* on a phone the panel takes the screen, and Close brings the rosters back */}
         {narrow && picked ? null : (
         <Card className="card gap-0 py-0">
@@ -518,19 +524,38 @@ export function RoundDraftBoard({
             </div>
             <div className="relative" style={{ width: BOARD_WIDTH, height: total }}>
               <svg width={BOARD_WIDTH} height={total} className="absolute inset-0" aria-hidden="true">
+                {/* the scale itself: a low-emphasis line and its MMR every 200, read from scaleOf */}
+                {scale
+                  ? ticks.map((mmr) => (
+                      <g key={mmr}>
+                        <line x1={TICKS} y1={placeAt(mmr, scale, height)} x2={BOARD_WIDTH} y2={placeAt(mmr, scale, height)} stroke={stroke("on-surface")} opacity={0.12} />
+                        <text x={TICKS - 4} y={placeAt(mmr, scale, height) + 3} textAnchor="end" fontSize={10} fill={stroke("on-surface")} opacity={0.6} className="tnum">
+                          {mmr}
+                        </text>
+                      </g>
+                    ))
+                  : null}
                 {/* the working difference around the picked player, so the reachable opponents stand out */}
                 {picked && scale && picked.mmr != null ? (
-                  <rect
-                    x={pickedSide === 1 ? LEFT_EDGE : 0}
-                    y={placeAt(Math.min(scale.high, picked.mmr + maxDifference), scale, height)}
-                    width={pickedSide === 1 ? BOARD_WIDTH - LEFT_EDGE : RIGHT_EDGE}
-                    height={Math.max(
-                      2,
-                      placeAt(Math.max(scale.low, picked.mmr - maxDifference), scale, height) - placeAt(Math.min(scale.high, picked.mmr + maxDifference), scale, height),
-                    )}
-                    fill={stroke("primary")}
-                    opacity={0.1}
-                  />
+                  <>
+                    <rect
+                      x={pickedSide === 1 ? LEFT_EDGE : TICKS}
+                      y={placeAt(Math.min(scale.high, picked.mmr + maxDifference), scale, height)}
+                      width={pickedSide === 1 ? BOARD_WIDTH - LEFT_EDGE : RIGHT_EDGE - TICKS}
+                      height={Math.max(
+                        2,
+                        placeAt(Math.max(scale.low, picked.mmr - maxDifference), scale, height) - placeAt(Math.min(scale.high, picked.mmr + maxDifference), scale, height),
+                      )}
+                      fill={stroke("primary")}
+                      opacity={0.1}
+                    />
+                    {/* the two bounds of the band, so a reader sees where it ends without counting ticks */}
+                    {[Math.min(scale.high, picked.mmr + maxDifference), Math.max(scale.low, picked.mmr - maxDifference)].map((bound) => (
+                      <text key={bound} x={TICKS - 4} y={placeAt(bound, scale, height) + 3} textAnchor="end" fontSize={10} fill={stroke("primary")} className="tnum">
+                        {bound}
+                      </text>
+                    ))}
+                  </>
                 ) : null}
                 {drafted.map((row) => {
                   const one = topOf.get(row.player1_id);
@@ -589,7 +614,7 @@ export function RoundDraftBoard({
                     </g>
                   );
                 })}
-                {shelf ? <line x1={0} y1={height + 8} x2={BOARD_WIDTH} y2={height + 8} stroke={stroke("on-surface")} strokeDasharray="2 4" opacity={0.3} /> : null}
+                {shelf ? <line x1={TICKS} y1={height + 8} x2={BOARD_WIDTH} y2={height + 8} stroke={stroke("on-surface")} strokeDasharray="2 4" opacity={0.3} /> : null}
               </svg>
               {leftRows.map((row) => label(row.player, 1, row.top))}
               {rightRows.map((row) => label(row.player, 2, row.top))}
@@ -600,6 +625,23 @@ export function RoundDraftBoard({
                   none
                 </span>
               ) : null}
+            </div>
+            {/* the marks the board draws that carry no hover of their own */}
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground" style={{ width: BOARD_WIDTH }}>
+              <span className="inline-flex items-center gap-1.5">
+                <svg width={16} height={6} aria-hidden="true">
+                  <line x1={0} y1={3} x2={16} y2={3} strokeWidth={2} stroke={stroke("on-surface")} opacity={0.55} />
+                </svg>
+                Pairing in the draft
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <i className="h-3 w-3 rounded-sm bg-primary/12" />
+                Within the largest difference
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="opacity-60">Name</span>
+                Already paired
+              </span>
             </div>
             </>
             )}

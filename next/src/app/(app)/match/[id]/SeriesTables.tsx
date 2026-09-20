@@ -215,7 +215,9 @@ export function DraftSeries({
     const by = item.updated_by_user_id ?? item.created_by_user_id ?? null;
     return !!item.updated_at && (seenAt === null || item.updated_at > seenAt) && (by == null || by !== viewerId);
   };
+  // the board over this table is the way to start a draft, so its empty state stands alone
   if (!draftSeries.length) {
+    if (board) return null;
     return (
       <div className="p-8 text-center">
         <Icon name="mdi-pencil-box-outline" size={64} className="text-warning" />

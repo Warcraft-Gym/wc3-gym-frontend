@@ -113,13 +113,43 @@ const store = {
   async addChallenger(event_id: number, stage_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`, { entrant_id });
   },
-  // A KOTH night is an event, so the module owns only these two writes
+  // A KOTH night is an event, so the module owns only these writes
   async openNight(night: any) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights`, night);
   },
   // Deletes the series nobody played, so every series left carries a result
   async closeNight(event_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${event_id}/close`);
+  },
+  // The whole night on one read: the brackets, their kings, their queues and what they played.
+  // No id reads the night that takes signups, which answers 404 while none is open.
+  async fetchBoard(night_id: number | null = null) {
+    return await fetchWrapper.get(`${backendUrl}/koth/${night_id ? `nights/${night_id}/board` : "board"}`);
+  },
+  // Every write below answers the whole board again, so a page never re-reads after one
+  async startKothSeries(night_id: number, entrant1_id: number, entrant2_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/series`, { entrant1_id, entrant2_id });
+  },
+  async cancelKothSeries(night_id: number, series_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series/${series_id}`);
+  },
+  // Enter or change the winner; the crown and the line follow it
+  async setKothWinner(night_id: number, series_id: number, winner: 1 | 2) {
+    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/series/${series_id}/result`, { winner });
+  },
+  async setKothQueue(night_id: number, division_id: number, entrant_ids: number[]) {
+    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/brackets/${division_id}/queue`, { entrant_ids });
+  },
+  // Pass the crown on, or step down with null, which leaves the throne empty
+  async setKothCrown(night_id: number, division_id: number, entrant_id: number | null) {
+    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/brackets/${division_id}/crown`, { entrant_id });
+  },
+  async removeKothEntrant(night_id: number, entrant_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}`);
+  },
+  // Back at the end of the line, without the crown
+  async restoreKothEntrant(night_id: number, entrant_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/restore`);
   },
   // Moves the top entrants of a finished stage into the next stage
   async advanceStage(event_id: number, stage_id: number) {

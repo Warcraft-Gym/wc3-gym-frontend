@@ -1,100 +1,84 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/Icon";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { toneClass } from "@/components/ui/tone";
-import { EventHeader } from "@/components/EventHeader";
-import { PlayerName } from "@/components/PlayerName";
-import { RaceIcon } from "@/components/RaceIcon";
+import { PageHeader } from "@/components/PageHeader";
 import { SignupDialog } from "@/components/SignupDialog";
-import { StageView } from "@/components/StageView";
 import { StatusAlert } from "@/components/StatusAlert";
-import { byPlayer, bySeed, entrantName, raceRows } from "@/helpers/entrants.mjs";
-import { myRaces, openNight } from "@/helpers/koth.mjs";
+import { BracketCard } from "@/components/koth/BracketCard";
+import { dateRange, eventLabel } from "@/helpers/event-labels.mjs";
+import { myRacesOnBoard, orderedBrackets } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
-import { inDivision, isScored } from "@/helpers/stage-view.mjs";
 import { useAuth, useEventStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-const solo = (item: Row) => !raceRows(item).length;
-const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
-const byPosition = (rows: Row[] = []) => [...rows].sort((a, b) => a.position - b.position);
+// The board is edge cached for 15 s, so twice a minute is the most the page can learn
+const POLL_MS = 30000;
 
-/** Tonight's KOTH night, open to everyone and drawn from the event reads: one column per
- *  bracket with its standing king, everyone signed up for it, and the chain the throne is
- *  played on. `?mode=clean` drops the two buttons, so the page can sit in a stream. */
+const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
+
+/** Tonight's KOTH night, open to everyone, on the one board read: a card per bracket with its
+ *  king, the series it plays now, the line waiting and what it played tonight. A member reads
+ *  his own place in line. `?mode=clean` drops every control, so the page can sit on a stream. */
 export function KothDashboard() {
-  const router = useRouter();
   const auth = useAuth();
   const store = useEventStore();
 
   // A stream reads the brackets alone, so the clean page offers nothing to click
   const cleanMode = useSearchParams().get("mode") === "clean";
 
-  const [event, setEvent] = useState<Row | null>(null);
-  const [entrants, setEntrants] = useState<Row[]>([]);
-  const [series, setSeries] = useState<Row[]>([]);
-  const [rounds, setRounds] = useState<Row[]>([]);
-  const [standings, setStandings] = useState<Row[]>([]);
+  const [board, setBoard] = useState<Row | null>(null);
+  const [event, setEvent] = useState<Row | null>(null); // read once, for the signup dialog alone
   const [loading, setLoading] = useState(true);
   const [withdrawing, setWithdrawing] = useState<string | boolean>(false); // true, or the race on its way out
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState(false);
 
-  // A night plays one koth stage; a night nobody drew yet has none of its series
-  const stage: Row | null = byPosition(event?.stages)[0] || null;
-  const standing = entrants.filter((row) => !row.withdrawn_at);
-  // A player on two races is one entrant
-  const players = byPlayer(standing).length;
+  const brackets: Row[] = orderedBrackets(board);
   const myId = auth.me?.user?.id;
-  const mine = standing.find((row) => row.user?.id && row.user.id === myId) || null;
-  const held: string[] = myRaces(standing, myId);
+  const held: string[] = myRacesOnBoard(board, myId);
 
-  // One column per bracket, strongest first. The king is the top of the bracket's table,
-  // which the engine sorts him to once the chain has scored a series.
-  const brackets: Row[] = byPosition(event?.divisions).map((division) => {
-    const chain: Row[] = inDivision(series, division.id);
-    const top = standings.find((group) => group.division_id === division.id)?.rows?.[0];
-    return {
-      ...division,
-      entrants: byPlayer(bySeed(standing.filter((row) => row.division_id === division.id))),
-      king: chain.some(isScored) ? entrants.find((row) => row.id === top?.entrant_id) || null : null,
-      chain,
+  // GET /koth/board answers 404 while no night takes signups, which is an empty page
+  const readBoard = async () => setBoard(await store.fetchBoard().catch(() => null));
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const answer = await store.fetchBoard().catch(() => null);
+        if (!alive) return;
+        setBoard(answer);
+        setError(null);
+        // the event row carries the signup rules the dialog needs; the board carries the night
+        if (answer && !event) setEvent(await store.fetchEvent(answer.night_id).catch(() => null));
+      } catch (e) {
+        if (alive) setError(`The night did not load: ${(e as Error).message}`);
+      }
     };
-  });
-
-  const load = async () => {
-    const night = openNight(await store.fetchEvents(null, "koth"));
-    if (!night) {
-      setEvent(null);
-      return;
-    }
-    const [full, rows] = await Promise.all([store.fetchEvent(night.id), store.fetchEntrants(night.id)]);
-    setEvent(full);
-    setEntrants(rows);
-    const first = byPosition(full.stages)[0];
-    // A stage nobody drew yet answers nothing, and the columns show the signups alone
-    const [drawn, table] = first
-      ? await Promise.all([store.fetchStage(full.id, first.id).catch(() => null), store.fetchStandings(full.id, first.id).catch(() => [])])
-      : [null, []];
-    setSeries(drawn?.series || []);
-    setRounds(drawn?.rounds || []);
-    setStandings(table);
-  };
+    load().then(() => alive && setLoading(false));
+    // the tab in the background asks for nothing, so a page left on a stream costs nothing
+    const timer = setInterval(() => {
+      if (!document.hidden) readBoard().catch(() => {});
+    }, POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const withdraw = async (race: string | null = null) => {
     if (!window.confirm(race ? `Withdraw ${raceName(race)} from tonight?` : "Withdraw from tonight?")) return;
     setWithdrawing(race ?? true);
     try {
-      await store.withdraw(event!.id, race);
-      await load();
+      await store.withdraw(board!.night_id, race);
+      await readBoard();
     } catch (e) {
       setError(`The withdraw did not go through: ${(e as Error).message}`);
     } finally {
@@ -102,130 +86,63 @@ export function KothDashboard() {
     }
   };
 
-  useEffect(() => {
-    const reload = async () => {
-      try {
-        await load();
-        setError(null);
-      } catch (e) {
-        setError(`The night did not load: ${(e as Error).message}`);
-      }
-    };
-    reload().then(() => setLoading(false));
-    // The page hangs on a stream all night, so it reads itself again every 30 seconds
-    const timer = setInterval(reload, 30000);
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const signedUp = held.length > 0;
+  const canEnter = !!event && !!event.signups_open && (!signedUp || (!!event.multi_entry && held.length < raceWrapper.races.length));
 
   return (
-    <div className="p-2">
+    <>
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
 
-      {!event && !loading ? (
+      {!board && !loading ? (
         <div className="py-12 text-center text-muted-foreground">
           <Icon name="mdi-crown-outline" size={64} className="opacity-40" />
-          <p className="mt-3 mb-0 text-xl font-medium">No night open tonight</p>
+          <p className="mt-3 mb-0 text-xl font-medium">No KOTH night is open</p>
         </div>
       ) : null}
 
-      {event ? (
+      {board ? (
         <>
-          <EventHeader event={event} />
-
-          {!cleanMode ? (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              {event.signups_open && (!mine || (event.multi_entry && held.length < raceWrapper.races.length)) ? (
-                <Button size="sm" onClick={() => setDialog(true)}>
-                  <Icon name="mdi-account-plus" />
-                  {mine ? "Enter another race" : "Sign up"}
-                </Button>
-              ) : null}
-              {/* A player on more than one race withdraws one race at a time */}
-              {(held.length > 1 ? held : []).map((race) => (
-                <Button key={race} size="sm" variant="destructive" disabled={withdrawing === race} onClick={() => withdraw(race)}>
-                  <Icon name={withdrawing === race ? "mdi-loading mdi-spin" : "mdi-account-minus"} />
-                  Withdraw {raceName(race)}
-                </Button>
-              ))}
-              {mine && held.length < 2 ? (
-                <Button size="sm" variant="destructive" disabled={withdrawing === true} onClick={() => withdraw()}>
-                  <Icon name={withdrawing === true ? "mdi-loading mdi-spin" : "mdi-account-minus"} />
-                  Withdraw
-                </Button>
-              ) : null}
-              <Badge className={toneClass(null)}>
-                <Icon name="mdi-account-multiple" />
-                {`${players} ${players === 1 ? "entrant" : "entrants"}`}
-              </Badge>
-            </div>
-          ) : null}
-
-          <div className="mt-4 grid gap-4 min-[960px]:grid-cols-3">
-            {brackets.map((bracket) => (
-              <Card key={bracket.id} className="card h-full gap-0 py-0">
-                <CardHeader className="bg-primary p-4">
-                  <CardTitle className="text-on-primary">{bracket.name}</CardTitle>
-                </CardHeader>
-
-                <div className="flex min-h-[84px] items-center gap-3 p-4">
-                  {bracket.king ? (
-                    <>
-                      <Icon name="mdi-crown" size={28} className="text-primary-text" aria-hidden="true" />
-                      <div>
-                        <span className="text-xl font-medium">
-                          <PlayerName player={bracket.king.user} race={bracket.king.race} mmr={bracket.king.mmr || false} />
-                        </span>
-                        <div className="text-xs text-muted-foreground">Holds the throne</div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-muted-foreground">No king yet</div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {bracket.entrants.length ? (
-                  <ul className="flex flex-col">
-                    {bracket.entrants.map((entrant: Row) => (
-                      <li key={entrant.id} className="px-4 py-1">
-                        <div className="flex items-center gap-3">
-                          {entrant.user ? (
-                            <PlayerName player={entrant.user} race={solo(entrant) ? entrant.race : undefined} mmr={(solo(entrant) && entrant.mmr) || false} />
-                          ) : (
-                            <span>{entrantName(entrant)}</span>
-                          )}
-                        </div>
-                        {/* A player on two races of one bracket sits once in its chain and reads once here */}
-                        {raceRows(entrant).map((race: Row) => (
-                          <div key={race.id} className="flex items-center gap-2 pl-6 text-xs text-muted-foreground">
-                            <RaceIcon raceIdentifier={race.race} />
-                            <span>{raceName(race.race)}</span>
-                            {race.mmr ? <span className="tnum">{race.mmr} MMR</span> : null}
-                          </div>
-                        ))}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mb-0 px-4 py-3 text-muted-foreground">Nobody signed up yet</p>
-                )}
-
-                {stage && bracket.chain.length ? (
-                  <div className="px-4 pb-2">
-                    <StageView stage={stage} series={bracket.chain} rounds={rounds} divisions={[bracket]} onOpenSeries={(row) => router.push(`/series/${row.id}`)} />
-                  </div>
+          <PageHeader title="KOTH Night" lead={[event ? eventLabel(event) : board.name, dateRange(board)].filter(Boolean).join(" · ")}>
+            {!cleanMode ? (
+              <>
+                {canEnter ? (
+                  <Button size="sm" onClick={() => setDialog(true)}>
+                    <Icon name={signedUp ? "mdi-plus" : "mdi-account-plus"} />
+                    {signedUp ? "Enter another race" : "Sign up"}
+                  </Button>
                 ) : null}
-              </Card>
+                {/* A player on more than one race withdraws one race at a time */}
+                {(held.length > 1 ? held : []).map((race) => (
+                  <Button key={race} size="sm" variant="destructive" disabled={withdrawing === race} onClick={() => withdraw(race)}>
+                    <Icon name={withdrawing === race ? "mdi-loading mdi-spin" : "mdi-account-minus"} />
+                    Withdraw {raceName(race)}
+                  </Button>
+                ))}
+                {held.length === 1 ? (
+                  <Button size="sm" variant="destructive" disabled={withdrawing === true} onClick={() => withdraw()}>
+                    <Icon name={withdrawing === true ? "mdi-loading mdi-spin" : "mdi-account-minus"} />
+                    Withdraw
+                  </Button>
+                ) : null}
+                <Badge className={toneClass(null)}>
+                  <Icon name="mdi-account-multiple" />
+                  {board.entrant_count} signed up
+                </Badge>
+              </>
+            ) : null}
+          </PageHeader>
+
+          <div className="grid gap-4 min-[960px]:grid-cols-3">
+            {brackets.map((bracket: Row) => (
+              <BracketCard key={bracket.division_id} bracket={bracket} brackets={brackets} you={cleanMode ? null : myId} />
             ))}
           </div>
 
-          {dialog ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={load} /> : null}
+          {dialog && event ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={readBoard} /> : null}
         </>
       ) : null}
-    </div>
+    </>
   );
 }
 

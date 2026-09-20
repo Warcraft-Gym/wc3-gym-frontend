@@ -1,0 +1,428 @@
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Icon } from "@/components/ui/Icon";
+import { Separator } from "@/components/ui/separator";
+import { TapTooltip } from "@/components/ui/TapTooltip";
+import { toneClass } from "@/components/ui/tone";
+import { PlayerName } from "@/components/PlayerName";
+import { RaceIcon } from "@/components/RaceIcon";
+import { noStatsWarning } from "@/helpers/games-rule.mjs";
+import { bracketLabel, placeInQueue, seatKey, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
+import { raceWrapper } from "@/helpers/races.js";
+import { cn } from "@/lib/utils";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Row = Record<string, any>;
+
+/** The controls the run page hangs on the card. The public page passes none and draws the
+ *  same card. */
+export type BracketAdmin = {
+  picks: Record<number, number>; // the race row each seat plays next, by seat key
+  picked: number[]; // the seat keys the admin clicked for the next pair, at most two
+  busy: boolean;
+  onPickSeat: (seat: Row) => void;
+  onPickRace: (seat: Row, entrantId: number) => void;
+  onClearPick: () => void;
+  onStart: (bracket: Row, pair: Row[]) => void;
+  onWin: (bracket: Row, side: 1 | 2) => void;
+  onCancelSeries: (bracket: Row) => void;
+  onStepDown: (bracket: Row) => void;
+  onMove: (bracket: Row, from: number, to: number) => void;
+  onRemove: (seat: Row) => void;
+  onRestore: (entrantId: number) => void;
+  onChangeWinner: (played: Row) => void;
+  onAddReplay: (played: Row) => void;
+  onAddPlayer: (bracket: Row) => void;
+};
+
+const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
+
+// The seat of this bracket one seat key names, so a pick survives a board that read itself again
+const seatOf = (bracket: Row, key: number): Row | null =>
+  [bracket.king, ...(bracket.queue ?? [])].find((seat: Row) => seat && seatKey(seat) === key) ?? null;
+
+/** One player of the board as the app draws a player line: flag, name, race, one MMR. A race
+ *  W3Champions holds no rating for wears the games mark instead of a number. */
+export function BoardPlayer({ row, race, plain }: { row: Row; race?: string | null; plain?: boolean }) {
+  const shown = race === undefined ? row.race : race;
+  return (
+    <PlayerName
+      player={{ id: row.user_id ?? null, name: row.name, country: row.country }}
+      race={shown || undefined}
+      mmr={row.mmr ?? false}
+      warning={row.mmr == null && shown ? noStatsWarning(shown) : null}
+      plain={plain}
+    />
+  );
+}
+
+/** The races one player holds in this bracket, under his name. An admin picks the one that
+ *  goes into the next series; a reader sees the ratings alone. */
+function RaceRows({ seat, admin }: { seat: Row; admin?: BracketAdmin }) {
+  const rows: Row[] = seat.rows ?? [];
+  if (rows.length < 2) return null;
+  const playing = seatRow(seat, admin?.picks ?? {});
+  return (
+    <div className="mt-1 flex flex-col">
+      {rows.map((row: Row) => {
+        const on = row.entrant_id === playing?.entrant_id;
+        const body = (
+          <>
+            {admin ? <Icon name={on ? "mdi-check-circle" : "mdi-circle-outline"} size={14} className={on ? "text-primary-text" : "text-muted-foreground"} /> : null}
+            <RaceIcon raceIdentifier={row.race} />
+            <span className="flex-1 truncate text-left">{raceName(row.race)}</span>
+            {row.mmr != null ? (
+              <span className="tnum text-muted-foreground">{row.mmr}</span>
+            ) : row.race ? (
+              <TapTooltip content={noStatsWarning(row.race).text}>
+                <Icon name="mdi-alert" size={14} className="text-error" />
+                <span className="sr-only">{noStatsWarning(row.race).text}</span>
+              </TapTooltip>
+            ) : null}
+          </>
+        );
+        return admin ? (
+          <button
+            key={row.entrant_id}
+            type="button"
+            aria-pressed={on}
+            className="flex items-center gap-2 border-t py-1 pl-6 pr-1 text-xs hover:bg-muted"
+            onClick={() => admin.onPickRace(seat, row.entrant_id)}
+          >
+            {body}
+          </button>
+        ) : (
+          <div key={row.entrant_id} className="flex items-center gap-2 border-t py-1 pl-6 pr-1 text-xs">
+            {body}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The throne: the standing king, the king from the last event while nobody has won tonight,
+ *  or nobody at all. */
+export function KingBlock({ bracket, admin }: { bracket: Row; admin?: BracketAdmin }) {
+  const king: Row | null = bracket.king;
+  const defender: Row | null = bracket.defender;
+  const row = king ? seatRow(king, admin?.picks ?? {}) : null;
+  return (
+    <div className="flex min-h-[64px] items-start gap-3 p-4">
+      <Icon name={king ? "mdi-crown" : "mdi-crown-outline"} size={26} className={king ? "text-primary-text" : "text-muted-foreground"} />
+      {king ? (
+        <div className="min-w-0 flex-1">
+          <BoardPlayer row={{ user_id: king.user_id, name: king.name, country: king.country, mmr: row?.mmr ?? null }} race={row?.race ?? null} />
+          <div className="text-xs text-muted-foreground">Holds the throne</div>
+          <RaceRows seat={king} admin={admin} />
+        </div>
+      ) : defender ? (
+        <div className="min-w-0 flex-1">
+          <BoardPlayer row={defender} />
+          <div className="text-xs text-muted-foreground">King from last event, defending</div>
+        </div>
+      ) : (
+        <div className="flex-1 text-muted-foreground">No king yet</div>
+      )}
+      {admin && king ? (
+        <Button variant="ghost" size="sm" className="shrink-0 text-primary-text" disabled={admin.busy} onClick={() => admin.onStepDown(bracket)}>
+          <Icon name="mdi-exit-to-app" />
+          Step down
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+/** The series the bracket plays right now, or the one filled button that starts the next one. */
+export function OpenSeries({ bracket, admin }: { bracket: Row; admin?: BracketAdmin }) {
+  const live: Row | null = bracket.open_series;
+  if (live) {
+    return (
+      <div className="mx-4 mb-3 rounded-lg border p-3">
+        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Icon name="mdi-play-circle-outline" size={16} />
+          Now playing
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <BoardPlayer row={live.side1} />
+          <span className="text-xs text-muted-foreground">vs</span>
+          <BoardPlayer row={live.side2} />
+        </div>
+        {admin ? (
+          <>
+            <div className="mt-3 flex flex-col gap-2 min-[420px]:flex-row">
+              {[live.side1, live.side2].map((side: Row, index: number) => (
+                <Button key={side.entrant_id} className="flex-1" disabled={admin.busy} onClick={() => admin.onWin(bracket, (index + 1) as 1 | 2)}>
+                  <Icon name="mdi-crown" />
+                  {side.name} won
+                </Button>
+              ))}
+            </div>
+            <Button variant="ghost" size="sm" className="mt-2 text-error" disabled={admin.busy} onClick={() => admin.onCancelSeries(bracket)}>
+              <Icon name="mdi-close" />
+              Cancel this series
+            </Button>
+          </>
+        ) : null}
+      </div>
+    );
+  }
+  if (!admin) return null;
+  const picked = admin.picked.map((key) => seatOf(bracket, key)).filter(Boolean) as Row[];
+  const start = startButton(bracket, picked);
+  const skipped = skippedSeat(bracket);
+  if (!start) return null;
+  return (
+    <div className="mx-4 mb-3">
+      <Button className="w-full" disabled={admin.busy} onClick={() => admin.onStart(bracket, start.pair)}>
+        <Icon name="mdi-play" />
+        {start.label}
+      </Button>
+      {start.note ? <p className="mt-1 mb-0 text-xs text-muted-foreground">{start.note}</p> : null}
+      {skipped && picked.length !== 2 ? (
+        <p className="mt-1 mb-0 text-xs text-muted-foreground">Skipped {skipped.name}, playing in another bracket.</p>
+      ) : null}
+      {picked.length === 2 ? (
+        <p className="mt-1 mb-0 text-xs text-muted-foreground">
+          Two players picked.{" "}
+          <button type="button" className="text-primary-text underline" onClick={admin.onClearPick}>
+            Clear the pick
+          </button>
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** One place in the line: one PLAYER, the races he holds in this bracket under his name, and
+ *  a mark while he is playing in another bracket. */
+export function QueueRow({
+  seat,
+  place,
+  bracket,
+  admin,
+  you,
+  dragged,
+  onDragged,
+}: {
+  seat: Row;
+  place: number;
+  bracket: Row;
+  admin?: BracketAdmin;
+  you?: number | null;
+  dragged?: number | null;
+  onDragged?: (key: number | null) => void;
+}) {
+  const key = seatKey(seat) as number;
+  const picked = !!admin && admin.picked.includes(key);
+  const row = seatRow(seat, admin?.picks ?? {});
+  const single = (seat.rows ?? []).length < 2;
+  const queue: Row[] = bracket.queue ?? [];
+  const at = queue.findIndex((one: Row) => seatKey(one) === key);
+  const line = { user_id: seat.user_id, name: seat.name, country: seat.country, mmr: single ? (row?.mmr ?? null) : null };
+  return (
+    <li
+      className={cn("border-t", picked && "bg-primary/10", dragged === key && "opacity-40")}
+      draggable={!!admin}
+      onDragStart={() => onDragged?.(key)}
+      onDragOver={(event) => admin && event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        if (admin && dragged != null && dragged !== key) admin.onMove(bracket, queue.findIndex((one: Row) => seatKey(one) === dragged), at);
+        onDragged?.(null);
+      }}
+      onDragEnd={() => onDragged?.(null)}
+    >
+      <div className="flex items-center gap-2 py-1 pl-1 pr-1">
+        {admin ? <Icon name="mdi-drag-horizontal-variant" size={16} className="shrink-0 cursor-grab text-muted-foreground" /> : null}
+        <span className="tnum w-4 shrink-0 text-right text-xs text-muted-foreground">{place}</span>
+        {admin ? (
+          <PlayerName
+            player={{ id: seat.user_id, name: seat.name, country: seat.country }}
+            race={single ? row?.race || undefined : undefined}
+            mmr={single ? (row?.mmr ?? false) : false}
+            warning={single && row && row.mmr == null && row.race ? noStatsWarning(row.race) : null}
+            onClick={() => admin.onPickSeat(seat)}
+          >
+            {picked ? <Icon name="mdi-check" size={16} className="text-primary-text" /> : null}
+          </PlayerName>
+        ) : (
+          <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} />
+        )}
+        {seat.busy ? (
+          <Badge variant="outline" className="shrink-0">
+            <Icon name="mdi-play" />
+            playing in another bracket
+          </Badge>
+        ) : null}
+        {you != null && seat.user_id === you ? (
+          <Badge className={cn(toneClass("info"), "shrink-0")}>
+            <Icon name="mdi-account-multiple" />
+            {placeInQueue(bracket, you)}
+          </Badge>
+        ) : null}
+        {admin ? (
+          <span className="ml-auto flex shrink-0 items-center">
+            <Button variant="ghost" size="icon-xs" disabled={admin.busy || at === 0} aria-label={`Move ${seat.name} up`} onClick={() => admin.onMove(bracket, at, at - 1)}>
+              <Icon name="mdi-chevron-up" />
+            </Button>
+            <Button variant="ghost" size="icon-xs" disabled={admin.busy || at === queue.length - 1} aria-label={`Move ${seat.name} down`} onClick={() => admin.onMove(bracket, at, at + 1)}>
+              <Icon name="mdi-chevron-down" />
+            </Button>
+            <Button variant="ghost" size="icon-xs" className="text-error" disabled={admin.busy} aria-label={`Remove ${seat.name}`} onClick={() => admin.onRemove(seat)}>
+              <Icon name="mdi-close" />
+            </Button>
+          </span>
+        ) : null}
+      </div>
+      <RaceRows seat={seat} admin={admin} />
+    </li>
+  );
+}
+
+/** The players who left tonight. An admin puts one back at the end of the line. */
+export function LeftRows({ bracket, admin }: { bracket: Row; admin?: BracketAdmin }) {
+  const rows: Row[] = bracket.left ?? [];
+  if (!rows.length) return null;
+  return (
+    <div className="px-4 pb-2">
+      <div className="py-1 text-xs font-medium text-muted-foreground">Left tonight</div>
+      {rows.map((row: Row) => (
+        <div key={row.entrant_id} className="flex items-center gap-2 border-t py-1 opacity-(--v-medium-emphasis-opacity)">
+          <BoardPlayer row={row} />
+          {admin ? (
+            <Button variant="ghost" size="sm" className="ml-auto shrink-0" disabled={admin.busy} onClick={() => admin.onRestore(row.entrant_id)}>
+              <Icon name="mdi-arrow-u-left-top" />
+              Put back
+            </Button>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** One series the bracket played tonight: the winner beat the loser, and the crown says what
+ *  the throne did. A best of one carries no score worth printing. */
+export function PlayedRow({ played, admin }: { played: Row; admin?: BracketAdmin }) {
+  const throne = throneWord(played);
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t py-1">
+      <span className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-win" aria-hidden="true" />
+      <BoardPlayer row={played.winner} />
+      <span className="text-xs text-muted-foreground">beat</span>
+      <BoardPlayer row={played.loser} />
+      <span className="ml-auto flex shrink-0 items-center gap-1">
+        {throne ? (
+          <TapTooltip content={throne}>
+            <Icon name="mdi-crown" size={16} className="text-primary-text" />
+            <span className="sr-only">{throne}</span>
+          </TapTooltip>
+        ) : null}
+        {played.replay ? (
+          <Badge variant="outline" render={<Link href={`/series/${played.series_id}`} />}>
+            <Icon name="mdi-filmstrip" />
+            Replay
+          </Badge>
+        ) : null}
+        {admin ? (
+          <>
+            {played.replay ? null : (
+              <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Add replay" title="Add replay" onClick={() => admin.onAddReplay(played)}>
+                <Icon name="mdi-upload" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Change the winner" title="Change the winner" onClick={() => admin.onChangeWinner(played)}>
+              <Icon name="mdi-swap-horizontal" />
+            </Button>
+          </>
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
+/** One bracket of the night, the same card on the run page and on the public page: the throne,
+ *  the series it plays now, the line waiting and what it played tonight. */
+export function BracketCard({
+  bracket,
+  brackets,
+  admin,
+  you,
+}: {
+  bracket: Row;
+  brackets: Row[];
+  admin?: BracketAdmin;
+  you?: number | null;
+}) {
+  const { name, band } = bracketLabel(brackets, bracket);
+  const queue: Row[] = bracket.queue ?? [];
+  const played: Row[] = bracket.played ?? [];
+  // one card is dragged at a time, so the drag belongs to the card and not to the page
+  const [dragged, setDragged] = useState<number | null>(null);
+  return (
+    <Card className="card h-full gap-0 py-0">
+      <CardHeader className="flex items-center gap-2 bg-primary p-3">
+        <CardTitle className="flex-1 text-on-primary">{name}</CardTitle>
+        <span className="tnum text-xs text-on-primary/80">{band}</span>
+      </CardHeader>
+
+      <KingBlock bracket={bracket} admin={admin} />
+      <Separator />
+      <OpenSeries bracket={bracket} admin={admin} />
+
+      <div className="flex items-baseline gap-2 px-4 pb-1">
+        <span className="text-xs font-medium text-muted-foreground">Queue</span>
+        <span className="tnum text-xs text-muted-foreground">{queue.length} waiting</span>
+      </div>
+      {queue.length ? (
+        <ul className="mb-2 flex flex-col px-3">
+          {queue.map((seat: Row, index: number) => (
+            <QueueRow
+              key={seatKey(seat)}
+              seat={seat}
+              place={index + 1}
+              bracket={bracket}
+              admin={admin}
+              you={you}
+              dragged={dragged}
+              onDragged={setDragged}
+            />
+          ))}
+        </ul>
+      ) : (
+        <p className="mb-2 px-4 text-sm text-muted-foreground">Nobody signed up yet</p>
+      )}
+
+      <LeftRows bracket={bracket} admin={admin} />
+
+      {admin ? (
+        <div className="px-4 pb-3">
+          <Button variant="outline" size="sm" className="text-primary-text" disabled={admin.busy} onClick={() => admin.onAddPlayer(bracket)}>
+            <Icon name="mdi-account-plus" />
+            Add player
+          </Button>
+        </div>
+      ) : null}
+
+      {played.length ? (
+        <div className="px-4 pb-3">
+          <div className="flex items-baseline gap-2 pb-1">
+            <span className="text-xs font-medium text-muted-foreground">Played tonight</span>
+            <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
+          </div>
+          {played.map((row: Row) => (
+            <PlayedRow key={row.series_id} played={row} admin={admin} />
+          ))}
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+export default BracketCard;

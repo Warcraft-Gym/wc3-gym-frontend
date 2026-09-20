@@ -18,17 +18,28 @@ import { TeamName } from "@/components/TeamName";
 import { checkInCounts, checkInStatus, setByText } from "@/helpers/check-in.mjs";
 import { eventLabel } from "@/helpers/event-labels.mjs";
 import { currentRound, roundLabel } from "@/helpers/rounds.mjs";
-import { useAuth, useAvailabilityStore, useMatchStore, useSeason, useTeamStore } from "@/stores";
+import { useBreakpoint, XS } from "@/hooks/breakpoint";
+import { useAuth, useAvailabilityStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
 
 type Row = Record<string, any>;
 type Status = { title: string; short: string; color: string | null; icon: string; derived: boolean; hint?: string };
 
-/** The state of one round as a tonal chip; the matrix cell reads the short word. */
+// The mark of a matrix cell wears the colour; the word beside it stays a text token
+const INK: Record<string, string> = { success: "text-success", error: "text-error" };
+
+/** The state of one round as a tonal chip; a matrix cell drops the pill, so three rounds fit 390 px. */
 function StatusChip({ status, short = false }: { status: Status; short?: boolean }) {
+  if (short)
+    return (
+      <span className="inline-flex items-center gap-1 text-xs" title={status.hint ?? status.title}>
+        <Icon name={status.icon} size={14} className={INK[status.color ?? ""] ?? "text-muted-foreground"} />
+        {status.short}
+      </span>
+    );
   return (
     <Badge className={toneClass(status.color)} title={status.hint ?? status.title}>
       <Icon name={status.icon} />
-      {short ? status.short : status.title}
+      {status.title}
     </Badge>
   );
 }
@@ -96,7 +107,9 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
   const teamStore = useTeamStore();
   const availabilityStore = useAvailabilityStore();
   const matchStore = useMatchStore();
+  const seriesStore = useSeriesStore();
   const { current_season: season, seasonIdOf, fetchSeason } = useSeason();
+  const phone = useBreakpoint(XS);
 
   const teamId = Number(id);
   const seasonId = seasonIdOf(seasonKey);
@@ -108,6 +121,8 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
   // The grid speaks for the answers it read: without them every cell would read 'No answer'
   const [loaded, setLoaded] = useState(false);
   const [matches, setMatches] = useState<Row[]>([]);
+  // One read of the event's series, so a round that is already paired names its opponent
+  const [eventSeries, setEventSeries] = useState<Row[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
   const [allRounds, setAllRounds] = useState(false);
   const [shownRound, setShownRound] = useState<number | null>(null);
@@ -127,6 +142,24 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
 
   const rowFor = (userId: number, playday: number) => rows.find((row) => row.user_id === userId && row.playday === playday);
   const statusOf = (userId: number, playday: number): Status => checkInStatus(rowFor(userId, playday));
+
+  // A series of the round is the answer: a player who is already paired needs no check-in word
+  const seriesOf = (userId: number, playday: number) =>
+    eventSeries.find(
+      (one) =>
+        one.match?.playday === playday &&
+        [one.match?.team1_id, one.match?.team2_id].includes(teamId) &&
+        [one.player1_id, one.player2_id].includes(userId),
+    );
+  // The other side of a series, or null while a side names nobody yet
+  const opponentOf = (one: Row | undefined, userId: number) => {
+    const side = one?.player1_id === userId ? 2 : 1;
+    const player = one?.[`player${side}`];
+    return one && player ? { player, race: one[`player${side}_race`] } : null;
+  };
+  // Checked in and still unpaired: the captain's own work list for the round
+  const needsGame = (playday: number) =>
+    players.filter((player) => statusOf(player.id, playday).title === "Checked in" && !seriesOf(player.id, playday)).length;
 
   // every route answers each row of the player it wrote, so their old rows go
   const write = async (userId: number, key: string, call: () => Promise<Row[]>) => {
@@ -181,15 +214,17 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
     queueMicrotask(async () => {
       setIsLoading(true);
       try {
-        const [answered, seasonMatches, loadedTeam] = await Promise.all([
+        const [answered, seasonMatches, loadedTeam, seasonSeries] = await Promise.all([
           availabilityStore.fetchTeamAvailability(teamId, seasonId),
           matchStore.searchMatchesBySeason(seasonId).catch(() => []),
           teamStore.fetchTeamBySeason(teamId, seasonId),
+          seriesStore.searchSeriesBySeason(seasonId).catch(() => []),
           fetchSeason(seasonId),
         ]);
         setRows(answered);
         setMatches(seasonMatches);
         setTeam(loadedTeam);
+        setEventSeries(seasonSeries);
         setLoaded(true);
       } catch (error: any) {
         console.error(error);
@@ -252,7 +287,9 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
           <ToggleGroupItem value="all">All rounds</ToggleGroupItem>
         </ToggleGroup>
         {!allRounds && loaded && players.length ? (
-          <span className="tnum text-sm text-muted-foreground sm:ml-auto">{checkInCounts(players, rows, round)}</span>
+          <span className="tnum text-sm text-muted-foreground sm:ml-auto">
+            {[checkInCounts(players, rows, round), needsGame(round) ? `${needsGame(round)} needs a game` : ""].filter(Boolean).join(" · ")}
+          </span>
         ) : null}
       </div>
 
@@ -268,11 +305,19 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
               const status = statusOf(player.id, round);
               const note = setByText(rowFor(player.id, round), auth.me?.user?.id);
               const busy = saving === `${player.id}|${round}` || saving === `${player.id}|all`;
+              const versus = opponentOf(seriesOf(player.id, round), player.id);
               return (
                 <div key={player.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-2 last:border-b-0">
                   <PlayerName player={player} race={player.signup_race} />
-                  <StatusChip status={status} />
-                  {note ? <span className="text-xs text-muted-foreground">{note}</span> : null}
+                  {versus ? (
+                    <span className="flex items-center gap-1.5 text-sm">
+                      <span className="text-muted-foreground">vs</span>
+                      <PlayerName player={versus.player} race={versus.race} />
+                    </span>
+                  ) : (
+                    <StatusChip status={status} />
+                  )}
+                  {note && !versus ? <span className="text-xs text-muted-foreground">{note}</span> : null}
                   <span className="ml-auto">
                     {menuFor(
                       player,
@@ -292,14 +337,24 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Player</TableHead>
+                  <TableHead className="sticky left-0 z-10 bg-surface">Player</TableHead>
                   {rounds.map((item) => (
                     <TableHead key={item} className="text-center">
-                      {roundLabel(roundOf(item))}
-                      <div className="text-xs font-normal text-muted-foreground">
-                        Round {item}
-                        {opponentOfRound(item) ? ` · vs ${opponentOfRound(item).name}` : ""}
-                      </div>
+                      {/* a phone reads the round on one short line, so three rounds fit 390 px */}
+                      {phone ? (
+                        <span className="whitespace-nowrap">
+                          R{item} · {roundLabel(roundOf(item)).replace(" to ", "-")}
+                        </span>
+                      ) : (
+                        <>
+                          Round {item}
+                          <div className="text-xs font-normal text-muted-foreground">
+                            {roundLabel(roundOf(item))}
+                            {opponentOfRound(item) ? ` · vs ${opponentOfRound(item).name}` : ""}
+                          </div>
+                        </>
+                      )}
+                      {needsGame(item) ? <div className="tnum text-xs font-normal text-muted-foreground">{needsGame(item)} needs a game</div> : null}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -307,13 +362,15 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
               <TableBody>
                 {players.map((player) => (
                   <TableRow key={player.id}>
-                    <TableCell>
-                      <PlayerName player={player} race={player.signup_race} />
+                    {/* the names stay in place while the rounds scroll under them */}
+                    <TableCell className="sticky left-0 z-10 bg-surface">
+                      <PlayerName player={player} race={phone ? undefined : player.signup_race} mmr={phone ? false : undefined} />
                     </TableCell>
                     {rounds.map((item) => {
                       // the cell reads the short word, so the label carries the state the chip stands for
                       const status = statusOf(player.id, item);
                       const busy = saving === `${player.id}|${item}` || saving === `${player.id}|all`;
+                      const versus = opponentOf(seriesOf(player.id, item), player.id);
                       return (
                         <TableCell key={item} className="text-center">
                           {menuFor(
@@ -322,11 +379,11 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                             <button
                               type="button"
                               className="cursor-pointer"
-                              aria-label={`${player.name}, round ${item}: ${status.title}. Open the check-in menu`}
+                              aria-label={`${player.name}, round ${item}: ${versus ? `vs ${versus.player.name}` : status.title}. Open the check-in menu`}
                               aria-busy={busy}
                               disabled={!!saving}
                             />,
-                            <StatusChip status={status} short />,
+                            versus ? <span className="text-sm">{versus.player.name}</span> : <StatusChip status={status} short />,
                           )}
                         </TableCell>
                       );

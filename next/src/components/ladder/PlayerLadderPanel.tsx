@@ -5,13 +5,15 @@ import { timeFormat } from "d3-time-format";
 import { Icon } from "@/components/ui/Icon";
 import { RaceIcon } from "@/components/RaceIcon";
 import { LadderPlots, type LadderDay } from "./LadderPlots";
+import { record } from "@/helpers/figures.mjs";
 import { LOSS, RACES, WIN, lastPlayed } from "@/helpers/ladder-days.mjs";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type SeasonPlayer = { games?: number; battleTag?: string | null; vs_race?: Record<string, [number, number]>; per_day?: any[] } & Record<string, any>;
 
-const BAR = 150;
+// the bar leaves room for the record beside it inside the 250 px race panel
+const BAR = 110;
 const fmt = timeFormat("%-d %b");
 
 /** The open row under a draft pick: his record against each race, then his games and MMR per day */
@@ -57,13 +59,11 @@ export function PlayerLadderPanel({
             {raceRows.map((r) => (
               <div key={r.race} className="flex h-[22px] items-center gap-2">
                 <RaceIcon raceIdentifier={r.race} />
-                <div className="flex w-[150px] gap-0">
+                <div className="flex w-[110px] shrink-0 gap-0">
                   {r.wPx ? <div style={{ width: `${r.wPx}px`, background: WIN }} className="h-[10px]" /> : null}
                   {r.lPx ? <div style={{ width: `${r.lPx}px`, background: LOSS, marginLeft: r.wPx ? "2px" : 0 }} className="h-[10px]" /> : null}
                 </div>
-                <span className="min-w-[30px] text-[0.8125rem] tnum">
-                  {r.w}&ndash;{r.l}
-                </span>
+                <span className="text-[0.8125rem] tnum whitespace-nowrap">{record(r.w, r.l) ?? "—"}</span>
               </div>
             ))}
           </div>

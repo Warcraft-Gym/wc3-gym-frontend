@@ -31,8 +31,8 @@ test('a day with no games draws no bar, the smallest played day keeps a stub', (
 });
 
 test('a day names itself, its record and its MMR', () => {
-  assert.equal(dayTip({ d: '2026-09-03', w: 2, l: 1, mmr: 1510 }), '3 Sep · 2–1 · 1510 MMR');
-  assert.equal(dayTip({ d: '2026-09-04', w: 0, l: 0, mmr: null }), '4 Sep · 0–0');
+  assert.equal(dayTip({ d: '2026-09-03', w: 2, l: 1, mmr: 1510 }), '3 Sep · 2 – 1 · 1510 MMR');
+  assert.equal(dayTip({ d: '2026-09-04', w: 0, l: 0, mmr: null }), '4 Sep · 0 – 0');
 });
 
 test('the day window spans the rows, in any order', () => {

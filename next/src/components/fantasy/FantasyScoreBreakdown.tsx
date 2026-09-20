@@ -12,6 +12,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { TeamName } from "@/components/TeamName";
 import { W3CMmr } from "@/components/W3CMmr";
+import { record } from "@/helpers/figures.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { teamImageUrl, showDefaultTeamImage } from "@/helpers/team-image.js";
 import { getW3CMMR } from "@/helpers/w3c-stats.js";
@@ -76,7 +77,7 @@ export function FantasyScoreBreakdown({
 
   const gnlRecord = (player: any) => {
     const stat = player.gnl_stats?.find((s: any) => s.season_id === seasonId);
-    return stat ? `${stat.wins || 0}W - ${stat.losses || 0}L` : "-";
+    return (stat && record(stat.wins || 0, stat.losses || 0)) || "—";
   };
 
   const roster: RosterRow[] = (() => {
@@ -203,7 +204,7 @@ export function FantasyScoreBreakdown({
             <RaceIcon raceIdentifier={breakdown.race_breakdown.race} size={24} />
             <strong>Race Points Details</strong>
             <span className="opacity-(--v-medium-emphasis-opacity)">
-              {raceName} · {breakdown.race_breakdown.season_stats.wins}W - {breakdown.race_breakdown.season_stats.losses}L
+              {raceName} · {record(breakdown.race_breakdown.season_stats.wins, breakdown.race_breakdown.season_stats.losses) ?? "—"}
             </span>
             <Badge className={toneClass("primary")}>
               #{raceRank} of {raceRanking.length}

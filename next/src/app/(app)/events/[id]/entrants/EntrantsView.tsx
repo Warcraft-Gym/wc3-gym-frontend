@@ -139,6 +139,8 @@ export function EntrantsView({ id }: { id: string }) {
   const hasPreviousStage = (stage?.position ?? 1) > 1;
   const canReorder = isAdmin && !seedsLocked;
   const takesTeams = event?.entrant_kind === "team";
+  // A division write deletes and rebuilds the brackets, which a live KOTH night cannot take
+  const isKoth = event?.kind === "koth";
 
   const columns: GroupedColumn[] = [
     { key: "player", title: "Entrant" },
@@ -432,15 +434,26 @@ export function EntrantsView({ id }: { id: string }) {
                   <Icon name="mdi-scale-balance" />
                   Even split
                 </Button>
-                <Button variant="outline" disabled={busy === "divisions"} onClick={saveDivisions}>
-                  {busyIcon("divisions", "mdi-content-save")}
-                  Save divisions
-                </Button>
+                {isKoth ? null : (
+                  <Button variant="outline" disabled={busy === "divisions"} onClick={saveDivisions}>
+                    {busyIcon("divisions", "mdi-content-save")}
+                    Save divisions
+                  </Button>
+                )}
                 <Button disabled={busy === "assign" || !divisions.length} onClick={assign}>
                   {busyIcon("assign", "mdi-arrow-split-vertical")}
                   Assign from MMR
                 </Button>
               </div>
+              {isKoth ? (
+                <p className="mb-2 text-xs text-muted-foreground">
+                  The brackets of a KOTH night keep their rows, so their MMR moves on{" "}
+                  <Link className="text-primary-text underline" href={`/koth/nights/${eventId}?bounds=1`}>
+                    the run page
+                  </Link>
+                  .
+                </p>
+              ) : null}
               <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={stripPlayers} names={names} colors={colors} domain={domain} stored={storedCuts} />
             </div>
           ) : null}

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  bracketLabel, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
+  boundsWrite, bracketLabel, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, seatRow, skippedSeat, startButton,
   throneWord,
 } from './koth-board.mjs';
@@ -122,7 +122,32 @@ test('the close names each open series it deletes', () => {
       { division_id: 8, name: 'Bracket 2', lower_bound: 1450, open_series: { series_id: 3, side1: { name: 'Kestrin' }, side2: { name: 'Sablefen' } } },
     ],
   };
-  assert.deepEqual(openSeriesRows(board), [{ division_id: 8, text: 'Bracket 2 · Kestrin vs Sablefen' }]);
+  assert.deepEqual(openSeriesRows(board), [
+    { division_id: 8, name: 'Bracket 2', side1: { name: 'Kestrin' }, side2: { name: 'Sablefen' }, text: 'Bracket 2 · Kestrin vs Sablefen' },
+  ]);
+});
+
+test('the bounds write keeps 0 on the weakest bracket and names every bracket once', () => {
+  const written = boundsWrite(BRACKETS, { 8: '1400', 7: '1700' });
+  assert.equal(written.error, null);
+  assert.deepEqual(written.body.bounds, [
+    { division_id: 9, lower_bound: 0 },
+    { division_id: 8, lower_bound: 1400 },
+    { division_id: 7, lower_bound: 1700 },
+  ]);
+  assert.deepEqual(written.rows.map((row) => row.line), [
+    'Bracket 1 takes under 1400 MMR',
+    'Bracket 2 takes 1400 to 1699 MMR',
+    'Bracket 3 takes 1700 MMR and up',
+  ]);
+});
+
+test('the bounds write refuses a bound that is not a whole number or not above the one below', () => {
+  assert.equal(boundsWrite(BRACKETS, { 8: '14 50', 7: '1700' }).error, 'Bracket 2 takes a whole number of 0 or more.');
+  assert.equal(boundsWrite(BRACKETS, { 8: '', 7: '1700' }).error, 'Bracket 2 takes a whole number of 0 or more.');
+  assert.equal(boundsWrite(BRACKETS, { 8: '-5', 7: '1700' }).error, 'Bracket 2 takes a whole number of 0 or more.');
+  assert.equal(boundsWrite(BRACKETS, { 8: '1700', 7: '1700' }).error, 'Bracket 3 takes a bound larger than Bracket 2.');
+  assert.equal(boundsWrite(BRACKETS, { 8: '0', 7: '1700' }).error, 'Bracket 2 takes a bound larger than Bracket 1.');
 });
 
 test('a player who left on two races reads one row, holding both of them', () => {

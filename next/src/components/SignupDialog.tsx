@@ -78,7 +78,7 @@ export function SignupDialog({
   const bracket: string | null = place?.bracket || (at < 0 ? null : bracketName(divisions[at], at));
   const tag = entrant?.user?.battleTag || battleTag.trim();
   // The one mark the app draws for a race W3Champions holds no stats on
-  const noStats = entrant?.race ? noStatsWarning(entrant.race) : null;
+  const noStats = noStatsWarning(entrant?.race ?? null);
 
   const submit = async () => {
     setError(null);

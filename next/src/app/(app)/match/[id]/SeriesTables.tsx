@@ -27,19 +27,27 @@ export function PublishedSeries({
   series,
   smAndDown,
   isAdmin,
+  canDraft,
+  openPlaces = 0,
   formateDate,
   seriesActions,
   onAddSeries,
+  onDraftSeries,
   onDeleteAll,
 }: {
   series: Row[];
   smAndDown: boolean;
   isAdmin: boolean;
+  canDraft?: boolean;
+  openPlaces?: number; // the places of the round the published series and the drafts leave open
   formateDate: (value?: string | null) => string | null | undefined;
   seriesActions: (item: Row) => RowAction[];
   onAddSeries: () => void;
+  onDraftSeries?: () => void; // the draft board is where a captain fills an open place
   onDeleteAll: () => void;
 }) {
+  // an admin fills an open place from the admin add, so the draft entry is the captain's
+  const room = canDraft && !isAdmin && openPlaces > 0;
   if (!series.length) {
     return (
       <div className="p-8 text-center">
@@ -66,12 +74,20 @@ export function PublishedSeries({
 
   return (
     <>
-      {isAdmin ? (
-        <div className="flex justify-end p-2">
-          <Button className="w-full min-[960px]:w-auto" onClick={onAddSeries}>
-            <Icon name="mdi-plus" />
-            Add Series
-          </Button>
+      {isAdmin || room ? (
+        <div className="flex flex-wrap justify-end gap-2 p-2">
+          {room ? (
+            <Button variant="outline" className="w-full text-primary-text min-[960px]:w-auto" onClick={onDraftSeries}>
+              <Icon name="mdi-plus" />
+              Add a series
+            </Button>
+          ) : null}
+          {isAdmin ? (
+            <Button className="w-full min-[960px]:w-auto" onClick={onAddSeries}>
+              <Icon name="mdi-plus" />
+              Add Series
+            </Button>
+          ) : null}
         </div>
       ) : null}
 
@@ -137,6 +153,12 @@ export function PublishedSeries({
         </div>
       )}
 
+      {room ? (
+        <p className="tnum px-4 py-2 text-sm text-muted-foreground">
+          {openPlaces} place{openPlaces === 1 ? "" : "s"} open. Add a series drafts a pairing, and an admin publishes it.
+        </p>
+      ) : null}
+
       {isAdmin ? (
         <div className="flex justify-end p-2">
           <Button variant="ghost" className="text-error" onClick={onDeleteAll}>
@@ -149,14 +171,20 @@ export function PublishedSeries({
   );
 }
 
-/** Who put a pairing in the draft, and whether it is new since this team last looked. */
-function PairingNote({ item, fresh }: { item: Row; fresh: boolean }) {
+/** Who put a pairing in the draft, the series it replaces, and whether it is new to this team. */
+function PairingNote({ item, fresh, replaces }: { item: Row; fresh: boolean; replaces?: string | null }) {
   // a create stamps updated_at with created_at, so only a later stamp reads as a change
   const changed = !!item.updated_by_name && item.updated_at !== item.created_at;
   const who = changed ? item.updated_by_name : item.created_by_name || item.updated_by_name;
-  if (!who && !fresh) return null;
+  if (!who && !fresh && !replaces) return null;
   return (
     <div className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+      {replaces ? (
+        <Badge variant="outline" className={toneClass("info")}>
+          <Icon name="mdi-swap-horizontal" size={14} />
+          Replaces {replaces}
+        </Badge>
+      ) : null}
       {who ? (
         <span>
           {changed ? "Changed" : "Added"} by {who}
@@ -185,6 +213,8 @@ export function DraftSeries({
   maxDifference,
   seenAt,
   viewerId,
+  replacedLabel,
+  publishCount,
   draftActions,
   onAddDraftSeries,
   onPublishAll,
@@ -202,6 +232,8 @@ export function DraftSeries({
   maxDifference?: number | null; // the working largest difference of the match, which the page holds
   seenAt?: string | null; // when the viewer's own team last opened this draft; null when it never did
   viewerId?: number | null; // the reader, whose own pairings are never new
+  replacedLabel?: (item: Row) => string | null; // the published pairing a replacement draft removes
+  publishCount?: number; // the drafts "Publish all" takes, which never holds a replacement
   draftActions: (item: Row) => RowAction[];
   onAddDraftSeries: () => void;
   onPublishAll: () => void;
@@ -242,7 +274,7 @@ export function DraftSeries({
       cell: ({ row }: { row: { original: Row } }) => (
         <>
           <PlayerName player={row.original[`player${n}`]} race={row.original[`player${n}_race`]} host={row.original.host_player_id === row.original[`player${n}`]?.id} mmr={false} />
-          {n === 1 ? <PairingNote item={row.original} fresh={isFresh(row.original)} /> : null}
+          {n === 1 ? <PairingNote item={row.original} fresh={isFresh(row.original)} replaces={replacedLabel?.(row.original)} /> : null}
         </>
       ),
     },
@@ -375,7 +407,7 @@ export function DraftSeries({
                 <div className="flex flex-wrap items-center gap-2 px-4 pb-2 text-sm">
                   <span className="tnum text-muted-foreground">{Number.isFinite(differenceOf(item)) ? `${differenceOf(item)} MMR difference` : "no MMR difference"}</span>
                   <SharedHours hours={pairOf(item.player1_id, item.player2_id)?.hours} />
-                  <PairingNote item={item} fresh={isFresh(item)} />
+                  <PairingNote item={item} fresh={isFresh(item)} replaces={replacedLabel?.(item)} />
                 </div>
               ) : null}
             </div>
@@ -385,10 +417,13 @@ export function DraftSeries({
 
       {isAdmin ? (
         <div className="flex justify-end gap-2 p-2">
-          <Button variant="ghost" className="text-success" onClick={onPublishAll}>
-            <Icon name="mdi-publish" />
-            Publish All Drafts
-          </Button>
+          {/* a replacement draft publishes from its own row, with the confirm that names what is lost */}
+          {publishCount ? (
+            <Button variant="ghost" className="text-success" onClick={onPublishAll}>
+              <Icon name="mdi-publish" />
+              Publish all {publishCount}
+            </Button>
+          ) : null}
           <Button variant="ghost" className="text-error" onClick={onDeleteAll}>
             <Icon name="mdi-delete-sweep" />
             Delete All Drafts

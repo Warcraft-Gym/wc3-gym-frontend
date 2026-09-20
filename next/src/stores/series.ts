@@ -51,6 +51,10 @@ const store = {
   async promoteDraftSeries(draft_series_id: number) {
     return await fetchWrapper.post(`${backendUrl}/draft-series/${draft_series_id}/promote`);
   },
+  // What a replacement draft removes when it is published; read only when the confirm opens
+  async getDraftReplaces(draft_series_id: number) {
+    return await fetchWrapper.get(`${backendUrl}/draft-series/${draft_series_id}/replaces`);
+  },
 
   // Round draft board: one read fills the board, and a read after a write skips the browser cache
   async getDraftBoard(match_id: number, fresh = false) {

@@ -3,6 +3,9 @@
 /** The MMR distance of two board players. A player with no MMR is never inside a difference. */
 export const mmrGap = (a, b) => (a?.mmr == null || b?.mmr == null ? Infinity : Math.abs(a.mmr - b.mmr));
 
+/** The drafts that take a place of the round; a replacement takes the place of the series it replaces. */
+export const placeTakers = (drafted = []) => drafted.filter((row) => !row.replaces_series_id);
+
 /** The board answers one row per possible pairing; this reads one of them by the two ids. */
 export function pairIndex(board) {
   const map = new Map();
@@ -129,7 +132,7 @@ export function suggestPairings(board, maxDifference, drafted = [], published = 
   const taken = new Set([...drafted, ...published].flatMap((row) => [row.player1_id, row.player2_id]));
   const free = (board?.players || []).filter((player) => !taken.has(player.user_id));
   // The places of the round the published series and the drafts leave
-  const open = Math.max(0, (board?.series_per_round || 0) - (board?.published_series || 0) - drafted.length);
+  const open = Math.max(0, (board?.series_per_round || 0) - (board?.published_series || 0) - placeTakers(drafted).length);
   const left = free.filter((player) => player.team_id === board?.team1_id && player.mmr != null);
   const right = free.filter((player) => player.team_id === board?.team2_id && player.mmr != null);
   const pairOf = pairIndex(board);

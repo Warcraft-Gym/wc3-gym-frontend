@@ -1,7 +1,7 @@
 "use client";
 import { useImperativeHandle, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, dialogCompact, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
@@ -256,11 +256,12 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
     if (!played) return null;
     const off = mapMismatch(game, replayMaps, wantedMaps);
     if (off) {
-      // the map field already holds the replay's map, so the other way out is to report the game on it
-      const other = mapOf(game) === played.id ? `report game ${game} on ${played.name}` : `change the map of game ${game}`;
+      const wanted = maps.find((map) => map.id === wantedMaps[game - 1])?.name;
+      // the map field already holds the replay's map, so the other way out asks for no step
+      const other = mapOf(game) === played.id ? `keep game ${game} on ${played.name}` : `set game ${game} to ${played.name}`;
       // the move is offered only over the games the series played, so the advice names a game the menu holds
       const fix = off.to && moveTargets(movesOver, game).includes(off.to) ? `Move it to game ${off.to}, or ${other}.` : `${other[0].toUpperCase()}${other.slice(1)}.`;
-      return `The replay was played on ${played.name}. ${fix}`;
+      return `The replay was played on ${played.name}${wanted ? `, but the veto gives game ${game} ${wanted}` : ""}. ${fix}`;
     }
     // the veto agrees with the file, the map named for the game does not
     if (mapOf(game) != null && mapOf(game) !== played.id) return `The replay was played on ${played.name}. Change the map of game ${game}.`;
@@ -526,7 +527,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         </div>
         {/* The veto never blocks, so a report that disagrees with it asks once and then goes through */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <DialogContent showCloseButton={false} className="max-w-[420px] gap-0 p-0 sm:max-w-[420px]">
+          <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[420px] gap-0 p-0 sm:max-w-[420px]`}>
             <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Are you sure?</DialogTitle>
             <div className="p-4 text-sm">{confirmReason}</div>
             <div className="flex justify-end gap-2 p-4 pt-0">

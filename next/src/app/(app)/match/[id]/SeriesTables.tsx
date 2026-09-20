@@ -259,7 +259,7 @@ export function DraftSeries({
         {canDraft ? (
           <Button variant="outline" className="mt-4 text-warning" onClick={onAddDraftSeries}>
             <Icon name="mdi-plus" />
-            Create Draft Series
+            Create draft series
           </Button>
         ) : null}
       </div>
@@ -360,7 +360,7 @@ export function DraftSeries({
         {canDraft ? (
           <Button className="bg-warning text-on-warning" onClick={onAddDraftSeries}>
             <Icon name="mdi-plus" />
-            Add Draft Series
+            Add draft series
           </Button>
         ) : null}
       </div>
@@ -426,7 +426,7 @@ export function DraftSeries({
           ) : null}
           <Button variant="ghost" className="text-error" onClick={onDeleteAll}>
             <Icon name="mdi-delete-sweep" />
-            Delete All Drafts
+            Delete all drafts
           </Button>
         </div>
       ) : null}

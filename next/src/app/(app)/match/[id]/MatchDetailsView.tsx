@@ -813,23 +813,23 @@ export function MatchDetailsView({ id }: { id: string }) {
     ...replays.filter((r) => r.series_id === item.id).map((r) => ({ icon: "mdi-download", label: `Replay game ${r.game_no}`, href: r.url, public: true })),
     { icon: "mdi-open-in-new", label: "Open series", public: true, onClick: () => router.push(`/series/${item.id}`) },
     ...replaceActions(item),
-    { icon: "mdi-pencil", label: "Edit Series", onClick: () => editSeries(item) },
+    { icon: "mdi-pencil", label: "Edit series", onClick: () => editSeries(item) },
     { icon: "mdi-map-outline", label: "Map veto", onClick: () => router.push(`/player-series/${item.id}/veto`) },
-    { icon: "mdi-delete", label: "Delete Series", color: "error", onClick: () => openDeleteDialog(item.id, removeSeries) },
+    { icon: "mdi-delete", label: "Delete series", color: "error", onClick: () => openDeleteDialog(item.id, removeSeries) },
   ];
 
   const draftActions = (item: Row): RowAction[] => [
     { icon: "mdi-pencil", label: "Edit draft", public: canDraft, onClick: () => editSeries(item) },
     {
       icon: item.is_fantasy_match ? "mdi-star-off" : "mdi-star",
-      label: item.is_fantasy_match ? "Remove from Fantasy" : "Mark as Fantasy Match",
+      label: item.is_fantasy_match ? "Remove from fantasy" : "Mark as fantasy match",
       color: item.is_fantasy_match ? "warning" : "primary",
       onClick: () => toggleDraftFantasyMatch(item),
     },
     item.replaces_series_id
       ? { icon: "mdi-publish", label: "Publish and replace", color: "success", onClick: () => openPublishReplace(item) }
-      : { icon: "mdi-publish", label: "Publish Series", color: "success", onClick: () => publishDraftSeries(item) },
-    { icon: "mdi-delete", label: "Delete Draft", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
+      : { icon: "mdi-publish", label: "Publish series", color: "success", onClick: () => publishDraftSeries(item) },
+    { icon: "mdi-delete", label: "Delete draft", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
   ];
 
   const seasonHref = `/seasons/${match.season ? seasonSlug(match.season) : match.season_id}`;
@@ -864,7 +864,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         <Card className="card mb-4 gap-0 py-0">
           <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
             <Icon name="mdi-trophy-variant" />
-            Series Management
+            Series management
             <span className="flex-1" />
             <Badge variant="outline" className="border-on-primary text-on-primary">
               {series.length} Published
@@ -890,12 +890,12 @@ export function MatchDetailsView({ id }: { id: string }) {
             <TabsList variant="line" className="w-full justify-center bg-surface-light">
               <TabsTrigger value="published" className="flex-none px-3">
                 <Icon name="mdi-check-circle" />
-                Published Series
+                Published series
               </TabsTrigger>
               {auth.isCaptain ? (
                 <TabsTrigger value="draft" className="flex-none px-3">
                   <Icon name="mdi-pencil-circle" />
-                  Draft Series
+                  Draft series
                 </TabsTrigger>
               ) : null}
             </TabsList>

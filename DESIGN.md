@@ -247,7 +247,6 @@ These parts of the app break a rule above today.
 - In light, `win`, `loss`, `draw`, `error`, `info`, `success` and `warning` name no `on-*` ink. A fill of one of those names picks its text colour by hand.
 - Status colours mark things that are not app states. The fantasy week rank chips use `success`, `info` and `warning`. The MMR chips on the match page use `info`. Bench points use `warning`.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
-- The schedule grid draws one blocked state for the pair, "One of you is blocked". The design asks for each player's own blocked hours, marked as its owner's, which needs the per-player spans on the free-time read (`next/src/components/player/ScheduleDialog.tsx`).
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The games mark draws a fixed twenty-game rule over two W3C seasons. The event settings carry a games floor and the number of W3C seasons it counts over, and the mark reads neither. One of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).

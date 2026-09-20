@@ -15,7 +15,7 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { authHeader } from "@/helpers/fetch-wrapper";
 import { commonHours } from "@/helpers/blocks.mjs";
 import { roundEndLine } from "@/helpers/rounds.mjs";
-import { blockedSpans, dayCells, insideBlocked, windowDays, zoneRow } from "@/helpers/schedule-grid.mjs";
+import { blockedSpans, dayCells, insideBlocked, sideSpans, windowDays, zoneRow } from "@/helpers/schedule-grid.mjs";
 import { seriesContext } from "@/helpers/series-actions.mjs";
 import { pickedInstant, pickerParts, viewerZone } from "@/helpers/timezone.mjs";
 import { useBreakpoint, XS } from "@/hooks/breakpoint";
@@ -24,7 +24,8 @@ import { cn } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 type Span = { start: DateTime; end: DateTime };
-type Cell = { at: DateTime; label: string; outside: boolean; blocked: boolean };
+type Cell = { at: DateTime; label: string; outside: boolean; blocked: boolean; sides: boolean[] };
+type Side = { player: Row; zone: string | null; you: boolean; spans: Span[] };
 type Day = { key: string; day: DateTime; label: string; today: boolean; first: DateTime; last: DateTime };
 type Clock = { zone: string; gmt: string; time: string; date: string; differs: boolean };
 type Picked = { row?: Row; id?: number; date?: Date | null; time?: string };
@@ -33,8 +34,9 @@ export type ScheduleDialogHandle = { open: (item: Row) => void };
 
 // The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
 const spansOf = blockedSpans as unknown as (free: Row[], start: string, end: string) => Span[];
+const mineOf = sideSpans as unknown as (ranges: Row[], start: string, end: string) => Span[];
 const daysOf = windowDays as unknown as (start: string, end: string, zone: string) => Day[];
-const cellsOf = dayCells as unknown as (day: Day, blocked: Span[]) => Cell[];
+const cellsOf = dayCells as unknown as (day: Day, blocked: Span[], sides: Span[][]) => Cell[];
 const isBlocked = insideBlocked as unknown as (pick: DateTime | null, blocked: Span[]) => boolean;
 const clockOf = zoneRow as unknown as (pick: DateTime, zone: string, viewer: string) => Clock;
 const contextOf = seriesContext as unknown as (series: Row, options: { playerId?: number | null }) => string;
@@ -104,9 +106,25 @@ export function ScheduleDialog({
   };
 
   const blocked: Span[] = freeTime ? spansOf(freeTime.ranges ?? [], freeTime.start, freeTime.end) : [];
+  // The read names each side's own blocked ranges beside the shared free ones
+  const hasSides = !!freeTime && (Array.isArray(freeTime.blocked1) || Array.isArray(freeTime.blocked2));
+  const rangesOf = (player: Row): Row[] =>
+    (player?.id === row.player1_id ? freeTime?.blocked1 : player?.id === row.player2_id ? freeTime?.blocked2 : null) ?? [];
+
+  // One row a side, the viewer's own side first; a captain or an admin reads them in play order
+  const both: Row[] = [row.player1 ?? {}, row.player2 ?? {}];
+  const players: Side[] = (row.player2_id === playerId ? [...both].reverse() : both).map((player) => ({
+    player,
+    zone: (player?.timezone as string) || null,
+    you: !!playerId && player?.id === playerId,
+    spans: freeTime && hasSides ? mineOf(rangesOf(player), freeTime.start, freeTime.end) : [],
+  }));
+  // The lanes of the grid: the viewer's blocked hours first, the other side's second
+  const lanes: Span[][] = hasSides ? players.map((one) => one.spans) : [];
+
   // One entry a day of the window, each with its half-hour cells; both views draw these
   const grid = (freeTime ? daysOf(freeTime.start, freeTime.end, viewer) : []).map((day) => {
-    const cells = cellsOf(day, blocked);
+    const cells = cellsOf(day, blocked, lanes);
     // the tab stop of a day is its picked cell, or its first cell inside the window
     const picked = cells.findIndex((cell) => cell.at.toMillis() === pickedAt);
     return { day, cells, first: picked >= 0 && !cells[picked].outside ? picked : cells.findIndex((cell) => !cell.outside) };
@@ -119,11 +137,6 @@ export function ScheduleDialog({
   const atPage = Math.min(page, pages - 1);
   const shown = grid.slice(atPage * perPage, atPage * perPage + perPage);
 
-  // One row a side, the viewer's own side first; a captain or an admin reads them in play order
-  const sides: Row[] = [row.player1 ?? {}, row.player2 ?? {}];
-  const players = (row.player2_id === playerId ? [...sides].reverse() : sides)
-    .map((player) => ({ player, zone: (player?.timezone as string) || null, you: !!playerId && player?.id === playerId }));
-
   // A round ends at midnight in the event's zone; the round cards read the same line from the same helper
   const endZone: string | null = row.match?.season?.round_end_zone || null;
   const windowEnd = freeTime ? DateTime.fromISO(freeTime.end, { zone: "UTC" }) : null;
@@ -131,10 +144,16 @@ export function ScheduleDialog({
   const endLine: string = windowEnd ? roundEndLine(windowEnd, endZone ?? viewer, viewer) : "";
   const otherZone = players.find((one) => one.zone && one.zone !== viewer)?.zone ?? null;
 
+  // Whose hour a point sits in, in the row order the dialog draws: "you", a name, or both
+  const nameOf = (side: Side) => (side.you ? "you" : side.player?.name ?? "the other player");
+  const whoseHour = (at: DateTime | null) =>
+    at ? players.filter((one) => isBlocked(at, one.spans)).map(nameOf).join(" and ") : "";
+
   const cellTitle = (at: DateTime) => {
     const mine = `${at.setZone(viewer).toFormat("ccc d LLL, HH:mm")} ${viewer}`;
     const other = otherZone ? `, ${at.setZone(otherZone).toFormat("ccc d LLL, HH:mm")} ${otherZone}` : "";
-    return `${mine}${other}${isBlocked(at, blocked) ? ", inside a blocked hour" : ""}`;
+    const whose = whoseHour(at);
+    return `${mine}${other}${whose ? `, blocked for ${whose}` : isBlocked(at, blocked) ? ", inside a blocked hour" : ""}`;
   };
 
   // Arrow keys stay inside one day, which the grid draws as one row or one column
@@ -157,6 +176,14 @@ export function ScheduleDialog({
     </span>
   );
 
+  // Each side's blocked hours apart: the viewer above the track and the other below it,
+  // and one lane a side in the calendar. Position is the channel, so both wear one ink.
+  const sideMark = (index: number) =>
+    cn(
+      "pointer-events-none absolute bg-on-surface/40",
+      view === "calendar" ? (index ? "inset-y-0 right-0 w-1/2" : "inset-y-0 left-0 w-1/2") : index ? "inset-x-0 bottom-0 h-1" : "inset-x-0 top-0 h-1",
+    );
+
   const cellButton = (day: Day, cell: Cell, index: number, first: number, size: string) => {
     const picked = pickedAt === cell.at.toMillis();
     return (
@@ -177,6 +204,7 @@ export function ScheduleDialog({
         )}
         onClick={() => setPick(cell.at)}
       >
+        {cell.sides.map((on, side) => (on ? <span key={side} className={sideMark(side)} /> : null))}
         {picked ? startMark : null}
       </button>
     );
@@ -185,7 +213,16 @@ export function ScheduleDialog({
   const legend = (
     <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1", CAPTION)}>
       <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-success/25")} />Open for both</span>
-      <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light")} />One of you is blocked</span>
+      {hasSides ? (
+        players.map((one, side) => (
+          <span key={one.player?.id ?? side} className="inline-flex items-center gap-1.5">
+            <i className={cn(SWATCH, "relative bg-surface-light")}><span className={sideMark(side)} /></i>
+            {one.you ? "You are blocked" : `${nameOf(one)} is blocked`}
+          </span>
+        ))
+      ) : (
+        <span className="inline-flex items-center gap-1.5"><i className={cn(SWATCH, "bg-surface-light")} />One of you is blocked</span>
+      )}
       <span className="inline-flex items-center gap-1.5">
         <i className="relative h-3 w-4"><span className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-primary" /><span className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary" /></i>
         Start time
@@ -409,7 +446,10 @@ export function ScheduleDialog({
               {inBlocked ? (
                 <div className={cn("flex items-start gap-2 rounded px-3 py-2 text-sm", toneClass("warning"))}>
                   <Icon name="mdi-alert-outline" />
-                  <span>This time is inside a blocked hour. You can still book it when you both agree.</span>
+                  <span>
+                    {whoseHour(chosen) ? `This time is blocked for ${whoseHour(chosen)}.` : "This time is inside a blocked hour."} You can still book
+                    it when you both agree.
+                  </span>
                 </div>
               ) : null}
 

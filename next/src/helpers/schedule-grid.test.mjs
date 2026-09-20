@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import test from 'node:test';
 import { DateTime } from 'luxon';
-import { blockedSpans, dayCells, insideBlocked, windowDays, zoneRow } from './schedule-grid.mjs';
+import { blockedSpans, dayCells, insideBlocked, sideSpans, windowDays, zoneRow } from './schedule-grid.mjs';
 
 const BERLIN = 'Europe/Berlin';
 const SEOUL = 'Asia/Seoul';
@@ -61,6 +61,45 @@ test('a day that gives back an hour holds 50 of them', () => {
   const now = DateTime.fromISO('2026-10-25T00:00:00Z');
   const [day] = windowDays('2026-10-25T00:00:00Z', '2026-10-26T00:00:00Z', BERLIN, now);
   assert.equal(dayCells(day, []).length, 50);
+});
+
+test("a side's own ranges are clipped to the window", () => {
+  const spans = sideSpans(
+    [{ start: '2026-10-04T12:00:00Z', end: '2026-10-05T06:00:00Z' }, { start: '2026-10-09T00:00:00Z', end: '2026-10-09T02:00:00Z' }],
+    START,
+    END,
+  ).map((span) => [span.start.toISO(), span.end.toISO()]);
+  // the first range keeps its part inside the window, the second one falls outside it
+  assert.deepEqual(spans, [['2026-10-05T00:00:00.000Z', '2026-10-05T06:00:00.000Z']]);
+  assert.deepEqual(sideSpans([], START, END), []);
+});
+
+test('a cell names each side that blocks it', () => {
+  const now = DateTime.fromISO('2026-10-06T00:00:00Z');
+  const [day] = windowDays(START, END, BERLIN, now);
+  // 18:00 to 20:00 UTC is 20:00 to 22:00 Berlin for one side, 21:00 to 22:00 UTC for the other
+  const mine = sideSpans([{ start: '2026-10-06T18:00:00Z', end: '2026-10-06T20:00:00Z' }], START, END);
+  const theirs = sideSpans([{ start: '2026-10-06T19:00:00Z', end: '2026-10-06T22:00:00Z' }], START, END);
+  const cells = dayCells(day, blockedSpans(FREE, START, END), [mine, theirs]);
+  const at = (label) => cells.find((cell) => cell.label === label).sides;
+  assert.deepEqual(at('20:00'), [true, false]);
+  assert.deepEqual(at('21:00'), [true, true]);
+  assert.deepEqual(at('23:00'), [false, true]);
+  assert.deepEqual(at('19:00'), [false, false]);
+  // with no side lists a cell names no side
+  assert.deepEqual(dayCells(day, [])[0].sides, []);
+});
+
+test("a range across midnight on the viewer's clock marks both days", () => {
+  const now = DateTime.fromISO('2026-10-06T00:00:00Z');
+  const days = windowDays(START, END, BERLIN, now);
+  // 21:00 to 01:00 UTC is 23:00 to 03:00 in Berlin, so it runs over the day edge
+  const spans = sideSpans([{ start: '2026-10-06T21:00:00Z', end: '2026-10-07T01:00:00Z' }], START, END);
+  const first = dayCells(days[0], [], [spans]);
+  const next = dayCells(days[1], [], [spans]);
+  const marked = (cells) => cells.filter((cell) => cell.sides[0]).map((cell) => cell.label);
+  assert.deepEqual(marked(first), ['23:00', '23:30']);
+  assert.deepEqual(marked(next), ['00:00', '00:30', '01:00', '01:30', '02:00', '02:30']);
 });
 
 test('each row reads the same point on its own clock, with the date when it differs', () => {

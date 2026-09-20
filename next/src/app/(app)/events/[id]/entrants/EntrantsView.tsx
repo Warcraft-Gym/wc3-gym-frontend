@@ -424,14 +424,22 @@ export function EntrantsView({ id }: { id: string }) {
         <>
           {isAdmin ? (
             <div className="card mt-4 rounded-lg p-4 shadow-sm">
-              <div className="mb-2 flex flex-wrap items-end gap-2">
-                <span className="self-center text-muted-foreground">
-                  Cut the entrants into divisions by <W3CMmr />
-                </span>
-                <span className="flex-1" />
-                {/* A KOTH night keeps its brackets and its queue, so it shows the stored cuts and no write */}
-                {isKoth ? null : (
-                  <>
+              {/* A KOTH night keeps its brackets and its queue, so it takes no cut here and its cards carry the bands */}
+              {isKoth ? (
+                <p className="text-xs text-muted-foreground">
+                  The brackets of a KOTH night keep their rows, so their MMR moves on{" "}
+                  <Link className="text-primary-text underline" href={`/koth/nights/${eventId}?bounds=1`}>
+                    the run page
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <>
+                  <div className="mb-2 flex flex-wrap items-end gap-2">
+                    <span className="self-center text-muted-foreground">
+                      Cut the entrants into divisions by <W3CMmr />
+                    </span>
+                    <span className="flex-1" />
                     <Pick labelAfter className="w-[130px]" label="Divisions" items={DIVISION_COUNTS} value={divisionCount} onChange={pickCount} />
                     <Button variant="outline" disabled={!rated.length} onClick={() => evenSplit()}>
                       <Icon name="mdi-scale-balance" />
@@ -445,19 +453,10 @@ export function EntrantsView({ id }: { id: string }) {
                       {busyIcon("assign", "mdi-arrow-split-vertical")}
                       Assign from MMR
                     </Button>
-                  </>
-                )}
-              </div>
-              {isKoth ? (
-                <p className="mb-2 text-xs text-muted-foreground">
-                  The brackets of a KOTH night keep their rows, so their MMR moves on{" "}
-                  <Link className="text-primary-text underline" href={`/koth/nights/${eventId}?bounds=1`}>
-                    the run page
-                  </Link>
-                  .
-                </p>
-              ) : null}
-              <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={stripPlayers} names={names} colors={colors} domain={domain} stored={storedCuts} disabled={isKoth} />
+                  </div>
+                  <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={stripPlayers} names={names} colors={colors} domain={domain} stored={storedCuts} />
+                </>
+              )}
             </div>
           ) : null}
 

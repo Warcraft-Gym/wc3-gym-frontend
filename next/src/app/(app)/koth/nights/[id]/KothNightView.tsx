@@ -76,6 +76,7 @@ export function KothNightView({ id }: { id: string }) {
 
   useEffect(() => {
     let alive = true;
+    let first = true; // the event settings page links here with ?bounds=1, which the first board spends
     const read = async () => {
       try {
         const answer = await store.fetchBoard(nightId);
@@ -83,6 +84,8 @@ export function KothNightView({ id }: { id: string }) {
         if (alive && !writing.current) {
           takeBoard(answer);
           setError(null);
+          if (first && wantsBounds && !answer.closed && !openSeriesRows(answer).length) openBounds(answer);
+          first = false;
         }
       } catch (e) {
         // a night nobody published answers 404, which the page says on its own
@@ -218,27 +221,15 @@ export function KothNightView({ id }: { id: string }) {
   // The write cuts the rated rows nobody placed by hand again, so it waits for every series to end
   const boundsBlocked = openRows.length > 0;
   const bounds = boundsWrite(brackets, boundValues);
-  const openBounds = () => {
-    setBoundValues(Object.fromEntries(brackets.map((bracket: Row) => [bracket.division_id, String(bracket.lower_bound ?? 0)])));
+  // The load effect opens the dialog on the board it read, before that board is state
+  const openBounds = (from?: Row) => {
+    const rows: Row[] = from ? orderedBrackets(from) : brackets;
+    setBoundValues(Object.fromEntries(rows.map((bracket: Row) => [bracket.division_id, String(bracket.lower_bound ?? 0)])));
     setBoundsError(null);
     setBoundsOpen(true);
   };
 
-  // The event settings page links here with ?bounds=1, which opens the dialog once
-  const boundsAsked = useRef(false);
-  useEffect(() => {
-    if (!wantsBounds || boundsAsked.current || !board) return;
-    // The first board read spends the flag, so a later read never opens the dialog by itself
-    boundsAsked.current = true;
-    if (!board.closed && !boundsBlocked) openBounds();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wantsBounds, board]);
-
   const saveBounds = async () => {
-    if (bounds.error) {
-      setBoundsError(bounds.error);
-      return;
-    }
     setBoundsError(null);
     setBusy(true);
     writing.current = true;
@@ -270,7 +261,7 @@ export function KothNightView({ id }: { id: string }) {
             Public page
           </Button>
           <span title={boundsBlocked ? "Finish or cancel the open series first." : undefined}>
-            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy || boundsBlocked || !board || !!board.closed} onClick={openBounds}>
+            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy || boundsBlocked || !board || !!board.closed} onClick={() => openBounds()}>
               <Icon name="mdi-tune-variant" />
               Bracket MMR
             </Button>
@@ -393,7 +384,7 @@ export function KothNightView({ id }: { id: string }) {
             <Button variant="ghost" onClick={() => setBoundsOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={busy} onClick={saveBounds}>
+            <Button disabled={busy || !!bounds.error} onClick={saveBounds}>
               <Icon name="mdi-content-save" />
               Save the bounds
             </Button>

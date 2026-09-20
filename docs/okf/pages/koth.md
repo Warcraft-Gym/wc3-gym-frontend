@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list, the run page an admin drives one night from, and the public board that draws tonight's brackets for the stream.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T21:40:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T23:10:00Z }
 sources:
   - id: nights
     resource: ../../../next/src/app/(app)/koth/KothView.tsx
@@ -45,7 +45,7 @@ A KOTH night is one event of the KOTH league. Its brackets are its divisions. An
 
 # Reads
 
-Both board reads carry no token, so the edge caches them for fifteen seconds and every reader shares one answer; the one read right after the reader's own write adds a query the cache misses, so he sees his own row at once. Both pages read once on load and again every thirty seconds, and neither asks while the tab is hidden. The public board reads the event row once per night as well, for the signup rules the signup dialog needs, and `?mode=clean` skips that read because a stream draws no signup button. After a signup the dialog reads the night's board once, through the same store action and the same edge cache, for the end state it prints. Three writes of the run page answer their own row instead of the board: a replay upload, the placement of an unplaced player and an added player. Each of the three reads the board back once. "Change the winner" reads nothing: the played row names the side the winner played, so the click writes the other side. A board answered before that field existed falls back to one `GET /series/{id}`. Neither page makes another repeated read.
+Both board reads carry no token, so the edge caches them for fifteen seconds and every reader shares one answer; the one read right after the reader's own write adds a query the cache misses, so he sees his own row at once. Both pages read once on load and again every thirty seconds, and neither asks while the tab is hidden. The public board reads the event row once per night as well, for the signup rules the signup dialog needs, and `?mode=clean` skips that read because a stream draws no signup button. After a signup the dialog reads the night's board once, through the same store action and the same edge cache, for the end state it prints. Three writes of the run page answer their own row instead of the board: a replay upload, the placement of an unplaced player and an added player. Each of the three reads the board back once. "Change the winner" reads nothing: the played row names the side the winner played, so the click writes the other side. A played row that names no `winner_side` costs one `GET /series/{id}` on that click. Neither page makes another repeated read.
 
 # Writes
 

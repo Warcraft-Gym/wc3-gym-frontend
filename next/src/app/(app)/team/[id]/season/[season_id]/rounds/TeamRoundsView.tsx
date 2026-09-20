@@ -31,9 +31,10 @@ const INK: Record<string, string> = { success: "text-success", error: "text-erro
 function StatusChip({ status, short = false }: { status: Status; short?: boolean }) {
   if (short)
     return (
-      <span className="inline-flex items-center gap-1 text-xs" title={status.hint ?? status.title}>
+      <span className="inline-flex items-center gap-1 text-xs" title={status.hint ?? status.title} aria-label={status.title}>
         <Icon name={status.icon} size={14} className={INK[status.color ?? ""] ?? "text-muted-foreground"} />
-        {status.short}
+        {/* under the XS breakpoint the mark stands alone, and the word stays in the tooltip */}
+        <span className="hidden min-[600px]:inline">{status.short}</span>
       </span>
     );
   return (
@@ -340,11 +341,12 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                   <TableHead className="sticky left-0 z-10 bg-surface">Player</TableHead>
                   {rounds.map((item) => (
                     <TableHead key={item} className="text-center">
-                      {/* a phone reads the round on one short line, so three rounds fit 390 px */}
+                      {/* a phone reads the round number over its dates, so three rounds fit 390 px */}
                       {phone ? (
-                        <span className="whitespace-nowrap">
-                          R{item} · {roundLabel(roundOf(item)).replace(" to ", "-")}
-                        </span>
+                        <>
+                          R{item}
+                          <div className="text-xs font-normal text-muted-foreground">{roundLabel(roundOf(item)).replace(" to ", "-")}</div>
+                        </>
                       ) : (
                         <>
                           Round {item}
@@ -383,7 +385,12 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                               aria-busy={busy}
                               disabled={!!saving}
                             />,
-                            versus ? <span className="text-sm">{versus.player.name}</span> : <StatusChip status={status} short />,
+                            versus ? (
+                              // the name gives the column its width, so a phone cuts it off
+                              <span className="block max-w-[9ch] truncate text-sm min-[600px]:max-w-none">{versus.player.name}</span>
+                            ) : (
+                              <StatusChip status={status} short />
+                            ),
                           )}
                         </TableCell>
                       );

@@ -148,6 +148,8 @@ export function ScheduleDialog({
   const nameOf = (side: Side) => (side.you ? "you" : side.player?.name ?? "the other player");
   const whoseHour = (at: DateTime | null) =>
     at ? players.filter((one) => isBlocked(at, one.spans)).map(nameOf).join(" and ") : "";
+  // Whose blocked hour the pick sits in, read once for the warning under the grid
+  const pickedWhose = whoseHour(chosen);
 
   const cellTitle = (at: DateTime) => {
     const mine = `${at.setZone(viewer).toFormat("ccc d LLL, HH:mm")} ${viewer}`;
@@ -176,11 +178,12 @@ export function ScheduleDialog({
     </span>
   );
 
-  // Position is the channel: the viewer's strip on top or left, the other side's at the bottom or right
+  // Position is the channel: the viewer's strip on top or left, the other side's at the bottom or right.
+  // Each strip leaves the middle of the cell clear, so two of them read apart and never hide the hover fill.
   const sideMark = (index: number) =>
     cn(
       "pointer-events-none absolute bg-on-surface/60",
-      view === "calendar" ? (index ? "inset-y-0 right-0 w-1/2" : "inset-y-0 left-0 w-1/2") : index ? "inset-x-0 bottom-0 h-1.5" : "inset-x-0 top-0 h-1.5",
+      view === "calendar" ? (index ? "inset-y-0 right-0 w-2/5" : "inset-y-0 left-0 w-2/5") : index ? "inset-x-0 bottom-0 h-1.5" : "inset-x-0 top-0 h-1.5",
     );
 
   const cellButton = (day: Day, cell: Cell, index: number, first: number, size: string) => {
@@ -447,7 +450,7 @@ export function ScheduleDialog({
                 <div className={cn("flex items-start gap-2 rounded px-3 py-2 text-sm", toneClass("warning"))}>
                   <Icon name="mdi-alert-outline" />
                   <span>
-                    {whoseHour(chosen) ? `This time is blocked for ${whoseHour(chosen)}.` : "This time is inside a blocked hour."} You can still book
+                    {pickedWhose ? `This time is blocked for ${pickedWhose}.` : "This time is inside a blocked hour."} You can still book
                     it when you both agree.
                   </span>
                 </div>

@@ -341,11 +341,11 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                   <TableHead className="sticky left-0 z-10 bg-surface">Player</TableHead>
                   {rounds.map((item) => (
                     <TableHead key={item} className="text-center">
-                      {/* a phone reads the round number over its dates, so three rounds fit 390 px */}
+                      {/* a phone reads the round number over its dates, one date a line, so three rounds fit 390 px */}
                       {phone ? (
                         <>
                           R{item}
-                          <div className="text-xs font-normal text-muted-foreground">{roundLabel(roundOf(item)).replace(" to ", "-")}</div>
+                          <div className="whitespace-pre-line text-xs font-normal text-muted-foreground">{roundLabel(roundOf(item)).replace(" to ", "\n")}</div>
                         </>
                       ) : (
                         <>
@@ -358,7 +358,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                       )}
                       {/* the words set the column width, so a phone keeps the count and the tooltip holds the words */}
                       {needsGame(item) ? (
-                        <div className="tnum text-xs font-normal text-muted-foreground" title={`${needsGame(item)} needs a game`}>
+                        <div className="tnum text-xs font-normal text-muted-foreground" aria-label={`${needsGame(item)} needs a game`} title={`${needsGame(item)} needs a game`}>
                           {phone ? needsGame(item) : `${needsGame(item)} needs a game`}
                         </div>
                       ) : null}

@@ -65,6 +65,23 @@ export const seriesSteps = (series, viewer = {}, now = DateTime.now()) => {
   return { steps, next, mayAct: actsForSeries(series, viewer) };
 };
 
+// How each rule gives the map of the game after the next one
+const NEXT_MAP = { fixed: 'the round map', loser: 'the loser picks', veto: 'the veto gives it', host: 'the host picks' };
+
+/** The map fact of a series: the next game to play, the map it plays, and the rule that gives the
+ *  map after it. Null once every game is played. `games` names the map and the winner of each game.
+ *  @param {string|null|undefined} mapRules
+ *  @param {{ map?: string|null, winner?: string|null }[]} [games] */
+export const seriesMapLine = (mapRules, games = []) => {
+  const rules = rulesOf(mapRules);
+  const index = games.findIndex((game) => !game.winner);
+  if (index === -1) return null;
+  const map = games[index]?.map || null;
+  if (!map) return `Game ${index + 1} map: ${NEXT_MAP[rules[index]] ?? 'the reporter names it'}`;
+  const after = NEXT_MAP[rules[index + 1]];
+  return after ? `Game ${index + 1} on ${map}, then ${after}` : `Game ${index + 1} on ${map}`;
+};
+
 /** The other side of a series, read from one player's side. Null when the series is not his.
  *  @param {any} series @param {number|null} [playerId] */
 const opponentOf = (series, playerId) => {

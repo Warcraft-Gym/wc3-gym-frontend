@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { actsForSeries, needsVeto, seriesContext, seriesSteps } from './series-actions.mjs';
+import { actsForSeries, needsVeto, seriesContext, seriesMapLine, seriesSteps } from './series-actions.mjs';
 
 const ME = 9;
 const OPEN = { id: 12, player1_id: ME, player2_id: 4, player1_score: null, player2_score: null };
@@ -93,4 +93,17 @@ test('the context label skips a part the series names no value for', () => {
   assert.equal(seriesContext(series, { playerId: 77 }), 'GNL - Season 19 - Round 2');
   assert.equal(seriesContext({ ...OPEN, player2: { name: 'Scorch' } }, { playerId: ME, round: 4 }), 'Round 4 - vs Scorch');
   assert.equal(seriesContext(OPEN, { playerId: ME, round: 4 }), 'Round 4 - vs your opponent');
+});
+
+test('the map line names the next game, its map and the rule after it', () => {
+  const games = [{ map: 'Echo Isles', winner: null }, { map: null, winner: null }, { map: null, winner: null }];
+  assert.equal(seriesMapLine('fixed,loser,loser', games), 'Game 1 on Echo Isles, then the loser picks');
+  const played = [{ map: 'Echo Isles', winner: 'A' }, { map: 'Twisted Meadows', winner: null }, { map: null, winner: null }];
+  assert.equal(seriesMapLine('fixed,loser,loser', played), 'Game 2 on Twisted Meadows, then the loser picks');
+});
+
+test('the map line names the rule alone while the map is unknown, and nothing once the series is played', () => {
+  assert.equal(seriesMapLine('veto,veto,veto', [{ map: null, winner: null }]), 'Game 1 map: the veto gives it');
+  assert.equal(seriesMapLine('fixed,loser,loser', [{ map: 'Echo Isles', winner: 'A' }, { map: 'Last Refuge', winner: 'A' }]), null);
+  assert.equal(seriesMapLine('fixed,loser', [{ map: 'Echo Isles', winner: 'A' }, { map: 'Last Refuge', winner: null }]), 'Game 2 on Last Refuge');
 });

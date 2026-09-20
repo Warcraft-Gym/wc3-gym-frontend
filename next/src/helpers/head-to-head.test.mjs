@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { opponentRows } from './head-to-head.mjs';
+import { meetingRecord, opponentRows } from './head-to-head.mjs';
 
 const meeting = (season_id, season_name, my_score, their_score, my_race, their_race) => ({
   series_id: `${season_id}-${my_score}-${their_score}-${my_race}`,
@@ -100,4 +100,11 @@ test('a mixed list counts a cup and a KOTH beside the season', () => {
 test('a meeting with no kind reads as a GNL season', () => {
   const [row] = opponentRows([{ meetings: [meeting(4, 'GNL S19', 2, 0, 'HU', 'OC')] }]);
   assert.deepEqual(row.events, [{ id: 4, name: 'GNL S19', kind: 'gnl', count: 1 }]);
+});
+
+test('the meeting record counts the score in path order and names the last event', () => {
+  const met = (series_id, player1_score, player2_score, event_label) => ({ series_id, player1_score, player2_score, event_label });
+  const rows = [met(3, 2, 0, 'GNL - Season 19'), met(2, 1, 2, 'GNL - Season 18'), met(1, null, null, 'GNL - Season 18')];
+  assert.deepEqual(meetingRecord(rows), { wins: 1, losses: 1, lastEvent: 'GNL - Season 19' });
+  assert.deepEqual(meetingRecord([]), { wins: 0, losses: 0, lastEvent: null });
 });

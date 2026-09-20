@@ -15,6 +15,18 @@ const tally = (keyOf, meetings) => {
   return counts;
 };
 
+/** The head to head of two players from GET /users/{a}/meetings/{b}: the score in the order the
+ *  read was made, and the event they last met in. A meeting with no score counts for neither. */
+export const meetingRecord = (meetings = []) => {
+  const played = meetings.filter((m) => m.player1_score != null && m.player2_score != null);
+  return {
+    wins: played.filter((m) => m.player1_score > m.player2_score).length,
+    losses: played.filter((m) => m.player1_score < m.player2_score).length,
+    // the read answers newest first, so the first labelled meeting is the last one played
+    lastEvent: meetings.find((m) => m.event_label)?.event_label ?? null,
+  };
+};
+
 export const opponentRows = (opponents = []) => opponents.map((opponent) => {
   const meetings = opponent.meetings ?? [];
   const played = meetings.filter(scored);

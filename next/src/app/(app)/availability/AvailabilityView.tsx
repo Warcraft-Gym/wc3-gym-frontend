@@ -5,6 +5,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { BlockedTimesEditor } from "@/components/BlockedTimesEditor";
+import { BlockedRounds } from "./BlockedRounds";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
@@ -23,6 +24,8 @@ export function AvailabilityView() {
   const { me } = useAuth();
   const [zoneError, setZoneError] = useState<string | null>(null);
   const [savingZone, setSavingZone] = useState(false);
+  // A saved block changes the rounds it covers, and the list below is read at load only
+  const [savedBlocks, setSavedBlocks] = useState(false);
 
   // The backend reads the blocks against the profile zone; the editor writes it when the profile carries none
   const profileZone: string | null = me?.user?.timezone ?? null;
@@ -74,9 +77,12 @@ export function AvailabilityView() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <BlockedTimesEditor zone={profileZone} onZone={onZone} />
+          <BlockedTimesEditor zone={profileZone} onZone={onZone} onSaved={() => setSavedBlocks(true)} />
         </CardContent>
       </Card>
+
+      {/* The answer itself belongs to the round, so this list only reads */}
+      <BlockedRounds changed={savedBlocks} />
     </div>
   );
 }

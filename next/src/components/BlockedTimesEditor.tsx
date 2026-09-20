@@ -37,9 +37,11 @@ const busyPreview = (row: BusyRow) => (busyValid(row) ? busyLine(asBusy(row)) : 
 export function BlockedTimesEditor({
   zone = null,
   onZone,
+  onSaved,
 }: {
   zone?: string | null; // the profile zone the backend resolves blocks against
   onZone?: (zone: string) => void;
+  onSaved?: () => void; // a block reached the backend, so what reads the blocks reads again
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -99,6 +101,7 @@ export function BlockedTimesEditor({
       await ensureZone();
       const saved = row.id ? await fetchWrapper.put(`${url}/${row.id}`, body) : await fetchWrapper.post(url, body);
       patch(setRows, row.key, mark({ ...row, ...fields(saved), editing: false }, shape));
+      onSaved?.();
     } catch (error) {
       setErrorMessage((error as Error).message || "Could not save the block.");
     } finally {
@@ -117,6 +120,7 @@ export function BlockedTimesEditor({
     try {
       await fetchWrapper.delete(`${backendUrl}/player-blocks/${path}/${row.id}`);
       remove(setRows, row.key);
+      onSaved?.();
     } catch (error) {
       setErrorMessage((error as Error).message || "Could not delete the block.");
     } finally {

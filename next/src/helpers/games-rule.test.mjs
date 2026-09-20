@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { gamesWarning, getW3CGamesCount, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from './games-rule.mjs';
+import { gamesWarning, getW3CGamesCount, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons, noStatsWarning } from './games-rule.mjs';
 
 const stat = (race, wc3_season, wins, losses) => ({ race, wc3_season, wins, losses });
 
@@ -17,6 +17,12 @@ test('gamesWarning marks a race W3C holds no stats for in error', () => {
   assert.deepEqual(gamesWarning(player, 25, 'NE'), { colour: 'error', text: 'No W3C stats found for NE' });
   assert.equal(gamesWarning({ w3c_stats: [] }, 25, 'HU').colour, 'error');
   assert.equal(hasW3CStatsTwoSeasons(player, 25, 'HU'), true);
+});
+
+test('the no-stats mark drops the race on a line that names none', () => {
+  assert.deepEqual(noStatsWarning('NE'), { colour: 'error', text: 'No W3C stats found for NE' });
+  assert.deepEqual(noStatsWarning(), { colour: 'error', text: 'No W3C stats found' });
+  assert.deepEqual(noStatsWarning(null), { colour: 'error', text: 'No W3C stats found' });
 });
 
 test('gamesWarning marks a player under the rule in warning, with the count', () => {

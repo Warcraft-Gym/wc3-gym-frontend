@@ -21,6 +21,33 @@ export function bracketLabel(brackets = [], bracket = null) {
   return { name: bracket?.name || 'Bracket', band };
 }
 
+/**
+ * The bounds write of one night, checked and built in one pass. The weakest bracket keeps 0,
+ * every bracket is named once, and each bound reads as a band while the admin types.
+ *
+ * @param {Array} brackets - Every bracket of the board
+ * @param {Object} values - The typed lower bound per division id, as text
+ * @returns {{rows: Array, error: string|null, body: {bounds: Array}}} - rows weakest first
+ */
+export function boundsWrite(brackets = [], values = {}) {
+  const rows = orderedBrackets({ brackets }).map((bracket, index) => {
+    const typed = index === 0 ? '0' : String(values[bracket.division_id] ?? '').trim();
+    return {
+      division_id: bracket.division_id,
+      name: bracketLabel(brackets, bracket).name,
+      lower_bound: /^\d+$/.test(typed) ? Number(typed) : NaN,
+      typed,
+    };
+  });
+  const body = { bounds: rows.map(({ division_id, lower_bound }) => ({ division_id, lower_bound })) };
+  const broken = rows.findIndex((row) => !Number.isInteger(row.lower_bound));
+  if (broken >= 0) return { rows, error: `${rows[broken].name} takes a whole number of 0 or more.`, body };
+  const low = rows.findIndex((row, index) => index > 0 && row.lower_bound <= rows[index - 1].lower_bound);
+  if (low > 0) return { rows, error: `${rows[low].name} takes a bound larger than ${rows[low - 1].name}.`, body };
+  // the band reads only while every bound holds, so a half-typed number names no band at all
+  return { rows: rows.map((row) => ({ ...row, line: `${row.name} takes ${bracketLabel(rows, row).band}` })), error: null, body };
+}
+
 // A seat is named by its first race row, which is the one id it always holds
 export const seatKey = (seat) => seat?.rows?.[0]?.entrant_id ?? null;
 
@@ -140,5 +167,7 @@ export const openSeriesRows = (board) =>
     .filter((bracket) => bracket.open_series)
     .map((bracket) => ({
       division_id: bracket.division_id,
-      text: `${bracket.name} · ${bracket.open_series.side1.name} vs ${bracket.open_series.side2.name}`,
+      name: bracket.name,
+      side1: bracket.open_series.side1,
+      side2: bracket.open_series.side2,
     }));

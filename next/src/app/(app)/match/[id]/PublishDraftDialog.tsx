@@ -49,7 +49,8 @@ export function PublishDraftDialog({
           {title}
         </DialogTitle>
         <div className="p-4">
-          <StatusAlert modelValue={error} onClose={onErrorClose} />
+          {/* A failed replaces read keeps its message here, so closing the alert never brings the reading line back */}
+          <StatusAlert modelValue={error} onClose={replacement && !lost ? undefined : onErrorClose} />
           {replacement ? (
             <>
               <p>It replaces this series, which is removed:</p>
@@ -71,7 +72,9 @@ export function PublishDraftDialog({
                   ) : null}
                   {!lost.date_time && !lost.has_veto ? <span className="text-muted-foreground">No booked time and no map veto</span> : null}
                 </div>
-              ) : error ? null : (
+              ) : error ? (
+                <p className="mt-2 text-sm text-muted-foreground">Cancel and open the confirm again to read what that series holds.</p>
+              ) : (
                 <p role="status" className="text-sm text-muted-foreground">Reading what that series holds…</p>
               )}
               <p className="mt-4 text-sm text-muted-foreground">
@@ -91,7 +94,8 @@ export function PublishDraftDialog({
           <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button disabled={busy || !rows.length || (replacement && !lost && !error)} onClick={onConfirm}>
+          {/* The replacement waits on the replaces read alone, so a failed read blocks the publish */}
+          <Button disabled={busy || !rows.length || (replacement && !lost)} onClick={onConfirm}>
             <Icon name="mdi-publish" />
             {replacement ? "Publish and replace" : `Publish ${noun}`}
           </Button>

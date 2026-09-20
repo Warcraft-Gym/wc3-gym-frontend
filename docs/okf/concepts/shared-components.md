@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T00:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T22:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -89,22 +89,25 @@ The one table for groups of rows: a tinted clickable header row per group, detai
 
 # RoundStrip
 
-One player's event reads as one 12 px square per round: `win` for a round he won, `loss` for one he lost, a square split down the middle for a round he won one series and lost another, a dashed outline for a series still to play, and a quiet `border` square for a round with no series.
+One player's event reads as one 12 px square per round: `win` for a round he won, `loss` for one he lost, a square split down the middle for a round he won one series and lost another, a dashed outline for a series still to play, a quiet `border` square crossed by a diagonal in low-emphasis ink for a round he sits out, and a plain quiet `border` square for a round with no series.
 
 - The mark names the winner of the series alone, so the strip reads the same whatever best-of the stage plays. The margin lives in the tooltip: "Round 3 · Lost 0 – 2", then the opponent as a player line. A round that holds two series lists both.
+- A series of that round wins over the crossed mark, because a round that was played shows its result, and the crossed mark reads "Round 3 · Sat out". It carries its own hover, so the strip still needs no legend row. The caller passes `outRounds`, which defaults to none, so a surface that knows of no sit-out draws the strip as before.
 - The text record "2 – 1" sits beside the strip in `win` and `loss`, so colour is never the only channel; a narrow surface drops the record and keeps the strip.
 - One strip is one keyboard stop. The group carries the name "Won 2, lost 1, played 3 of 7 rounds" and the arrow keys walk its marks, so a roster of twelve players never holds a hundred tab stops.
-- `roundMarks`, `seriesHead`, `markText`, `stripRecord` and `stripLabel` in `next/src/helpers/round-strip.mjs` hold the state of a round and the words; the component holds only the marks and the focus.
+- `roundMarks`, `seriesHead`, `markText`, `stripRecord`, `stripPoints` and `stripLabel` in `next/src/helpers/round-strip.mjs` hold the state of a round, the points and the words; the component holds only the marks and the focus.
 - It is drawn on the team page roster and on the player page's Events row. A surface that does not load the event's series draws the roster without it.
 
 # TeamRoster
 
-The roster of one team in one event is one card: the captains, then the members, in one aligned list of flag, name, race, MMR and the round strip.
+The roster of one team in one event is one card: the captains, then the members, in one aligned list of flag, name, race, MMR, points and the round strip.
 
 - The members run by MMR, highest first, and a player with no MMR last, because the list carries no sort control. The MMR head is the W3C form with the synced time in its tooltip.
-- The column head, the MMR and the round numbers, is drawn once for the card, on the head of the first group that lists rows; "Captains" and "Members 7" stay row group heads, and a group with no rows keeps its one line of empty text.
-- A long name truncates and carries the full name in its title; the MMR never truncates.
-- A captain shows his race, his MMR and his strip only when he plays in that event, and reads "Not playing this season" across those columns when he does not. The race comes from the player's signup race for that event, so a player with none shows no race.
+- The column head, the MMR, "Points" and the round numbers, is drawn once for the card, on the head of the first group that lists rows; "Captains" and "Members 7" stay row group heads, and a group with no rows keeps its one line of empty text.
+- The points cell is `stripPoints` over the series the page already holds: the sum of the player's own `player1_points` or `player2_points`. The server applies the event's score system, so the browser only adds the numbers up, and a player no series names reads an em dash. The head note says "Points from series in this event", because a record always names its scope.
+- The rounds a player sits out come from the `out_rounds` of the `gnl_stats` row whose `season_id` is this event, which the event roster read fills. A roster that names no event reads no sit-out.
+- A long name truncates and carries the full name in its title; a number never truncates, and a narrow screen drops the text record beside the strip before it drops the points.
+- A captain shows his race, his MMR, his points and his strip only when he plays in that event, and reads "Not playing this season" across those columns when he does not. The race comes from the player's signup race for that event, so a player with none shows no race.
 - A captain reads under Captains alone, so the members list and the member count leave his member row out.
 - A page that edits the roster fills `renderCaptains` and `renderMembers` with its own controls, and that group draws its own block under the group name instead of the aligned list.
 

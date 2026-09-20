@@ -18,7 +18,9 @@ import { cn } from "@/lib/utils";
 type Row = Record<string, any>;
 
 // The list is sorted, so the numbers stand in their own tracks: flag, name, race, MMR, points, rounds
-const GRID = "grid grid-cols-[16px_minmax(4rem,max-content)_18px_auto_auto_1fr] items-center pb-4";
+// the name is the track that gives way: its floor is lower on a narrow screen, and a longer strip scrolls in the card
+const GRID =
+  "grid grid-cols-[16px_minmax(3.5rem,max-content)_18px_auto_auto_1fr] items-center overflow-x-auto pb-4 sm:grid-cols-[16px_minmax(4rem,max-content)_18px_auto_auto_1fr]";
 // every cell carries the row rule, so one hairline runs the width of the card
 const CELL = "self-stretch flex items-center border-b py-1.5";
 

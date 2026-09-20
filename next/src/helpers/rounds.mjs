@@ -75,8 +75,7 @@ export const roundCards = (
     return {
       playday: round.playday,
       label: roundLabel(round),
-      // The stage the round sits in; GET /player-series names it, another read leaves the name null
-      stageId: round.stage_id ?? null,
+      // The name of the stage the round sits in; GET /player-series names it, another read leaves it null
       stageName: round.stage_name ?? null,
       over,
       current,

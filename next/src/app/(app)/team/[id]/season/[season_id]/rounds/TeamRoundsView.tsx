@@ -31,7 +31,7 @@ const INK: Record<string, string> = { success: "text-success", error: "text-erro
 function StatusChip({ status, short = false }: { status: Status; short?: boolean }) {
   if (short)
     return (
-      <span className="inline-flex items-center gap-1 text-xs" title={status.hint ?? status.title} aria-label={status.title}>
+      <span className="inline-flex items-center gap-1 text-xs" title={status.hint ?? status.title}>
         <Icon name={status.icon} size={14} className={INK[status.color ?? ""] ?? "text-muted-foreground"} />
         {/* under the XS breakpoint the mark stands alone, and the word stays in the tooltip */}
         <span className="hidden min-[600px]:inline">{status.short}</span>
@@ -356,7 +356,12 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                           </div>
                         </>
                       )}
-                      {needsGame(item) ? <div className="tnum text-xs font-normal text-muted-foreground">{needsGame(item)} needs a game</div> : null}
+                      {/* the words set the column width, so a phone keeps the count and the tooltip holds the words */}
+                      {needsGame(item) ? (
+                        <div className="tnum text-xs font-normal text-muted-foreground" title={`${needsGame(item)} needs a game`}>
+                          {phone ? needsGame(item) : `${needsGame(item)} needs a game`}
+                        </div>
+                      ) : null}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -364,8 +369,8 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
               <TableBody>
                 {players.map((player) => (
                   <TableRow key={player.id}>
-                    {/* the names stay in place while the rounds scroll under them */}
-                    <TableCell className="sticky left-0 z-10 bg-surface">
+                    {/* the names stay in place while the rounds scroll under them, cut off on a phone so three rounds fit beside them */}
+                    <TableCell className="sticky left-0 z-10 max-w-[6.5rem] overflow-hidden bg-surface [&_.name]:truncate [&_.player-name]:max-w-full min-[600px]:max-w-none">
                       <PlayerName player={player} race={phone ? undefined : player.signup_race} mmr={phone ? false : undefined} />
                     </TableCell>
                     {rounds.map((item) => {
@@ -387,7 +392,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                             />,
                             versus ? (
                               // the name gives the column its width, so a phone cuts it off
-                              <span className="block max-w-[9ch] truncate text-sm min-[600px]:max-w-none">{versus.player.name}</span>
+                              <span className="block max-w-[9ch] truncate text-sm min-[600px]:max-w-none" title={versus.player.name}>{versus.player.name}</span>
                             ) : (
                               <StatusChip status={status} short />
                             ),

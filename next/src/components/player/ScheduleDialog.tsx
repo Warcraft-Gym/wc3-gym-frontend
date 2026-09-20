@@ -176,12 +176,11 @@ export function ScheduleDialog({
     </span>
   );
 
-  // Each side's blocked hours apart: the viewer above the track and the other below it,
-  // and one lane a side in the calendar. Position is the channel, so both wear one ink.
+  // Position is the channel: the viewer's strip on top or left, the other side's at the bottom or right
   const sideMark = (index: number) =>
     cn(
-      "pointer-events-none absolute bg-on-surface/40",
-      view === "calendar" ? (index ? "inset-y-0 right-0 w-1/2" : "inset-y-0 left-0 w-1/2") : index ? "inset-x-0 bottom-0 h-1" : "inset-x-0 top-0 h-1",
+      "pointer-events-none absolute bg-on-surface/60",
+      view === "calendar" ? (index ? "inset-y-0 right-0 w-1/2" : "inset-y-0 left-0 w-1/2") : index ? "inset-x-0 bottom-0 h-1.5" : "inset-x-0 top-0 h-1.5",
     );
 
   const cellButton = (day: Day, cell: Cell, index: number, first: number, size: string) => {
@@ -204,7 +203,8 @@ export function ScheduleDialog({
         )}
         onClick={() => setPick(cell.at)}
       >
-        {cell.sides.map((on, side) => (on ? <span key={side} className={sideMark(side)} /> : null))}
+        {/* an hour outside the round window takes no side mark, because the dialog shows no past */}
+        {cell.sides.map((on, side) => (on && !cell.outside ? <span key={side} className={sideMark(side)} /> : null))}
         {picked ? startMark : null}
       </button>
     );

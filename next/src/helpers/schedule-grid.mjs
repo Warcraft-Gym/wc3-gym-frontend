@@ -50,8 +50,7 @@ export const windowDays = (start, end, zone, now = DateTime.now()) => {
   return days;
 };
 
-/** The half hours of one day. A day that changes its offset holds 46 or 50 of them.
- *  `sides` holds one span list per player, in the order the dialog draws them. */
+/** The half hours of one day, `sides` one span list a player in draw order; a day that changes its offset holds 46 or 50. */
 export const dayCells = ({ day, first, last }, blocked = [], sides = []) => {
   const end = day.plus({ days: 1 }).startOf('day');
   const cells = [];

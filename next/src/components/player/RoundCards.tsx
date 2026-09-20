@@ -125,14 +125,14 @@ export function RoundCards({
   const theirScore = (s: Row) => (mine(s) ? s.player2_score : s.player1_score) || 0;
   const scoreColor = (s: Row) => (myScore(s) > theirScore(s) ? "win" : myScore(s) < theirScore(s) ? "loss" : "draw");
 
-  // The rounds in their stages, in round order; a run of rounds of one stage is one group
+  // The rounds in their stages, in round order; a run of rounds of one stage name is one group
   const groups = cards.reduce((list: Row[], card: Row) => {
     const last = list[list.length - 1];
-    if (last && last.stageId === card.stageId) last.cards.push(card);
-    else list.push({ stageId: card.stageId, name: card.stageName, key: `${card.stageId}-${card.playday}`, cards: [card] });
+    if (last && last.name === card.stageName) last.cards.push(card);
+    else list.push({ name: card.stageName, key: card.playday, cards: [card] });
     return list;
   }, []);
-  // An event whose rounds all sit in one stage, or in none, names no stage
+  // An event whose rounds all sit in one stage, or name none, draws no stage heading
   const staged = groups.length > 1;
 
   const cardBox = (card: Row) => (

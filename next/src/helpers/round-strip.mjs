@@ -21,8 +21,10 @@ const sideOf = (series, playerId) => {
 };
 
 /** One mark per round of the event. `state` is 'won', 'lost', 'mixed' (one won and one
- *  lost in that round), 'pending' (a series still to play) or 'none' (no series). */
-export const roundMarks = (series = [], playerId, roundCount = 0) =>
+ *  lost in that round), 'pending' (a series still to play), 'out' (a round the player sits
+ *  out) or 'none' (no series). A series wins over the out state, because a round that was
+ *  played shows its result. */
+export const roundMarks = (series = [], playerId, roundCount = 0, outRounds = []) =>
   Array.from({ length: roundCount }, (_, index) => {
     const round = index + 1;
     const list = series
@@ -30,7 +32,7 @@ export const roundMarks = (series = [], playerId, roundCount = 0) =>
       .map((row) => sideOf(row, playerId));
     const won = list.filter((one) => one.result === 'won').length;
     const lost = list.filter((one) => one.result === 'lost').length;
-    const state = !list.length ? 'none'
+    const state = !list.length ? (outRounds.includes(round) ? 'out' : 'none')
       : list.some((one) => one.result === 'pending') ? 'pending'
         : won && lost ? 'mixed' : won ? 'won' : lost ? 'lost' : 'none';
     return { round, state, series: list };
@@ -42,7 +44,7 @@ export const seriesHead = (round, one) => `Round ${round} · ${one.result === 'p
 // What one mark says to a screen reader: every series it holds, with the opponent named
 export const markText = (mark) => (mark.series.length
   ? mark.series.map((one) => `${seriesHead(mark.round, one)}, vs ${one.opponent?.name ?? 'an unnamed player'}`).join('; ')
-  : `Round ${mark.round} · No series`);
+  : `Round ${mark.round} · ${mark.state === 'out' ? 'Sat out' : 'No series'}`);
 
 // The record beside the strip, and the rounds the player has a result in
 export const stripRecord = (marks = []) => marks.reduce((sum, mark) => {
@@ -50,6 +52,13 @@ export const stripRecord = (marks = []) => marks.reduce((sum, mark) => {
   const lost = mark.series.filter((one) => one.result === 'lost').length;
   return { wins: sum.wins + won, losses: sum.losses + lost, played: sum.played + (won || lost ? 1 : 0) };
 }, { wins: 0, losses: 0, played: 0 });
+
+// The points one player took in this event: the server writes them on each series row, so the
+// browser only sums his side. Null where no series names him, so the cell prints its own dash.
+export const stripPoints = (series = [], playerId) => {
+  const own = series.filter((row) => row.player1_id === playerId || row.player2_id === playerId);
+  return own.length ? own.reduce((sum, row) => sum + ((row.player1_id === playerId ? row.player1_points : row.player2_points) ?? 0), 0) : null;
+};
 
 // The one name the whole strip carries, because the strip is one keyboard stop
 export const stripLabel = (marks = []) => {

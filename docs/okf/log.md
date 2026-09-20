@@ -2,6 +2,7 @@
 
 ## 2026-09-20
 
+* **Update**: the team roster carries a points column summed from the series the page already holds, and a round a player sits out draws as a crossed square in the round strip. The shared-component and teams page concepts state the column, its scope note and the sit-out mark.
 * **Update**: the team check-in page shows one round as a roster list or every round as a matrix, both from one read, and the captain edits from a row menu. The teams page concept states the two views, the four states, the derived block and the write that sits out every round that has not ended.
 * **Update**: the season dialog turns check-in off for an existing event and hides the check-in days and the early check-in switch while it is off. The GNL season page concept states the field and the new-season default.
 * **Update**: the player page answers a round in its Events section, carries the state chip and the round end line, and sits out every remaining round with an Undo; the availability page lists the rounds the blocked times cover. The players and stats page concept states the chip, the early window, the bulk sit-out and the write it makes.

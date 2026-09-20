@@ -85,7 +85,7 @@ export function PublishedSeries({
           {isAdmin ? (
             <Button className="w-full min-[960px]:w-auto" onClick={onAddSeries}>
               <Icon name="mdi-plus" />
-              Add Series
+              Add series
             </Button>
           ) : null}
         </div>
@@ -163,7 +163,7 @@ export function PublishedSeries({
         <div className="flex justify-end p-2">
           <Button variant="ghost" className="text-error" onClick={onDeleteAll}>
             <Icon name="mdi-delete-sweep" />
-            Delete All Published
+            Delete all published
           </Button>
         </div>
       ) : null}

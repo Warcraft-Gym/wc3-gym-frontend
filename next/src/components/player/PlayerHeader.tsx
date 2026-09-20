@@ -25,7 +25,7 @@ const ID_LINK = "inline-flex items-center gap-1.5 whitespace-nowrap text-inherit
 const ID_LINK_HOVER = `${ID_LINK} hover:[&_span]:underline`;
 
 const chipText = (captain: boolean, team: string, season: string) => `${captain ? "Captain · " : ""}${team} · ${season}`;
-// the handle a channel link ends on: thanks_tv, @thanks
+// the handle a channel link ends on: the last path part, with any @ the channel keeps
 const handle = (url?: string | null) => (url || "").replace(/\/+$/, "").split("/").pop();
 
 /** Who the player is, at the top of his page: the picture, the name and race, the

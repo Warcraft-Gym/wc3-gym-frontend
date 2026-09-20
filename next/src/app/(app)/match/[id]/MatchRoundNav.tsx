@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/Icon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { W3CIcon } from "@/components/W3CIcon";
 import { hideMissingImage, teamImageUrl } from "@/helpers/team-image";
+import { teamLabel } from "@/helpers/teams.mjs";
 import { cn } from "@/lib/utils";
 import type { Row } from "./match-cells";
 
@@ -55,30 +56,33 @@ export function MatchRoundNav({
                 <Icon name="mdi-calendar-week" />
                 Round {round.roundNumber}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="max-w-[400px]">
-                <DropdownMenuLabel>Round {round.roundNumber} Matches</DropdownMenuLabel>
-                {round.matches.map((matchItem) => (
-                  <DropdownMenuItem
-                    key={matchItem.id}
-                    onClick={() => onOpenMatch(matchItem.id)}
-                    /* the match you are reading is named, so weight and not colour alone marks the row */
-                    className={cn(matchItem.id === match.id && "font-medium")}
-                    aria-current={matchItem.id === match.id ? "page" : undefined}
-                  >
-                    <span className="flex w-full items-center justify-between gap-2">
-                      <span className="flex w-[45%] flex-col items-center gap-1">
-                        <img className="size-8 rounded-full object-cover" alt="" src={teamImageUrl(matchItem.team1_id)} onError={hideMissingImage} />
-                        <span className="text-center text-xs">{matchItem.team1_name}</span>
+              {/* the trigger is one narrow button, so the list sets its own width and the names read in full */}
+              <DropdownMenuContent align="start" className="w-80 max-w-[calc(100vw-2rem)]">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Round {round.roundNumber} Matches</DropdownMenuLabel>
+                  {round.matches.map((matchItem) => (
+                    <DropdownMenuItem
+                      key={matchItem.id}
+                      onClick={() => onOpenMatch(matchItem.id)}
+                      /* the match you are reading is named, so weight and not colour alone marks the row */
+                      className={cn(matchItem.id === match.id && "font-medium")}
+                      aria-current={matchItem.id === match.id ? "page" : undefined}
+                    >
+                      <span className="flex w-full items-center justify-between gap-2">
+                        <span className="flex w-[45%] flex-col items-center gap-1">
+                          <img className="size-8 rounded-full object-cover" alt="" src={teamImageUrl(matchItem.team1_id)} onError={hideMissingImage} />
+                          <span className="text-center text-xs">{teamLabel(matchItem.team1)}</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground">vs</span>
+                        <span className="flex w-[45%] flex-col items-center gap-1">
+                          <img className="size-8 rounded-full object-cover" alt="" src={teamImageUrl(matchItem.team2_id)} onError={hideMissingImage} />
+                          <span className="text-center text-xs">{teamLabel(matchItem.team2)}</span>
+                        </span>
                       </span>
-                      <span className="text-xs text-muted-foreground">vs</span>
-                      <span className="flex w-[45%] flex-col items-center gap-1">
-                        <img className="size-8 rounded-full object-cover" alt="" src={teamImageUrl(matchItem.team2_id)} onError={hideMissingImage} />
-                        <span className="text-center text-xs">{matchItem.team2_name}</span>
-                      </span>
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-                {round.matches.length === 0 ? <DropdownMenuItem disabled>No matches scheduled</DropdownMenuItem> : null}
+                    </DropdownMenuItem>
+                  ))}
+                  {round.matches.length === 0 ? <DropdownMenuItem disabled>No matches scheduled</DropdownMenuItem> : null}
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           ))}

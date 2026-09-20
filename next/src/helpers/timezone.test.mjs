@@ -10,15 +10,15 @@ test('London against New York follows each side on its own switch date', () => {
   assert.equal(zoneLabel(LON, NY, '2026-03-01T20:00:00'), 'Europe/London · GMT · 5 h ahead of you');
   assert.equal(zoneLabel(LON, NY, '2026-03-15T20:00:00'), 'Europe/London · GMT · 4 h ahead of you');
   assert.equal(zoneLabel(LON, NY, '2026-04-05T20:00:00'), 'Europe/London · GMT+1 · 5 h ahead of you');
-  assert.equal(zoneLabel(NY, LON, '2026-03-15T20:00:00'), 'America/New_York · GMT-4 · 4 h behind you');
-  assert.equal(zoneLabel(NY, LON, '2026-03-01T20:00:00'), 'America/New_York · GMT-5 · 5 h behind you');
+  assert.equal(zoneLabel(NY, LON, '2026-03-15T20:00:00'), 'America/New_York · GMT\u22124 · 4 h behind you');
+  assert.equal(zoneLabel(NY, LON, '2026-03-01T20:00:00'), 'America/New_York · GMT\u22125 · 5 h behind you');
 });
 
 test('a half hour zone keeps its minutes', () => {
   assert.equal(zoneLabel('Asia/Kolkata', LON, '2026-03-15T12:00:00'), 'Asia/Kolkata · GMT+5:30 · 5 h 30 min ahead of you');
   assert.equal(zoneLabel('Asia/Kolkata', NY, '2026-03-15T12:00:00'), 'Asia/Kolkata · GMT+5:30 · 9 h 30 min ahead of you');
   assert.equal(zoneLabel(LON, 'Asia/Kolkata', '2026-04-05T12:00:00'), 'Europe/London · GMT+1 · 4 h 30 min behind you');
-  assert.equal(gmt(-210), 'GMT-3:30');
+  assert.equal(gmt(-210), 'GMT\u22123:30');
 });
 
 test('an opponent with no zone gets no label', () => {

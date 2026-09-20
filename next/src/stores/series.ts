@@ -51,6 +51,29 @@ const store = {
   async promoteDraftSeries(draft_series_id: number) {
     return await fetchWrapper.post(`${backendUrl}/draft-series/${draft_series_id}/promote`);
   },
+
+  // Round draft board: one read fills the board, and a read after a write skips the browser cache
+  async getDraftBoard(match_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/matches/${match_id}/draft-board`, undefined, fresh ? { cache: "no-store" } : undefined);
+  },
+  async getDraftState(match_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/draft-series/match/${match_id}/state`, undefined, fresh ? { cache: "no-store" } : undefined);
+  },
+  // The viewer's own team only; every other caller reads 403
+  async markDraftSeen(match_id: number, team_id: number) {
+    await fetchWrapper.put(`${backendUrl}/draft-series/match/${match_id}/teams/${team_id}/seen`);
+  },
+  async setDraftReady(match_id: number, team_id: number, ready: boolean) {
+    await fetchWrapper.put(`${backendUrl}/draft-series/match/${match_id}/teams/${team_id}/ready`, { ready });
+  },
+  // The working largest MMR difference of this match; null resets it to the stage value
+  async setDraftMaxMmrDifference(match_id: number, max_mmr_difference: number | null) {
+    await fetchWrapper.put(`${backendUrl}/draft-series/match/${match_id}/max-mmr-difference`, { max_mmr_difference });
+  },
+  // The meetings of two players, read only when a captain opens the head to head
+  async playerMeetings(user_a: number, user_b: number) {
+    return await fetchWrapper.get(`${backendUrl}/users/${user_a}/meetings/${user_b}`);
+  },
   async getSeriesByMatchId(match_id: number) {
     return await fetchWrapper.post(`${backendUrl}/series/search?query=match_id == ${match_id}`);
   },

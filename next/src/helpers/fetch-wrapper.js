@@ -55,7 +55,8 @@ function getAllPages(method) {
 }
 
 function request(method) {
-    return async (url, body) => {  // Mark as async
+    // options reach fetch as they are, so a caller can ask for a fresh read with { cache: 'no-store' }
+    return async (url, body, options) => {  // Mark as async
         let requestMethod = method;
         let fileUpload = false;
         let receiveBinary = false;
@@ -80,7 +81,7 @@ function request(method) {
 
         // **Wait for headers to be resolved before passing them**
         const headers = await authHeader(requestMethod, url);
-        const requestOptions = { method: requestMethod, headers };
+        const requestOptions = { ...options, method: requestMethod, headers };
 
         if (body) {
             if (fileUpload) {

@@ -11,12 +11,14 @@ test('ten played or more carries the percent', () => {
 test('under ten the two numbers stand alone', () => {
   assert.equal(record(3, 1), '3 – 1');
   assert.equal(record(2, 1), '2 – 1');
+  assert.equal(record(9, 0), '9 – 0');
   assert.equal(record(0, 9), '0 – 9');
 });
 
 test('nothing played answers nothing, so the cell prints its own dash', () => {
   assert.equal(record(0, 0), null);
   assert.equal(record(0, undefined), null);
+  assert.equal(record(null, null), null);
   assert.equal(record(undefined, undefined), null);
 });
 

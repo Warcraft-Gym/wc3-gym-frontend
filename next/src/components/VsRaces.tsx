@@ -12,7 +12,7 @@ type SeasonPlayer = { vs_race?: Record<string, number[]> } & Record<string, any>
 export function VsRacesHead() {
   return (
     <span className="inline-flex items-center gap-1 whitespace-nowrap">
-      <W3CIcon size={14} /> Games vs race
+      <W3CIcon size={14} /> Ladder games vs race
     </span>
   );
 }
@@ -29,7 +29,7 @@ export function VsRaces({ player, race }: { player?: SeasonPlayer; race?: string
       content={
         <div>
           <div className="mb-1 flex items-center gap-1">
-            <W3CIcon size={14} /> Ladder record
+            <W3CIcon size={14} /> Ladder record, won – lost
           </div>
           {(RACES as string[]).map((r) => (
             <div key={r} className="flex items-center gap-1">

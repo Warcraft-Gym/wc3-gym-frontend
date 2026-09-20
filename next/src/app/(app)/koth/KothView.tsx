@@ -15,7 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
-import { dateRange, STATE_COLOR, STATE_LABEL, stateOf } from "@/helpers/event-labels.mjs";
+import { dateRange, STATE_COLOR, STATE_LABEL } from "@/helpers/event-labels.mjs";
+import { nightState } from "@/helpers/koth.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -82,7 +83,7 @@ export function KothView() {
         lower_bounds: form.lower_bounds,
       });
       setDialogOpen(false);
-      router.push(`/events/${night.id}/admin`);
+      router.push(`/koth/nights/${night.id}`);
     } catch (e) {
       setDialogError((e as Error).message);
     } finally {
@@ -121,13 +122,14 @@ export function KothView() {
                 <TableHead>Night</TableHead>
                 <TableHead className={phoneCell}>Date</TableHead>
                 <TableHead>State</TableHead>
+                <TableHead className={cn(phoneCell, "text-right")}>Settings</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {nights.map((night) => (
                 <TableRow key={night.id}>
                   <TableCell className="py-3">
-                    <Link href={`/events/${night.id}/admin`}>
+                    <Link href={`/koth/nights/${night.id}`}>
                       <strong>{night.name}</strong>
                     </Link>
                     {/* a phone drops the date column, so the date rides under the name */}
@@ -135,13 +137,19 @@ export function KothView() {
                   </TableCell>
                   <TableCell className={cn(phoneCell, "whitespace-nowrap")}>{dateRange(night) || "—"}</TableCell>
                   <TableCell>
-                    <Badge className={toneClass(stateColor[stateOf(night)])}>{stateLabel[stateOf(night)] || "—"}</Badge>
+                    <Badge className={toneClass(stateColor[nightState(night)])}>{stateLabel[nightState(night)] || "—"}</Badge>
+                  </TableCell>
+                  {/* the run page runs the night; the event page keeps every setting of it */}
+                  <TableCell className={cn(phoneCell, "text-right whitespace-nowrap")}>
+                    <Button nativeButton={false} variant="ghost" size="sm" className="text-primary-text" render={<Link href={`/events/${night.id}/admin`} />}>
+                      Settings
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
               {!nights.length && !loading ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
+                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
                     No night has run yet.
                   </TableCell>
                 </TableRow>

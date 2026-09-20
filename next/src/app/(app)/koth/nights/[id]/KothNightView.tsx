@@ -227,9 +227,10 @@ export function KothNightView({ id }: { id: string }) {
   // The event settings page links here with ?bounds=1, which opens the dialog once
   const boundsAsked = useRef(false);
   useEffect(() => {
-    if (!wantsBounds || boundsAsked.current || !board || board.closed || boundsBlocked) return;
+    if (!wantsBounds || boundsAsked.current || !board) return;
+    // The first board read spends the flag, so a later read never opens the dialog by itself
     boundsAsked.current = true;
-    openBounds();
+    if (!board.closed && !boundsBlocked) openBounds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wantsBounds, board]);
 
@@ -371,13 +372,13 @@ export function KothNightView({ id }: { id: string }) {
                 )}
               </Field>
             ))}
-            {bounds.error ? null : (
-              <div className="flex flex-col text-xs text-muted-foreground">
-                {[...bounds.rows].reverse().map((row: Row) => (
-                  <span key={row.division_id}>{row.line}</span>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-col text-xs text-muted-foreground">
+              {bounds.error ? (
+                <span>{bounds.error}</span>
+              ) : (
+                [...bounds.rows].reverse().map((row: Row) => <span key={row.division_id}>{row.line}</span>)
+              )}
+            </div>
             <p className="mb-0 text-xs text-muted-foreground">
               Players nobody placed by hand move to the bracket of their MMR. A player an admin placed stays where he is.
             </p>

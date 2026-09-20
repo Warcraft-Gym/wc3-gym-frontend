@@ -429,21 +429,24 @@ export function EntrantsView({ id }: { id: string }) {
                   Cut the entrants into divisions by <W3CMmr />
                 </span>
                 <span className="flex-1" />
-                <Pick labelAfter className="w-[130px]" label="Divisions" items={DIVISION_COUNTS} value={divisionCount} onChange={pickCount} />
-                <Button variant="outline" disabled={!rated.length} onClick={() => evenSplit()}>
-                  <Icon name="mdi-scale-balance" />
-                  Even split
-                </Button>
+                {/* A KOTH night keeps its brackets and its queue, so it shows the stored cuts and no write */}
                 {isKoth ? null : (
-                  <Button variant="outline" disabled={busy === "divisions"} onClick={saveDivisions}>
-                    {busyIcon("divisions", "mdi-content-save")}
-                    Save divisions
-                  </Button>
+                  <>
+                    <Pick labelAfter className="w-[130px]" label="Divisions" items={DIVISION_COUNTS} value={divisionCount} onChange={pickCount} />
+                    <Button variant="outline" disabled={!rated.length} onClick={() => evenSplit()}>
+                      <Icon name="mdi-scale-balance" />
+                      Even split
+                    </Button>
+                    <Button variant="outline" disabled={busy === "divisions"} onClick={saveDivisions}>
+                      {busyIcon("divisions", "mdi-content-save")}
+                      Save divisions
+                    </Button>
+                    <Button disabled={busy === "assign" || !divisions.length} onClick={assign}>
+                      {busyIcon("assign", "mdi-arrow-split-vertical")}
+                      Assign from MMR
+                    </Button>
+                  </>
                 )}
-                <Button disabled={busy === "assign" || !divisions.length} onClick={assign}>
-                  {busyIcon("assign", "mdi-arrow-split-vertical")}
-                  Assign from MMR
-                </Button>
               </div>
               {isKoth ? (
                 <p className="mb-2 text-xs text-muted-foreground">
@@ -454,7 +457,7 @@ export function EntrantsView({ id }: { id: string }) {
                   .
                 </p>
               ) : null}
-              <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={stripPlayers} names={names} colors={colors} domain={domain} stored={storedCuts} />
+              <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={stripPlayers} names={names} colors={colors} domain={domain} stored={storedCuts} disabled={isKoth} />
             </div>
           ) : null}
 

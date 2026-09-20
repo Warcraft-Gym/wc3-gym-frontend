@@ -207,13 +207,15 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
     };
     // The ask names the rounds with no series, so the line back names the same set
     const paired = new Set((seasonCards(season) ?? []).filter((card) => card.series).map((card) => card.playday));
+    // A round already out on the blocked times is not in the ask either, so it is not counted
+    const derived = (playday: number) => !!before.find((item) => item.playday === playday)?.blocked_out;
     try {
       const rows = await availabilityStore.setAllPlayerAvailability({ season_id: Number(seasonId), available: false });
       setSeasonData((older) => ({ ...older, [seasonId]: { ...older[seasonId], availability: rows } }));
       const rounds = rows
         .filter((row: Row) => row.available === false && was(row.playday) !== false)
         .map((row: Row) => ({ playday: row.playday, available: was(row.playday) }));
-      setUndo({ seasonId, rounds, count: rounds.filter((row) => !paired.has(row.playday)).length });
+      setUndo({ seasonId, rounds, count: rounds.filter((row: Row) => !paired.has(row.playday) && !derived(row.playday)).length });
     } catch (error) {
       setErrorMessage((error as Error).message || "Error saving availability.");
     }

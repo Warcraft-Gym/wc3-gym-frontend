@@ -18,8 +18,8 @@ type Group = { id: number; label: string; slug: string; rounds: Row[] };
 /** The rounds the blocked times answer on their own: one read per event the player is
  *  signed up to, the same read his player page makes. A derived row is never stored, so
  *  the list is read-only and the answer itself is changed on the round. */
-export function BlockedRounds({ refresh = 0 }: {
-  refresh?: number; // a block save bumps it, and the list reads the rounds again
+export function BlockedRounds({ changed = false }: {
+  changed?: boolean; // a saved block moves the rounds it covers, so the list reads as out of date
 }) {
   const { me } = useAuth();
   const { seasons, slugOf } = useSeason();
@@ -47,12 +47,12 @@ export function BlockedRounds({ refresh = 0 }: {
       }).filter((group: Group) => group.rounds.length));
     })();
     return () => { live = false; };
-    // the read follows the events he is in; the store's members are rebuilt every render
+    // one read per event, at load only: a saved block would cost the same reads again
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ids, refresh]);
+  }, [ids]);
 
   // Nothing to say without an event, or once the read lands and no round is covered
-  if (!ids || groups?.length === 0) return null;
+  if (!ids || (!changed && groups?.length === 0)) return null;
 
   return (
     <Card className="mt-6 gap-0 p-0">
@@ -63,7 +63,9 @@ export function BlockedRounds({ refresh = 0 }: {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4">
-        {groups === null ? (
+        {changed ? (
+          <p className="text-sm text-muted-foreground">Your blocks changed. Reload the page to see the rounds they cover.</p>
+        ) : groups === null ? (
           <Skeleton className="h-16 w-full" />
         ) : (
           groups.map((group) => (

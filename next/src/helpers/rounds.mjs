@@ -11,8 +11,7 @@ export const roundLabel = (round) => {
   return `${start.toFormat(start.hasSame(end, 'month') ? 'd' : 'd LLL')} to ${end.toFormat('d LLL')}`;
 };
 
-// The instant a round ends: midnight after its last day, in the event's zone.
-// Null for a round with no date; the viewer's own zone stands in for an event with none.
+// The instant a round ends: midnight after its last day in the event's zone, or null with no date
 /** @param {*} round @param {string|null} [zone] */
 export const roundEnd = (round, zone = null) => {
   const last = round?.end_date || round?.start_date;
@@ -28,8 +27,7 @@ export const roundOver = (round, today = DateTime.now(), zone = null) => {
   return !!end && end <= today;
 };
 
-// "Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 18:00 your time" for the instant `roundEnd`
-// answers; '' for an event that names no zone, whose rounds end on the reader's own clock
+// "Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 18:00 your time", or '' for an event with no zone
 /** @param {*} end @param {string|null} [zone] @param {string|null} [viewer] */
 export const roundEndLine = (end, zone = null, viewer = null) => {
   if (!end || !zone) return '';

@@ -19,6 +19,7 @@ export function SeriesActionBar({
   series,
   viewer,
   variant = "full",
+  facts = true,
   onSchedule,
   onReport,
   className,
@@ -26,6 +27,8 @@ export function SeriesActionBar({
   series: Row | null;
   viewer: { id?: number | null; isAdmin?: boolean; seats?: { team_id: number; season_id: number }[] };
   variant?: "full" | "compact";
+  /** A surface that states the booked time in a line of its own passes false */
+  facts?: boolean;
   onSchedule?: () => void;
   onReport?: () => void;
   className?: string;
@@ -40,7 +43,7 @@ export function SeriesActionBar({
   // The full bar shows every step while one is left to take; a reported series keeps its result button alone in both bars
   const shown = !mayAct ? [] : variant === "full" && active.length ? live : compact;
   // A step already taken states what it left behind; the score is drawn beside the series on every surface, so the report step states no fact
-  const facts = live.filter((step) => step.state === "done" && step.step !== "report");
+  const factSteps = facts ? live.filter((step) => step.state === "done" && step.step !== "report") : [];
 
   const fact = (step: Step) => (step.step === "schedule" ? formatDateTime(series.date_time) : "Veto done");
 
@@ -62,10 +65,10 @@ export function SeriesActionBar({
     );
   };
 
-  if (!facts.length && !shown.length) return null;
+  if (!factSteps.length && !shown.length) return null;
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      {facts.map((step) => (
+      {factSteps.map((step) => (
         <span key={step.step} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <Icon name={ICON[step.step]} size={16} />
           {fact(step)}

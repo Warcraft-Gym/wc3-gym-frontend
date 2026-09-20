@@ -2,6 +2,7 @@
 import { useImperativeHandle, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,12 @@ import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { VetoBoard } from "@/components/VetoBoard";
 import { authHeader, backendUrl, fetchWrapper } from "@/helpers";
-import { gamesOf, winsFor, isValidResult, replaysNeeded } from "@/helpers/best-of.mjs";
+import { gamesOf, winsFor, isValidResult, moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helpers/map-order.mjs";
+import { mapMismatch, mapMismatches, reportWarning } from "@/helpers/replay-maps.mjs";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
-import { useMapStore } from "@/stores";
+import { useMapStore, useMatchStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -64,9 +66,14 @@ const mapOfIn = (form: Form, veto: Row | null, game: number) => form.maps?.[game
  *  opens it through its ref and hands in the series row. */
 export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: string) => void; ref?: React.Ref<ReportResultDialogHandle> }) {
   const mapStore = useMapStore();
+  const matchStore = useMatchStore();
 
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
+  // the report asks once before it saves when the replays and the veto disagree
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [moving, setMoving] = useState<number | null>(null); // the game whose stored replay is on the move
+  const [moved, setMoved] = useState<string | null>(null);
   // the veto sits under a disclosure row, folded away until the reporter opens it
   const [vetoOpen, setVetoOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -113,6 +120,8 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   useImperativeHandle(ref, () => ({
     open: (item: Row) => {
       setErrorMessage(null);
+      setMoved(null);
+      setConfirmOpen(false);
       openId.current = item.id;
       setSeries({
         id: item.id,
@@ -179,20 +188,6 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
     return played && played.id === series.maps[game] ? "Read from the replay" : undefined;
   };
 
-  // What the replay disagrees with, or null
-  const replayNote = (game: number) => {
-    const read = series.reads?.[game];
-    if (!read) return null;
-    if (isOtherSeries(read.tags, series.tags)) {
-      return `This replay is ${read.tags.join(" against ")}. It is not this series.`;
-    }
-    const played = matchMap(read.mapPath, maps);
-    if (played && series.maps[game] && series.maps[game] !== played.id) {
-      return `The replay was played on ${played.name}.`;
-    }
-    return null;
-  };
-
   // The file goes from the browser straight to the bucket, at a link the backend signs per game
   const uploadReplay = async (seriesId: number, game: number, file: File) => {
     const head = new TextDecoder().decode(await file.slice(0, REPLAY_MAGIC.length).arrayBuffer());
@@ -240,6 +235,63 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   const [p1, p2] = reportedScore;
   const scoreProblem = isValidResult(p1, p2, seriesWins) ? null : "Tap the winner of each game played";
   const resultLine = `${name(1)} ${p1} – ${p2} ${name(2)}`;
+
+  // The map each game should play: the veto's, else the one the reporter named himself
+  const offered = offeredMaps(series, scoreVeto);
+  const wantedMaps = gameRows.map((game) => offered[game - 1] ?? series.maps?.[game] ?? null);
+  const replayMaps = gameRows.map((game) => matchMap(series.reads?.[game]?.mapPath, maps)?.id ?? null);
+  // Why the report asks once before it saves, or null. A series whose rules play no veto draws no
+  // veto anywhere, so only one that plays a veto and records no step asks about a missing veto.
+  const confirmReason: string | null = reportWarning(hasVeto && !vetoSteps, mapMismatches(replayMaps, wantedMaps));
+  const mapNameOf = (game: number) => maps.find((map) => map.id === mapOf(game))?.name;
+
+  // What the replay disagrees with, or null: another series, or the map of another game
+  const replayNote = (game: number) => {
+    const read = series.reads?.[game];
+    if (!read) return null;
+    if (isOtherSeries(read.tags, series.tags)) {
+      return `This replay is ${read.tags.join(" against ")}. It is not this series.`;
+    }
+    const off = mapMismatch(game, replayMaps, wantedMaps);
+    const played = off && matchMap(read.mapPath, maps);
+    if (!off || !played) return null;
+    const fix = off.to ? `Move it to game ${off.to}, or change the map of game ${game}.` : `Change the map of game ${game}.`;
+    return `The replay was played on ${played.name}. ${fix}`;
+  };
+
+  // A replay moves inside the games the series played: the ones reported, and the ones tapped now
+  const movesOver = Math.max(replaysNeeded(p1, p2), series.reported || 0);
+  const canMove = (game: number) => movesOver > 1 && (hasReplay(game) || !needsFile(game));
+
+  // Move one game's replay to another game. A file the reporter picked is not uploaded yet, so the
+  // two games swap it in the form; a replay already stored moves through the API.
+  const moveReplay = async (from: number, to: number) => {
+    setMoved(null);
+    setErrorMessage(null);
+    if (hasReplay(from) || hasReplay(to)) {
+      const swapped = hasReplay(to);
+      setSeries((form) => {
+        const reads = { ...form.reads };
+        const [fromRead, toRead] = [form.reads[from], form.reads[to]];
+        if (toRead) reads[from] = toRead;
+        else delete reads[from];
+        if (fromRead) reads[to] = fromRead;
+        else delete reads[to];
+        return { ...form, reads, replays: { ...form.replays, [from]: form.replays[to] ?? null, [to]: form.replays[from] ?? null } };
+      });
+      setMoved(moveMessage(from, to, swapped));
+      return;
+    }
+    setMoving(from);
+    try {
+      const rows: Row[] = await matchStore.moveSeriesReplay(series.id!, from, to);
+      setMoved(moveMessage(from, to, (rows || []).some((row: Row) => row.game_no === from)));
+    } catch (error) {
+      setErrorMessage((error as Error).message);
+    } finally {
+      setMoving(null);
+    }
+  };
 
   // Allowed score combinations, every required file present, and every file a .w3g
   const isValid = (() => {
@@ -306,133 +358,187 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   };
 
   return (
-    <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : saving ? null : close())}>
-      {/* One width in every state: the fold holds the board, so a missing veto never widens the dialog */}
-      <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 md:max-w-[600px]">
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-          <Icon name="mdi-trophy" />
-          Report result
-        </DialogTitle>
-        <div className="flex flex-col gap-3 p-4">
-          <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
-          {vetoMissing ? (
-            <div>
-              <h3 className="flex items-center gap-2 text-warning">
-                <Icon name="mdi-alert-outline" />
-                The map veto is not complete
-              </h3>
-              <div className="text-sm">Enter it below, or report the result without it.</div>
-            </div>
-          ) : null}
-          {hasVeto ? (
-            <Button variant="outline" aria-expanded={vetoOpen} className="h-auto w-full justify-between px-3 py-2" onClick={() => setVetoOpen(!vetoOpen)}>
-              <span className="flex items-center gap-2">
-                <Icon name={scoreVeto?.complete ? "mdi-check-circle-outline" : "mdi-alert-outline"} className={scoreVeto?.complete ? "text-success" : "text-warning"} />
-                {vetoLine}
-              </span>
-              <Icon name={vetoOpen ? "mdi-chevron-up" : "mdi-chevron-down"} />
-            </Button>
-          ) : null}
-          {/* The board stays mounted while it is folded, and shows its loader or error until it answers */}
-          {series.id ? (
-            <div hidden={!!scoreVeto && (!hasVeto || !vetoOpen)}>
-              <VetoBoard key={series.id} seriesId={series.id} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} />
-            </div>
-          ) : null}
-
-          {series.solo && !series.raceOpen ? (
-            <div>
-              <Button variant="ghost" size="sm" onClick={() => setSeries((form) => ({ ...form, raceOpen: true }))}>
-                <Icon name="mdi-account-switch" />
-                Played a different race
+    <>
+      <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : saving ? null : close())}>
+        {/* One width in every state: the fold holds the board, so a missing veto never widens the dialog */}
+        <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 md:max-w-[600px]">
+          <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+            <Icon name="mdi-trophy" />
+            Report result
+          </DialogTitle>
+          <div className="flex flex-col gap-3 p-4">
+            <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
+            <StatusAlert modelValue={moved} type="success" onClose={() => setMoved(null)} className="mb-0" />
+            {vetoMissing ? (
+              <div>
+                <h3 className="flex items-center gap-2 text-warning">
+                  <Icon name="mdi-alert-outline" />
+                  The map veto is not complete
+                </h3>
+                <div className="text-sm">Enter it below, or report the result without it.</div>
+              </div>
+            ) : null}
+            {hasVeto ? (
+              <Button variant="outline" aria-expanded={vetoOpen} className="h-auto w-full justify-between px-3 py-2" onClick={() => setVetoOpen(!vetoOpen)}>
+                <span className="flex items-center gap-2">
+                  <Icon name={scoreVeto?.complete ? "mdi-check-circle-outline" : "mdi-alert-outline"} className={scoreVeto?.complete ? "text-success" : "text-warning"} />
+                  {vetoLine}
+                </span>
+                <Icon name={vetoOpen ? "mdi-chevron-up" : "mdi-chevron-down"} />
               </Button>
-            </div>
-          ) : series.solo ? (
-            <div className="grid grid-cols-2 gap-3">
-              {([1, 2] as const).map((side) => (
-                <RaceSelect
-                  key={side}
-                  label={name(side)}
-                  value={series.races[`player${side}`] ?? null}
-                  onChange={(race) => setSeries((form) => ({ ...form, races: { ...form.races, [`player${side}`]: race } }))}
-                />
-              ))}
-            </div>
-          ) : null}
+            ) : null}
+            {/* The board stays mounted while it is folded, and shows its loader or error until it answers */}
+            {series.id ? (
+              <div hidden={!!scoreVeto && (!hasVeto || !vetoOpen)}>
+                <VetoBoard key={series.id} seriesId={series.id} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} />
+              </div>
+            ) : null}
 
-          {gameRows.map((game) => (
-            <div key={game} className="flex flex-col gap-3 rounded border p-3">
-              <div className="text-sm font-medium">Game {game}</div>
-              <ToggleGroup
-                variant="outline"
-                spacing={0}
-                className="w-full"
-                aria-label={`Winner of game ${game}`}
-                value={series.winners[game - 1] ? [series.winners[game - 1] as string] : []}
-                onValueChange={(value) => setWinner(game, (value[0] as string) ?? null)}
-              >
-                <ToggleGroupItem value="A" className={SIDE_BUTTON}>
-                  {name(1)} won
-                </ToggleGroupItem>
-                <ToggleGroupItem value="B" className={SIDE_BUTTON}>
-                  {name(2)} won
-                </ToggleGroupItem>
-              </ToggleGroup>
-              <Field label="Map played" htmlFor={`report-map-${game}`} hint={mapHint(game)}>
-                <div className="flex gap-2">
-                  <Select value={mapOf(game)} onValueChange={(value) => setMap(game, value as number | null)}>
-                    <SelectTrigger id={`report-map-${game}`} className="w-full">
-                      <SelectValue>{(id: number | null) => maps.find((map) => map.id === id)?.name ?? ""}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {maps.map((map) => (
-                        <SelectItem key={map.id} value={map.id}>
-                          {map.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {mapOf(game) ? (
-                    <Button variant="ghost" size="icon" aria-label="Clear the map" onClick={() => setMap(game, null)}>
-                      <Icon name="mdi-close" />
-                    </Button>
+            {series.solo && !series.raceOpen ? (
+              <div>
+                <Button variant="ghost" size="sm" onClick={() => setSeries((form) => ({ ...form, raceOpen: true }))}>
+                  <Icon name="mdi-account-switch" />
+                  Played a different race
+                </Button>
+              </div>
+            ) : series.solo ? (
+              <div className="grid grid-cols-2 gap-3">
+                {([1, 2] as const).map((side) => (
+                  <RaceSelect
+                    key={side}
+                    label={name(side)}
+                    value={series.races[`player${side}`] ?? null}
+                    onChange={(race) => setSeries((form) => ({ ...form, races: { ...form.races, [`player${side}`]: race } }))}
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            {gameRows.map((game) => (
+              <div key={game} className="flex flex-col gap-3 rounded border p-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 text-sm font-medium">
+                    Game {game}
+                    {mapNameOf(game) ? ` \u00b7 ${mapNameOf(game)}` : ""}
+                  </div>
+                  {canMove(game) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={<Button variant="outline" size="sm" className="text-primary-text" aria-label={`Move the replay of game ${game}`} aria-busy={moving === game} disabled={moving !== null} />}
+                      >
+                        <Icon name={moving === game ? "mdi-loading mdi-spin" : "mdi-file-move-outline"} />
+                        Move to game
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {moveTargets(movesOver, game).map((to: number) => (
+                          <DropdownMenuItem key={to} onClick={() => moveReplay(game, to)}>
+                            Move to game {to}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : null}
                 </div>
-              </Field>
-              <Field
-                label={`Game ${game} replay`}
-                htmlFor={`report-replay-${game}`}
-                hint={fileHint(game)}
-                error={isW3g(series.replays[game]) ? null : "Only .w3g replay files are allowed"}
-              >
-                <Input
-                  id={`report-replay-${game}`}
-                  ref={showHeld(series.replays[game])}
-                  type="file"
-                  accept=".w3g"
-                  required={needsFile(game)}
-                  onChange={(event) => readGameReplay(game, event.target.files?.[0] ?? null)}
-                />
-              </Field>
-              {replayNote(game) ? <Note type="warning">{replayNote(game)}</Note> : null}
-            </div>
-          ))}
+                <ToggleGroup
+                  variant="outline"
+                  spacing={0}
+                  className="w-full"
+                  aria-label={`Winner of game ${game}`}
+                  value={series.winners[game - 1] ? [series.winners[game - 1] as string] : []}
+                  onValueChange={(value) => setWinner(game, (value[0] as string) ?? null)}
+                >
+                  <ToggleGroupItem value="A" className={SIDE_BUTTON}>
+                    {name(1)} won
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="B" className={SIDE_BUTTON}>
+                    {name(2)} won
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <Field label="Map played" htmlFor={`report-map-${game}`} hint={mapHint(game)}>
+                  <div className="flex gap-2">
+                    <Select value={mapOf(game)} onValueChange={(value) => setMap(game, value as number | null)}>
+                      <SelectTrigger id={`report-map-${game}`} className="w-full">
+                        <SelectValue>{(id: number | null) => maps.find((map) => map.id === id)?.name ?? ""}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {maps.map((map) => (
+                          <SelectItem key={map.id} value={map.id}>
+                            {map.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {mapOf(game) ? (
+                      <Button variant="ghost" size="icon" aria-label="Clear the map" onClick={() => setMap(game, null)}>
+                        <Icon name="mdi-close" />
+                      </Button>
+                    ) : null}
+                  </div>
+                </Field>
+                <Field
+                  label={`Game ${game} replay`}
+                  htmlFor={`report-replay-${game}`}
+                  hint={fileHint(game)}
+                  error={isW3g(series.replays[game]) ? null : "Only .w3g replay files are allowed"}
+                >
+                  <Input
+                    id={`report-replay-${game}`}
+                    key={series.replays[game]?.name ?? "none"}
+                    ref={showHeld(series.replays[game])}
+                    type="file"
+                    accept=".w3g"
+                    required={needsFile(game)}
+                    onChange={(event) => readGameReplay(game, event.target.files?.[0] ?? null)}
+                  />
+                </Field>
+                {replayNote(game) ? <Note type="warning">{replayNote(game)}</Note> : null}
+              </div>
+            ))}
 
-          <div className="text-center">
-            {scoreProblem ? <span className="text-xs text-muted-foreground">{scoreProblem}</span> : <span className="text-base font-medium">{resultLine}</span>}
+            <div className="text-center">
+              {scoreProblem ? <span className="text-xs text-muted-foreground">{scoreProblem}</span> : <span className="text-base font-medium">{resultLine}</span>}
+            </div>
           </div>
-        </div>
-        <div className="flex justify-end gap-2 p-4 pt-0">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Close
-          </Button>
-          <Button variant={vetoMissing ? "outline" : "default"} className={vetoMissing ? "text-warning" : undefined} disabled={!isValid || saving} onClick={save}>
-            <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
-            {vetoMissing ? "Report without a veto" : "Save result"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" disabled={saving} onClick={close}>
+              Close
+            </Button>
+            <Button
+              variant={vetoMissing ? "outline" : "default"}
+              className={vetoMissing ? "text-warning" : undefined}
+              disabled={!isValid || saving}
+              onClick={() => (confirmReason ? setConfirmOpen(true) : save())}
+            >
+              <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
+              {vetoMissing ? "Report without a veto" : "Save result"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* The veto never blocks, so a report that disagrees with it asks once and then goes through */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent showCloseButton={false} className="max-w-[420px] gap-0 p-0 sm:max-w-[420px]">
+          <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Are you sure?</DialogTitle>
+          <div className="p-4 text-sm">{confirmReason}</div>
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              Go back
+            </Button>
+            <Button
+              variant="outline"
+              className="text-warning"
+              onClick={() => {
+                setConfirmOpen(false);
+                save();
+              }}
+            >
+              Report anyway
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

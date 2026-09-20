@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { withExtras } from './countries.mjs';
 import { seasonAction } from './events.mjs';
-import { COUNTRY_ZONE, battleTagError, signupState, signupTitles, startZone } from './signup.mjs';
+import { COUNTRY_ZONE, battleTagError, isTagError, signupState, signupTitles, startZone } from './signup.mjs';
 
 const base = createRequire(import.meta.url)('country-code-info/data/countries.json');
 
@@ -92,4 +92,10 @@ test('every other shape prints the one sentence that shows the form', () => {
   for (const tag of ['Mirren', 'Mirren#44', 'Mirren#123456789', '#4410', 'Mirren#abc', 'Mir ren#4410', 'Mirren#4410#1', '', null]) {
     assert.equal(battleTagError(tag), 'A battle tag looks like Name#1234.', String(tag));
   }
+});
+
+test('only a refusal that names the battle tag belongs under the field', () => {
+  assert.equal(isTagError("'Mirren' is not a battle tag. A battle tag looks like Name#1234."), true);
+  assert.equal(isTagError('The night is closed.'), false);
+  assert.equal(isTagError(null), false);
 });

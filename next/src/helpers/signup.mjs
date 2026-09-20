@@ -85,6 +85,9 @@ export function battleTagError(tag) {
   return BATTLE_TAG.test(String(tag ?? '').trim()) ? null : 'A battle tag looks like Name#1234.';
 }
 
+// A refusal the tag field owns: the backend names the battle tag in the sentence it answers
+export const isTagError = (message) => /battle tag/i.test(String(message ?? ''));
+
 // What /signup shows: the home page's action, joined, over, or a profile-only form for a member with no users row
 export function signupState(season, signedUp, hasProfile) {
   const action = seasonAction(season);

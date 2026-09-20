@@ -26,6 +26,9 @@ const bracketIds = (bracket) => [
   ...playerId(bracket.open_series?.side2),
 ];
 
+// The one name a bracket reads by, on the board and on the event row: its name, else its position.
+export const bracketName = (bracket, index) => bracket?.name || `Bracket ${index + 1}`;
+
 /**
  * The bracket and place in line of one entrant on a KOTH board.
  *
@@ -39,7 +42,7 @@ export function signupPlace(board, entrantId) {
   for (const [index, bracket] of brackets.entries()) {
     if (!bracketIds(bracket).includes(entrantId)) continue;
     const at = (bracket.queue ?? []).findIndex((seat) => seatIds(seat).includes(entrantId));
-    return { bracket: bracket.name || `Bracket ${index + 1}`, placeWord: at < 0 ? null : placeWord(at + 1) };
+    return { bracket: bracketName(bracket, index), placeWord: at < 0 ? null : placeWord(at + 1) };
   }
   return null;
 }

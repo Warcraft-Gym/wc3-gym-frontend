@@ -14,10 +14,10 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { warningLabel } from "@/helpers/entrants.mjs";
 import { eventLabel } from "@/helpers/event-labels.mjs";
-import { signupPlace } from "@/helpers/koth-signup.mjs";
+import { bracketName, signupPlace } from "@/helpers/koth-signup.mjs";
 import { defaultSignupRace } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
-import { battleTagError } from "@/helpers/signup.mjs";
+import { battleTagError, isTagError } from "@/helpers/signup.mjs";
 import { useAuthStore, useEventStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -73,8 +73,9 @@ export function SignupDialog({
   // The signup answered a bracket, so the line the board draws names the place
   const placed = entrant?.division_id != null;
   // The event row already carries its divisions, so the bracket has a name without a second read
-  const bracket =
-    place?.bracket || (event.divisions || []).find((one: Row) => one.id === entrant?.division_id)?.name;
+  const divisions: Row[] = event.divisions || [];
+  const at = placed ? divisions.findIndex((one: Row) => one.id === entrant?.division_id) : -1;
+  const bracket: string | null = place?.bracket || (at < 0 ? null : bracketName(divisions[at], at));
   const tag = entrant?.user?.battleTag || battleTag.trim();
   // The mark the app draws for a race W3Champions holds no stats on, in the same words
   const noStats = entrant?.race ? { colour: "error" as const, text: `No W3C stats found for ${entrant.race}` } : null;
@@ -91,7 +92,6 @@ export function SignupDialog({
         note: note.trim() || null,
         battle_tag: needsTag ? battleTag.trim() : null,
       });
-      setEntrant(row);
       onSignedUp?.(row);
       // One public read, edge cached: where the night put the new row in its bracket's line
       if (koth && row?.division_id != null) {
@@ -102,10 +102,12 @@ export function SignupDialog({
           setPlace(null); // no board answered, so the event row names the bracket alone
         }
       }
+      // Last, so the form holds its spinner until the place is known and the end state prints once
+      setEntrant(row);
     } catch (e) {
       const failed = e as Error & { status?: number };
-      // The backend refuses a tag the client took, so its sentence lands under the field
-      if (needsTag && failed.status === 400) setTagError(failed.message);
+      // A refusal that names the battle tag lands under the field; every other one is a dialog error
+      if (needsTag && failed.status === 400 && isTagError(failed.message)) setTagError(failed.message);
       else setError(`The signup did not go through: ${failed.message}`);
     } finally {
       setSaving(false);

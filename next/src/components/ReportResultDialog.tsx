@@ -2,6 +2,7 @@
 import { useImperativeHandle, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
@@ -12,11 +13,12 @@ import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { VetoBoard } from "@/components/VetoBoard";
 import { authHeader, backendUrl, fetchWrapper } from "@/helpers";
-import { gamesOf, winsFor, isValidResult, replaysNeeded } from "@/helpers/best-of.mjs";
+import { gamesOf, winsFor, isValidResult, moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helpers/map-order.mjs";
+import { mapMismatch, mapMismatches, reportWarning, swapMapFields } from "@/helpers/replay-maps.mjs";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
-import { useMapStore } from "@/stores";
+import { useMapStore, useMatchStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -62,11 +64,16 @@ const mapOfIn = (form: Form, veto: Row | null, game: number) => form.maps?.[game
  *  the replay file per game. A roster member reports for a team side, which names no
  *  race of its own. The veto warns when it is not complete; it never blocks. The caller
  *  opens it through its ref and hands in the series row. */
-export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: string) => void; ref?: React.Ref<ReportResultDialogHandle> }) {
+export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (message: string) => void; onMoved?: (replays: Row[]) => void; ref?: React.Ref<ReportResultDialogHandle> }) {
   const mapStore = useMapStore();
+  const matchStore = useMatchStore();
 
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
+  // the report asks once before it saves when the replays and the veto disagree
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [moving, setMoving] = useState<number | null>(null); // the game whose stored replay is on the move
+  const [moved, setMoved] = useState<string | null>(null);
   // the veto sits under a disclosure row, folded away until the reporter opens it
   const [vetoOpen, setVetoOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -113,6 +120,8 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   useImperativeHandle(ref, () => ({
     open: (item: Row) => {
       setErrorMessage(null);
+      setMoved(null);
+      setConfirmOpen(false);
       openId.current = item.id;
       setSeries({
         id: item.id,
@@ -179,20 +188,6 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
     return played && played.id === series.maps[game] ? "Read from the replay" : undefined;
   };
 
-  // What the replay disagrees with, or null
-  const replayNote = (game: number) => {
-    const read = series.reads?.[game];
-    if (!read) return null;
-    if (isOtherSeries(read.tags, series.tags)) {
-      return `This replay is ${read.tags.join(" against ")}. It is not this series.`;
-    }
-    const played = matchMap(read.mapPath, maps);
-    if (played && series.maps[game] && series.maps[game] !== played.id) {
-      return `The replay was played on ${played.name}.`;
-    }
-    return null;
-  };
-
   // The file goes from the browser straight to the bucket, at a link the backend signs per game
   const uploadReplay = async (seriesId: number, game: number, file: File) => {
     const head = new TextDecoder().decode(await file.slice(0, REPLAY_MAGIC.length).arrayBuffer());
@@ -240,6 +235,75 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   const [p1, p2] = reportedScore;
   const scoreProblem = isValidResult(p1, p2, seriesWins) ? null : "Tap the winner of each game played";
   const resultLine = `${name(1)} ${p1} – ${p2} ${name(2)}`;
+
+  // The map each game should play: the veto's, else the one the reporter named himself
+  const offered = offeredMaps(series, scoreVeto);
+  const wantedMaps = gameRows.map((game) => offered[game - 1] ?? series.maps?.[game] ?? null);
+  const replayMaps = gameRows.map((game) => matchMap(series.reads?.[game]?.mapPath, maps)?.id ?? null);
+  // Why the report asks once before it saves, or null: only a series that plays a veto and records no step asks about the veto
+  const confirmReason: string | null = reportWarning(hasVeto && !vetoSteps, mapMismatches(replayMaps, wantedMaps));
+  // The group title names the map the game should play: the veto's, else the one named for the game
+  const titleMapOf = (game: number) => maps.find((map) => map.id === (offered[game - 1] ?? mapOf(game)))?.name;
+
+  // What the replay disagrees with, or null: another series, or the map of another game
+  const replayNote = (game: number) => {
+    const read = series.reads?.[game];
+    if (!read) return null;
+    if (isOtherSeries(read.tags, series.tags)) {
+      return `This replay is ${read.tags.join(" against ")}. It is not this series.`;
+    }
+    const played = matchMap(read.mapPath, maps);
+    if (!played) return null;
+    const off = mapMismatch(game, replayMaps, wantedMaps);
+    if (off) {
+      // the map field already holds the replay's map, so the other way out is to report the game on it
+      const other = mapOf(game) === played.id ? `report game ${game} on ${played.name}` : `change the map of game ${game}`;
+      // the move is offered only over the games the series played, so the advice names a game the menu holds
+      const fix = off.to && moveTargets(movesOver, game).includes(off.to) ? `Move it to game ${off.to}, or ${other}.` : `${other[0].toUpperCase()}${other.slice(1)}.`;
+      return `The replay was played on ${played.name}. ${fix}`;
+    }
+    // the veto agrees with the file, the map named for the game does not
+    if (mapOf(game) != null && mapOf(game) !== played.id) return `The replay was played on ${played.name}. Change the map of game ${game}.`;
+    return null;
+  };
+
+  // A replay moves inside the games the series played: the ones reported, and the ones tapped now
+  const movesOver = Math.max(replaysNeeded(p1, p2), series.reported || 0);
+  const canMove = (game: number) => movesOver > 1 && (hasReplay(game) || !needsFile(game));
+
+  // Move one game's replay to another: a picked file swaps inside the form, a stored one moves through the API
+  const moveReplay = async (from: number, to: number) => {
+    setMoved(null);
+    setErrorMessage(null);
+    if (hasReplay(from)) {
+      const swapped = hasReplay(to);
+      setSeries((form) => {
+        const reads = { ...form.reads };
+        const [fromRead, toRead] = [form.reads[from], form.reads[to]];
+        if (toRead) reads[from] = toRead;
+        else delete reads[from];
+        if (fromRead) reads[to] = fromRead;
+        else delete reads[to];
+        // a map field the replay itself wrote travels with the file, so the two stay together
+        const fields = swapMapFields(form.maps, from, to, (game: number) => matchMap(form.reads?.[game]?.mapPath, maps)?.id ?? null);
+        return { ...form, reads, maps: fields, replays: { ...form.replays, [from]: form.replays[to] ?? null, [to]: form.replays[from] ?? null } };
+      });
+      setMoved(moveMessage(from, to, swapped));
+      return;
+    }
+    setMoving(from);
+    try {
+      const rows: Row[] = await matchStore.moveSeriesReplay(series.id!, from, to);
+      const message = moveMessage(from, to, (rows || []).some((row: Row) => row.game_no === from));
+      setMoved(message);
+      // the move answers every replay of the series, so a surface that lists them takes the answer and reads nothing
+      onMoved?.(rows || []);
+    } catch (error) {
+      setErrorMessage((error as Error).message);
+    } finally {
+      setMoving(null);
+    }
+  };
 
   // Allowed score combinations, every required file present, and every file a .w3g
   const isValid = (() => {
@@ -315,6 +379,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
         </DialogTitle>
         <div className="flex flex-col gap-3 p-4">
           <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
+          <StatusAlert modelValue={moved} type="success" onClose={() => setMoved(null)} className="mb-0" />
           {vetoMissing ? (
             <div>
               <h3 className="flex items-center gap-2 text-warning">
@@ -362,7 +427,29 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
 
           {gameRows.map((game) => (
             <div key={game} className="flex flex-col gap-3 rounded border p-3">
-              <div className="text-sm font-medium">Game {game}</div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 text-sm font-medium">
+                  Game {game}
+                  {titleMapOf(game) ? ` \u00b7 ${titleMapOf(game)}` : ""}
+                </div>
+                {canMove(game) ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={<Button variant="outline" size="sm" className="text-primary-text" aria-label={`Move to game: the replay of game ${game}`} aria-busy={moving === game} disabled={moving !== null} />}
+                    >
+                      <Icon name={moving === game ? "mdi-loading mdi-spin" : "mdi-file-move-outline"} />
+                      Move to game
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {moveTargets(movesOver, game).map((to: number) => (
+                        <DropdownMenuItem key={to} onClick={() => moveReplay(game, to)}>
+                          Move to game {to}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+              </div>
               <ToggleGroup
                 variant="outline"
                 spacing={0}
@@ -407,6 +494,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
               >
                 <Input
                   id={`report-replay-${game}`}
+                  key={series.replays[game]?.name ?? "none"}
                   ref={showHeld(series.replays[game])}
                   type="file"
                   accept=".w3g"
@@ -426,11 +514,38 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
           <Button variant="ghost" disabled={saving} onClick={close}>
             Close
           </Button>
-          <Button variant={vetoMissing ? "outline" : "default"} className={vetoMissing ? "text-warning" : undefined} disabled={!isValid || saving} onClick={save}>
+          <Button
+            variant={vetoMissing ? "outline" : "default"}
+            className={vetoMissing ? "text-warning" : undefined}
+            disabled={!isValid || saving}
+            onClick={() => (confirmReason ? setConfirmOpen(true) : save())}
+          >
             <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
             {vetoMissing ? "Report without a veto" : "Save result"}
           </Button>
         </div>
+        {/* The veto never blocks, so a report that disagrees with it asks once and then goes through */}
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent showCloseButton={false} className="max-w-[420px] gap-0 p-0 sm:max-w-[420px]">
+            <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Are you sure?</DialogTitle>
+            <div className="p-4 text-sm">{confirmReason}</div>
+            <div className="flex justify-end gap-2 p-4 pt-0">
+              <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+                Go back
+              </Button>
+              <Button
+                variant="outline"
+                className="text-warning"
+                onClick={() => {
+                  setConfirmOpen(false);
+                  save();
+                }}
+              >
+                Report anyway
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

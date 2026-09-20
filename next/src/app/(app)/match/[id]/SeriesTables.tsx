@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { CastChips, type CastSeries } from "@/components/CastChips";
+import { HeadToHeadCell } from "@/components/HeadToHeadCell";
 import { PlayerName } from "@/components/PlayerName";
 import { RowActions, type RowAction } from "@/components/RowActions";
 import { SeriesCard } from "@/components/SeriesCard";
@@ -12,7 +13,7 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { toneClass } from "@/components/ui/tone";
 import { formatDateTime } from "@/helpers/datetime";
 import { mmrGap, pairIndex } from "@/helpers/draft-suggest.mjs";
-import { HeadToHeadCell, SharedHours } from "./RoundDraftBoard";
+import { SharedHours } from "./RoundDraftBoard";
 import { FacedRaces, SyncedLine, getHighestW3CMMR, mmrOf, type Row } from "./match-cells";
 
 const WON_FILL = "bg-win text-on-win";

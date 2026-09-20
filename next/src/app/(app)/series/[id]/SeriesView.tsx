@@ -14,6 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toneClass } from "@/components/ui/tone";
 import { CastChips, type CastSeries } from "@/components/CastChips";
 import { FixtureSeries } from "@/components/FixtureSeries";
+import { HeadToHeadCell } from "@/components/HeadToHeadCell";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerName } from "@/components/PlayerName";
 import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/ScheduleDialog";
@@ -23,12 +24,15 @@ import { SeriesBox } from "@/components/SeriesBox";
 import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
+import { formatDateTime } from "@/helpers/datetime";
 import { eventLabel, MAP_RULES, titleOf } from "@/helpers/event-labels.mjs";
+import { record } from "@/helpers/figures.mjs";
 import { fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster } from "@/helpers/fixture.mjs";
+import { meetingRecord } from "@/helpers/head-to-head.mjs";
 import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
-import { seriesContext, seriesSteps } from "@/helpers/series-actions.mjs";
+import { seriesContext, seriesMapLine, seriesSteps } from "@/helpers/series-actions.mjs";
 import { isScored, sideName as nameOfSide } from "@/helpers/stage-view.mjs";
-import { useAuth, useEventStore, useMapStore, useMatchStore, useTeamStore } from "@/stores";
+import { useAuth, useEventStore, useMapStore, useMatchStore, useSeriesStore, useTeamStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -47,6 +51,7 @@ export function SeriesView({ id }: { id: string }) {
   const eventStore = useEventStore();
   const mapStore = useMapStore();
   const matchStore = useMatchStore();
+  const seriesStore = useSeriesStore();
   const teamStore = useTeamStore();
 
   const [series, setSeries] = useState<Row | null>(null);
@@ -65,6 +70,7 @@ export function SeriesView({ id }: { id: string }) {
   const [replays, setReplays] = useState<Row[]>([]); // the uploaded replay of each game of this series
   const [moving, setMoving] = useState<number | null>(null); // the game whose replay is on the move
   const [moved, setMoved] = useState<string | null>(null);
+  const [meetings, setMeetings] = useState<Row[]>([]); // every series the two players played, newest first
   const reportDialog = useRef<ReportResultDialogHandle>(null);
   const scheduleDialog = useRef<ScheduleDialogHandle>(null);
   const [awardOpen, setAwardOpen] = useState(false);
@@ -116,10 +122,15 @@ export function SeriesView({ id }: { id: string }) {
       game_no: index + 1,
       rule: titleOf(MAP_RULES, rule),
       // a fixed game names its map before it is played; every other rule waits for the veto or the result
-      map: mapName(game?.map_id ?? game?.offered_map_id ?? (rule === "fixed" ? fixedMapId : null)) || "—",
+      map: mapName(game?.map_id ?? game?.offered_map_id ?? (rule === "fixed" ? fixedMapId : null)) || null,
       winner: game?.winner_side ? sideName(game.winner_side === "A" ? 1 : 2) : null,
     };
   });
+
+  // The three facts under the title: the booked time, the next map, the head to head; a scored series plays no next game
+  const mapLine = scored ? null : seriesMapLine(series?.rules?.map_rules, gameRows);
+  const met = meetingRecord(meetings);
+  const headToHead = record(met.wins, met.losses);
 
   // The stage row names the team entrants and the team behind each side, which the series
   // read does not carry, so the action bar gates on the two together
@@ -207,6 +218,20 @@ export function SeriesView({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canMove, series]); // load() sets a new series row on every save, so the list is read again
 
+  // The head to head of the two players, for a solo series and a signed-in reader alone.
+  // This series is left out of its own line, so a scored one does not count itself.
+  useEffect(() => {
+    const [one, two] = [series?.player1_id, series?.player2_id];
+    const self = series?.id;
+    // the loader sets state, so it runs just outside the effect body (react-hooks/set-state-in-effect)
+    queueMicrotask(() => {
+      setMeetings([]); // the meetings of the series the page leaves are not this one's
+      if (!one || !two || !auth.me) return; // the meetings route answers a member alone
+      seriesStore.playerMeetings(one, two).then((rows: Row[]) => setMeetings((rows || []).filter((row: Row) => row.series_id !== self))).catch(() => {});
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [series?.id, series?.player1_id, series?.player2_id, auth.me?.user?.id]); // one read per series: a save of this series cannot change a line it is left out of
+
   // A link from one series to the next keeps the page, so the read follows the route
   useEffect(() => {
     // the loader sets state, so it runs just outside the effect body (react-hooks/set-state-in-effect)
@@ -252,12 +277,37 @@ export function SeriesView({ id }: { id: string }) {
         <>
           {/* The title names the event, so the eyebrow says the round and the opponent alone */}
           <PageHeader kicker={seriesContext(series, { event: false, playerId: viewer.id }) || undefined} title={title}>
-            <SeriesActionBar
-              series={actionRow}
-              viewer={viewer}
-              onSchedule={() => actionRow && scheduleDialog.current?.open(actionRow)}
-              onReport={() => reportDialog.current?.open(series)}
-            />
+            <div className="flex w-full flex-col gap-1.5">
+              {/* One fact per line at every width: the booked time, the next map, the head to head */}
+              {series.date_time ? (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Icon name="mdi-calendar" size={16} />
+                  <span className="tnum">{formatDateTime(series.date_time)}</span>
+                  <span>&middot; your time</span>
+                </span>
+              ) : null}
+              {mapLine ? (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Icon name="mdi-map-outline" size={16} />
+                  {mapLine}
+                </span>
+              ) : null}
+              {headToHead ? (
+                <span className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+                  <Icon name="mdi-sword-cross" size={16} />
+                  Head to head
+                  <HeadToHeadCell pair={{ wins: met.wins, losses: met.losses, last_event: met.lastEvent }} onMeetings={async () => meetings} />
+                </span>
+              ) : null}
+              <SeriesActionBar
+                className="mt-2"
+                series={actionRow}
+                viewer={viewer}
+                dateFact={false}
+                onSchedule={() => actionRow && scheduleDialog.current?.open(actionRow)}
+                onReport={() => reportDialog.current?.open(series)}
+              />
+            </div>
           </PageHeader>
 
           <div className="grid gap-6 min-[960px]:grid-cols-12">
@@ -312,7 +362,7 @@ export function SeriesView({ id }: { id: string }) {
                         <div className={`${phoneOnly} text-xs whitespace-nowrap text-muted-foreground`}>{row.rule}</div>
                       </TableCell>
                       <TableCell className={wideOnly}>{row.rule}</TableCell>
-                      <TableCell>{row.map}</TableCell>
+                      <TableCell>{row.map ?? "—"}</TableCell>
                       <TableCell>
                         {/* The winner wears the win mark, never coloured text */}
                         {row.winner ? (
@@ -418,7 +468,8 @@ export function SeriesView({ id }: { id: string }) {
           {canReport ? (
             <>
               <ScheduleDialog ref={scheduleDialog} playerId={auth.me?.user?.id ?? null} onSaved={load} />
-              <ReportResultDialog ref={reportDialog} onSaved={load} />
+              {/* a moved replay answers the whole list, so the table takes it instead of reading the page again */}
+              <ReportResultDialog ref={reportDialog} onSaved={load} onMoved={setReplays} />
             </>
           ) : null}
         </>

@@ -178,12 +178,11 @@ export function ScheduleDialog({
     </span>
   );
 
-  // Position is the channel: the viewer's strip on top or left, the other side's at the bottom or right.
-  // Each strip leaves the middle of the cell clear, so two of them read apart and never hide the hover fill.
+  // Position is the channel: the viewer's strip over the track and in the left lane of a calendar day, the other side's under the track and in the right lane
   const sideMark = (index: number) =>
     cn(
       "pointer-events-none absolute bg-on-surface/60",
-      view === "calendar" ? (index ? "inset-y-0 right-0 w-2/5" : "inset-y-0 left-0 w-2/5") : index ? "inset-x-0 bottom-0 h-1.5" : "inset-x-0 top-0 h-1.5",
+      view === "calendar" ? (index ? "inset-y-0 right-0 w-1/2" : "inset-y-0 left-0 w-1/2") : index ? "inset-x-0 bottom-0 h-1.5" : "inset-x-0 top-0 h-1.5",
     );
 
   const cellButton = (day: Day, cell: Cell, index: number, first: number, size: string) => {

@@ -358,8 +358,8 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
                       )}
                       {/* the words set the column width, so a phone keeps the count and the tooltip holds the words */}
                       {needsGame(item) ? (
-                        <div className="tnum text-xs font-normal text-muted-foreground" aria-label={`${needsGame(item)} needs a game`} title={`${needsGame(item)} needs a game`}>
-                          {phone ? needsGame(item) : `${needsGame(item)} needs a game`}
+                        <div className="tnum text-xs font-normal text-muted-foreground" title={`${needsGame(item)} needs a game`}>
+                          {needsGame(item)}<span className="sr-only min-[600px]:not-sr-only"> needs a game</span>
                         </div>
                       ) : null}
                     </TableHead>
@@ -369,8 +369,8 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
               <TableBody>
                 {players.map((player) => (
                   <TableRow key={player.id}>
-                    {/* the names stay in place while the rounds scroll under them, cut off on a phone so three rounds fit beside them */}
-                    <TableCell className="sticky left-0 z-10 max-w-[6.5rem] overflow-hidden bg-surface [&_.name]:truncate [&_.player-name]:max-w-full min-[600px]:max-w-none">
+                    {/* the names stay in place while the rounds scroll under them; the cap sits on the name line, because a table cell ignores max-width */}
+                    <TableCell className="sticky left-0 z-10 overflow-hidden bg-surface [&_.name]:truncate [&_.player-name]:max-w-[5.5rem] min-[600px]:[&_.player-name]:max-w-none">
                       <PlayerName player={player} race={phone ? undefined : player.signup_race} mmr={phone ? false : undefined} />
                     </TableCell>
                     {rounds.map((item) => {

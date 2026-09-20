@@ -130,16 +130,18 @@ export function EntrantsView({ id }: { id: string }) {
   const rated = live.filter((row) => entrantMmr(row) > 0);
   const entered = byPlayer_(live).length;
   const groups = groupsOf(entrants, divisions);
+  // A division write rebuilds the brackets of a KOTH night and a seed write reorders its live queue
+  const isKoth = event?.kind === "koth";
+  // A KOTH night calls its divisions brackets, so the group words of the list follow the kind
+  const groupWord = isKoth ? "bracket" : "division";
   // The list prints a player once a division; the seed writes still read the rows of `groups`
-  const playerGroups = groups.map((group) => ({ ...group, rows: byPlayer_(group.rows) }));
+  const playerGroups = groups.map((group) => ({ ...group, title: group.id == null ? `No ${groupWord}` : group.title, rows: byPlayer_(group.rows) }));
   const stages: Row[] = [...(event?.stages || [])].sort((a, b) => a.position - b.position).map((stage) => ({ ...stage, label: stage.name || titleOf(FORMATS, stage.format) }));
   const stage = stages.find((row) => row.id === stageId) || null;
   const seedsLocked = !!stage?.seeds_locked_at;
   // The standings of the stage before order these seeds, so the first stage is offered no button
   const hasPreviousStage = (stage?.position ?? 1) > 1;
   const takesTeams = event?.entrant_kind === "team";
-  // A division write rebuilds the brackets of a KOTH night and a seed write reorders its live queue
-  const isKoth = event?.kind === "koth";
   const canReorder = isAdmin && !seedsLocked && !isKoth;
 
   const columns: GroupedColumn[] = [
@@ -645,7 +647,7 @@ export function EntrantsView({ id }: { id: string }) {
                     </div>
                   </div>
                 ))}
-                {!group.rows.length ? <p className="text-muted-foreground">Nobody is in this division.</p> : null}
+                {!group.rows.length ? <p className="text-muted-foreground">Nobody is in this {groupWord}.</p> : null}
               </div>
             ))}
             {!groups.length ? <p className="text-muted-foreground">Nobody has entered yet.</p> : null}

@@ -370,7 +370,7 @@ export function KothNightView({ id }: { id: string }) {
             )}
             <div className="flex flex-col text-xs text-muted-foreground">
               {bounds.error ? (
-                <span>{bounds.error}</span>
+                <span role="alert" className="text-error">{bounds.error}</span>
               ) : (
                 [...bounds.rows].reverse().map((row: Row) => <span key={row.division_id}>{row.line}</span>)
               )}
@@ -480,11 +480,12 @@ export function KothNightView({ id }: { id: string }) {
                     {openRows.length === 1 ? "One series was started and never scored. Closing deletes it." : `${openRows.length} series were started and never scored. Closing deletes them.`}
                   </p>
                   {openRows.map((open: Row) => (
-                    <div key={open.division_id} className="flex flex-wrap items-center gap-x-2 opacity-(--v-medium-emphasis-opacity)">
+                    <div key={open.division_id} className="flex flex-wrap items-center gap-x-2 text-foreground">
                       <span>{open.name} ·</span>
-                      <BoardPlayer row={open.side1} plain />
+                      {/* both sides keep the mark slot, so the two flags line up where the second wraps */}
+                      <BoardPlayer row={open.side1} plain slot={open.side1.mmr == null || open.side2.mmr == null} />
                       <span className="text-xs">vs</span>
-                      <BoardPlayer row={open.side2} plain />
+                      <BoardPlayer row={open.side2} plain slot={open.side1.mmr == null || open.side2.mmr == null} />
                     </div>
                   ))}
                 </div>

@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ColumnNote } from "@/components/ColumnNote";
 import { TeamName } from "@/components/TeamName";
-import { HomePanel, ROW, SkeletonRows } from "@/components/home/HomePanel";
+import { HomePanel, Quiet, ROW, SkeletonRows } from "@/components/home/HomePanel";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { record } from "@/helpers/figures.mjs";
 import { currentRound, roundEnd } from "@/helpers/rounds.mjs";
@@ -54,7 +54,10 @@ export function SeasonBoard({
       order={order}
       title={
         loading || !season ? (
-          <Skeleton role="img" aria-label="Season leaderboard" className="skeleton h-4 w-36 bg-on-primary/30" />
+          // the bar stands in a full title line, so the header keeps its height when the name lands
+          <span className="flex h-[1lh] items-center">
+            <Skeleton role="img" aria-label="Season leaderboard" className="skeleton h-4 w-36 bg-on-primary/30" />
+          </span>
         ) : (
           <Link href={`/seasons/${season.id}`} className="inline-flex items-center gap-1 text-on-primary underline">
             {season.name}
@@ -97,7 +100,9 @@ export function SeasonBoard({
                 </div>
               ))}
             </>
-          ) : failed ? null : (
+          ) : failed ? (
+            <Quiet>Could not be loaded.</Quiet>
+          ) : (
             <p className="text-sm">This season has no teams yet.</p>
           )}
         </>

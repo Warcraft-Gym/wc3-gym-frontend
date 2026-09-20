@@ -35,27 +35,29 @@ export function OpenSignups({
         <SkeletonRows rows={3} />
       ) : cards.length ? (
         cards.map((card) => (
-          <div key={card.key} className={ROW}>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="min-w-0 font-medium">{card.name}</span>
-              <span className="ml-auto flex items-center gap-2">
-                {card.chip ? (
-                  <Badge className={toneClass("success")}>
-                    <Icon name="mdi-check" />
-                    {card.chip}
-                    {/* every race the member entered rides the one chip, so a two-race entry reads both */}
-                    {(card.races ?? []).map((race: string) => (
-                      <span key={race} className="inline-flex items-center gap-1">
-                        <RaceIcon raceIdentifier={race} size="1.2em" />
-                        {raceName(race)}
-                      </span>
-                    ))}
-                  </Badge>
-                ) : null}
-                {card.primary ? <SignupButton card={card} acting={acting} onAct={onAct} /> : null}
+          // below 600 px the chip drops to the left of the play dates and the button keeps the name's line
+          <div key={card.key} className={cn(ROW, "flex flex-wrap items-center gap-x-2 gap-y-1")}>
+            <span className="order-1 min-w-0 flex-1 font-medium">{card.name}</span>
+            {card.chip ? (
+              <Badge className={cn(toneClass("success"), "order-4 min-[600px]:order-2")}>
+                <Icon name="mdi-check" />
+                {card.chip}
+                {/* every race the member entered rides the one chip, so a two-race entry reads both */}
+                {(card.races ?? []).map((race: string) => (
+                  <span key={race} className="inline-flex items-center gap-1">
+                    <RaceIcon raceIdentifier={race} size="1.2em" />
+                    {raceName(race)}
+                  </span>
+                ))}
+              </Badge>
+            ) : null}
+            {card.primary ? (
+              <span className="order-2 min-[600px]:order-3">
+                <SignupButton card={card} acting={acting} onAct={onAct} />
               </span>
-            </div>
-            {card.dates ? <div className="tnum text-sm text-muted-foreground">plays {card.dates}</div> : null}
+            ) : null}
+            <span className="order-3 basis-full min-[600px]:hidden" />
+            {card.dates ? <div className="tnum order-5 text-sm text-muted-foreground min-[600px]:basis-full">plays {card.dates}</div> : null}
           </div>
         ))
       ) : (

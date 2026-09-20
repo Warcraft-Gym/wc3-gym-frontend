@@ -71,11 +71,12 @@ export const captainRow = (fixture, today = DateTime.now()) => {
   };
 };
 
-/** Where a GET /home/series row sits: "GNL - Season 19 - Group stage - Round 3". A part the row
- *  leaves out takes no separator, and an event name that opens with its league says it once.
+/** Where a GET /home/series row sits: "GNL · Season 19 · Group stage · Round 3". It takes the middle
+ *  dot of eventLabel, so one hub screen names an event one way. A part the row leaves out takes no
+ *  separator, and an event name that opens with its league says it once.
  *  @param {any} row */
 export const rowContext = (row) => {
   const event = String(row?.event ?? '');
   const league = row?.league && !event.toLowerCase().startsWith(String(row.league).toLowerCase()) ? row.league : null;
-  return [league, row?.event, row?.stage, row?.round].filter(Boolean).join(' - ');
+  return [league, row?.event, row?.stage, row?.round].filter(Boolean).join(' · ');
 };

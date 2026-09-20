@@ -4,7 +4,7 @@ title: Session and auth
 description: Clerk signs a member in with Discord, the backend's /me answer is the session the app reads, a legacy admin token has its own login page, and the fetch wrapper sends the bearer.
 resource: ../../../next/src/stores/auth.ts
 tags: [session]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:56:13Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T13:00:00Z }
 sources:
   - id: auth-store
     resource: ../../../next/src/stores/auth.ts
@@ -33,7 +33,7 @@ Sign-out calls Clerk's `signOut()`; clearing storage or cookies is not a sign-ou
 
 # The fetch wrapper
 
-`fetchWrapper` in `next/src/helpers/fetch-wrapper.js` is the only way the app calls the backend. It attaches `Authorization: Bearer <token>` to every request whose URL starts with the backend URL, except `/login` and the one edge-cached ladder read, which must stay bearer-free to be cacheable. It sends `X-View-As` and `X-View-Seats` when an admin is viewing as a lower role. It parses the error envelope into an `Error` whose `message` is `body.message`, else `body.error`, else the text, with the body's keys copied on, so a view reads `error.message` and a code check reads `error.error`. A 401 on a live session signs out; a 403 is shown, not acted on.
+`fetchWrapper` in `next/src/helpers/fetch-wrapper.js` is the only way the app calls the backend. It attaches `Authorization: Bearer <token>` to every request whose URL starts with the backend URL, except `/login` and the edge-cached open reads, the season ladder and the home hub's series read, which must stay bearer-free to be cacheable. It sends `X-View-As` and `X-View-Seats` when an admin is viewing as a lower role. It parses the error envelope into an `Error` whose `message` is `body.message`, else `body.error`, else the text, with the body's keys copied on, so a view reads `error.message` and a code check reads `error.error`. A 401 on a live session signs out; a 403 is shown, not acted on.
 
 `getPage`, `postPage`, `getAll` and `postAll` read the paged list routes with `limit` and `offset` and `X-Total-Count`.
 

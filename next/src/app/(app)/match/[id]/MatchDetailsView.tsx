@@ -867,11 +867,11 @@ export function MatchDetailsView({ id }: { id: string }) {
             Series management
             <span className="flex-1" />
             <Badge variant="outline" className="border-on-primary text-on-primary">
-              {series.length} Published
+              {series.length} published
             </Badge>
             {auth.isCaptain ? (
               <Badge variant="outline" className="border-on-primary text-on-primary">
-                {draftSeries.length} Drafts
+                {draftSeries.length} drafts
               </Badge>
             ) : null}
             <Button variant="ghost" size="icon-sm" className="text-on-primary" aria-label="Refresh series data" onClick={fetchMatchSeries} disabled={isLoading}>

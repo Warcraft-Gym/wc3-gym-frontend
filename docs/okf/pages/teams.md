@@ -4,7 +4,7 @@ title: Teams
 description: The teams list, one team across its events, the team in one season with its roster and captains, and the captain's check-in.
 resource: ../../../next/src/app/(app)/teams/TeamsView.tsx
 tags: [pages, teams]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-21T01:10:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T04:41:00Z }
 sources:
   - id: teams
     resource: ../../../next/src/app/(app)/teams/TeamsView.tsx

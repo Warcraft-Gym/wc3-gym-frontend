@@ -149,7 +149,7 @@ export function EditSeriesDialog({
 
           <Label className="flex items-center gap-2">
             <Checkbox checked={!!series.is_fantasy_match} onCheckedChange={(checked) => onPatch({ is_fantasy_match: !!checked })} />
-            Is Fantasy Match
+            Is fantasy match
           </Label>
         </div>
 

@@ -10,7 +10,7 @@ type Row = Record<string, any>;
  *  over any other page, so this page serves typed and shared links. */
 export function PlayerView({ id }: { id: string }) {
   const router = useRouter();
-  // A typed /player/thanks#11187 arrives as path + hash, so the key rejoins them.
+  // A typed /player/<name>#<tag> arrives as path + hash, so the key rejoins them.
   // The segment keeps the escape of a tag link, and the read asks for the plain tag.
   const hash = typeof window === "undefined" ? "" : window.location.hash;
   const playerKey = decodeURIComponent(id) + hash;

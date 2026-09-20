@@ -12,7 +12,7 @@ type SeasonPlayer = { vs_race?: Record<string, number[]> } & Record<string, any>
 export function VsRacesHead() {
   return (
     <span className="inline-flex items-center gap-1 whitespace-nowrap">
-      <W3CIcon size={14} /> Ladder record vs race
+      <W3CIcon size={14} /> Ladder games vs race
     </span>
   );
 }

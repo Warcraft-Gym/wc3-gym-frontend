@@ -10,9 +10,17 @@ const store = {
   async setPlayerAvailability(answer: any) {
     return await fetchWrapper.put(`${backendUrl}/player-availability`, answer);
   },
+  // { season_id?, available }; every round that has not ended, a null available clears them
+  async setAllPlayerAvailability(answer: any) {
+    return await fetchWrapper.put(`${backendUrl}/player-availability/all`, answer);
+  },
   // { user_id, playday, available }
   async setTeamAvailability(team_id: number, season_id: number, answer: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${season_id}/teams/${team_id}/availability`, answer);
+  },
+  // { user_id, available }; one call writes every round of the event that has not ended
+  async setTeamAvailabilityAll(team_id: number, season_id: number, answer: any) {
+    return await fetchWrapper.put(`${backendUrl}/events/${season_id}/teams/${team_id}/availability/all`, answer);
   },
 };
 

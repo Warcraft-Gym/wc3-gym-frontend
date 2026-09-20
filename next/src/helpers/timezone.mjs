@@ -16,12 +16,12 @@ const span = (minutes) => {
   return [h && `${h} h`, m && `${m} min`].filter(Boolean).join(' ');
 };
 
-// e.g. "GMT+2", "GMT-3:30", "GMT"
+// e.g. "GMT+2", "GMT−3:30", "GMT"; a negative offset wears a true minus sign
 export const gmt = (offset) => {
   if (!offset) return 'GMT';
   const abs = Math.abs(offset);
   const m = abs % 60;
-  return `GMT${offset < 0 ? '-' : '+'}${Math.floor(abs / 60)}${m ? `:${String(m).padStart(2, '0')}` : ''}`;
+  return `GMT${offset < 0 ? '−' : '+'}${Math.floor(abs / 60)}${m ? `:${String(m).padStart(2, '0')}` : ''}`;
 };
 
 // "Europe/Paris · GMT+2 · 1 h ahead of you", both offsets taken at the instant; '' for no zone

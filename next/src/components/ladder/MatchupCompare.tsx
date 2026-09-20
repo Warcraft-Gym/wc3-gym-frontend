@@ -3,7 +3,8 @@ import { PlayerName, type Player } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { LadderDayBars } from "./LadderDayBars";
 import type { LadderDay } from "./LadderPlots";
-import { LOSS, WIN, winRate } from "@/helpers/ladder-days.mjs";
+import { record as recordFigure } from "@/helpers/figures.mjs";
+import { LOSS, WIN } from "@/helpers/ladder-days.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type LadderRow = { games?: number; wins?: number; losses?: number; vs_race?: Record<string, [number, number]> } & Record<string, any>;
@@ -12,12 +13,12 @@ type GnlRow = { games?: number; wins?: number; losses?: number } & Record<string
 const disabled = "text-[rgba(var(--v-theme-on-surface),0.38)]";
 const label = `text-center text-xs ${disabled}`;
 
-const record = (p?: LadderRow | null) => (!p || !p.games ? "—" : `${p.wins}–${p.losses} · ${winRate(p.wins, p.losses)}%`);
+const record = (p?: LadderRow | null) => (!p ? "—" : recordFigure(p.wins, p.losses) ?? "—");
 const vs = (p?: LadderRow | null, race?: string) => {
   const r = race ? p?.vs_race?.[race] : null;
-  return r && r[0] + r[1] ? `${r[0]}–${r[1]}` : "—";
+  return (r && recordFigure(r[0], r[1])) || "—";
 };
-const gnl = (g?: GnlRow | null) => (g && g.games ? `${g.wins ?? 0}–${g.losses ?? 0}` : "—");
+const gnl = (g?: GnlRow | null) => (!g ? "—" : recordFigure(g.wins ?? 0, g.losses ?? 0) ?? "—");
 
 /** The two players of a series side by side: MMR, ladder record, the record against the other's
  *  race, the GNL record, the games per day */

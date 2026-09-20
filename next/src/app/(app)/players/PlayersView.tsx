@@ -148,7 +148,7 @@ export function PlayersView() {
     <Card className="card gap-0 py-0">
       <StatusAlert modelValue={error} className="m-4" onClose={() => setError(null)} />
       {!error ? <div className="table-scroll overflow-x-auto"><Table className="tnum"><TableHeader><TableRow>
-        {head("Name", "name")}{head(<W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series won", "series_winrate", "text-right")}{head("Games won", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
+        {head("Name", "name")}{head(<W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series record", "series_winrate", "text-right")}{head("Games record", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
       </TableRow></TableHeader><TableBody>
         {shown.map((row) => <TableRow key={row.key} className={row.id != null ? "cursor-pointer" : undefined} onClick={(event) => {
           if ((event.target as Element).closest('[data-slot="tooltip-trigger"]')) return;

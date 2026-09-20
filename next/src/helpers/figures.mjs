@@ -1,9 +1,9 @@
-// A record as wins and losses: "19 – 11 (63%)" from ten up, "3 – 1" under ten; the title names what it counts.
+// A record: "19 – 11 (63%)" from ten up, "3 – 1" under ten; null when nothing was played, so the cell prints its own dash.
 
 export const record = (wins, losses) => {
-  const won = wins || 0;
-  const lost = losses || 0;
-  const total = won + lost;
+  wins ??= 0;
+  losses ??= 0;
+  const total = wins + losses;
   if (!total) return null;
-  return total >= 10 ? `${won} – ${lost} (${Math.round((100 * won) / total)}%)` : `${won} – ${lost}`;
+  return total >= 10 ? `${wins} – ${losses} (${Math.round((100 * wins) / total)}%)` : `${wins} – ${losses}`;
 };

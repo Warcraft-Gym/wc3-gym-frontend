@@ -4,6 +4,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/Icon";
 import { ACHIEVEMENTS_NOTE, LADDER_NOTE, SCORED_NOTE } from "@/helpers/achievements.js";
+import { record } from "@/helpers/figures.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -35,7 +36,7 @@ export function LadderLeaderboards({
     segments: segments({ key: "badge", value: badgePoints(p) }),
   }));
   const ladder = rank((p) => p.ladder_points).map((p): Row => ({
-    ...p, value: p.ladder_points, caption: `${p.wins}-${p.losses}`,
+    ...p, value: p.ladder_points, caption: record(p.wins, p.losses) ?? "—",
     segments: segments({ key: "ladder", value: p.ladder_points }),
   }));
   // One scale per list: its own leader fills the bar

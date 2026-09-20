@@ -21,6 +21,7 @@ import { canSeeRole } from "@/helpers";
 import { POINTS_NOTES } from "@/helpers/achievements.js";
 import { resolveCurrentSeasonId } from "@/helpers/current-season.js";
 import { eventLabel } from "@/helpers/event-labels.mjs";
+import { record } from "@/helpers/figures.mjs";
 import { gamesBarHeight, winRate } from "@/helpers/ladder-days.mjs";
 import { playerPath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
@@ -496,9 +497,8 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                       <Th className="w-11">#</Th>
                       <TableHead>Player</TableHead>
                       <TableHead className={WIDE}>Team</TableHead>
-                      <Th>W-L</Th>
+                      <Th>Series record</Th>
                       <Th className={WIDE}>Played</Th>
-                      <Th className={WIDE}>Win %</Th>
                       <Th>Points</Th>
                     </TableRow>
                   </TableHeader>
@@ -524,13 +524,10 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                             <span className="text-xs">–</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center tnum">
-                          {player.wins}-{player.losses}
+                        <TableCell className="text-center tnum whitespace-nowrap">
+                          {record(player.wins, player.losses) ?? "—"}
                         </TableCell>
                         <TableCell className={cn(WIDE, "text-center tnum")}>{player.played}</TableCell>
-                        <TableCell className={cn(WIDE, "text-center tnum")}>
-                          {player.winRate != null ? `${player.winRate}%` : <span className="text-xs text-muted-foreground">–</span>}
-                        </TableCell>
                         <TableCell className="text-center">
                           {player.totalPoints > 0 ? (
                             <Badge className="text-[0.625rem] tnum">{player.totalPoints}</Badge>
@@ -586,9 +583,9 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-bold tnum">
-                            {raceEntry.wins}-{raceEntry.losses}
+                            {record(raceEntry.wins, raceEntry.losses) ?? "—"}
                           </div>
-                          <div className="text-xs text-muted-foreground">W-L</div>
+                          <div className="text-xs text-muted-foreground">Series</div>
                         </div>
                         <div className="text-center">
                           <div className="text-lg font-bold tnum">{raceEntry.points}</div>

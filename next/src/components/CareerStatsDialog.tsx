@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { StatusAlert } from "@/components/StatusAlert";
 import { usePlayerCareerStatsStore } from "@/stores";
+import { record } from "@/helpers/figures.mjs";
 
 const BASELINE = [
   ["rating", "Rating"], ["seasons_played", "Seasons"], ["series_won", "Series won"],
@@ -80,7 +81,7 @@ export function CareerStatsDialog({ players, onChanged, ref }: { players: Record
               ))}
               <div className="md:col-span-2">
                 <h3 className="mb-1">Totals with the app&apos;s results</h3>
-                <p className="text-sm text-muted-foreground">Rating {stat.rating}. Series {stat.series_won}-{stat.series_lost} ({stat.series_winrate}%). Games {stat.games_won}-{stat.games_lost} ({stat.games_winrate}%). {stat.seasons_played} seasons.</p>
+                <p className="text-sm text-muted-foreground">Rating {stat.rating}. Series {record(stat.series_won, stat.series_lost) ?? "—"}. Games {record(stat.games_won, stat.games_lost) ?? "—"}. {stat.seasons_played} seasons.</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-4 pt-0">

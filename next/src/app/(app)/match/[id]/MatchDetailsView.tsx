@@ -18,6 +18,7 @@ import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { PanelLinksContext } from "@/hooks/player-panel";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
+import { checkInStatus } from "@/helpers/check-in.mjs";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
@@ -46,9 +47,9 @@ const playersOf = (teams: Row[]) => {
   return map;
 };
 
-// Who said they cannot play this round; no answer counts as available and nothing is ever blocked
+// Who cannot play this round, said or derived from the blocked times; no answer counts as available
 const isOutOn = (rows: Row[], playerId: number, playday?: number) =>
-  rows.some((row) => row.user_id === playerId && row.playday === playday && row.available === false);
+  checkInStatus(rows.find((row) => row.user_id === playerId && row.playday === playday)).short === "Out";
 
 // For every series, host_player_id === player1.id means team1 is hosting
 const countTeamHosts = (seriesList: Row[]) => {

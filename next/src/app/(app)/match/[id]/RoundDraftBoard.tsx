@@ -7,6 +7,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { toneClass } from "@/components/ui/tone";
+import { HeadToHeadCell } from "@/components/HeadToHeadCell";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { TeamName } from "@/components/TeamName";

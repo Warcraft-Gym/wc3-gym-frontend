@@ -127,8 +127,9 @@ export function SeriesView({ id }: { id: string }) {
     };
   });
 
-  // The three facts under the title: when it is played, the map it plays next, and the head to head
-  const mapLine = seriesMapLine(series?.rules?.map_rules, gameRows);
+  // The three facts under the title: when it is played, the map it plays next, and the head to head.
+  // A scored series plays no next game, whatever its rows say: a 2-0 leaves game 3 with no winner.
+  const mapLine = scored ? null : seriesMapLine(series?.rules?.map_rules, gameRows);
   const met = meetingRecord(meetings);
   const headToHead = record(met.wins, met.losses);
 
@@ -219,14 +220,14 @@ export function SeriesView({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canMove, series]); // load() sets a new series row on every save, so the list is read again
 
-  // The head to head of the two players, one read, for a solo series alone
+  // The head to head of the two players, one read, for a solo series and a signed-in reader alone
   useEffect(() => {
     const [one, two] = [series?.player1_id, series?.player2_id];
-    if (!one || !two) return;
+    if (!one || !two || !auth.me) return; // the meetings route answers a member alone
     // the loader sets state, so it runs just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(() => seriesStore.playerMeetings(one, two).then((rows: Row[]) => setMeetings(rows || [])).catch(() => {}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [series?.player1_id, series?.player2_id]);
+  }, [series, auth.me?.user?.id]); // load() sets a new series row on every save, so the score counts the new result
 
   // A link from one series to the next keeps the page, so the read follows the route
   useEffect(() => {

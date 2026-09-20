@@ -24,5 +24,24 @@ export const reportWarning = (vetoMissing, off = []) => {
   if (!off.length) return null;
   const games = off.map((one) => one.game);
   const which = games.length > 1 ? `games ${games.join(', ')}` : `game ${games[0]}`;
-  return `The replay of ${which} was played on another map than the veto gives it.`;
+  return `The replay of ${which} was played on another map than its game plays.`;
+};
+
+/** The map field of each game after the replays of two games swap: a field the replay wrote travels
+ *  with its file, a map the reporter named stays with its game. `played` answers the map the replay
+ *  of a game was played on.
+ *  @param {Record<number, number|null>} maps
+ *  @param {number} from
+ *  @param {number} to
+ *  @param {(game: number) => number|null} played */
+export const swapMapFields = (maps = {}, from, to, played = () => null) => {
+  const named = (game) => (maps[game] != null && maps[game] !== played(game) ? maps[game] : null);
+  const carried = (game) => (maps[game] != null && maps[game] === played(game) ? maps[game] : null);
+  const next = { ...maps };
+  for (const [game, other] of [[from, to], [to, from]]) {
+    const map = named(game) ?? carried(other);
+    if (map == null) delete next[game];
+    else next[game] = map;
+  }
+  return next;
 };

@@ -15,7 +15,7 @@ import { VetoBoard } from "@/components/VetoBoard";
 import { authHeader, backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, winsFor, isValidResult, moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helpers/map-order.mjs";
-import { mapMismatch, mapMismatches, reportWarning } from "@/helpers/replay-maps.mjs";
+import { mapMismatch, mapMismatches, reportWarning, swapMapFields } from "@/helpers/replay-maps.mjs";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
 import { useMapStore, useMatchStore } from "@/stores";
@@ -252,11 +252,16 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
     if (isOtherSeries(read.tags, series.tags)) {
       return `This replay is ${read.tags.join(" against ")}. It is not this series.`;
     }
+    const played = matchMap(read.mapPath, maps);
+    if (!played) return null;
     const off = mapMismatch(game, replayMaps, wantedMaps);
-    const played = off && matchMap(read.mapPath, maps);
-    if (!off || !played) return null;
-    const fix = off.to ? `Move it to game ${off.to}, or change the map of game ${game}.` : `Change the map of game ${game}.`;
-    return `The replay was played on ${played.name}. ${fix}`;
+    if (off) {
+      const fix = off.to ? `Move it to game ${off.to}, or change the map of game ${game}.` : `Change the map of game ${game}.`;
+      return `The replay was played on ${played.name}. ${fix}`;
+    }
+    // the veto agrees with the file, the map named for the game does not
+    if (mapOf(game) != null && mapOf(game) !== played.id) return `The replay was played on ${played.name}. Change the map of game ${game}.`;
+    return null;
   };
 
   // A replay moves inside the games the series played: the ones reported, and the ones tapped now
@@ -268,7 +273,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   const moveReplay = async (from: number, to: number) => {
     setMoved(null);
     setErrorMessage(null);
-    if (hasReplay(from) || hasReplay(to)) {
+    if (hasReplay(from)) {
       const swapped = hasReplay(to);
       setSeries((form) => {
         const reads = { ...form.reads };
@@ -277,7 +282,9 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
         else delete reads[from];
         if (fromRead) reads[to] = fromRead;
         else delete reads[to];
-        return { ...form, reads, replays: { ...form.replays, [from]: form.replays[to] ?? null, [to]: form.replays[from] ?? null } };
+        // a map field the replay itself wrote travels with the file, so the two stay together
+        const fields = swapMapFields(form.maps, from, to, (game: number) => matchMap(form.reads?.[game]?.mapPath, maps)?.id ?? null);
+        return { ...form, reads, maps: fields, replays: { ...form.replays, [from]: form.replays[to] ?? null, [to]: form.replays[from] ?? null } };
       });
       setMoved(moveMessage(from, to, swapped));
       return;

@@ -188,7 +188,7 @@ export function TeamRostersPanel({
         <AccordionTrigger className="text-lg font-bold">
           <span className="flex items-center gap-2">
             <Icon name="mdi-account-group" />
-            Team Rosters &amp; Series Proposal
+            Team rosters and series proposal
           </span>
         </AccordionTrigger>
         <AccordionContent>

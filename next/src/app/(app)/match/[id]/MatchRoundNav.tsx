@@ -36,7 +36,7 @@ export function MatchRoundNav({
       <CardContent className="flex flex-col gap-3 p-3 min-[960px]:flex-row min-[960px]:items-center">
         <Button nativeButton={false} className="min-[960px]:w-auto" render={<Link href={seasonHref} />}>
           <Icon name="mdi-calendar-multiple" />
-          Back to Season
+          Back to season
         </Button>
 
         {/* One button per round; it lists that round's matches so a reader moves along the season */}

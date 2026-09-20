@@ -225,11 +225,11 @@ export function ProposeSeriesDialog({
           </Button>
           <Button className="bg-warning text-on-warning" disabled={!selected.length} onClick={() => onCreate(true)}>
             <Icon name="mdi-pencil" />
-            Create {selected.length} Draft Series
+            Create {selected.length} draft series
           </Button>
           <Button disabled={!selected.length} onClick={() => onCreate(false)}>
             <Icon name="mdi-publish" />
-            Create {selected.length} Published Series
+            Create {selected.length} published series
           </Button>
         </div>
       </DialogContent>

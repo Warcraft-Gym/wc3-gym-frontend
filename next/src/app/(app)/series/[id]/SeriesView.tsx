@@ -127,8 +127,7 @@ export function SeriesView({ id }: { id: string }) {
     };
   });
 
-  // The three facts under the title: when it is played, the map it plays next, and the head to head.
-  // A scored series plays no next game, whatever its rows say: a 2-0 leaves game 3 with no winner.
+  // The three facts under the title: the booked time, the next map, the head to head; a scored series plays no next game
   const mapLine = scored ? null : seriesMapLine(series?.rules?.map_rules, gameRows);
   const met = meetingRecord(meetings);
   const headToHead = record(met.wins, met.losses);
@@ -194,7 +193,6 @@ export function SeriesView({ id }: { id: string }) {
       const loaded = await fetchWrapper.get(`${backendUrl}/series/${id}`);
       setSeries(loaded);
       setReplays([]); // the replays of the series the page leaves are not this one's
-      setMeetings([]); // and neither are its meetings
       setMoved(null); // and neither is its success line
       // A series nobody reported records no game, and the table shows its rules alone
       setGames(await fetchWrapper.get(`${backendUrl}/series/${id}/games`).catch(() => []));
@@ -220,16 +218,19 @@ export function SeriesView({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canMove, series]); // load() sets a new series row on every save, so the list is read again
 
-  // The head to head of the two players, one read, for a solo series and a signed-in reader alone.
+  // The head to head of the two players, for a solo series and a signed-in reader alone.
   // This series is left out of its own line, so a scored one does not count itself.
   useEffect(() => {
     const [one, two] = [series?.player1_id, series?.player2_id];
-    if (!one || !two || !auth.me) return; // the meetings route answers a member alone
     const self = series?.id;
     // the loader sets state, so it runs just outside the effect body (react-hooks/set-state-in-effect)
-    queueMicrotask(() => seriesStore.playerMeetings(one, two).then((rows: Row[]) => setMeetings((rows || []).filter((row: Row) => row.series_id !== self))).catch(() => {}));
+    queueMicrotask(() => {
+      setMeetings([]); // the meetings of the series the page leaves are not this one's
+      if (!one || !two || !auth.me) return; // the meetings route answers a member alone
+      seriesStore.playerMeetings(one, two).then((rows: Row[]) => setMeetings((rows || []).filter((row: Row) => row.series_id !== self))).catch(() => {});
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [series, auth.me?.user?.id]); // load() sets a new series row on every save, so the score counts the new result
+  }, [series?.id, series?.player1_id, series?.player2_id, auth.me?.user?.id]); // one read per series: a save of this series cannot change a line it is left out of
 
   // A link from one series to the next keeps the page, so the read follows the route
   useEffect(() => {
@@ -467,7 +468,8 @@ export function SeriesView({ id }: { id: string }) {
           {canReport ? (
             <>
               <ScheduleDialog ref={scheduleDialog} playerId={auth.me?.user?.id ?? null} onSaved={load} />
-              <ReportResultDialog ref={reportDialog} onSaved={load} />
+              {/* a moved replay answers the whole list, so the table takes it instead of reading the page again */}
+              <ReportResultDialog ref={reportDialog} onSaved={load} onMoved={setReplays} />
             </>
           ) : null}
         </>

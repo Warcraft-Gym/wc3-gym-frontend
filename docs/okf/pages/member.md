@@ -4,11 +4,17 @@ title: Member self-service
 description: The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
 resource: ../../../next/src/app/(app)/HomeView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T11:30:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T17:00:00Z }
 sources:
   - id: home
     resource: ../../../next/src/app/(app)/HomeView.tsx
     title: The home page
+  - id: home-panels
+    resource: ../../../next/src/components/home/HomePanel.tsx
+    title: The panel shell of the home hub
+  - id: home-helper
+    resource: ../../../next/src/helpers/home-hub.mjs
+    title: The panel order, the signup chip and the captain row
   - id: profile
     resource: ../../../next/src/app/(app)/profile/ProfileView.tsx
     title: The profile switch
@@ -42,7 +48,11 @@ sources:
 
 # What it does
 
-**Home (`/`).** One card per event that `GET /me/events` answers, in date order. A finished event stays off the page unless `/me` still lists the member in that season. A KOTH league takes one card only, for tonight's night. A card shows the date tile, the event label, a status line (the round in play for a GNL member, the open check-in, or the dates), the state chip, and one action. The action is the word the backend picked for the caller: sign up, withdraw (the confirm says every race the member entered goes; one race at a time is the event page's job), check in, or view. A GNL season carries a link instead: "Sign up" or "Ask to join" while the member is not in, "Your series" once they are. Under a GNL card sit the links to the team, the report, the upcoming series, the ladder, the players, the fantasy team, and the availability page when the season's scheduling tools are on. When the backend hints that the member's own blocks cover the next round, the card shows the hint and a "Sit out" button. Once per browser session a dialog lists the events the member can still sign up for. An admin also sees three counters, teams, seasons and players, each a link to its page.
+**Home (`/`).** A hub of five panels under the h1 "Home", which carries no subheader. Above 960 px a wide main column holds "Your series", "Next matches" and "Open signups", and a narrow side column holds the latest season's leaderboard and "Casted games"; below that width the columns dissolve into one stack. One CSS order per panel drives both layouts, so a member with no series of his own reads "Open signups" first, the leaderboard second and his own panel third. Each panel draws its own skeleton rows under its real title while the page loads.
+
+"Your series" states the member's next series with the compact action bar and the result of the one he played last, both out of `GET /player-series` for each season `/me` says he is in that has started; a season still open pairs nobody, so while none of them has started and the leaderboard's season is complete the panel reads that season instead and states that it is over. The result is the series score with his own score first, in the win or the loss token, linked to the series; it carries no icon and no word. "Next matches" is the `next` list of `GET /home/series`, at most five rows, each with its time in the reader's zone, its League - Event - Stage - Round label, its teams, its two players with the MMR the row names and a chip for the caster who claimed it; a side with neither player nor team reads "To be decided", and "All upcoming" opens the schedule. That read keeps a started series for two hours, so a row whose time has passed reads "Started 20:30" instead of its day and time. A captain reads one row first per event whose member row carries a fixture he still has to draft, with the round, the event's own name, the two teams, how much of it is drafted and a button to the draft board. "Open signups" lists the events whose signups stand open and the events whose check-in stands open, each with the same outlined button: sign up opens the signup dialog, a GNL season links to its own form, a member already in reads a chip beside the withdraw or the check-in. A row prints the play dates alone, and the rows read in the order the events start, because an event stores no signup close time. A member already entered reads "Signed up as" with the icon and the name of every race of the row's `entrant_races`, all in that one chip. The leaderboard names the latest GNL season as a link to its page, a chip for the round in play or "Final", the day the round ends, and the top five teams by season points, each with a "Series record" column from the `series_won` and `series_lost` of that season's `seasons_info` row. "Casted games" is the `casts_upcoming` and `casts_recent` lists of `GET /home/series`, with "Watch" to the stream and "VOD" to the recording.
+
+The page sends six requests for a member: `/me`, `GET /seasons`, `GET /me/events`, `GET /home/series`, `GET /events/{id}/teams/basic` and one `GET /player-series?season_id=` per started season the member is in. An admin sends the same six. The `/home/series` read is public and edge cached, so it is sent without a bearer. A failed `/home/series` or `/events/{id}/teams/basic` read states itself in the page's alert, and the panel that read it prints no empty state. The hub carries no admin card: an admin reaches season management and the round draft through the leaderboard's season link.
 
 **Profile (`/profile`).** The one route a guest may open. A guest reads a card that offers the Discord invite from the settings and a "Check again" button, which reads `/me` once more. A member with no player row reads the signup form. A member with a player row is sent to their own player page.
 

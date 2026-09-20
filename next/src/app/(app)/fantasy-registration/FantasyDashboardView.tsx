@@ -34,7 +34,8 @@ import { formatDateTime } from "@/helpers/datetime";
 import { eventLabel } from "@/helpers/event-labels.mjs";
 import { betsOpen, isScored, validateBetPoints as checkBetPoints } from "@/helpers/bets.mjs";
 import { ALL_COLORS, ALL_NAMES } from "@/helpers/tiers.mjs";
-import { fillDays, maxGamesPerDay, winRate } from "@/helpers/ladder-days.mjs";
+import { record } from "@/helpers/figures.mjs";
+import { fillDays, maxGamesPerDay } from "@/helpers/ladder-days.mjs";
 import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image";
 import { cn } from "@/lib/utils";
 
@@ -151,7 +152,6 @@ export function FantasyDashboardView() {
     { key: "team", title: "Team", phone: false },
     { key: "mmr", title: "W3C MMR", align: "right" },
     { key: "record", title: "Record", align: "right", phone: false },
-    { key: "rate", title: "Win %", align: "right" },
     { key: "ladder", title: windowLabel ? `Ladder · ${windowLabel}` : "Ladder", phone: false },
     { key: "open", title: "" },
   ];
@@ -173,7 +173,7 @@ export function FantasyDashboardView() {
     color: tierColors[tier - 1],
     rows: (playersByTier[tier] || []).map((player) => {
       const ladder = ladderById.get(player.id) || null;
-      return { ...player, ladder, days: daysById.get(player.id) || null, rate: ladder && ladder.games ? winRate(ladder.wins, ladder.losses) : null };
+      return { ...player, ladder, days: daysById.get(player.id) || null };
     }),
   }));
 
@@ -508,7 +508,7 @@ export function FantasyDashboardView() {
       cell: ({ row }: any) =>
         isScored(row.original) ? (
           <Badge variant="outline" className={cn("tnum", scoreTone(row.original))}>
-            {row.original.player1_score || 0} - {row.original.player2_score || 0}
+            {record(row.original.player1_score || 0, row.original.player2_score || 0) ?? "—"}
           </Badge>
         ) : (
           <span className="text-muted-foreground">Not played</span>
@@ -804,8 +804,7 @@ export function FantasyDashboardView() {
                             {row.ladder?.team ? <TeamName team={{ id: row.ladder.team_id, name: row.ladder.team, icon_url: row.ladder.team_icon_url }} /> : null}
                           </TableCell>
                           <TableCell className="tnum text-right">{row.ladder?.mmr?.current ?? "—"}</TableCell>
-                          <TableCell className={cn(phoneCell, "tnum text-right")}>{row.ladder ? `${row.ladder.wins}–${row.ladder.losses}` : "—"}</TableCell>
-                          <TableCell className="tnum text-right">{row.rate == null ? "—" : `${row.rate}%`}</TableCell>
+                          <TableCell className={cn(phoneCell, "tnum text-right")}>{(row.ladder && record(row.ladder.wins, row.ladder.losses)) || "—"}</TableCell>
                           <TableCell className={phoneCell}>
                             {row.days ? <LadderDayBars days={row.days} ymax={ymax} /> : <span className="text-muted-foreground">—</span>}
                           </TableCell>

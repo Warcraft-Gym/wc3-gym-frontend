@@ -18,6 +18,7 @@ import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { PanelLinksContext } from "@/hooks/player-panel";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
+import { checkInStatus } from "@/helpers/check-in.mjs";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
@@ -28,6 +29,7 @@ import { EditSeriesDialog } from "./EditSeriesDialog";
 import { MatchBanner } from "./MatchBanner";
 import { MatchRoundNav, type RoundMatches } from "./MatchRoundNav";
 import { ProposeSeriesDialog } from "./ProposeSeriesDialog";
+import { RoundDraftBoard } from "./RoundDraftBoard";
 import { DraftSeries, PublishedSeries } from "./SeriesTables";
 import { TeamRostersPanel } from "./TeamRostersPanel";
 import { mmrOf, type Row } from "./match-cells";
@@ -45,9 +47,9 @@ const playersOf = (teams: Row[]) => {
   return map;
 };
 
-// Who said they cannot play this round; no answer counts as available and nothing is ever blocked
+// Who cannot play this round, said or derived from the blocked times; no answer counts as available
 const isOutOn = (rows: Row[], playerId: number, playday?: number) =>
-  rows.some((row) => row.user_id === playerId && row.playday === playday && row.available === false);
+  checkInStatus(rows.find((row) => row.user_id === playerId && row.playday === playday)).short === "Out";
 
 // For every series, host_player_id === player1.id means team1 is hosting
 const countTeamHosts = (seriesList: Row[]) => {
@@ -92,6 +94,11 @@ export function MatchDetailsView({ id }: { id: string }) {
   // The season ladder record of every signup, by user id, for the record against each race
   const [ladderById, setLadderById] = useState<Map<number, Row>>(new Map());
   const [extraPlayersById, setExtraPlayersById] = useState<Record<number, Row>>({});
+  const [draftBoard, setDraftBoard] = useState<Row | null>(null);
+  const [draftState, setDraftState] = useState<Row | null>(null);
+  // The stamp of the last visit: undefined until the state read answers, null when this team never opened the draft
+  const [seenAt, setSeenAt] = useState<string | null | undefined>(undefined);
+  const [seenSent, setSeenSent] = useState(false);
   const [availability1, setAvailability1] = useState<Row[]>([]);
   const [availability2, setAvailability2] = useState<Row[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -138,11 +145,25 @@ export function MatchDetailsView({ id }: { id: string }) {
   // a captain writes the draft of the matches their own team plays; an admin any
   const canDraft = auth.isAdmin || [match.team1_id, match.team2_id].some((teamId) => teamId != null && auth.isCaptainOf(teamId, match.season_id));
 
+  // The team the viewer captains in this fixture; only that team may write a seen or a ready mark,
+  // and an admin passes isCaptainOf but holds no seat
+  const seatTeamOf = (row: Row) => {
+    const seats = (auth.me?.seats ?? []) as Row[];
+    const seat = seats.find(
+      (one) => Number(one.season_id) === Number(row.season_id) && [row.team1_id, row.team2_id].some((teamId) => teamId != null && Number(one.team_id) === Number(teamId)),
+    );
+    return seat ? Number(seat.team_id) : null;
+  };
+  const ownTeamId = seatTeamOf(match);
+
   const roster1: Row[] = team1?.player_by_season?.[match.season_id] || [];
   const roster2: Row[] = team2?.player_by_season?.[match.season_id] || [];
   // The tables hold ids, so a roster reload never leaves a selection pointing at a stale row
   const playersById = (roster: Row[], ids: number[]) => roster.filter((p) => ids.includes(p.id));
 
+  // The board names a team, so one test reads the availability of the right side
+  const isOutOnTeam = (playerId: number, teamId: number) =>
+    isOutOn(Number(teamId) === Number(match.team1_id) ? availability1 : availability2, playerId, match.playday);
   const outTeam1 = (player: Row) => isOutOn(availability1, player.id, match.playday);
   const outTeam2 = (player: Row) => isOutOn(availability2, player.id, match.playday);
   // Already in a series on this match, published or draft; a second one is allowed by hand
@@ -162,6 +183,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   });
   const enrichedSeries = series.map(withFullPlayers);
   const enrichedDraftSeries = draftSeries.map(withFullPlayers);
+  // The working largest difference of this match, which the board and the draft table both read
+  const maxDifference = draftState?.max_mmr_difference ?? draftBoard?.max_mmr_difference ?? 0;
 
   const newSeriesPlayer1 = playersById(roster1, newSeriesPlayers[0])[0];
   const newSeriesPlayer2 = playersById(roster2, newSeriesPlayers[1])[0];
@@ -246,6 +269,32 @@ export function MatchDetailsView({ id }: { id: string }) {
     return [a1, a2] as Row[][];
   };
 
+  const mayDraft = (row: Row) =>
+    !!row?.id && (auth.isAdmin || [row.team1_id, row.team2_id].some((teamId) => teamId != null && auth.isCaptainOf(teamId, row.season_id)));
+
+  // The state alone: the working difference, the Ready marks and the last visit
+  const fetchDraftState = async (row: Row, fresh = false) => {
+    if (!mayDraft(row)) return;
+    const stateRow = await seriesStore.getDraftState(row.id, fresh).catch(() => null);
+    setDraftState(stateRow);
+    if (stateRow) setSeenAt((was) => (was === undefined ? stateRow.seen_at ?? null : was));
+  };
+
+  // One read fills the draft board and one the draft state; both are captain-only
+  const fetchDraftBoard = async (row: Row, fresh = false) => {
+    if (!mayDraft(row)) return;
+    const [boardRow] = await Promise.all([seriesStore.getDraftBoard(row.id, fresh).catch(() => null), fetchDraftState(row, fresh)]);
+    setDraftBoard(boardRow);
+  };
+
+  // The visit is stamped when the Draft tab first opens, so reading the published table alone
+  // never clears the marks; only the viewer's own team may write it
+  const markDraftSeen = () => {
+    if (seenSent || !ownTeamId || !match.id) return;
+    setSeenSent(true);
+    seriesStore.markDraftSeen(match.id, ownTeamId).catch(() => undefined);
+  };
+
   const fetchTeamDetails = async (row: Row) => {
     try {
       const [t1, t2] = await Promise.all([
@@ -301,6 +350,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         fetchSeasonMatches(row),
         fetchAvailability(row),
         fetchLadderPlayers(row),
+        fetchDraftBoard(row),
       ]);
       setProposePlayersTeam1(availableIds(teams[0], availability[0], row));
       setProposePlayersTeam2(availableIds(teams[1], availability[1], row));
@@ -314,12 +364,13 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
+  // Every write of the draft lands here, and a write moves the board and the state as well
   const fetchMatchSeries = async () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
       const { rows, drafts } = await fetchSeriesRows();
-      await loadMissingSeriesPlayers(rows, drafts, seriesPlayerById);
+      await Promise.all([loadMissingSeriesPlayers(rows, drafts, seriesPlayerById), fetchDraftBoard(match, true)]);
     } catch (error) {
       console.error("Failed to fetch match series:", error);
     } finally {
@@ -524,6 +575,54 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
+  // A write that moves a pairing reads the whole series list; another write names the lighter read it needs
+  const runDraftWrite = async (write: () => Promise<unknown>, read: () => Promise<unknown> = fetchMatchSeries) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      await write();
+      await read();
+    } catch (error: any) {
+      console.error("Failed to write the draft:", error);
+      await read().catch(() => {}); // a set that failed part-way still wrote rows, so the board reads them
+      setErrorMessage(error?.error || error?.message || String(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // A whole suggested set writes in one go: the hosts count as it goes, and one read follows
+  const addPairings = (pairs: { player1_id: number; player2_id: number }[]) => {
+    let { team1Hosts, team2Hosts } = countTeamHosts([...series, ...draftSeries]);
+    return runDraftWrite(async () => {
+      for (const pair of pairs) {
+        const hostId = team1Hosts > team2Hosts ? pair.player2_id : pair.player1_id;
+        await seriesStore.createDraftSeries({ match_id: match.id, season_id: match.season_id, ...pair, host_player_id: hostId });
+        if (hostId === pair.player1_id) team1Hosts++;
+        else team2Hosts++;
+      }
+    });
+  };
+
+  // The pairing keeps its row, so the note says it changed and who changed it
+  const changeOpponent = (draft: Row, side: 1 | 2, playerId: number) => {
+    const leaving = draft[`player${side}_id`];
+    const row: Row = { ...draft, player1: undefined, player2: undefined, [`player${side}_id`]: playerId };
+    if (row.host_player_id === leaving) row.host_player_id = playerId;
+    return runDraftWrite(() => seriesStore.updateDraftSeries(row));
+  };
+
+  const setMaxMmrDifference = (value: number | null) =>
+    runDraftWrite(() => seriesStore.setDraftMaxMmrDifference(matchId, value), () => fetchDraftState(match, true));
+  const setTeamReady = (teamId: number, ready: boolean) =>
+    runDraftWrite(() => seriesStore.setDraftReady(matchId, teamId, ready), () => fetchDraftState(match, true));
+  const checkInFor = (teamId: number, playerId: number) =>
+    runDraftWrite(
+      () => availabilityStore.setTeamAvailability(teamId, match.season_id, { user_id: playerId, playday: match.playday, available: true }),
+      () => fetchAvailability(match),
+    );
+  const meetingsOf = (userA: number, userB: number) => seriesStore.playerMeetings(userA, userB);
+
   const toggleDraftFantasyMatch = async (draftSeriesItem: Row) => {
     setIsLoading(true);
     try {
@@ -680,7 +779,13 @@ export function MatchDetailsView({ id }: { id: string }) {
             </Button>
           </CardTitle>
 
-          <Tabs value={seriesViewTab} onValueChange={(value) => setSeriesViewTab(value as string)}>
+          <Tabs
+            value={seriesViewTab}
+            onValueChange={(value) => {
+              setSeriesViewTab(value as string);
+              if (value === "draft") markDraftSeen();
+            }}
+          >
             <TabsList variant="line" className="w-full justify-center bg-surface-light">
               <TabsTrigger value="published" className="flex-none px-3">
                 <Icon name="mdi-check-circle" />
@@ -708,6 +813,27 @@ export function MatchDetailsView({ id }: { id: string }) {
 
             {auth.isCaptain ? (
               <TabsContent value="draft">
+                <RoundDraftBoard
+                  board={draftBoard}
+                  state={draftState}
+                  maxDifference={maxDifference}
+                  drafted={draftSeries}
+                  published={series}
+                  team1={team1}
+                  team2={team2}
+                  playerById={seriesPlayerById}
+                  ownTeamId={ownTeamId}
+                  playday={match.playday}
+                  narrow={smAndDown}
+                  isOut={isOutOnTeam}
+                  busy={isLoading}
+                  onAddPairings={addPairings}
+                  onChangeOpponent={changeOpponent}
+                  onSetMaxDifference={setMaxMmrDifference}
+                  onSetReady={setTeamReady}
+                  onCheckIn={checkInFor}
+                  onMeetings={meetingsOf}
+                />
                 <DraftSeries
                   draftSeries={enrichedDraftSeries}
                   smAndDown={smAndDown}
@@ -716,6 +842,11 @@ export function MatchDetailsView({ id }: { id: string }) {
                   ladderById={ladderById}
                   isAdmin={auth.isAdmin}
                   canDraft={canDraft}
+                  board={draftBoard}
+                  maxDifference={maxDifference}
+                  seenAt={seenAt}
+                  viewerId={auth.me?.user?.id ?? null}
+                  onMeetings={meetingsOf}
                   draftActions={draftActions}
                   onAddDraftSeries={openCreateNewDraftSeries}
                   onPublishAll={publishAllDraftSeries}

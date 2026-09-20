@@ -10,6 +10,9 @@ import { SeriesCard } from "@/components/SeriesCard";
 import { VsRaces, VsRacesHead } from "@/components/VsRaces";
 import { W3CMmr } from "@/components/W3CMmr";
 import { toneClass } from "@/components/ui/tone";
+import { formatDateTime } from "@/helpers/datetime";
+import { mmrGap, pairIndex } from "@/helpers/draft-suggest.mjs";
+import { HeadToHeadCell, SharedHours } from "./RoundDraftBoard";
 import { FacedRaces, SyncedLine, getHighestW3CMMR, mmrOf, type Row } from "./match-cells";
 
 const WON_FILL = "bg-win text-on-win";
@@ -145,6 +148,29 @@ export function PublishedSeries({
   );
 }
 
+/** Who put a pairing in the draft, and whether it is new since this team last looked. */
+function PairingNote({ item, fresh }: { item: Row; fresh: boolean }) {
+  // a create stamps updated_at with created_at, so only a later stamp reads as a change
+  const changed = !!item.updated_by_name && item.updated_at !== item.created_at;
+  const who = changed ? item.updated_by_name : item.created_by_name || item.updated_by_name;
+  if (!who && !fresh) return null;
+  return (
+    <div className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+      {who ? (
+        <span>
+          {changed ? "Changed" : "Added"} by {who}
+          {item.updated_at ? `, ${formatDateTime(item.updated_at)}` : ""}
+        </span>
+      ) : null}
+      {fresh ? (
+        <Badge variant="outline" className={toneClass("info")}>
+          New since your last visit
+        </Badge>
+      ) : null}
+    </div>
+  );
+}
+
 /** The draft series of the match: what a captain plans before an admin publishes it. */
 export function DraftSeries({
   draftSeries,
@@ -154,10 +180,15 @@ export function DraftSeries({
   ladderById,
   isAdmin,
   canDraft,
+  board,
+  maxDifference,
+  seenAt,
+  viewerId,
   draftActions,
   onAddDraftSeries,
   onPublishAll,
   onDeleteAll,
+  onMeetings,
 }: {
   draftSeries: Row[];
   smAndDown: boolean;
@@ -166,11 +197,24 @@ export function DraftSeries({
   ladderById: Map<number, Row>;
   isAdmin: boolean;
   canDraft: boolean;
+  board?: Row | null; // the draft board read: the difference, the shared hours and the head to head of a pairing
+  maxDifference?: number | null; // the working largest difference of the match, which the page holds
+  seenAt?: string | null; // when the viewer's own team last opened this draft; null when it never did
+  viewerId?: number | null; // the reader, whose own pairings are never new
   draftActions: (item: Row) => RowAction[];
   onAddDraftSeries: () => void;
   onPublishAll: () => void;
   onDeleteAll: () => void;
+  onMeetings: (userA: number, userB: number) => Promise<Row[]>;
 }) {
+  const pairOf = pairIndex(board);
+  const boardPlayer = new Map<number, Row>((board?.players || []).map((player: Row) => [player.user_id, player]));
+  // A pairing the other captain moved since this team last opened the draft; seen_at null means it never did
+  const isFresh = (item: Row) => {
+    if (seenAt === undefined) return false;
+    const by = item.updated_by_user_id ?? item.created_by_user_id ?? null;
+    return !!item.updated_at && (seenAt === null || item.updated_at > seenAt) && (by == null || by !== viewerId);
+  };
   if (!draftSeries.length) {
     return (
       <div className="p-8 text-center">
@@ -193,7 +237,10 @@ export function DraftSeries({
       accessorFn: (row: Row) => row[`player${n}`]?.name ?? "",
       header: `Player ${n}`,
       cell: ({ row }: { row: { original: Row } }) => (
-        <PlayerName player={row.original[`player${n}`]} race={row.original[`player${n}_race`]} host={row.original.host_player_id === row.original[`player${n}`]?.id} mmr={false} />
+        <>
+          <PlayerName player={row.original[`player${n}`]} race={row.original[`player${n}_race`]} host={row.original.host_player_id === row.original[`player${n}`]?.id} mmr={false} />
+          {n === 1 ? <PairingNote item={row.original} fresh={isFresh(row.original)} /> : null}
+        </>
       ),
     },
     {
@@ -233,6 +280,41 @@ export function DraftSeries({
     },
   ];
 
+  // The pairing's own figures, which the one board read already carries
+  const differenceOf = (item: Row) => mmrGap(boardPlayer.get(item.player1_id), boardPlayer.get(item.player2_id));
+  const pairingColumns = [
+    {
+      id: "pairing_difference",
+      header: "MMR difference",
+      enableSorting: false,
+      cell: ({ row }: { row: { original: Row } }) => {
+        const difference = differenceOf(row.original);
+        const limit = maxDifference ?? null;
+        const over = limit != null && Number.isFinite(difference) && difference > limit ? difference - limit : 0;
+        return (
+          <div className="text-right">
+            <div className="tnum">{Number.isFinite(difference) ? difference : "—"}</div>
+            {over ? <div className="tnum text-xs text-warning">{over} over the largest difference</div> : null}
+          </div>
+        );
+      },
+    },
+    {
+      id: "pairing_hours",
+      header: "Shared hours",
+      enableSorting: false,
+      cell: ({ row }: { row: { original: Row } }) => <SharedHours hours={pairOf(row.original.player1_id, row.original.player2_id)?.hours} />,
+    },
+    {
+      id: "pairing_head_to_head",
+      header: "Head to head",
+      enableSorting: false,
+      cell: ({ row }: { row: { original: Row } }) => (
+        <HeadToHeadCell pair={pairOf(row.original.player1_id, row.original.player2_id)} onMeetings={() => onMeetings(row.original.player1_id, row.original.player2_id)} />
+      ),
+    },
+  ];
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 p-2">
@@ -256,6 +338,7 @@ export function DraftSeries({
           columns={[
             ...sideColumns(1),
             ...sideColumns(2),
+            ...(board ? pairingColumns : []),
             ...(isAdmin
               ? [
                   {
@@ -279,12 +362,20 @@ export function DraftSeries({
       ) : (
         <div>
           {draftSeries.map((item) => (
-            <SeriesCard
-              key={item.id}
-              series={item}
-              title={item.is_fantasy_match ? <Icon name="mdi-star" className="text-primary" title="Marked to count for fantasy when published" /> : null}
-              actions={canDraft ? <RowActions actions={draftActions(item)} /> : null}
-            />
+            <div key={item.id}>
+              <SeriesCard
+                series={item}
+                title={item.is_fantasy_match ? <Icon name="mdi-star" className="text-primary" title="Marked to count for fantasy when published" /> : null}
+                actions={canDraft ? <RowActions actions={draftActions(item)} /> : null}
+              />
+              {board ? (
+                <div className="flex flex-wrap items-center gap-2 px-4 pb-2 text-sm">
+                  <span className="tnum text-muted-foreground">{Number.isFinite(differenceOf(item)) ? `${differenceOf(item)} MMR difference` : "no MMR difference"}</span>
+                  <SharedHours hours={pairOf(item.player1_id, item.player2_id)?.hours} />
+                  <PairingNote item={item} fresh={isFresh(item)} />
+                </div>
+              ) : null}
+            </div>
           ))}
         </div>
       )}

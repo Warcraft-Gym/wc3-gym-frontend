@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T23:10:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T00:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -91,7 +91,7 @@ The one table for groups of rows: a tinted clickable header row per group, detai
 
 One player's event reads as one 12 px square per round: `win` for a round he won, `loss` for one he lost, a square split down the middle for a round he won one series and lost another, a dashed outline for a series still to play, and a quiet `border` square for a round with no series.
 
-- The mark names the winner of the series alone, so the strip reads the same whatever best-of the stage plays. The margin lives in the tooltip: "Round 3 · Lost 0-2", then the opponent as a player line. A round that holds two series lists both.
+- The mark names the winner of the series alone, so the strip reads the same whatever best-of the stage plays. The margin lives in the tooltip: "Round 3 · Lost 0 – 2", then the opponent as a player line. A round that holds two series lists both.
 - The text record "2 – 1" sits beside the strip in `win` and `loss`, so colour is never the only channel; a narrow surface drops the record and keeps the strip.
 - One strip is one keyboard stop. The group carries the name "Won 2, lost 1, played 3 of 7 rounds" and the arrow keys walk its marks, so a roster of twelve players never holds a hundred tab stops.
 - `roundMarks`, `seriesHead`, `markText`, `stripRecord` and `stripLabel` in `next/src/helpers/round-strip.mjs` hold the state of a round and the words; the component holds only the marks and the focus.

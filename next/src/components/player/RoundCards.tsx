@@ -7,6 +7,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
 import { useMatchStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
+import { record } from "@/helpers/figures.mjs";
 import { roundCards, roundStateChip } from "@/helpers/rounds.mjs";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
@@ -124,7 +125,7 @@ export function RoundCards({
                     <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} mmr={opponentMmr(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
                     {!isUnscored(card.series) ? (
                       <Badge variant="outline" className={cn("tnum", SCORE[scoreColor(card.series)])}>
-                        {myScore(card.series)} - {theirScore(card.series)}
+                        {record(myScore(card.series), theirScore(card.series)) ?? "—"}
                       </Badge>
                     ) : null}
                   </div>

@@ -357,11 +357,11 @@ export function SeasonDetailsView({ id }: { id: string }) {
       ) : null}
 
       {/* Round navigation tabs */}
-      <Card className="card mb-4 gap-0 bg-primary py-0 text-on-primary">
+      <Card className="card mb-4 gap-0 py-0">
         <Tabs value={selectedWeek} onValueChange={(value) => fetchMatches(Number(value))}>
           <TabsList variant="line" className="max-w-full justify-start overflow-x-auto">
             {Array.from({ length: season.round_count || 0 }, (_, i) => i + 1).map((week) => (
-              <TabsTrigger key={week} value={week} className="flex-none px-3 text-on-primary">
+              <TabsTrigger key={week} value={week} className="flex-none px-3">
                 <Icon name="mdi-calendar-week" />
                 Round {week}
               </TabsTrigger>

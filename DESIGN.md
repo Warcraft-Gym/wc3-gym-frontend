@@ -305,7 +305,7 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 
 ### The public league site
 
-The public league site, the `wc3-gnl-website` repository, shows the same league data in its own look, black and gold. A reader who moves between the two sites must find one way to read a record, a result and a race. Each site keeps its own look. The dark values of `win`, `loss` and the four `race-*` tokens also pass the validator on a black ground, so both sites can share them. Propose a change to a rule of this section to that repository too.
+The public league site, the `wc3-gnl-website` repository, shows the same league data in its own look, black and gold. A reader who moves between the two sites must find one way to read a record, a result and a race. Each site keeps its own look. For data, this palette is the reference for both sites: the maintainers decided on 20 September 2026 that the public site takes the dark values of `win`, `loss` and the four `race-*` tokens, which also pass the validator on a black ground. Propose a change to a rule of this section to that repository too.
 
 ## Charts
 
@@ -352,6 +352,7 @@ These parts of the app break a rule above today.
 - Coloured text carries a result outside the two exceptions: the weekly net and the bet results of `FantasyScoreBreakdown`, and the record chip of the head to head table. `win` and `loss` also colour a rating change, which is not a result.
 - The random stats page and `MatchupCompare` show ladder figures with no W3C mark and no sync time.
 - The fantasy leaderboard and the ladder table do not right-align their numeric columns. The team page prints "0 – 0" for a round nobody played. The fantasy bets page writes a series score with a colon, and the fantasy dashboard sends a series score through `record`.
+- The "Edit profile" dialog still offers one race per player, and `PlayerHeader` and the games mark still fall back to it. That profile race is a legacy value, and no new data display reads it.
 - A win rate still gets a bar on the race cards of the season report (`RateBar`) and in the per-race table of `PlayerLadderTab`. A bar for a win rate is discouraged, by the maintainers' decision of 20 September 2026.
 - The dots in `DivisionBracketing` have a 1.5 px ring. A pinned dot's ring is `on-surface`.
 - The games mark draws a fixed twenty-game rule over two W3C seasons. The event settings carry a games floor and the number of W3C seasons it counts over, and the mark reads neither. One of its two surfaces, the players page, pairs nobody (`next/src/helpers/games-rule.mjs`).

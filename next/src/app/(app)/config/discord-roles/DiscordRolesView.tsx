@@ -25,6 +25,7 @@ import { discordMark } from "@/assets/discordMark.js";
 import { teamImageUrl, showDefaultTeamImage } from "@/helpers/team-image";
 import { resolveCurrentSeasonId } from "@/helpers/current-season";
 import { cn } from "@/lib/utils";
+import { byNewest } from "@/helpers/season-order.mjs";
 
 type Role = { id: string; name: string; color?: string | null; members: number; manageable: boolean; hidden?: boolean };
 type Binding = { id: number; discord_role: string; kind: string; team_id: number | null; scope: string; season_id: number | null; synced: boolean; holders: number };
@@ -164,7 +165,7 @@ export function DiscordRolesView() {
           : "When the next season becomes current, Apply or Sync all grants it to the new holders and removes it from last season's.";
 
   const seasonGroups = groups.filter((g) => g.kind !== "team");
-  const seasonsNewestFirst = [...seasons].sort((a: any, b: any) => b.id - a.id);
+  const seasonsNewestFirst = [...seasons].sort(byNewest);
   // The holder count of each team group, so a team with no group row shows 0
   const teamCounts: Record<number, number> = Object.fromEntries(groups.filter((g) => g.kind === "team").map((g) => [g.team_id, g.count]));
 

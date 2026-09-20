@@ -4,6 +4,7 @@
 // phase and the rounds; the series read adds the series of one event.
 import { EVENT_KINDS, eventLabel, titleOf } from './event-labels.mjs';
 import { isUnscored } from './season-phase.mjs';
+import { byNewest } from "./season-order.mjs";
 
 const SUFFIX = ['th', 'st', 'nd', 'rd'];
 
@@ -65,5 +66,5 @@ export const eventRows = ({
         ladder: ladderByEvent[id] ?? null,
       };
     })
-    .sort((a, b) => b.id - a.id);
+    .sort(byNewest);
 };

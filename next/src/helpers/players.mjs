@@ -1,3 +1,4 @@
+import { byNewest } from "./season-order.mjs";
 // Shared player list filters used by the player, team assign and team detail grids.
 
 export const matchesPlayerSearch = (player, query) => {
@@ -66,7 +67,7 @@ export const defaultSignupRace = (player, gamesOf) => {
   if (!player) return null;
   const last = (player.signup_seasons || [])
     .filter(season => season.signup_race)
-    .sort((a, b) => b.id - a.id)[0];
+    .sort(byNewest)[0];
   if (last) return last.signup_race;
   const played = [...new Set((player.w3c_stats || []).map(stat => stat.race).filter(Boolean))]
     .map(race => ({ race, games: gamesOf(race) }))

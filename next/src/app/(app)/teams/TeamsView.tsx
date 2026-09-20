@@ -19,6 +19,7 @@ import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { loadSeasons, resolveCurrentSeasonId } from "@/helpers/current-season.js";
 import { showDefaultTeamImage, teamImageUrl } from "@/helpers/team-image.js";
 import { useAuth, useSeason, useTeamStore } from "@/stores";
+import { byNewest } from "@/helpers/season-order.mjs";
 
 type Row = Record<string, any>;
 const WIDE = "hidden min-[960px]:table-cell";
@@ -54,7 +55,7 @@ export function TeamsView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const playedSeasons = (team: Row) => (team.seasons_info || []).map((info: Row) => seasonStore.seasons.find((season) => season.id === info.season_id)).filter(Boolean).sort((a: Row, b: Row) => b.id - a.id);
+  const playedSeasons = (team: Row) => (team.seasons_info || []).map((info: Row) => seasonStore.seasons.find((season) => season.id === info.season_id)).filter(Boolean).sort(byNewest);
   const currentName = seasonStore.seasons.find((season) => season.id === currentSeasonId)?.name;
   const playsCurrent = (team: Row) => (team.seasons_info || []).some((info: Row) => info.season_id === currentSeasonId);
   const groups = !currentSeasonId ? [{ title: "All teams", items: teams }] : [{ title: currentName || "Current season", items: teams.filter(playsCurrent) }, { title: "Past teams", items: teams.filter((team) => !playsCurrent(team)) }];

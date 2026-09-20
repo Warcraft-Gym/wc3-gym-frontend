@@ -68,7 +68,8 @@ export function PlayerName({
       {player.country ? <FlagIcon countryIdentifier={player.country} /> : <span className="fp" />}
       <span className="name">{player.name}</span>
       {race ? <RaceIcon raceIdentifier={race} /> : race !== undefined ? <span className="fp w-[1.4em]" /> : null}
-      {rating != null ? <span className="tnum font-normal text-muted-foreground">{rating}</span> : null}
+      {/* the MMR never shrinks, so a narrow cell truncates the name and keeps the number whole */}
+      {rating != null ? <span className="shrink-0 tnum font-normal text-muted-foreground">{rating}</span> : null}
       {/* the cue is always coloured, so a reader knows before the click that the page stays */}
       {opensPanel ? <Icon name="mdi-dock-right" size={16} className="-ml-0.5 text-primary" /> : null}
       {offRace ? <Badge variant="outline" title={offRaceHint} className="text-warning border-warning">off-race</Badge> : null}

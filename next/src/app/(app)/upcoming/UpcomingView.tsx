@@ -14,6 +14,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { SM_AND_DOWN, useBreakpoint } from "@/hooks/breakpoint";
 import { resolveCurrentSeason } from "@/helpers/current-season";
 import { eventLabel } from "@/helpers/event-labels.mjs";
+import { record } from "@/helpers/figures.mjs";
 import { local, scheduleDays } from "@/helpers/schedule.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
 import { gmt } from "@/helpers/timezone.mjs";
@@ -36,7 +37,7 @@ const timeOf = (value: string) => {
   const at = local(value);
   return `${at.toFormat("HH:mm")} ${gmt(at.offset)}`;
 };
-const scoreOf = (row: Row) => (isUnscored(row) ? "—" : `${row.player1_score}-${row.player2_score}`);
+const scoreOf = (row: Row) => (isUnscored(row) ? "—" : record(row.player1_score, row.player2_score) ?? "—");
 const teamsOf = (row: Row) => (row.match?.team1 && row.match?.team2 ? `${row.match.team1.name} vs ${row.match.team2.name}` : null);
 const roundLink = (row: Row) => <Link href={`/match/${row.match_id}`}>Round {row.match?.playday ?? "?"}</Link>;
 const dayLine = (group: Day) => (

@@ -1,6 +1,7 @@
 // The round strip of one player in one event: one mark per round, and the words its
 // tooltip and its label read. The mark names the winner of the series; the margin
 // lives in the tooltip, so best of 1, 3 and 5 all draw the same strip.
+import { record } from './figures.mjs';
 import { isUnscored } from './season-phase.mjs';
 
 const WORD = { won: 'Won', lost: 'Lost', drawn: 'Drew' };
@@ -11,7 +12,7 @@ const sideOf = (series, playerId) => {
   const [me, them] = mine ? [series.player1_score, series.player2_score] : [series.player2_score, series.player1_score];
   return {
     result: isUnscored(series) ? 'pending' : me > them ? 'won' : me < them ? 'lost' : 'drawn',
-    score: `${me}-${them}`,
+    score: record(me, them) ?? '—',
     opponent: (mine ? series.player2 : series.player1) ?? null,
     opponentRace: mine ? series.player2_race : series.player1_race,
     // the rating the row names on that race; null where the payload carries none

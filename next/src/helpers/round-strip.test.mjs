@@ -41,9 +41,9 @@ test('the series of another player, and of another event, never reach the strip'
 
 test('the head names the round and the margin, and a round with no series says so', () => {
   const marks = roundMarks([series(1, true, 2, 1, them(3, 'Scorch')), series(2, true, null, null, them(4, 'Taro'))], 7, 3);
-  assert.equal(seriesHead(1, marks[0].series[0]), 'Round 1 · Won 2-1');
+  assert.equal(seriesHead(1, marks[0].series[0]), 'Round 1 · Won 2 – 1');
   assert.equal(seriesHead(2, marks[1].series[0]), 'Round 2 · To play');
-  assert.equal(markText(marks[0]), 'Round 1 · Won 2-1, vs Scorch');
+  assert.equal(markText(marks[0]), 'Round 1 · Won 2 – 1, vs Scorch');
   assert.equal(markText(marks[2]), 'Round 3 · No series');
 });
 

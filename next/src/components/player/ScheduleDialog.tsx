@@ -14,6 +14,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { authHeader } from "@/helpers/fetch-wrapper";
 import { commonHours } from "@/helpers/blocks.mjs";
+import { roundEndLine } from "@/helpers/rounds.mjs";
 import { blockedSpans, dayCells, insideBlocked, windowDays, zoneRow } from "@/helpers/schedule-grid.mjs";
 import { seriesContext } from "@/helpers/series-actions.mjs";
 import { pickedInstant, pickerParts, viewerZone } from "@/helpers/timezone.mjs";
@@ -114,9 +115,11 @@ export function ScheduleDialog({
   const players = (row.player2_id === playerId ? [...sides].reverse() : sides)
     .map((player) => ({ player, zone: (player?.timezone as string) || null, you: !!playerId && player?.id === playerId }));
 
-  // A round ends at midnight in the event's zone; the viewer reads the same moment on his clock
+  // A round ends at midnight in the event's zone; the round cards read the same line from the same helper
   const endZone: string | null = row.match?.season?.round_end_zone || null;
   const windowEnd = freeTime ? DateTime.fromISO(freeTime.end, { zone: "UTC" }) : null;
+  // An event with no zone of its own still ends the window on the viewer's clock
+  const endLine: string = windowEnd ? roundEndLine(windowEnd, endZone ?? viewer, viewer) : "";
   const otherZone = players.find((one) => one.zone && one.zone !== viewer)?.zone ?? null;
 
   const cellTitle = (at: DateTime) => {
@@ -350,12 +353,7 @@ export function ScheduleDialog({
                 <>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <span className="text-sm font-medium">{commonHours(freeTime.hours)}</span>
-                    {windowEnd ? (
-                      <span className={CAPTION}>
-                        Round ends {windowEnd.setZone(endZone ?? viewer).toFormat("ccc d LLL, HH:mm")} {endZone ?? viewer}
-                        {endZone ? ` · ${windowEnd.setZone(viewer).toFormat("ccc d LLL, HH:mm")} your time` : ""}
-                      </span>
-                    ) : null}
+                    {endLine ? <span className={CAPTION}>{endLine}</span> : null}
                     <ToggleGroup
                       className="ml-auto"
                       variant="outline"

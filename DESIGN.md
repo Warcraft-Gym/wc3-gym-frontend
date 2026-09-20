@@ -138,7 +138,7 @@ Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 - The app bar title reads "WC3 Gym Dashboard" and always links to `/`.
 - A round is answered with two buttons, "Check in" and "Sit out". The status reads "Checked in", "Out", "Out (blocked times)" or "No answer". Never "can play" or "can't play".
 - A record reads "19 – 11 (63%)", wins then losses. The percent shows from ten games up; under ten the record stands alone, "3 – 1". `record` in `next/src/helpers/figures.mjs` writes it. No bar in a cell, no footnote, and no "won" in a cell, because the column title carries it.
-- A head to head reads as the score in the pairing's order with the last meeting after it: "2-1, last met Season 18".
+- A head to head reads as the score in the pairing's order with the last meeting after it: "2 – 1, last met Season 18".
 - The app shows no win chance for an MMR or for an MMR difference over the whole population. A figure counted from one player's own games is fine.
 
 ## Shared components

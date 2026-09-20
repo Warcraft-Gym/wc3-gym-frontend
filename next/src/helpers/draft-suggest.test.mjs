@@ -88,3 +88,10 @@ test('over the exact ceiling the greedy path still fills every open place', () =
   const { pairs } = suggestPairings({ team1_id: 1, team2_id: 2, series_per_round: 13, players, pairs: [] }, 100);
   assert.equal(pairs.length, 13);
 });
+
+test('a player in a published series of the fixture is never suggested again', () => {
+  // one published series takes 11 and 21, so the one open place can only hold 12 vs 22
+  const published = [{ player1_id: 11, player2_id: 21 }];
+  const { pairs } = suggestPairings({ ...BOARD, series_per_round: 2, published_series: 1 }, 100, [], published);
+  assert.deepEqual(keys(pairs), ['12-22']);
+});

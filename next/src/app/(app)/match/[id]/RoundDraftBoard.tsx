@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -47,9 +47,8 @@ function scaleOf(players: Row[]) {
 
 /** One row per player at its MMR; rows that would overlap are pushed apart, so every name reads. */
 function placeRows(players: Row[], scale: { high: number; low: number }, height: number) {
-  const span = Math.max(1, scale.high - scale.low);
   const rows = players.map((player) => {
-    const at = PAD + ((scale.high - (player.mmr as number)) / span) * (height - 2 * PAD);
+    const at = placeAt(player.mmr as number, scale, height);
     return { player, at, top: at };
   });
   for (let i = 1; i < rows.length; i++) if (rows[i].top - rows[i - 1].top < MIN_ROW) rows[i].top = rows[i - 1].top + MIN_ROW;
@@ -128,7 +127,8 @@ function DifferenceControl({ value, stageValue, busy, onChange }: { value: numbe
     setShown(value);
     setText(String(value));
   }
-  const commit = (next: number) => {
+  const commit = (raw: number) => {
+    const next = Math.round(raw); // the backend field is an int, so a fraction is never sent
     if (!Number.isFinite(next) || next < 1 || next === value) return setText(String(value));
     onChange(next);
   };
@@ -166,6 +166,7 @@ export function RoundDraftBoard({
   state,
   maxDifference,
   drafted,
+  published,
   team1,
   team2,
   playerById,
@@ -185,6 +186,7 @@ export function RoundDraftBoard({
   state: Row | null;
   maxDifference: number; // the working value of the match, which the page holds for the board and the table
   drafted: Row[];
+  published: Row[]; // a player in a published series of this fixture is taken too
   team1: Row;
   team2: Row;
   playerById: Record<number, Row>; // the rosters the page holds: the board read names no player
@@ -204,8 +206,18 @@ export function RoundDraftBoard({
   const [breaking, setBreaking] = useState<number | null>(null);
   const [showPaired, setShowPaired] = useState(false);
   const [sittingOpen, setSittingOpen] = useState<number | null>(null);
-  const [suggested, setSuggested] = useState<Row | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
   const [dropped, setDropped] = useState<number[]>([]);
+
+  // The card holds no snapshot: the suggestion is read again from the board, the working value and
+  // the pairings, so "Set to N" and every draft write move it. A player who sits out is not on it.
+  const suggested: Row | null = useMemo(
+    () =>
+      suggestOpen && board
+        ? suggestPairings({ ...board, players: (board.players || []).filter((one: Row) => !isOut(one.user_id, one.team_id)) }, maxDifference, drafted, published)
+        : null,
+    [suggestOpen, board, maxDifference, drafted, published, isOut],
+  );
 
   if (!board) return null;
 
@@ -222,14 +234,15 @@ export function RoundDraftBoard({
   const filled = (board.published_series || 0) + drafted.length;
   const full = seriesPerRound > 0 && filled >= seriesPerRound;
 
-  // Who a player is drafted against on this fixture, and the draft row that holds it
+  // Who a player is paired against on this fixture, published or draft; only a draft row can move
+  const pairings = [...published, ...drafted];
   const draftOf = (playerId: number) => drafted.find((row) => row.player1_id === playerId || row.player2_id === playerId);
   const partnerOf = (playerId: number) => {
-    const row = draftOf(playerId);
+    const row = pairings.find((one) => one.player1_id === playerId || one.player2_id === playerId);
     if (!row) return null;
     return byId.get(row.player1_id === playerId ? row.player2_id : row.player1_id) || null;
   };
-  const takenIds = new Set(drafted.flatMap((row) => [row.player1_id, row.player2_id]));
+  const takenIds = new Set(pairings.flatMap((row) => [row.player1_id, row.player2_id]));
 
   const sideOf = (player: Row) => (player.team_id === board.team1_id ? 1 : 2);
   const ordered = (teamId: number) =>
@@ -260,18 +273,18 @@ export function RoundDraftBoard({
   const pairedOther = picked ? opponentsOf(picked).filter((player) => takenIds.has(player.user_id)) : [];
   const nearest = far.find((player) => Number.isFinite(gapTo(player)));
   const pickedPartner = picked ? partnerOf(picked.user_id) : null;
+  const pickedDraft = picked ? draftOf(picked.user_id) : undefined;
 
-  // a player who sits out this round is not on the board, so Suggest never picks that player
   const runSuggest = () => {
     setDropped([]);
-    setSuggested(suggestPairings({ ...board, players: [...left, ...right] }, maxDifference, drafted));
+    setSuggestOpen(true);
   };
 
   // The whole set goes in one write, so the board and the state are read once for all of it
   const addSuggested = async () => {
     const pairs = (suggested?.pairs || []).filter((pair: Row) => !dropped.includes(pair.player1_id));
     await onAddPairings(pairs.map((pair: Row) => ({ player1_id: pair.player1_id, player2_id: pair.player2_id })));
-    setSuggested(null);
+    setSuggestOpen(false);
   };
 
   const add = async (opponent: Row) => {
@@ -370,6 +383,8 @@ export function RoundDraftBoard({
           <SharedHours hours={pair?.hours} />
           <span className="flex-1" />
           {kind === "paired" ? (
+            // a published pairing is not moved here, so only a draft opponent offers the change
+            draftOf(opponent.user_id) ? (
             <Button
               variant="outline"
               size="sm"
@@ -383,13 +398,14 @@ export function RoundDraftBoard({
               <Icon name="mdi-swap-horizontal" />
               Change opponent
             </Button>
+            ) : null
           ) : (
             <>
-              <Button size="sm" disabled={busy} onClick={() => (pickedPartner ? changeTo(opponent) : add(opponent))}>
-                <Icon name={pickedPartner ? "mdi-swap-horizontal" : "mdi-plus"} />
-                {pickedPartner ? `Change to ${opponent.name}` : "Add to draft"}
+              <Button size="sm" disabled={busy} onClick={() => (pickedDraft ? changeTo(opponent) : add(opponent))}>
+                <Icon name={pickedDraft ? "mdi-swap-horizontal" : "mdi-plus"} />
+                {pickedDraft ? `Change to ${opponent.name}` : "Add to draft"}
               </Button>
-              {pickedPartner ? (
+              {pickedDraft ? (
                 <Button variant="outline" size="sm" disabled={busy} onClick={() => add(opponent)}>
                   Add as a second pairing
                 </Button>
@@ -468,7 +484,6 @@ export function RoundDraftBoard({
         {ownTeamId ? (
           <Button
             variant={readyOf(ownTeamId)?.ready_at ? "outline" : "default"}
-            aria-pressed={!!readyOf(ownTeamId)?.ready_at}
             disabled={busy}
             onClick={() => onSetReady(ownTeamId, !readyOf(ownTeamId)?.ready_at)}
           >
@@ -600,7 +615,7 @@ export function RoundDraftBoard({
           {picked ? (
             <Card className="card gap-0 py-0">
               <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-                {pickedPartner ? `Change opponent for ${picked.name}` : `Opponents for ${picked.name}`}
+                {pickedDraft ? `Change opponent for ${picked.name}` : `Opponents for ${picked.name}`}
                 <span className="flex-1" />
                 <Button variant="ghost" size="sm" className="text-on-primary" onClick={() => setPick(null)}>
                   <Icon name="mdi-close" />
@@ -633,14 +648,16 @@ export function RoundDraftBoard({
                   </div>
                 ) : null}
                 {near.map((opponent) => candidate(opponent, "near"))}
-                {far.length ? <div className="px-3 py-1 text-sm tnum text-muted-foreground">Further in MMR ({far.length})</div> : null}
+                {far.length && picked.mmr != null ? <div className="px-3 py-1 text-sm tnum text-muted-foreground">Further in MMR ({far.length})</div> : null}
                 {far.map((opponent) => candidate(opponent, "far"))}
+                {pairedOther.length ? (
                 <div className="px-3 pt-2">
                   <Button variant="ghost" size="sm" className="text-primary-text" aria-expanded={showPaired} onClick={() => setShowPaired((was) => !was)}>
                     <Icon name={showPaired ? "mdi-chevron-down" : "mdi-chevron-right"} />
                     Already paired ({pairedOther.length})
                   </Button>
                 </div>
+                ) : null}
                 {showPaired ? pairedOther.map((opponent) => candidate(opponent, "paired")) : null}
               </div>
             </Card>
@@ -658,7 +675,7 @@ export function RoundDraftBoard({
           <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
             Suggested pairings
             <span className="flex-1" />
-            <Button variant="ghost" size="sm" className="text-on-primary" onClick={() => setSuggested(null)}>
+            <Button variant="ghost" size="sm" className="text-on-primary" onClick={() => setSuggestOpen(false)}>
               <Icon name="mdi-close" />
               Cancel
             </Button>
@@ -709,7 +726,7 @@ export function RoundDraftBoard({
               </div>
             ) : null}
             <div className="mt-3 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setSuggested(null)}>
+              <Button variant="ghost" onClick={() => setSuggestOpen(false)}>
                 Cancel
               </Button>
               <Button disabled={busy || !suggested.pairs.filter((pair: Row) => !dropped.includes(pair.player1_id)).length} onClick={addSuggested}>

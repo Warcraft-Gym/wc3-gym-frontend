@@ -121,11 +121,12 @@ function fillSteps(left, right, open, maxDifference, filled) {
   return fills;
 }
 
-/** Fill the open places of the round. The pairings already drafted stay, a player with no MMR
- *  is skipped, and no suggested pairing is wider than the working difference. `fills` names the
- *  differences at which one more place would fill. */
-export function suggestPairings(board, maxDifference, drafted = []) {
-  const taken = new Set(drafted.flatMap((row) => [row.player1_id, row.player2_id]));
+/** Fill the open places of the round. The pairings already drafted and the published series of the
+ *  fixture stay, a player in either is never suggested again, a player with no MMR is skipped, and
+ *  no suggested pairing is wider than the working difference. `fills` names the differences at
+ *  which one more place would fill. */
+export function suggestPairings(board, maxDifference, drafted = [], published = []) {
+  const taken = new Set([...drafted, ...published].flatMap((row) => [row.player1_id, row.player2_id]));
   const free = (board?.players || []).filter((player) => !taken.has(player.user_id));
   // The places of the round the published series and the drafts leave
   const open = Math.max(0, (board?.series_per_round || 0) - (board?.published_series || 0) - drafted.length);

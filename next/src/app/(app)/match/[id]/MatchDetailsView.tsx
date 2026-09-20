@@ -583,6 +583,7 @@ export function MatchDetailsView({ id }: { id: string }) {
       await read();
     } catch (error: any) {
       console.error("Failed to write the draft:", error);
+      await read().catch(() => {}); // a set that failed part-way still wrote rows, so the board reads them
       setErrorMessage(error?.error || error?.message || String(error));
     } finally {
       setIsLoading(false);
@@ -816,6 +817,7 @@ export function MatchDetailsView({ id }: { id: string }) {
                   state={draftState}
                   maxDifference={maxDifference}
                   drafted={draftSeries}
+                  published={series}
                   team1={team1}
                   team2={team2}
                   playerById={seriesPlayerById}

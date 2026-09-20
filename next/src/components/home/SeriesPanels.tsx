@@ -9,7 +9,7 @@ import { TeamName } from "@/components/TeamName";
 import { HomePanel, Quiet, ROW, SkeletonRows } from "@/components/home/HomePanel";
 import { PLATFORM_ICONS, platformOf } from "@/helpers/casts.mjs";
 import { record } from "@/helpers/figures.mjs";
-import { captainRow, rowContext } from "@/helpers/home-hub.mjs";
+import { captainRow, rowContext, seriesWhen } from "@/helpers/home-hub.mjs";
 import { local } from "@/helpers/schedule.mjs";
 import { gmt } from "@/helpers/timezone.mjs";
 
@@ -19,8 +19,7 @@ type Row = Record<string, any>;
 // The panel shows five series at most; "All upcoming" holds the rest
 const MAX_NEXT = 5;
 
-// A row states its date in the reader's own zone; one with no time says so
-const whenText = (row: Row) => (row.date_time ? local(row.date_time).toFormat("ccc d LLL, HH:mm") : "No time booked");
+// A row states its day in the reader's own zone
 const dayText = (row: Row) => (row.date_time ? local(row.date_time).toFormat("ccc d LLL") : "");
 
 /** The two sides of a home series row: the players, the teams that field them, or "To be decided". */
@@ -55,7 +54,7 @@ const CastChip = ({ cast }: { cast: Row }) => (
 );
 
 /** The next series of the whole app, and, for a captain, the fixture he still has to draft. */
-export function NextMatches({ rows, fixtures, loading, order }: { rows: Row[]; fixtures: Row[]; loading: boolean; order: number }) {
+export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: Row[]; fixtures: Row[]; loading: boolean; failed?: boolean; order: number }) {
   return (
     <HomePanel
       icon="mdi-clock-outline"
@@ -79,6 +78,7 @@ export function NextMatches({ rows, fixtures, loading, order }: { rows: Row[]; f
                     Draft pairings
                   </Button>
                 </div>
+                {fixture.event ? <div className="text-sm text-muted-foreground">{fixture.event}</div> : null}
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                   {[fixture.team1, fixture.team2].filter(Boolean).map((team: Row, index: number) => (
                     <span key={team.id} className="flex min-w-0 items-center gap-2">
@@ -95,7 +95,7 @@ export function NextMatches({ rows, fixtures, loading, order }: { rows: Row[]; f
             <div key={row.id} className={ROW}>
               <div className="flex flex-wrap items-center gap-2">
                 <Link href={`/series/${row.id}`} className="tnum font-medium text-inherit no-underline hover:underline">
-                  {whenText(row)}
+                  {seriesWhen(row)}
                 </Link>
                 {row.cast ? <CastChip cast={row.cast} /> : null}
               </div>
@@ -112,7 +112,7 @@ export function NextMatches({ rows, fixtures, loading, order }: { rows: Row[]; f
               <Versus row={row} />
             </div>
           ))}
-          {!rows.length && !fixtures.length ? <p className="text-sm">No series is booked. A booked time shows here as soon as two players agree one.</p> : null}
+          {!rows.length && !fixtures.length && !failed ? <p className="text-sm">No series is booked. A booked time shows here as soon as two players agree one.</p> : null}
           {rows.length ? <Quiet>Times in your zone, {gmt(DateTime.local().offset)}</Quiet> : null}
         </>
       )}
@@ -121,7 +121,7 @@ export function NextMatches({ rows, fixtures, loading, order }: { rows: Row[]; f
 }
 
 /** What a caster claimed: the streams still to come, then the VODs of the games already played. */
-export function CastedGames({ upcoming, recent, loading, order }: { upcoming: Row[]; recent: Row[]; loading: boolean; order: number }) {
+export function CastedGames({ upcoming, recent, loading, failed, order }: { upcoming: Row[]; recent: Row[]; loading: boolean; failed?: boolean; order: number }) {
   const group = (title: string, rows: Row[], watch: { label: string; icon: string }) =>
     rows.length ? (
       <div key={title} className="mt-3 first:mt-0">
@@ -157,7 +157,7 @@ export function CastedGames({ upcoming, recent, loading, order }: { upcoming: Ro
         <>
           {group("Upcoming", upcoming, { label: "Watch", icon: "mdi-video-outline" })}
           {group("Recent", recent, { label: "VOD", icon: "mdi-play-circle-outline" })}
-          {!upcoming.length && !recent.length ? <p className="text-sm">No cast is claimed yet.</p> : null}
+          {!upcoming.length && !recent.length && !failed ? <p className="text-sm">No cast is claimed yet.</p> : null}
         </>
       )}
     </HomePanel>

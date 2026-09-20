@@ -1,6 +1,7 @@
-// The pure parts of the home hub: the panel order, the signup chip, the member's two series, the captain row.
+// The pure parts of the home hub: the panel order, the open signups, the member's two series, the captain row.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
+import { local } from './schedule.mjs';
 import { isUnscored } from './season-phase.mjs';
 
 // One order per panel drives both layouts: the phone stack and the panels inside each desktop column.
@@ -11,22 +12,19 @@ const NO_SERIES = { signup: 1, board: 2, own: 3, next: 4, cast: 5 };
  *  @param {boolean} hasSeries */
 export const panelOrder = (hasSeries) => (hasSeries ? WITH_SERIES : NO_SERIES);
 
-/** The chip on a signup that closes inside two days; null further out and with no close time.
- *  @param {string|null|undefined} closesAt @param {*} [now] */
-export const closesIn = (closesAt, now = DateTime.now()) => {
-  const at = closesAt ? DateTime.fromISO(closesAt, { zone: 'utc' }) : null;
-  if (!at?.isValid) return null;
-  const days = at.setZone(now.zone).startOf('day').diff(now.startOf('day'), 'days').days;
-  if (days < 0 || days > 2) return null;
-  return ['closes today', 'closes tomorrow', 'closes in 2 days'][days];
-};
-
-/** The events the member may still enter, leave or check in to, in the order they close; a row with
- *  no close time reads in the order the event starts, which is every row the member read sends today.
+/** The events the member may still enter, leave or check in to, in the order the events start.
  *  @param {any[]} [rows] the GET /me/events rows */
 export const openSignups = (rows = []) => rows
   .filter((row) => row.action === 'sign_up' || row.action === 'check_in' || (row.action === 'withdraw' && row.signups_open))
-  .sort((a, b) => String(a.signup_end ?? a.start ?? '9999').localeCompare(String(b.signup_end ?? b.start ?? '9999')));
+  .sort((a, b) => String(a.start ?? '9999').localeCompare(String(b.start ?? '9999')));
+
+/** When a series row reads: its local day and time, "Started HH:mm" once its time has passed, or no time.
+ *  @param {any} row @param {*} [now] */
+export const seriesWhen = (row, now = DateTime.now()) => {
+  if (!row?.date_time) return 'No time booked';
+  const at = local(row.date_time);
+  return at < now ? `Started ${at.toFormat('HH:mm')}` : at.toFormat('ccc d LLL, HH:mm');
+};
 
 // A round orders the member's series; a booked time breaks the ties inside one round
 const seriesKey = (series) => [series.match?.playday ?? 0, series.date_time ?? ''];

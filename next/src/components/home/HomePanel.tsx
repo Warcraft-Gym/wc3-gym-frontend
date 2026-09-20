@@ -51,7 +51,7 @@ export function SkeletonRows({ rows = 3, className }: { rows?: number; className
   );
 }
 
-/** A quiet line under a panel's rows: the time zone note, the sync mark, an empty state. */
+/** A quiet line under a panel's rows: the time zone note or an empty state. */
 export const Quiet = ({ children }: { children: React.ReactNode }) => (
   <p className="mt-3 text-sm text-muted-foreground">{children}</p>
 );

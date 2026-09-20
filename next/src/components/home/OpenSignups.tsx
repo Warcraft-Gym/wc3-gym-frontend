@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { HomePanel, ROW, SkeletonRows } from "@/components/home/HomePanel";
-import { closesIn } from "@/helpers/home-hub.mjs";
+import { RaceIcon } from "@/components/RaceIcon";
+import { raceWrapper } from "@/helpers/races.js";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Card = Record<string, any>;
 
-/** The events a member may still enter, soonest closing first. Every choice of equal standing
- *  takes the same outlined button; urgency is the order and one chip, never a louder button. */
+const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
+
+/** The events a member may still enter, in the order the events start. Every choice of equal
+ *  standing takes the same outlined button, never a louder one. */
 export function OpenSignups({
   cards,
   acting,
@@ -31,34 +34,30 @@ export function OpenSignups({
       {loading ? (
         <SkeletonRows rows={3} />
       ) : cards.length ? (
-        cards.map((card) => {
-          const soon = closesIn(card.closesAt);
-          return (
-            <div key={card.key} className={ROW}>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="min-w-0 font-medium">{card.name}</span>
-                <span className="ml-auto flex items-center gap-2">
-                  {card.chip ? (
-                    <Badge className={toneClass("success")}>
-                      <Icon name="mdi-check" />
-                      {card.chip}
-                    </Badge>
-                  ) : null}
-                  {card.primary ? <SignupButton card={card} acting={acting} onAct={onAct} /> : null}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                {card.dates ? <span className="tnum">plays {card.dates}</span> : null}
-                {soon ? (
-                  <Badge variant="outline" className="border-warning text-warning">
-                    <Icon name="mdi-alert-outline" />
-                    {soon}
+        cards.map((card) => (
+          <div key={card.key} className={ROW}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 font-medium">{card.name}</span>
+              <span className="ml-auto flex items-center gap-2">
+                {card.chip ? (
+                  <Badge className={toneClass("success")}>
+                    <Icon name="mdi-check" />
+                    {card.chip}
+                    {/* every race the member entered rides the one chip, so a two-race entry reads both */}
+                    {(card.races ?? []).map((race: string) => (
+                      <span key={race} className="inline-flex items-center gap-1">
+                        <RaceIcon raceIdentifier={race} size="1.2em" />
+                        {raceName(race)}
+                      </span>
+                    ))}
                   </Badge>
                 ) : null}
-              </div>
+                {card.primary ? <SignupButton card={card} acting={acting} onAct={onAct} /> : null}
+              </span>
             </div>
-          );
-        })
+            {card.dates ? <div className="tnum text-sm text-muted-foreground">plays {card.dates}</div> : null}
+          </div>
+        ))
       ) : (
         <p className="text-sm">No signup is open. A new event shows here as soon as it takes entries.</p>
       )}

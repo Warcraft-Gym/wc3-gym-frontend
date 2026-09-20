@@ -1,24 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { captainRow, closesIn, openSignups, ownScore, ownSeries, panelOrder, rowContext } from './home-hub.mjs';
+import { captainRow, openSignups, ownScore, ownSeries, panelOrder, rowContext, seriesWhen } from './home-hub.mjs';
 
 test('a member with no series of his own reads the open signups first', () => {
   assert.deepEqual(panelOrder(true), { own: 1, next: 2, signup: 3, board: 4, cast: 5 });
   assert.deepEqual(panelOrder(false), { signup: 1, board: 2, own: 3, next: 4, cast: 5 });
 });
 
-test('a signup closing inside two days carries a chip', () => {
-  const now = DateTime.fromISO('2026-09-20T10:00', { zone: 'utc' });
-  assert.equal(closesIn('2026-09-20T18:00:00Z', now), 'closes today');
-  assert.equal(closesIn('2026-09-21T06:00:00Z', now), 'closes tomorrow');
-  assert.equal(closesIn('2026-09-22T23:00:00Z', now), 'closes in 2 days');
-  assert.equal(closesIn('2026-09-23T00:30:00Z', now), null);
-  assert.equal(closesIn('2026-09-19T18:00:00Z', now), null);
-  assert.equal(closesIn(null, now), null);
+test('a series already under way reads the time it started', () => {
+  const now = DateTime.fromISO('2026-09-20T20:00Z').toLocal();
+  const at = (value) => DateTime.fromISO(value, { zone: 'utc' }).toLocal();
+  assert.equal(seriesWhen({ date_time: '2026-09-20T19:00:00Z' }, now), `Started ${at('2026-09-20T19:00:00Z').toFormat('HH:mm')}`);
+  assert.equal(seriesWhen({ date_time: '2026-09-21T19:00:00Z' }, now), at('2026-09-21T19:00:00Z').toFormat('ccc d LLL, HH:mm'));
+  assert.equal(seriesWhen({ date_time: null }, now), 'No time booked');
+  assert.equal(seriesWhen(null, now), 'No time booked');
 });
 
-test('the open signups are the rows a member may still enter, leave or check in to, soonest first', () => {
+test('the open signups are the rows a member may still enter, leave or check in to, by event start', () => {
   const rows = [
     { id: 1, action: 'sign_up', start: '2026-11-09' },
     { id: 2, action: 'withdraw', signups_open: true, start: '2026-09-28' },

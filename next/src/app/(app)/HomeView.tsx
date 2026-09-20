@@ -24,8 +24,7 @@ const buildCards = homeCards as unknown as (input: { events: Row[]; me: Row | nu
 // The season the leaderboard names: the latest GNL season that has started, else the latest of all
 const boardOf = (seasons: Row[]) => [...seasons].reverse().find((season) => season.phase !== "open") ?? seasons[seasons.length - 1] ?? null;
 
-// The seasons that hold the member's own series: the started ones /me names, or, off-season, the
-// finished board season. A season still open pairs nobody, so it takes no read of its own.
+// The started seasons /me names, or, off-season, the finished board season
 const ownSeasons = (mine: Row[], board: Row | null): Row[] => {
   const started = mine.filter((season) => season.signed_up && season.phase !== "open");
   if (started.length || !board || board.phase !== "complete") return started;
@@ -45,7 +44,8 @@ export function HomeView() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [myEvents, setMyEvents] = useState<Row[]>([]);
   const [hub, setHub] = useState<Row | null>(null);
-  const [boardTeams, setBoardTeams] = useState<Row[]>([]);
+  // null while the read is out or once it failed; a failed read never prints an empty state
+  const [boardTeams, setBoardTeams] = useState<Row[] | null>(null);
   // one /player-series answer per season the member is in, keyed by season id
   const [seasonData, setSeasonData] = useState<Row>({});
   const [acting, setActing] = useState<string | null>(null);
@@ -78,16 +78,15 @@ export function HomeView() {
         ? {
             ...card,
             dates: dateRange({ start_date: row.start, end_date: row.end }),
-            chip: row.checked_in_at ? "Checked in" : row.joined ? "Signed up" : null,
-            // the chip reads the close time of the signup window; no member read carries one
-            closesAt: row.signup_end ?? null,
+            chip: row.checked_in_at ? "Checked in" : row.joined ? (row.entrant_races?.length ? "Signed up as" : "Signed up") : null,
+            races: row.checked_in_at ? [] : (row.entrant_races ?? []),
           }
         : null;
     })
     .filter(Boolean) as Row[];
 
-  // Every event whose row hands a captain a fixture he has still to draft
-  const fixtures: Row[] = myEvents.map((row) => row.captain_fixture).filter(Boolean);
+  // Every event whose row hands a captain a fixture he has still to draft; the row names its event
+  const fixtures: Row[] = myEvents.filter((row) => row.captain_fixture).map((row) => ({ ...row.captain_fixture, event: row.name }));
 
   const loadOwn = async (entries: Row[]) => {
     const answers = await Promise.all(entries.map((season) =>
@@ -129,7 +128,10 @@ export function HomeView() {
           fetchSeasons(),
           eventStore.myEvents(),
           // the hub's one new read: public, edge cached, once per page load
-          seriesStore.homeSeries().catch(() => null),
+          seriesStore.homeSeries().catch(() => {
+            setErrorMessage("The next matches and the casted games could not be loaded.");
+            return null;
+          }),
         ]);
         if (!live) return;
         setMyEvents(rows);
@@ -137,11 +139,16 @@ export function HomeView() {
         const season = boardOf(known);
         const entries = ownSeasons((me?.seasons ?? []) as Row[], season);
         const [teams] = await Promise.all([
-          season ? teamStore.fetchTeamsBySeasonBasic(season.id).catch(() => []) : Promise.resolve([]),
+          season
+            ? teamStore.fetchTeamsBySeasonBasic(season.id).catch(() => {
+                setErrorMessage("The season leaderboard could not be loaded.");
+                return null;
+              })
+            : Promise.resolve([]),
           loadOwn(entries),
         ]);
         if (!live) return;
-        setBoardTeams(teams ?? []);
+        setBoardTeams(teams);
       } catch (error) {
         console.error("Error loading the home page:", error);
         if (live) setErrorMessage((error as Error).message || "Failed to load the home page.");
@@ -177,12 +184,12 @@ export function HomeView() {
             onSchedule={(series) => scheduleDialog.current?.open(series)}
             onReport={(series) => reportDialog.current?.open(series)}
           />
-          <NextMatches rows={hub?.next ?? []} fixtures={fixtures} loading={loading} order={order.next} />
+          <NextMatches rows={hub?.next ?? []} fixtures={fixtures} loading={loading} failed={!hub} order={order.next} />
           <OpenSignups cards={signupRows} acting={acting} loading={loading} order={order.signup} onAct={act} />
         </div>
         <div className="contents min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-col min-[960px]:gap-5">
-          <SeasonBoard season={board} nextSeason={nextSeason} teams={boardTeams} loading={loading} order={order.board} />
-          <CastedGames upcoming={hub?.casts_upcoming ?? []} recent={hub?.casts_recent ?? []} loading={loading} order={order.cast} />
+          <SeasonBoard season={board} nextSeason={nextSeason} teams={boardTeams ?? []} failed={!boardTeams} loading={loading} order={order.board} />
+          <CastedGames upcoming={hub?.casts_upcoming ?? []} recent={hub?.casts_recent ?? []} loading={loading} failed={!hub} order={order.cast} />
         </div>
       </div>
 

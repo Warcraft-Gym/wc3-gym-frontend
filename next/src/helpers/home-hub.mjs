@@ -21,11 +21,11 @@ export const closesIn = (closesAt, now = DateTime.now()) => {
   return ['closes today', 'closes tomorrow', 'closes in 2 days'][days];
 };
 
-/** The events whose signups stand open for the member, in the order they close; a row with no
- *  close time reads in the order the event starts, which is every row the member read sends today.
+/** The events the member may still enter, leave or check in to, in the order they close; a row with
+ *  no close time reads in the order the event starts, which is every row the member read sends today.
  *  @param {any[]} [rows] the GET /me/events rows */
 export const openSignups = (rows = []) => rows
-  .filter((row) => row.action === 'sign_up' || (row.action === 'withdraw' && row.signups_open))
+  .filter((row) => row.action === 'sign_up' || row.action === 'check_in' || (row.action === 'withdraw' && row.signups_open))
   .sort((a, b) => String(a.signup_end ?? a.start ?? '9999').localeCompare(String(b.signup_end ?? b.start ?? '9999')));
 
 // A round orders the member's series; a booked time breaks the ties inside one round

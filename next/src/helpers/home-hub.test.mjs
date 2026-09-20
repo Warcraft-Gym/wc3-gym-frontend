@@ -18,15 +18,16 @@ test('a signup closing inside two days carries a chip', () => {
   assert.equal(closesIn(null, now), null);
 });
 
-test('the open signups are the rows a member may still enter or leave, soonest first', () => {
+test('the open signups are the rows a member may still enter, leave or check in to, soonest first', () => {
   const rows = [
     { id: 1, action: 'sign_up', start: '2026-11-09' },
     { id: 2, action: 'withdraw', signups_open: true, start: '2026-09-28' },
     { id: 3, action: 'withdraw', signups_open: false, start: '2026-09-01' },
-    { id: 4, action: 'check_in', start: '2026-09-02' },
+    { id: 4, action: 'check_in', joined: true, start: '2026-09-02' },
     { id: 5, action: 'sign_up', start: '2026-09-21' },
   ];
-  assert.deepEqual(openSignups(rows).map((row) => row.id), [5, 2, 1]);
+  // a check-in opens once the signups close, so the row keeps its place on the panel
+  assert.deepEqual(openSignups(rows).map((row) => row.id), [4, 5, 2, 1]);
 });
 
 test('the own panel takes the next round to play and the last round played', () => {

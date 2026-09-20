@@ -24,6 +24,8 @@ function SeriesHead({ series, season, teamId, playerId }: { series: Row; season:
   const opponentTeam = teamId != null && match.team1_id != null ? (match.team1_id === teamId ? match.team2 : match.team1) : null;
   const opponent = series.player1_id === playerId ? series.player2 : series.player1;
   const race = series.player1_id === playerId ? series.player2_race : series.player1_race;
+  // the rating the row names on that race, not the one the opponent's profile carries
+  const mmr = (series.player1_id === playerId ? series.player2_mmr : series.player1_mmr) ?? null;
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
@@ -35,7 +37,7 @@ function SeriesHead({ series, season, teamId, playerId }: { series: Row; season:
           </span>
         ) : null}
       </div>
-      {opponent ? <div className="my-1.5"><PlayerName player={opponent} race={race ?? undefined} /></div> : null}
+      {opponent ? <div className="my-1.5"><PlayerName player={opponent} race={race ?? undefined} mmr={mmr} /></div> : null}
     </>
   );
 }

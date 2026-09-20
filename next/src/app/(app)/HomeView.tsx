@@ -24,10 +24,12 @@ const buildCards = homeCards as unknown as (input: { events: Row[]; me: Row | nu
 // The season the leaderboard names: the latest GNL season that has started, else the latest of all
 const boardOf = (seasons: Row[]) => [...seasons].reverse().find((season) => season.phase !== "open") ?? seasons[seasons.length - 1] ?? null;
 
-// The seasons that hold the member's own series: the ones /me names, or, off-season, the finished board season
+// The seasons that hold the member's own series: the started ones /me names, or, off-season, the
+// finished board season. A season still open pairs nobody, so it takes no read of its own.
 const ownSeasons = (mine: Row[], board: Row | null): Row[] => {
-  const entered = mine.filter((season) => season.signed_up);
-  return entered.length || board?.phase !== "complete" ? entered : board ? [board] : [];
+  const started = mine.filter((season) => season.signed_up && season.phase !== "open");
+  if (started.length || !board || board.phase !== "complete") return started;
+  return [board];
 };
 
 /** The home hub: five panels over one page. The member's own next series and last result, the next

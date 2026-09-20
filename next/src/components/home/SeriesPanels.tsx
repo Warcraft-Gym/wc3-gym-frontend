@@ -29,7 +29,8 @@ function Versus({ row }: { row: Row }) {
     const player = row[`player${index}`];
     const team = row[`team${index}`];
     if (player) return <PlayerName player={player} race={player.race ?? undefined} mmr={player.mmr ?? null} />;
-    if (team) return <TeamName team={team} />;
+    // a fixture names both teams on the line above, so a side of one reads what is still to fill
+    if (team && !(row.team1 && row.team2)) return <TeamName team={team} />;
     return <span className="text-muted-foreground">To be decided</span>;
   };
   return (

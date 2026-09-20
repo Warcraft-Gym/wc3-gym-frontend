@@ -83,7 +83,7 @@ function SignupButton({ card, acting, onAct }: { card: Card; acting: string | nu
       </Button>
     );
   return (
-    <Button variant="outline" size="sm" className={cn(tint)} disabled={busy} onClick={() => onAct(card)}>
+    <Button variant="outline" size="sm" className={cn(tint)} aria-busy={busy} disabled={busy} onClick={() => onAct(card)}>
       {body}
     </Button>
   );

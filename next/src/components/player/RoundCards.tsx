@@ -27,6 +27,7 @@ const SCORE: Record<string, string> = { win: "text-win border-win", loss: "text-
 export function RoundCards({
   player,
   season,
+  rounds = null,
   series = [],
   teamId = null,
   answers = null,
@@ -34,7 +35,8 @@ export function RoundCards({
   question,
 }: {
   player: Row;
-  season: Row; // carries the rounds
+  season: Row; // carries the settings, and the rounds when the caller passes none
+  rounds?: Row[] | null; // the rounds of GET /player-series, the one read that names the stage
   series?: Row[]; // the player's series of this season
   teamId?: number | null;
   answers?: Row[] | null; // availability, the player's own page only; null while it is read
@@ -57,7 +59,7 @@ export function RoundCards({
   const zone: string | null = season?.round_end_zone ?? null;
 
   const cards: Row[] = roundCards({
-    rounds: season?.rounds ?? [],
+    rounds: rounds ?? season?.rounds ?? [],
     series,
     matches,
     teamId,
@@ -123,6 +125,73 @@ export function RoundCards({
   const theirScore = (s: Row) => (mine(s) ? s.player2_score : s.player1_score) || 0;
   const scoreColor = (s: Row) => (myScore(s) > theirScore(s) ? "win" : myScore(s) < theirScore(s) ? "loss" : "draw");
 
+  // The rounds in their stages, in round order; a run of rounds of one stage is one group
+  const groups = cards.reduce((list: Row[], card: Row) => {
+    const last = list[list.length - 1];
+    if (last && last.stageId === card.stageId) last.cards.push(card);
+    else list.push({ stageId: card.stageId, name: card.stageName, key: `${card.stageId}-${card.playday}`, cards: [card] });
+    return list;
+  }, []);
+  // An event whose rounds all sit in one stage, or in none, names no stage
+  const staged = groups.length > 1;
+
+  const cardBox = (card: Row) => (
+    <div key={card.playday} className={cn("card min-w-[230px] grow rounded p-3", card.current && "border-primary!")}>
+      <div className="text-sm font-medium">{card.label}</div>
+      <div className={cn(CAPTION, "flex flex-wrap items-center gap-1")}>
+        <span>Round {card.playday}</span>
+        {card.opponentTeam ? (
+          <>
+            <span>· vs</span>
+            <TeamName team={card.opponentTeam} />
+          </>
+        ) : null}
+      </div>
+
+      {card.series ? (
+        // A series replaces the question: the round is already accounted for
+        <>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} mmr={opponentMmr(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
+            {!isUnscored(card.series) ? (
+              <Badge variant="outline" className={cn("tnum", SCORE[scoreColor(card.series)])}>
+                {record(myScore(card.series), theirScore(card.series)) ?? "—"}
+              </Badge>
+            ) : null}
+          </div>
+          {/* The host bans first and hosts game one, so the card names that side */}
+          {card.series.host_player_id === player.id ? <div className="text-xs text-primary-text">You host and ban first</div> : null}
+          {/* The action bar names the booked time for a viewer who acts on it */}
+          {!seriesActions ? <div className={CAPTION}>{formatDateTime(card.series.date_time)}</div> : null}
+          {opponentZone(card.series) ? <div className={CAPTION}>{opponentZone(card.series)}</div> : null}
+          {/* The three maps of the series once the veto has decided them */}
+          {maps(card.series).map((line) => (
+            <div key={line} className={CAPTION}>{line}</div>
+          ))}
+          <div className="mt-1">
+            <CastChips series={card.series as CastSeries} />
+          </div>
+          {/* A scored series keeps its actions: the backend takes a second report */}
+          {seriesActions?.(card.series)}
+        </>
+      ) : (
+        // the check-in belongs to the player himself; a visitor reads the state
+        <div className="mt-2 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {stateChip(card)}
+            {asks && !card.pending && card.setBy && card.setById !== player.id ? (
+              <span className={CAPTION}>set by {card.setBy}</span>
+            ) : null}
+          </div>
+          {asks && card.takes ? question?.(card) : null}
+          {asks && card.takes && checkinOpensLine(card) ? <div className={CAPTION}>{checkinOpensLine(card)}</div> : null}
+        </div>
+      )}
+      {/* The round closes at midnight in the event's zone, so the reader gets both clocks */}
+      {!card.over && endLine(card) ? <div className={cn(CAPTION, "mt-2")}>{endLine(card)}</div> : null}
+    </div>
+  );
+
   return (
     <>
       {asks && asking.length ? (
@@ -131,61 +200,11 @@ export function RoundCards({
         </Badge>
       ) : null}
       {cards.length ? (
-        <div className="flex flex-wrap gap-3">
-          {cards.map((card) => (
-            <div key={card.playday} className={cn("card min-w-[230px] grow rounded p-3", card.current && "border-primary!")}>
-              <div className="text-sm font-medium">{card.label}</div>
-              <div className={cn(CAPTION, "flex flex-wrap items-center gap-1")}>
-                <span>Round {card.playday}</span>
-                {card.opponentTeam ? (
-                  <>
-                    <span>· vs</span>
-                    <TeamName team={card.opponentTeam} />
-                  </>
-                ) : null}
-              </div>
-
-              {card.series ? (
-                // A series replaces the question: the round is already accounted for
-                <>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <PlayerName player={opponent(card.series)} race={opponentRace(card.series)} mmr={opponentMmr(card.series)} host={card.series.host_player_id === opponent(card.series).id} />
-                    {!isUnscored(card.series) ? (
-                      <Badge variant="outline" className={cn("tnum", SCORE[scoreColor(card.series)])}>
-                        {record(myScore(card.series), theirScore(card.series)) ?? "—"}
-                      </Badge>
-                    ) : null}
-                  </div>
-                  {/* The host bans first and hosts game one, so the card names that side */}
-                  {card.series.host_player_id === player.id ? <div className="text-xs text-primary-text">You host and ban first</div> : null}
-                  {/* The action bar names the booked time for a viewer who acts on it */}
-                  {!seriesActions ? <div className={CAPTION}>{formatDateTime(card.series.date_time)}</div> : null}
-                  {opponentZone(card.series) ? <div className={CAPTION}>{opponentZone(card.series)}</div> : null}
-                  {/* The three maps of the series once the veto has decided them */}
-                  {maps(card.series).map((line) => (
-                    <div key={line} className={CAPTION}>{line}</div>
-                  ))}
-                  <div className="mt-1">
-                    <CastChips series={card.series as CastSeries} />
-                  </div>
-                  {/* A scored series keeps its actions: the backend takes a second report */}
-                  {seriesActions?.(card.series)}
-                </>
-              ) : (
-                // the check-in belongs to the player himself; a visitor reads the state
-                <div className="mt-2 flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {stateChip(card)}
-                    {asks && !card.pending && card.setBy && card.setById !== player.id ? (
-                      <span className={CAPTION}>set by {card.setBy}</span>
-                    ) : null}
-                  </div>
-                  {asks && card.takes ? question?.(card) : null}
-                  {asks && card.takes && checkinOpensLine(card) ? <div className={CAPTION}>{checkinOpensLine(card)}</div> : null}
-                </div>
-              )}
-              {/* The round closes at midnight in the event's zone, so the reader gets both clocks */}
-              {!card.over && endLine(card) ? <div className={cn(CAPTION, "mt-2")}>{endLine(card)}</div> : null}
+        <div className="flex flex-col gap-4">
+          {groups.map((group) => (
+            <div key={group.key} className="flex flex-col gap-2">
+              {staged && group.name ? <h3 className="text-sm font-medium">{group.name}</h3> : null}
+              <div className="flex flex-wrap gap-3">{group.cards.map(cardBox)}</div>
             </div>
           ))}
         </div>

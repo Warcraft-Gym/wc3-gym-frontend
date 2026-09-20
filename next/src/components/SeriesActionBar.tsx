@@ -19,7 +19,7 @@ export function SeriesActionBar({
   series,
   viewer,
   variant = "full",
-  facts = true,
+  dateFact = true,
   onSchedule,
   onReport,
   className,
@@ -27,8 +27,8 @@ export function SeriesActionBar({
   series: Row | null;
   viewer: { id?: number | null; isAdmin?: boolean; seats?: { team_id: number; season_id: number }[] };
   variant?: "full" | "compact";
-  /** A surface that states the booked time in a line of its own passes false */
-  facts?: boolean;
+  /** A surface that states the booked time in a line of its own passes false, and keeps the other facts */
+  dateFact?: boolean;
   onSchedule?: () => void;
   onReport?: () => void;
   className?: string;
@@ -43,7 +43,7 @@ export function SeriesActionBar({
   // The full bar shows every step while one is left to take; a reported series keeps its result button alone in both bars
   const shown = !mayAct ? [] : variant === "full" && active.length ? live : compact;
   // A step already taken states what it left behind; the score is drawn beside the series on every surface, so the report step states no fact
-  const factSteps = facts ? live.filter((step) => step.state === "done" && step.step !== "report") : [];
+  const factSteps = live.filter((step) => step.state === "done" && step.step !== "report" && (dateFact || step.step !== "schedule"));
 
   const fact = (step: Step) => (step.step === "schedule" ? formatDateTime(series.date_time) : "Veto done");
 

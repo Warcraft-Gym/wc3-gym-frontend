@@ -243,7 +243,8 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
   // Why the report asks once before it saves, or null. A series whose rules play no veto draws no
   // veto anywhere, so only one that plays a veto and records no step asks about a missing veto.
   const confirmReason: string | null = reportWarning(hasVeto && !vetoSteps, mapMismatches(replayMaps, wantedMaps));
-  const mapNameOf = (game: number) => maps.find((map) => map.id === mapOf(game))?.name;
+  // The group title names the map the game should play: the veto's, else the one named for the game
+  const titleMapOf = (game: number) => maps.find((map) => map.id === (offered[game - 1] ?? mapOf(game)))?.name;
 
   // What the replay disagrees with, or null: another series, or the map of another game
   const replayNote = (game: number) => {
@@ -256,7 +257,9 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
     if (!played) return null;
     const off = mapMismatch(game, replayMaps, wantedMaps);
     if (off) {
-      const fix = off.to ? `Move it to game ${off.to}, or change the map of game ${game}.` : `Change the map of game ${game}.`;
+      // the map field already holds the replay's map, so the other way out is to report the game on it
+      const other = mapOf(game) === played.id ? `report game ${game} on ${played.name}` : `change the map of game ${game}`;
+      const fix = off.to ? `Move it to game ${off.to}, or ${other}.` : `${other[0].toUpperCase()}${other.slice(1)}.`;
       return `The replay was played on ${played.name}. ${fix}`;
     }
     // the veto agrees with the file, the map named for the game does not
@@ -292,7 +295,10 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
     setMoving(from);
     try {
       const rows: Row[] = await matchStore.moveSeriesReplay(series.id!, from, to);
-      setMoved(moveMessage(from, to, (rows || []).some((row: Row) => row.game_no === from)));
+      const message = moveMessage(from, to, (rows || []).some((row: Row) => row.game_no === from));
+      setMoved(message);
+      // the surface behind the dialog holds its own replay list, so the write tells it to read again
+      onSaved?.(message);
     } catch (error) {
       setErrorMessage((error as Error).message);
     } finally {
@@ -426,7 +432,7 @@ export function ReportResultDialog({ onSaved, ref }: { onSaved?: (message: strin
                 <div className="flex items-center gap-2">
                   <div className="flex-1 text-sm font-medium">
                     Game {game}
-                    {mapNameOf(game) ? ` \u00b7 ${mapNameOf(game)}` : ""}
+                    {titleMapOf(game) ? ` \u00b7 ${titleMapOf(game)}` : ""}
                   </div>
                   {canMove(game) ? (
                     <DropdownMenu>

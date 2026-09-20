@@ -220,12 +220,14 @@ export function SeriesView({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canMove, series]); // load() sets a new series row on every save, so the list is read again
 
-  // The head to head of the two players, one read, for a solo series and a signed-in reader alone
+  // The head to head of the two players, one read, for a solo series and a signed-in reader alone.
+  // This series is left out of its own line, so a scored one does not count itself.
   useEffect(() => {
     const [one, two] = [series?.player1_id, series?.player2_id];
     if (!one || !two || !auth.me) return; // the meetings route answers a member alone
+    const self = series?.id;
     // the loader sets state, so it runs just outside the effect body (react-hooks/set-state-in-effect)
-    queueMicrotask(() => seriesStore.playerMeetings(one, two).then((rows: Row[]) => setMeetings(rows || [])).catch(() => {}));
+    queueMicrotask(() => seriesStore.playerMeetings(one, two).then((rows: Row[]) => setMeetings((rows || []).filter((row: Row) => row.series_id !== self))).catch(() => {}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [series, auth.me?.user?.id]); // load() sets a new series row on every save, so the score counts the new result
 
@@ -300,7 +302,7 @@ export function SeriesView({ id }: { id: string }) {
                 className="mt-2"
                 series={actionRow}
                 viewer={viewer}
-                facts={false}
+                dateFact={false}
                 onSchedule={() => actionRow && scheduleDialog.current?.open(actionRow)}
                 onReport={() => reportDialog.current?.open(series)}
               />

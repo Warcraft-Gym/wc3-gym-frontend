@@ -16,7 +16,7 @@ import { Guard } from "@/lib/guard";
 import { useTheme } from "@/hooks/theme";
 import type { ThemeMode } from "@/hooks/theme";
 import { canSeeRole, metaOf } from "@/lib/routes";
-import { useAuth, useSeason } from "@/stores";
+import { useAuth } from "@/stores";
 import { myProfilePath } from "@/helpers/players.mjs";
 import w3cLogo from "@/assets/media/w3c-logo.png";
 import w3cLogoWhite from "@/assets/media/w3c-logo-white.png";
@@ -31,7 +31,6 @@ const THEMES: { value: ThemeMode; title: string; icon: string }[] = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { me, user, viewAs, logout, setViewAs } = useAuth();
-  const { slugOf } = useSeason();
   const { themeMode, activeTheme, setThemeMode } = useTheme();
   const [drawer, setDrawer] = useState(false);
   // useAuth answers the signed-out server snapshot until hydration, so the account slot waits for it
@@ -51,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const showNavLinks = !!me && metaOf(path).nav !== false && !clean;
   // a link is drawn only when the session role reaches the target route's meta.role
   const canSee = (to: string) => canSeeRole(me?.role, metaOf(to.split("?")[0]).role);
-  const nav = navItems(me?.season_id ?? null, slugOf)
+  const nav = navItems()
     .filter((g) => canSee(g.to))
     .map((g) => (g.items ? { ...g, items: g.items.filter((i) => canSee(i.to)) } : g));
 

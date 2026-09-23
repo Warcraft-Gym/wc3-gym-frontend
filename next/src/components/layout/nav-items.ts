@@ -2,7 +2,7 @@ export type NavItem = { title: string; to: string; mark?: boolean };
 export type NavGroup = { title: string; to: string; items?: NavItem[] };
 
 /** One link tree drawn as the bar's menus on desktop and as the drawer on phones. */
-export const navItems = (seasonId: number | null, slugOf: (id: number) => string): NavGroup[] => [
+export const navItems = (): NavGroup[] => [
   { title: "Home", to: "/" },
   {
     title: "GNL",
@@ -13,7 +13,6 @@ export const navItems = (seasonId: number | null, slugOf: (id: number) => string
       { title: "Teams", to: "/teams" },
       { title: "Ladder Grind", to: "/ladder", mark: true },
       { title: "Players", to: "/players" },
-      ...(seasonId ? [{ title: "Players (this season)", to: `/players?season=${slugOf(seasonId)}` }] : []),
       { title: "Seasons", to: "/seasons" },
       { title: "1v1 Maps", to: "/maps" },
     ],

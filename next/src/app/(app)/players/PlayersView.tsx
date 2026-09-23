@@ -25,7 +25,7 @@ import { SeasonSignupDialog, type SeasonSignupDialogHandle } from "@/components/
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
-import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
+import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { record as recordFigure } from "@/helpers/figures.mjs";
 import { findSeason } from "@/helpers/season-slug.mjs";
 import { filterByMmrRange, matchesPlayerSearch, playerPath, playersWithCareers } from "@/helpers/players.mjs";
@@ -53,6 +53,7 @@ export function PlayersView() {
   const [players, setPlayers] = useState<Row[]>([]);
   const [careers, setCareers] = useState<Row[]>([]);
   const [w3cSeason, setW3cSeason] = useState<number | null>(null);
+  const [currentSeasonId, setCurrentSeasonId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -82,19 +83,22 @@ export function PlayersView() {
       try {
         await seasonStore.fetchSeasons();
       } catch (e) { console.error("Failed to fetch seasons:", e); }
+      resolveCurrentSeasonId().then(setCurrentSeasonId);
       await load();
     };
     start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const seasonId = findSeason(seasonStore.seasons, searchParams.get("season"))?.id ?? null;
+  // No ?season opens the current season; ?season=all lists every player
+  const seasonParam = searchParams.get("season");
+  const seasonId = seasonParam === "all" ? null : seasonParam ? findSeason(seasonStore.seasons, seasonParam)?.id ?? null : currentSeasonId;
 
   const chooseSeason = (id: number | null) => {
     setPage(0);
     const query = new URLSearchParams(searchParams.toString());
-    if (id) query.set("season", seasonStore.slugOf(id)); else query.delete("season");
-    router.replace(query.size ? `/players?${query}` : "/players", { scroll: false });
+    query.set("season", id ? seasonStore.slugOf(id) : "all");
+    router.replace(`/players?${query}`, { scroll: false });
   };
   const bestMmr = (player: Row) => Math.max(0, ...getAllRaceStats(player, w3cSeason ?? undefined).filter((stat: Row) => (stat.games || 0) > 0).map((stat: Row) => stat.mmr || 0));
   const joined: Row[] = playersWithCareers(players, careers).map((row: Row) => ({ ...row, best_mmr: row.id != null ? bestMmr(row) || null : null }));

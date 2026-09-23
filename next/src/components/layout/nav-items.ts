@@ -8,12 +8,11 @@ export const navItems = (): NavGroup[] => [
     title: "GNL",
     to: "/report",
     items: [
-      { title: "Season Report", to: "/report" },
+      { title: "Season", to: "/report" },
       { title: "Upcoming", to: "/upcoming" },
       { title: "Teams", to: "/teams" },
       { title: "Ladder Grind", to: "/ladder", mark: true },
       { title: "Players", to: "/players" },
-      { title: "Seasons", to: "/seasons" },
       { title: "1v1 Maps", to: "/maps" },
     ],
   },

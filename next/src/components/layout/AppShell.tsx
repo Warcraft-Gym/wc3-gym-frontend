@@ -18,8 +18,6 @@ import type { ThemeMode } from "@/hooks/theme";
 import { canSeeRole, metaOf } from "@/lib/routes";
 import { useAuth } from "@/stores";
 import { myProfilePath } from "@/helpers/players.mjs";
-import w3cLogo from "@/assets/media/w3c-logo.png";
-import w3cLogoWhite from "@/assets/media/w3c-logo-white.png";
 
 // Light, dark, or the operating system setting. The choice is kept in localStorage.
 const THEMES: { value: ThemeMode; title: string; icon: string }[] = [
@@ -31,7 +29,7 @@ const THEMES: { value: ThemeMode; title: string; icon: string }[] = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { me, user, viewAs, logout, setViewAs } = useAuth();
-  const { themeMode, activeTheme, setThemeMode } = useTheme();
+  const { themeMode, setThemeMode } = useTheme();
   const [drawer, setDrawer] = useState(false);
   // useAuth answers the signed-out server snapshot until hydration, so the account slot waits for it
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
@@ -39,8 +37,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // view-as: an admin sees the app as a lower role; the legacy token session cannot
   const canViewAs = me?.actual_role === "admin" && !user;
 
-  // The dark-ink W3C mark is made for the light theme; the dark theme takes the white original.
-  const w3cMark = (activeTheme === "dark" ? w3cLogoWhite : w3cLogo).src;
   const themeIcon = THEMES.find((t) => t.value === themeMode)?.icon || "mdi-theme-light-dark";
 
   // the KOTH board on a stream wears the app title alone: no nav, no account, no theme
@@ -121,7 +117,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <DropdownMenuContent className="min-w-[180px]">
                     {group.items.map((item) => (
                       <DropdownMenuItem key={item.to} render={<Link href={item.to} />}>
-                        {item.mark ? <img src={w3cMark} alt="W3C" className="mr-1 h-[1.4em]" /> : null}
                         {item.title}
                       </DropdownMenuItem>
                     ))}

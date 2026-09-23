@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { seasonBox, useSeason } from "@/stores";
 import { loadSeasons, resolveCurrentSeasonId } from "@/helpers/current-season.js";
 import { eventLabel } from "@/helpers/event-labels.mjs";
+import { byNewest } from "@/helpers/season-order.mjs";
 import { findSeason } from "@/helpers/season-slug.mjs";
 
 type Season = { id: number; name: string };
@@ -37,9 +38,12 @@ export function SeasonSelect() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeasonId, seasons.length]);
 
+  // Newest season first, by start date, never by store order
+  const ordered = [...seasons].sort(byNewest);
+
   return (
     <Select
-      items={seasons.map((season) => ({ value: season.id, label: eventLabel(season) }))}
+      items={ordered.map((season) => ({ value: season.id, label: eventLabel(season) }))}
       value={selectedSeasonId}
       onValueChange={(value) => setSelectedSeasonId(value as number | null)}
     >
@@ -47,7 +51,7 @@ export function SeasonSelect() {
         <SelectValue placeholder="Season" />
       </SelectTrigger>
       <SelectContent>
-        {seasons.map((season) => (
+        {ordered.map((season) => (
           <SelectItem key={season.id} value={season.id}>
             {eventLabel(season)}
           </SelectItem>

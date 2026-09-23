@@ -98,16 +98,18 @@ function request(method) {
     };
 }
 
-// no bearer on purpose: the Vercel edge caches these open reads, never a request with one
-const EDGE_CACHED = /(\/events\/\d+\/ladder|\/home\/series|\/koth\/(nights\/\d+\/)?board)$/;
+// no bearer on a non-admin GET: the Vercel edge caches these open reads, never a request with one
+const EDGE_CACHED = /(\/events\/\d+\/ladder(\/players)?|\/home\/series|\/koth\/(nights\/\d+\/)?board|\/leagues|\/maps|\/config\/w3c|\/config\/settings\/\w+|\/users\/\d+\/ladder(\?season_id=\d+)?|\/users\/\d+\/history|\/(events|leagues)\/\d+\/teams(\/basic|\/\d+)?)$/;
 
 // exported so the raw FormData requests can send the same bearer
 export async function authHeader(method, url) {
-    if (!url.startsWith(backendUrl) || url.startsWith(`${backendUrl}/login`) || EDGE_CACHED.test(url)) {
+    if (!url.startsWith(backendUrl) || url.startsWith(`${backendUrl}/login`)) {
         return {};
     }
 
     const store = useAuthStore();
+    // writes share these paths; an admin re-reads right after a write, so their reads skip the cache
+    if (method === 'GET' && EDGE_CACHED.test(url) && !store.isAdmin) return {};
     const token = await store.token();
     if (!token) return {};
     const headers = { Authorization: `Bearer ${token}` };

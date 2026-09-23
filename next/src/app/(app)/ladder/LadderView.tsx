@@ -28,8 +28,6 @@ import { TapTooltip } from "@/components/ui/TapTooltip";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useTheme } from "@/hooks/theme";
 import { useAuth, useLadderStore, usePlayerStore, useSeason } from "@/stores";
-import w3championsLogo from "@/assets/media/w3champions-logo.png";
-import w3championsLogoWhite from "@/assets/media/w3champions-logo-white.png";
 import w3cLogo from "@/assets/media/w3c-logo.png";
 import w3cLogoWhite from "@/assets/media/w3c-logo-white.png";
 import { ACHIEVEMENTS_NOTE, LADDER_NOTE, SCORED_NOTE, TEAM_BADGES_NOTE, achievementPoints } from "@/helpers/achievements.js";
@@ -53,11 +51,9 @@ export function LadderView() {
   const playerStore = usePlayerStore();
   const { isAdmin } = useAuth();
   const { seasons, selectedSeasonId, slugOf } = useSeason();
-  // The dark-ink wordmark is made for the light theme; the dark theme takes the white original.
   const { activeTheme } = useTheme();
   // The wide columns show from the md breakpoint
   const mdAndUp = useBreakpoint(MD_AND_UP);
-  const wordmark = activeTheme === "dark" ? w3championsLogoWhite : w3championsLogo;
   // The Sync button is a primary fill, so its mark follows on-primary: the inverse of the surface rule
   const syncMark = activeTheme === "dark" ? w3cLogo : w3cLogoWhite;
 
@@ -202,7 +198,7 @@ export function LadderView() {
         </div>
       ) : null}
 
-      <PageHeader title={<img src={wordmark.src} alt="W3Champions" className="h-[1.35em]" />} />
+      <PageHeader title="Ladder Grind" lead="W3Champions ladder games this season, scored for the league. Not the W3Champions ladder itself." />
 
       {/* Season picker and the sync of that season */}
       <div className="mb-2 flex flex-wrap items-center gap-3">

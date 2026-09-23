@@ -11,7 +11,7 @@ export const navItems = (seasonId: number | null, slugOf: (id: number) => string
       { title: "Season Report", to: "/report" },
       { title: "Upcoming", to: "/upcoming" },
       { title: "Teams", to: "/teams" },
-      { title: "Ladder", to: "/ladder", mark: true },
+      { title: "Ladder Grind", to: "/ladder", mark: true },
       { title: "Players", to: "/players" },
       ...(seasonId ? [{ title: "Players (this season)", to: `/players?season=${slugOf(seasonId)}` }] : []),
       { title: "Seasons", to: "/seasons" },

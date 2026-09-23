@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { scaleQuantize } from "d3-scale";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -73,7 +74,7 @@ const WIDE = "hidden md:table-cell";
 /** The whole season on one page: standings, players, races, ladder activity and fantasy. */
 export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
   const router = useRouter();
-  const { me } = useAuth();
+  const { me, isAdmin } = useAuth();
   const { seasons, current_season, selectedSeasonId, setSelectedSeasonId, fetchSeasons, fetchSeason, seasonIdOf, slugOf } = useSeason();
   const teamStore = useTeamStore();
   const seriesStore = useSeriesStore();
@@ -392,6 +393,13 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
             </Select>
             <Label htmlFor="report-season">Select season</Label>
           </div>
+          {/* Admins reach the season editor and the season list from here */}
+          {isAdmin ? (
+            <div className="flex flex-wrap gap-1">
+              {selectedSeasonId ? <Button variant="link" nativeButton={false} render={<Link href={`/seasons/${selectedSeasonId}`} />}>Season settings</Button> : null}
+              <Button variant="link" nativeButton={false} render={<Link href="/seasons" />}>Manage seasons</Button>
+            </div>
+          ) : null}
           <div className="flex-1" />
           <Button disabled={!reportReady} onClick={printReport}>
             <Icon name="mdi-printer" className="mr-1" />

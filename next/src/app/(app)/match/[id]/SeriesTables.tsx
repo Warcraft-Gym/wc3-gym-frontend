@@ -13,6 +13,7 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { toneClass } from "@/components/ui/tone";
 import { formatDateTime } from "@/helpers/datetime";
 import { mmrGap, pairIndex } from "@/helpers/draft-suggest.mjs";
+import { timeMissing } from "@/helpers/schedule.mjs";
 import { SharedHours } from "./RoundDraftBoard";
 import { FacedRaces, SyncedLine, getHighestW3CMMR, mmrOf, type Row } from "./match-cells";
 

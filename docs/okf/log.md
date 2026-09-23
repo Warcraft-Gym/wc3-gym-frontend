@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-09-23
+
+* **Update**: the fetch wrapper sends no bearer on a non-admin GET of thirteen more open reads the backend caches at the edge; an admin and a write always send it.
+
 ## 2026-09-20
 
 * **Update**: the run page of a KOTH night moves the MMR bound of each bracket in place while no bracket plays a series, the entrants page of a night takes no division and no seed write and points at that page, the public board lists the signups no bracket holds yet, and one mark reads on every player line the board names no rating for. The KOTH and event management page concepts, the store action table and `DESIGN.md` state the dialog, the two pages and the mark.

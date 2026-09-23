@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AchievementChip } from "@/components/AchievementChip";
 import { ColumnNote } from "@/components/ColumnNote";
 import { FilterPanel } from "@/components/FilterPanel";
+import { GroupedTable } from "@/components/GroupedTable";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
@@ -23,7 +24,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableCell } from "@/components/ui/table";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useTheme } from "@/hooks/theme";
@@ -39,8 +40,16 @@ import { agoFromIso, localFromIso } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
 
 type Row = Record<string, any>;
-// A standings column the table drops below the sm breakpoint
-const SM = "hidden min-[600px]:table-cell";
+// A standings column the grouped table drops on a phone; the cells take its header's class
+const SM = "hidden min-[960px]:table-cell";
+const standingColumns = [
+  { key: "team", title: "Team" },
+  { key: "points", align: "right" as const },
+  { key: "badges", align: "right" as const, phone: false },
+  { key: "games", title: "Games", align: "right" as const },
+  { key: "players", title: "Players", align: "right" as const, phone: false },
+  { key: "teamBadges", title: "Team badges", phone: false },
+];
 
 // The roster's badge points plus the team badges; the standing column and the season total
 const teamBadgePoints = (team: Row) => team.points - team.ladder_points + achievementPoints(team.achievements);
@@ -156,6 +165,13 @@ export function LadderView() {
     if (searchTeam) list = list.filter((p) => p.teamId === searchTeam);
     return list;
   }, [allPlayers, searchName, searchRace, searchTeam]);
+  // The standings group rows keep every team; their detail rows take the filtered players, most points first
+  const teamGroups = useMemo(() => teams.map((team): Row & { key: number; label: string } => ({ ...team, key: team.id, label: teamLabel(team) })), [teams]);
+  const playersByTeam = useMemo(() => {
+    const byTeam = new Map<number, Row[]>();
+    for (const player of [...filtered].sort((a, b) => b.points - a.points)) byTeam.set(player.teamId, [...(byTeam.get(player.teamId) ?? []), player]);
+    return byTeam;
+  }, [filtered]);
   const resetFilters = () => {
     setSearchName("");
     setSearchRace(null);
@@ -198,7 +214,7 @@ export function LadderView() {
         </div>
       ) : null}
 
-      <PageHeader title="Ladder Grind" lead="W3Champions ladder games this season, scored for the league. Not the W3Champions ladder itself." />
+      <PageHeader title="GNL Ladder Grind" lead="Ladder grind and achievements for the selected GNL season" />
 
       {/* Season picker and the sync of that season */}
       <div className="mb-2 flex flex-wrap items-center gap-3">
@@ -206,6 +222,34 @@ export function LadderView() {
         <div className="ms-auto min-w-[240px] text-right"><SyncProgress caption={syncCaption} stamp={localFromIso(newestSync)} /></div>
         {isAdmin ? syncButton : null}
       </div>
+
+      {/* Filters: the name, race and team pick the player rows of both tables */}
+      {ladder && ladder.total_games ? (
+        <FilterPanel
+          searchName={searchName}
+          onSearchNameChange={setSearchName}
+          searchRace={searchRace}
+          onSearchRaceChange={setSearchRace}
+          showSeason={false}
+          showMMR={false}
+          extraActive={searchTeam ? 1 : 0}
+          onReset={resetFilters}
+          after={
+            <Select items={teamOptions.map((team) => ({ value: team.id, label: team.name }))} value={searchTeam} onValueChange={(value) => setSearchTeam(value as number | null)}>
+              <SelectTrigger aria-label="Team" className="w-full md:w-[220px]">
+                <Icon name="mdi-shield-account" className="text-muted-foreground" />
+                <SelectValue placeholder="Team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>All teams</SelectItem>
+                {teamOptions.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          }
+        />
+      ) : null}
 
       <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
 
@@ -233,77 +277,52 @@ export function LadderView() {
               <span>Team standings</span>
             </CardTitle>
             <div className="p-2 text-xs text-muted-foreground">{seasonDates}</div>
-            <div className="table-scroll overflow-x-auto">
-              <Table className="tnum">
-                <TableHeader>
-                  <TableRow className="[&_th]:text-xs [&_th]:text-muted-foreground">
-                    <TableHead>Team</TableHead>
-                    <TableHead className="text-center"><ColumnNote title="Total points" note={SCORED_NOTE} /></TableHead>
-                    <TableHead className={cn(SM, "text-center")}><ColumnNote title="Achievement points" note={TEAM_BADGES_NOTE} /></TableHead>
-                    <TableHead className="text-center">Games</TableHead>
-                    <TableHead className={cn(SM, "text-center")}>Players</TableHead>
-                    <TableHead className={SM}>Team badges</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teams.map((team, idx) => (
-                    <TableRow key={team.id} className={cn(idx === 0 && "bg-primary/6")}>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <TeamName team={team} seasonKey={slugOf(selectedSeasonId as number)} />
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center font-bold">{team.points}</TableCell>
-                      <TableCell className={cn(SM, "text-center")}>{teamBadgePoints(team)}</TableCell>
-                      <TableCell className="text-center">{team.games}</TableCell>
-                      <TableCell className={cn(SM, "text-center")}>{team.players.length}</TableCell>
-                      <TableCell className={SM}><AchievementChip badges={team.achievements} showPoints={false} /></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                {/* The season totals, under the column each one belongs to */}
-                <tfoot>
-                  <TableRow className="border-t">
-                    <TableCell className="text-muted-foreground">{teams.length} teams</TableCell>
-                    <TableCell className="text-center font-bold">{seasonPoints}</TableCell>
-                    <TableCell className={cn(SM, "text-center")}>{seasonBadgePoints}</TableCell>
-                    <TableCell className="text-center">{ladder.total_games}</TableCell>
-                    <TableCell className={cn(SM, "text-center")}>{seasonPlayers}</TableCell>
+            {/* One group per team; its detail rows are the team's players that pass the filters */}
+            <GroupedTable
+              className="tnum"
+              columns={standingColumns}
+              groups={teamGroups}
+              empty="No team plays this season"
+              head={{
+                points: <ColumnNote title="Total points" note={SCORED_NOTE} />,
+                badges: <ColumnNote title="Achievement points" note={TEAM_BADGES_NOTE} />,
+              }}
+              group={({ group: team }) => {
+                // The leading team keeps its tint over the group row's own
+                const lead = team.key === teams[0]?.id ? "bg-primary/6!" : "";
+                return (
+                  <>
+                    <TableCell className={lead}><TeamName team={team} seasonKey={slugOf(selectedSeasonId as number)} /></TableCell>
+                    <TableCell className={cn(lead, "text-right font-bold")}>{team.points}</TableCell>
+                    <TableCell className={cn(lead, SM, "text-right")}>{teamBadgePoints(team)}</TableCell>
+                    <TableCell className={cn(lead, "text-right")}>{team.games}</TableCell>
+                    <TableCell className={cn(lead, SM, "text-right")}>{team.players.length}</TableCell>
+                    <TableCell className={cn(lead, SM)}><AchievementChip badges={team.achievements} showPoints={false} /></TableCell>
+                  </>
+                );
+              }}
+              rows={({ group: team }) =>
+                (playersByTeam.get(team.key) ?? []).map((player) => (
+                  <tr key={player.id} className="detail-row border-b">
+                    <TableCell />
+                    <TableCell><PlayerName player={player} /></TableCell>
+                    <TableCell className="text-right">{player.points}</TableCell>
+                    <TableCell className={cn(SM, "text-right")}>{player.badgePoints}</TableCell>
+                    <TableCell className="text-right">{player.wins + player.losses}</TableCell>
                     <TableCell className={SM} />
-                  </TableRow>
-                </tfoot>
-              </Table>
+                    <TableCell className={SM}><AchievementChip badges={player.achievements} showPoints={false} /></TableCell>
+                  </tr>
+                ))
+              }
+            />
+            {/* The season totals */}
+            <div className="p-2 text-xs text-muted-foreground">
+              {teams.length} teams · {seasonPoints} total points · {seasonBadgePoints} achievement points · {ladder.total_games} games · {seasonPlayers} players
             </div>
           </Card>
 
           <LadderLeaderboards players={allPlayers} onOpenPlayer={goToPlayer} />
           <BadgeRarity rules={ladder.achievement_rules} teamRules={ladder.team_achievement_rules} players={allPlayers} teams={teams} />
-
-          {/* Filters (reusable) */}
-          <FilterPanel
-            searchName={searchName}
-            onSearchNameChange={setSearchName}
-            searchRace={searchRace}
-            onSearchRaceChange={setSearchRace}
-            showSeason={false}
-            showMMR={false}
-            extraActive={searchTeam ? 1 : 0}
-            onReset={resetFilters}
-            after={
-              <Select items={teamOptions.map((team) => ({ value: team.id, label: team.name }))} value={searchTeam} onValueChange={(value) => setSearchTeam(value as number | null)}>
-                <SelectTrigger aria-label="Team" className="w-full md:w-[220px]">
-                  <Icon name="mdi-shield-account" className="text-muted-foreground" />
-                  <SelectValue placeholder="Team" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>All teams</SelectItem>
-                  {teamOptions.map((team) => (
-                    <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            }
-          />
 
           {/* Players */}
           <Card className="card gap-0 py-0">

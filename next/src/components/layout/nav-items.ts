@@ -1,4 +1,4 @@
-export type NavItem = { title: string; to: string; mark?: boolean };
+export type NavItem = { title: string; to: string };
 export type NavGroup = { title: string; to: string; items?: NavItem[] };
 
 /** One link tree drawn as the bar's menus on desktop and as the drawer on phones. */
@@ -11,7 +11,7 @@ export const navItems = (): NavGroup[] => [
       { title: "Season", to: "/report" },
       { title: "Upcoming", to: "/upcoming" },
       { title: "Teams", to: "/teams" },
-      { title: "Ladder Grind", to: "/ladder", mark: true },
+      { title: "Ladder Grind", to: "/ladder" },
       { title: "Players", to: "/players" },
       { title: "1v1 Maps", to: "/maps" },
     ],

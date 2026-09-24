@@ -48,6 +48,7 @@ export function PublicSignupView() {
   const [tagRefusal, setTagRefusal] = useState("");
   const [link, setLink] = useState<SignupLink | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   // the browser's region is the default country, e.g. en-US -> US; empty when it names no country
   const [country, setCountry] = useState<string>(() => existing?.country || findCountry(new Intl.Locale(navigator.language || "en").region)?.a2 || "");
   const [race, setRace] = useState<string>(existing?.race || "");
@@ -111,6 +112,7 @@ export function PublicSignupView() {
     setTagRefusal("");
     setLink(null);
     setCopied(false);
+    setCopyFailed(false);
     setSaved(false);
     setAttempted(true);
     // basic client-side validation
@@ -296,10 +298,18 @@ export function PublicSignupView() {
                 <Note type="warning" className="mt-4">
                   <strong>{link.message}</strong> Send an admin these two lines on Discord.
                   <pre className="mt-2 whitespace-pre-line rounded bg-surface-bright p-2 font-mono text-sm select-all">{linkLines(link)}</pre>
-                  <Button variant="outline" className="mt-2" onClick={() => navigator.clipboard.writeText(linkLines(link)).then(() => setCopied(true), () => setCopied(false))}>
+                  <Button variant="outline" className="mt-2" onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(linkLines(link));
+                        setCopied(true);
+                      } catch {
+                        setCopyFailed(true);
+                      }
+                    }}>
                     <Icon name={copied ? "mdi-check" : "mdi-content-copy"} />
                     {copied ? "Copied" : "Copy for the admin"}
                   </Button>
+                  {copyFailed ? <p className="mt-1.5 text-xs">Copy failed. Select the two lines and copy them.</p> : null}
                 </Note>
               ) : null}
               {submitError ? (

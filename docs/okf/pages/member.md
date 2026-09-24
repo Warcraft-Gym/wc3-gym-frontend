@@ -21,6 +21,9 @@ sources:
   - id: signup
     resource: ../../../next/src/app/(app)/signup/PublicSignupView.tsx
     title: The season signup form
+  - id: signup-helper
+    resource: ../../../next/src/helpers/signup.mjs
+    title: The signup states, the battle tag shape and which refusal the tag field owns
   - id: availability
     resource: ../../../next/src/app/(app)/availability/AvailabilityView.tsx
     title: The availability page

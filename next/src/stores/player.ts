@@ -60,6 +60,10 @@ const store = {
   async startBnetLink() {
     return await fetchWrapper.get(`${backendUrl}/users/me/bnet/start`);
   },
+  // Links the Battle.net account the return token names to the signed-in person; answers UserPublic
+  async finishBnetLink(token: string) {
+    return await fetchWrapper.post(`${backendUrl}/users/me/bnet/finish`, { token });
+  },
   // Admin: one tag row to another person, and one person folded into another
   async moveTag(userId: number, tagId: number, toUserId: number) {
     return await fetchWrapper.post(`${backendUrl}/users/${userId}/tags/${tagId}/move`, { to_user_id: toUserId });

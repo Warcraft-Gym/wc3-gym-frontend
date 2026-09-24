@@ -21,7 +21,7 @@ const BATTLE_TAG = /^\S+#\d+$/;
 /** The owner's own battle tags on his player page: which one is active, the ones he may
  *  remove, and "I also played as" to add another. Every write answers his row, and the
  *  page reads the profile again, because the header, the address and the MMR follow the active tag.
- *  "Link Battle.net" leaves for Blizzard, which sends the browser back with ?bnet=linked or ?bnet=error. */
+ *  "Link Battle.net" leaves for Blizzard, which sends the browser back with ?bnet=<token> or ?bnet=error. */
 export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[] | null }; onChanged: () => Promise<void> }) {
   const playerStore = usePlayerStore();
   const tags: PlayerTag[] = tagsActiveFirst(player.tags ?? []);
@@ -29,21 +29,26 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  // the return from Blizzard, read once so its note outlives the address clean-up below
-  const [landing] = useState(() => bnetNote(searchParams.get("bnet"), searchParams.get("reason")));
+  // the return from Blizzard, read once so it outlives the address clean-up below
+  const [bnet] = useState(() => searchParams.get("bnet"));
 
   const [busy, setBusy] = useState<number | null>(null); // the tag row a write is out for
-  const [pageError, setPageError] = useState<string | null>(landing?.kind === "error" ? landing.text : null);
+  const [pageError, setPageError] = useState<string | null>(() => bnetNote(bnet, searchParams.get("reason")));
   const [typed, setTyped] = useState("");
   const [checking, setChecking] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [added, setAdded] = useState<string | null>(landing?.kind === "ok" ? landing.text : null); // the line under the field after a success
+  const [added, setAdded] = useState<string | null>(null); // the line under the field after a success
   const [linking, setLinking] = useState(false);
 
-  // after a link, read the tags again; either way drop ?bnet= from the address
+  // a ?bnet=<token> return links the account to this login; either way drop ?bnet= from the address
   useEffect(() => {
-    if (!landing) return;
-    if (landing.kind === "ok") onChanged();
+    if (!bnet) return;
+    if (bnet !== "error" && bnet !== "linked") {
+      playerStore.finishBnetLink(bnet).then(
+        () => { setAdded("Battle.net account linked"); return onChanged(); },
+        (error) => { const { field, page } = addTagError(error); setPageError(field ?? page); },
+      );
+    }
     const query = new URLSearchParams(searchParams);
     query.delete("bnet");
     query.delete("reason");

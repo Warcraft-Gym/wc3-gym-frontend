@@ -54,11 +54,11 @@ test('the server-side show-only entries send their list filter', () => {
   assert.equal(isListFilter('no_stats'), false);
 });
 
-test('the Battle.net return names its outcome, and an unknown reason reads the general failure', () => {
-  assert.deepEqual(bnetNote('linked', null), { kind: 'ok', text: 'Battle.net account linked' });
-  assert.deepEqual(bnetNote('error', 'denied'), { kind: 'error', text: 'You cancelled on Battle.net.' });
-  assert.equal(bnetNote('error', 'taken').text, 'That Battle.net account or tag belongs to another player. Ask an admin.');
-  assert.equal(bnetNote('error', 'state').text, 'Linking failed. Try again.');
-  assert.equal(bnetNote('error', null).text, 'Linking failed. Try again.');
+test('a Battle.net error return names its reason, an unknown reason reads the general failure', () => {
+  assert.equal(bnetNote('error', 'denied'), 'You cancelled on Battle.net.');
+  assert.equal(bnetNote('error', 'taken'), 'That Battle.net account or tag belongs to another player. Ask an admin.');
+  assert.equal(bnetNote('error', 'state'), 'Linking failed. Try again.');
+  assert.equal(bnetNote('error', null), 'Linking failed. Try again.');
+  assert.equal(bnetNote('eyJhbGciOi.token', null), null);
   assert.equal(bnetNote(null, null), null);
 });

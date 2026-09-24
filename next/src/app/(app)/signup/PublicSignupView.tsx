@@ -19,10 +19,13 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { findCountry } from "@/helpers/countries.js";
 import { myProfilePath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
-import { signupState, signupTitles, startZone } from "@/helpers/signup.mjs";
+import { isTagError, signupState, signupTitles, startZone } from "@/helpers/signup.mjs";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { useAuth, useSeason } from "@/stores";
 import type { Me } from "@/stores";
+
+// What a refused signup carries for an admin who links the earlier player to this login
+type SignupLink = { player: string; discord_id: string; battle_tag: string; message: string };
 
 type Season = { id: number; name?: string; signed_up?: boolean; scheduling_enabled?: boolean };
 
@@ -42,6 +45,10 @@ export function PublicSignupView() {
   const [existing] = useState(() => me?.user);
   const [name, setName] = useState<string>(existing?.name || "");
   const [battleTag, setBattleTag] = useState<string>(existing?.battleTag || "");
+  const [tagRefusal, setTagRefusal] = useState("");
+  const [link, setLink] = useState<SignupLink | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   // the browser's region is the default country, e.g. en-US -> US; empty when it names no country
   const [country, setCountry] = useState<string>(() => existing?.country || findCountry(new Intl.Locale(navigator.language || "en").region)?.a2 || "");
   const [race, setRace] = useState<string>(existing?.race || "");
@@ -102,6 +109,10 @@ export function PublicSignupView() {
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError("");
+    setTagRefusal("");
+    setLink(null);
+    setCopied(false);
+    setCopyFailed(false);
     setSaved(false);
     setAttempted(true);
     // basic client-side validation
@@ -133,8 +144,11 @@ export function PublicSignupView() {
       setSaved(editing || stateOf(fresh) !== "joined");
       setEditing(false);
     } catch (err) {
-      const e = err as { message?: string; error?: string };
-      setSubmitError(e?.message || e?.error || String(err));
+      const e = err as { message?: string; error?: string; link?: Omit<SignupLink, "message"> };
+      const message = e?.message || e?.error || String(err);
+      if (e?.link) setLink({ ...e.link, message });
+      else if (isTagError(message)) setTagRefusal(message);
+      else setSubmitError(message);
     } finally {
       setSubmitting(false);
     }
@@ -236,10 +250,10 @@ export function PublicSignupView() {
                       <InputGroupInput id="signup-name" value={name} onChange={(event) => setName(event.target.value)} />
                     </InputGroup>
                   </Field>
-                  <Field label="Player BattleTag (EAShibby#12342)" htmlFor="signup-battletag" error={battleTagError}>
+                  <Field label="Player BattleTag (EAShibby#12342)" htmlFor="signup-battletag" error={battleTagError || tagRefusal || null}>
                     <InputGroup>
                       <InputGroupAddon><Icon name="mdi-pound" /></InputGroupAddon>
-                      <InputGroupInput id="signup-battletag" value={battleTag} required aria-invalid={!!battleTagError} onChange={(event) => setBattleTag(event.target.value)} />
+                      <InputGroupInput id="signup-battletag" value={battleTag} required aria-invalid={!!(battleTagError || tagRefusal)} onChange={(event) => { setBattleTag(event.target.value); setTagRefusal(""); }} />
                     </InputGroup>
                   </Field>
                 </div>
@@ -280,6 +294,24 @@ export function PublicSignupView() {
                   {closedMessage}
                 </Note>
               ) : null}
+              {link ? (
+                <Note type="warning" className="mt-4">
+                  <strong>{link.message}</strong> Send an admin these two lines on Discord.
+                  <pre className="mt-2 whitespace-pre-line rounded bg-surface-bright p-2 font-mono text-sm select-all">{linkLines(link)}</pre>
+                  <Button variant="outline" className="mt-2" onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(linkLines(link));
+                        setCopied(true);
+                      } catch {
+                        setCopyFailed(true);
+                      }
+                    }}>
+                    <Icon name={copied ? "mdi-check" : "mdi-content-copy"} />
+                    {copied ? "Copied" : "Copy for the admin"}
+                  </Button>
+                  {copyFailed ? <p className="mt-1.5 text-xs">Copy failed. Select the two lines and copy them.</p> : null}
+                </Note>
+              ) : null}
               {submitError ? (
                 <Note type="error" className="mt-4">
                   Error: {submitError}
@@ -297,6 +329,8 @@ export function PublicSignupView() {
     </div>
   );
 }
+
+const linkLines = (link: SignupLink) => `Discord id: ${link.discord_id}\nBattle tag: ${link.battle_tag}`;
 
 const FieldError = ({ message }: { message: string | null }) => (message ? <p className="mt-1.5 text-xs text-error">{message}</p> : null);
 

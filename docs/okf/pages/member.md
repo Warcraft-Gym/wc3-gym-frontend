@@ -4,7 +4,7 @@ title: Member self-service
 description: The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
 resource: ../../../next/src/app/(app)/HomeView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T19:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T07:10:53Z }
 sources:
   - id: home
     resource: ../../../next/src/app/(app)/HomeView.tsx
@@ -21,6 +21,9 @@ sources:
   - id: signup
     resource: ../../../next/src/app/(app)/signup/PublicSignupView.tsx
     title: The season signup form
+  - id: signup-helper
+    resource: ../../../next/src/helpers/signup.mjs
+    title: The signup states, the battle tag shape and which refusal the tag field owns
   - id: availability
     resource: ../../../next/src/app/(app)/availability/AvailabilityView.tsx
     title: The availability page
@@ -56,7 +59,7 @@ The page sends six requests for a member: `/me`, `GET /seasons`, `GET /me/events
 
 **Profile (`/profile`).** The one route a guest may open. A guest reads a card that offers the Discord invite from the settings and a "Check again" button, which reads `/me` once more. A member with no player row reads the signup form. A member with a player row is sent to their own player page.
 
-**Signup (`/signup`).** The season signup form: player name, battle tag, country, main race and timezone, prefilled from the linked player row. `?season=<slug>` names the season; otherwise the `/me` answer's season does. The form has five states. Signup: the season is open and takes signups. Request: signups are closed or the season has commenced, so the form saves the profile and asks an admin to add the player. Joined: the page shows the entry and offers "Change my details", plus a link to the round check-in when scheduling is on. Over: the season is complete. Profile: no season takes signups, so only the profile saves. A submit the backend answers as closed shows the backend's message. A successful submit reads `/me` again.
+**Signup (`/signup`).** The season signup form: player name, battle tag, country, main race and timezone, prefilled from the linked player row. `?season=<slug>` names the season; otherwise the `/me` answer's season does. The form has five states. Signup: the season is open and takes signups. Request: signups are closed or the season has commenced, so the form saves the profile and asks an admin to add the player. Joined: the page shows the entry and offers "Change my details", plus a link to the round check-in when scheduling is on. Over: the season is complete. Profile: no season takes signups, so only the profile saves. A submit the backend answers as closed shows the backend's message. A refusal that names the battle tag prints under the tag field until the tag changes. A refusal that carries `link` names the earlier player and shows two lines for an admin, the Discord id and the battle tag, with a copy button. A successful submit reads `/me` again.
 
 **Availability (`/availability`).** The timezone the member's hours are read in, then the blocked times editor: repeating weekly blocks and one-off busy periods. The backend refuses a block while the profile names no zone, so the editor writes the browser zone first when the profile has none. The page says that open hours are a starting point, not a promise. It holds no check-in control: the round check-in lives on the [player page](players-and-stats.md). Under the editor, "Rounds these cover" reads the rounds the blocks answer on their own, grouped by event, each with its derived "Out (blocked times)" chip and a link to the event. The list is read-only, because a derived answer is never stored; a round is taken back on the player page. It reads one `GET /player-series` per event the member is signed up to, the same read the player page makes, and shows the app's skeleton pulse until they land. The reads run once, when the page loads; a saved or deleted block moves the rounds the blocks cover, so the card then asks the reader to reload the page.
 

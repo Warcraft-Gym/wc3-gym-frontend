@@ -7,15 +7,14 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toneClass } from "@/components/ui/tone";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CIcon } from "@/components/W3CIcon";
-import { addTagError, bnetNote, tagSourceRest, tagsActiveFirst } from "@/helpers/tags.mjs";
+import { addTagError, bnetNote, tagsActiveFirst, verifiedTag } from "@/helpers/tags.mjs";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats.js";
 import { usePlayerStore } from "@/stores";
-import type { PlayerTag } from "@/stores";
+import type { LinkPrompt, PlayerTag } from "@/stores";
 
 const BATTLE_TAG = /^\S+#\d+$/;
 
@@ -26,12 +25,12 @@ function BnetVerified() {
     <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger
         render={
-          // a tap opens it as well as a hover; preventDefault keeps the tap off the row's radio
+          // a tap opens it as well as a hover
           <button
             type="button"
             aria-label="Verified on Battle.net"
             className="inline-flex cursor-help items-center gap-1 text-sm font-normal text-muted-foreground"
-            onClick={(event) => { event.preventDefault(); setOpen((o) => !o); }}
+            onClick={() => setOpen((o) => !o)}
           />
         }
       >
@@ -43,35 +42,71 @@ function BnetVerified() {
   );
 }
 
-/** The owner's own battle tags on his player page: which one is active, the ones he may
- *  remove, and "I also played as" to add another. Every write answers his row, and the
- *  page reads the profile again, because the header, the address and the MMR follow the active tag.
- *  "Link Battle.net" leaves for Blizzard, which sends the browser back with ?bnet=<token> or ?bnet=error. */
+/** One open prompt: an earlier player who may be the owner, or a tag another player verified. */
+function PromptRow({ prompt, busy, onAnswer }: { prompt: LinkPrompt; busy: boolean; onAnswer: (accept: boolean) => void }) {
+  if (prompt.kind === "taken") {
+    return (
+      <div className="flex flex-wrap items-center gap-3 border-b bg-muted/40 px-4 py-3">
+        <span className="min-w-0 flex-1 text-sm">Another player verified {prompt.tag}. Ask an admin if this is wrong.</span>
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => onAnswer(false)}>OK</Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b bg-muted/40 px-4 py-3">
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="font-medium">Is this you? {prompt.tag ?? prompt.name}</span>
+        {prompt.seasons.length ? <span className="text-sm text-muted-foreground">{prompt.seasons.join(", ")}</span> : null}
+      </span>
+      <span className="flex gap-2">
+        <Button size="sm" disabled={busy} onClick={() => onAnswer(true)}>That&apos;s me</Button>
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => onAnswer(false)}>Not me</Button>
+      </span>
+    </div>
+  );
+}
+
+/** The owner's own battle tags on their player page: prompts about earlier players first, then
+ *  each tag with its Battle.net mark, "Make main", the W3C link and, on an unverified spare,
+ *  remove. Every write answers their row, and the page reads the profile again, because the
+ *  header, the address and the MMR follow the main tag. "Verify with Battle.net" leaves for
+ *  Blizzard, which sends the browser back with ?bnet=<token> or ?bnet=error. */
 export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[] | null }; onChanged: () => Promise<void> }) {
   const playerStore = usePlayerStore();
   const tags: PlayerTag[] = tagsActiveFirst(player.tags ?? []);
-  const active = tags.find((row) => row.active);
 
   const router = useRouter();
   const searchParams = useSearchParams();
   // the return from Blizzard, read once so it outlives the address clean-up below
   const [bnet] = useState(() => searchParams.get("bnet"));
 
-  const [busy, setBusy] = useState<number | null>(null); // the tag row a write is out for
+  const [busy, setBusy] = useState<string | null>(null); // the row a write is out for
   const [pageError, setPageError] = useState<string | null>(() => bnetNote(bnet, searchParams.get("reason")));
+  const [done, setDone] = useState<string | null>(null); // the line after a success
+  const [adding, setAdding] = useState(false);
   const [typed, setTyped] = useState("");
   const [checking, setChecking] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [added, setAdded] = useState<string | null>(null); // the line under the field after a success
   const [linking, setLinking] = useState(false);
+  const [prompts, setPrompts] = useState<LinkPrompt[]>([]);
 
-  // a ?bnet=<token> return links the account to this login; either way drop ?bnet= from the address
+  const loadPrompts = () => playerStore.myPrompts().then(setPrompts, () => setPrompts([]));
+
+  // a ?bnet=<token> return verifies the tag on this login; either way drop ?bnet= from the address
   useEffect(() => {
+    const finishing = !!bnet && bnet !== "error" && bnet !== "linked";
+    // a Battle.net return reads the prompts after the verify, so a first read cannot land late
+    if (!finishing) loadPrompts();
     if (!bnet) return;
-    if (bnet !== "error" && bnet !== "linked") {
+    if (finishing) {
       playerStore.finishBnetLink(bnet).then(
-        () => { setAdded("Battle.net account linked"); return onChanged(); },
-        (error) => { const { field, page } = addTagError(error); setPageError(field ?? page); },
+        (user) => {
+          const tag = verifiedTag(user?.tags, player.tags ?? []);
+          setDone(tag ? `Verified ${tag}.` : "Verified.");
+          loadPrompts();
+          return onChanged();
+        },
+        (error) => { setPageError((error as Error).message); loadPrompts(); },
       );
     }
     const query = new URLSearchParams(searchParams);
@@ -81,7 +116,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const linkBnet = async () => {
+  const verify = async () => {
     setLinking(true);
     setPageError(null);
     try {
@@ -93,10 +128,10 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     }
   };
 
-  const write = async (tagId: number, run: () => Promise<unknown>) => {
-    setBusy(tagId);
+  const write = async (key: string, run: () => Promise<unknown>) => {
+    setBusy(key);
     setPageError(null);
-    setAdded(null);
+    setDone(null);
     try {
       await run();
       await onChanged();
@@ -107,10 +142,26 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     }
   };
 
+  // only an accepted suggestion changes the profile; the list reloads either way
+  const answer = async (prompt: LinkPrompt, accept: boolean) => {
+    setBusy(`prompt-${prompt.id}`);
+    setPageError(null);
+    setDone(null);
+    try {
+      await playerStore.answerPrompt(prompt.id, accept);
+      if (accept) await onChanged();
+    } catch (error) {
+      setPageError((error as Error).message);
+    } finally {
+      await loadPrompts();
+      setBusy(null);
+    }
+  };
+
   const add = async (event: React.FormEvent) => {
     event.preventDefault();
     const tag = typed.trim();
-    setAdded(null);
+    setDone(null);
     setPageError(null);
     if (!BATTLE_TAG.test(tag)) {
       setFieldError("Enter a battle tag like Name#1234.");
@@ -121,7 +172,9 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     try {
       await playerStore.addMyTag(tag);
       setTyped("");
-      setAdded(`Added ${tag}`);
+      setAdding(false);
+      setDone(`Added ${tag}.`);
+      await loadPrompts();
       await onChanged();
     } catch (error) {
       const { field, page } = addTagError(error);
@@ -137,88 +190,82 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
       <CardTitle className="flex items-center gap-2 bg-primary p-4 text-on-primary">
         <Icon name="mdi-card-account-details" />
         My accounts
-        <span className="tnum ms-auto text-sm font-normal">
-          {tags.length} {tags.length === 1 ? "tag" : "tags"}
-        </span>
       </CardTitle>
       <CardContent className="p-0">
         <StatusAlert modelValue={pageError} className="m-4" onClose={() => setPageError(null)} />
-        {tags.length ? (
-          <RadioGroup
-            aria-label="Active account"
-            className="gap-0"
-            value={active ? String(active.id) : ""}
-            onValueChange={(value) => {
-              const id = Number(value);
-              if (id !== active?.id) write(id, () => playerStore.makeMyTagActive(id));
-            }}
-          >
-            {tags.map((row) => (
-              <div key={row.id} className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-b px-4 py-3">
-                <RadioGroupItem id={`tag-${row.id}`} value={String(row.id)} className="mt-1" disabled={busy !== null} aria-label={`Make ${row.tag} active`} />
-                <label htmlFor={`tag-${row.id}`} className="flex min-w-0 flex-col gap-0.5">
-                  <span className="flex flex-wrap items-center gap-2 font-medium">
-                    {row.tag}
-                    {row.verified ? <BnetVerified /> : null}
-                    {row.active ? <Badge className={toneClass("primary")}>Active</Badge> : null}
-                    {busy === row.id ? <Icon name="mdi-loading mdi-spin" size={16} /> : null}
-                  </span>
-                  {/* an unverified tag offers the Battle.net link that verifies it */}
-                  {row.verified ? null : (
-                    <span className="text-sm text-muted-foreground">
-                      <Button type="button" variant="link" size="sm" className="h-auto p-0 text-sm" disabled={linking} onClick={linkBnet}>Verify with Battle.net</Button>
-                      {tagSourceRest(row) ? `. ${tagSourceRest(row)}` : null}
-                    </span>
-                  )}
-                </label>
-                <span className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" nativeButton={false} render={<a href={w3cPlayerUrl(row.tag)} target="_blank" rel="noopener noreferrer" />}>
-                    <W3CIcon size={16} />
-                    W3C
-                  </Button>
-                  {/* a verified or active tag stays; the player makes another active first */}
-                  {!row.active && !row.verified ? (
-                    <Button variant="ghost" size="icon-sm" aria-label={`Remove ${row.tag}`} disabled={busy !== null} onClick={() => write(row.id, () => playerStore.removeMyTag(row.id))}>
-                      <Icon name="mdi-close" />
-                    </Button>
-                  ) : null}
-                </span>
+        {prompts.map((prompt) => (
+          <PromptRow key={prompt.id} prompt={prompt} busy={busy !== null} onAnswer={(accept) => answer(prompt, accept)} />
+        ))}
+        {tags.map((row) => (
+          <div key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-3">
+            <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 font-medium">
+              {row.tag}
+              {row.verified ? <BnetVerified /> : <span className="text-sm font-normal text-muted-foreground">Unverified</span>}
+              {row.active ? <Badge className={toneClass("primary")}>Main</Badge> : null}
+              {busy === `tag-${row.id}` ? <Icon name="mdi-loading mdi-spin" size={16} /> : null}
+            </span>
+            <span className="flex items-center gap-1">
+              {row.active ? null : (
+                <Button variant="ghost" size="sm" aria-label={`Make ${row.tag} main`} disabled={busy !== null} onClick={() => write(`tag-${row.id}`, () => playerStore.makeMyTagActive(row.id))}>
+                  Make main
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" nativeButton={false} render={<a href={w3cPlayerUrl(row.tag)} target="_blank" rel="noopener noreferrer" aria-label={`${row.tag} on W3Champions`} />}>
+                <W3CIcon size={16} />
+                W3C
+              </Button>
+              {/* a verified or main tag stays; make another main first */}
+              {!row.active && !row.verified ? (
+                <Button variant="ghost" size="icon-sm" aria-label={`Remove ${row.tag}`} disabled={busy !== null} onClick={() => write(`tag-${row.id}`, () => playerStore.removeMyTag(row.id))}>
+                  <Icon name="mdi-close" />
+                </Button>
+              ) : null}
+            </span>
+          </div>
+        ))}
+        {adding ? (
+          <form className="border-b px-4 py-3" onSubmit={add}>
+            <Field label="Battle tag" htmlFor="add-tag" error={fieldError}>
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  id="add-tag"
+                  autoFocus
+                  className="min-w-0 flex-1"
+                  placeholder="Name#1234"
+                  value={typed}
+                  aria-invalid={!!fieldError}
+                  onChange={(event) => { setTyped(event.target.value); setFieldError(null); }}
+                />
+                <Button type="submit" disabled={checking || !typed.trim()}>Add</Button>
+                <Button type="button" variant="ghost" disabled={checking} onClick={() => { setAdding(false); setTyped(""); setFieldError(null); }}>Cancel</Button>
               </div>
-            ))}
-          </RadioGroup>
+            </Field>
+            {checking ? (
+              <p role="status" className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Icon name="mdi-loading mdi-spin" size={14} />
+                Checking W3Champions
+              </p>
+            ) : null}
+          </form>
         ) : null}
-        <form className="px-4 py-3" onSubmit={add}>
-          <Field
-            label="I also played as"
-            htmlFor="also-played-as"
-            error={fieldError}
-            hint={checking || added ? undefined : "Checked against W3Champions"}
-          >
-            <div className="flex gap-2">
-              <Input
-                id="also-played-as"
-                className="min-w-0 flex-1"
-                placeholder="Name#1234"
-                value={typed}
-                aria-invalid={!!fieldError}
-                onChange={(event) => { setTyped(event.target.value); setFieldError(null); setAdded(null); }}
-              />
-              <Button type="submit" variant="outline" disabled={checking || !typed.trim()}>Add</Button>
-              <Button type="button" variant="outline" disabled={linking} onClick={linkBnet}>Link Battle.net</Button>
-            </div>
-          </Field>
-          {checking ? (
-            <p role="status" className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Icon name="mdi-loading mdi-spin" size={14} />
-              Checking W3Champions
-            </p>
-          ) : added ? (
-            <p role="status" className="mt-1.5 flex items-center gap-1.5 text-xs">
-              <Icon name="mdi-check" size={14} className="text-success" />
-              {added}
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+          <Button variant="outline" disabled={linking} onClick={verify}>
+            <Icon name="mdi-check-decagram" size={16} />
+            Verify with Battle.net
+          </Button>
+          {adding ? null : (
+            <Button variant="outline" onClick={() => { setAdding(true); setDone(null); }}>
+              <Icon name="mdi-plus" size={16} />
+              Add a tag
+            </Button>
+          )}
+          {done ? (
+            <p role="status" className="flex items-center gap-1.5 text-sm">
+              <Icon name="mdi-check" size={16} className="text-success" />
+              {done}
             </p>
           ) : null}
-        </form>
+        </div>
       </CardContent>
     </Card>
   );

@@ -3,6 +3,8 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 
 // One row of UserPublic.tags
 export type PlayerTag = { id: number; tag: string; verified: boolean; active: boolean; source: string | null; first_seen: string | null; last_seen: string | null };
+// An open prompt on the owner's profile: a suggested earlier player, or a tag another login verified
+export type LinkPrompt = { id: number; kind: "suggest" | "taken"; tag: string | null; person_id: number | null; name: string | null; seasons: string[] };
 // What a merge check answers, each line in plain words
 export type MergePreview = { stops: string[]; removes: string[]; moves: string[] };
 
@@ -55,6 +57,13 @@ const store = {
   },
   async removeMyTag(tagId: number) {
     return await fetchWrapper.delete(`${backendUrl}/users/me/tags/${tagId}`);
+  },
+  // The owner's open prompts; an answer closes one and answers UserPublic
+  async myPrompts() {
+    return await fetchWrapper.get(`${backendUrl}/users/me/prompts`);
+  },
+  async answerPrompt(promptId: number, accept: boolean) {
+    return await fetchWrapper.post(`${backendUrl}/users/me/prompts/${promptId}`, { accept });
   },
   // The Blizzard sign-in address that links a Battle.net account; answers {url}
   async startBnetLink() {

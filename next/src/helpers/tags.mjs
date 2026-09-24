@@ -1,6 +1,5 @@
 // A person's battle tags: the rows of UserPublic.tags, one of them active.
 // Each row is { id, tag, verified, active, source, first_seen, last_seen }.
-import { DateTime } from 'luxon';
 
 const same = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
 
@@ -14,22 +13,17 @@ export const tagsActiveFirst = (tags = []) =>
 // The tags a person holds besides the active one
 export const otherTags = (player) => tagsActiveFirst(player?.tags).filter((row) => !row.active && !same(row.tag, player?.battleTag));
 
-// Where a tag row came from, in words; an unknown source says nothing
-const SOURCES = { claim: 'Added by the player', signup: 'From a signup', sheet: 'From the GNL sheets', admin: 'Moved by an admin', link: 'Linked Battle.net account' };
-const month = (iso) => (iso ? DateTime.fromISO(iso).toFormat('LLLL yyyy') : null);
-
-// e.g. "From the GNL sheets, first seen April 2020, last seen August 2026"; '' when nothing is known
-export const tagSourceRest = (row) => {
-  const seen = [month(row.first_seen) && `first seen ${month(row.first_seen)}`, month(row.last_seen) && `last seen ${month(row.last_seen)}`].filter(Boolean);
-  const from = SOURCES[row.source];
-  const detail = from ? [from, ...seen].join(', ') : seen.join(', ');
-  return detail ? detail[0].toUpperCase() + detail.slice(1) : '';
-};
-
-// Where a refused "I also played as" shows: a 404 or a 409 names the tag, so it goes under the field
+// Where a refused "Add a tag" shows: a 404 or a 409 is about the tag, so it goes under the field
 export const addTagError = (error) => {
   const message = error?.message || error?.error || String(error ?? '');
-  return error?.status === 404 || error?.status === 409 ? { field: message, page: null } : { field: null, page: message };
+  if (error?.status === 404) return { field: 'Not found on W3Champions.', page: null };
+  return error?.status === 409 ? { field: message, page: null } : { field: null, page: message };
+};
+
+// The tag a Battle.net verify just marked: verified now and not before; else null
+export const verifiedTag = (after = [], before = []) => {
+  const was = new Set((before ?? []).filter((row) => row.verified).map((row) => row.tag.toLowerCase()));
+  return (after ?? []).find((row) => row.verified && !was.has(row.tag.toLowerCase()))?.tag ?? null;
 };
 
 // The error MyAccounts shows when Blizzard sends the browser back with ?bnet=error&reason=; else null

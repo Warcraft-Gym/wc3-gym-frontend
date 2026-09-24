@@ -9,7 +9,7 @@ export { useFantasyStore } from "./fantasy";
 export { useMapStore } from "./map";
 export { useMatchStore } from "./match";
 export { usePlayerStore } from "./player";
-export type { MergePreview, PlayerTag } from "./player";
+export type { LinkPrompt, MergePreview, PlayerTag } from "./player";
 export { usePlayerCareerStatsStore } from "./player_career_stats";
 export { useSeriesStore } from "./series";
 export { useTeamStore } from "./team";

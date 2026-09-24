@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addTagError, bnetNote, canConfirmMerge, isListFilter, listFilterQuery, otherTags, playedAsTag, tagSourceLine, tagSourceRest, tagsActiveFirst } from './tags.mjs';
+import { addTagError, bnetNote, canConfirmMerge, isListFilter, listFilterQuery, otherTags, playedAsTag, tagSourceRest, tagsActiveFirst } from './tags.mjs';
 
 // A season row shows "as TAG" only when it was played under a tag the person no longer shows
 test('played as shows only when the tag differs from the current one', () => {
@@ -22,12 +22,7 @@ test('the active tag leads, then the newest sighting', () => {
   assert.deepEqual(otherTags({ battleTag: 'Main#3' }), []);
 });
 
-test('the source line reads verified, source and dates in words', () => {
-  assert.equal(
-    tagSourceLine({ verified: false, source: 'sheet', first_seen: '2020-04-12T00:00:00Z', last_seen: null }),
-    'Unverified. From the GNL sheets, first seen April 2020',
-  );
-  assert.equal(tagSourceLine({ verified: true, source: 'unknown' }), 'Verified.');
+test('the source line reads source and dates in words', () => {
   assert.equal(tagSourceRest({ verified: false, source: 'signup', first_seen: '2020-04-12T00:00:00Z' }), 'From a signup, first seen April 2020');
   assert.equal(tagSourceRest({ verified: true, source: 'unknown' }), '');
 });

@@ -15,7 +15,7 @@ export const tagsActiveFirst = (tags = []) =>
 export const otherTags = (player) => tagsActiveFirst(player?.tags).filter((row) => !row.active && !same(row.tag, player?.battleTag));
 
 // Where a tag row came from, in words; an unknown source says nothing
-const SOURCES = { claim: 'Added by the player', signup: 'From a signup', sheet: 'From the GNL sheets', import: 'From the GNL sheets' };
+const SOURCES = { claim: 'Added by the player', signup: 'From a signup', sheet: 'From the GNL sheets', admin: 'Moved by an admin', link: 'Linked Battle.net account' };
 const month = (iso) => (iso ? DateTime.fromISO(iso).toFormat('LLLL yyyy') : null);
 
 // e.g. "Unverified. From the GNL sheets, first seen April 2020, last seen August 2026"

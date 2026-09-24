@@ -94,17 +94,19 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
 
   // a ?bnet=<token> return verifies the tag on this login; either way drop ?bnet= from the address
   useEffect(() => {
-    loadPrompts();
+    const finishing = !!bnet && bnet !== "error" && bnet !== "linked";
+    // a Battle.net return reads the prompts after the verify, so a first read cannot land late
+    if (!finishing) loadPrompts();
     if (!bnet) return;
-    if (bnet !== "error" && bnet !== "linked") {
+    if (finishing) {
       playerStore.finishBnetLink(bnet).then(
         (user) => {
-          const tag = verifiedTag(user?.tags);
+          const tag = verifiedTag(user?.tags, player.tags);
           setDone(tag ? `Verified ${tag}.` : "Verified.");
           loadPrompts();
           return onChanged();
         },
-        (error) => { const { field, page } = addTagError(error); setPageError(field ?? page); },
+        (error) => { setPageError((error as Error).message); loadPrompts(); },
       );
     }
     const query = new URLSearchParams(searchParams);
@@ -140,11 +142,21 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     }
   };
 
-  const answer = (prompt: LinkPrompt, accept: boolean) =>
-    write(`prompt-${prompt.id}`, async () => {
+  // only an accepted suggestion changes the profile; the list reloads either way
+  const answer = async (prompt: LinkPrompt, accept: boolean) => {
+    setBusy(`prompt-${prompt.id}`);
+    setPageError(null);
+    setDone(null);
+    try {
       await playerStore.answerPrompt(prompt.id, accept);
+      if (accept) await onChanged();
+    } catch (error) {
+      setPageError((error as Error).message);
+    } finally {
       await loadPrompts();
-    });
+      setBusy(null);
+    }
+  };
 
   const add = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -194,7 +206,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
             </span>
             <span className="flex items-center gap-1">
               {row.active ? null : (
-                <Button variant="ghost" size="sm" disabled={busy !== null} onClick={() => write(`tag-${row.id}`, () => playerStore.makeMyTagActive(row.id))}>
+                <Button variant="ghost" size="sm" aria-label={`Make ${row.tag} main`} disabled={busy !== null} onClick={() => write(`tag-${row.id}`, () => playerStore.makeMyTagActive(row.id))}>
                   Make main
                 </Button>
               )}
@@ -225,7 +237,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
                   onChange={(event) => { setTyped(event.target.value); setFieldError(null); }}
                 />
                 <Button type="submit" disabled={checking || !typed.trim()}>Add</Button>
-                <Button type="button" variant="ghost" onClick={() => { setAdding(false); setTyped(""); setFieldError(null); }}>Cancel</Button>
+                <Button type="button" variant="ghost" disabled={checking} onClick={() => { setAdding(false); setTyped(""); setFieldError(null); }}>Cancel</Button>
               </div>
             </Field>
             {checking ? (

@@ -20,9 +20,11 @@ export const addTagError = (error) => {
   return error?.status === 409 ? { field: message, page: null } : { field: null, page: message };
 };
 
-// The tag a Battle.net verify just marked: the newest verified row; else null
-export const verifiedTag = (tags = []) =>
-  [...(tags ?? [])].filter((row) => row.verified).sort((a, b) => String(b.last_seen ?? '').localeCompare(String(a.last_seen ?? '')))[0]?.tag ?? null;
+// The tag a Battle.net verify just marked: verified now and not before; else null
+export const verifiedTag = (after = [], before = []) => {
+  const was = new Set((before ?? []).filter((row) => row.verified).map((row) => row.tag.toLowerCase()));
+  return (after ?? []).find((row) => row.verified && !was.has(row.tag.toLowerCase()))?.tag ?? null;
+};
 
 // The error MyAccounts shows when Blizzard sends the browser back with ?bnet=error&reason=; else null
 export const BNET_REASONS = {

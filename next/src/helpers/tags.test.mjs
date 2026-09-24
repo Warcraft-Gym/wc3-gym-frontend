@@ -55,13 +55,10 @@ test('a Battle.net error return names its reason, an unknown reason reads the ge
   assert.equal(bnetNote(null, null), null);
 });
 
-test('the verified tag is the newest verified row', () => {
-  const tags = [
-    { tag: 'Old#1', verified: true, last_seen: '2026-01-01' },
-    { tag: 'New#2', verified: true, last_seen: '2026-09-01' },
-    { tag: 'Spare#3', verified: false, last_seen: '2026-09-20' },
-  ];
-  assert.equal(verifiedTag(tags), 'New#2');
-  assert.equal(verifiedTag([]), null);
-  assert.equal(verifiedTag(null), null);
+test('the verified tag is the one verified now and not before', () => {
+  const before = [{ tag: 'Old#1', verified: true }, { tag: 'New#2', verified: false }];
+  const after = [{ tag: 'Old#1', verified: true }, { tag: 'New#2', verified: true }];
+  assert.equal(verifiedTag(after, before), 'New#2');
+  assert.equal(verifiedTag(before, before), null);
+  assert.equal(verifiedTag(null, null), null);
 });

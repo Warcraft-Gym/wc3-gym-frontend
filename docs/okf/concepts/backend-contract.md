@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T09:35:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T15:45:00Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -62,6 +62,15 @@ A user row carries `tags`: a list of `{id, tag, verified, active, source, first_
 | `player_career_stats` | `/stats/career`, `/stats/career/{id}` |
 
 The backend pins the GNL payloads, the error envelope and the paged routes in its own tests. A field this app reads that is not in those tests is a reliance the backend cannot see; add a line here when you add one, and tell the backend.
+
+# Read cost and the edge cache
+
+The database cost of a backend read is the rows one call reads times the calls that reach the backend function. A call the Vercel edge answers from its cache costs no database read. The edge serves a cached copy only to a request with no Authorization header, so `EDGE_CACHED` in `next/src/helpers/fetch-wrapper.js` lists the open reads that go out without the bearer for a non-admin. See [the pitfall](../pitfalls/edge-cache-no-bearer.md).
+
+- A read that every visitor of a page makes goes through a route the backend edge-caches and is listed in `EDGE_CACHED`. When the backend route has no cache time yet, ask the backend for one in the same change.
+- Read the narrowest route the page needs: one player's row, not the full list filtered in the browser. When no narrow route exists, ask the backend for one.
+- A read after a write, and every admin read, carries the bearer, so the person who changed something sees it at once. Everyone else sees it once the edge entry expires.
+- The backend states the rules for choosing a cache time in its `docs/okf/api/overview.md`, section "What a read costs".
 
 # What the app never does
 

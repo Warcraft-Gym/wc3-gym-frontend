@@ -27,4 +27,5 @@ The review that merges the pull request repeats step 1.
 - [`DESIGN.md`](DESIGN.md) holds the look and the data display rules. Read it, and load the `dataviz` skill and the `frontend-design` skill, before you change a page, a figure, a mark or a chart. `DESIGN.md` outranks a general rule of a skill.
 - The code rules live in the bundle: [code style](docs/okf/conventions/code-style.md), [testing](docs/okf/conventions/testing.md), [git and pull requests](docs/okf/conventions/git-and-pull-requests.md).
 - `just okf-validate` checks the bundle with a third-party OKF validator, and `just okf-drift` lists the concepts to re-read after a code change. Both run from the repository root.
+- A new backend read that every visitor of a page makes follows [read cost and the edge cache](docs/okf/concepts/backend-contract.md#read-cost-and-the-edge-cache): an edge-cached route, listed in `EDGE_CACHED`, and the narrowest route the page needs.
 - A pull request that changes a page, a store action, a contract or a decision rewrites the concept in `docs/okf/` that states it, in the same pull request.

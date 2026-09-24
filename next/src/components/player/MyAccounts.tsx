@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toneClass } from "@/components/ui/tone";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CIcon } from "@/components/W3CIcon";
-import { addTagError, tagSourceLine, tagsActiveFirst } from "@/helpers/tags.mjs";
+import { addTagError, bnetNote, tagSourceLine, tagsActiveFirst } from "@/helpers/tags.mjs";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats.js";
 import { usePlayerStore } from "@/stores";
 import type { PlayerTag } from "@/stores";
@@ -19,18 +20,53 @@ const BATTLE_TAG = /^\S+#\d+$/;
 
 /** The owner's own battle tags on his player page: which one is active, the ones he may
  *  remove, and "I also played as" to add another. Every write answers his row, and the
- *  page reads the profile again, because the header, the address and the MMR follow the active tag. */
+ *  page reads the profile again, because the header, the address and the MMR follow the active tag.
+ *  "Link Battle.net" leaves for Blizzard, which sends the browser back with ?bnet=<token> or ?bnet=error. */
 export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[] | null }; onChanged: () => Promise<void> }) {
   const playerStore = usePlayerStore();
   const tags: PlayerTag[] = tagsActiveFirst(player.tags ?? []);
   const active = tags.find((row) => row.active);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // the return from Blizzard, read once so it outlives the address clean-up below
+  const [bnet] = useState(() => searchParams.get("bnet"));
+
   const [busy, setBusy] = useState<number | null>(null); // the tag row a write is out for
-  const [pageError, setPageError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(() => bnetNote(bnet, searchParams.get("reason")));
   const [typed, setTyped] = useState("");
   const [checking, setChecking] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [added, setAdded] = useState<string | null>(null);
+  const [added, setAdded] = useState<string | null>(null); // the line under the field after a success
+  const [linking, setLinking] = useState(false);
+
+  // a ?bnet=<token> return links the account to this login; either way drop ?bnet= from the address
+  useEffect(() => {
+    if (!bnet) return;
+    if (bnet !== "error" && bnet !== "linked") {
+      playerStore.finishBnetLink(bnet).then(
+        () => { setAdded("Battle.net account linked"); return onChanged(); },
+        (error) => { const { field, page } = addTagError(error); setPageError(field ?? page); },
+      );
+    }
+    const query = new URLSearchParams(searchParams);
+    query.delete("bnet");
+    query.delete("reason");
+    router.replace(window.location.pathname + (query.size ? `?${query}` : ""));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const linkBnet = async () => {
+    setLinking(true);
+    setPageError(null);
+    try {
+      const { url } = await playerStore.startBnetLink();
+      window.location.assign(url);
+    } catch (error) {
+      setPageError((error as Error).message);
+      setLinking(false);
+    }
+  };
 
   const write = async (tagId: number, run: () => Promise<unknown>) => {
     setBusy(tagId);
@@ -60,7 +96,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     try {
       await playerStore.addMyTag(tag);
       setTyped("");
-      setAdded(tag);
+      setAdded(`Added ${tag}`);
       await onChanged();
     } catch (error) {
       const { field, page } = addTagError(error);
@@ -136,6 +172,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
                 onChange={(event) => { setTyped(event.target.value); setFieldError(null); setAdded(null); }}
               />
               <Button type="submit" variant="outline" disabled={checking || !typed.trim()}>Add</Button>
+              <Button type="button" variant="outline" disabled={linking} onClick={linkBnet}>Link Battle.net</Button>
             </div>
           </Field>
           {checking ? (
@@ -146,7 +183,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
           ) : added ? (
             <p role="status" className="mt-1.5 flex items-center gap-1.5 text-xs">
               <Icon name="mdi-check" size={14} className="text-success" />
-              Added {added}
+              {added}
             </p>
           ) : null}
         </form>

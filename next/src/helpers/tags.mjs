@@ -33,6 +33,13 @@ export const addTagError = (error) => {
   return error?.status === 404 || error?.status === 409 ? { field: message, page: null } : { field: null, page: message };
 };
 
+// The error MyAccounts shows when Blizzard sends the browser back with ?bnet=error&reason=; else null
+export const BNET_REASONS = {
+  denied: 'You cancelled on Battle.net.',
+  taken: 'That Battle.net account or tag belongs to another player. Ask an admin.',
+};
+export const bnetNote = (bnet, reason) => (bnet === 'error' ? BNET_REASONS[reason] ?? 'Linking failed. Try again.' : null);
+
 // A merge runs only after its check came back with nothing that stops it
 export const canConfirmMerge = (preview) => !!preview && Array.isArray(preview.stops) && preview.stops.length === 0;
 

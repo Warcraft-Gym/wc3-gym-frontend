@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addTagError, canConfirmMerge, isListFilter, listFilterQuery, otherTags, playedAsTag, tagSourceLine, tagsActiveFirst } from './tags.mjs';
+import { addTagError, bnetNote, canConfirmMerge, isListFilter, listFilterQuery, otherTags, playedAsTag, tagSourceLine, tagsActiveFirst } from './tags.mjs';
 
 // A season row shows "as TAG" only when it was played under a tag the person no longer shows
 test('played as shows only when the tag differs from the current one', () => {
@@ -52,4 +52,13 @@ test('the server-side show-only entries send their list filter', () => {
   assert.equal(listFilterQuery('low_games'), null);
   assert.equal(isListFilter('claimed'), true);
   assert.equal(isListFilter('no_stats'), false);
+});
+
+test('a Battle.net error return names its reason, an unknown reason reads the general failure', () => {
+  assert.equal(bnetNote('error', 'denied'), 'You cancelled on Battle.net.');
+  assert.equal(bnetNote('error', 'taken'), 'That Battle.net account or tag belongs to another player. Ask an admin.');
+  assert.equal(bnetNote('error', 'state'), 'Linking failed. Try again.');
+  assert.equal(bnetNote('error', null), 'Linking failed. Try again.');
+  assert.equal(bnetNote('eyJhbGciOi.token', null), null);
+  assert.equal(bnetNote(null, null), null);
 });

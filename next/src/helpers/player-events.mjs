@@ -39,6 +39,7 @@ export const eventRows = ({
 } = {}) => {
   const bySeason = new Map((seasons ?? []).map((season) => [season.id, season]));
   const races = new Map((player.signup_seasons ?? []).map((row) => [row.id, row.signup_race]));
+  const playedAs = new Map((player.signup_seasons ?? []).map((row) => [row.id, row.played_as ?? null]));
   const champion = new Set((player.trophies ?? []).map((row) => row.season_id));
   return (history.events ?? [])
     .map((event) => {
@@ -59,6 +60,7 @@ export const eventRows = ({
         teamId: event.team_id ?? null,
         teamIcon: event.team_icon_url ?? null,
         race: races.get(id) ?? null,
+        playedAs: playedAs.get(id) ?? null,
         wins: event.won ?? 0,
         losses: event.lost ?? 0,
         series,

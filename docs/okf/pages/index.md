@@ -6,7 +6,7 @@
 * [KOTH](koth.md) - The KOTH nights list, the run page an admin drives one night from, and the public board that draws tonight's brackets for the stream.
 * [Leagues and events, the public side](leagues-and-events.md) - The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 * [Member self-service](member.md) - The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
-* [Players and stats](players-and-stats.md) - The players list, one player's page with the owner's actions, the season ladder and the Random stats helper.
+* [Players and stats](players-and-stats.md) - The players list with the admin's tag controls, one player's page with his tags and the owner's actions, the season ladder and the Random stats helper.
 * [Site admin](site-admin.md) - The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
 * [Teams](teams.md) - The teams list, one team across its events, the team in one season with its roster and captains, and the captain's check-in.
 * [The GNL season](gnl-season.md) - The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.

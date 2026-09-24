@@ -4,7 +4,7 @@ title: Member self-service
 description: The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
 resource: ../../../next/src/app/(app)/HomeView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T07:10:53Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T09:35:07Z }
 sources:
   - id: home
     resource: ../../../next/src/app/(app)/HomeView.tsx
@@ -57,7 +57,7 @@ sources:
 
 The page sends six requests for a member: `/me`, `GET /seasons`, `GET /me/events`, `GET /home/series`, `GET /events/{id}/teams/basic` and one `GET /player-series?season_id=` per started season the member is in. An admin sends the same six. The `/home/series` read is public and edge cached, so it is sent without a bearer. A failed `/home/series` or `/events/{id}/teams/basic` read states itself in the page's alert, and the panel that read it prints the one quiet line "Could not be loaded." in place of its rows, never an empty state. The hub carries no admin card: an admin reaches season management and the round draft through the leaderboard's season link.
 
-**Profile (`/profile`).** The one route a guest may open. A guest reads a card that offers the Discord invite from the settings and a "Check again" button, which reads `/me` once more. A member with no player row reads the signup form. A member with a player row is sent to their own player page.
+**Profile (`/profile`).** The one route a guest may open. A guest reads a card that offers the Discord invite from the settings and a "Check again" button, which reads `/me` once more. A member with no player row reads the signup form. A member with a player row is sent to their own player page, where the "My accounts" card manages his battle tags; see [players and stats](players-and-stats.md).
 
 **Signup (`/signup`).** The season signup form: player name, battle tag, country, main race and timezone, prefilled from the linked player row. `?season=<slug>` names the season; otherwise the `/me` answer's season does. The form has five states. Signup: the season is open and takes signups. Request: signups are closed or the season has commenced, so the form saves the profile and asks an admin to add the player. Joined: the page shows the entry and offers "Change my details", plus a link to the round check-in when scheduling is on. Over: the season is complete. Profile: no season takes signups, so only the profile saves. A submit the backend answers as closed shows the backend's message. A refusal that names the battle tag prints under the tag field until the tag changes. A refusal that carries `link` names the earlier player and shows two lines for an admin, the Discord id and the battle tag, with a copy button. A successful submit reads `/me` again.
 

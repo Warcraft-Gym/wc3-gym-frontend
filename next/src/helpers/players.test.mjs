@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSignupRace, kingPlayer, myProfilePath, playersWithCareers } from './players.mjs';
+import { defaultSignupRace, kingPlayer, matchesPlayerSearch, myProfilePath, playersWithCareers } from './players.mjs';
 
 // A signup needs the race of THIS season, and the profile race cannot carry
 // that for a player who plays two. The last signup is his own answer; the
@@ -60,4 +60,11 @@ test('the account menu points at the own player page, or the signup page', () =>
   assert.equal(myProfilePath({ user: { id: 7 } }), '/player/7');
   assert.equal(myProfilePath({ role: 'member' }), '/profile');
   assert.equal(myProfilePath(null), '/profile');
+});
+
+// A person is found by any tag he holds, not only the active one
+test('the player search matches a tag the person holds besides the active one', () => {
+  const player = { name: 'FattsRussell', battleTag: 'BeLit#11855', tags: [{ tag: 'BeLit#11855' }, { tag: 'MangoIsNice#1230' }] };
+  assert.equal(matchesPlayerSearch(player, 'mango'), true);
+  assert.equal(matchesPlayerSearch(player, 'nobody'), false);
 });

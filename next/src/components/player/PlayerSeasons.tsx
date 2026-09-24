@@ -15,6 +15,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RoundStrip } from "@/components/RoundStrip";
 import { StatusAlert } from "@/components/StatusAlert";
+import { PlayedAs } from "@/components/PlayedAs";
 import { TeamName } from "@/components/TeamName";
 import { W3CMmr } from "@/components/W3CMmr";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
@@ -231,6 +232,7 @@ export function PlayerSeasons({
                         )}
                       </span>
                       <span className={CAPTION}>{dates(row.season)}</span>
+                      <PlayedAs playedAs={row.playedAs} battleTag={player.battleTag} />
                     </span>
                     {row.team ? (
                       <span className={FACT}>

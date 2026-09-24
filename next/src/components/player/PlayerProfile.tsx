@@ -6,6 +6,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/Icon";
 import { EditPlayerDialog, type EditPlayerDialogHandle } from "@/components/EditPlayerDialog";
 import { HeadToHead } from "@/components/player/HeadToHead";
+import { MyAccounts } from "@/components/player/MyAccounts";
 import { PlayerHeader } from "@/components/player/PlayerHeader";
 import { PlayerSeasons } from "@/components/player/PlayerSeasons";
 import { RoundCards } from "@/components/player/RoundCards";
@@ -36,7 +37,7 @@ const weekKey = (seasonId: number | string, week: number) => `${seasonId}-${week
 export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLoaded?: (player: Row) => void }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { me, isAdmin } = useAuth();
+  const { me, isAdmin, fetchMe } = useAuth();
   const availabilityStore = useAvailabilityStore();
   const eventStore = useEventStore();
   const playerStore = usePlayerStore();
@@ -248,6 +249,11 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
     onLoaded?.(row);
   };
 
+  // the active tag is the address and the session's tag, so both read again
+  const afterTagWrite = async () => {
+    await Promise.all([reload(), fetchMe().catch(() => null)]);
+  };
+
   const afterWrite = async (message: string) => {
     setSuccessMessage(message);
     await loadSeasons();
@@ -284,6 +290,8 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
               />
             </CardContent>
           </Card>
+
+          {owner ? <MyAccounts player={player} onChanged={afterTagWrite} /> : null}
 
           {owner && waiting.length ? (
             <Card className="card mb-6">

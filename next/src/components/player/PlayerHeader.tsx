@@ -14,6 +14,7 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { useSeason, useSeasonStore, useTeamStore } from "@/stores";
 import { discordMark } from "@/assets/discordMark.js";
 import { syncedAgo, w3cPlayerUrl } from "@/helpers/w3c-stats.js";
+import { otherTags } from "@/helpers/tags.mjs";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -29,7 +30,7 @@ const chipText = (captain: boolean, team: string, season: string) => `${captain 
 const handle = (url?: string | null) => (url || "").replace(/\/+$/, "").split("/").pop();
 
 /** Who the player is, at the top of his page: the picture, the name and race, the
- *  battle tag at w3champions, the seasons he is in, the channels he plays on, his
+ *  battle tag at w3champions and the other tags he played as, the seasons he is in, the channels he plays on, his
  *  clock and his W3C MMR. The owner also gets his Availability and Edit buttons. */
 export function PlayerHeader({
   player,
@@ -64,6 +65,8 @@ export function PlayerHeader({
   }, [owner]);
 
   const initials = (player.name || "?").slice(0, 2).toUpperCase();
+  // the tags he holds besides the active one, each a W3Champions link
+  const others: Row[] = otherTags(player);
 
   // the race of his newest signup; the profile race is one self-declared value
   const signupRace: string | undefined = (player.signup_seasons ?? []).slice().sort((a: Row, b: Row) => b.id - a.id).find((s: Row) => s.signup_race)?.signup_race ?? player.race;
@@ -106,6 +109,17 @@ export function PlayerHeader({
               <W3CIcon size={16} />
               <span>{player.battleTag}</span>
             </a>
+          ) : null}
+          {others.length ? (
+            <div className="text-sm text-muted-foreground">
+              Also played as{" "}
+              {others.map((row: Row, index: number) => (
+                <span key={row.id}>
+                  {index ? ", " : null}
+                  <a href={w3cPlayerUrl(row.tag)} target="_blank" rel="noopener noreferrer" className="text-inherit hover:underline">{row.tag}</a>
+                </span>
+              ))}
+            </div>
           ) : null}
           {seasonChips.length ? (
             <div className="mt-2 flex flex-wrap gap-2">

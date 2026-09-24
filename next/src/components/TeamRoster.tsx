@@ -5,12 +5,14 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/Icon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { FlagIcon } from "@/components/FlagIcon";
+import { PlayedAs } from "@/components/PlayedAs";
 import { type Player } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RoundStrip } from "@/components/RoundStrip";
 import { W3CMmr } from "@/components/W3CMmr";
 import { playerPath } from "@/helpers/players.mjs";
 import { stripPoints } from "@/helpers/round-strip.mjs";
+import { playedAsTag } from "@/helpers/tags.mjs";
 import { agoFromIso, getW3CMMR } from "@/helpers/w3c-stats";
 import { cn } from "@/lib/utils";
 
@@ -118,10 +120,13 @@ export function TeamRoster({
     const row = rowOf(player);
     // a member plays this event; a captain plays only when he is rostered as a member too
     const plays = members.some((member) => member.id === player.id);
+    // the tag this event was played as sits on its own line under the row, so the tracks keep their widths
+    const asTag = playedAsTag(row.played_as, player.battleTag);
+    const cell = asTag ? cn(CELL, "border-b-0 pb-0") : CELL;
     return (
       <Fragment key={player.id}>
-        <span className={cn(CELL, "pe-1.5")}>{player.country ? <FlagIcon countryIdentifier={player.country} /> : null}</span>
-        <span className={cn(CELL, "min-w-0 overflow-hidden pe-1.5")} title={player.name}>
+        <span className={cn(cell, "pe-1.5")}>{player.country ? <FlagIcon countryIdentifier={player.country} /> : null}</span>
+        <span className={cn(cell, "min-w-0 overflow-hidden pe-1.5")} title={player.name}>
           {player.id != null ? (
             <Link href={playerPath(player)} className="min-w-0 truncate text-inherit no-underline hover:text-primary hover:underline">
               {player.name}
@@ -130,20 +135,21 @@ export function TeamRoster({
             <span className="min-w-0 truncate">{player.name}</span>
           )}
         </span>
-        <span className={cn(CELL, "pe-1.5")}>{row.signup_race ? <RaceIcon raceIdentifier={row.signup_race} /> : null}</span>
+        <span className={cn(cell, "pe-1.5")}>{row.signup_race ? <RaceIcon raceIdentifier={row.signup_race} /> : null}</span>
         {plays ? (
           <>
-            <span className={cn(CELL, "tnum min-w-[3.1em] justify-end pe-1.5")}>{mmrOf(row) ?? "—"}</span>
-            <span className={cn(CELL, "tnum justify-end pe-1")}>{strip ? (stripPoints(series as Row[], Number(player.id)) ?? "—") : null}</span>
-            <span className={cn(CELL, "ps-2 sm:ps-[18px]")}>
+            <span className={cn(cell, "tnum min-w-[3.1em] justify-end pe-1.5")}>{mmrOf(row) ?? "—"}</span>
+            <span className={cn(cell, "tnum justify-end pe-1")}>{strip ? (stripPoints(series as Row[], Number(player.id)) ?? "—") : null}</span>
+            <span className={cn(cell, "ps-2 sm:ps-[18px]")}>
               {strip ? (
                 <RoundStrip series={series as Row[]} playerId={Number(player.id)} rounds={rounds} outRounds={outRoundsOf(row)} record />
               ) : null}
             </span>
           </>
         ) : (
-          <span className={cn(CELL, "col-span-3 whitespace-nowrap text-muted-foreground")}>Not playing this season</span>
+          <span className={cn(cell, "col-span-3 whitespace-nowrap text-muted-foreground")}>Not playing this season</span>
         )}
+        {asTag ? <span className={cn(CELL, "col-span-6 pt-0 ps-4")}><PlayedAs playedAs={row.played_as} battleTag={player.battleTag} /></span> : null}
       </Fragment>
     );
   };

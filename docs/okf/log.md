@@ -2,6 +2,7 @@
 
 ## 2026-09-24
 
+* **Update**: a person holds many battle tags. The owner's player page carries a "My accounts" card that picks the active tag, removes an unverified one and adds "I also played as"; the header lists the other tags; a season row names the tag it was played as when that differs from today's. The admin players page gains a Tags column, the "No Discord" and "Claimed tags" filters, and the "Move tag" and "Merge into" dialogs. The players and stats, member and teams page concepts, the shared-component concept and the backend contract state the card, the lines, the dialogs and the routes.
 * **Update**: the signup form prints a battle tag refusal under the tag field, and shows the details an admin needs when the backend asks for a link.
 
 ## 2026-09-23

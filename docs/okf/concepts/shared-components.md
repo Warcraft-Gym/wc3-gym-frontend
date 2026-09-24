@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T05:20:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T09:35:07Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -120,7 +120,12 @@ The roster of one team in one event is one card: the captains, then the members,
 - A long name truncates and carries the full name in its title; a number never truncates, and a narrow screen drops the text record beside the strip before it drops the points.
 - A captain shows his race, his MMR, his points and his strip only when he plays in that event, and reads "Not playing this season" across those columns when he does not. The race comes from the player's signup race for that event, so a player with none shows no race.
 - A captain reads under Captains alone, so the members list and the member count leave his member row out.
+- A row whose `played_as` differs from the player's tag today gets a line of its own under it, spanning the card, with "as TAG" in `PlayedAs`. The line sits under the row and not beside the name, so the tracks keep their widths.
 - A page that edits the roster fills `renderCaptains` and `renderMembers` with its own controls, and that group draws its own block under the group name instead of the aligned list.
+
+# PlayedAs
+
+The tag one season row was played as: "as TAG" in small muted text, no icon and no link. It renders nothing when `played_as` is null or equals the person's `battleTag`. The team roster, the season team table and the player's Events card use it.
 
 # VetoBoard
 

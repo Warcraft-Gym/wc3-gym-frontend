@@ -20,6 +20,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RowActions } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
+import { PlayedAs } from "@/components/PlayedAs";
 import { TeamRoster } from "@/components/TeamRoster";
 import { W3CIcon } from "@/components/W3CIcon";
 import { W3CMmr } from "@/components/W3CMmr";
@@ -470,6 +471,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                   cell: ({ row }) => (
                     <>
                       <PlayerName player={row.original} race={row.original.signup_race} />
+                      <PlayedAs playedAs={row.original.played_as} battleTag={row.original.battleTag} />
                       <div>{syncCell(row.original)}</div>
                     </>
                   ),

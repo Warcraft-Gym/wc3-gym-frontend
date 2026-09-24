@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T13:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T09:35:07Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -35,6 +35,10 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 - The veto board answer carries `week_map_id` for the fixed map of game 1; the name is kept on purpose.
 - The veto board answer carries `viewer_side` (`A`, `B`, or null for an admin, who edits either side). Each side is a player or a team: `id` and `name` are the user's, or null for a team side, which sets `team_id` and `team_name` instead.
 
+# The person's tags
+
+A user row carries `tags`: a list of `{id, tag, verified, active, source, first_seen, last_seen}`, one of them active, and `battleTag` equals the active tag. A signup and a roster row carry `played_as`, the tag that season was played as, or null. `GET /users/{key}` takes an id or any tag the person holds. The merge answers `{stops, removes, moves}`, three lists of sentences, when `dry_run` is true.
+
 # The session answer
 
 `GET /me`: `role` (`guest`, `member`, `captain`, `admin`), `actual_role`, `name`, `avatar`, `user` (the linked player or null), `superadmin`, `signed_up`, `season_id`, `team`, `seats` (a list of `{team_id, season_id}`), and `seasons` (every running season with `phase`, `signups_open`, `scheduling_enabled`, `checkin_days`, dates, `signed_up`, `team`, `captain`). The router guard, the app bar, the home page and every draft page read it.
@@ -46,7 +50,7 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 | `auth` | `POST /login`, `GET /me` |
 | `season` | `/leagues`, `/events?league_id={id}`, `/events/{id}`, `/events/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements`, `/import`, `/export` |
 | `event` | `/leagues`, `/leagues/{id}`, `/events`, `/events/{id}`, `/me/events`, `/events/{id}/entrants...`, `/divisions`, `/divisions/assign`, `/stages`, `/stages/{id}/seeds`, `/seeds/lock`, `/generate`, `/rounds`, `/series`, `/standings`, `/advance`, `/finish`, `/koth/nights`, `/koth/nights/{id}/close` |
-| `player` | `/users`, `/users/{id}`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/player-series`, `/player-history` |
+| `player` | `/users`, `/users?no_discord=true`, `/users?tag_source=claim`, `/users/{id}`, `/users/me/tags`, `/users/me/tags/{tag_id}`, `/users/me/tags/{tag_id}/active`, `/users/{id}/tags/{tag_id}/move`, `/users/{id}/merge`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/player-series`, `/player-history` |
 | `team` | `/leagues/{league_id}/teams`, `/leagues/{league_id}/teams/basic`, `/leagues/{league_id}/teams/{id}`, `/events/{event_id}/teams`, `/events/{event_id}/teams/basic`, `/events/{event_id}/teams/{id}`, `/players`, `/captains`, `/availability`, `/ladder-sync`, `/image` |
 | `match` | `/matches`, `/matches/{id}`, `/matches/{id}/replays`, `/player-series/{id}/replays/{game}/move/{to_game}`, `/matches/search`, `/draft-series...`, `/draft-series/{id}/promote` |
 | `series` | `/series`, `/series/{id}`, `/series/{id}/result-kind`, `/series/{id}/places`, `/series/{id}/sides`, `/series/search`, `/events/{event_id}/series/search`, `/series/{id}/casts...`, `/casts/last`, `/series/{id}/games`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time`, `/home/series` |

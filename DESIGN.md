@@ -157,6 +157,7 @@ Use these instead of drawing the same thing again.
 | `StatusAlert` | A load or save message. It offers a retry when the page can load again. |
 | `EventHeader`, `PlayerHeader` | The top of an event page and of a player page. |
 | `TeamRoster` | The captains and the members of one team in one event, as one card and one aligned list. A page that edits the roster fills its slots, and a GNL page passes the two empty lines that say season. |
+| `PlayedAs` | "as TAG" in muted text under a season row, only when the row's `played_as` differs from the person's tag today. No icon, no link. |
 | `RoundStrip` | One player's event as one square per round, with the text record beside it. |
 | `FixtureSeries` | The ordered series one fixture holds, each with its mode, its pick rule and its two sides. |
 | `BracketCard` | One bracket of a KOTH night: its throne, the series it plays now, the line waiting and what it played tonight. The run page passes its admin controls; the public page passes none. |

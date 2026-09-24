@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-09-24
+
+* **Update**: the signup form prints a battle tag refusal under the tag field, and shows the details an admin needs when the backend asks for a link.
+
 ## 2026-09-23
 
 * **Update**: the fetch wrapper sends no bearer on a non-admin GET of thirteen more open reads the backend caches at the edge; an admin and a write always send it.

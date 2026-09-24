@@ -18,14 +18,16 @@ export const otherTags = (player) => tagsActiveFirst(player?.tags).filter((row) 
 const SOURCES = { claim: 'Added by the player', signup: 'From a signup', sheet: 'From the GNL sheets', admin: 'Moved by an admin', link: 'Linked Battle.net account' };
 const month = (iso) => (iso ? DateTime.fromISO(iso).toFormat('LLLL yyyy') : null);
 
-// e.g. "Unverified. From the GNL sheets, first seen April 2020, last seen August 2026"
-export const tagSourceLine = (row) => {
+// e.g. "From the GNL sheets, first seen April 2020, last seen August 2026"; '' when nothing is known
+export const tagSourceRest = (row) => {
   const seen = [month(row.first_seen) && `first seen ${month(row.first_seen)}`, month(row.last_seen) && `last seen ${month(row.last_seen)}`].filter(Boolean);
   const from = SOURCES[row.source];
   const detail = from ? [from, ...seen].join(', ') : seen.join(', ');
-  const rest = detail ? detail[0].toUpperCase() + detail.slice(1) : '';
-  return [row.verified ? 'Verified.' : 'Unverified.', rest].filter(Boolean).join(' ');
+  return detail ? detail[0].toUpperCase() + detail.slice(1) : '';
 };
+
+// e.g. "Unverified. From the GNL sheets, first seen April 2020, last seen August 2026"
+export const tagSourceLine = (row) => [row.verified ? 'Verified.' : 'Unverified.', tagSourceRest(row)].filter(Boolean).join(' ');
 
 // Where a refused "I also played as" shows: a 404 or a 409 names the tag, so it goes under the field
 export const addTagError = (error) => {

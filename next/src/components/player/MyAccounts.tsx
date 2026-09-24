@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toneClass } from "@/components/ui/tone";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CIcon } from "@/components/W3CIcon";
-import { addTagError, bnetNote, tagSourceLine, tagsActiveFirst } from "@/helpers/tags.mjs";
+import { addTagError, bnetNote, tagSourceLine, tagSourceRest, tagsActiveFirst } from "@/helpers/tags.mjs";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats.js";
 import { usePlayerStore } from "@/stores";
 import type { PlayerTag } from "@/stores";
@@ -137,7 +137,15 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
                     {row.active ? <Badge className={toneClass("primary")}>Active</Badge> : null}
                     {busy === row.id ? <Icon name="mdi-loading mdi-spin" size={16} /> : null}
                   </span>
-                  <span className="text-sm text-muted-foreground">{tagSourceLine(row)}</span>
+                  {/* an unverified tag offers the Battle.net link that verifies it */}
+                  {row.verified ? (
+                    <span className="text-sm text-muted-foreground">{tagSourceLine(row)}</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      <Button type="button" variant="link" size="sm" className="h-auto p-0 text-sm" disabled={linking} onClick={linkBnet}>Verify with Battle.net</Button>
+                      {tagSourceRest(row) ? `. ${tagSourceRest(row)}` : null}
+                    </span>
+                  )}
                 </label>
                 <span className="flex items-center gap-1">
                   <Button variant="ghost" size="sm" nativeButton={false} render={<a href={w3cPlayerUrl(row.tag)} target="_blank" rel="noopener noreferrer" />}>

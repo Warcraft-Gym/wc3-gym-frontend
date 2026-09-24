@@ -101,7 +101,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     if (finishing) {
       playerStore.finishBnetLink(bnet).then(
         (user) => {
-          const tag = verifiedTag(user?.tags, player.tags);
+          const tag = verifiedTag(user?.tags, player.tags ?? []);
           setDone(tag ? `Verified ${tag}.` : "Verified.");
           loadPrompts();
           return onChanged();

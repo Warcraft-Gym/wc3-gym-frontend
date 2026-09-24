@@ -12,9 +12,9 @@ export function ProfileView() {
   const router = useRouter();
   const { me } = useAuth();
   const state = profileState(me);
-  // a member with a player row reads his profile at his own player page
+  // a member with a player row reads his profile at his own player page; the query (?bnet=) rides along
   useEffect(() => {
-    if (state === "dashboard") router.replace(playerPath(me!.user));
+    if (state === "dashboard") router.replace(playerPath(me!.user) + window.location.search);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 

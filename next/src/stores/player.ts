@@ -56,6 +56,10 @@ const store = {
   async removeMyTag(tagId: number) {
     return await fetchWrapper.delete(`${backendUrl}/users/me/tags/${tagId}`);
   },
+  // The Blizzard sign-in address that links a Battle.net account; answers {url}
+  async startBnetLink() {
+    return await fetchWrapper.get(`${backendUrl}/users/me/bnet/start`);
+  },
   // Admin: one tag row to another person, and one person folded into another
   async moveTag(userId: number, tagId: number, toUserId: number) {
     return await fetchWrapper.post(`${backendUrl}/users/${userId}/tags/${tagId}/move`, { to_user_id: toUserId });

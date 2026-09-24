@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addTagError, bnetNote, canConfirmMerge, isListFilter, listFilterQuery, otherTags, playedAsTag, tagSourceRest, tagsActiveFirst } from './tags.mjs';
+import { addTagError, bnetNote, verifiedTag, canConfirmMerge, isListFilter, listFilterQuery, otherTags, playedAsTag, tagsActiveFirst } from './tags.mjs';
 
 // A season row shows "as TAG" only when it was played under a tag the person no longer shows
 test('played as shows only when the tag differs from the current one', () => {
@@ -22,17 +22,12 @@ test('the active tag leads, then the newest sighting', () => {
   assert.deepEqual(otherTags({ battleTag: 'Main#3' }), []);
 });
 
-test('the source line reads source and dates in words', () => {
-  assert.equal(tagSourceRest({ verified: false, source: 'signup', first_seen: '2020-04-12T00:00:00Z' }), 'From a signup, first seen April 2020');
-  assert.equal(tagSourceRest({ verified: true, source: 'unknown' }), '');
-});
-
 // A refusal that names the tag goes under the field, as the signup form does
-test('a 409 and a 404 on "I also played as" show under the field', () => {
+test('a 409 and a 404 on "Add a tag" show under the field', () => {
   const refused = Object.assign(new Error('BeLit#11855 belongs to another player. Ask an admin to move it.'), { status: 409 });
   assert.deepEqual(addTagError(refused), { field: 'BeLit#11855 belongs to another player. Ask an admin to move it.', page: null });
-  const missing = Object.assign(new Error('W3Champions has no player MangoIsNce#1230.'), { status: 404 });
-  assert.equal(addTagError(missing).field, 'W3Champions has no player MangoIsNce#1230.');
+  const missing = Object.assign(new Error('W3Champions does not know MangoIsNce#1230'), { status: 404 });
+  assert.equal(addTagError(missing).field, 'Not found on W3Champions.');
   const broken = Object.assign(new Error('HTTP 500'), { status: 500 });
   assert.deepEqual(addTagError(broken), { field: null, page: 'HTTP 500' });
 });
@@ -58,4 +53,15 @@ test('a Battle.net error return names its reason, an unknown reason reads the ge
   assert.equal(bnetNote('error', null), 'Linking failed. Try again.');
   assert.equal(bnetNote('eyJhbGciOi.token', null), null);
   assert.equal(bnetNote(null, null), null);
+});
+
+test('the verified tag is the newest verified row', () => {
+  const tags = [
+    { tag: 'Old#1', verified: true, last_seen: '2026-01-01' },
+    { tag: 'New#2', verified: true, last_seen: '2026-09-01' },
+    { tag: 'Spare#3', verified: false, last_seen: '2026-09-20' },
+  ];
+  assert.equal(verifiedTag(tags), 'New#2');
+  assert.equal(verifiedTag([]), null);
+  assert.equal(verifiedTag(null), null);
 });

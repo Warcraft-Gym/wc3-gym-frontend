@@ -9,14 +9,39 @@ import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toneClass } from "@/components/ui/tone";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CIcon } from "@/components/W3CIcon";
-import { addTagError, bnetNote, tagSourceLine, tagSourceRest, tagsActiveFirst } from "@/helpers/tags.mjs";
+import { addTagError, bnetNote, tagSourceRest, tagsActiveFirst } from "@/helpers/tags.mjs";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats.js";
 import { usePlayerStore } from "@/stores";
 import type { PlayerTag } from "@/stores";
 
 const BATTLE_TAG = /^\S+#\d+$/;
+
+/** The mark beside a tag Battle.net confirmed: a tick and the word, the sentence in a tooltip. */
+function BnetVerified() {
+  const [open, setOpen] = useState(false);
+  return (
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger
+        render={
+          // a tap opens it as well as a hover; preventDefault keeps the tap off the row's radio
+          <button
+            type="button"
+            aria-label="Verified on Battle.net"
+            className="inline-flex cursor-help items-center gap-1 text-sm font-normal text-muted-foreground"
+            onClick={(event) => { event.preventDefault(); setOpen((o) => !o); }}
+          />
+        }
+      >
+        <Icon name="mdi-check-decagram" size={16} className="text-primary" />
+        Battle.net
+      </TooltipTrigger>
+      <TooltipContent>Verified on Battle.net</TooltipContent>
+    </Tooltip>
+  );
+}
 
 /** The owner's own battle tags on his player page: which one is active, the ones he may
  *  remove, and "I also played as" to add another. Every write answers his row, and the
@@ -134,13 +159,12 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
                 <label htmlFor={`tag-${row.id}`} className="flex min-w-0 flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-2 font-medium">
                     {row.tag}
+                    {row.verified ? <BnetVerified /> : null}
                     {row.active ? <Badge className={toneClass("primary")}>Active</Badge> : null}
                     {busy === row.id ? <Icon name="mdi-loading mdi-spin" size={16} /> : null}
                   </span>
                   {/* an unverified tag offers the Battle.net link that verifies it */}
-                  {row.verified ? (
-                    <span className="text-sm text-muted-foreground">{tagSourceLine(row)}</span>
-                  ) : (
+                  {row.verified ? null : (
                     <span className="text-sm text-muted-foreground">
                       <Button type="button" variant="link" size="sm" className="h-auto p-0 text-sm" disabled={linking} onClick={linkBnet}>Verify with Battle.net</Button>
                       {tagSourceRest(row) ? `. ${tagSourceRest(row)}` : null}

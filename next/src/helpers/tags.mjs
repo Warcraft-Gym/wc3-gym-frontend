@@ -26,9 +26,6 @@ export const tagSourceRest = (row) => {
   return detail ? detail[0].toUpperCase() + detail.slice(1) : '';
 };
 
-// e.g. "Unverified. From the GNL sheets, first seen April 2020, last seen August 2026"
-export const tagSourceLine = (row) => [row.verified ? 'Verified.' : 'Unverified.', tagSourceRest(row)].filter(Boolean).join(' ');
-
 // Where a refused "I also played as" shows: a 404 or a 409 names the tag, so it goes under the field
 export const addTagError = (error) => {
   const message = error?.message || error?.error || String(error ?? '');

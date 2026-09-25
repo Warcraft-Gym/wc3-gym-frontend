@@ -4,7 +4,7 @@ title: Session and auth
 description: Clerk signs a member in with Discord, the backend's /me answer is the session the app reads, a legacy admin token has its own login page, and the fetch wrapper sends the bearer.
 resource: ../../../next/src/stores/auth.ts
 tags: [session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-23T17:50:00Z }
+generated: { by: codex/gpt-6, at: 2026-09-25T09:54:00Z }
 sources:
   - id: auth-store
     resource: ../../../next/src/stores/auth.ts
@@ -33,7 +33,7 @@ Sign-out calls Clerk's `signOut()`; clearing storage or cookies is not a sign-ou
 
 # The fetch wrapper
 
-`fetchWrapper` in `next/src/helpers/fetch-wrapper.js` is the only way the app calls the backend. It attaches `Authorization: Bearer <token>` to every request whose URL starts with the backend URL, except `/login` and a non-admin GET of an edge-cached open read, which must stay bearer-free to be cacheable. `EDGE_CACHED` lists those reads: the season ladder and its players, the home hub's series, the KOTH board, the leagues, the maps, the W3C config, one setting, a player's ladder and history, and the team reads of an event or a league. An admin always sends the bearer, so an admin reads past the cache and sees an edit at once. A write to the same path always sends the bearer. It sends `X-View-As` and `X-View-Seats` when an admin is viewing as a lower role. It parses the error envelope into an `Error` whose `message` is `body.message`, else `body.error`, else the text, with the body's keys copied on, so a view reads `error.message` and a code check reads `error.error`. A 401 on a live session signs out; a 403 is shown, not acted on.
+`fetchWrapper` in `next/src/helpers/fetch-wrapper.js` is the only way the app calls the backend. It attaches `Authorization: Bearer <token>` to every request whose URL starts with the backend URL, except `/login` and a non-admin GET of an edge-cached open read, which must stay bearer-free to be cacheable. The edge-cache patterns list those reads: the season ladder and its players, the home hub's series, the KOTH board, the leagues, the maps, the W3C config, one setting, a player's ladder and history, career lists and single player career rows, and the team reads of an event or a league. Career list paging, search and sort parameters remain cacheable. An admin always sends the bearer, so an admin reads past the cache and sees an edit at once. A write to the same path always sends the bearer. It sends `X-View-As` and `X-View-Seats` when an admin is viewing as a lower role. It parses the error envelope into an `Error` whose `message` is `body.message`, else `body.error`, else the text, with the body's keys copied on, so a view reads `error.message` and a code check reads `error.error`. A 401 on a live session signs out; a 403 is shown, not acted on.
 
 `getPage`, `postPage`, `getAll` and `postAll` read the paged list routes with `limit` and `offset` and `X-Total-Count`.
 

@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-26T10:30:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T14:55:00Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -57,7 +57,7 @@ The signup dialog asks for the race, a note on a signup-only event, and a battle
 
 The dialog ends on a state with a "Done" button. On a KOTH night the end state names where the entrant stands: an entrant the night placed reads its bracket and its place in line, counted from one read of the public board, the bracket alone when that read answers nothing, and the line every other event reads, "You are in. See you on the ladder.", when neither the board nor the event row names a bracket. An entrant W3Champions rated no race for reads that an admin places it in a bracket, with the no-stats mark on the race. Both states draw the player line the app draws everywhere: the flag, the name, the race and the one rating.
 
-**Entrants (`/events/:id/entrants`).** A grouped table, one group per division: the entrant, the MMR the seed was cut from, the battle tag, the Discord tag, whether W3Champions knows the player, the eligibility warnings (under the game count, over the MMR cap, banned), the seed with its source once locked, and the status (signed up, checked in, withdrawn, and a pin when placed by hand). A team entrant reads as the team name over the roster it fields for this event, captains starred; its MMR is the mean of the roster's ratings. A phone reads one card per entrant. A member reads all of this and none of the controls.
+**Entrants (`/events/:id/entrants`).** A grouped table, one group per division: the entrant, the MMR the seed was cut from, the battle tag, whether W3Champions knows the player, the eligibility warnings (under the game count, over the MMR cap, banned), the seed with its source once locked, and the status (signed up, checked in, withdrawn, and a pin when placed by hand). A team entrant reads as the team name over the roster it fields for this event, captains starred; its MMR is the mean of the roster's ratings. A phone reads one card per entrant. A member reads all of this and none of the controls.
 
 # Writes
 

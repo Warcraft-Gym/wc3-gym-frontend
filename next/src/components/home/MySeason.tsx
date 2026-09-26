@@ -197,10 +197,10 @@ export function MySeason({
             </>
           ) : seasonAction(season) === "request" ? (
             <>
-              <p className="text-sm">You are not signed up for {season.name}. Signups are closed, but you can ask to join and an admin decides.</p>
-              <Button variant="outline" className="mt-3 text-primary-text" nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
-                <Icon name="mdi-account-question" />
-                Ask to join {season.name}
+              <p className="text-sm">You are not signed up for {season.name}. Signups are closed, so an admin decides on your signup.</p>
+              <Button className="mt-3" nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
+                <Icon name="mdi-account-plus" />
+                Sign up for {season.name}
               </Button>
             </>
           ) : (

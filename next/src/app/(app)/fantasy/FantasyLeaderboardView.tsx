@@ -387,7 +387,6 @@ export function FantasyLeaderboardView() {
                     breakdown={breakdowns[team.id]}
                     players={seasonSignups}
                     draftedPlayers={team.drafted_players || []}
-                    seasonId={selectedSeasonId}
                   />
                 )}
               </div>

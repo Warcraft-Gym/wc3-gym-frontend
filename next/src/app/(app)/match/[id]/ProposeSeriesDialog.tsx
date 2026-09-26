@@ -42,7 +42,6 @@ export function ProposeSeriesDialog({
   pairs,
   existing,
   ladderById,
-  seasonId,
   hasSeries,
   errorMessage,
   onErrorClose,
@@ -61,7 +60,6 @@ export function ProposeSeriesDialog({
   pairs: number;
   existing: number;
   ladderById: Map<number, Row>;
-  seasonId?: number;
   hasSeries: (playerId: number) => boolean;
   errorMessage: string | null;
   onErrorClose: () => void;
@@ -94,7 +92,7 @@ export function ProposeSeriesDialog({
       id: `p${n}_matchup_history`,
       header: "Faced Races",
       enableSorting: false,
-      cell: ({ row }: { row: { original: Row } }) => <FacedRaces player={row.original[`player${n}`]} seasonId={seasonId} />,
+      cell: ({ row }: { row: { original: Row } }) => <FacedRaces player={row.original[`player${n}`]} />,
     },
     {
       id: `p${n}_vs_race`,

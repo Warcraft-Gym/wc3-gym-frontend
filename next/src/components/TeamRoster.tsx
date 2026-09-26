@@ -59,8 +59,8 @@ export function TeamRoster({
   renderMembers?: (args: { members: Player[] }) => React.ReactNode;
 }) {
   const mmrOf = (player: Player) => (over ? (player.mmr_entered ?? null) : getW3CMMR(player, player.signup_race ?? undefined)) as number | null;
-  // the stats row of this event names the rounds the player sits out; a row of another event never does
-  const outRoundsOf = (player: Row) => ((player.gnl_stats ?? []).find((stat: Row) => stat.season_id === eventId)?.out_rounds ?? []) as number[];
+  // the record of this event names the rounds the player sits out; a record of another event never does
+  const outRoundsOf = (player: Row) => (player.record?.season_id === eventId ? (player.record.out_rounds ?? []) : []) as number[];
   // a captain is rostered on his member row when he plays, so the row carries his race and MMR
   const rowOf = (player: Player) => members.find((member) => member.id === player.id) ?? player;
   // a captain reads under Captains only, so the Members list leaves his member row out

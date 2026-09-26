@@ -205,7 +205,6 @@ function PairingNote({ item, fresh, replaces }: { item: Row; fresh: boolean; rep
 export function DraftSeries({
   draftSeries,
   smAndDown,
-  seasonId,
   ladderById,
   isAdmin,
   canDraft,
@@ -224,7 +223,6 @@ export function DraftSeries({
 }: {
   draftSeries: Row[];
   smAndDown: boolean;
-  seasonId?: number;
   ladderById: Map<number, Row>;
   isAdmin: boolean;
   canDraft: boolean;
@@ -283,7 +281,7 @@ export function DraftSeries({
       id: `p${n}_matchup_history`,
       header: "Faced Races",
       enableSorting: false,
-      cell: ({ row }: { row: { original: Row } }) => <FacedRaces player={row.original[`player${n}`]} seasonId={seasonId} />,
+      cell: ({ row }: { row: { original: Row } }) => <FacedRaces player={row.original[`player${n}`]} />,
     },
     {
       id: `p${n}_vs_race`,

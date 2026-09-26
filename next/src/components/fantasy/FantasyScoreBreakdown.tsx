@@ -53,14 +53,12 @@ export function FantasyScoreBreakdown({
   breakdown,
   players = [],
   draftedPlayers = [],
-  seasonId = null,
 }: {
   breakdown: any;
   players?: any[];
   draftedPlayers?: any[];
-  seasonId?: number | null;
 }) {
-  // drafted players last: they carry the season stats the roster table reads
+  // drafted players last: they carry the event record the roster table reads
   const pool = useMemo(() => [...players, ...draftedPlayers], [players, draftedPlayers]);
   const byId = useMemo(() => new Map(pool.map((p) => [p.id, p])), [pool]);
   const byName = useMemo(() => new Map(pool.map((p) => [p.name, p])), [pool]);
@@ -74,7 +72,7 @@ export function FantasyScoreBreakdown({
   };
 
   const gnlRecord = (player: any) => {
-    const stat = player.gnl_stats?.find((s: any) => s.season_id === seasonId);
+    const stat = player.record;
     return (stat && record(stat.wins || 0, stat.losses || 0)) || "—";
   };
 

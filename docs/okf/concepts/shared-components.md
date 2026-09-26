@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T09:35:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T19:04:08Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -116,7 +116,7 @@ The roster of one team in one event is one card: the captains, then the members,
 - The members run by MMR, highest first, and a player with no MMR last, because the list carries no sort control. The MMR head is the W3C form with the synced time in its tooltip. On a running event the MMR is the live one of the signup race; on an event that is over (closed, or past its end date, `isOver` in `next/src/helpers/season-phase.mjs`) it is `mmr_entered`, the MMR the player entered the event with, and an em dash when the ladder holds none.
 - The column head, the MMR, "Points" and the round numbers, is drawn once for the card, on the head of the first group that lists rows; "Captains" and "Members 7" stay row group heads, and a group with no rows keeps its one line of empty text.
 - The points cell is `stripPoints` over the series the page already holds: the sum of the player's own `player1_points` or `player2_points`. The server applies the event's score system, so the browser only adds the numbers up, and a player no series names reads an em dash. The head note says "Points from series in this event", because a record always names its scope.
-- The rounds a player sits out come from the `out_rounds` of the `gnl_stats` row whose `season_id` is this event, which the event roster read fills. A roster that names no event reads no sit-out.
+- The rounds a player sits out come from the `out_rounds` of the player's `record` when its `season_id` is this event, which the event roster read fills. A roster that names no event reads no sit-out.
 - A long name truncates and carries the full name in its title; a number never truncates, and a narrow screen drops the text record beside the strip before it drops the points.
 - A captain shows his race, his MMR, his points and his strip only when he plays in that event, and reads "Not playing this season" across those columns when he does not. The race comes from the player's signup race for that event, so a player with none shows no race.
 - A captain reads under Captains alone, so the members list and the member count leave his member row out.

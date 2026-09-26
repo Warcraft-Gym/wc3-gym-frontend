@@ -84,7 +84,8 @@ export function buildNav(me, canSee) {
 }
 
 /** The phone's bottom tabs: Home, My Team, Season and More, each only when it has somewhere to go.
- *  More always stands last; it opens the drawer that holds every other link. */
+ *  More always stands last; it opens the drawer that holds every other link.
+ *  @returns {{ key: string, title: string, icon: string, to: string | null }[]} */
 export function phoneTabs(nav) {
   const season = nav.browse.find((group) => group.title === 'Season');
   return [

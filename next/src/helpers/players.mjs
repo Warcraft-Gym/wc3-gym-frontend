@@ -5,7 +5,6 @@ export const matchesPlayerSearch = (player, query) => {
   const q = query.trim().toLowerCase();
   return (player.name || '').toLowerCase().includes(q)
     || (player.battleTag || '').toLowerCase().includes(q)
-    || (player.discordTag || '').toLowerCase().includes(q)
     || (player.tags || []).some((row) => (row.tag || '').toLowerCase().includes(q));
 };
 

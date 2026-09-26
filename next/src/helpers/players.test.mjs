@@ -68,3 +68,10 @@ test('the player search matches a tag the person holds besides the active one', 
   assert.equal(matchesPlayerSearch(player, 'mango'), true);
   assert.equal(matchesPlayerSearch(player, 'nobody'), false);
 });
+
+// The Discord handle is served only on the player read, so the search never matches it
+test('the player search ignores a Discord handle', () => {
+  const player = { name: 'FattsRussell', battleTag: 'BeLit#11855', discordTag: 'fatts' };
+  assert.equal(matchesPlayerSearch(player, 'fatts'), true);
+  assert.equal(matchesPlayerSearch({ ...player, name: 'Other' }, 'fatts'), false);
+});

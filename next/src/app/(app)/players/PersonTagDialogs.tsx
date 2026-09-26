@@ -15,7 +15,7 @@ import type { MergePreview } from "@/stores";
 
 type Row = Record<string, any>;
 
-// One person in the search: his name, then his Discord handle and newest season, so two people
+// One person in the search: his name, then his battle tag and newest season, so two people
 // of one name read apart without an id
 const personLine = (row: Row) => {
   const season = [...(row.signup_seasons ?? [])].sort(byNewest)[0]?.name;
@@ -24,20 +24,20 @@ const personLine = (row: Row) => {
     <span className="flex min-w-0 flex-col items-start text-left">
       <span className="font-medium">{row.name}</span>
       <span className="truncate text-xs text-muted-foreground">
-        {[row.discordTag ? `Discord ${row.discordTag}` : "No Discord", tags || "No tags", season].filter(Boolean).join(". ")}
+        {[row.battleTag || "No battle tag", tags || "No tags", season].filter(Boolean).join(". ")}
       </span>
     </span>
   );
 };
 
-// The person search both dialogs use; it matches name, tags and Discord handle
+// The person search both dialogs use; it matches name and tags
 function PersonPick({ id, label, players, except, value, onChange }: { id: string; label: string; players: Row[]; except: number; value: number | null; onChange: (id: number | null) => void }) {
   const items = players
     .filter((row) => row.id != null && row.id !== except)
-    .map((row) => ({ ...row, value: String(row.id), title: [row.name, row.discordTag, ...(row.tags ?? []).map((tag: Row) => tag.tag)].filter(Boolean).join(" ") }));
+    .map((row) => ({ ...row, value: String(row.id), title: [row.name, ...(row.tags ?? []).map((tag: Row) => tag.tag)].filter(Boolean).join(" ") }));
   return (
     <Field label={label} htmlFor={id}>
-      <Combobox id={id} items={items} value={value == null ? null : String(value)} onChange={(picked) => onChange(picked ? Number(picked) : null)} placeholder="Name, tag or Discord" empty="No person matches" row={personLine} />
+      <Combobox id={id} items={items} value={value == null ? null : String(value)} onChange={(picked) => onChange(picked ? Number(picked) : null)} placeholder="Name or tag" empty="No person matches" row={personLine} />
     </Field>
   );
 }

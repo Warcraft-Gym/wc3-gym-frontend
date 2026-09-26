@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildNav, isActive, myTeams, phoneTabs } from './nav-model.mjs';
+import { buildNav, isActive, myTeams, navTabs } from './nav-model.mjs';
 import { ADMIN_PATHS, activeAdminPath, inAdminFrame } from './admin-nav.mjs';
 
 // The route table is TypeScript, so the test reads its path and role pairs as text
@@ -33,14 +33,19 @@ const adminAndPlayer = { role: 'admin', actual_role: 'admin', user: { id: 7 }, s
 const allThree = { role: 'admin', actual_role: 'admin', user: { id: 7 }, seats: [{ team_id: 5, season_id: 18 }], seasons: [{ ...S19, team: orcs }, { ...S18, captain: true }] };
 const guest = { role: 'guest', user: null, seats: [], seasons: [S19] };
 
-test('a player sees Home, their team and the shared pages, and no Admin', () => {
+test('a player sees Home, My Stats and their team, and no Admin', () => {
   const nav = buildNav(player, canSeeAs(player.role));
   assert.deepEqual(nav.home, { title: 'Home', to: '/' });
+  assert.deepEqual(nav.stats, { title: 'My Stats', to: '/player/7' });
   assert.deepEqual(nav.teams.map((t) => t.title), ['Orcs · Season 19']);
   assert.equal(nav.teams[0].to, '/team/3/season/19');
   assert.equal(nav.teams[0].captain, false);
-  assert.deepEqual(nav.browse.map((g) => g.title), ['Season', 'Fantasy', 'Events']);
   assert.equal(nav.admin, null);
+});
+
+test('a member with no player row has no stats page yet', () => {
+  const nav = buildNav({ role: 'member', user: null, seats: [], seasons: [S19] }, canSeeAs('member'));
+  assert.equal(nav.stats, null);
 });
 
 test('a captain who also plays for the team gets one entry, marked captained', () => {
@@ -62,10 +67,11 @@ test('the current season seat takes its team name from /me', () => {
   assert.equal(teams[1].title, 'Elves · Season 18');
 });
 
-test('an admin with no player row sees Admin and no team', () => {
+test('an admin with no player row sees Admin and no team or stats', () => {
   const nav = buildNav(adminOnly, canSeeAs(adminOnly.role));
   assert.deepEqual(nav.admin, { title: 'Admin', to: '/admin' });
   assert.deepEqual(nav.teams, []);
+  assert.equal(nav.stats, null);
 });
 
 test('an admin who plays sees their team and Admin', () => {
@@ -87,21 +93,21 @@ test('an admin viewing as a captain sees the viewed seats and no Admin', () => {
   assert.equal(nav.teams.find((t) => t.seasonId === 19).captain, true);
 });
 
-test('a guest sees only the public pages', () => {
+test('a guest gets no links; their one page is /profile', () => {
   const nav = buildNav(guest, canSeeAs(guest.role));
-  assert.equal(nav.home, null);
-  assert.deepEqual(nav.teams, []);
-  assert.equal(nav.admin, null);
-  assert.deepEqual(nav.browse.map((g) => g.items.map((i) => i.to)), [['/report'], ['/leagues', '/events', '/koth/dashboard']]);
+  assert.deepEqual(navTabs(nav), []);
 });
 
-test('the phone tabs keep Home, My Team, Season and More, dropping what has nowhere to go', () => {
-  assert.deepEqual(phoneTabs(buildNav(player, canSeeAs('member'))).map((t) => [t.key, t.to]),
-    [['home', '/'], ['team', '/team/3/season/19'], ['season', '/report'], ['more', null]]);
-  // two teams: the tab opens the picker instead of a page
-  assert.equal(phoneTabs(buildNav(twoSeats, canSeeAs('captain'))).find((t) => t.key === 'team').to, null);
-  assert.deepEqual(phoneTabs(buildNav(adminOnly, canSeeAs('admin'))).map((t) => t.key), ['home', 'season', 'more']);
-  assert.deepEqual(phoneTabs(buildNav(guest, canSeeAs('guest'))).map((t) => t.key), ['season', 'more']);
+test('the tabs hold only the hats a person wears', () => {
+  const keys = (me) => navTabs(buildNav(me, canSeeAs(me.role))).map((t) => t.key);
+  assert.deepEqual(keys(player), ['home', 'stats', 'team']);
+  assert.deepEqual(keys(adminOnly), ['home', 'admin']);
+  assert.deepEqual(keys(adminAndPlayer), ['home', 'stats', 'team', 'admin']);
+  assert.deepEqual(keys(allThree), ['home', 'stats', 'team', 'admin']);
+  assert.deepEqual(keys({ ...player, seasons: [S19] }), ['home', 'stats']);
+  // one team: the tab is its page; two teams: the tab opens the picker
+  assert.equal(navTabs(buildNav(player, canSeeAs('member'))).find((t) => t.key === 'team').to, '/team/3/season/19');
+  assert.equal(navTabs(buildNav(twoSeats, canSeeAs('captain'))).find((t) => t.key === 'team').to, null);
 });
 
 test('a link is active on its own page and the pages under it, Home only on itself', () => {

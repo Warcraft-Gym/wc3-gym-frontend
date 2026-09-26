@@ -5,7 +5,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/Icon";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -19,12 +18,11 @@ import type { ThemeMode } from "@/hooks/theme";
 import { canSeeRole, metaOf } from "@/lib/routes";
 import { useAuth } from "@/stores";
 import { myProfilePath } from "@/helpers/players.mjs";
-import { buildNav, isActive, phoneTabs } from "@/helpers/nav-model.mjs";
+import { buildNav, isActive, navTabs } from "@/helpers/nav-model.mjs";
 import { inAdminFrame } from "@/helpers/admin-nav.mjs";
 import { cn } from "@/lib/utils";
 
 const BAR_LINK = "text-primary-text";
-const DRAWER_LINK = "block rounded px-2 py-2 text-foreground no-underline hover:bg-accent";
 
 // Light, dark, or the operating system setting. The choice is kept in localStorage.
 const THEMES: { value: ThemeMode; title: string; icon: string }[] = [
@@ -37,7 +35,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { me, user, viewAs, logout, setViewAs } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
-  const [drawer, setDrawer] = useState(false);
   // useAuth answers the signed-out server snapshot until hydration, so the account slot waits for it
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
@@ -53,13 +50,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const showNavLinks = !!me && metaOf(path).nav !== false && !clean;
   // a link is drawn only when the session role reaches the target route's meta.role
   const canSee = (to: string) => canSeeRole(me?.role, metaOf(to.split("?")[0]).role);
-  // every hat the session wears adds its links: Home and its teams, the shared pages, the admin area
+  // every hat the session wears adds its place: Home and My Stats, My Team, Admin
   const nav = buildNav(me, canSee);
-  const tabs = phoneTabs(nav);
+  const tabs = showNavLinks ? navTabs(nav) : [];
   // an admin page sits in the admin frame; a viewed lower role never reaches one
   const adminFrame = showNavLinks && !!nav.admin && inAdminFrame(path, metaOf(path).role === "admin");
   const current = (to: string) => (isActive(to, path) ? "page" : undefined);
-  const closeDrawer = () => setDrawer(false);
 
   const avatarUrl: string | null = me?.avatar || null; // /me already answers the CDN URL
   const initials = (me?.name || "?").slice(0, 2).toUpperCase();
@@ -82,87 +78,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     // the phone's tab bar is fixed over the bottom edge, so the page ends above it
-    <div className={cn("flex min-h-dvh flex-col", showNavLinks && "pb-[calc(3.5rem+env(safe-area-inset-bottom))] min-[960px]:pb-0")}>
+    <div className={cn("flex min-h-dvh flex-col", tabs.length > 0 && "pb-[calc(3.5rem+env(safe-area-inset-bottom))] min-[960px]:pb-0")}>
       <ClerkBridge />
       <header className="flex items-center gap-2 border-b border-border bg-surface px-2 py-1.5">
-        {showNavLinks ? (
-          // below 960 px the links live in the bottom tab bar and this drawer, which More opens
-          <Sheet open={drawer} onOpenChange={setDrawer}>
-            <SheetContent side="left" className="w-72 overflow-y-auto p-4">
-              <SheetTitle className="sr-only">Menu</SheetTitle>
-              <nav aria-label="All pages">
-                <ul className="flex flex-col gap-1">
-                  {nav.home ? <li><Link href={nav.home.to} onClick={closeDrawer} aria-current={current(nav.home.to)} className={DRAWER_LINK}>{nav.home.title}</Link></li> : null}
-                  {nav.teams.length ? (
-                    <li>
-                      <p className="px-2 pt-3 text-xs text-muted-foreground">My Teams</p>
-                      <ul>
-                        {nav.teams.map((team) => (
-                          <li key={team.to}><Link href={team.to} onClick={closeDrawer} aria-current={current(team.to)} className={DRAWER_LINK}>{team.title}</Link></li>
-                        ))}
-                      </ul>
-                    </li>
-                  ) : null}
-                  {nav.browse.map((group) => (
-                    <li key={group.title}>
-                      <p className="px-2 pt-3 text-xs text-muted-foreground">{group.title}</p>
-                      <ul>
-                        {group.items.map((item) => (
-                          <li key={item.to}><Link href={item.to} onClick={closeDrawer} aria-current={current(item.to)} className={DRAWER_LINK}>{item.title}</Link></li>
-                        ))}
-                      </ul>
-                    </li>
-                  ))}
-                  {nav.admin ? (
-                    <li className="mt-3 border-t border-border pt-3">
-                      <Link href={nav.admin.to} onClick={closeDrawer} aria-current={current(nav.admin.to)} className={cn(DRAWER_LINK, "flex items-center gap-2")}><Icon name="mdi-cog-outline" />{nav.admin.title}</Link>
-                    </li>
-                  ) : null}
-                </ul>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        ) : null}
         {/* the app title is the way home from every page, so it always points at /; truncate keeps it on one line */}
         <Link href="/" className="truncate font-heading text-lg font-bold text-foreground no-underline">WC3 Gym Dashboard</Link>
         <div className="flex-1" />
-        {showNavLinks ? (
+        {tabs.length ? (
+          // from 960 px the tabs sit in the bar; below it, in the bottom tab bar
           <nav className="hidden items-center min-[960px]:flex" aria-label="Main">
-            {nav.home ? <Button variant="ghost" className={BAR_LINK} nativeButton={false} render={<Link href={nav.home.to} aria-current={current(nav.home.to)} />}>{nav.home.title}</Button> : null}
-            {nav.teams.length === 1 ? (
-              <Button variant="ghost" className={BAR_LINK} nativeButton={false} render={<Link href={nav.teams[0].to} aria-current={current(nav.teams[0].to)} />}>My Team</Button>
-            ) : nav.teams.length > 1 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger render={<Button variant="ghost" className={BAR_LINK}>My Team<Icon name="mdi-chevron-down" /></Button>} />
-                <DropdownMenuContent className="min-w-[220px]">
-                  {nav.teams.map((team) => (
-                    <DropdownMenuItem key={team.to} render={<Link href={team.to} />}>
-                      <Icon name={team.captain ? "mdi-star-circle-outline" : "mdi-shield-outline"} />
-                      {team.title}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-            {nav.browse.map((group) =>
-              group.items.length > 1 ? (
-                <DropdownMenu key={group.title}>
-                  <DropdownMenuTrigger render={<Button variant="ghost" className={BAR_LINK}>{group.title}<Icon name="mdi-chevron-down" /></Button>} />
-                  <DropdownMenuContent className="min-w-[180px]">
-                    {group.items.map((item) => (
-                      <DropdownMenuItem key={item.to} render={<Link href={item.to} />}>
-                        {item.title}
+            {tabs.map((tab) =>
+              tab.to ? (
+                <Button key={tab.key} variant="ghost" className={BAR_LINK} nativeButton={false} render={<Link href={tab.to} aria-current={tab.key === "admin" ? (adminFrame ? "page" : undefined) : current(tab.to)} />}>
+                  <Icon name={tab.icon} />
+                  {tab.title}
+                </Button>
+              ) : (
+                <DropdownMenu key={tab.key}>
+                  <DropdownMenuTrigger render={<Button variant="ghost" className={BAR_LINK}><Icon name={tab.icon} />{tab.title}<Icon name="mdi-chevron-down" /></Button>} />
+                  <DropdownMenuContent className="min-w-[220px]">
+                    {nav.teams.map((team) => (
+                      <DropdownMenuItem key={team.to} render={<Link href={team.to} />}>
+                        <Icon name={team.captain ? "mdi-star-circle-outline" : "mdi-shield-outline"} />
+                        {team.title}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button key={group.title} variant="ghost" className={BAR_LINK} nativeButton={false} render={<Link href={group.items[0].to} aria-current={current(group.items[0].to)} />}>{group.title}</Button>
               ),
             )}
-            {nav.admin ? (
-              <Button variant="ghost" className={BAR_LINK} nativeButton={false} render={<Link href={nav.admin.to} aria-current={adminFrame ? "page" : undefined} />}><Icon name="mdi-cog-outline" />{nav.admin.title}</Button>
-            ) : null}
           </nav>
         ) : null}
         {/* the session menu sits outside the link tree, so a meta.nav route keeps it */}
@@ -239,7 +183,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* a stream shows the brackets alone, so the clean page carries no footer link either */}
-      {showNavLinks ? <BottomNav tabs={tabs} teams={nav.teams} path={path} onMore={() => setDrawer(true)} /> : null}
+      {tabs.length ? <BottomNav tabs={tabs} teams={nav.teams} path={path} adminActive={adminFrame} /> : null}
 
       {!clean ? (
         <footer className="flex justify-end px-3 py-1 text-xs">

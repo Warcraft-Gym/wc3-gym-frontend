@@ -1,38 +1,8 @@
 // The app's links, built from /me. A person wears up to three hats at once: a player (a roster
-// row), a captain (a seat) and an admin. The nav draws the links of every hat the person wears:
-// Home and their teams first, then the shared pages, then the admin area.
-
-/** The shared pages, grouped as the bar's menus and the drawer's sections. */
-export const BROWSE = [
-  {
-    title: 'Season',
-    icon: 'mdi-trophy-outline',
-    items: [
-      { title: 'Standings', to: '/report' },
-      { title: 'Upcoming Games', to: '/upcoming' },
-      { title: 'Teams', to: '/teams' },
-      { title: 'Players', to: '/players' },
-      { title: 'Ladder Grind', to: '/ladder' },
-    ],
-  },
-  {
-    title: 'Fantasy',
-    icon: 'mdi-cards-outline',
-    items: [
-      { title: 'Leaderboard', to: '/fantasy' },
-      { title: 'My Fantasy Team', to: '/fantasy-registration' },
-    ],
-  },
-  {
-    title: 'Events',
-    icon: 'mdi-calendar-star',
-    items: [
-      { title: 'Leagues', to: '/leagues' },
-      { title: 'Events', to: '/events' },
-      { title: 'KOTH Board', to: '/koth/dashboard' },
-    ],
-  },
-];
+// row), a captain (a seat) and an admin. The nav holds only the places each hat works in: Home and
+// My Stats for a player, My Team for a team's players and captains, Admin for an admin. Every
+// shared page (standings, upcoming series, fantasy) is reached through the Home panels.
+import { myProfilePath } from './players.mjs';
 
 /** Where a team entry points. The captain hub replaces this link in its own step. */
 export const teamPath = (teamId, seasonId) => `/team/${teamId}/season/${seasonId}`;
@@ -73,26 +43,25 @@ export function myTeams(me) {
 
 /** The whole nav for one session. `canSee(path)` answers whether the session reaches a route. */
 export function buildNav(me, canSee) {
-  const browse = BROWSE.map((group) => ({ ...group, items: group.items.filter((item) => canSee(item.to)) }))
-    .filter((group) => group.items.length);
+  const home = canSee('/') ? { title: 'Home', to: '/' } : null;
   return {
-    home: canSee('/') ? { title: 'Home', to: '/' } : null,
-    teams: me ? myTeams(me) : [],
-    browse,
+    home,
+    // a player row has a dashboard; a guest's one page stays /profile, reached from the account menu
+    stats: home && me?.user ? { title: 'My Stats', to: myProfilePath(me) } : null,
+    teams: home && me ? myTeams(me) : [],
     admin: canSee('/admin') ? { title: 'Admin', to: '/admin' } : null,
   };
 }
 
-/** The phone's bottom tabs: Home, My Team, Season and More, each only when it has somewhere to go.
- *  More always stands last; it opens the drawer that holds every other link.
+/** The tabs, in the bar on a desktop and at the bottom of a phone: each only when the hat is worn.
+ *  My Team has no page of its own when the person has several teams; it opens a picker.
  *  @returns {{ key: string, title: string, icon: string, to: string | null }[]} */
-export function phoneTabs(nav) {
-  const season = nav.browse.find((group) => group.title === 'Season');
+export function navTabs(nav) {
   return [
     nav.home ? { key: 'home', title: 'Home', icon: 'mdi-home-outline', to: nav.home.to } : null,
+    nav.stats ? { key: 'stats', title: 'My Stats', icon: 'mdi-account-circle-outline', to: nav.stats.to } : null,
     nav.teams.length ? { key: 'team', title: 'My Team', icon: 'mdi-shield-account-outline', to: nav.teams.length === 1 ? nav.teams[0].to : null } : null,
-    season ? { key: 'season', title: 'Season', icon: 'mdi-trophy-outline', to: season.items[0].to } : null,
-    { key: 'more', title: 'More', icon: 'mdi-menu', to: null },
+    nav.admin ? { key: 'admin', title: 'Admin', icon: 'mdi-cog-outline', to: nav.admin.to } : null,
   ].filter(Boolean);
 }
 

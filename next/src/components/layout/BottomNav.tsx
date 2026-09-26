@@ -12,10 +12,10 @@ type Team = { title: string; to: string; captain: boolean };
 const TAB = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-xs text-muted-foreground no-underline";
 const ON = "text-primary-text font-medium";
 
-/** The phone's tab bar: Home, My Team, Season and More, in thumb reach at the bottom of the screen.
- *  My Team opens a picker when the person has more than one team; More opens the drawer. Above
- *  960 px the top bar carries the links instead, so this bar is hidden there by CSS. */
-export function BottomNav({ tabs, teams, path, onMore }: { tabs: Tab[]; teams: Team[]; path: string; onMore: () => void }) {
+/** The phone's tab bar: Home, My Stats, My Team and Admin, each for the hat the person wears, in
+ *  thumb reach at the bottom of the screen. My Team opens a picker when the person has more than one
+ *  team. Above 960 px the top bar carries the tabs instead, so this bar is hidden there by CSS. */
+export function BottomNav({ tabs, teams, path, adminActive }: { tabs: Tab[]; teams: Team[]; path: string; adminActive: boolean }) {
   const [picker, setPicker] = useState(false);
   const teamActive = teams.some((team) => isActive(team.to, path));
 
@@ -24,7 +24,7 @@ export function BottomNav({ tabs, teams, path, onMore }: { tabs: Tab[]; teams: T
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] min-[960px]:hidden">
         <ul className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((tab) => {
-            const active = tab.key === "team" ? teamActive : tab.to ? isActive(tab.to, path) : false;
+            const active = tab.key === "team" ? teamActive : tab.key === "admin" ? adminActive : tab.to ? isActive(tab.to, path) : false;
             const body = (
               <>
                 <Icon name={tab.icon} className="text-xl" />
@@ -36,7 +36,7 @@ export function BottomNav({ tabs, teams, path, onMore }: { tabs: Tab[]; teams: T
                 {tab.to ? (
                   <Link href={tab.to} aria-current={active ? "page" : undefined} className={cn(TAB, active && ON)}>{body}</Link>
                 ) : (
-                  <button type="button" onClick={tab.key === "team" ? () => setPicker(true) : onMore} className={cn(TAB, "w-full", active && ON)}>{body}</button>
+                  <button type="button" onClick={() => setPicker(true)} className={cn(TAB, "w-full", active && ON)}>{body}</button>
                 )}
               </li>
             );

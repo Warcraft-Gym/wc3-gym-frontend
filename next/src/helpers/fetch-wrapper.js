@@ -98,8 +98,9 @@ function request(method) {
     };
 }
 
-// no bearer on a non-admin GET: the Vercel edge caches these open reads, never a request with one
-const EDGE_CACHED = /(\/events\/\d+\/ladder(\/players)?|\/home\/series|\/koth\/(nights\/\d+\/)?board|\/leagues|\/maps|\/config\/w3c|\/config\/settings\/\w+|\/users\/\d+\/ladder(\?season_id=\d+)?|\/users\/\d+\/history|\/(events|leagues)\/\d+\/teams(\/basic|\/\d+)?)$/;
+// no bearer on a non-admin GET: the edge caches these open reads by class (live, running, settled), never a request with one
+// entrants keeps the bearer, so a member who signs up sees their own name at once
+const EDGE_CACHED = /(\/events\/\d+\/ladder(\/players)?|\/events\/\d+\/achievements|\/events\/\d+\/stages\/\d+\/(series|standings)|\/home\/series|\/koth\/(nights\/\d+\/)?board|\/leagues|\/maps|\/config\/w3c|\/config\/settings\/\w+|\/users\/\d+\/ladder(\?season_id=\d+)?|\/users\/\d+\/history|\/(events|leagues)\/\d+\/teams(\/basic|\/\d+)?)$/;
 // Career pages use query parameters for paging and sorting; a cache-busting query stays authenticated.
 const CAREER_EDGE_CACHED = /\/stats\/career(?:\/\d+)?(?:\?(?:limit|offset|search|sort|order)=[^&]*(?:&(?:limit|offset|search|sort|order)=[^&]*)*)?$/;
 // The events list takes only league_id and kind; a cache-busting `t` or an admin-only `published` filter stays authenticated.

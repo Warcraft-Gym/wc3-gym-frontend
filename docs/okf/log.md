@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-09-26
+
+* **Update**: an event's achievements, stage series and stage standings reads carry no bearer for a non-admin, so the edge caches them; the entrants read keeps the bearer, so a member who signs up sees their own name at once.
+
 ## 2026-09-25
 
 * **Update**: public career pages and their paging, search and sort reads carry no bearer for the edge cache; fresh reads and admin requests keep their bearer.

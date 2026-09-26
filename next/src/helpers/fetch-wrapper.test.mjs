@@ -61,7 +61,7 @@ test('the open events list and its league_id/kind queries are edge cached, other
   for (const url of ['/api/events', '/api/events?league_id=3', '/api/events?kind=koth', '/api/events?league_id=3&kind=gnl', '/api/events?kind=gnl&league_id=3']) {
     assert.equal(eventsListEdgeCached.test(url), true, url);
   }
-  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123']) {
+  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123', '/api/me/events']) {
     assert.equal(eventsListEdgeCached.test(url), false, url);
   }
 });

@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 const source = readFileSync(new URL('./fetch-wrapper.js', import.meta.url), 'utf8');
 const edgeCached = new RegExp(source.match(/^const EDGE_CACHED = \/(.+)\/;$/m)[1]);
 const careerEdgeCached = new RegExp(source.match(/^const CAREER_EDGE_CACHED = \/(.+)\/;$/m)[1]);
+const eventsListEdgeCached = new RegExp(source.match(/^const EVENTS_LIST_EDGE_CACHED = \/(.+)\/;$/m)[1]);
 
 test('the open reads the edge caches send no bearer', () => {
   for (const url of ['/api/events/12/ladder', '/api/home/series', '/api/koth/board', '/api/koth/nights/10/board']) {
@@ -48,7 +49,7 @@ test('career pages use the edge cache while fresh reads keep the bearer', () => 
 
 test('caller-dependent reads and other queries keep the bearer', () => {
   for (const url of [
-    '/api/leagues/5', '/api/events/5', '/api/events', '/api/config/settings', '/api/maps/ladder-import',
+    '/api/leagues/5', '/api/events/5', '/api/config/settings', '/api/maps/ladder-import',
     '/api/users/3/ladder?t=123', '/api/users/3/ladder?season_id=2&t=123', '/api/events/12/teams?t=123',
     '/api/events/12/teams/7/availability', '/api/config/discord-roles',
   ]) {
@@ -56,6 +57,15 @@ test('caller-dependent reads and other queries keep the bearer', () => {
   }
 });
 
+test('the open events list and its league_id/kind queries are edge cached, other queries keep the bearer', () => {
+  for (const url of ['/api/events', '/api/events?league_id=3', '/api/events?kind=koth', '/api/events?league_id=3&kind=gnl', '/api/events?kind=gnl&league_id=3']) {
+    assert.equal(eventsListEdgeCached.test(url), true, url);
+  }
+  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123']) {
+    assert.equal(eventsListEdgeCached.test(url), false, url);
+  }
+});
+
 test('only a non-admin GET skips the bearer', () => {
-  assert.match(source, /if \(method === 'GET' && \(EDGE_CACHED\.test\(url\) \|\| CAREER_EDGE_CACHED\.test\(url\)\) && !store\.isAdmin\) return \{\};/);
+  assert.match(source, /if \(method === 'GET' && \(EDGE_CACHED\.test\(url\) \|\| CAREER_EDGE_CACHED\.test\(url\) \|\| EVENTS_LIST_EDGE_CACHED\.test\(url\)\) && !store\.isAdmin\) return \{\};/);
 });

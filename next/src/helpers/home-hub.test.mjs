@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { PANEL_ORDER, captainRow, openSignups, ownScore, ownSeries, rowContext, seasonGames, seriesWhen } from './home-hub.mjs';
+import { PANEL_ORDER, captainRow, homeRounds, openSignups, ownScore, ownSeries, rowContext, seasonState, seriesWhen } from './home-hub.mjs';
 
 test('an open signup comes first, then the games, the upcoming series, fantasy and the stats', () => {
   assert.deepEqual(PANEL_ORDER, { signup: 1, games: 2, next: 3, fantasy: 4, stats: 5 });
@@ -81,9 +81,16 @@ test('an unscored series with no time is still waiting on a booking', () => {
   assert.equal(seriesWhen({ date_time: null, player1_score: null, player2_score: null }, now), 'No time booked');
 });
 
-test('the season games split into the ones to play and the ones played, in round order', () => {
-  const row = (id, playday, scores = [null, null], p1 = 7, p2 = 8) => ({ id, player1_id: p1, player2_id: p2, player1_score: scores[0], player2_score: scores[1], match: { playday } });
-  const { open, played } = seasonGames([row(1, 3), row(2, 1, [2, 1]), row(3, 2), row(4, 1, [null, null], 9, 8), row(5, 2, [0, 2])], 7);
-  assert.deepEqual(open.map((r) => r.id), [3, 1]);
-  assert.deepEqual(played.map((r) => r.id), [2, 5]);
+test('the member is on a team, waiting for the draft, or not in the current season', () => {
+  assert.equal(seasonState({ id: 20, team: { id: 3 }, signed_up: true }), 'playing');
+  assert.equal(seasonState({ id: 20, team: null, signed_up: true }), 'waiting');
+  assert.equal(seasonState({ id: 20, team: null, signed_up: false }), 'not_in');
+  assert.equal(seasonState(undefined), 'not_in');
+});
+
+test('the rounds to play come first in order, the rounds played after, the most recent first', () => {
+  const cards = [1, 2, 3, 4, 5].map((playday) => ({ playday, over: playday <= 2 }));
+  const { ahead, played } = homeRounds(cards);
+  assert.deepEqual(ahead.map((card) => card.playday), [3, 4, 5]);
+  assert.deepEqual(played.map((card) => card.playday), [2, 1]);
 });

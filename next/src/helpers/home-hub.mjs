@@ -1,4 +1,4 @@
-// The pure parts of the home hub: the panel order, the open signups, the member's season series, the captain row.
+// The pure parts of the home hub: the panel order, the open signups, the member's season and rounds, the captain row.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
 import { local, timeMissing } from './schedule.mjs';
@@ -34,13 +34,18 @@ const byRound = (a, b) => {
   return roundA - roundB || String(timeA).localeCompare(String(timeB));
 };
 
-/** The member's series of one season, split into the ones still to play and the ones played, each
- *  in round order.
- *  @param {any[]} [series] @param {number|null} [playerId] */
-export const seasonGames = (series = [], playerId = null) => {
-  const mine = series.filter((row) => [row.player1_id, row.player2_id].includes(playerId));
-  return { open: mine.filter(isUnscored).sort(byRound), played: mine.filter((row) => !isUnscored(row)).sort(byRound) };
-};
+/** Where the member stands in the current season, from its /me seasons row: on a team ('playing'),
+ *  signed up and waiting for the draft ('waiting'), or not in it ('not_in').
+ *  @param {any} entry */
+export const seasonState = (entry) => (entry?.team ? 'playing' : entry?.signed_up ? 'waiting' : 'not_in');
+
+/** The round cards of a season as Home lists them: the rounds still to play in round order, the one
+ *  in play first, then the rounds played, the most recent first.
+ *  @param {any[]} [cards] the cards of roundCards */
+export const homeRounds = (cards = []) => ({
+  ahead: cards.filter((card) => !card.over),
+  played: cards.filter((card) => card.over).reverse(),
+});
 
 /** The member's own next series and last result out of one season's series.
  *  @param {any[]} [series] @param {number|null} [playerId] */

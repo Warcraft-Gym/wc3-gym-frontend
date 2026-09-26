@@ -20,7 +20,7 @@ import { useAuth, useAvailabilityStore, useEventStore, usePlayerStore, useSeason
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { myNight, myRaces } from "@/helpers/koth.mjs";
-import { roundCards, waitingLines } from "@/helpers/rounds.mjs";
+import { nextAnswer, roundCards, waitingLines } from "@/helpers/rounds.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -186,7 +186,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
       const rows = await availabilityStore.setPlayerAvailability({
         season_id: Number(seasonId),
         playday: week,
-        available: available === want ? null : want,
+        available: nextAnswer(available, want),
       });
       setSeasonData((was) => ({ ...was, [seasonId]: { ...was[seasonId], availability: rows } }));
     } catch (error) {

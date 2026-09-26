@@ -7,7 +7,7 @@ import { SignupDialog } from "@/components/SignupDialog";
 import { StatusAlert } from "@/components/StatusAlert";
 import { BetDialog } from "@/components/fantasy/BetDialog";
 import { FantasyPanel } from "@/components/home/FantasyPanel";
-import { MyGames } from "@/components/home/MyGames";
+import { MySeason } from "@/components/home/MySeason";
 import { NextMatches } from "@/components/home/SeriesPanels";
 import { OpenSignups } from "@/components/home/OpenSignups";
 import { StatsPanel } from "@/components/home/StatsPanel";
@@ -15,10 +15,11 @@ import { dateRange } from "@/helpers/event-labels.mjs";
 import { actOnEvent, homeCards } from "@/helpers/events.mjs";
 import { creationOpen, fantasyState, openBets } from "@/helpers/fantasy-panel.mjs";
 import { PANEL_ORDER, openSignups } from "@/helpers/home-hub.mjs";
+import { nextAnswer } from "@/helpers/rounds.mjs";
 import { achievementSummary, gnlSeasons, seasonScore, seasonsPlayed } from "@/helpers/player-summary.mjs";
 import { myProfilePath } from "@/helpers/players.mjs";
 import { backendUrl, fetchWrapper } from "@/helpers";
-import { useAuth, useConfigStore, useEventStore, useFantasyStore, useLadderStore, usePlayerStore, useSeason, useSeriesStore } from "@/stores";
+import { useAuth, useAvailabilityStore, useConfigStore, useEventStore, useFantasyStore, useLadderStore, usePlayerStore, useSeason, useSeriesStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -26,24 +27,18 @@ type Row = Record<string, any>;
 // events.mjs is plain JS, so its defaults type the parameters; the seam names the real shapes.
 const buildCards = homeCards as unknown as (input: { events: Row[]; me: Row | null; seasons: Row[] }) => Row[];
 
-// The latest GNL season that has started, else the latest of all
-const boardOf = (seasons: Row[]) => [...seasons].reverse().find((season) => season.phase !== "open") ?? seasons[seasons.length - 1] ?? null;
+// The season Home follows: the current season the admins set (/me season_id), else the latest one
+const currentOf = (seasons: Row[], currentId: number | null | undefined): Row | null =>
+  seasons.find((season) => Number(season.id) === Number(currentId)) ?? seasons[seasons.length - 1] ?? null;
 
-// The season whose games Home lists: the newest running season the member plays in, else, off-season,
-// the finished latest season, so his last results still show
-const gameSeasonOf = (mine: Row[], board: Row | null): Row | null => {
-  const started = mine.filter((season) => (season.signed_up || season.team) && season.phase !== "open");
-  if (started.length) return started[0];
-  return board?.phase === "complete" ? board : null;
-};
-
-/** The member's Home: every panel a player needs for the week. An open signup, his games this season
- *  with their next step, the upcoming series, his fantasy team and bets, and his own stats. A panel
- *  shows only when it has something to say. */
+/** The member's Home: every panel a player needs for the week, all on the current season. An open
+ *  signup, his season round by round with his answer and his series, the upcoming series, his fantasy
+ *  team and bets, and his own stats. A panel shows only when it has something to say. */
 export function HomeView() {
   const eventStore = useEventStore();
   const seriesStore = useSeriesStore();
   const configStore = useConfigStore();
+  const availabilityStore = useAvailabilityStore();
   const fantasyStore = useFantasyStore();
   const playerStore = usePlayerStore();
   const ladderStore = useLadderStore();
@@ -57,6 +52,8 @@ export function HomeView() {
   const [hub, setHub] = useState<Row | null>(null);
   // the /player-series answer of the season Home lists; null while it is read or when there is none
   const [games, setGames] = useState<Row | null>(null);
+  // the round whose answer is being written, so only its buttons wait
+  const [savingRound, setSavingRound] = useState<number | null>(null);
   const [acting, setActing] = useState<string | null>(null);
   const [signupEvent, setSignupEvent] = useState<Row | null>(null);
 
@@ -73,11 +70,12 @@ export function HomeView() {
   const playerId: number | null = me?.user?.id ?? null;
   // The one viewer the action bar gates on, as the backend gates the writes
   const viewer = { id: playerId, isAdmin, seats: me?.seats ?? [] };
-  const board = boardOf(seasons);
-  const gameEntry = gameSeasonOf((me?.seasons ?? []) as Row[], board);
-  const gameSeason: Row | null = gameEntry ? { ...seasons.find((known: Row) => known.id === gameEntry.id), ...gameEntry } : null;
-  // the season fantasy plays in: the current season the admins set, else the board season
-  const fantasySeasonId: number | null = me?.season_id ?? board?.id ?? null;
+  // every panel follows the current season: the games, the answers, the stats and fantasy
+  const currentSeason = currentOf(seasons, me?.season_id);
+  const currentId: number | null = currentSeason?.id ?? me?.season_id ?? null;
+  // the member's own row of that season, when /me lists him in it
+  const currentEntry: Row | null = ((me?.seasons ?? []) as Row[]).find((season) => Number(season.id) === Number(currentId)) ?? null;
+  const fantasySeasonId: number | null = currentId;
 
   // The signup rows reuse the home card, so the dialog, the GNL link and the withdraw stay
   const cards = buildCards({ events: myEvents, me, seasons });
@@ -101,6 +99,22 @@ export function HomeView() {
   const loadGames = async (seasonId: number | null) => {
     if (!seasonId || !playerId) return setGames(null);
     setGames(await fetchWrapper.get(`${backendUrl}/player-series?season_id=${seasonId}`).catch(() => null));
+  };
+
+  // One round's answer: the state pressed, or none when he pressed the one it holds
+  const answerRound = async (playday: number, want: boolean) => {
+    if (!currentId) return;
+    setSavingRound(playday);
+    setErrorMessage(null);
+    try {
+      const held = (games?.availability ?? []).find((row: Row) => row.playday === playday)?.available ?? null;
+      const rows = await availabilityStore.setPlayerAvailability({ season_id: Number(currentId), playday, available: nextAnswer(held, want) });
+      setGames((was) => (was ? { ...was, availability: rows } : was));
+    } catch (error) {
+      setErrorMessage((error as Error).message || "Your answer could not be saved.");
+    } finally {
+      setSavingRound(null);
+    }
   };
 
   const reloadEvents = async () => {
@@ -181,13 +195,13 @@ export function HomeView() {
         if (!live) return;
         setMyEvents(rows);
         setHub(series);
-        const entry = gameSeasonOf((me?.seasons ?? []) as Row[], boardOf(known));
-        await loadGames(entry?.id ?? null);
+        const seasonId = currentOf(known, me?.season_id)?.id ?? me?.season_id ?? null;
+        await loadGames(seasonId);
         if (!live) return;
         setLoading(false);
         // the fantasy and stats reads come after the page has drawn; each panel waits for its own
         loadFantasy();
-        loadStats(entry?.id ?? me?.season_id ?? null);
+        loadStats(seasonId);
       } catch (error) {
         console.error("Error loading the home page:", error);
         if (live) {
@@ -217,14 +231,16 @@ export function HomeView() {
             <OpenSignups cards={signupRows} acting={acting} loading={loading} order={PANEL_ORDER.signup} onAct={act} />
           ) : null}
           {playerId ? (
-            <MyGames
-              series={seriesRows}
-              season={gameSeason}
-              teamId={gameEntry?.team?.id ?? null}
+            <MySeason
+              season={currentSeason}
+              entry={currentEntry}
+              data={games}
               playerId={playerId}
               viewer={viewer}
               loading={loading}
+              savingRound={savingRound}
               order={PANEL_ORDER.games}
+              onAnswer={answerRound}
               onSchedule={(series) => scheduleDialog.current?.open(series)}
               onReport={(series) => reportDialog.current?.open(series)}
             />
@@ -233,7 +249,7 @@ export function HomeView() {
         </div>
         <div className="contents min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-col min-[960px]:gap-5">
           {playerId ? (
-            <StatsPanel summary={summary} seasonName={gameSeason?.name ?? null} to={myProfilePath(me)} order={PANEL_ORDER.stats} />
+            <StatsPanel summary={summary} seasonName={currentSeason?.name ?? null} to={myProfilePath(me)} order={PANEL_ORDER.stats} />
           ) : null}
           {/* drawn once its reads say it has something to offer, so it never shows and then vanishes */}
           {fantasy.state ? (
@@ -244,8 +260,8 @@ export function HomeView() {
 
       {playerId ? (
         <>
-          <ScheduleDialog ref={scheduleDialog} playerId={playerId} onSaved={() => loadGames(gameEntry?.id ?? null)} />
-          <ReportResultDialog ref={reportDialog} onSaved={() => loadGames(gameEntry?.id ?? null)} />
+          <ScheduleDialog ref={scheduleDialog} playerId={playerId} onSaved={() => loadGames(currentId)} />
+          <ReportResultDialog ref={reportDialog} onSaved={() => loadGames(currentId)} />
         </>
       ) : null}
 

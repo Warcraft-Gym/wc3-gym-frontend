@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundLine, roundOver, roundStateChip, waitingLines } from './rounds.mjs';
+import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundLine, roundOver, roundStateChip, waitingLines, nextAnswer } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -232,4 +232,11 @@ test('a round ends at midnight in the event zone', () => {
   const midnight = DateTime.fromISO('2026-09-26T22:30Z');
   assert.equal(roundOver(round, midnight, 'Europe/Berlin'), true);
   assert.equal(roundOver(round, midnight, 'America/Los_Angeles'), false);
+});
+
+test('pressing a round button sets that answer, and pressing the answer it holds clears it', () => {
+  assert.equal(nextAnswer(null, true), true);
+  assert.equal(nextAnswer(false, true), true);
+  assert.equal(nextAnswer(true, true), null);
+  assert.equal(nextAnswer(false, false), null);
 });

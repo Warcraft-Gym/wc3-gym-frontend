@@ -2,6 +2,7 @@
 
 ## 2026-09-26
 
+* **Update**: an embedded player's record in the read's event comes from its `record` object: the roster sit-outs, the faced races on the match page, the season report, the fantasy matchup compare and the fantasy score breakdown read it. The shared-component concept states the rule.
 * **Update**: the open events list is edge cached without a bearer; the entrants and season roster tables carry no Discord column, the player and person searches match name and tags, and the edit dialog reads the player for its Discord fields.
 * **Update**: the KOTH night page shows the withdraw buttons until the night closes, a king's withdraw confirm says it forfeits his next match, and a forfeit played row reads "Forfeit"; the night page and the run page give an admin "Open stream view" and "Copy stream link".
 * **Update**: every KOTH night has one public page, `/events/:id`: a member signs up, withdraws and reads his place in line there, and `?mode=clean` is its stream view. `/koth/dashboard` lands on tonight's night page and keeps `?mode=clean`. The KOTH menu holds Nights; a menu with no item the session may open is a plain link.

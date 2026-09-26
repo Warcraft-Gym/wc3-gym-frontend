@@ -943,7 +943,6 @@ export function MatchDetailsView({ id }: { id: string }) {
                 <DraftSeries
                   draftSeries={enrichedDraftSeries}
                   smAndDown={smAndDown}
-                  seasonId={match.season_id}
                   ladderById={ladderById}
                   isAdmin={auth.isAdmin}
                   canDraft={canDraft}
@@ -1039,7 +1038,6 @@ export function MatchDetailsView({ id }: { id: string }) {
           pairs={proposePairs}
           existing={proposeExisting}
           ladderById={ladderById}
-          seasonId={match.season_id}
           hasSeries={hasSeries}
           errorMessage={errorMessage}
           onErrorClose={() => setErrorMessage(null)}

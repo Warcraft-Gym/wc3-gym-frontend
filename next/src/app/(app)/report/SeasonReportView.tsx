@@ -220,7 +220,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
       for (const player of team.player_by_season?.[seasonIdKey] || []) {
         if (seen.has(player.id)) continue;
         seen.add(player.id);
-        const seasonStats = player.gnl_stats?.find((s: any) => s.season_id === season.id) || null;
+        const seasonStats = player.record ?? null;
         result.push({ ...player, seasonStats, team });
       }
     }
@@ -251,9 +251,8 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
       const info = team.seasons_info?.find((s: any) => s.season_id === season?.id) || team.seasons_info?.[0] || {};
       const seasonIdKey = String(season?.id);
       const players = team.player_by_season?.[seasonIdKey] || [];
-      const statsOf = (p: any) => p.gnl_stats?.find((s: any) => s.season_id === season?.id);
-      const totalWins = players.reduce((sum: number, p: any) => sum + (statsOf(p)?.wins || 0), 0);
-      const totalLosses = players.reduce((sum: number, p: any) => sum + (statsOf(p)?.losses || 0), 0);
+      const totalWins = players.reduce((sum: number, p: any) => sum + (p.record?.wins || 0), 0);
+      const totalLosses = players.reduce((sum: number, p: any) => sum + (p.record?.losses || 0), 0);
       return {
         id: team.id,
         icon_url: team.icon_url,

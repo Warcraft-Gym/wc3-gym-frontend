@@ -136,7 +136,6 @@ export function FantasyDashboardView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [ladderPlayers, ladderWindow?.start, ladderWindow?.end],
   );
-  const gnlOf = (player: any) => player.gnl_stats?.find((row: any) => row.season_id === selectedSeasonId) ?? player.gnl_stats?.[0] ?? null;
   const seasonParam = searchParams.get("season");
   const ladderTo = seasonParam ? `/ladder?season=${seasonParam}` : "/ladder";
   const toggleRow = (id: number) =>
@@ -481,8 +480,8 @@ export function FantasyDashboardView() {
             raceB={row.original.player2_race}
             la={ladderById.get(row.original.player1.id)}
             lb={ladderById.get(row.original.player2.id)}
-            ga={gnlOf(row.original.player1)}
-            gb={gnlOf(row.original.player2)}
+            ga={row.original.player1.record}
+            gb={row.original.player2.record}
             daysA={daysById.get(row.original.player1.id)}
             daysB={daysById.get(row.original.player2.id)}
             ymax={ymax}

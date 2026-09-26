@@ -16,16 +16,14 @@ export function getHighestW3CMMR(player?: Row | null): number | null {
   return live.length ? Math.max(...live.map((entry: Row) => entry.mmr)) : null;
 }
 
-/** The races a player faced, from his gnl_stats matchup history for this season. */
-export function getOpponentRaceHistory(player?: Row | null, seasonId?: number): string[] {
-  if (!player || !player.gnl_stats || player.gnl_stats.length === 0) return [];
-  const seasonStats = seasonId ? player.gnl_stats.find((s: Row) => s.season_id === seasonId) : player.gnl_stats[0];
-  return seasonStats?.matchup_history || [];
+/** The races a player faced, from the matchup history of his record in this event. */
+export function getOpponentRaceHistory(player?: Row | null): string[] {
+  return player?.record?.matchup_history ?? [];
 }
 
 /** One icon per race the player already faced this season. */
-export function FacedRaces({ player, seasonId }: { player?: Row | null; seasonId?: number }) {
-  const races = getOpponentRaceHistory(player, seasonId).filter(Boolean);
+export function FacedRaces({ player }: { player?: Row | null }) {
+  const races = getOpponentRaceHistory(player).filter(Boolean);
   return (
     <div className="flex items-center gap-1">
       {races.map((race, idx) => (

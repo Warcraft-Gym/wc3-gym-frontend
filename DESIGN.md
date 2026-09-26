@@ -162,6 +162,7 @@ Use these instead of drawing the same thing again.
 | `FixtureSeries` | The ordered series one fixture holds, each with its mode, its pick rule and its two sides. |
 | `BracketCard` | One bracket of a KOTH night: its throne, the series it plays now, the line waiting and what it played tonight. The run page passes its admin controls; the public page passes none. |
 | `SeriesActionBar` | The steps of one series as buttons, full or compact. A step already taken reads as a quiet fact before the buttons. |
+| `DesktopOnlyNotice` | On a phone, the notice that a task is easier on a computer, with a copy-link button. Around the editing part of a "Read on phone" view, or with `desktopOnly` for a "Desktop only" view. Above 960 px it draws its children alone. |
 
 - The player line is flag, name, race icon, MMR, with one 6 px gap between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in that event. This plain line is the default on every surface.
 - The MMR is the W3C ladder MMR of the race the player signed up on, read by the line itself from the `w3c_stats` the payload already carries, so no surface asks for a number of its own. A series row is the exception: the series reads name `player1_mmr` and `player2_mmr`, the rating on the race the row plays, and the surface passes that number in, because the row's player carries no stats. A player with no stats in the payload, and a row that names no rating, end the line after the race icon: no dash, no placeholder. A table that sorts by MMR keeps its column and passes `mmr={false}`, so the number never reads twice in one row; a ladder table keeps its own MMR and +/- columns, which come from the ladder history and are a different figure.
@@ -214,6 +215,33 @@ The events module names things the same way on every page. A league is what repe
 - The player page's Events section is one accordion row per event the player took part in, of any kind, newest first: the event label, the kind as a small outlined chip, the dates, and one chip for the result — Champion, else the placing once the event is over, else the state. A GNL row carries the team, the race, the series record with its round strip, the ladder record and the MMR, and opens onto the round cards or the series by round; every other kind opens onto its placing, the series still to play and a link to its event page. `next/src/helpers/player-events.mjs` builds the rows from `GET /users/{id}/history`, which answers every kind. On the owner's own page tonight's KOTH night joins the list: `foldNight` in `next/src/helpers/koth.mjs` rides it on his own row once he entered it and leads the list while he has not, and the row wears `mdi-crown` with the night's state, the races he entered on, and the one action word the member read picked.
 - A result bar or square uses `win` and `loss` only; a draw or no result uses `draw`.
 - The head to head card counts every kind of event. Its events column and its meeting rows print `eventLabel`, and a cup, a KOTH night and a signup event wear a small icon (`mdi-tournament`, `mdi-crown`, `mdi-clipboard-text-outline`) with the kind as the title; a GNL season wears none, because its label already says so.
+
+## Views for everyone
+
+Most people who use the app are players and captains, not IT or data specialists. Every view follows these rules:
+
+- One view serves one task. Its title names the task ("Plan Round 3 Lineup"), not the data it shows.
+- The next step comes first, as the one filled button. Everything else sits below it or behind a "More" link.
+- Plain words only. An internal term (draft series, promote, entrant, seat, a phase code) never reaches the page. A status is a short label with a colour and an icon, never a raw value.
+- Show, don't tabulate. A status chip, a progress step or a card comes before a table. A table is used when comparing many rows is the task.
+- No new UI library and no decoration beyond the components in "Shared components".
+- An empty list says why it is empty and what happens next. A disabled button says why it is disabled.
+
+### Phone support
+
+Every view is built for a phone (390 px wide) and a desktop in the same pull request. Each view states one of three levels in its `docs/okf/pages/*` concept:
+
+| Level | On a phone |
+|---|---|
+| Full | Every action works. |
+| Read on phone | The status is readable; the editing part shows `DesktopOnlyNotice` above it. |
+| Desktop only | Only `DesktopOnlyNotice` shows (`desktopOnly`). |
+
+`next/src/components/DesktopOnlyNotice.tsx` is the one notice for both lower levels, so every task says it in the same words and offers the same copy-link button.
+
+### Navigation
+
+The nav is built from the hats a session wears (`next/src/helpers/nav-model.mjs`): a player, a captain and an admin can be one person, and each hat adds its own links. Under 960 px a bottom tab bar holds Home, My Team, Season and More; a phone never needs the drawer for its common tasks. Admin pages sit in the admin frame (`next/src/components/admin/AdminFrame.tsx`), whose sections come from `next/src/helpers/admin-nav.mjs`.
 
 ## Patterns
 

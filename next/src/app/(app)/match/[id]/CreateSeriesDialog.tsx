@@ -18,11 +18,11 @@ import { SyncedLine, mmrOf, type Row } from "./match-cells";
 
 export type SideTeam = { team: Row; roster: Row[]; isOut: (player: Row) => boolean };
 
-// The search matches the name or the Discord name, as the table filter does
+// The search matches the name
 const matchesQuery = (player: Row, search: string) => {
   if (!search) return true;
   const needle = search.toLowerCase();
-  return (player.name || "").toLowerCase().includes(needle) || (player.discordTag || "").toLowerCase().includes(needle);
+  return (player.name || "").toLowerCase().includes(needle);
 };
 
 /** Add one series: one player from each roster, published or as a draft. */

@@ -148,7 +148,6 @@ export function EntrantsView({ id }: { id: string }) {
     { key: "player", title: "Entrant" },
     { key: "mmr", title: "MMR", align: "right" },
     { key: "battle_tag", title: "Battle tag", phone: false },
-    { key: "discord", title: "Discord", phone: false },
     { key: "w3c", title: "W3C", phone: false },
     { key: "eligibility", title: "Eligibility" },
     { key: "seed", title: "Seed", align: "right" },
@@ -551,9 +550,8 @@ export function EntrantsView({ id }: { id: string }) {
                       ) : null}
                     </TableCell>
                     <TableCell className="tnum text-right">{solo(row) ? mmrCell(row, entrantMmr(row)) : null}</TableCell>
-                    {/* A team has no identity of its own; the three columns belong to a player */}
+                    {/* A team has no identity of its own; the two columns belong to a player */}
                     <TableCell className={cn(phoneCell, !row.user?.battleTag && "text-muted-foreground")}>{row.user ? row.user.battleTag || "Not linked" : "—"}</TableCell>
-                    <TableCell className={cn(phoneCell, !row.user?.discordTag && "text-muted-foreground")}>{row.user ? row.user.discordTag || "Not linked" : "—"}</TableCell>
                     {/* The W3C name is the battle tag, so this column answers whether w3champions
                         knows it rather than printing the same string twice */}
                     <TableCell className={phoneCell}>
@@ -594,7 +592,7 @@ export function EntrantsView({ id }: { id: string }) {
                         <span className="ml-2">{raceName(race.race)}</span>
                       </TableCell>
                       <TableCell className="tnum text-right">{mmrCell(race, race.mmr)}</TableCell>
-                      <TableCell colSpan={3} className={phoneCell} />
+                      <TableCell colSpan={2} className={phoneCell} />
                       <TableCell />
                       <TableCell className="tnum text-right">{seedCell(race)}</TableCell>
                       <TableCell className="whitespace-nowrap">

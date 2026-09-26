@@ -205,7 +205,6 @@ function PairingNote({ item, fresh, replaces }: { item: Row; fresh: boolean; rep
 export function DraftSeries({
   draftSeries,
   smAndDown,
-  w3cSeason,
   seasonId,
   ladderById,
   isAdmin,
@@ -224,7 +223,6 @@ export function DraftSeries({
 }: {
   draftSeries: Row[];
   smAndDown: boolean;
-  w3cSeason?: number;
   seasonId?: number;
   ladderById: Map<number, Row>;
   isAdmin: boolean;
@@ -295,22 +293,22 @@ export function DraftSeries({
     },
     {
       id: `p${n}_w3c_mmr`,
-      accessorFn: (row: Row) => mmrOf(row[`player${n}`], row[`player${n}_race`], w3cSeason) || 0,
+      accessorFn: (row: Row) => mmrOf(row[`player${n}`], row[`player${n}_race`]) || 0,
       header: () => <W3CMmr />,
       cell: ({ row }: { row: { original: Row } }) => (
         <div className="text-right">
-          <Badge className="bg-info text-on-info tnum">{mmrOf(row.original[`player${n}`], row.original[`player${n}_race`], w3cSeason) || "—"}</Badge>
+          <Badge className="bg-info text-on-info tnum">{mmrOf(row.original[`player${n}`], row.original[`player${n}_race`]) || "—"}</Badge>
           <SyncedLine player={row.original[`player${n}`]} />
         </div>
       ),
     },
     {
       id: `p${n}_w3c_high_mmr`,
-      accessorFn: (row: Row) => getHighestW3CMMR(row[`player${n}`], w3cSeason) || 0,
+      accessorFn: (row: Row) => getHighestW3CMMR(row[`player${n}`]) || 0,
       header: "Highest MMR",
       cell: ({ row }: { row: { original: Row } }) => (
         <div className="text-right">
-          <Badge className="bg-secondary text-on-secondary tnum">{getHighestW3CMMR(row.original[`player${n}`], w3cSeason) || "—"}</Badge>
+          <Badge className="bg-secondary text-on-secondary tnum">{getHighestW3CMMR(row.original[`player${n}`]) || "—"}</Badge>
         </div>
       ),
     },

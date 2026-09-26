@@ -290,7 +290,7 @@ export function FantasyDashboardView() {
         setTierCount(count);
         setTeams((await teamStore.fetchTeamsBySeasonBasic(seasonId)) || []);
 
-        // The draft pool: the season's signups, carrying signup_race and w3c_stats
+        // The draft pool: the season's signups, carrying signup_race and race_mmrs
         let pool = (await seasonStore.fetchSeasonSignups(seasonId)) || [];
         setLadderPlayers(await seasonStore.fetchSeasonLadderPlayers(seasonId).catch(() => []));
 

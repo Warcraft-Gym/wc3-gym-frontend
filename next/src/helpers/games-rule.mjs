@@ -1,89 +1,62 @@
 /**
  * The GNL games rule: how many W3C ladder games a player has on one race over the current
  * and the previous w3champions season, and the mark the player line draws when he is short.
- * The threshold is a parameter, so an event setting can carry it once the backend holds one.
+ * The backend's race_mmrs summary carries the window; the threshold is a parameter, so an
+ * event setting can carry it once the backend holds one.
  */
 
 /**
- * Get combined games count from W3C stats for current season AND previous season (currentSeason - 1).
+ * The race_mmrs entry of one race: a window entry (stale false) or a profile's older one (stale true)
+ *
+ * @param {Object} player - Player object carrying race_mmrs
+ * @param {string} race - Race to read (required, null gives null)
+ * @returns {Object|null} - { race, wc3_season, mmr, games, wins, losses, stale }, or null when the race has none
+ */
+export function getRaceMmr(player, race = null) {
+  if (!race) return null;
+  return (player?.race_mmrs || []).find(entry => entry.race && entry.race.toUpperCase() === race.toUpperCase()) ?? null;
+}
+
+// The window entry of one race, which the games rule reads; a stale entry does not count
+const liveEntry = (player, race) => {
+  const entry = getRaceMmr(player, race);
+  return entry && !entry.stale ? entry : null;
+};
+
+/**
+ * The games of one race over the current and the previous season
  *
  * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
  * @param {string} race - Race to count for (required, null gives no games)
- * @returns {number} - Combined games count across both seasons
+ * @returns {number} - The window games of that race, 0 when it has none
  */
-export function getW3CGamesCount(player, currentSeason, race = null) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
-    return 0;
-  }
-
-  if (!race) {
-    return 0;
-  }
-
-  let total = 0;
-
-  // Add games from current season
-  const currentStats = player.w3c_stats.find(s =>
-    s.race && s.race.toUpperCase() === race.toUpperCase() &&
-    s.wc3_season === currentSeason
-  );
-  if (currentStats) {
-    total += Number(currentStats.wins || 0) + Number(currentStats.losses || 0);
-  }
-
-  // Add games from previous season
-  const prevStats = player.w3c_stats.find(s =>
-    s.race && s.race.toUpperCase() === race.toUpperCase() &&
-    s.wc3_season === currentSeason - 1
-  );
-  if (prevStats) {
-    total += Number(prevStats.wins || 0) + Number(prevStats.losses || 0);
-  }
-
-  return total;
+export function getW3CGamesCount(player, race = null) {
+  return Number(liveEntry(player, race)?.games || 0);
 }
 
 /**
- * Check if player has W3C stats for current OR previous season (currentSeason - 1).
+ * Check if player has W3C stats for the current or the previous season on one race.
  * Used for eligibility warning display.
  *
  * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
  * @param {string} race - Race to check (required, null gives false)
- * @returns {boolean} - True if stats exist for either season
+ * @returns {boolean} - True when the race has a window entry
  */
-export function hasW3CStatsTwoSeasons(player, currentSeason, race = null) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0 || !currentSeason) {
-    return false;
-  }
-
-  if (!race) {
-    return false;
-  }
-
-  return player.w3c_stats.some(s =>
-    s.race && s.race.toUpperCase() === race.toUpperCase() &&
-    (s.wc3_season === currentSeason || s.wc3_season === currentSeason - 1)
-  );
+export function hasW3CStatsTwoSeasons(player, race = null) {
+  return !!liveEntry(player, race);
 }
 
 /**
- * Check if combined games count across current and previous season is below threshold.
+ * Check if the games over the current and the previous season are below threshold.
  * Used for eligibility warning display.
  *
  * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
  * @param {string} race - Race to check (required, null gives false)
  * @param {number} threshold - Minimum games threshold (default: 20)
- * @returns {boolean} - True if combined games are below threshold (and player has some stats)
+ * @returns {boolean} - True if the window games are below threshold (and player has some)
  */
-export function hasLowGamesTwoSeasons(player, currentSeason, race = null, threshold = 20) {
-  if (!hasW3CStatsTwoSeasons(player, currentSeason, race)) {
-    return false;
-  }
-
-  const games = getW3CGamesCount(player, currentSeason, race);
+export function hasLowGamesTwoSeasons(player, race = null, threshold = 20) {
+  const games = getW3CGamesCount(player, race);
   return games > 0 && games < threshold;
 }
 
@@ -103,22 +76,21 @@ export const noStatsWarning = (race = null) => ({
  * The games-rule mark of one player on one race, as the player line draws it
  *
  * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (required)
  * @param {string} race - Race to check (required, null gives no mark)
  * @param {number} threshold - Minimum games threshold (default: 20)
  * @returns {{colour: 'error'|'warning', text: string}|null} - error when W3C holds no stats, warning under the rule, null when the player passes
  */
-export function gamesWarning(player, currentSeason, race = null, threshold = 20) {
-  if (!race || !currentSeason) {
+export function gamesWarning(player, race = null, threshold = 20) {
+  if (!race) {
     return null;
   }
 
-  if (!hasW3CStatsTwoSeasons(player, currentSeason, race)) {
+  if (!hasW3CStatsTwoSeasons(player, race)) {
     return noStatsWarning(race);
   }
 
-  if (hasLowGamesTwoSeasons(player, currentSeason, race, threshold)) {
-    const games = getW3CGamesCount(player, currentSeason, race);
+  if (hasLowGamesTwoSeasons(player, race, threshold)) {
+    const games = getW3CGamesCount(player, race);
     return { colour: 'warning', text: `Less than ${threshold} games (${games} games) for ${race}` };
   }
 

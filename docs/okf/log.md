@@ -2,6 +2,7 @@
 
 ## 2026-09-26
 
+* **Update**: the dashboard reads the backend MMR summary, `race_mmrs` and `main_race`, in place of raw ladder rows and the w3champions season config; a stale race shows its season tag, a new signup opens on the main race, and the roster of an event that is over shows the MMR each player entered it with. The data display, data pieces and shared-component concepts and the teams page concept state the summary and the rule.
 * **Update**: a KOTH night's run page holds its settings in a Night card and its bracket bounds in the MMR strip; the event run page of a night sends the admin to the night's run page; the public event page of a night draws its board in every state; the nights list drops the per-row settings link; the stage views drop the KOTH chain.
 * **Update**: an event's achievements, stage series and stage standings reads carry no bearer for a non-admin, so the edge caches them; the entrants read keeps the bearer, so a member who signs up sees their own name at once.
 

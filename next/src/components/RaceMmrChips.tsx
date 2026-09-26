@@ -6,7 +6,7 @@ import { raceWrapper } from "@/helpers/races.js";
 import { getAllRaceStats } from "@/helpers/w3c-stats.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type RaceStat = { race: string; mmr?: number; wins?: number; losses?: number; games?: number; wc3_season?: number };
+type RaceStat = { race: string; mmr?: number; wins?: number; losses?: number; games?: number; wc3_season?: number; stale?: boolean };
 
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 
@@ -15,16 +15,13 @@ const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race
  *  `max` keeps the best ones as chips and folds the rest into a "+n" chip. */
 export function RaceMmrChips({
   player,
-  w3cSeason,
   max = Infinity,
 }: {
-  player: Record<string, any>; // needs w3c_stats
-  w3cSeason?: number; // current W3C season; a stat from an older season names its own
+  player: Record<string, any>; // needs race_mmrs; a stale race names its own season
   max?: number;
 }) {
-  const raceStats: RaceStat[] = getAllRaceStats(player, w3cSeason)
-    .filter((stat: RaceStat) => (stat.games || 0) > 0)
-    .sort((a: RaceStat, b: RaceStat) => (b.mmr || 0) - (a.mmr || 0));
+  // the summary lists the window races by MMR, then the stale ones
+  const raceStats: RaceStat[] = getAllRaceStats(player).filter((stat: RaceStat) => (stat.games || 0) > 0);
   return (
     <span className="inline-flex items-center gap-2">
       {raceStats.slice(0, max).map((stat) => (
@@ -35,7 +32,7 @@ export function RaceMmrChips({
           <Badge variant="secondary">
             <RaceIcon raceIdentifier={stat.race} />
             {stat.mmr}
-            {w3cSeason && stat.wc3_season !== w3cSeason ? <span className="ml-1 text-xs text-muted-foreground">S{stat.wc3_season}</span> : null}
+            {stat.stale ? <span className="ml-1 text-xs text-muted-foreground">S{stat.wc3_season}</span> : null}
           </Badge>
         </TapTooltip>
       ))}
@@ -46,7 +43,7 @@ export function RaceMmrChips({
               {raceStats.slice(max).map((stat) => (
                 <div key={stat.race}>
                   {raceName(stat.race)} {stat.mmr}
-                  {w3cSeason && stat.wc3_season !== w3cSeason ? ` (S${stat.wc3_season})` : ""}
+                  {stat.stale ? ` (S${stat.wc3_season})` : ""}
                 </div>
               ))}
             </div>

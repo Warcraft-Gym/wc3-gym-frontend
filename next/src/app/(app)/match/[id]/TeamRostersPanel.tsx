@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
 import { W3CMmr } from "@/components/W3CMmr";
-import { mmrSeasonLabel } from "@/helpers/w3c-stats";
 import { SyncedLine, mmrOf, type Row } from "./match-cells";
 
 // The search matches the name
@@ -31,7 +30,6 @@ function RosterCard({
   isOut,
   hasSeries,
   onSelectAvailable,
-  w3cSeason,
 }: {
   team: Row;
   roster: Row[];
@@ -42,7 +40,6 @@ function RosterCard({
   isOut: (player: Row) => boolean;
   hasSeries: (playerId: number) => boolean;
   onSelectAvailable: () => void;
-  w3cSeason?: number;
 }) {
   const shown = roster.filter((player) => matchesQuery(player, search));
   const allShown = shown.length > 0 && shown.every((player) => selected.includes(player.id));
@@ -118,14 +115,11 @@ function RosterCard({
             },
             {
               id: "w3c_mmr",
-              accessorFn: (row: Row) => mmrOf(row, row.signup_race, w3cSeason) || 0,
-              header: () => <W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />,
+              accessorFn: (row: Row) => mmrOf(row, row.signup_race) || 0,
+              header: () => <W3CMmr />,
               cell: ({ row }) => (
                 <>
-                  <Badge className="bg-info text-on-info tnum">{mmrOf(row.original, row.original.signup_race, w3cSeason) ?? "N/A"}</Badge>
-                  {mmrSeasonLabel(row.original, w3cSeason as number, row.original.signup_race) ? (
-                    <span className="ms-1 text-xs text-muted-foreground">{mmrSeasonLabel(row.original, w3cSeason as number, row.original.signup_race)}</span>
-                  ) : null}
+                  <Badge className="bg-info text-on-info tnum">{mmrOf(row.original, row.original.signup_race) ?? "N/A"}</Badge>
                   <SyncedLine player={row.original} />
                 </>
               ),
@@ -159,7 +153,6 @@ export function TeamRostersPanel({
   onMmrDiffChange,
   canPropose,
   onPropose,
-  w3cSeason,
 }: {
   team1: Row;
   team2: Row;
@@ -180,7 +173,6 @@ export function TeamRostersPanel({
   onMmrDiffChange: (value: string) => void;
   canPropose: boolean;
   onPropose: () => void;
-  w3cSeason?: number;
 }) {
   return (
     <Accordion className="card mt-4 rounded px-4">
@@ -215,7 +207,6 @@ export function TeamRostersPanel({
               isOut={outTeam1}
               hasSeries={hasSeries}
               onSelectAvailable={onSelectAvailableTeam1}
-              w3cSeason={w3cSeason}
             />
             <RosterCard
               team={team2}
@@ -227,7 +218,6 @@ export function TeamRostersPanel({
               isOut={outTeam2}
               hasSeries={hasSeries}
               onSelectAvailable={onSelectAvailableTeam2}
-              w3cSeason={w3cSeason}
             />
           </div>
         </AccordionContent>

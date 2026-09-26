@@ -37,6 +37,9 @@ const store = {
   async updateEvent(event_id: number, event: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}`, event);
   },
+  async deleteEvent(event_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}`);
+  },
   // The stages are written for the whole event at once: their positions must stay 1..n
   async setStages(event_id: number, stages: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages`, stages);

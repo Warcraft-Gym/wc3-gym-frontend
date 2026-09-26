@@ -18,6 +18,9 @@ import { useAuth, useEventStore } from "@/stores";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
+// The stream view never reloads, so it alone reads the board again every 30 s
+const STREAM_POLL_MS = 30000;
+
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 
 /** Tonight's KOTH night, open to everyone, on the one board read: a card per bracket with its
@@ -42,7 +45,7 @@ export function KothDashboard() {
   const myId = auth.me?.user?.id;
   const held: string[] = myRacesOnBoard(board, myId);
 
-  // The board read on load and after a withdraw; fresh skips the edge cache after the reader's own write
+  // The board read on load, after a withdraw and on the stream view's timer; fresh skips the edge cache after the reader's own write
   const readBoard = async (fresh = false) => {
     try {
       const answer = await store.fetchBoard(null, fresh);
@@ -69,8 +72,11 @@ export function KothDashboard() {
       if (alive) setLoading(false);
     };
     first();
+    // the stream view reads again only while its tab is visible
+    const timer = cleanMode ? setInterval(() => !document.hidden && readBoard(), STREAM_POLL_MS) : undefined;
     return () => {
       alive = false;
+      clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

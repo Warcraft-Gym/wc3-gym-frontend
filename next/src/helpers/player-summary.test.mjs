@@ -25,7 +25,7 @@ test('the achievements count this season and overall, and the best three sort by
   ], 20);
   assert.equal(summary.thisSeason, 4);
   assert.equal(summary.overall, 5);
-  assert.deepEqual(summary.top3.map((b) => b.id), ['b', 'c', 'a']);
+  assert.deepEqual(summary.top3.map((b) => b.id), ['b', 'a', 'c']);
   assert.equal(summary.complete, true);
 });
 

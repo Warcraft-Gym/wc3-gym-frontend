@@ -102,6 +102,8 @@ function request(method) {
 const EDGE_CACHED = /(\/events\/\d+\/ladder(\/players)?|\/home\/series|\/koth\/(nights\/\d+\/)?board|\/leagues|\/maps|\/config\/w3c|\/config\/settings\/\w+|\/users\/\d+\/ladder(\?season_id=\d+)?|\/users\/\d+\/history|\/(events|leagues)\/\d+\/teams(\/basic|\/\d+)?)$/;
 // Career pages use query parameters for paging and sorting; a cache-busting query stays authenticated.
 const CAREER_EDGE_CACHED = /\/stats\/career(?:\/\d+)?(?:\?(?:limit|offset|search|sort|order)=[^&]*(?:&(?:limit|offset|search|sort|order)=[^&]*)*)?$/;
+// The events list takes only league_id and kind; a cache-busting `t` or an admin-only `published` filter stays authenticated.
+const EVENTS_LIST_EDGE_CACHED = /\/events(?:\?(?:league_id=\d+|kind=\w+)(?:&(?:league_id=\d+|kind=\w+))*)?$/;
 
 // exported so the raw FormData requests can send the same bearer
 export async function authHeader(method, url) {
@@ -111,7 +113,7 @@ export async function authHeader(method, url) {
 
     const store = useAuthStore();
     // writes share these paths; an admin re-reads right after a write, so their reads skip the cache
-    if (method === 'GET' && (EDGE_CACHED.test(url) || CAREER_EDGE_CACHED.test(url)) && !store.isAdmin) return {};
+    if (method === 'GET' && (EDGE_CACHED.test(url) || CAREER_EDGE_CACHED.test(url) || EVENTS_LIST_EDGE_CACHED.test(url)) && !store.isAdmin) return {};
     const token = await store.token();
     if (!token) return {};
     const headers = { Authorization: `Bearer ${token}` };

@@ -112,8 +112,8 @@ export function KothView() {
         }
       >
         <Button nativeButton={false} variant="outline" className="text-primary-text" render={<Link href="/koth/dashboard" />}>
-          <Icon name="mdi-view-dashboard" />
-          Dashboard
+          <Icon name="mdi-crown-outline" />
+          Tonight
         </Button>
         <Button disabled={loading} onClick={openDialog}>
           <Icon name="mdi-plus" />

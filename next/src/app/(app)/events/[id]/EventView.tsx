@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toneClass } from "@/components/ui/tone";
 import { ColumnNote } from "@/components/ColumnNote";
 import { EventHeader } from "@/components/EventHeader";
-import { BracketCard } from "@/components/koth/BracketCard";
 import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
+import { KothNightBoard } from "@/components/koth/KothNightBoard";
+import { StreamLinks } from "@/components/koth/StreamLinks";
 import { HIDE_RESULTS, useHideResultsSwitch } from "@/components/hide-results";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
@@ -26,7 +27,6 @@ import { byPlayer, bySeed, bySignup, entrantName, raceRows, rostersByEntrant, si
 import { FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, stateOf, titleOf } from "@/helpers/event-labels.mjs";
 import { actOnEvent, blocksHint, eventActionButton } from "@/helpers/events.mjs";
 import { myRaces } from "@/helpers/koth.mjs";
-import { orderedBrackets } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { saveReturnUrl } from "@/helpers/return-url.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
@@ -48,11 +48,12 @@ const act_ = actOnEvent as unknown as (action: string, options: Record<string, u
  *  reader can do about it. An event with no stage is a sign-up list, so it reads its entrants
  *  against the cap in place of the stage table. A GNL season keeps its own pages, so this one
  *  links to them rather than redrawing them. A KOTH night draws its board, live or archived, in
- *  place of the entrants and the stages. The spoiler switch is the reader's own, kept in this
+ *  place of the entrants and the stages, and `?mode=clean` draws it for a stream. The spoiler switch is the reader's own, kept in this
  *  browser. */
 export function EventView({ id }: { id: string }) {
   const router = useRouter();
   const search = useSearchParams();
+  const clean = search.get("mode") === "clean";
   const auth = useAuth();
   const store = useEventStore();
   const teamStore = useTeamStore();
@@ -192,27 +193,32 @@ export function EventView({ id }: { id: string }) {
   }, [id]);
 
   if (board && event) {
-    const brackets: Row[] = orderedBrackets(board);
+    const runLink = auth.isAdmin ? (
+      <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/koth/nights/${event.id}`} />}>
+        <Icon name="mdi-play-circle-outline" />
+        Run the night
+      </Button>
+    ) : null;
+    // an admin puts the night on a stream without typing the clean link
+    const adminLinks = runLink ? (
+      <>
+        {runLink}
+        <StreamLinks eventId={event.id} />
+      </>
+    ) : null;
     return (
       <>
         <StatusAlert modelValue={error} onClose={() => setError(null)} />
         <EventHeader event={event} league={league} />
-        {auth.isAdmin ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/koth/nights/${event.id}`} />}>
-              <Icon name="mdi-play-circle-outline" />
-              Run the night
-            </Button>
-          </div>
-        ) : null}
         {board.historical ? (
-          <HistoricalBoard board={board} />
+          <>
+            {runLink ? <div className="mt-4 flex flex-wrap gap-2">{runLink}</div> : null}
+            <HistoricalBoard board={board} />
+          </>
         ) : (
-          <div className="mt-4 grid gap-4 min-[960px]:grid-cols-3">
-            {brackets.map((bracket: Row) => (
-              <BracketCard key={bracket.division_id} bracket={bracket} brackets={brackets} />
-            ))}
-          </div>
+          <KothNightBoard event={event} board={board} clean={clean} onError={setError}>
+            {adminLinks}
+          </KothNightBoard>
         )}
       </>
     );

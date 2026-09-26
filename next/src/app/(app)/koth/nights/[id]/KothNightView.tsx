@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ const nightBody = (form: NightForm) => ({
 export function KothNightView({ id }: { id: string }) {
   const nightId = Number(id);
   const store = useEventStore();
+  const router = useRouter();
 
   const [board, setBoard] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +77,7 @@ export function KothNightView({ id }: { id: string }) {
   const [stepDown, setStepDown] = useState<Row | null>(null);
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [event, setEvent] = useState<Row | null>(null); // read once, for the Night card
   const [form, setForm] = useState<NightForm | null>(null);
   const [nightOpen, setNightOpen] = useState<boolean | null>(null); // null follows the night: folded while it runs
@@ -136,6 +139,20 @@ export function KothNightView({ id }: { id: string }) {
   }, [nightId]);
 
   // Every admin write answers the new board; a route that answers its own row reads it back fresh
+  // The event's entrants, series, crowns and videos follow it through their foreign keys
+  const deleteNight = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await store.deleteEvent(nightId);
+      router.replace("/koth");
+    } catch (e) {
+      setError((e as Error).message);
+      setDeleting(false);
+      setBusy(false);
+    }
+  };
+
   const run = async (call: () => Promise<any>, after?: () => void) => {
     setBusy(true);
     setError(null);
@@ -287,6 +304,12 @@ export function KothNightView({ id }: { id: string }) {
             <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setClosing(true)}>
               <Icon name="mdi-exit-to-app" />
               Close the night
+            </Button>
+          ) : null}
+          {board ? (
+            <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setDeleting(true)}>
+              <Icon name="mdi-delete-outline" />
+              Delete
             </Button>
           ) : null}
         </span>
@@ -448,6 +471,22 @@ export function KothNightView({ id }: { id: string }) {
               </div>
             </>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleting} onOpenChange={setDeleting}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="bg-error px-4 py-3 text-on-error">Delete {board?.name || "night"}</DialogTitle>
+          <p className="m-0 p-4 text-sm">Deletes the night with its signups, series and crowns. This cannot be undone.</p>
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setDeleting(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" disabled={busy} onClick={deleteNight}>
+              <Icon name="mdi-delete-outline" />
+              Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

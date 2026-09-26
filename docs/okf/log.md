@@ -2,6 +2,7 @@
 
 ## 2026-09-26
 
+* **Update**: the open events list is edge cached without a bearer; the entrants and season roster tables carry no Discord column, the player and person searches match name and tags, and the edit dialog reads the player for its Discord fields.
 * **Update**: the KOTH night page shows the withdraw buttons until the night closes, a king's withdraw confirm says it forfeits his next match, and a forfeit played row reads "Forfeit"; the night page and the run page give an admin "Open stream view" and "Copy stream link".
 * **Update**: every KOTH night has one public page, `/events/:id`: a member signs up, withdraws and reads his place in line there, and `?mode=clean` is its stream view. `/koth/dashboard` lands on tonight's night page and keeps `?mode=clean`. The KOTH menu holds Nights; a menu with no item the session may open is a plain link.
 * **Update**: the menus are Home, GNL, Fantasy, KOTH (Board, Nights), Leagues (All Leagues, Events), Config and User Guide; the GNL and KOTH rows of `/leagues` open those menus' home pages; `/upcoming` is gone and its schedule is the "Upcoming series" section of the Season page; the home "Open signups" panel is "Upcoming events", every event of every league that has not finished.

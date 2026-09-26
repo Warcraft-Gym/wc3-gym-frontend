@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T14:02:48Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-26T04:00:00Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -76,3 +76,7 @@ The dialog ends on a state with a "Done" button. On a KOTH night the end state n
 - The race shown is the signup race, never the profile race: [a race icon needs a race for the row](../pitfalls/race-icon-context.md).
 - The entrants list is a grouped table: [one grouped table component](../decisions/grouped-table.md).
 - The vocabulary of leagues, events, stages, rounds, fixtures, series, games and divisions: the events section of `DESIGN.md`.
+
+# Historical KOTH events
+
+An event whose read answers `archived` true reads its cached board and nothing else: the public event page renders the same historical component as the night page and skips the entrant and stage reads. It shows every source bracket, its reported crown, ordered BO1s and event video links. Unknown results remain visible, and unconfirmed source names do not link to accounts. The backend owns the evidence and nullable identity contract. The board route has a fifteen-second edge cache and the page does not poll archived results.

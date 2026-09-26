@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toneClass } from "@/components/ui/tone";
 import { ColumnNote } from "@/components/ColumnNote";
+import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
 import { EventHeader } from "@/components/EventHeader";
 import { HIDE_RESULTS, useHideResultsSwitch } from "@/components/hide-results";
 import { PlayerName } from "@/components/PlayerName";
@@ -53,6 +54,7 @@ export function EventView({ id }: { id: string }) {
   const store = useEventStore();
   const teamStore = useTeamStore();
 
+  const [archive, setArchive] = useState<Row | null>(null);
   const [event, setEvent] = useState<Row | null>(null);
   const [leagues, setLeagues] = useState<Row[]>([]);
   const [entrants, setEntrants] = useState<Row[]>([]);
@@ -162,6 +164,11 @@ export function EventView({ id }: { id: string }) {
         const [loaded, leagueRows] = await Promise.all([store.fetchEvent(Number(id)), store.fetchLeagues()]);
         setEvent(loaded);
         setLeagues(leagueRows);
+        setArchive(null);
+        if (loaded.archived) {
+          setArchive(await store.fetchBoard(loaded.id));
+          return;
+        }
         await reload(loaded);
         const drawings = await Promise.all(
           [...(loaded.stages || [])].map(async (stage: Row) => {
@@ -180,6 +187,8 @@ export function EventView({ id }: { id: string }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  if (archive && event) return <><EventHeader event={event} league={league} /><HistoricalBoard board={archive} /></>;
 
   return (
     <HIDE_RESULTS.Provider value={hideResults}>

@@ -2,7 +2,7 @@
 
 // The brackets weakest first, the way the cards read. The board answers them strongest first.
 export const orderedBrackets = (board) =>
-  [...(board?.brackets ?? [])].sort((a, b) => (a.lower_bound ?? 0) - (b.lower_bound ?? 0));
+  board?.historical ? [...(board.brackets ?? [])] : [...(board?.brackets ?? [])].sort((a, b) => (a.lower_bound ?? 0) - (b.lower_bound ?? 0));
 
 /**
  * The name and the MMR band of one bracket. The band runs from the bracket's own bound to

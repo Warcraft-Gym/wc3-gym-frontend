@@ -8,6 +8,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { TeamName } from "@/components/TeamName";
 import { HomePanel, Quiet, ROW, SkeletonRows } from "@/components/home/HomePanel";
+import { seasonAction } from "@/helpers/events.mjs";
 import { homeRounds, ownScore, seasonState } from "@/helpers/home-hub.mjs";
 import { cardStatus, checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { local } from "@/helpers/schedule.mjs";
@@ -185,13 +186,26 @@ export function MySeason({
         <p className="text-sm">No season is running. The next one shows here as soon as it opens.</p>
       ) : state === "not_in" ? (
         <>
-          <p className="text-sm">You are not signed up for {season.name}.</p>
-          {season.signups_open !== false && season.phase === "open" ? (
-            <Button className="mt-3" nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
-              <Icon name="mdi-account-plus" />
-              Sign up for {season.name}
-            </Button>
-          ) : null}
+          {/* the one rule the season card follows: sign up while signups are open, else ask an admin */}
+          {seasonAction(season) === "signup" ? (
+            <>
+              <p className="text-sm">You are not signed up for {season.name} yet. Signups are open.</p>
+              <Button className="mt-3" nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
+                <Icon name="mdi-account-plus" />
+                Sign up for {season.name}
+              </Button>
+            </>
+          ) : seasonAction(season) === "request" ? (
+            <>
+              <p className="text-sm">You are not signed up for {season.name}. Signups are closed, but you can ask to join and an admin decides.</p>
+              <Button variant="outline" className="mt-3 text-primary-text" nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
+                <Icon name="mdi-account-question" />
+                Ask to join {season.name}
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm">You were not signed up for {season.name}, and it is over. The next season shows here as soon as it opens.</p>
+          )}
         </>
       ) : (
         <>

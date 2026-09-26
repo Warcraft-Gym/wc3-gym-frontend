@@ -1,8 +1,6 @@
 "use client";
 import Link from "next/link";
 import { AchievementIcon } from "@/components/AchievementIcon";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/Icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HomePanel, Quiet } from "@/components/home/HomePanel";
 
@@ -22,12 +20,13 @@ function Figure({ value, label }: { value: number | null | undefined; label: str
 }
 
 /** The member's own facts at a glance: how many GNL seasons he played, his achievements this season
- *  and overall, the best three of this season, and his GNL points this season. It leads to his page.
+ *  and overall, the best three of this season, and his GNL points this season. Its title bar leads
+ *  to his profile.
  *  A figure is undefined while its read is out, and null when there is none. */
 export function StatsPanel({ summary, seasonName, to, order }: { summary: Partial<Summary>; seasonName: string | null; to: string; order: number }) {
   const top3 = summary.top3 ?? [];
   return (
-    <HomePanel icon="mdi-account-star-outline" title="My Stats" order={order} action={<Link href={to} className="text-on-primary underline">Open</Link>}>
+    <HomePanel icon="mdi-account-star-outline" title="My Stats" order={order} action={<Link href={to} className="text-on-primary underline">Go to Profile</Link>}>
       <div className="grid grid-cols-2 gap-4">
         <Figure value={summary.seasons} label="Seasons played" />
         <Figure value={summary.score} label={seasonName ? `Points in ${seasonName}` : "Points this season"} />
@@ -53,10 +52,6 @@ export function StatsPanel({ summary, seasonName, to, order }: { summary: Partia
       ) : null}
       {summary.complete === false ? <Quiet>Some seasons could not be loaded, so a count may be short.</Quiet> : null}
 
-      <Button variant="outline" size="sm" className="mt-4 text-primary-text" nativeButton={false} render={<Link href={to} />}>
-        <Icon name="mdi-chart-box-outline" />
-        See all my stats
-      </Button>
     </HomePanel>
   );
 }

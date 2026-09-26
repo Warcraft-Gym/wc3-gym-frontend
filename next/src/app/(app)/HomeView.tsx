@@ -137,7 +137,8 @@ export function HomeView() {
         setMyEvents(rows);
         setHub(series);
         const season = boardOf(known);
-        const entries = ownSeasons((me?.seasons ?? []) as Row[], season);
+        // no player row (the super admin among them) has no series of its own to ask for
+        const entries = me?.user ? ownSeasons((me?.seasons ?? []) as Row[], season) : [];
         const [teams] = await Promise.all([
           season
             ? teamStore.fetchTeamsBySeasonBasic(season.id).catch(() => {

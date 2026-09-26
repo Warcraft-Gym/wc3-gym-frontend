@@ -4,7 +4,7 @@ title: Session and auth
 description: Clerk signs a member in with Discord, the backend's /me answer is the session the app reads, a legacy admin token has its own login page, and the fetch wrapper sends the bearer.
 resource: ../../../next/src/stores/auth.ts
 tags: [session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-23T17:50:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-25T08:52:36Z }
 sources:
   - id: auth-store
     resource: ../../../next/src/stores/auth.ts
@@ -24,6 +24,8 @@ sources:
 
 1. **A member.** Clerk's React SDK, mounted once in `next/src/lib/clerk-provider.tsx` with `publishableKey` from `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, Discord as the only sign-in method. Every flow stays on `/login`: the sign-in, sign-up and after-sign-out URLs all name it, and the app routes once the session lands. `/sso-callback` is where Discord sends the browser back. The session token comes from `clerk.getToken()` on every request.
 2. **The super admin.** `/admin-login` posts the shared admin token to `POST /login` and keeps the answer in `localStorage` under `user`. It has no Discord account and no Clerk session. The legacy token wins when both exist.
+
+With `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` unset, Clerk does not mount: `/login` links to `/admin-login`, and the super admin is the only session.
 
 # The /me answer is the session
 

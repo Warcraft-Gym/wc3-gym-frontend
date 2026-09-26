@@ -4,7 +4,7 @@ title: Run locally
 description: Install, copy the example environment, start the dev server against a local or the staging backend.
 resource: ../../../README.md
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:07:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-25T08:52:36Z }
 stale_after: 2027-03-14T00:00:00Z
 sources:
   - id: source
@@ -23,7 +23,7 @@ sources:
 
 # Signing in locally
 
-A member session needs the Clerk dev instance, whose publishable key goes in `.env`; Discord sign-in works on `localhost` without any dashboard change. The super admin session is `/admin-login` with the backend's admin token from its `.env`.
+A member session needs the Clerk dev instance, whose publishable key goes in `.env`; Discord sign-in works on `localhost` without any dashboard change. The super admin session is `/admin-login` with the backend's admin token from its `.env`. With the key left empty the app runs without Clerk, and `/admin-login` is the only sign-in.
 
 # Environment values
 

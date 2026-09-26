@@ -60,7 +60,7 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
       icon="mdi-clock-outline"
       title="Next matches"
       order={order}
-      action={loading ? null : <Link href="/upcoming" className="text-on-primary underline">All upcoming</Link>}
+      action={loading ? null : <Link href="/report#upcoming" className="text-on-primary underline">All upcoming</Link>}
     >
       {loading ? (
         <SkeletonRows rows={3} />

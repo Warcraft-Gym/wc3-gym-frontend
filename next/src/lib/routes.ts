@@ -24,7 +24,6 @@ export const ROUTES: { path: string; meta: RouteMeta }[] = [
   { path: "/player-series/:id/veto", meta: { role: "member" } },
   { path: "/fantasy-registration", meta: { role: "member" } },
   { path: "/players", meta: { role: "member" } },
-  { path: "/upcoming", meta: { role: "member" } },
   { path: "/player/:id", meta: { role: "member", season: true } },
   { path: "/seasons/:id", meta: { role: "member", season: true } },
   { path: "/seasons/:id/assign", meta: { role: "captain", season: true } },

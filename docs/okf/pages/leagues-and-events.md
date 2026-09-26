@@ -45,7 +45,7 @@ A league is what repeats. An event is one run of it: a GNL season, a KOTH night,
 
 Outside its own page an event is named by its league and its name, "GNL · Season 18". A wide screen reads the long league name, "Gym Newbie League · Season 18"; a phone keeps the short one. An event whose name already opens with the short name, "GNL S18", is named alone.
 
-**Leagues (`/leagues`).** One row per league: name, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
+**Leagues (`/leagues`).** One row per league: name, linked to the home page of its menu for GNL (`/report`) and KOTH (`/koth/dashboard`) and to `/leagues/:id` for any other kind, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
 
 **One league (`/leagues/:id`).** The league's events, newest first, with kind, dates and state. A member reads the published events; an admin also reads the drafts. An admin sees "New event", which opens the wizard with this league preset.
 

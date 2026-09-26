@@ -168,10 +168,10 @@ admin's own timezone; the stored value is UTC), **Is fantasy match**, and the re
 The result takes the score for each side, the race each player played, the map of each game
 and the replay files. A series with a veto shows the maps the players chose.
 
-### Upcoming
+### Upcoming series
 
-GNL → Upcoming (`/upcoming`) lists the scheduled series of the current season with their
-times in the reader's own timezone, and who has claimed the cast.
+GNL → Season (`/report`) opens on "Upcoming series" for the current season: the scheduled
+series with their times in the reader's own timezone, and who has claimed the cast.
 
 ---
 

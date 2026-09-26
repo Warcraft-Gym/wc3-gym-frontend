@@ -14,9 +14,9 @@ type Card = Record<string, any>;
 
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 
-/** The events a member may still enter, in the order the events start. Every choice of equal
+/** The upcoming events of every league, in the order the events start. Every choice of equal
  *  standing takes the same outlined button, never a louder one. */
-export function OpenSignups({
+export function UpcomingEvents({
   cards,
   acting,
   loading,
@@ -30,7 +30,7 @@ export function OpenSignups({
   onAct: (card: Card) => void;
 }) {
   return (
-    <HomePanel icon="mdi-calendar-outline" title="Open signups" order={order}>
+    <HomePanel icon="mdi-calendar-outline" title="Upcoming events" order={order}>
       {loading ? (
         <SkeletonRows rows={3} />
       ) : cards.length ? (
@@ -61,13 +61,13 @@ export function OpenSignups({
           </div>
         ))
       ) : (
-        <p className="text-sm">No signup is open. A new event shows here as soon as it takes entries.</p>
+        <p className="text-sm">No upcoming events.</p>
       )}
     </HomePanel>
   );
 }
 
-/** The one control a signup row offers, always outlined: choices of equal standing look equal. */
+/** The one control an event row offers, always outlined: choices of equal standing look equal. */
 function SignupButton({ card, acting, onAct }: { card: Card; acting: string | null; onAct: (card: Card) => void }) {
   const busy = acting === card.key;
   const tint = card.primary.color === "error" ? "text-error" : card.primary.color === "success" ? "text-success" : "text-primary-text";

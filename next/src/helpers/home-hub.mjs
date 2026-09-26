@@ -1,4 +1,4 @@
-// The pure parts of the home hub: the panel order, the open signups, the member's two series, the captain row.
+// The pure parts of the home hub: the panel order, the upcoming events, the member's two series, the captain row.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
 import { local, timeMissing } from './schedule.mjs';
@@ -8,15 +8,13 @@ import { isUnscored } from './season-phase.mjs';
 const WITH_SERIES = { own: 1, next: 2, signup: 3, board: 4, cast: 5 };
 const NO_SERIES = { signup: 1, board: 2, own: 3, next: 4, cast: 5 };
 
-/** The CSS order of each panel. A member with no series of his own reads the open signups first.
+/** The CSS order of each panel. A member with no series of his own reads the upcoming events first.
  *  @param {boolean} hasSeries */
 export const panelOrder = (hasSeries) => (hasSeries ? WITH_SERIES : NO_SERIES);
 
-/** The events the member may still enter, leave or check in to, in the order the events start.
- *  @param {any[]} [rows] the GET /me/events rows */
-export const openSignups = (rows = []) => rows
-  .filter((row) => row.action === 'sign_up' || row.action === 'check_in' || (row.action === 'withdraw' && row.signups_open))
-  .sort((a, b) => String(a.start ?? '9999').localeCompare(String(b.start ?? '9999')));
+/** Whether an upcoming event row keeps its button: a withdraw only while the signups are open.
+ *  @param {any} row a GET /me/events row */
+export const offersAction = (row) => row?.action !== 'withdraw' || !!row.signups_open;
 
 /** When a series row reads: its local day and time, "Started HH:mm" once its time has passed, or no time.
  *

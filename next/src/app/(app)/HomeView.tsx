@@ -6,13 +6,13 @@ import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/S
 import { SignupDialog } from "@/components/SignupDialog";
 import { StatusAlert } from "@/components/StatusAlert";
 import { CastedGames, NextMatches } from "@/components/home/SeriesPanels";
-import { OpenSignups } from "@/components/home/OpenSignups";
+import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 import { SeasonBoard } from "@/components/home/SeasonBoard";
 import { YourSeries } from "@/components/home/YourSeries";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { actOnEvent, homeCards } from "@/helpers/events.mjs";
-import { openSignups, ownSeries, panelOrder } from "@/helpers/home-hub.mjs";
+import { offersAction, ownSeries, panelOrder } from "@/helpers/home-hub.mjs";
 import { useAuth, useEventStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -69,21 +69,17 @@ export function HomeView() {
 
   const nextSeason = [...seasons].reverse().find((season: Row) => season.phase === "open" && season.id !== board?.id) ?? null;
 
-  // The signup rows reuse the home card, so the dialog, the GNL link and the withdraw stay
-  const cards = buildCards({ events: myEvents, me, seasons });
-  const signupRows = openSignups(myEvents)
-    .map((row: Row) => {
-      const card = cards.find((entry) => entry.id === row.id);
-      return card
-        ? {
-            ...card,
-            dates: dateRange({ start_date: row.start, end_date: row.end }),
-            chip: row.checked_in_at ? "Checked in" : row.joined ? (row.entrant_races?.length ? "Signed up as" : "Signed up") : null,
-            races: row.checked_in_at ? [] : (row.entrant_races ?? []),
-          }
-        : null;
-    })
-    .filter(Boolean) as Row[];
+  // Every upcoming event of every league, one row per home card, so the dialog, the GNL link and the withdraw stay
+  const eventRows = buildCards({ events: myEvents, me, seasons }).map((card) => {
+    const row: Row = myEvents.find((entry) => entry.id === card.id) ?? {};
+    return {
+      ...card,
+      primary: offersAction(row) ? card.primary : null,
+      dates: dateRange({ start_date: row.start, end_date: row.end }),
+      chip: row.checked_in_at ? "Checked in" : row.joined ? (row.entrant_races?.length ? "Signed up as" : "Signed up") : null,
+      races: row.checked_in_at ? [] : (row.entrant_races ?? []),
+    };
+  });
 
   // Every event whose row hands a captain a fixture he has still to draft; the row names its event
   const fixtures: Row[] = myEvents.filter((row) => row.captain_fixture).map((row) => ({ ...row.captain_fixture, event: row.name }));
@@ -186,7 +182,7 @@ export function HomeView() {
             onReport={(series) => reportDialog.current?.open(series)}
           />
           <NextMatches rows={hub?.next ?? []} fixtures={fixtures} loading={loading} failed={!hub} order={order.next} />
-          <OpenSignups cards={signupRows} acting={acting} loading={loading} order={order.signup} onAct={act} />
+          <UpcomingEvents cards={eventRows} acting={acting} loading={loading} order={order.signup} onAct={act} />
         </div>
         <div className="contents min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-col min-[960px]:gap-5">
           <SeasonBoard season={board} nextSeason={nextSeason} teams={boardTeams ?? []} failed={!boardTeams} loading={loading} order={order.board} />

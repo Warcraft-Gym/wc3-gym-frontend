@@ -28,10 +28,10 @@ export const navItems = (): NavGroup[] => [
     ],
   },
   {
-    title: "Events",
-    to: "/events",
+    title: "Leagues",
+    to: "/leagues",
     items: [
-      { title: "Leagues", to: "/leagues" },
+      { title: "All Leagues", to: "/leagues" },
       { title: "Events", to: "/events" },
     ],
   },

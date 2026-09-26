@@ -9,6 +9,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Note } from "@/components/ui/Note";
 import { DiscordJoinCard } from "@/components/DiscordJoinCard";
 import { useAuth } from "@/stores";
+import { DevLoginCard, devLoginEnabled } from "@/components/DevLoginCard";
 import { discordMark } from "@/assets/discordMark.js";
 import { clerkEnabled } from "@/lib/clerk-provider";
 
@@ -39,6 +40,7 @@ function AdminOnlyLoginView() {
           </Button>
         </CardContent>
       </Card>
+      {devLoginEnabled ? <DevLoginCard /> : null}
     </div>
   );
 }
@@ -138,6 +140,7 @@ function DiscordLoginView() {
 
       {/* a signed-in session with no guild membership is a guest, and reads why here */}
       {me?.role === "guest" ? <DiscordJoinCard className="mt-4" /> : null}
+      {devLoginEnabled && !isSignedIn ? <DevLoginCard /> : null}
     </div>
   );
 }

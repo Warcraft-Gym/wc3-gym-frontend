@@ -38,8 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // useAuth answers the signed-out server snapshot until hydration, so the account slot waits for it
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
-  // view-as: an admin sees the app as a lower role; the legacy token session cannot
-  const canViewAs = me?.actual_role === "admin" && !user;
+  // view-as: an admin sees the app as a lower role; the legacy token session cannot, a local dev login can
+  const canViewAs = me?.actual_role === "admin" && (!user || !!user.dev);
 
   const themeIcon = THEMES.find((t) => t.value === themeMode)?.icon || "mdi-theme-light-dark";
 

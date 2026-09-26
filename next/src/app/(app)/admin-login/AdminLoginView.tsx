@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Note } from "@/components/ui/Note";
 import { useAuth } from "@/stores";
+import { DevLoginCard, devLoginEnabled } from "@/components/DevLoginCard";
 
 /** The admin-token login: a super admin session with no Discord account. */
 export function AdminLoginView() {
@@ -75,6 +76,7 @@ export function AdminLoginView() {
           </form>
         </CardContent>
       </Card>
+      {devLoginEnabled ? <DevLoginCard /> : null}
     </div>
   );
 }

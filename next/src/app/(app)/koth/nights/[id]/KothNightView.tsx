@@ -244,8 +244,6 @@ export function KothNightView({ id }: { id: string }) {
   const passName = passOptions.find((seat: Row) => seatKey(seat) === passTo)?.name;
   const openRows: Row[] = openSeriesRows(board);
 
-  // The write cuts the rated rows nobody placed by hand again, so it waits for every series to end
-  const boundsBlocked = openRows.length > 0;
   const saveBounds = () => run(() => store.setKothBounds(nightId, boundsOf(board, cuts)));
 
   // The strip: every rated race row, one dot each, cut where the brackets open
@@ -319,15 +317,14 @@ export function KothNightView({ id }: { id: string }) {
                   colors={stripColors}
                   domain={stripDomain}
                   stored={savedCuts}
-                  disabled={boundsBlocked || !!board.closed}
+                  disabled={!!board.closed}
                   onUpdateCuts={setCuts}
                 />
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <Button disabled={busy || boundsBlocked || !!board.closed || !boundsMoved} onClick={saveBounds}>
+                  <Button disabled={busy || !!board.closed || !boundsMoved} onClick={saveBounds}>
                     <Icon name="mdi-content-save" />
                     Save the bounds
                   </Button>
-                  {!board.closed && boundsBlocked ? <span className="text-xs text-muted-foreground">Finish or cancel the open series first.</span> : null}
                 </div>
               </>
             )}

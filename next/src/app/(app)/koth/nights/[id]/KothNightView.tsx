@@ -1,16 +1,18 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, dialogCompact, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { toneClass } from "@/components/ui/tone";
+import { DivisionBracketing } from "@/components/DivisionBracketing";
 import { PageHeader } from "@/components/PageHeader";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -18,7 +20,8 @@ import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
 import { BoardPlayer, BracketCard, seatMark, type BracketAdmin } from "@/components/koth/BracketCard";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
-import { boundsWrite, bracketLabel, movedQueue, openSeriesRows, orderedBrackets, queueIds, seatKey, seatRow } from "@/helpers/koth-board.mjs";
+import { domainOf, bandOf } from "@/helpers/divisions.mjs";
+import { boundsOf, bracketLabel, cutsOf, movedQueue, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow } from "@/helpers/koth-board.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
@@ -29,16 +32,38 @@ type Row = Record<string, any>;
 
 // The night read is edge cached for 15 s, so twice a minute is the most the poll can learn
 const POLL_MS = 30000;
+// One bronze step per bracket, light to dark, as the entrants page colours its divisions
+const RAMP = ["heat-1", "heat-2", "heat-3", "heat-4", "heat-5"];
+
+// The night fields the Night card writes, as the form holds them
+type NightForm = { name: string; start_date: string; start_time: string; stream_url: string; page_url: string; signups_open: boolean; published: boolean };
+const formOf = (event: Row): NightForm => ({
+  name: event.name ?? "",
+  start_date: event.start_date ?? "",
+  start_time: event.starts_at ? DateTime.fromISO(event.starts_at, { zone: "utc" }).toLocal().toFormat("HH:mm") : "",
+  stream_url: event.stream_url ?? "",
+  page_url: event.page_url ?? "",
+  signups_open: !!event.signups_open,
+  published: !!event.published,
+});
+// The start time is typed in the admin's own zone and stored in UTC
+const nightBody = (form: NightForm) => ({
+  name: form.name.trim(),
+  start_date: form.start_date || null,
+  starts_at: form.start_date && form.start_time ? DateTime.fromISO(`${form.start_date}T${form.start_time}`).toUTC().toISO() : null,
+  stream_url: form.stream_url.trim() || null,
+  page_url: form.page_url.trim() || null,
+  signups_open: form.signups_open,
+  published: form.published,
+});
 
 /** The run page of one KOTH night: the admin starts every series by hand, enters its winner,
  *  edits the line while people come and go, places the signups W3Champions gave no rating
- *  for, and closes the night. Every write answers the whole board, so the page never reads
- *  itself again after one. */
+ *  for, sets the night's details and its bracket bounds, and closes the night. Every board
+ *  write answers the whole board, so the page never reads itself again after one. */
 export function KothNightView({ id }: { id: string }) {
   const nightId = Number(id);
   const store = useEventStore();
-  // The event settings page sends the admin straight into the bounds dialog
-  const wantsBounds = useSearchParams().get("bounds") === "1";
 
   const [board, setBoard] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,9 +76,10 @@ export function KothNightView({ id }: { id: string }) {
   const [stepDown, setStepDown] = useState<Row | null>(null);
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
-  const [boundsOpen, setBoundsOpen] = useState(false);
-  const [boundValues, setBoundValues] = useState<Record<number, string>>({}); // the typed lower bound per bracket
-  const [boundsError, setBoundsError] = useState<string | null>(null);
+  const [event, setEvent] = useState<Row | null>(null); // read once, for the Night card
+  const [form, setForm] = useState<NightForm | null>(null);
+  const [nightOpen, setNightOpen] = useState<boolean | null>(null); // null follows the night: folded while it runs
+  const [cuts, setCuts] = useState<number[]>([]); // the strip's cuts, ascending
   const [addTo, setAddTo] = useState(false); // W3Champions picks the bracket, so the dialog is one form
   const [addTag, setAddTag] = useState("");
   const [addRace, setAddRace] = useState<string | null>(null);
@@ -62,6 +88,7 @@ export function KothNightView({ id }: { id: string }) {
   const replayFor = useRef<number | null>(null);
   const replayInput = useRef<HTMLInputElement>(null);
   const writing = useRef(false); // the poll never overwrites a board a write is about to answer
+  const storedCuts = useRef(""); // the bounds the last board answered, so a drag survives the poll
 
   const brackets: Row[] = orderedBrackets(board);
   const unplaced: Row[] = board?.unplaced ?? [];
@@ -69,24 +96,21 @@ export function KothNightView({ id }: { id: string }) {
   // A bracket that plays a series takes no pair, so a pick left on its line clears with the answer
   const takeBoard = (answer: Row) => {
     setBoard(answer);
+    // the strip follows the board only when its bounds moved, so a cut being dragged survives the poll
+    const stored = JSON.stringify(cutsOf(answer));
+    if (stored !== storedCuts.current) {
+      storedCuts.current = stored;
+      setCuts(cutsOf(answer));
+    }
     const running = orderedBrackets(answer)
       .filter((bracket: Row) => bracket.open_series)
       .flatMap((bracket: Row) => (bracket.queue ?? []).map(seatKey));
     setPicked((was) => was.filter((key) => !running.includes(key)));
   };
 
-  // The load effect opens the dialog on the board it read, before that board is state
-  const openBounds = (from?: Row) => {
-    const rows: Row[] = from ? orderedBrackets(from) : brackets;
-    setBoundValues(Object.fromEntries(rows.map((bracket: Row) => [bracket.division_id, String(bracket.lower_bound ?? 0)])));
-    setBoundsError(null);
-    setBoundsOpen(true);
-  };
-
   useEffect(() => {
     let alive = true;
     let archived = false;
-    let first = true; // the event settings page links here with ?bounds=1, which the first board spends
     const read = async () => {
       try {
         const answer = await store.fetchBoard(nightId);
@@ -95,8 +119,6 @@ export function KothNightView({ id }: { id: string }) {
           takeBoard(answer);
           archived = !!answer.historical;
           setError(null);
-          if (first && wantsBounds && !answer.closed && !openSeriesRows(answer).length) openBounds(answer);
-          first = false;
         }
       } catch (e) {
         // a night nobody published answers 404, which the page says on its own
@@ -104,6 +126,14 @@ export function KothNightView({ id }: { id: string }) {
       }
     };
     read().then(() => alive && setLoading(false));
+    store
+      .fetchEvent(nightId)
+      .then((row: Row) => {
+        if (!alive) return;
+        setEvent(row);
+        setForm(formOf(row));
+      })
+      .catch((e: Error) => alive && setError(`The night's settings did not load: ${e.message}`));
     // the tab in the background asks for nothing, so a page left open all night costs nothing
     const timer = setInterval(() => {
       if (!archived && !document.hidden && !writing.current) read();
@@ -231,22 +261,30 @@ export function KothNightView({ id }: { id: string }) {
 
   // The write cuts the rated rows nobody placed by hand again, so it waits for every series to end
   const boundsBlocked = openRows.length > 0;
-  const bounds = boundsWrite(brackets, boundValues);
+  const saveBounds = () => run(() => store.setKothBounds(nightId, boundsOf(board, cuts)));
 
-  const saveBounds = async () => {
-    setBoundsError(null);
-    setBusy(true);
-    writing.current = true;
-    try {
-      takeBoard(await store.setKothBounds(nightId, bounds.body.bounds));
-      setBoundsOpen(false);
-    } catch (e) {
-      setBoundsError((e as Error).message);
-    } finally {
-      writing.current = false;
-      setBusy(false);
-    }
-  };
+  // The strip: every rated race row, one dot each, cut where the brackets open
+  const rated: Row[] = ratedPlayers(board);
+  const stripPlayers = rated.map((row) => ({ id: row.entrant_id, who: row.user_id ?? row.entrant_id, label: row.name, mmr: row.mmr, band: bandOf(row.mmr, cuts) as number }));
+  const stripNames = brackets.map((bracket: Row) => bracketLabel(brackets, bracket).name);
+  const stripColors = brackets.map((unused, index) => RAMP[Math.round((index * (RAMP.length - 1)) / Math.max(1, brackets.length - 1))]);
+  // the stored cuts sit inside the axis even where no player is rated near them, and a drag never moves the axis
+  const savedCuts: number[] = cutsOf(board);
+  const stripDomain: number[] = domainOf([...rated.map((row) => row.mmr), ...savedCuts.flatMap((cut) => [cut - 150, cut + 150])]);
+  const boundsMoved = JSON.stringify(cuts) !== JSON.stringify(savedCuts);
+
+  // The night runs while a series plays or signups stand open, so its settings fold away
+  const running = !!board && !board.closed && (openRows.length > 0 || !!event?.signups_open);
+  const nightShown = nightOpen ?? (!!board && !running);
+
+  const setField = (patch: Partial<NightForm>) => setForm((was) => (was ? { ...was, ...patch } : was));
+  const saveNight = () =>
+    run(async () => {
+      const saved = await store.updateEvent(nightId, nightBody(form as NightForm));
+      setEvent(saved);
+      setForm(formOf(saved));
+      return null;
+    });
 
   return (
     <>
@@ -260,20 +298,6 @@ export function KothNightView({ id }: { id: string }) {
           {board?.entrant_count ?? 0} signed up
         </Badge>
         <span className="ml-auto flex flex-wrap gap-2">
-          <Button nativeButton={false} variant="outline" size="sm" className="text-primary-text" render={<Link href="/koth/dashboard" />}>
-            <Icon name="mdi-eye-outline" />
-            Public page
-          </Button>
-          <span title={boundsBlocked ? "Finish or cancel the open series first." : undefined}>
-            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy || boundsBlocked || !board || !!board.closed} onClick={() => openBounds()}>
-              <Icon name="mdi-tune-variant" />
-              Bracket MMR
-            </Button>
-          </span>
-          <Button nativeButton={false} variant="outline" size="sm" className="text-primary-text" render={<Link href={`/events/${nightId}/admin`} />}>
-            <Icon name="mdi-cog-outline" />
-            Event settings
-          </Button>
           {board && !board.closed ? (
             <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setClosing(true)}>
               <Icon name="mdi-exit-to-app" />
@@ -286,8 +310,44 @@ export function KothNightView({ id }: { id: string }) {
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
 
-      {board && !board.closed && boundsBlocked ? (
-        <p className="mb-2 text-xs text-muted-foreground">Bracket MMR waits: finish or cancel the open series first.</p>
+      {form ? <NightCard form={form} open={nightShown} busy={busy} onOpen={() => setNightOpen(true)} onChange={setField} onSave={saveNight} /> : null}
+
+      {board ? (
+        <Card className="card mb-4">
+          <CardHeader>
+            <CardTitle>Brackets</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* an archived night keeps the words its source wrote for each bracket */}
+            {board.historical ? (
+              <ul className="mb-0 flex flex-col gap-1">
+                {brackets.map((bracket: Row) => (
+                  <li key={bracket.division_id}>{bracket.name}</li>
+                ))}
+              </ul>
+            ) : (
+              <>
+                <DivisionBracketing
+                  players={stripPlayers}
+                  cuts={cuts}
+                  names={stripNames}
+                  colors={stripColors}
+                  domain={stripDomain}
+                  stored={savedCuts}
+                  disabled={boundsBlocked || !!board.closed}
+                  onUpdateCuts={setCuts}
+                />
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <Button disabled={busy || boundsBlocked || !!board.closed || !boundsMoved} onClick={saveBounds}>
+                    <Icon name="mdi-content-save" />
+                    Save the bounds
+                  </Button>
+                  {!board.closed && boundsBlocked ? <span className="text-xs text-muted-foreground">Finish or cancel the open series first.</span> : null}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       ) : null}
 
       {/* the board read answers 404 for a night nobody published; a failed read says so in the alert above */}
@@ -346,61 +406,6 @@ export function KothNightView({ id }: { id: string }) {
           event.target.value = "";
         }}
       />
-
-      {/* The MMR each bracket opens at, moved in place: every bracket keeps its rows and its series */}
-      <Dialog open={boundsOpen} onOpenChange={setBoundsOpen}>
-        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[480px]", dialogCompact)}>
-          <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Bracket MMR</DialogTitle>
-          <div className="flex flex-col gap-3 p-4">
-            {[...bounds.rows].reverse().map((row: Row, index: number, all: Row[]) =>
-              // The weakest bracket opens at 0, so its row is text under a plain heading, not a label over a control
-              index === all.length - 1 ? (
-                <div key={row.division_id} className="flex flex-col gap-1.5">
-                  <span className="text-sm leading-none font-medium">{row.name}</span>
-                  <p className="mb-0 py-1 text-sm text-muted-foreground">0, the weakest bracket</p>
-                </div>
-              ) : (
-                <Field key={row.division_id} label={row.name} htmlFor={`koth-bound-${row.division_id}`}>
-                  <Input
-                    id={`koth-bound-${row.division_id}`}
-                    inputMode="numeric"
-                    value={boundValues[row.division_id] ?? ""}
-                    onChange={(event) => {
-                      setBoundValues((was) => ({ ...was, [row.division_id]: event.target.value }));
-                      setBoundsError(null);
-                    }}
-                  />
-                </Field>
-              ),
-            )}
-            <div className="flex flex-col text-xs text-muted-foreground">
-              {bounds.error ? (
-                <span role="alert" className="text-error">{bounds.error}</span>
-              ) : (
-                [...bounds.rows].reverse().map((row: Row) => <span key={row.division_id}>{row.line}</span>)
-              )}
-            </div>
-            <p className="mb-0 text-xs text-muted-foreground">
-              Players nobody placed by hand move to the bracket of their MMR. A player an admin placed stays where he is.
-            </p>
-            {boundsError ? (
-              <p className={cn("mb-0 flex items-start gap-2 rounded-lg p-3 text-sm", toneClass("error"))}>
-                <Icon name="mdi-alert" className="text-error" />
-                {boundsError}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex justify-end gap-2 p-4 pt-0">
-            <Button variant="ghost" onClick={() => setBoundsOpen(false)}>
-              Cancel
-            </Button>
-            <Button disabled={busy || !!bounds.error} onClick={saveBounds}>
-              <Icon name="mdi-content-save" />
-              Save the bounds
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* The king leaves the throne empty for the next series, or hands the crown to one player */}
       <Dialog open={!!stepDown} onOpenChange={(open) => !open && setStepDown(null)}>
@@ -534,6 +539,74 @@ export function KothNightView({ id }: { id: string }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/** The night's own settings: its name, when it starts, its links and its two switches. It
+ *  folds to one "Edit night" button while the night runs. */
+function NightCard({
+  form,
+  open,
+  busy,
+  onOpen,
+  onChange,
+  onSave,
+}: {
+  form: NightForm;
+  open: boolean;
+  busy: boolean;
+  onOpen: () => void;
+  onChange: (patch: Partial<NightForm>) => void;
+  onSave: () => void;
+}) {
+  return (
+    <Card className="card mb-4">
+      <CardHeader className="flex flex-wrap items-center gap-2">
+        <CardTitle className="flex-1">Night</CardTitle>
+        {!open ? (
+          <Button variant="outline" size="sm" className="text-primary-text" aria-expanded={false} aria-controls="koth-night-form" onClick={onOpen}>
+            <Icon name="mdi-pencil" />
+            Edit night
+          </Button>
+        ) : null}
+      </CardHeader>
+      {open ? (
+        <CardContent id="koth-night-form" className="flex flex-col gap-4">
+          <div className="grid gap-3 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3">
+            <Field label="Name" htmlFor="koth-night-name">
+              <Input id="koth-night-name" value={form.name} onChange={(e) => onChange({ name: e.target.value })} />
+            </Field>
+            <Field label="Date" htmlFor="koth-night-date">
+              <Input id="koth-night-date" type="date" value={form.start_date} onChange={(e) => onChange({ start_date: e.target.value })} />
+            </Field>
+            <Field label="Start time" htmlFor="koth-night-time">
+              <Input id="koth-night-time" type="time" value={form.start_time} onChange={(e) => onChange({ start_time: e.target.value })} />
+            </Field>
+            <Field label="Stream link" htmlFor="koth-night-stream">
+              <Input id="koth-night-stream" type="url" value={form.stream_url} onChange={(e) => onChange({ stream_url: e.target.value })} />
+            </Field>
+            <Field label="Page link" htmlFor="koth-night-page">
+              <Input id="koth-night-page" type="url" value={form.page_url} onChange={(e) => onChange({ page_url: e.target.value })} />
+            </Field>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <Label className="flex items-center gap-2">
+              <Switch checked={form.signups_open} onCheckedChange={(signups_open) => onChange({ signups_open })} />
+              Signups open
+            </Label>
+            <Label className="flex items-center gap-2">
+              <Switch checked={form.published} onCheckedChange={(published) => onChange({ published })} />
+              Published
+            </Label>
+            <span className="flex-1" />
+            <Button disabled={busy || !form.name.trim()} onClick={onSave}>
+              <Icon name="mdi-content-save" />
+              Save
+            </Button>
+          </div>
+        </CardContent>
+      ) : null}
+    </Card>
   );
 }
 

@@ -12,8 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toneClass } from "@/components/ui/tone";
 import { ColumnNote } from "@/components/ColumnNote";
-import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
 import { EventHeader } from "@/components/EventHeader";
+import { BracketCard } from "@/components/koth/BracketCard";
+import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
 import { HIDE_RESULTS, useHideResultsSwitch } from "@/components/hide-results";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
@@ -25,6 +26,7 @@ import { byPlayer, bySeed, bySignup, entrantName, raceRows, rostersByEntrant, si
 import { FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, stateOf, titleOf } from "@/helpers/event-labels.mjs";
 import { actOnEvent, blocksHint, eventActionButton } from "@/helpers/events.mjs";
 import { myRaces } from "@/helpers/koth.mjs";
+import { orderedBrackets } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { saveReturnUrl } from "@/helpers/return-url.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
@@ -40,13 +42,16 @@ const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "m
 // The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
 const placesOf = placings as (standings: Row[]) => Record<string, Row>;
 const rostersOf = rostersByEntrant as unknown as (entrants: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;
+// The board is edge cached for 15 s, so twice a minute is the most the page can learn
+const POLL_MS = 30000;
 const act_ = actOnEvent as unknown as (action: string, options: Record<string, unknown>) => Promise<string | null>;
 
 /** One event, open to everyone: what it is, how it plays, who is in it, and the one thing the
  *  reader can do about it. An event with no stage is a sign-up list, so it reads its entrants
  *  against the cap in place of the stage table. A GNL season keeps its own pages, so this one
- *  links to them rather than redrawing them. The spoiler switch is the reader's own, kept in
- *  this browser. */
+ *  links to them rather than redrawing them. A KOTH night draws its board, live or archived, in
+ *  place of the entrants and the stages. The spoiler switch is the reader's own, kept in this
+ *  browser. */
 export function EventView({ id }: { id: string }) {
   const router = useRouter();
   const search = useSearchParams();
@@ -54,7 +59,7 @@ export function EventView({ id }: { id: string }) {
   const store = useEventStore();
   const teamStore = useTeamStore();
 
-  const [archive, setArchive] = useState<Row | null>(null);
+  const [board, setBoard] = useState<Row | null>(null); // a KOTH night's board, in place of its entrants and stages
   const [event, setEvent] = useState<Row | null>(null);
   const [leagues, setLeagues] = useState<Row[]>([]);
   const [entrants, setEntrants] = useState<Row[]>([]);
@@ -164,9 +169,9 @@ export function EventView({ id }: { id: string }) {
         const [loaded, leagueRows] = await Promise.all([store.fetchEvent(Number(id)), store.fetchLeagues()]);
         setEvent(loaded);
         setLeagues(leagueRows);
-        setArchive(null);
-        if (loaded.archived) {
-          setArchive(await store.fetchBoard(loaded.id));
+        setBoard(null);
+        if (loaded.kind === "koth") {
+          setBoard(await store.fetchBoard(loaded.id));
           return;
         }
         await reload(loaded);
@@ -188,7 +193,43 @@ export function EventView({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (archive && event) return <><EventHeader event={event} league={league} /><HistoricalBoard board={archive} /></>;
+  // A live night reads its board again twice a minute, never while the tab is hidden, and stops once it closes
+  const boardOpen = !!board && !board.closed;
+  useEffect(() => {
+    if (!boardOpen || !event) return;
+    const timer = setInterval(() => {
+      if (!document.hidden) store.fetchBoard(event.id).then(setBoard).catch(() => undefined);
+    }, POLL_MS);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardOpen, event?.id]);
+
+  if (board && event) {
+    const brackets: Row[] = orderedBrackets(board);
+    return (
+      <>
+        <StatusAlert modelValue={error} onClose={() => setError(null)} />
+        <EventHeader event={event} league={league} />
+        {auth.isAdmin ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/koth/nights/${event.id}`} />}>
+              <Icon name="mdi-play-circle-outline" />
+              Run the night
+            </Button>
+          </div>
+        ) : null}
+        {board.historical ? (
+          <HistoricalBoard board={board} />
+        ) : (
+          <div className="mt-4 grid gap-4 min-[960px]:grid-cols-3">
+            {brackets.map((bracket: Row) => (
+              <BracketCard key={bracket.division_id} bracket={bracket} brackets={brackets} />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
 
   return (
     <HIDE_RESULTS.Provider value={hideResults}>

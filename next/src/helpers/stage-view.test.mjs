@@ -2,9 +2,9 @@ import assert from 'node:assert';
 import test from 'node:test';
 
 import {
-  advancingRows, blocks, buchholz, chainChallengers, chainOrder, columns, drawsByRound,
+  advancingRows, blocks, buchholz, columns, drawsByRound,
   generateFields, inDivision, isByeSide, isLobby, layout, lobbySeats, lobbyTargets,
-  nextRound, pendingChainSeries, ranking, seriesState, shownPlayer, shownTeam, sideName,
+  nextRound, ranking, seriesState, shownPlayer, shownTeam, sideName,
   standingsGroups, standsOn, winnerSide,
 } from './stage-view.mjs';
 
@@ -52,9 +52,6 @@ const DE8_ROUNDS = named(
   'Lower bracket round 1', 'Lower bracket round 2', 'Lower bracket round 3',
   'Lower bracket final', 'Grand final',
 );
-
-// A KOTH chain of 4: the king holds the throne against each challenger in turn
-const CHAIN4 = [S(1, 1, 1, 1, 2), S(2, 1, 2, ['w', 1], 3), S(3, 1, 3, ['w', 2], 4)];
 
 // A round robin of 5: five rounds of two series, every pair once
 const RR5 = [
@@ -123,12 +120,6 @@ test('a single elimination is one block, third place included', () => {
   const withThird = [...SE9, S(9, 4, 2, ['l', 6], ['l', 7])];
   assert.strictEqual(blocks(columns(SE9, SE9_ROUNDS)).length, 1);
   assert.strictEqual(blocks(columns(withThird, SE9_ROUNDS)).length, 1);
-});
-
-test('a chain of 4 reads in play order whatever order it arrives in', () => {
-  assert.deepStrictEqual(chainOrder([...CHAIN4].reverse()).map((row) => row.id), [1, 2, 3]);
-  // every series after the first takes the standing king on side one
-  assert.ok(CHAIN4.slice(1).every((row) => row.slot1_from_series_id));
 });
 
 test('a round robin of 5 plays every pair once over five rounds', () => {
@@ -295,37 +286,6 @@ test('a stage with no advance count carries the whole table', () => {
   assert.strictEqual(advancingRows(table, null).length, 3);
   assert.strictEqual(advancingRows(table, 1).length, 2);
   assert.strictEqual(advancingRows([{ rows: [] }], null).length, 0);
-});
-
-test('closing a night takes the unplayed tail of every chain', () => {
-  const played = { player1_score: 1, player2_score: 0 };
-  const rows = [
-    { id: 1, division_id: 7, sequence: 1, ...played },
-    { id: 2, division_id: 7, sequence: 2, ...played },
-    { id: 3, division_id: 7, sequence: 3 },
-    { id: 4, division_id: 8, sequence: 1 },
-    { id: 5, division_id: 8, sequence: 2 },
-  ];
-  const bands = [{ id: 7, position: 1 }, { id: 8, position: 2 }];
-  assert.deepStrictEqual(pendingChainSeries(rows, bands).map((row) => row.id), [3, 4, 5]);
-  assert.strictEqual(pendingChainSeries(rows.slice(0, 2), bands).length, 0);
-  // an event with no divisions closes its one chain
-  assert.deepStrictEqual(
-    pendingChainSeries([{ id: 9, division_id: null, sequence: 1 }], []).map((row) => row.id),
-    [9],
-  );
-});
-
-test('a challenger is an entrant no series names yet', () => {
-  const entrants = [
-    { id: 1, user: { id: 11 } },
-    { id: 2, user: { id: 12 } },
-    { id: 3, user: { id: 13 } },
-    { id: 4, user: { id: 14 }, withdrawn_at: '2026-09-14T00:00:00Z' },
-  ];
-  const rows = [{ id: 1, player1_id: 11, player2_id: null }, { id: 2, player1_id: null, player2_id: 12 }];
-  assert.deepStrictEqual(chainChallengers(entrants, rows).map((row) => row.id), [3]);
-  assert.deepStrictEqual(chainChallengers(entrants, []).map((row) => row.id), [1, 2, 3]);
 });
 
 // A four-team 2v2 cup: every side is a team entrant, so no series names a player.

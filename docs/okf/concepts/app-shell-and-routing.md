@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T12:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T16:00:00Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -53,14 +53,14 @@ The bar opens with the app title, "WC3 Gym Dashboard", which links to `/` from e
 
 # The nav
 
-One person can be a player, a captain and an admin at once. `buildNav` in `next/src/helpers/nav-model.mjs` reads each hat from `/me` and returns the links of every hat the session wears:
+One person can be a player, a captain and an admin at once. `buildNav` in `next/src/helpers/nav-model.mjs` reads each hat from `/me` and returns only the places those hats work in:
 
 - Home, for a member or above.
+- My Stats, the member's own player page, when he has a player row.
 - My Team: one entry per team the person plays for (`seasons[].team`) or captains (`seats`) in a running season, newest season first. A seat and a roster row of the same team and season are one entry, marked as captained. Each entry links to the team's season page.
-- The shared pages in three groups: Season (Standings, Upcoming Games, Teams, Players, Ladder Grind), Fantasy (Leaderboard, My Fantasy Team) and Events (Leagues, Events, KOTH Board). A link shows only when the session's role reaches its route.
 - Admin, when the session reaches `/admin`. A viewed lower role never does, so view-as hides it.
 
-From 960 px the top bar draws these links; My Team is a link for one team and a menu for several. Below 960 px a fixed tab bar at the bottom holds Home, My Team, Season (the standings) and More, each only when it has somewhere to go. My Team opens a picker for several teams; More opens the drawer with every link. The page ends above the tab bar, and a sheet or a dialog opens over it.
+A player therefore sees Home and My Stats alone. The shared pages (standings, upcoming series, teams, fantasy leaderboard, events) are reached through links in the Home panels and on the pages themselves; the nav names none of them. `navTabs` turns the nav into tabs: from 960 px they sit in the top bar, below it in a fixed bar at the bottom of the screen. My Team is a link for one team and opens a picker (a menu in the top bar, a sheet on a phone) for several. There is no drawer. The page ends above the tab bar, and a sheet or a dialog opens over it. A guest gets no tabs; their one page is `/profile`, in the account menu.
 
 # The admin frame
 

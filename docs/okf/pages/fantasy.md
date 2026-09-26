@@ -4,7 +4,7 @@ title: Fantasy
 description: The fantasy leaderboard, the bets, the player tiers and the member's own fantasy team and bets.
 resource: ../../../next/src/app/(app)/fantasy/FantasyLeaderboardView.tsx
 tags: [pages, fantasy]
-generated: { by: openai/gpt-6, at: 2026-09-15T21:52:57Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T16:00:00Z }
 sources:
   - id: leaderboard
     resource: ../../../next/src/app/(app)/fantasy/FantasyLeaderboardView.tsx
@@ -64,6 +64,8 @@ Every page carries the season picker; the picked season is shared across the fan
 | `fantasy.public_deleteBet` | `DELETE /fantasy-bet/{id}` |
 
 # Rules
+
+- One bet dialog, `next/src/components/fantasy/BetDialog.tsx`, places, changes and deletes a bet on the fantasy page and on Home. It reads the bet point settings itself and is mounted per series, keyed by it.
 
 - The tier names and colours are tokens: [colours are tokens, in one file](../decisions/design-tokens-only.md).
 - The tier tables are grouped tables: [one grouped table component](../decisions/grouped-table.md).

@@ -4,7 +4,7 @@ title: Member self-service
 description: The home page, the profile, the season signup form and the availability page; what a member reads and writes about themselves.
 resource: ../../../next/src/app/(app)/HomeView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T09:35:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T16:00:00Z }
 sources:
   - id: home
     resource: ../../../next/src/app/(app)/HomeView.tsx
@@ -14,7 +14,22 @@ sources:
     title: The panel shell of the home hub
   - id: home-helper
     resource: ../../../next/src/helpers/home-hub.mjs
-    title: The panel order, the signup chip and the captain row
+    title: The panel order, the season games, the signup chip and the captain row
+  - id: my-games
+    resource: ../../../next/src/components/home/MyGames.tsx
+    title: The member's games of the season
+  - id: stats-panel
+    resource: ../../../next/src/components/home/StatsPanel.tsx
+    title: The member's stats at a glance
+  - id: player-summary
+    resource: ../../../next/src/helpers/player-summary.mjs
+    title: Seasons played, achievements and the season score
+  - id: fantasy-panel
+    resource: ../../../next/src/components/home/FantasyPanel.tsx
+    title: Fantasy on Home
+  - id: fantasy-panel-helper
+    resource: ../../../next/src/helpers/fantasy-panel.mjs
+    title: What the fantasy panel offers and which bets are open
   - id: profile
     resource: ../../../next/src/app/(app)/profile/ProfileView.tsx
     title: The profile switch
@@ -51,11 +66,11 @@ sources:
 
 # What it does
 
-**Home (`/`).** A hub of five panels under the h1 "Home", which carries no subheader. Above 960 px a wide main column holds "Your series", "Next matches" and "Open signups", and a narrow side column holds the latest season's leaderboard and "Casted games"; below that width the columns dissolve into one stack. One CSS order per panel drives both layouts, so a member with no series of his own reads "Open signups" first, the leaderboard second and his own panel third. Each panel draws its own skeleton rows under its real title while the page loads, in the order a member with a series reads, so the panels do not swap places when the reads land.
+**Home (`/`).** The player's one page for the week, under the h1 "Home". Up to five panels, each drawn only when it has something to say. Above 960 px a wide column holds "Open signups", "My Games" and "Upcoming Series", and a narrow column holds "My Stats" and "Fantasy"; below that width they stack in one column in the order of `PANEL_ORDER` in `next/src/helpers/home-hub.mjs`: signup, games, upcoming, fantasy, stats. Every panel works on a phone (Full).
 
-"Your series" states the member's next series with the compact action bar and the result of the one he played last, both out of `GET /player-series` for each season `/me` says he is in that has started; a season still open pairs nobody, so while none of them has started and the leaderboard's season is complete the panel reads that season instead and states that it is over. The result is the series score with his own score first, in the win or the loss token, linked to the series; it carries no icon and no word. "Next matches" is the `next` list of `GET /home/series`, at most five rows, each with its time in the reader's zone, its "League · Event · Stage · Round" label, its teams, its two players with the MMR the row names and a chip for the caster who claimed it; a side with neither player nor team reads "To be decided", and "All upcoming" opens the schedule. That read keeps a started series for two hours, so a row whose time has passed reads "Started 20:30" instead of its day and time. A captain reads one row first per event whose member row carries a fixture he still has to draft, with the round, the event's own name, the two teams, how much of it is drafted and a button to the draft board. "Open signups" lists the events whose signups stand open and the events whose check-in stands open, each with the same outlined button: sign up opens the signup dialog, a GNL season links to its own form, a member already in reads a chip beside the withdraw or the check-in. A row prints the play dates alone, and the rows read in the order the events start, because an event stores no signup close time. A member already entered reads "Signed up as" with the icon and the name of every race of the row's `entrant_races`, all in that one chip. The leaderboard names the latest GNL season as a link to its page, a chip for the round in play or "Final", the day the round ends, and the top five teams by season points, each with a "Series record" column from the `series_won` and `series_lost` of that season's `seasons_info` row. "Casted games" is the `casts_upcoming` and `casts_recent` lists of `GET /home/series`, with "Watch" to the stream and "VOD" to the recording; a stream still to come names its day and time, a recording the day it was played.
+"Open signups" shows while the member can still enter, leave or check in to an event, from `GET /me/events`: sign up opens the signup dialog, a GNL season links to its own form, a member already in reads a chip beside the withdraw or the check-in. "My Games · <season>" lists every series of the member in the season Home follows, the newest running season he is in, or off-season the finished latest season: first the ones "To play", each with the compact action bar (schedule, veto, report), then the ones "Played", each with its score from his side linked to the series. The opponent's name opens his player panel. The panel's title bar links to the season standings. "Upcoming Series" is the `next` list of `GET /home/series`, at most five rows, with "All upcoming" to the schedule; a captain reads one row first per fixture he still has to draft. "Fantasy" offers "Create your fantasy team" while `fantasy_team_creation_enabled` is true and the member has no team; once he has one, it lists the season's fantasy series still open for bets, soonest first, each with his pick or a "Place bet" button that opens `BetDialog`; with creation closed and no team the panel is not drawn. "My Stats" shows the GNL seasons he took part in, his achievements this season and overall, the best three of this season by points, and his GNL points this season, and links to his player page.
 
-The page sends six requests for a member: `/me`, `GET /seasons`, `GET /me/events`, `GET /home/series`, `GET /events/{id}/teams/basic` and one `GET /player-series?season_id=` per started season the member is in. An admin sends the same six. The `/home/series` read is public and edge cached, so it is sent without a bearer. A failed `/home/series` or `/events/{id}/teams/basic` read states itself in the page's alert, and the panel that read it prints the one quiet line "Could not be loaded." in place of its rows, never an empty state. The hub carries no admin card: an admin reaches season management and the round draft through the leaderboard's season link.
+The page first sends `/me`, `GET /seasons`, `GET /me/events`, `GET /home/series` and one `GET /player-series?season_id=` for the season Home follows. After the panels have drawn, the fantasy panel reads the setting and the member's team, and with a team `GET /events/{id}/series` and his bets; the stats panel reads `GET /users/{id}/history` and one `GET /users/{id}/ladder?season_id=` per GNL season of that history. The history, the ladders, the setting, `/home/series` and `/events/{id}/series` are public and edge cached, so they go without a bearer. A failed `/home/series` read states itself in the page's alert and the upcoming panel prints "Could not be loaded."; a failed ladder read leaves that season out of the counts and the stats panel says a count may be short.
 
 **Profile (`/profile`).** The one route a guest may open. A guest reads a card that offers the Discord invite from the settings and a "Check again" button, which reads `/me` once more. A member with no player row reads the signup form. A member with a player row is sent to their own player page, where the "My accounts" card manages his battle tags; see [players and stats](players-and-stats.md).
 

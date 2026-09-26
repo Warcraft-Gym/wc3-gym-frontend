@@ -88,7 +88,6 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
   const currentSeasonInfo = team?.seasons_info ? team.seasons_info.find((s: Row) => s.season_id === seasonId) ?? team.seasons_info[0] : null;
 
   const seasonCaptains: Row[] = rosterOf(team, seasonId).captains;
-  const missingRoleCaptains = seasonCaptains.filter((captain) => discordRoleMissing.includes(captain.discordId));
   const chosenCaptains = captainIds.map((captainId) => allAvailableUsers.find((user) => user.id === captainId) ?? { id: captainId, name: String(captainId) });
 
   const ladderTeam: Row | null = (seasonLadder?.teams ?? []).find((t: Row) => String(t.id) === String(teamId)) ?? null;
@@ -407,12 +406,12 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
 
             {/* Save captains answers the accounts the guild has not granted the role yet */}
             <div className="mt-4 flex flex-wrap gap-2">
-              {missingRoleCaptains.map((captain) => (
-                <Badge key={captain.id} className={toneClass("warning")}>
+              {discordRoleMissing.length ? (
+                <Badge className={toneClass("warning")}>
                   <Icon name="mdi-alert" />
-                  {captain.name} — role missing in Discord
+                  Role missing in Discord for {discordRoleMissing.length} {discordRoleMissing.length === 1 ? "captain" : "captains"}
                 </Badge>
-              ))}
+              ) : null}
             </div>
           </>
         )}
@@ -447,7 +446,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
               key={members.length > 10 ? "paged" : "all"}
               data={members as Row[]}
               pageSize={members.length > 10 ? 10 : undefined}
-              columnVisibility={{ battleTag: mdAndUp, discordTag: mdAndUp }}
+              columnVisibility={{ battleTag: mdAndUp }}
               empty={
                 errorMessage ? null : (
                   <div className="p-8 text-center">
@@ -477,7 +476,6 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                   ),
                 },
                 { id: "battleTag", accessorKey: "battleTag", header: "Battletag" },
-                { id: "discordTag", accessorKey: "discordTag", header: "Discord name" },
                 {
                   id: "actions",
                   header: "",

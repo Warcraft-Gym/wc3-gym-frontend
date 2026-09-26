@@ -14,11 +14,11 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { mmrSeasonLabel } from "@/helpers/w3c-stats";
 import { SyncedLine, mmrOf, type Row } from "./match-cells";
 
-// The search matches the name or the Discord name, as the table filter does
+// The search matches the name
 const matchesQuery = (player: Row, search: string) => {
   if (!search) return true;
   const needle = search.toLowerCase();
-  return (player.name || "").toLowerCase().includes(needle) || (player.discordTag || "").toLowerCase().includes(needle);
+  return (player.name || "").toLowerCase().includes(needle);
 };
 
 function RosterCard({

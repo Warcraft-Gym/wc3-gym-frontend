@@ -48,6 +48,12 @@ export function EditPlayerDialog({
       setSelectedPlayer({ ...player });
       setUpdateError("");
       setShow(true);
+      // List rows carry no Discord fields; the player read does, and a typed value wins
+      if (!self && player.id != null)
+        playerStore
+          .getPlayer(player.id)
+          .then(({ discordTag, discordId }) => setSelectedPlayer((row) => (row && row.id === player.id ? { ...row, discordTag: row.discordTag ?? discordTag, discordId: row.discordId ?? discordId } : row)))
+          .catch((error) => console.error("Error loading player:", error));
     },
   }));
 

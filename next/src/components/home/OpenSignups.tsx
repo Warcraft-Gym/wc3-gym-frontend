@@ -56,6 +56,7 @@ export function OpenSignups({
                 <SignupButton card={card} acting={acting} onAct={onAct} />
               </span>
             ) : null}
+            {card.note ? <p className="order-5 basis-full text-sm text-muted-foreground">{card.note}</p> : null}
             <span className="order-3 basis-full min-[600px]:hidden" />
             {card.dates ? <div className="tnum order-5 text-sm text-muted-foreground min-[600px]:basis-full">plays {card.dates}</div> : null}
           </div>

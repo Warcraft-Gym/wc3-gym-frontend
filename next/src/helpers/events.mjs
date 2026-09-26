@@ -37,6 +37,9 @@ function eventStatus(row, season, round) {
   return dateRange({ start_date: row.start, end_date: row.end });
 }
 
+// Why a GNL card the token admin reads offers no sign up: it holds no Discord account
+export const SUPERADMIN_SIGNUP_NOTE = 'The admin token has no player account, so it cannot sign up. Sign in as a player to sign up.';
+
 // The one thing a card offers. A GNL season keeps its own signup form and its own
 // pages, so its button is a link; every other kind carries the action word the home
 // acts on in place, and `view` opens the event page.
@@ -104,6 +107,8 @@ export function homeCards({ events = [], me = null, seasons = [], now = new Date
       joined: row.joined,
       hint: blocksHint(row),
       primary: eventPrimary(row, me, slug),
+      // a card with no button says why, so an open signup never reads as broken
+      note: gnl && !row.joined && me?.superadmin ? SUPERADMIN_SIGNUP_NOTE : null,
       links: gnl ? seasonLinks(season, slug) : [{ title: 'Event page', icon: 'mdi-tournament', to: `/events/${row.id}` }],
       slug,
     };

@@ -157,6 +157,7 @@ test('an admin without a player row gets cards without the sign-up ask', () => {
   const cards = homeCards({ events: open, me: admin, seasons, now });
   assert.deepEqual(cards[0].chips.map((chip) => chip.title), ['Signups open']);
   assert.ok(!cards[0].primary);
+  assert.match(cards[0].note, /cannot sign up/);
   assert.deepEqual(cards[0].links.map((link) => link.title), ['Season report', 'Players']);
   assert.deepEqual(joinableEvents(cards), []);  // the popup button reads primary, so such a row stays out
 });

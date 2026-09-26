@@ -80,6 +80,6 @@ A refused write shows the sentence of its error envelope in the page's `StatusAl
 
 # Historical nights
 
-The run page draws an archived board through the shared historical results component. A historical board is closed and is read once without polling. Its brackets retain source order and literal MMR or rank labels. BO1 pairings keep their sequence; an absent winner reads as an unrecorded result. Reported crowns remain separate from inferred match outcomes.
+The run page draws an archived board through the shared historical results component. A historical board is closed and is read once without polling. Its brackets retain source order and literal MMR or rank labels. Each BO1 is a two-side box in play order: the winner wears the `win` bar, bold, and a crown, filled for a recorded result and outlined in muted ink for one inferred from the play order; the loser wears the `loss` bar; a series with no result wears `draw` on both sides, "Forfeit" where the order reads one, and an info mark whose tooltip names the review reason. One legend over the brackets names the three bars and the two crowns.
 
-Historical names have no profile link or race icon while identity and race are unconfirmed. Event video links name the recording without promising full-event coverage. The shared player-name component renders each side without current rating warnings.
+Historical names have no profile link or race icon while identity and race are unconfirmed. Event video links name the recording without promising full-event coverage. Each side is the written name alone, with no rating warning.

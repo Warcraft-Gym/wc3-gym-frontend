@@ -20,8 +20,8 @@ const STATE_WORD: Record<string, string> = {
 };
 
 // The result is a mark beside the name, never coloured text
-const MARK = "shrink-0 w-[3px] self-stretch rounded-[2px]";
-const SIDE = "flex items-center gap-1.5 px-2 py-[3px] min-h-[26px]";
+export const MARK = "shrink-0 w-[3px] self-stretch rounded-[2px]";
+export const SIDE = "flex items-center gap-1.5 px-2 py-[3px] min-h-[26px]";
 
 /** One series of a stage: a side per row with its race, the score, and the state as a word.
  *  A team side reads as the team name over the roster it fields. A free for all lobby reads

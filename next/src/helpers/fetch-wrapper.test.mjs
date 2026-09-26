@@ -34,6 +34,15 @@ test('the open league, map, config, player and team reads are edge cached', () =
   }
 });
 
+test('the open entrant, achievement and stage reads of an event are edge cached', () => {
+  for (const url of [
+    '/api/events/12/entrants', '/api/events/12/achievements',
+    '/api/events/12/stages/4/series', '/api/events/12/stages/4/standings',
+  ]) {
+    assert.equal(edgeCached.test(url), true, url);
+  }
+});
+
 test('career pages use the edge cache while fresh reads keep the bearer', () => {
   for (const url of [
     '/api/stats/career', '/api/stats/career/3',
@@ -52,6 +61,7 @@ test('caller-dependent reads and other queries keep the bearer', () => {
     '/api/leagues/5', '/api/events/5', '/api/config/settings', '/api/maps/ladder-import',
     '/api/users/3/ladder?t=123', '/api/users/3/ladder?season_id=2&t=123', '/api/events/12/teams?t=123',
     '/api/events/12/teams/7/availability', '/api/config/discord-roles',
+    '/api/events/12/series/search', '/api/events/12/entrants?t=123', '/api/events/12/stages/4/series?t=123',
   ]) {
     assert.equal(edgeCached.test(url), false, url);
   }

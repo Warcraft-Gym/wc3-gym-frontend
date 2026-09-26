@@ -29,7 +29,6 @@ export const navItems = (): NavGroup[] => [
     title: "KOTH",
     to: "/koth/dashboard",
     items: [
-      { title: "Board", to: "/koth/dashboard" },
       { title: "Nights", to: "/koth" },
     ],
   },

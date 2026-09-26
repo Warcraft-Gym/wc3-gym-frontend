@@ -6,24 +6,25 @@ import { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
 import { dateRange, STATE_COLOR, STATE_LABEL } from "@/helpers/event-labels.mjs";
 import { nightState } from "@/helpers/koth.mjs";
+import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useEventStore } from "@/stores";
-import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-const phoneCell = "hidden min-[960px]:table-cell";
+// One page of nights; the backend sorts and cuts it, and counts them all
+const PAGE_SIZE = 25;
 // event-labels.mjs is plain JS, so its records index by a known key; the seam widens them
 const stateColor = STATE_COLOR as Record<string, string>;
 const stateLabel = STATE_LABEL as Record<string, string>;
@@ -31,13 +32,18 @@ const stateLabel = STATE_LABEL as Record<string, string>;
 // The bracket cuts a first night takes, weakest first, the way the module names them
 const DEFAULT_BOUNDS = [0, 1450, 1600];
 
-/** Every KOTH night, newest first. A night is one event of the KOTH league, so this page
+/** The KOTH nights, newest first, one page at a time. A night is one event of the KOTH league, so this page
  *  only opens tonight's and hands the run over to the night's run page. */
 export function KothView() {
   const router = useRouter();
   const store = useEventStore();
+  const mdAndUp = useBreakpoint(MD_AND_UP);
 
   const [nights, setNights] = useState<Row[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  // The newest night, from the first page, which the dialog prefills from on any page
+  const [latestId, setLatestId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,8 +53,12 @@ export function KothView() {
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       try {
-        setNights(await store.fetchEvents(null, "koth"));
+        const { items, total: count } = await store.fetchEventsPage("koth", PAGE_SIZE, page * PAGE_SIZE);
+        setNights(items);
+        setTotal(count ?? items.length);
+        if (page === 0) setLatestId(items[0]?.id ?? null);
       } catch (e) {
         setError(`The nights did not load: ${(e as Error).message}`);
       } finally {
@@ -57,13 +67,13 @@ export function KothView() {
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [page]);
 
   // Tonight at the hour the last night started, and its bracket cuts, weakest first.
   // The list read carries no divisions, so the last night is read in full for them.
   const openDialog = async () => {
     setDialogError(null);
-    const last: Row | null = nights[0] ? await store.fetchEvent(nights[0].id).catch(() => null) : null;
+    const last: Row | null = latestId ? await store.fetchEvent(latestId).catch(() => null) : null;
     const started = last?.starts_at ? DateTime.fromISO(last.starts_at, { zone: "utc" }).toLocal() : null;
     const start = DateTime.now().set({ hour: started?.hour ?? 20, minute: started?.minute ?? 0, second: 0, millisecond: 0 });
     const bounds: number[] = [...(last?.divisions || [])].sort((a: Row, b: Row) => b.position - a.position).map((band: Row) => band.lower_bound ?? 0);
@@ -115,41 +125,46 @@ export function KothView() {
 
       <Card className="card">
         {loading ? <Progress value={null} /> : null}
-        <div className="table-scroll overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Night</TableHead>
-                <TableHead className={phoneCell}>Date</TableHead>
-                <TableHead>State</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {nights.map((night) => (
-                <TableRow key={night.id}>
-                  <TableCell className="py-3">
-                    <Link href={`/koth/nights/${night.id}`}>
-                      <strong>{night.name}</strong>
-                    </Link>
-                    {/* a phone drops the date column, so the date rides under the name */}
-                    <div className="text-xs text-muted-foreground min-[960px]:hidden">{dateRange(night)}</div>
-                  </TableCell>
-                  <TableCell className={cn(phoneCell, "whitespace-nowrap")}>{dateRange(night) || "—"}</TableCell>
-                  <TableCell>
-                    <Badge className={toneClass(stateColor[nightState(night)])}>{stateLabel[nightState(night)] || "—"}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {!nights.length && !loading ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
-                    No night has run yet.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          data={nights}
+          rowId={(night: Row) => String(night.id)}
+          rowCount={total}
+          page={page}
+          onPageChange={setPage}
+          pageSize={PAGE_SIZE}
+          columnVisibility={{ date: mdAndUp }}
+          empty={loading ? null : <div className="py-6 text-center">No night has run yet.</div>}
+          columns={[
+            {
+              id: "name",
+              header: "Night",
+              enableSorting: false,
+              cell: ({ row }) => (
+                <div className="py-1">
+                  <Link href={`/koth/nights/${row.original.id}`}>
+                    <strong>{row.original.name}</strong>
+                  </Link>
+                  {/* a phone drops the date column, so the date rides under the name */}
+                  <div className="text-xs text-muted-foreground min-[960px]:hidden">{dateRange(row.original)}</div>
+                </div>
+              ),
+            },
+            {
+              id: "date",
+              header: "Date",
+              enableSorting: false,
+              cell: ({ row }) => <span className="whitespace-nowrap">{dateRange(row.original) || "—"}</span>,
+            },
+            {
+              id: "state",
+              header: "State",
+              enableSorting: false,
+              cell: ({ row }) => (
+                <Badge className={toneClass(stateColor[nightState(row.original)])}>{stateLabel[nightState(row.original)] || "—"}</Badge>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Tonight's night: when it starts, and where its three brackets cut */}

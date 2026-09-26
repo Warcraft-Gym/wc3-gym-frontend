@@ -67,11 +67,14 @@ test('caller-dependent reads and other queries keep the bearer', () => {
   }
 });
 
-test('the open events list and its league_id/kind queries are edge cached, other queries keep the bearer', () => {
-  for (const url of ['/api/events', '/api/events?league_id=3', '/api/events?kind=koth', '/api/events?league_id=3&kind=gnl', '/api/events?kind=gnl&league_id=3']) {
+test('the open events list and its league_id/kind/limit/offset queries are edge cached, other queries keep the bearer', () => {
+  for (const url of [
+    '/api/events', '/api/events?league_id=3', '/api/events?kind=koth', '/api/events?league_id=3&kind=gnl', '/api/events?kind=gnl&league_id=3',
+    '/api/events?kind=koth&limit=25&offset=50', '/api/events?limit=25',
+  ]) {
     assert.equal(eventsListEdgeCached.test(url), true, url);
   }
-  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123']) {
+  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123', '/api/events?kind=koth&limit=25&offset=0&t=123', '/api/events?limit=']) {
     assert.equal(eventsListEdgeCached.test(url), false, url);
   }
 });

@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 // so the one rule this file checks is read out of the source.
 const source = readFileSync(new URL('./fetch-wrapper.js', import.meta.url), 'utf8');
 const edgeCached = new RegExp(source.match(/^const EDGE_CACHED = \/(.+)\/;$/m)[1]);
+const careerEdgeCached = new RegExp(source.match(/^const CAREER_EDGE_CACHED = \/(.+)\/;$/m)[1]);
 
 test('the open reads the edge caches send no bearer', () => {
   for (const url of ['/api/events/12/ladder', '/api/home/series', '/api/koth/board', '/api/koth/nights/10/board']) {
@@ -32,6 +33,19 @@ test('the open league, map, config, player and team reads are edge cached', () =
   }
 });
 
+test('career pages use the edge cache while fresh reads keep the bearer', () => {
+  for (const url of [
+    '/api/stats/career', '/api/stats/career/3',
+    '/api/stats/career?limit=500&offset=0',
+    '/api/stats/career?search=foo&sort=rating&order=desc',
+  ]) {
+    assert.equal(careerEdgeCached.test(url), true, url);
+  }
+  for (const url of ['/api/stats/career?t=123', '/api/stats/career?limit=500&t=123']) {
+    assert.equal(careerEdgeCached.test(url), false, url);
+  }
+});
+
 test('caller-dependent reads and other queries keep the bearer', () => {
   for (const url of [
     '/api/leagues/5', '/api/events/5', '/api/events', '/api/config/settings', '/api/maps/ladder-import',
@@ -43,5 +57,5 @@ test('caller-dependent reads and other queries keep the bearer', () => {
 });
 
 test('only a non-admin GET skips the bearer', () => {
-  assert.match(source, /if \(method === 'GET' && EDGE_CACHED\.test\(url\) && !store\.isAdmin\) return \{\};/);
+  assert.match(source, /if \(method === 'GET' && \(EDGE_CACHED\.test\(url\) \|\| CAREER_EDGE_CACHED\.test\(url\)\) && !store\.isAdmin\) return \{\};/);
 });

@@ -30,6 +30,7 @@ function RosterCard({
   isOut,
   hasSeries,
   onSelectAvailable,
+  over,
 }: {
   team: Row;
   roster: Row[];
@@ -40,6 +41,7 @@ function RosterCard({
   isOut: (player: Row) => boolean;
   hasSeries: (playerId: number) => boolean;
   onSelectAvailable: () => void;
+  over: boolean; // the event is over: no live MMR column
 }) {
   const shown = roster.filter((player) => matchesQuery(player, search));
   const allShown = shown.length > 0 && shown.every((player) => selected.includes(player.id));
@@ -113,17 +115,18 @@ function RosterCard({
                 </PlayerName>
               ),
             },
-            {
+            // a finished event shows the MMR of the time on its series rows, so the live figure stays out
+            ...(over ? [] : [{
               id: "w3c_mmr",
               accessorFn: (row: Row) => mmrOf(row, row.signup_race) || 0,
               header: () => <W3CMmr />,
-              cell: ({ row }) => (
+              cell: ({ row }: { row: { original: Row } }) => (
                 <>
                   <Badge className="bg-info text-on-info tnum">{mmrOf(row.original, row.original.signup_race) ?? "N/A"}</Badge>
                   <SyncedLine player={row.original} />
                 </>
               ),
-            },
+            }]),
           ]}
         />
       </CardContent>
@@ -153,6 +156,7 @@ export function TeamRostersPanel({
   onMmrDiffChange,
   canPropose,
   onPropose,
+  over = false,
 }: {
   team1: Row;
   team2: Row;
@@ -173,6 +177,7 @@ export function TeamRostersPanel({
   onMmrDiffChange: (value: string) => void;
   canPropose: boolean;
   onPropose: () => void;
+  over?: boolean; // the event is over: the rosters show no live MMR
 }) {
   return (
     <Accordion className="card mt-4 rounded px-4">
@@ -207,6 +212,7 @@ export function TeamRostersPanel({
               isOut={outTeam1}
               hasSeries={hasSeries}
               onSelectAvailable={onSelectAvailableTeam1}
+              over={over}
             />
             <RosterCard
               team={team2}
@@ -218,6 +224,7 @@ export function TeamRostersPanel({
               isOut={outTeam2}
               hasSeries={hasSeries}
               onSelectAvailable={onSelectAvailableTeam2}
+              over={over}
             />
           </div>
         </AccordionContent>

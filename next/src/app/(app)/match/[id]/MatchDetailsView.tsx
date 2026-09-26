@@ -21,6 +21,7 @@ import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
 import { checkInStatus } from "@/helpers/check-in.mjs";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
 import { placeTakers } from "@/helpers/draft-suggest.mjs";
+import { isOver } from "@/helpers/season-phase.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { pickedInstant, pickerParts, storedUtc, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { useAuth, useAvailabilityStore, useEventStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
@@ -957,6 +958,7 @@ export function MatchDetailsView({ id }: { id: string }) {
                   onAddDraftSeries={openCreateNewDraftSeries}
                   onPublishAll={openPublishAll}
                   onDeleteAll={() => openDeleteDialog(null, removeAllDraftSeries)}
+                  over={isOver(season)}
                 />
               </TabsContent>
             ) : null}
@@ -985,6 +987,7 @@ export function MatchDetailsView({ id }: { id: string }) {
             onMmrDiffChange={setProposeSeriesMMRDiff}
             canPropose={isProposeValid}
             onPropose={openProposeSeries}
+            over={isOver(season)}
           />
         ) : null}
       </div>

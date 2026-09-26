@@ -467,7 +467,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                   header: "Name",
                   cell: ({ row }) => (
                     <>
-                      <PlayerName player={row.original} race={row.original.signup_race} mmr={isOver(seasonRow) ? (row.original.mmr_entered ?? null) : undefined} />
+                      <PlayerName player={row.original} race={row.original.signup_race} mmr={isOver(seasonRow) ? (row.original.mmr_entered ?? false) : undefined} />
                       <PlayedAs playedAs={row.original.played_as} battleTag={row.original.battleTag} />
                       <div>{syncCell(row.original)}</div>
                     </>

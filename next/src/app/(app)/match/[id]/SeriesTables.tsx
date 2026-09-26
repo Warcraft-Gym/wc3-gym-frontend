@@ -220,6 +220,7 @@ export function DraftSeries({
   onPublishAll,
   onDeleteAll,
   onMeetings,
+  over = false,
 }: {
   draftSeries: Row[];
   smAndDown: boolean;
@@ -238,6 +239,7 @@ export function DraftSeries({
   onPublishAll: () => void;
   onDeleteAll: () => void;
   onMeetings: (userA: number, userB: number) => Promise<Row[]>;
+  over?: boolean; // the event is over: the rows show no live MMR
 }) {
   const pairOf = pairIndex(board);
   const boardPlayer = new Map<number, Row>((board?.players || []).map((player: Row) => [player.user_id, player]));
@@ -291,7 +293,8 @@ export function DraftSeries({
         <VsRaces player={ladderById.get(row.original[`player${n}`]?.id)} race={row.original[`player${n === 1 ? 2 : 1}_race`]} />
       ),
     },
-    {
+    // a finished event shows the MMR of the time on its series rows, so the live figures stay out
+    ...(over ? [] : [{
       id: `p${n}_w3c_mmr`,
       accessorFn: (row: Row) => mmrOf(row[`player${n}`], row[`player${n}_race`]) || 0,
       header: () => <W3CMmr />,
@@ -311,7 +314,7 @@ export function DraftSeries({
           <Badge className="bg-secondary text-on-secondary tnum">{getHighestW3CMMR(row.original[`player${n}`]) || "—"}</Badge>
         </div>
       ),
-    },
+    }]),
   ];
 
   // The pairing's own figures, which the one board read already carries

@@ -7,7 +7,7 @@ import { getAllRaceStats, getW3CMMR, syncedAgo, syncedAt } from "@/helpers/w3c-s
 
 export type Row = Record<string, any>;
 
-/** The live MMR of one race, from the player's ladder summary. */
+/** The MMR of one race: the entry's MMR; list payloads carry live entries only. */
 export const mmrOf = (player: Row | undefined | null, race?: string | null) => getW3CMMR(player as Row, race as string);
 
 /** The highest MMR across the races of the live window. */

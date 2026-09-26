@@ -1,4 +1,18 @@
-# Role-based UI rework — Step 1: the general layout
+# Role-based UI rework
+
+## Progress
+
+- **Step 1, the general layout: done.** Frontend `feature/ui-rework-layout`, backend `feature/admin-me-seats`.
+- **Step 2, simpler nav and the player Home: in progress** on `feature/ui-rework-player-home` (from `feature/ui-rework-layout`). See section 4 below.
+
+### Decisions from step 2 (they override the layout described in step 1)
+
+- A player needs two places only: **Home** and their own **player dashboard** ("My Stats").
+- The nav shows only the hats a person wears: Home, My Stats (with a player row), My Team (captains and roster players), Admin (admins). The Season, Fantasy and Events menus, the More tab and the drawer are gone; the shared pages are reached through links in the Home panels.
+- The season score on Home is the GNL series points of the current season.
+- Achievement counts on Home are computed in the browser from the cached ladder read per season; no backend change.
+
+# Step 1: the general layout
 
 ## Start here (execution order)
 
@@ -193,20 +207,31 @@ Backend work for the captain phase (each its own PR with docs):
 - a round announce route for captains
 - any figures missing from the draft board read (series played this season, recent opponent races)
 
-### 4. Player: Home as "My Games" (draft, from the tasks described earlier; to refine)
+### 4. Player: Home (step 2)
 
-Home stacks one section per hat. The player section is a list of their series, each showing its next step: **Schedule → Map Veto → Play → Report**. **Full on phone.**
+Home is the player's one page for the week. A stack of panels, each shown only when it has something to say. **Full on phone.**
 
-| # | User story | Today's base |
+| # | Panel | Shows |
 |---|---|---|
-| 1 | Set my availability for the season | `availability/AvailabilityView`, `BlockedRounds`, `/player-availability`, `/player-blocks` |
-| 2 | See which games I have been assigned | `components/home/YourSeries`, `/player-series` |
-| 3 | See information about my opponent | `/users/{id}`, `/stats/career/{id}`, `/users/{a}/meetings/{b}`, `PlayerPanel` |
-| 4 | Agree a play time for a planned match | `player/ScheduleDialog`, `/player-series/{id}/free-time` |
-| 5 | Do the map veto with my opponent | `VetoBoard`, `/player-series/{id}/veto` |
-| 6 | Report the result of a finished match | `ReportResultDialog`, `PUT /player-series/{id}` |
+| 1 | Sign Up | Only while a season or event is open for signup and the player has not joined, with one button per signup |
+| 2 | My Games | Every series of the player in the current season, open and played. An open series shows its next step (Schedule → Veto maps → Report result); a played series its result. A link to the season standings |
+| 3 | Upcoming Series | The next 5 series, with a link to the full upcoming list |
+| 4 | Fantasy | While team creation is open and the player has no team: create a team. With a team: the fantasy series still open for bets, with the player's bet or a "Place bet" button, and a link to the leaderboard |
+| 5 | My Stats | Part of N seasons · achievements this season and overall · top 3 achievements this season · season score (GNL points). Leads to the player dashboard |
 
-Captain and admin sections on Home are short summaries that link to the Team hub and the Admin area.
+The player stories it covers:
+
+| # | User story | Where |
+|---|---|---|
+| 1 | Sign up for an open season | Sign Up panel |
+| 2 | Set my availability for the season | Account menu → Availability (`availability/AvailabilityView`) |
+| 3 | See which games I have been assigned, played and open | My Games panel (`/player-series`, `RoundCards`) |
+| 4 | See information about my opponent | The player name opens `PlayerPanel` |
+| 5 | Agree a play time, do the map veto, report the result | The series actions in My Games (`ScheduleDialog`, `VetoBoard`, `ReportResultDialog`) |
+| 6 | Create a fantasy team and bet on fantasy matches | Fantasy panel (`BetDialog`, shared with the fantasy page) |
+| 7 | See my stats and achievements | My Stats panel → player dashboard |
+
+Follow-up: rework the player dashboard itself into a stats and achievements page (today achievements show only in its ladder tab).
 
 ### 5. Later
 

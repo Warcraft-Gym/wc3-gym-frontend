@@ -12,7 +12,7 @@ export const navItems = (): NavGroup[] => [
       { title: "Teams", to: "/teams" },
       { title: "Ladder Grind", to: "/ladder" },
       { title: "Players", to: "/players" },
-      { title: "1v1 Maps", to: "/maps" },
+      { title: "Maps", to: "/maps" },
       { title: "Fantasy", to: "/fantasy" },
       { title: "My Fantasy Team", to: "/fantasy-registration" },
       { title: "Fantasy Bets", to: "/fantasy/bets" },

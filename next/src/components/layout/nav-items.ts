@@ -9,11 +9,22 @@ export const navItems = (): NavGroup[] => [
     to: "/report",
     items: [
       { title: "Season", to: "/report" },
-      { title: "Upcoming", to: "/upcoming" },
       { title: "Teams", to: "/teams" },
       { title: "Ladder Grind", to: "/ladder" },
       { title: "Players", to: "/players" },
       { title: "1v1 Maps", to: "/maps" },
+      { title: "Fantasy", to: "/fantasy" },
+      { title: "My Fantasy Team", to: "/fantasy-registration" },
+      { title: "Fantasy Bets", to: "/fantasy/bets" },
+      { title: "Fantasy Tiers", to: "/fantasy/tiers" },
+    ],
+  },
+  {
+    title: "KOTH",
+    to: "/koth/dashboard",
+    items: [
+      { title: "Board", to: "/koth/dashboard" },
+      { title: "Nights", to: "/koth" },
     ],
   },
   {
@@ -24,17 +35,6 @@ export const navItems = (): NavGroup[] => [
       { title: "Events", to: "/events" },
     ],
   },
-  {
-    title: "Fantasy",
-    to: "/fantasy",
-    items: [
-      { title: "Leaderboard", to: "/fantasy" },
-      { title: "My Fantasy Team", to: "/fantasy-registration" },
-      { title: "Manage Bets", to: "/fantasy/bets" },
-      { title: "Player Tiers", to: "/fantasy/tiers" },
-    ],
-  },
-  { title: "KOTH", to: "/koth" },
   {
     title: "Config",
     to: "/config",

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/Combobox";
@@ -17,7 +17,6 @@ import { RaceSelect } from "@/components/RaceSelect";
 import { discordMark } from "@/assets/discordMark.js";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { findCountry } from "@/helpers/countries.js";
-import { myProfilePath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { isTagError, signupState, signupTitles, startZone } from "@/helpers/signup.mjs";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
@@ -38,6 +37,7 @@ export function PublicSignupView() {
   const seasonKey = useSearchParams().get("season");
   const { me, fetchMe } = useAuth();
   const { seasons, seasonIdOf, fetchSeasons } = useSeason();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   // Form fields (match the create player dialog). The Discord session identifies the player,
@@ -139,8 +139,13 @@ export function PublicSignupView() {
         setClosedMessage(created.message);
         return;
       }
-      // the fresh users row and signup turn the page into the signed-up view, which confirms itself
       const fresh = await fetchMe();
+      // a new signup goes home, where the season and its check-in wait; Home confirms it once
+      if (!editing && stateOf(fresh) === "joined") {
+        router.push(`/?signed_up=${encodeURIComponent(mySeasonOf(fresh)?.name || seasonName)}`);
+        return;
+      }
+      // an edit or a profile save stays here and confirms itself
       setSaved(editing || stateOf(fresh) !== "joined");
       setEditing(false);
     } catch (err) {
@@ -201,9 +206,9 @@ export function PublicSignupView() {
                 Change my details
               </Button>
               {schedulingEnabled ? (
-                <Link href={myProfilePath(me)} className="mt-6 flex items-center gap-3 rounded-lg bg-primary/12 p-4 text-primary-text no-underline">
+                <Link href="/" className="mt-6 flex items-center gap-3 rounded-lg bg-primary/12 p-4 text-primary-text no-underline">
                   <Icon name="mdi-calendar-check" size={24} />
-                  <span className="flex-1 font-heading text-base font-medium text-wrap">Check in for each round on your profile</span>
+                  <span className="flex-1 font-heading text-base font-medium text-wrap">Check in for each round on Home</span>
                   <Icon name="mdi-chevron-right" size={24} />
                 </Link>
               ) : null}

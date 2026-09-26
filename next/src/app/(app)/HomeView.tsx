@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/ReportResultDialog";
 import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/ScheduleDialog";
@@ -47,7 +48,9 @@ export function HomeView() {
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // a signup lands here with ?signed_up=<season>; Home confirms it once
+  const signedUp = useSearchParams().get("signed_up");
+  const [successMessage, setSuccessMessage] = useState<string | null>(() => (signedUp ? `You are signed up for ${signedUp}.` : null));
   const [myEvents, setMyEvents] = useState<Row[]>([]);
   const [hub, setHub] = useState<Row | null>(null);
   // the /player-series answer of the season Home lists; null while it is read or when there is none
@@ -176,6 +179,11 @@ export function HomeView() {
     );
     setActing(null);
   };
+
+  // the note shows once; a reload or a shared link does not repeat it
+  useEffect(() => {
+    if (signedUp) window.history.replaceState(null, "", "/");
+  }, [signedUp]);
 
   useEffect(() => {
     let live = true;

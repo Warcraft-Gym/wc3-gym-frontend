@@ -165,12 +165,9 @@ export function EventView({ id }: { id: string }) {
         setEvent(loaded);
         setLeagues(leagueRows);
         setArchive(null);
-        if (loaded.kind === "koth" && loaded.closed_at) {
-          const board = await store.fetchBoard(loaded.id);
-          if (board.historical) {
-            setArchive(board);
-            return;
-          }
+        if (loaded.archived) {
+          setArchive(await store.fetchBoard(loaded.id));
+          return;
         }
         await reload(loaded);
         const drawings = await Promise.all(

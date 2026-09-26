@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { captainRow, openSignups, ownScore, ownSeries, panelOrder, rowContext, seriesWhen } from './home-hub.mjs';
+import { PANEL_ORDER, captainRow, openSignups, ownScore, ownSeries, rowContext, seasonGames, seriesWhen } from './home-hub.mjs';
 
-test('a member with no series of his own reads the open signups first', () => {
-  assert.deepEqual(panelOrder(true), { own: 1, next: 2, signup: 3, board: 4, cast: 5 });
-  assert.deepEqual(panelOrder(false), { signup: 1, board: 2, own: 3, next: 4, cast: 5 });
+test('an open signup comes first, then the games, the upcoming series, fantasy and the stats', () => {
+  assert.deepEqual(PANEL_ORDER, { signup: 1, games: 2, next: 3, fantasy: 4, stats: 5 });
 });
 
 test('a series already under way reads the time it started', () => {
@@ -80,4 +79,11 @@ test('a scored series with no time never had one written down', () => {
 test('an unscored series with no time is still waiting on a booking', () => {
   const now = DateTime.fromISO('2026-09-21T12:00:00Z');
   assert.equal(seriesWhen({ date_time: null, player1_score: null, player2_score: null }, now), 'No time booked');
+});
+
+test('the season games split into the ones to play and the ones played, in round order', () => {
+  const row = (id, playday, scores = [null, null], p1 = 7, p2 = 8) => ({ id, player1_id: p1, player2_id: p2, player1_score: scores[0], player2_score: scores[1], match: { playday } });
+  const { open, played } = seasonGames([row(1, 3), row(2, 1, [2, 1]), row(3, 2), row(4, 1, [null, null], 9, 8), row(5, 2, [0, 2])], 7);
+  assert.deepEqual(open.map((r) => r.id), [3, 1]);
+  assert.deepEqual(played.map((r) => r.id), [2, 5]);
 });

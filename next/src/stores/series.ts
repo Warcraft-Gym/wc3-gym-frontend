@@ -90,6 +90,10 @@ const store = {
     const query = encodeURIComponent(`player1_id == ${user_id} or player2_id == ${user_id}`);
     return await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search?query=${query}`);
   },
+  // Every series of an event in one open read, edge cached, so it goes without a bearer
+  async eventSeries(event_id: number) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/series`);
+  },
   async searchSeriesBySeason(season_id: number, search?: string) {
     const suffix = search ? `?query=${search}` : "";
     return await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search${suffix}`);

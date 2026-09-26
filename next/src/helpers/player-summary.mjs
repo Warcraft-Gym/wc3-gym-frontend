@@ -12,7 +12,8 @@ export const seasonsPlayed = (history) => gnlSeasons(history).length;
 /** The achievement figures from one ladder read per GNL season (`GET /users/{id}/ladder?season_id=`).
  *  `ladders` is `[{ seasonId, ladder }]`, with `ladder` null where the read failed: that season adds
  *  nothing, and `complete` says a count may be short. `thisSeason` is null when the current season
- *  has no ladder. The best three sort by points, then by name. */
+ *  has no ladder. The best three sort by points, then by name.
+ *  @param {{ seasonId: number, ladder: any }[]} [ladders] @param {number|null} [currentSeasonId] */
 export function achievementSummary(ladders = [], currentSeasonId = null) {
   const earned = (row) => row?.ladder?.achievements ?? [];
   const current = ladders.find((row) => Number(row.seasonId) === Number(currentSeasonId)) ?? null;

@@ -1,16 +1,12 @@
-// The pure parts of the home hub: the panel order, the open signups, the member's two series, the captain row.
+// The pure parts of the home hub: the panel order, the open signups, the member's season series, the captain row.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
 import { local, timeMissing } from './schedule.mjs';
 import { isUnscored } from './season-phase.mjs';
 
-// One order per panel drives both layouts: the phone stack and the panels inside each desktop column.
-const WITH_SERIES = { own: 1, next: 2, signup: 3, board: 4, cast: 5 };
-const NO_SERIES = { signup: 1, board: 2, own: 3, next: 4, cast: 5 };
-
-/** The CSS order of each panel. A member with no series of his own reads the open signups first.
- *  @param {boolean} hasSeries */
-export const panelOrder = (hasSeries) => (hasSeries ? WITH_SERIES : NO_SERIES);
+/** The CSS order of each Home panel. One order drives both layouts: the phone stack, and the panels
+ *  inside each desktop column. An open signup comes first, because it is the one thing that expires. */
+export const PANEL_ORDER = { signup: 1, games: 2, next: 3, fantasy: 4, stats: 5 };
 
 /** The events the member may still enter, leave or check in to, in the order the events start.
  *  @param {any[]} [rows] the GET /me/events rows */
@@ -36,6 +32,14 @@ const byRound = (a, b) => {
   const [roundA, timeA] = seriesKey(a);
   const [roundB, timeB] = seriesKey(b);
   return roundA - roundB || String(timeA).localeCompare(String(timeB));
+};
+
+/** The member's series of one season, split into the ones still to play and the ones played, each
+ *  in round order.
+ *  @param {any[]} [series] @param {number|null} [playerId] */
+export const seasonGames = (series = [], playerId = null) => {
+  const mine = series.filter((row) => [row.player1_id, row.player2_id].includes(playerId));
+  return { open: mine.filter(isUnscored).sort(byRound), played: mine.filter((row) => !isUnscored(row)).sort(byRound) };
 };
 
 /** The member's own next series and last result out of one season's series.

@@ -5,15 +5,20 @@ import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/
 import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/ScheduleDialog";
 import { SignupDialog } from "@/components/SignupDialog";
 import { StatusAlert } from "@/components/StatusAlert";
-import { CastedGames, NextMatches } from "@/components/home/SeriesPanels";
+import { BetDialog } from "@/components/fantasy/BetDialog";
+import { FantasyPanel } from "@/components/home/FantasyPanel";
+import { MyGames } from "@/components/home/MyGames";
+import { NextMatches } from "@/components/home/SeriesPanels";
 import { OpenSignups } from "@/components/home/OpenSignups";
-import { SeasonBoard } from "@/components/home/SeasonBoard";
-import { YourSeries } from "@/components/home/YourSeries";
-import { backendUrl, fetchWrapper } from "@/helpers";
+import { StatsPanel } from "@/components/home/StatsPanel";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { actOnEvent, homeCards } from "@/helpers/events.mjs";
-import { openSignups, ownSeries, panelOrder } from "@/helpers/home-hub.mjs";
-import { useAuth, useEventStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
+import { creationOpen, fantasyState, openBets } from "@/helpers/fantasy-panel.mjs";
+import { PANEL_ORDER, openSignups } from "@/helpers/home-hub.mjs";
+import { achievementSummary, gnlSeasons, seasonScore, seasonsPlayed } from "@/helpers/player-summary.mjs";
+import { myProfilePath } from "@/helpers/players.mjs";
+import { backendUrl, fetchWrapper } from "@/helpers";
+import { useAuth, useConfigStore, useEventStore, useFantasyStore, useLadderStore, usePlayerStore, useSeason, useSeriesStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -21,53 +26,58 @@ type Row = Record<string, any>;
 // events.mjs is plain JS, so its defaults type the parameters; the seam names the real shapes.
 const buildCards = homeCards as unknown as (input: { events: Row[]; me: Row | null; seasons: Row[] }) => Row[];
 
-// The season the leaderboard names: the latest GNL season that has started, else the latest of all
+// The latest GNL season that has started, else the latest of all
 const boardOf = (seasons: Row[]) => [...seasons].reverse().find((season) => season.phase !== "open") ?? seasons[seasons.length - 1] ?? null;
 
-// The started seasons /me names, or, off-season, the finished board season
-const ownSeasons = (mine: Row[], board: Row | null): Row[] => {
-  const started = mine.filter((season) => season.signed_up && season.phase !== "open");
-  if (started.length || !board || board.phase !== "complete") return started;
-  return [board];
+// The season whose games Home lists: the newest running season the member plays in, else, off-season,
+// the finished latest season, so his last results still show
+const gameSeasonOf = (mine: Row[], board: Row | null): Row | null => {
+  const started = mine.filter((season) => (season.signed_up || season.team) && season.phase !== "open");
+  if (started.length) return started[0];
+  return board?.phase === "complete" ? board : null;
 };
 
-/** The home hub: five panels over one page. The member's own next series and last result, the next
- *  matches of the whole app, the signups still open, the latest season's standings and the casts. */
+/** The member's Home: every panel a player needs for the week. An open signup, his games this season
+ *  with their next step, the upcoming series, his fantasy team and bets, and his own stats. A panel
+ *  shows only when it has something to say. */
 export function HomeView() {
   const eventStore = useEventStore();
   const seriesStore = useSeriesStore();
-  const teamStore = useTeamStore();
+  const configStore = useConfigStore();
+  const fantasyStore = useFantasyStore();
+  const playerStore = usePlayerStore();
+  const ladderStore = useLadderStore();
   const { seasons, fetchSeasons } = useSeason();
   const { me, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [myEvents, setMyEvents] = useState<Row[]>([]);
   const [hub, setHub] = useState<Row | null>(null);
-  // null while the read is out or once it failed; a failed read never prints an empty state
-  const [boardTeams, setBoardTeams] = useState<Row[] | null>(null);
-  // one /player-series answer per season the member is in, keyed by season id
-  const [seasonData, setSeasonData] = useState<Row>({});
+  // the /player-series answer of the season Home lists; null while it is read or when there is none
+  const [games, setGames] = useState<Row | null>(null);
   const [acting, setActing] = useState<string | null>(null);
   const [signupEvent, setSignupEvent] = useState<Row | null>(null);
+
+  // fantasy: the panel's state, the open bets, and the series whose bet dialog is open
+  const [fantasy, setFantasy] = useState<{ state: "create" | "bets" | null; rows: Row[]; loading: boolean }>({ state: null, rows: [], loading: true });
+  const [betSeries, setBetSeries] = useState<Row | null>(null);
+
+  // the stats panel; a figure is undefined while its read is out
+  const [stats, setStats] = useState<Row>({});
 
   const scheduleDialog = useRef<ScheduleDialogHandle>(null);
   const reportDialog = useRef<ReportResultDialogHandle>(null);
 
-  const playerId = me?.user?.id ?? null;
+  const playerId: number | null = me?.user?.id ?? null;
   // The one viewer the action bar gates on, as the backend gates the writes
   const viewer = { id: playerId, isAdmin, seats: me?.seats ?? [] };
   const board = boardOf(seasons);
-  const mySeasons: Row[] = ownSeasons((me?.seasons ?? []) as Row[], board);
-
-  // The member's own two series: the first season that still pairs him, else the last he played in
-  const mine = mySeasons.map((entry) => {
-    const { next, last } = ownSeries(seasonData[entry.id]?.series ?? [], playerId);
-    return { entry, next, last, season: { ...seasons.find((known: Row) => known.id === entry.id), ...entry } };
-  });
-  const own = mine.find((row) => row.next) ?? mine.find((row) => row.last) ?? null;
-
-  const nextSeason = [...seasons].reverse().find((season: Row) => season.phase === "open" && season.id !== board?.id) ?? null;
+  const gameEntry = gameSeasonOf((me?.seasons ?? []) as Row[], board);
+  const gameSeason: Row | null = gameEntry ? { ...seasons.find((known: Row) => known.id === gameEntry.id), ...gameEntry } : null;
+  // the season fantasy plays in: the current season the admins set, else the board season
+  const fantasySeasonId: number | null = me?.season_id ?? board?.id ?? null;
 
   // The signup rows reuse the home card, so the dialog, the GNL link and the withdraw stay
   const cards = buildCards({ events: myEvents, me, seasons });
@@ -88,16 +98,51 @@ export function HomeView() {
   // Every event whose row hands a captain a fixture he has still to draft; the row names its event
   const fixtures: Row[] = myEvents.filter((row) => row.captain_fixture).map((row) => ({ ...row.captain_fixture, event: row.name }));
 
-  const loadOwn = async (entries: Row[]) => {
-    const answers = await Promise.all(entries.map((season) =>
-      fetchWrapper.get(`${backendUrl}/player-series?season_id=${season.id}`).catch(() => null)));
-    setSeasonData(Object.fromEntries(entries.map((season, i) => [season.id, answers[i]]).filter(([, answer]) => answer)));
+  const loadGames = async (seasonId: number | null) => {
+    if (!seasonId || !playerId) return setGames(null);
+    setGames(await fetchWrapper.get(`${backendUrl}/player-series?season_id=${seasonId}`).catch(() => null));
   };
 
   const reloadEvents = async () => {
     const rows = await eventStore.myEvents();
     setMyEvents(rows);
     return rows;
+  };
+
+  // The fantasy panel: nothing to read for a member with no player row
+  const loadFantasy = async () => {
+    if (!playerId || !fantasySeasonId) return setFantasy({ state: null, rows: [], loading: false });
+    try {
+      const [setting, teams] = await Promise.all([
+        configStore.fetchSetting("fantasy_team_creation_enabled").catch(() => null),
+        fantasyStore.searchTeams(`captain_id == ${playerId} and season_id == ${fantasySeasonId}`).catch(() => []),
+      ]);
+      const state = fantasyState({ open: creationOpen(setting), team: teams?.[0] ?? null });
+      if (state !== "bets") return setFantasy({ state, rows: [], loading: false });
+      const [series, bets] = await Promise.all([
+        seriesStore.eventSeries(fantasySeasonId).catch(() => []),
+        fantasyStore.searchBets(`season_id == ${fantasySeasonId} AND user_id == ${playerId}`).catch(() => []),
+      ]);
+      setFantasy({ state, rows: openBets(series ?? [], bets ?? []), loading: false });
+    } catch {
+      setFantasy({ state: null, rows: [], loading: false });
+    }
+  };
+
+  // The stats panel: the GNL seasons of the history, then one cached ladder read per season
+  const loadStats = async (currentId: number | null) => {
+    if (!playerId) return;
+    try {
+      const history = await playerStore.playerHistory(playerId);
+      const seasonIds: number[] = gnlSeasons(history).map((event: Row) => event.season_id);
+      setStats((known) => ({ ...known, seasons: seasonsPlayed(history) }));
+      const ladders = await Promise.all(
+        seasonIds.map((seasonId) => ladderStore.userLadder(playerId, { seasonId }).then((ladder: Row) => ({ seasonId, ladder })).catch(() => ({ seasonId, ladder: null }))),
+      );
+      setStats((known) => ({ ...known, ...achievementSummary(ladders, currentId) }));
+    } catch {
+      setStats((known) => ({ ...known, seasons: null, thisSeason: null, overall: null, top3: [], complete: false }));
+    }
   };
 
   // A sign up opens the home's own dialog; every other action word goes through the shared act
@@ -127,34 +172,28 @@ export function HomeView() {
         const [known, rows, series] = await Promise.all([
           fetchSeasons(),
           eventStore.myEvents(),
-          // the hub's one new read: public, edge cached, once per page load
+          // public, edge cached, once per page load
           seriesStore.homeSeries().catch(() => {
-            setErrorMessage("The next matches and the casted games could not be loaded.");
+            setErrorMessage("The upcoming series could not be loaded.");
             return null;
           }),
         ]);
         if (!live) return;
         setMyEvents(rows);
         setHub(series);
-        const season = boardOf(known);
-        // no player row (the super admin among them) has no series of its own to ask for
-        const entries = me?.user ? ownSeasons((me?.seasons ?? []) as Row[], season) : [];
-        const [teams] = await Promise.all([
-          season
-            ? teamStore.fetchTeamsBySeasonBasic(season.id).catch(() => {
-                setErrorMessage("The season leaderboard could not be loaded.");
-                return null;
-              })
-            : Promise.resolve([]),
-          loadOwn(entries),
-        ]);
+        const entry = gameSeasonOf((me?.seasons ?? []) as Row[], boardOf(known));
+        await loadGames(entry?.id ?? null);
         if (!live) return;
-        setBoardTeams(teams);
+        setLoading(false);
+        // the fantasy and stats reads come after the page has drawn; each panel waits for its own
+        loadFantasy();
+        loadStats(entry?.id ?? me?.season_id ?? null);
       } catch (error) {
         console.error("Error loading the home page:", error);
-        if (live) setErrorMessage((error as Error).message || "Failed to load the home page.");
-      } finally {
-        if (live) setLoading(false);
+        if (live) {
+          setErrorMessage((error as Error).message || "Failed to load the home page.");
+          setLoading(false);
+        }
       }
     };
     load();
@@ -163,43 +202,65 @@ export function HomeView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId]);
 
-  // the reads stand in the with-series order, so a member with a series sees no panel swap
-  const order = panelOrder(loading || !!(own?.next || own?.last));
+  const seriesRows: Row[] = games?.series ?? [];
+  const summary = { ...stats, score: loading ? undefined : seasonScore(seriesRows, playerId) };
 
   return (
     <>
       <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
+      <StatusAlert modelValue={successMessage} type="success" onClose={() => setSuccessMessage(null)} />
       <PageHeader title="Home" />
 
       <div className="flex flex-col gap-5 min-[960px]:grid min-[960px]:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] min-[960px]:items-start">
         <div className="contents min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-col min-[960px]:gap-5">
-          <YourSeries
-            next={own?.next ?? null}
-            last={own?.last ?? null}
-            season={own?.season ?? null}
-            nextSeason={nextSeason}
-            teamId={own?.entry?.team?.id ?? null}
-            playerId={playerId}
-            viewer={viewer}
-            loading={loading}
-            order={order.own}
-            onSchedule={(series) => scheduleDialog.current?.open(series)}
-            onReport={(series) => reportDialog.current?.open(series)}
-          />
-          <NextMatches rows={hub?.next ?? []} fixtures={fixtures} loading={loading} failed={!hub} order={order.next} />
-          <OpenSignups cards={signupRows} acting={acting} loading={loading} order={order.signup} onAct={act} />
+          {loading || signupRows.length ? (
+            <OpenSignups cards={signupRows} acting={acting} loading={loading} order={PANEL_ORDER.signup} onAct={act} />
+          ) : null}
+          {playerId ? (
+            <MyGames
+              series={seriesRows}
+              season={gameSeason}
+              teamId={gameEntry?.team?.id ?? null}
+              playerId={playerId}
+              viewer={viewer}
+              loading={loading}
+              order={PANEL_ORDER.games}
+              onSchedule={(series) => scheduleDialog.current?.open(series)}
+              onReport={(series) => reportDialog.current?.open(series)}
+            />
+          ) : null}
+          <NextMatches rows={hub?.next ?? []} fixtures={fixtures} loading={loading} failed={!hub} order={PANEL_ORDER.next} />
         </div>
         <div className="contents min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-col min-[960px]:gap-5">
-          <SeasonBoard season={board} nextSeason={nextSeason} teams={boardTeams ?? []} failed={!boardTeams} loading={loading} order={order.board} />
-          <CastedGames upcoming={hub?.casts_upcoming ?? []} recent={hub?.casts_recent ?? []} loading={loading} failed={!hub} order={order.cast} />
+          {playerId ? (
+            <StatsPanel summary={summary} seasonName={gameSeason?.name ?? null} to={myProfilePath(me)} order={PANEL_ORDER.stats} />
+          ) : null}
+          {/* drawn once its reads say it has something to offer, so it never shows and then vanishes */}
+          {fantasy.state ? (
+            <FantasyPanel state={fantasy.state} rows={fantasy.rows} loading={false} order={PANEL_ORDER.fantasy} onBet={setBetSeries} />
+          ) : null}
         </div>
       </div>
 
       {playerId ? (
         <>
-          <ScheduleDialog ref={scheduleDialog} playerId={playerId} onSaved={() => loadOwn(mySeasons)} />
-          <ReportResultDialog ref={reportDialog} onSaved={() => loadOwn(mySeasons)} />
+          <ScheduleDialog ref={scheduleDialog} playerId={playerId} onSaved={() => loadGames(gameEntry?.id ?? null)} />
+          <ReportResultDialog ref={reportDialog} onSaved={() => loadGames(gameEntry?.id ?? null)} />
         </>
+      ) : null}
+
+      {betSeries ? (
+        <BetDialog
+          key={betSeries.id}
+          series={betSeries}
+          seasonId={fantasySeasonId}
+          onClose={() => setBetSeries(null)}
+          onSaved={async (message) => {
+            setBetSeries(null);
+            setSuccessMessage(message);
+            await loadFantasy();
+          }}
+        />
       ) : null}
 
       {signupEvent ? (

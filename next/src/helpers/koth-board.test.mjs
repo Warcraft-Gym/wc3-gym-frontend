@@ -166,3 +166,9 @@ test('a player who left on two races reads one row, holding both of them', () =>
   assert.deepEqual(seats[2].rows.map((row) => row.entrant_id), [24]);
   assert.deepEqual(leftSeats(null), []);
 });
+
+
+test('historical brackets preserve source order and categorical labels', () => {
+  const brackets = [{ name: 'Platinum to 1700 MMR', lower_bound: null }, { name: '1500 to ~1700 MMR', lower_bound: 1500 }, { name: 'Gold and below', lower_bound: null }];
+  assert.deepEqual(orderedBrackets({ historical: true, brackets }), brackets);
+});

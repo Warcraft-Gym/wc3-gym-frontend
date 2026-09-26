@@ -408,6 +408,7 @@ export function BracketCard({
   const played: Row[] = bracket.played ?? [];
   // one card is dragged at a time, so the drag belongs to the card and not to the page
   const [dragged, setDragged] = useState<number | null>(null);
+  if (bracket.historical) return <HistoricalBracket bracket={bracket} />;
   // a stream reads from further away, so every small label of the card grows one step too
   return (
     <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm")}>
@@ -468,6 +469,38 @@ export function BracketCard({
           ))}
         </div>
       ) : null}
+    </Card>
+  );
+}
+
+/** Historical pairings keep their source order and never imply a missing result. */
+function HistoricalBracket({ bracket }: { bracket: Row }) {
+  const history: Row[] = bracket.history ?? [];
+  return (
+    <Card className="card h-full gap-0 py-0">
+      <CardHeader className="bg-primary p-3">
+        <CardTitle className="text-on-primary">{bracket.name}</CardTitle>
+      </CardHeader>
+      <div className="flex flex-wrap items-center gap-2 border-b p-3">
+        <Icon name="mdi-crown-outline" className="text-primary-text" />
+        {bracket.historical_king ? (
+          <><span className="text-sm text-muted-foreground">Reported king</span><BoardPlayer row={bracket.historical_king} plain warn={false} /></>
+        ) : <span className="text-sm text-muted-foreground">King not recorded</span>}
+      </div>
+      <p className="px-3 pt-3 text-xs text-muted-foreground">{history.length} BO1 series · Source order</p>
+      <ol className="px-3 pb-3">
+        {history.map((row: Row) => (
+          <li key={row.series_id} data-history-series={row.series_id} className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b py-3 last:border-0">
+            <span className="tnum text-xs text-muted-foreground">{row.sequence}.</span>
+            <BoardPlayer row={row.side1} plain warn={false} />
+            <span className="text-xs text-muted-foreground">vs.</span>
+            <BoardPlayer row={row.side2} plain warn={false} />
+            <span className="basis-full pl-5 text-xs text-muted-foreground">
+              {row.winner_side ? `Winner: ${row.winner_side === 1 ? row.side1.name : row.side2.name}` : "Result not recorded"}
+            </span>
+          </li>
+        ))}
+      </ol>
     </Card>
   );
 }

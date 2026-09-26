@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list, the run page an admin drives one night from, and the public board that draws tonight's brackets for the stream.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T23:55:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-26T04:00:00Z }
 sources:
   - id: nights
     resource: ../../../next/src/app/(app)/koth/KothView.tsx
@@ -77,3 +77,9 @@ A refused write shows the sentence of its error envelope in the page's `StatusAl
 - `next/src/helpers/koth-board.mjs` holds the parts that are only data: the bracket band, the default pair, the text of the start button, a place in line as a word, the throne word of a played row, the players who left folded to one row each, the ordered ids one queue write sends and the checked body of the bounds write.
 - `next/src/helpers/koth-signup.mjs` reads that one board answer back to the bracket and the place of a new entrant, and takes the place word from `koth-board.mjs`, which holds the one copy. What the dialog prints from it is in [leagues and events](leagues-and-events.md).
 - Only the close ends a night, so `nightState` in `next/src/helpers/koth.mjs` reads a night the admin has not closed as running, whatever the event read computes from its dates.
+
+# Historical nights
+
+The run page draws an archived board through the shared historical results component. A historical board is closed and is read once without polling. Its brackets retain source order and literal MMR or rank labels. BO1 pairings keep their sequence; an absent winner reads as an unrecorded result. Reported crowns remain separate from inferred match outcomes.
+
+Historical names have no profile link or race icon while identity and race are unconfirmed. Event video links name the recording without promising full-event coverage. The shared player-name component renders each side without current rating warnings.

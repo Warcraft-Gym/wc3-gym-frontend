@@ -14,6 +14,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
+import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
 import { BoardPlayer, BracketCard, seatMark, type BracketAdmin } from "@/components/koth/BracketCard";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -84,6 +85,7 @@ export function KothNightView({ id }: { id: string }) {
 
   useEffect(() => {
     let alive = true;
+    let archived = false;
     let first = true; // the event settings page links here with ?bounds=1, which the first board spends
     const read = async () => {
       try {
@@ -91,6 +93,7 @@ export function KothNightView({ id }: { id: string }) {
         // a write that started while this read was in flight holds the newer board
         if (alive && !writing.current) {
           takeBoard(answer);
+          archived = !!answer.historical;
           setError(null);
           if (first && wantsBounds && !answer.closed && !openSeriesRows(answer).length) openBounds(answer);
           first = false;
@@ -103,7 +106,7 @@ export function KothNightView({ id }: { id: string }) {
     read().then(() => alive && setLoading(false));
     // the tab in the background asks for nothing, so a page left open all night costs nothing
     const timer = setInterval(() => {
-      if (!document.hidden && !writing.current) read();
+      if (!archived && !document.hidden && !writing.current) read();
     }, POLL_MS);
     return () => {
       alive = false;
@@ -324,11 +327,13 @@ export function KothNightView({ id }: { id: string }) {
         </Card>
       ) : null}
 
-      <div className="grid gap-4 min-[960px]:grid-cols-3">
-        {brackets.map((bracket: Row) => (
-          <BracketCard key={bracket.division_id} bracket={bracket} brackets={brackets} admin={board?.closed ? undefined : admin} />
-        ))}
-      </div>
+      {board?.historical ? <HistoricalBoard board={board} /> : (
+        <div className="grid gap-4 min-[960px]:grid-cols-3">
+          {brackets.map((bracket: Row) => (
+            <BracketCard key={bracket.division_id} bracket={bracket} brackets={brackets} admin={board?.closed ? undefined : admin} />
+          ))}
+        </div>
+      )}
 
       {/* One file per played series; a KOTH series is a best of one, so it is always game 1 */}
       <input

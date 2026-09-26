@@ -2,6 +2,7 @@
 
 ## 2026-09-26
 
+* **Update**: Home follows the current season in every panel. My Games becomes My Season, the season round by round with the Available / Out answer and the series; the player page is named a page to look at, with the tasks on Home.
 * **Update**: a local dev login signs in as any player with a Discord id, as a player, guest or admin, behind `NEXT_PUBLIC_DEV_LOGIN`; the session concept and the local runbook state it. A GNL signup card the admin token reads says why it has no button.
 * **Update**: the nav shows only the hats a person wears: Home, My Stats, My Team and Admin; the Season, Fantasy and Events menus and the drawer are gone. Home is the player's page for the week: open signups, the season's games with their next step, the upcoming series, a fantasy panel that creates a team or places bets through the shared `BetDialog`, and a stats panel. `GET /events/{id}/series` joins `EDGE_CACHED`. The shell, member and fantasy concepts and `DESIGN.md` state the change.
 * **Update**: the nav is built from the hats a session wears: Home, one My Team entry per team played for or captained, the shared pages and Admin. A phone gets a bottom tab bar (Home, My Team, Season, More). Admin pages sit in an admin frame with the sections from the new `/admin` page. The shell concept and the shared-component concept state the nav, the frame and `DesktopOnlyNotice`; `DESIGN.md` gains the rules for views everyone can use and the three phone levels.

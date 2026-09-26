@@ -214,7 +214,7 @@ Home is the player's one page for the week. A stack of panels, each shown only w
 | # | Panel | Shows |
 |---|---|---|
 | 1 | Sign Up | Only while a season or event is open for signup and the player has not joined, with one button per signup |
-| 2 | My Games | Every series of the player in the current season, open and played. An open series shows its next step (Schedule → Veto maps → Report result); a played series its result. A link to the season standings |
+| 2 | My Season | The current season (always the one the admins set) round by round: each round's Available / Out answer while its check-in is open, and once paired the opponent with the next step (Schedule → Veto maps → Report result) or the result. A link to the season standings and to the blocked times |
 | 3 | Upcoming Series | The next 5 series, with a link to the full upcoming list |
 | 4 | Fantasy | While team creation is open and the player has no team: create a team. With a team: the fantasy series still open for bets, with the player's bet or a "Place bet" button, and a link to the leaderboard |
 | 5 | My Stats | Part of N seasons · achievements this season and overall · top 3 achievements this season · season score (GNL points). Leads to the player dashboard |
@@ -224,14 +224,14 @@ The player stories it covers:
 | # | User story | Where |
 |---|---|---|
 | 1 | Sign up for an open season | Sign Up panel |
-| 2 | Set my availability for the season | Account menu → Availability (`availability/AvailabilityView`) |
-| 3 | See which games I have been assigned, played and open | My Games panel (`/player-series`, `RoundCards`) |
+| 2 | Set my availability for the season | My Season panel, per round; blocked times on `/availability` |
+| 3 | See which games I have been assigned, played and open | My Season panel (`/player-series`, `roundCards`) |
 | 4 | See information about my opponent | The player name opens `PlayerPanel` |
-| 5 | Agree a play time, do the map veto, report the result | The series actions in My Games (`ScheduleDialog`, `VetoBoard`, `ReportResultDialog`) |
+| 5 | Agree a play time, do the map veto, report the result | The series actions in My Season (`ScheduleDialog`, `VetoBoard`, `ReportResultDialog`) |
 | 6 | Create a fantasy team and bet on fantasy matches | Fantasy panel (`BetDialog`, shared with the fantasy page) |
 | 7 | See my stats and achievements | My Stats panel → player dashboard |
 
-Follow-up: rework the player dashboard itself into a stats and achievements page (today achievements show only in its ladder tab).
+The player dashboard is mainly a page to look at; the tasks start on Home. Follow-up: rework it into a stats and achievements page (today achievements show only in its ladder tab).
 
 ### 5. Later
 

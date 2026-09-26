@@ -18,8 +18,8 @@ import { useAuth, useEventStore } from "@/stores";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-// The board is edge cached for 15 s, so twice a minute is the most the page can learn
-const POLL_MS = 30000;
+// The stream view never reloads, so it alone reads the board again every 30 s
+const STREAM_POLL_MS = 30000;
 
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 
@@ -45,7 +45,7 @@ export function KothDashboard() {
   const myId = auth.me?.user?.id;
   const held: string[] = myRacesOnBoard(board, myId);
 
-  // The one repeated read of the page; fresh skips the edge cache after the reader's own write
+  // The board read on load, after a withdraw and on the stream view's timer; fresh skips the edge cache after the reader's own write
   const readBoard = async (fresh = false) => {
     try {
       const answer = await store.fetchBoard(null, fresh);
@@ -72,10 +72,8 @@ export function KothDashboard() {
       if (alive) setLoading(false);
     };
     first();
-    // the tab in the background asks for nothing, so a page left on a stream costs nothing
-    const timer = setInterval(() => {
-      if (!document.hidden) readBoard();
-    }, POLL_MS);
+    // the stream view reads again only while its tab is visible
+    const timer = cleanMode ? setInterval(() => !document.hidden && readBoard(), STREAM_POLL_MS) : undefined;
     return () => {
       alive = false;
       clearInterval(timer);

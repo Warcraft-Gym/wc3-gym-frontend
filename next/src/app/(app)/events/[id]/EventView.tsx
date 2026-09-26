@@ -42,8 +42,6 @@ const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "m
 // The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
 const placesOf = placings as (standings: Row[]) => Record<string, Row>;
 const rostersOf = rostersByEntrant as unknown as (entrants: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;
-// The board is edge cached for 15 s, so twice a minute is the most the page can learn
-const POLL_MS = 30000;
 const act_ = actOnEvent as unknown as (action: string, options: Record<string, unknown>) => Promise<string | null>;
 
 /** One event, open to everyone: what it is, how it plays, who is in it, and the one thing the
@@ -192,17 +190,6 @@ export function EventView({ id }: { id: string }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  // A live night reads its board again twice a minute, never while the tab is hidden, and stops once it closes
-  const boardOpen = !!board && !board.closed;
-  useEffect(() => {
-    if (!boardOpen || !event) return;
-    const timer = setInterval(() => {
-      if (!document.hidden) store.fetchBoard(event.id).then(setBoard).catch(() => undefined);
-    }, POLL_MS);
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardOpen, event?.id]);
 
   if (board && event) {
     const brackets: Row[] = orderedBrackets(board);

@@ -30,8 +30,6 @@ import { cn } from "@/lib/utils";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-// The night read is edge cached for 15 s, so twice a minute is the most the poll can learn
-const POLL_MS = 30000;
 // One bronze step per bracket, light to dark, as the entrants page colours its divisions
 const RAMP = ["heat-1", "heat-2", "heat-3", "heat-4", "heat-5"];
 
@@ -87,8 +85,7 @@ export function KothNightView({ id }: { id: string }) {
 
   const replayFor = useRef<number | null>(null);
   const replayInput = useRef<HTMLInputElement>(null);
-  const writing = useRef(false); // the poll never overwrites a board a write is about to answer
-  const storedCuts = useRef(""); // the bounds the last board answered, so a drag survives the poll
+  const storedCuts = useRef(""); // the bounds the last board answered, so a drag survives a write
 
   const brackets: Row[] = orderedBrackets(board);
   const unplaced: Row[] = board?.unplaced ?? [];
@@ -96,7 +93,7 @@ export function KothNightView({ id }: { id: string }) {
   // A bracket that plays a series takes no pair, so a pick left on its line clears with the answer
   const takeBoard = (answer: Row) => {
     setBoard(answer);
-    // the strip follows the board only when its bounds moved, so a cut being dragged survives the poll
+    // the strip follows the board only when its bounds moved, so a cut being dragged survives a write
     const stored = JSON.stringify(cutsOf(answer));
     if (stored !== storedCuts.current) {
       storedCuts.current = stored;
@@ -110,14 +107,11 @@ export function KothNightView({ id }: { id: string }) {
 
   useEffect(() => {
     let alive = true;
-    let archived = false;
     const read = async () => {
       try {
         const answer = await store.fetchBoard(nightId);
-        // a write that started while this read was in flight holds the newer board
-        if (alive && !writing.current) {
+        if (alive) {
           takeBoard(answer);
-          archived = !!answer.historical;
           setError(null);
         }
       } catch (e) {
@@ -134,13 +128,8 @@ export function KothNightView({ id }: { id: string }) {
         setForm(formOf(row));
       })
       .catch((e: Error) => alive && setError(`The night's settings did not load: ${e.message}`));
-    // the tab in the background asks for nothing, so a page left open all night costs nothing
-    const timer = setInterval(() => {
-      if (!archived && !document.hidden && !writing.current) read();
-    }, POLL_MS);
     return () => {
       alive = false;
-      clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nightId]);
@@ -148,7 +137,6 @@ export function KothNightView({ id }: { id: string }) {
   // Every admin write answers the new board; a route that answers its own row reads it back fresh
   const run = async (call: () => Promise<any>, after?: () => void) => {
     setBusy(true);
-    writing.current = true;
     setError(null);
     try {
       const answer = await call();
@@ -157,7 +145,6 @@ export function KothNightView({ id }: { id: string }) {
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      writing.current = false;
       setBusy(false);
     }
   };
@@ -242,7 +229,6 @@ export function KothNightView({ id }: { id: string }) {
     setAddError(shape);
     if (shape) return;
     setBusy(true);
-    writing.current = true;
     try {
       await store.addEntrant(nightId, { battle_tag: addTag.trim(), race: addRace });
       takeBoard(await store.fetchBoard(nightId, true));
@@ -250,7 +236,6 @@ export function KothNightView({ id }: { id: string }) {
     } catch (e) {
       setAddError((e as Error).message);
     } finally {
-      writing.current = false;
       setBusy(false);
     }
   };

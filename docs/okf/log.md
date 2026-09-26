@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-09-26
+
+* **Update**: the nav is built from the hats a session wears: Home, one My Team entry per team played for or captained, the shared pages and Admin. A phone gets a bottom tab bar (Home, My Team, Season, More). Admin pages sit in an admin frame with the sections from the new `/admin` page. The shell concept and the shared-component concept state the nav, the frame and `DesktopOnlyNotice`; `DESIGN.md` gains the rules for views everyone can use and the three phone levels.
+
 ## 2026-09-25
 
 * **Update**: public career pages and their paging, search and sort reads carry no bearer for the edge cache; fresh reads and admin requests keep their bearer.

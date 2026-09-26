@@ -1,10 +1,10 @@
 ---
 type: Domain Concept
 title: Shared components
-description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
+description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T09:35:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T12:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -33,6 +33,9 @@ sources:
   - id: head-to-head
     resource: ../../../next/src/components/HeadToHeadCell.tsx
     title: HeadToHeadCell
+  - id: desktop-only-notice
+    resource: ../../../next/src/components/DesktopOnlyNotice.tsx
+    title: DesktopOnlyNotice
 ---
 
 `DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle.
@@ -130,6 +133,10 @@ The tag one season row was played as: "as TAG" in small muted text, no icon and 
 # VetoBoard
 
 `VetoBoard` reads which side the viewer acts for from the board answer's `viewer_side`; it never works the side out from ids on the client. A side that is a team shows its team name when the answer sets `team_name`, and the player through `PlayerName` otherwise. See [the backend contract](backend-contract.md).
+
+# DesktopOnlyNotice
+
+Every view states its phone level in its page concept: Full, Read on phone or Desktop only. `DesktopOnlyNotice` is the one notice for the two lower levels. On a phone it says the task is easier on a computer and offers a copy-link button; with `desktopOnly` it hides the task, and without it the task stays readable under the notice. Above 960 px it draws its children alone. See "Views for everyone" in `DESIGN.md`.
 
 # The rest
 

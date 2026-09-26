@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Alegreya, Alegreya_Sans } from "next/font/google";
 import { AppClerkProvider } from "@/lib/clerk-provider";
 import { paletteStyle, THEME_SCRIPT } from "./palette-style";
+import { MEASURE_GUARD } from "./dev-measure-guard";
 import "./globals.css";
 
 const display = Alegreya({
@@ -32,6 +33,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <style dangerouslySetInnerHTML={{ __html: paletteStyle() }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* before React loads, so its first measure already meets the guard */}
+        {process.env.NODE_ENV === "development" ? <script dangerouslySetInnerHTML={{ __html: MEASURE_GUARD }} /> : null}
       </head>
       <body className="min-h-full">
         <AppClerkProvider>{children}</AppClerkProvider>

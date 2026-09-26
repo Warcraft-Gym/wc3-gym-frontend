@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { toneClass } from "@/components/ui/tone";
 import { DivisionBracketing } from "@/components/DivisionBracketing";
 import { PageHeader } from "@/components/PageHeader";
+import { StreamLinks } from "@/components/koth/StreamLinks";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
@@ -281,6 +282,7 @@ export function KothNightView({ id }: { id: string }) {
           {board?.entrant_count ?? 0} signed up
         </Badge>
         <span className="ml-auto flex flex-wrap gap-2">
+          {board && !board.historical ? <StreamLinks eventId={board.night_id} /> : null}
           {board && !board.closed ? (
             <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setClosing(true)}>
               <Icon name="mdi-exit-to-app" />

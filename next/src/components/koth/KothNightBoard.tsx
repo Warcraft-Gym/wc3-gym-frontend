@@ -19,8 +19,8 @@ const STREAM_POLL_MS = 30000;
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 
 /** A KOTH night that is not archived, on the one board read: a card per bracket with its king,
- *  the series it plays now, the line waiting and what it played tonight. A member signs up or
- *  withdraws and reads his own place in line. `clean` is the stream view: no control, and the
+ *  the series it plays now, the line waiting and what it played tonight. A member signs up while
+ *  signups stand open, withdraws until the night closes, and reads his own place in line. `clean` is the stream view: no control, and the
  *  board read again every 30 s while the tab is visible and the night is open. */
 export function KothNightBoard({
   event,
@@ -45,6 +45,10 @@ export function KothNightBoard({
   const myId = auth.me ? auth.me.user?.id : null;
   const held: string[] = myRacesOnBoard(board, myId);
   const signedUp = held.length > 0;
+  const closed = !!board.closed;
+  // a king who leaves loses a forfeit to the first in line, so his confirm says so
+  const wearsCrown = (race: string | null) =>
+    brackets.some((bracket) => bracket.king?.user_id === myId && (race === null || bracket.king.rows.some((row: Row) => row.race === race)));
   const canEnter = !!auth.me && !!event.signups_open && (!signedUp || (!!event.multi_entry && held.length < raceWrapper.races.length));
 
   // fresh skips the edge cache after the reader's own write; a failure keeps the board on the screen
@@ -57,7 +61,6 @@ export function KothNightBoard({
     }
   };
 
-  const closed = !!board.closed;
   useEffect(() => {
     if (!clean || closed) return;
     const timer = setInterval(() => !document.hidden && readBoard(), STREAM_POLL_MS);
@@ -66,7 +69,12 @@ export function KothNightBoard({
   }, [clean, closed]);
 
   const withdraw = async (race: string | null = null) => {
-    if (!window.confirm(race ? `Withdraw ${raceName(race)} from tonight?` : "Withdraw from tonight?")) return;
+    const question = wearsCrown(race)
+      ? "Withdrawing forfeits your next match."
+      : race
+        ? `Withdraw ${raceName(race)} from tonight?`
+        : "Withdraw from tonight?";
+    if (!window.confirm(question)) return;
     setWithdrawing(race ?? true);
     try {
       await store.withdraw(event.id, race);
@@ -89,13 +97,13 @@ export function KothNightBoard({
             </Button>
           ) : null}
           {/* A player on more than one race withdraws one race at a time */}
-          {(held.length > 1 ? held : []).map((race) => (
+          {(held.length > 1 && !closed ? held : []).map((race) => (
             <Button key={race} size="sm" variant="destructive" disabled={withdrawing === race} onClick={() => withdraw(race)}>
               <Icon name={withdrawing === race ? "mdi-loading mdi-spin" : "mdi-account-minus"} />
               Withdraw {raceName(race)}
             </Button>
           ))}
-          {held.length === 1 ? (
+          {held.length === 1 && !closed ? (
             <Button size="sm" variant="destructive" disabled={withdrawing === true} onClick={() => withdraw()}>
               <Icon name={withdrawing === true ? "mdi-loading mdi-spin" : "mdi-account-minus"} />
               Withdraw

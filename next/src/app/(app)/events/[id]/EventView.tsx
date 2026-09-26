@@ -15,6 +15,7 @@ import { ColumnNote } from "@/components/ColumnNote";
 import { EventHeader } from "@/components/EventHeader";
 import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
 import { KothNightBoard } from "@/components/koth/KothNightBoard";
+import { StreamLinks } from "@/components/koth/StreamLinks";
 import { HIDE_RESULTS, useHideResultsSwitch } from "@/components/hide-results";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
@@ -198,6 +199,13 @@ export function EventView({ id }: { id: string }) {
         Run the night
       </Button>
     ) : null;
+    // an admin puts the night on a stream without typing the clean link
+    const adminLinks = runLink ? (
+      <>
+        {runLink}
+        <StreamLinks eventId={event.id} />
+      </>
+    ) : null;
     return (
       <>
         <StatusAlert modelValue={error} onClose={() => setError(null)} />
@@ -209,7 +217,7 @@ export function EventView({ id }: { id: string }) {
           </>
         ) : (
           <KothNightBoard event={event} board={board} clean={clean} onError={setError}>
-            {runLink}
+            {adminLinks}
           </KothNightBoard>
         )}
       </>

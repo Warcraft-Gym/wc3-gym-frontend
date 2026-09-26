@@ -1,7 +1,6 @@
 "use client";
 import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
-import { Icon } from "@/components/ui/Icon";
 import { useHideResults } from "@/components/hide-results";
 import { sideRoster } from "@/helpers/fixture.mjs";
 import { teamLabel } from "@/helpers/teams.mjs";
@@ -30,7 +29,6 @@ export function SeriesBox({
   series,
   label = "", // the grand final and the third place name themselves
   round = "", // the column the box sits in, so a screen reader hears it per box
-  crown, // the standing king of a KOTH chain
   flat, // inside a list, the card around it draws the border
   readonly, // the series page opens nothing, so its names link
   rosters = {}, // the players of each team entrant, by entrant id
@@ -41,7 +39,6 @@ export function SeriesBox({
   series: Row;
   label?: string;
   round?: string;
-  crown?: boolean;
   flat?: boolean;
   readonly?: boolean;
   rosters?: Record<string, Row[]>;
@@ -105,7 +102,6 @@ export function SeriesBox({
     : [1, 2].map((side, index) => (
         <div key={side} className={cn(SIDE, index && "border-t", sideClass(side) === "won" && "font-bold")}>
           <span className={cn(MARK, markClass(sideClass(side)))} />
-          {crown && side === 1 ? <Icon name="mdi-crown" size={14} className="text-primary-text" /> : null}
           {team(side) ? (
             <div className="flex min-w-0 flex-col gap-px">
               <TeamName team={team(side)} plain={!readonly} />

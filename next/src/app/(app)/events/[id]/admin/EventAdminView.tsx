@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,11 @@ import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } fr
 import { winsFor } from "@/helpers/best-of.mjs";
 import { gameSlots, scoreOf } from "@/helpers/map-order.mjs";
 import {
-  advancingRows, chainChallengers, drawsByRound, generateFields, isLobby, isScored,
-  lobbySeats, lobbyTargets, nextRound, pendingChainSeries, sideName, standsOn,
+  advancingRows, drawsByRound, generateFields, isLobby, isScored,
+  lobbySeats, lobbyTargets, nextRound, sideName, standsOn,
 } from "@/helpers/stage-view.mjs";
 import { awardList, placeIcon, placeMedal } from "@/helpers/awards.mjs";
-import { entrantName, rostersByEntrant } from "@/helpers/entrants.mjs";
+import { rostersByEntrant } from "@/helpers/entrants.mjs";
 import { useEventStore, useTeamStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -37,8 +37,6 @@ type Row = Record<string, any>;
 const fieldsOf = generateFields as unknown as (entrants: Row[], divisions?: Row[], format?: string) => Row[];
 const advancingOf = advancingRows as unknown as (standings: Row[], count?: number | null) => Row[];
 const awardsOf = awardList as unknown as (standings: Row[]) => Row[];
-const pendingOf = pendingChainSeries as unknown as (series: Row[], divisions?: Row[]) => Row[];
-const challengersOf = chainChallengers as unknown as (entrants: Row[], series: Row[]) => Row[];
 const targetsOf = lobbyTargets as unknown as (series: Row[], picked: Row | null) => { id: number; label: string }[];
 const nextRoundOf = nextRound as unknown as (stage: Row | null, series: Row[], divisions?: Row[]) => { number: number; done: boolean; blocked: string | null };
 const rostersOf = rostersByEntrant as unknown as (entrants: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;
@@ -86,6 +84,7 @@ const busyIcon = (busy: boolean, icon?: string) => (busy ? <Icon name="mdi-loadi
  *  reopens one and advances the stage. It draws each stage with the same StageView the
  *  public page shows. */
 export function EventAdminView({ id }: { id: string }) {
+  const router = useRouter();
   const store = useEventStore();
   const teamStore = useTeamStore();
 
@@ -106,9 +105,6 @@ export function EventAdminView({ id }: { id: string }) {
   const [confirmDraw, setConfirmDraw] = useState(false);
   const [confirmAdvance, setConfirmAdvance] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
-  const [confirmClose, setConfirmClose] = useState(false);
-  const [challengerOpen, setChallengerOpen] = useState(false);
-  const [challenger, setChallenger] = useState<number | null>(null);
   const [confirmForce, setConfirmForce] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [lobbyOpen, setLobbyOpen] = useState(false);
@@ -149,15 +145,6 @@ export function EventAdminView({ id }: { id: string }) {
   const draw = nextRoundOf(stage, series, event?.divisions);
   const drawNote = !drawsRounds ? "" : draw.done ? "This stage has drawn every round it plays." : draw.blocked || "";
 
-  // A chain stage is a KOTH night: it takes one challenger at a time and an admin closes it
-  const isChain = stage?.format === "koth";
-  const pendingCount = pendingOf(series, event?.divisions).length;
-  const divisionName = (divisionId: number) => event?.divisions?.find((band: Row) => band.id === divisionId)?.name || "";
-  const challengerItems = challengersOf(entrants, series);
-  // The picker needs a plain string for a row that PlayerName draws itself; a row with no
-  // name at all still reads as something
-  const challengerTitle = (row: Row) => entrantName(row) || "Unnamed";
-
   const loadStage = async (ofEvent: Row | null = event, ofStage: Row | null = stage) => {
     setSeries([]);
     setRounds([]);
@@ -188,6 +175,11 @@ export function EventAdminView({ id }: { id: string }) {
       setLoading(true);
       try {
         const [row, leagues] = await Promise.all([store.fetchEvent(Number(id)), store.fetchLeagues()]);
+        // a KOTH night runs on its own run page, not on the stage engine
+        if (row.kind === "koth") {
+          router.replace(`/koth/nights/${row.id}`);
+          return;
+        }
         setEvent(row);
         setLeague(leagues.find((one: Row) => one.id === row.league_id) || null);
         const rows: Row[] = await store.fetchEntrants(row.id).catch(() => []);
@@ -242,21 +234,6 @@ export function EventAdminView({ id }: { id: string }) {
   const finish = async () => {
     if (!(await run(() => store.finishEvent(event!.id)))) {
       setConfirmFinish(false);
-      await readEvent();
-    }
-  };
-
-  const openChallenger = () => {
-    setChallenger(null);
-    setDialogError(null);
-    setChallengerOpen(true);
-  };
-  const addChallenger = async () => {
-    if (!(await run(() => store.addChallenger(event!.id, stage!.id, challenger as number)))) setChallengerOpen(false);
-  };
-  const closeNight = async () => {
-    if (!(await run(() => store.closeNight(event!.id)))) {
-      setConfirmClose(false);
       await readEvent();
     }
   };
@@ -352,9 +329,6 @@ export function EventAdminView({ id }: { id: string }) {
     }
   };
 
-  const entrantRow = (row: Row) =>
-    row.user ? <PlayerName player={row.user} race={row.race} plain mmr={row.mmr || false} /> : <span>{entrantName(row)}</span>;
-
   return (
     <>
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
@@ -363,19 +337,6 @@ export function EventAdminView({ id }: { id: string }) {
       {event ? (
         <>
           <EventHeader event={event} league={league} />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/events/${event.id}`} />}>
-              <Icon name="mdi-eye-outline" />
-              Public page
-            </Button>
-            {/* the bounds of a live night move only on its run page, which keeps every bracket in place */}
-            {event.kind === "koth" ? (
-              <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/koth/nights/${event.id}?bounds=1`} />}>
-                <Icon name="mdi-tune-variant" />
-                Bracket MMR bounds
-              </Button>
-            ) : null}
-          </div>
 
           {stages.length > 1 ? (
             <Tabs value={tab} onValueChange={(value) => pickTab(value as number)} className="mt-4">
@@ -403,21 +364,6 @@ export function EventAdminView({ id }: { id: string }) {
                   </Badge>
                 ) : null}
                 <span className="flex-1" />
-                {/* a KOTH night grows one challenger at a time and ends when the admin closes it */}
-                {isChain ? (
-                  <>
-                    {series.length ? (
-                      <Button variant="outline" className="text-primary-text" disabled={saving} onClick={openChallenger}>
-                        <Icon name="mdi-account-plus" />
-                        Add challenger
-                      </Button>
-                    ) : null}
-                    <Button variant="outline" className="text-error" disabled={saving} onClick={() => setConfirmClose(true)}>
-                      <Icon name="mdi-crown-outline" />
-                      Close the night
-                    </Button>
-                  </>
-                ) : null}
                 {/* a Swiss stage pairs one round at a time, so it is drawn round by round and
                     never generated whole */}
                 {drawsRounds ? (
@@ -503,57 +449,6 @@ export function EventAdminView({ id }: { id: string }) {
         <p>
           Round {draw.number} pairs each entrant with the closest opponent he has not met yet, from the table as it stands. An odd field gives the bye to the lowest entrant
           without one.
-        </p>
-      </Ask>
-
-      {/* One more challenger at the end of his own chain */}
-      <Ask
-        open={challengerOpen}
-        onOpenChange={setChallengerOpen}
-        title="Add challenger"
-        width={480}
-        actions={
-          <>
-            <Button nativeButton={false} variant="ghost" render={<Link href={`/events/${event?.id}/entrants`} />}>Entrants</Button>
-            <span className="flex-1" />
-            <Button variant="ghost" onClick={() => setChallengerOpen(false)}>Cancel</Button>
-            <Button disabled={!challenger || saving} onClick={addChallenger}>{busyIcon(saving)}Add challenger</Button>
-          </>
-        }
-      >
-        <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
-        <Pick
-          labelAfter
-          label="Entrant"
-          items={challengerItems.map((row) => ({ value: row.id as number, title: challengerTitle(row), row }))}
-          value={challenger}
-          onChange={setChallenger}
-          row={(item) => (
-            <span className="flex flex-col">
-              {entrantRow(item.row)}
-              <span className="text-xs text-muted-foreground">{divisionName(item.row.division_id)}</span>
-            </span>
-          )}
-        />
-        {!challengerItems.length ? <p className="mt-3 text-muted-foreground">Every entrant already plays in a chain. Enter the player on the entrants page first.</p> : null}
-      </Ask>
-
-      {/* Closing deletes the series nobody played, so it counts them first */}
-      <Ask
-        open={confirmClose}
-        onOpenChange={setConfirmClose}
-        title="Close the night"
-        tone="error"
-        actions={
-          <>
-            <Button variant="ghost" onClick={() => setConfirmClose(false)}>Cancel</Button>
-            <Button variant="destructive" disabled={saving} onClick={closeNight}>{busyIcon(saving)}Close the night</Button>
-          </>
-        }
-      >
-        <p>
-          {pendingCount} {pendingCount === 1 ? "series goes" : "series go"}: nobody played {pendingCount === 1 ? "it" : "them"}. Every series left carries a result and the night reads
-          finished.
         </p>
       </Ask>
 

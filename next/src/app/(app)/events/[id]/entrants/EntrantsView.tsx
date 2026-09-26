@@ -431,11 +431,9 @@ export function EntrantsView({ id }: { id: string }) {
               {/* A KOTH night keeps its brackets and its queue, so it takes no cut here and its cards carry the bands */}
               {isKoth ? (
                 <p className="text-xs text-muted-foreground">
-                  The brackets of a KOTH night keep their rows and their order, so their MMR and their queue move on{" "}
-                  <Link className="text-primary-text underline" href={`/koth/nights/${eventId}?bounds=1`}>
-                    the run page
+                  <Link className="text-primary-text underline" href={`/koth/nights/${eventId}`}>
+                    Set the brackets on the night&apos;s run page.
                   </Link>
-                  .
                 </p>
               ) : (
                 <>

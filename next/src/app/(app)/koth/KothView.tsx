@@ -32,7 +32,7 @@ const stateLabel = STATE_LABEL as Record<string, string>;
 const DEFAULT_BOUNDS = [0, 1450, 1600];
 
 /** Every KOTH night, newest first. A night is one event of the KOTH league, so this page
- *  only opens tonight's and hands the run over to the event run page. */
+ *  only opens tonight's and hands the run over to the night's run page. */
 export function KothView() {
   const router = useRouter();
   const store = useEventStore();
@@ -102,8 +102,8 @@ export function KothView() {
         }
       >
         <Button nativeButton={false} variant="outline" className="text-primary-text" render={<Link href="/koth/dashboard" />}>
-          <Icon name="mdi-eye-outline" />
-          Public page
+          <Icon name="mdi-view-dashboard" />
+          Dashboard
         </Button>
         <Button disabled={loading} onClick={openDialog}>
           <Icon name="mdi-plus" />
@@ -122,7 +122,6 @@ export function KothView() {
                 <TableHead>Night</TableHead>
                 <TableHead className={phoneCell}>Date</TableHead>
                 <TableHead>State</TableHead>
-                <TableHead className={cn(phoneCell, "text-right")}>Settings</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -139,17 +138,11 @@ export function KothView() {
                   <TableCell>
                     <Badge className={toneClass(stateColor[nightState(night)])}>{stateLabel[nightState(night)] || "—"}</Badge>
                   </TableCell>
-                  {/* the run page runs the night; the event page keeps every setting of it */}
-                  <TableCell className={cn(phoneCell, "text-right whitespace-nowrap")}>
-                    <Button nativeButton={false} variant="ghost" size="sm" className="text-primary-text" render={<Link href={`/events/${night.id}/admin`} />}>
-                      Settings
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
               {!nights.length && !loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                  <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
                     No night has run yet.
                   </TableCell>
                 </TableRow>

@@ -4,7 +4,7 @@ title: Event management
 description: The admin's path from an empty league to a finished event with awards; the wizard, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
 resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T23:50:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-09-26T10:30:00Z }
 sources:
   - id: wizard
     resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
@@ -67,7 +67,7 @@ A step with a problem cannot be left: no league or no name, an end before the st
 
 **7. The awards.** On the last stage's tab, "Finish" writes `POST /events/{id}/finish`. The confirm lists every entrant the close awards and the place it takes (Champion, Runner-up, Third, Placed n), because the close freezes that stage's table into the award rows. Finishing again rewrites the places from the table as it stands. The event page then carries each place on the entrant's row, and a first place reaches the player page's trophy shelf.
 
-**KOTH nights.** A night is one event of the KOTH league, so the league, the wizard and the entrants page hold for it. `/koth` lists every night, newest first, and each name opens its own run page `/koth/nights/:id`, where the admin pairs every series by hand, edits the line and closes the night with `POST /koth/nights/{id}/close`; see [KOTH](koth.md). "Open tonight" on `/koth` takes the start time and the three MMR bounds the brackets open at, prefilled from the night before, writes `POST /koth/nights` and lands on the run page, while `/events/:id/admin` keeps the settings, the entrants and the divisions the brackets read.
+**KOTH nights.** A night is one event of the KOTH league, so the league, the wizard and the entrants page hold for it. `/koth` lists every night, newest first, and each name opens its own run page `/koth/nights/:id`, where the admin sets the night's settings and its bracket bounds, pairs every series by hand, edits the line and closes the night with `POST /koth/nights/{id}/close`; see [KOTH](koth.md). "Open tonight" on `/koth` takes the start time and the three MMR bounds the brackets open at, prefilled from the night before, writes `POST /koth/nights` and lands on the run page. A night is not run on the stage engine, so `/events/:id/admin` of a night sends the admin on to its run page.
 
 # Writes
 
@@ -93,7 +93,6 @@ A step with a problem cannot be left: no league or no name, an end before the st
 | `event.advanceStage` | `POST /events/{id}/stages/{stage_id}/advance` |
 | `event.finishEvent` | `POST /events/{id}/finish` |
 | `event.openNight` | `POST /koth/nights` |
-| `event.addChallenger` | `POST /events/{id}/stages/{stage_id}/series` |
 | `event.closeNight` | `POST /koth/nights/{id}/close` |
 
 # Rules

@@ -109,10 +109,6 @@ const store = {
   async drawNextRound(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/rounds`);
   },
-  // Appends one entrant to the end of the chain his division plays
-  async addChallenger(event_id: number, stage_id: number, entrant_id: number) {
-    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`, { entrant_id });
-  },
   // A KOTH night is an event, so the module owns only these writes
   async openNight(night: any) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights`, night);

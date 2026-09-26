@@ -21,31 +21,43 @@ export function bracketLabel(brackets = [], bracket = null) {
   return { name: bracket?.name || 'Bracket', band };
 }
 
+// The cuts the bracketing strip draws: the lower bound of every bracket but the weakest, ascending
+export const cutsOf = (board) => orderedBrackets(board).slice(1).map((bracket) => bracket.lower_bound ?? 0);
+
 /**
- * The bounds write of one night, checked and built in one pass. The weakest bracket keeps 0,
- * every bracket is named once, and each bound reads as a band while the admin types.
+ * The bounds write of one night from the strip's cuts: the weakest bracket keeps 0 and each
+ * stronger bracket opens at its cut, in the shape `setKothBounds` sends.
  *
- * @param {Array} brackets - Every bracket of the board
- * @param {Object} values - The typed lower bound per division id, as text
- * @returns {{rows: Array, error: string|null, body: {bounds: Array}}} - rows weakest first
+ * @param {Object|null} board - The board read
+ * @param {Array} cuts - Ascending, one per bracket but the weakest
+ * @returns {Array<{division_id: number, lower_bound: number}>} - weakest first
  */
-export function boundsWrite(brackets = [], values = {}) {
-  const rows = orderedBrackets({ brackets }).map((bracket, index) => {
-    const typed = index === 0 ? '0' : String(values[bracket.division_id] ?? '').trim();
-    return {
-      division_id: bracket.division_id,
-      name: bracketLabel(brackets, bracket).name,
-      lower_bound: /^\d+$/.test(typed) ? Number(typed) : NaN,
-      typed,
-    };
-  });
-  const body = { bounds: rows.map(({ division_id, lower_bound }) => ({ division_id, lower_bound })) };
-  const broken = rows.findIndex((row) => !Number.isInteger(row.lower_bound));
-  if (broken >= 0) return { rows, error: `${rows[broken].name} takes a whole number of 0 or more.`, body };
-  const low = rows.findIndex((row, index) => index > 0 && row.lower_bound <= rows[index - 1].lower_bound);
-  if (low > 0) return { rows, error: `${rows[low].name} takes a bound larger than ${rows[low - 1].name}.`, body };
-  // the band reads only while every bound holds, so a half-typed number names no band at all
-  return { rows: rows.map((row) => ({ ...row, line: `${row.name} takes ${bracketLabel(rows, row).band}` })), error: null, body };
+export const boundsOf = (board, cuts = []) =>
+  orderedBrackets(board).map((bracket, index) => ({
+    division_id: bracket.division_id,
+    lower_bound: index === 0 ? 0 : cuts[index - 1] ?? bracket.lower_bound ?? 0,
+  }));
+
+/**
+ * Every signup with a rating, one per race row: the kings, the lines, the open series and the
+ * unplaced strip. A row the board names no rating for stays off the strip.
+ *
+ * @param {Object|null} board - The board read
+ * @returns {Array<{entrant_id: number, user_id: number|null, name: string, race: string|null, mmr: number}>}
+ */
+export function ratedPlayers(board) {
+  const rows = new Map();
+  const add = (row, seat = row) => {
+    if (row?.mmr == null || rows.has(row.entrant_id)) return;
+    rows.set(row.entrant_id, { entrant_id: row.entrant_id, user_id: seat.user_id ?? null, name: seat.name, race: row.race ?? null, mmr: row.mmr });
+  };
+  for (const bracket of orderedBrackets(board)) {
+    for (const seat of [bracket.king, ...(bracket.queue ?? [])]) for (const row of seat?.rows ?? []) add(row, seat);
+    add(bracket.open_series?.side1);
+    add(bracket.open_series?.side2);
+  }
+  for (const row of board?.unplaced ?? []) add(row);
+  return [...rows.values()];
 }
 
 // A seat is named by its first race row, which is the one id it always holds

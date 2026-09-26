@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsWrite, bracketLabel, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
-  orderedBrackets, placeInQueue, placeWord, queueIds, seatRow, skippedSeat, startButton,
+  boundsOf, bracketLabel, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
+  orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatRow, skippedSeat, startButton,
   throneWord,
 } from './koth-board.mjs';
 
@@ -127,27 +127,44 @@ test('the close names each open series it deletes', () => {
   ]);
 });
 
-test('the bounds write keeps 0 on the weakest bracket and names every bracket once', () => {
-  const written = boundsWrite(BRACKETS, { 8: '1400', 7: '1700' });
-  assert.equal(written.error, null);
-  assert.deepEqual(written.body.bounds, [
+test('the strip cuts are the bounds of every bracket but the weakest, ascending', () => {
+  assert.deepEqual(cutsOf({ brackets: BRACKETS }), [1450, 1600]);
+  assert.deepEqual(cutsOf({ brackets: [BRACKETS[2]] }), []);
+  assert.deepEqual(cutsOf(null), []);
+});
+
+test('the bounds write keeps 0 on the weakest bracket and opens each other at its cut', () => {
+  assert.deepEqual(boundsOf({ brackets: BRACKETS }, [1400, 1700]), [
     { division_id: 9, lower_bound: 0 },
     { division_id: 8, lower_bound: 1400 },
     { division_id: 7, lower_bound: 1700 },
   ]);
-  assert.deepEqual(written.rows.map((row) => row.line), [
-    'Bracket 1 takes under 1400 MMR',
-    'Bracket 2 takes 1400 to 1699 MMR',
-    'Bracket 3 takes 1700 MMR and up',
-  ]);
+  // the cuts read back from the board write the board unchanged
+  const board = { brackets: BRACKETS };
+  assert.deepEqual(boundsOf(board, cutsOf(board)).map((b) => b.lower_bound), [0, 1450, 1600]);
 });
 
-test('the bounds write refuses a bound that is not a whole number or not above the one below', () => {
-  assert.equal(boundsWrite(BRACKETS, { 8: '14 50', 7: '1700' }).error, 'Bracket 2 takes a whole number of 0 or more.');
-  assert.equal(boundsWrite(BRACKETS, { 8: '', 7: '1700' }).error, 'Bracket 2 takes a whole number of 0 or more.');
-  assert.equal(boundsWrite(BRACKETS, { 8: '-5', 7: '1700' }).error, 'Bracket 2 takes a whole number of 0 or more.');
-  assert.equal(boundsWrite(BRACKETS, { 8: '1700', 7: '1700' }).error, 'Bracket 3 takes a bound larger than Bracket 2.');
-  assert.equal(boundsWrite(BRACKETS, { 8: '0', 7: '1700' }).error, 'Bracket 2 takes a bound larger than Bracket 1.');
+test('the strip holds one dot per rated race row, from every seat, series and the unplaced strip', () => {
+  const board = {
+    unplaced: [{ entrant_id: 50, user_id: 5, name: 'Eve', race: 'HU', mmr: null }, { entrant_id: 60, user_id: 6, name: 'Fay', race: 'NE', mmr: 1300 }],
+    brackets: [
+      {
+        division_id: 9, lower_bound: 0,
+        king: seat(1, 'Ann', [row(10, 'HU', 1400)]),
+        queue: [seat(2, 'Bob', [row(20, 'OC', 1100), row(21, 'UD', null)])],
+        open_series: { side1: { entrant_id: 10, user_id: 1, name: 'Ann', race: 'HU', mmr: 1400 }, side2: { entrant_id: 30, user_id: 3, name: 'Cid', race: 'NE', mmr: 1200 } },
+      },
+      { division_id: 7, lower_bound: 1600, king: null, queue: [seat(4, 'Dan', [row(40, 'HU', 1700)])], open_series: null },
+    ],
+  };
+  assert.deepEqual(ratedPlayers(board).map((p) => [p.entrant_id, p.user_id, p.name, p.mmr]), [
+    [10, 1, 'Ann', 1400],
+    [20, 2, 'Bob', 1100],
+    [30, 3, 'Cid', 1200],
+    [40, 4, 'Dan', 1700],
+    [60, 6, 'Fay', 1300],
+  ]);
+  assert.deepEqual(ratedPlayers(null), []);
 });
 
 test('a player who left on two races reads one row, holding both of them', () => {

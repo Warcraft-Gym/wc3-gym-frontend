@@ -13,10 +13,16 @@ export const navItems = (): NavGroup[] => [
       { title: "Ladder Grind", to: "/ladder" },
       { title: "Players", to: "/players" },
       { title: "Maps", to: "/maps" },
-      { title: "Fantasy", to: "/fantasy" },
+    ],
+  },
+  {
+    title: "Fantasy",
+    to: "/fantasy",
+    items: [
+      { title: "Leaderboard", to: "/fantasy" },
       { title: "My Fantasy Team", to: "/fantasy-registration" },
-      { title: "Fantasy Bets", to: "/fantasy/bets" },
-      { title: "Fantasy Tiers", to: "/fantasy/tiers" },
+      { title: "Manage Bets", to: "/fantasy/bets" },
+      { title: "Player Tiers", to: "/fantasy/tiers" },
     ],
   },
   {
@@ -28,10 +34,10 @@ export const navItems = (): NavGroup[] => [
     ],
   },
   {
-    title: "Events",
-    to: "/events",
+    title: "Leagues",
+    to: "/leagues",
     items: [
-      { title: "Leagues", to: "/leagues" },
+      { title: "All Leagues", to: "/leagues" },
       { title: "Events", to: "/events" },
     ],
   },

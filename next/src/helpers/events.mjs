@@ -19,7 +19,7 @@ function seasonLinks(season, slug) {
   return [
     season.team && { title: season.team.name, icon: 'mdi-shield-account', to: `/team/${season.team.id}` },
     report,
-    { title: 'Upcoming series', icon: 'mdi-calendar-clock', to: '/upcoming' },
+    { title: 'Upcoming series', icon: 'mdi-calendar-clock', to: '/report#upcoming' },
     { title: 'Ladder', icon: 'mdi-chart-line', to: `/ladder?season=${slug}` },
     players,
     { title: 'My fantasy team', icon: 'mdi-cards-playing-outline', to: `/fantasy-registration?season=${slug}` },

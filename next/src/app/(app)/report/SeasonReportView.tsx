@@ -16,6 +16,7 @@ import { ColumnNote } from "@/components/ColumnNote";
 import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
 import { RaceIcon } from "@/components/RaceIcon";
+import { SeriesSchedule } from "@/components/SeriesSchedule";
 import { StatusAlert } from "@/components/StatusAlert";
 import { useAuth, useSeason, useTeamStore, useSeriesStore, useFantasyStore, useLadderStore } from "@/stores";
 import { canSeeRole } from "@/helpers";
@@ -447,6 +448,14 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
           </div>
 
           <div className="report-body mx-auto max-w-[1400px] p-4 pt-6">
+            {/* ── Upcoming series: the current season only ── */}
+            {selectedSeasonId === currentSeasonId ? (
+              <div id="upcoming" className={cn("report-section mb-6", collapsed.has("upcoming") && "collapsed")}>
+                {sectionTitle("upcoming", "mdi-calendar-clock", "Upcoming series")}
+                <SeriesSchedule series={series} />
+              </div>
+            ) : null}
+
             {/* ── Team standings ── */}
             <div className={cn("report-section mb-6", collapsed.has("standings") && "collapsed")}>
               {sectionTitle("standings", "mdi-trophy", "Team standings")}

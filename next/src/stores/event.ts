@@ -24,6 +24,10 @@ const store = {
     const query = filters.length ? `?${filters.join("&")}` : "";
     return await fetchWrapper.get(`${backendUrl}/events${query}`);
   },
+  // One page of one kind's events, newest first, with the count of all of them
+  async fetchEventsPage(kind: string, limit: number, offset: number) {
+    return await fetchWrapper.getPage(`${backendUrl}/events?kind=${kind}&limit=${limit}&offset=${offset}`);
+  },
   async fetchEvent(event_id: number) {
     return await fetchWrapper.get(`${backendUrl}/events/${event_id}`);
   },

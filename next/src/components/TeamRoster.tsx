@@ -37,6 +37,7 @@ export function TeamRoster({
   rounds = 0,
   round,
   eventId,
+  over = false,
   // The empty lines name the run of the league the roster belongs to; a GNL page says season
   noCaptains = "No captains recorded for this event.",
   noMembers = "No members recorded for this event.",
@@ -50,13 +51,14 @@ export function TeamRoster({
   rounds?: number; // how many rounds the event plays
   round?: number | null; // the round in play, named in the head
   eventId?: number | null; // the event the stats row of each player is read on
+  over?: boolean; // the event is over: each row shows the MMR the player entered it with
   noCaptains?: string;
   noMembers?: string;
   captainsActions?: React.ReactNode;
   renderCaptains?: (args: { captains: Player[] }) => React.ReactNode;
   renderMembers?: (args: { members: Player[] }) => React.ReactNode;
 }) {
-  const mmrOf = (player: Player) => getW3CMMR(player, undefined, player.signup_race ?? undefined) as number | null;
+  const mmrOf = (player: Player) => (over ? (player.mmr_entered ?? null) : getW3CMMR(player, player.signup_race ?? undefined)) as number | null;
   // the stats row of this event names the rounds the player sits out; a row of another event never does
   const outRoundsOf = (player: Row) => ((player.gnl_stats ?? []).find((stat: Row) => stat.season_id === eventId)?.out_rounds ?? []) as number[];
   // a captain is rostered on his member row when he plays, so the row carries his race and MMR
@@ -70,7 +72,7 @@ export function TeamRoster({
   const strip = !!series && rounds > 0;
   // the card is as synced as its least synced player, the way every other W3C line reads
   const synced = agoFromIso([...captains, ...members].map((player: Row) => player.w3c_synced_at).filter(Boolean).sort()[0] ?? null);
-  const mmrNote = `W3C ladder MMR on the signup race, ${synced === "never synced" ? synced : `synced ${synced}`}`;
+  const mmrNote = over ? "W3C ladder MMR on the signup race at the start of the event" : `W3C ladder MMR on the signup race, ${synced === "never synced" ? synced : `synced ${synced}`}`;
 
   // the columns are named once for the card, on the head of the first group that lists rows
   const columnsOn = !renderCaptains && captains.length ? "captains" : !renderMembers && sorted.length ? "members" : null;

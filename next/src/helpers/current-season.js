@@ -52,18 +52,3 @@ export async function loadSeasons() {
     return [];
   }
 }
-
-// Resolve the w3champions season the backend reports as in use.
-// Returns null when nothing is configured and w3champions is unreachable.
-export async function resolveCurrentW3CSeason() {
-  const configStore = useConfigStore();
-
-  try {
-    const config = await configStore.fetchW3cConfig();
-    const season = Number(config?.current_season);
-    return config?.current_season == null || Number.isNaN(season) ? null : season;
-  } catch (error) {
-    console.warn('Failed to fetch the w3champions config:', error);
-    return null;
-  }
-}

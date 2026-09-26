@@ -1,139 +1,39 @@
 import { DateTime } from 'luxon';
+import { getRaceMmr } from './games-rule.mjs';
 
 /**
  * W3Champions Stats Helper
  *
- * Provides utilities for working with W3C stats including fallback logic
- * to previous season when current season stats are not available.
+ * Reads the backend's race_mmrs summary: one entry per race, the window races
+ * (current and previous W3C season) first, then a profile's stale races.
  */
 
 // The games rule is pure and lives on its own, so node --test reads it without a bundler
 export { gamesWarning, getW3CGamesCount, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from './games-rule.mjs';
 
 /**
- * Get W3C stats for a player with season fallback
- * 
- * @param {Object} player - Player object containing w3c_stats array
- * @param {string} race - Race to get stats for (required, null gives no stats)
- * @param {number} currentSeason - Current W3C season number
- * @returns {Object|null} - W3C stats object or null if not found
+ * The summary entries of every race, window races first
+ *
+ * @param {Object} player - Player object carrying race_mmrs
+ * @returns {Array} - The race_mmrs entries, empty when there are none
  */
-export function getW3CStatsWithFallback(player, race = null, currentSeason = null) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0) {
-    return null;
-  }
-
-  if (!race) {
-    return null;
-  }
-
-  // Filter stats for the target race (case-insensitive comparison)
-  const raceStats = player.w3c_stats.filter(s =>
-    s.race && s.race.toUpperCase() === race.toUpperCase()
-  );
-  if (raceStats.length === 0) {
-    return null;
-  }
-
-  // If no current season specified, return the most recent stats
-  if (!currentSeason) {
-    return raceStats.reduce((latest, current) => {
-      if (!latest) return current;
-      return (current.wc3_season || 0) > (latest.wc3_season || 0) ? current : latest;
-    }, null);
-  }
-
-  // Try to find stats for current season
-  let stats = raceStats.find(s => s.wc3_season === currentSeason);
-  
-  // If not found, try previous season (currentSeason - 1)
-  if (!stats) {
-    stats = raceStats.find(s => s.wc3_season === currentSeason - 1);
-  }
-
-  // If still not found, return the most recent available stats
-  if (!stats) {
-    stats = raceStats.reduce((latest, current) => {
-      if (!latest) return current;
-      return (current.wc3_season || 0) > (latest.wc3_season || 0) ? current : latest;
-    }, null);
-  }
-
-  return stats;
+export function getAllRaceStats(player) {
+  return player?.race_mmrs || [];
 }
 
 /**
- * Get W3C stats for all races
- * 
+ * Get W3C MMR for a player on one race
+ *
  * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (optional)
- * @returns {Array} - Array of W3C stats objects for all races
- */
-export function getAllRaceStats(player, currentSeason = null) {
-  if (!player || !player.w3c_stats || player.w3c_stats.length === 0) {
-    return [];
-  }
-
-  const races = ['HU', 'OC', 'UD', 'NE', 'RANDOM'];
-  return races
-    .map(race => getW3CStatsWithFallback(player, race, currentSeason))
-    .filter(stats => stats !== null);
-}
-
-/**
- * Get W3C MMR for a player with fallback
- * 
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (optional, null = use fallback)
  * @param {string} race - Race to read (required, null gives no MMR)
- * @returns {number|null} - MMR value, or null when there are no stats
+ * @returns {number|null} - MMR value, or null when the race has no entry
  */
-export function getW3CMMR(player, currentSeason = null, race = null) {
-  const stats = getW3CStatsWithFallback(player, race, currentSeason);
-  return stats?.mmr ?? null;
-}
-
-/**
- * Get the games played on one race, from the same stats row the MMR comes from
- *
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (optional, null = newest available)
- * @param {string} race - Race to read (required, null gives 0)
- * @returns {number} - Games played, 0 when there are no stats
- */
-export function getW3CGames(player, currentSeason = null, race = null) {
-  const stats = getW3CStatsWithFallback(player, race, currentSeason);
-  return stats ? (stats.games ?? Number(stats.wins || 0) + Number(stats.losses || 0)) : 0;
-}
-
-/**
- * Get the w3champions season the MMR shown for a player came from
- *
- * @param {Object} player - Player object
- * @param {number} currentSeason - Current W3C season (optional, null = newest available)
- * @param {string} race - Race to read (required, null gives no season)
- * @returns {number|null} - Season number of the stats used, or null when there are none
- */
-export function getW3CMMRSeason(player, currentSeason = null, race = null) {
-  const stats = getW3CStatsWithFallback(player, race, currentSeason);
-  return stats ? (stats.wc3_season ?? null) : null;
+export function getW3CMMR(player, race = null) {
+  return getRaceMmr(player, race)?.mmr ?? null;
 }
 
 // A player's w3champions profile page
 export const w3cPlayerUrl = (battleTag) => `https://www.w3champions.com/player/${encodeURIComponent(battleTag)}`;
-
-/**
- * Names the season an MMR came from when it is not the requested one
- *
- * @param {Object} player - Player object
- * @param {number} currentSeason - Requested W3C season
- * @param {string} race - Race to read (required, null gives '')
- * @returns {string} - e.g. "S22", or '' when the MMR is from the requested season
- */
-export function mmrSeasonLabel(player, currentSeason, race = null) {
-  const season = getW3CMMRSeason(player, currentSeason, race);
-  return season && season !== currentSeason ? `S${season}` : '';
-}
 
 /**
  * Relative time since a player's W3C stats were last fetched

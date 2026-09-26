@@ -43,7 +43,6 @@ export function ProposeSeriesDialog({
   existing,
   ladderById,
   seasonId,
-  w3cSeason,
   hasSeries,
   errorMessage,
   onErrorClose,
@@ -63,7 +62,6 @@ export function ProposeSeriesDialog({
   existing: number;
   ladderById: Map<number, Row>;
   seasonId?: number;
-  w3cSeason?: number;
   hasSeries: (playerId: number) => boolean;
   errorMessage: string | null;
   onErrorClose: () => void;
@@ -108,20 +106,20 @@ export function ProposeSeriesDialog({
     },
     {
       id: `p${n}_w3c_mmr`,
-      accessorFn: (row: Row) => mmrOf(row[`player${n}`], row[`player${n}_race`], w3cSeason) || 0,
+      accessorFn: (row: Row) => mmrOf(row[`player${n}`], row[`player${n}_race`]) || 0,
       header: () => <W3CMmr />,
       cell: ({ row }: { row: { original: Row } }) => (
         <>
-          <span className="tnum">{mmrOf(row.original[`player${n}`], row.original[`player${n}_race`], w3cSeason) ?? "N/A"}</span>
+          <span className="tnum">{mmrOf(row.original[`player${n}`], row.original[`player${n}_race`]) ?? "N/A"}</span>
           <SyncedLine player={row.original[`player${n}`]} />
         </>
       ),
     },
     {
       id: `p${n}_w3c_high_mmr`,
-      accessorFn: (row: Row) => getHighestW3CMMR(row[`player${n}`], w3cSeason) || 0,
+      accessorFn: (row: Row) => getHighestW3CMMR(row[`player${n}`]) || 0,
       header: "Highest Race MMR",
-      cell: ({ row }: { row: { original: Row } }) => <span className="tnum">{getHighestW3CMMR(row.original[`player${n}`], w3cSeason) ?? "N/A"}</span>,
+      cell: ({ row }: { row: { original: Row } }) => <span className="tnum">{getHighestW3CMMR(row.original[`player${n}`]) ?? "N/A"}</span>,
     },
   ];
 

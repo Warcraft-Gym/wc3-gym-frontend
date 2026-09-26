@@ -28,8 +28,8 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | Record figure | `next/src/helpers/figures.mjs` | The reader asks how a player or a team did over many series or games. | The pair is a points pair; a points pair prints its zeroes and takes no percent, so the surface writes it (see "points pair" below). |
 | Points pair | Inline in the views | The two numbers are points, not a record. | The pair is wins and losses; then `record` owns it. |
 | `tnum` tabular figures | `next/src/app/globals.css` | A number sits in a column or beside another number. | The number is inside a paragraph of prose. |
-| MMR number, read by `getW3CMMR` | `next/src/helpers/w3c-stats.js` | The row names a race. | The row has no race; then print nothing, not a dash. |
-| MMR season label and synced time | `next/src/helpers/w3c-stats.js` | The figure is W3Champions data. | The figure comes from the app's own series. |
+| MMR number, read by `getW3CMMR` from `race_mmrs` | `next/src/helpers/w3c-stats.js` | The row names a race. | The row has no race; then print nothing, not a dash. |
+| MMR season label of a stale race, and synced time | `next/src/components/RaceMmrChips.tsx`, `next/src/helpers/w3c-stats.js` | The figure is W3Champions data. | The figure comes from the app's own series. |
 | Signed game difference | `next/src/components/StageView.tsx` | A standings table ranks on game difference. | A free for all lobby stage; a lobby counts no games and the column is dropped. |
 | Win rate percent | `next/src/helpers/ladder-days.mjs` | The page already prints the record and wants one share. | `record` can carry the percent itself. |
 | Stat tile | `next/src/app/(app)/report/SeasonReportView.tsx` | One number answers the page's question. | The reader needs to compare many values; then a table or a chart. |

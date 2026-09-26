@@ -27,9 +27,9 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { W3CSyncResultDialog, type SyncEntry } from "@/components/W3CSyncResultDialog";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { ACHIEVEMENTS_NOTE, LADDER_NOTE, POINTS_NOTES, SCORED_NOTE } from "@/helpers/achievements";
-import { resolveCurrentW3CSeason } from "@/helpers/current-season";
 import { eventLabel } from "@/helpers/event-labels.mjs";
 import { filterByMmrRange, matchesPlayerSearch, playerPath } from "@/helpers/players.mjs";
+import { isOver } from "@/helpers/season-phase.mjs";
 import { rosterOf } from "@/helpers/team-roster.mjs";
 import { agoFromIso, getW3CMMR, localFromIso, syncedAgo, syncedAt } from "@/helpers/w3c-stats";
 import { useAuth, useLadderStore, usePlayerStore, useSeason, useTeamStore } from "@/stores";
@@ -57,7 +57,6 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
   const [players, setPlayers] = useState<Row[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [currentW3CSeason, setCurrentW3CSeason] = useState<number | undefined>(undefined);
 
   // The Add Player dialog pool: season signups, carrying signup_race and MMR stats
   const [seasonSignups, setSeasonSignups] = useState<Row[]>([]);
@@ -136,7 +135,6 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     if (!seasonId) return;
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
-      setCurrentW3CSeason((await resolveCurrentW3CSeason()) ?? undefined);
       await fetchTeam();
       try {
         setSeasonLadder(await ladderStore.seasonLadder(seasonId));
@@ -223,8 +221,8 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     if (searchName.trim().length > 0) list = list.filter((p) => matchesPlayerSearch(p, searchName));
     if (searchRace) list = list.filter((p) => p.signup_race === searchRace);
     // filter by mmr range — only apply if user changed from defaults
-    return filterByMmrRange(list, rangeValues, (p: Row) => Number(getW3CMMR(p, currentW3CSeason, p.signup_race) ?? 0));
-  }, [seasonSignups, searchName, searchRace, rangeValues, currentW3CSeason]);
+    return filterByMmrRange(list, rangeValues, (p: Row) => Number(getW3CMMR(p, p.signup_race) ?? 0));
+  }, [seasonSignups, searchName, searchRace, rangeValues]);
 
   const syncCell = (row: Row) => (
     <TapTooltip className="text-xs text-muted-foreground" content={syncedAt(row)}>
@@ -469,7 +467,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
                   header: "Name",
                   cell: ({ row }) => (
                     <>
-                      <PlayerName player={row.original} race={row.original.signup_race} />
+                      <PlayerName player={row.original} race={row.original.signup_race} mmr={isOver(seasonRow) ? (row.original.mmr_entered ?? false) : undefined} />
                       <PlayedAs playedAs={row.original.played_as} battleTag={row.original.battleTag} />
                       <div>{syncCell(row.original)}</div>
                     </>

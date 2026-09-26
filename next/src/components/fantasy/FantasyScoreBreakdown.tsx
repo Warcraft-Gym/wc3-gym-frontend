@@ -54,13 +54,11 @@ export function FantasyScoreBreakdown({
   players = [],
   draftedPlayers = [],
   seasonId = null,
-  w3cSeason = null,
 }: {
   breakdown: any;
   players?: any[];
   draftedPlayers?: any[];
   seasonId?: number | null;
-  w3cSeason?: any;
 }) {
   // drafted players last: they carry the season stats the roster table reads
   const pool = useMemo(() => [...players, ...draftedPlayers], [players, draftedPlayers]);
@@ -72,7 +70,7 @@ export function FantasyScoreBreakdown({
   // the MMR of the race the opponent played, on the pool the roster rows read
   const opponentMmr = (series: any) => {
     const player = resolve(series.opponent);
-    return series.opponent_race ? getW3CMMR(player, w3cSeason, series.opponent_race) : null;
+    return series.opponent_race ? getW3CMMR(player, series.opponent_race) : null;
   };
 
   const gnlRecord = (player: any) => {
@@ -90,7 +88,7 @@ export function FantasyScoreBreakdown({
         key: b.player_id ?? b.player_name,
         label: b.player_name,
         player,
-        mmr: getW3CMMR(player, w3cSeason, player.signup_race),
+        mmr: getW3CMMR(player, player.signup_race),
         record: gnlRecord(player),
         bench: bench[b.player_name] || 0,
       };

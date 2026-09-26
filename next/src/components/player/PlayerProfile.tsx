@@ -18,7 +18,6 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { usePanelLinks } from "@/hooks/player-panel";
 import { useAuth, useAvailabilityStore, useEventStore, usePlayerStore, useSeason } from "@/stores";
 import { backendUrl, fetchWrapper } from "@/helpers";
-import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { myNight, myRaces } from "@/helpers/koth.mjs";
 import { roundCards, waitingLines } from "@/helpers/rounds.mjs";
 
@@ -44,19 +43,11 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
   const { seasons } = useSeason();
 
   const [player, setPlayer] = useState<Row | null>(null);
-  // a stat from an older W3C season names its own season on the chip
-  const [currentW3CSeason, setCurrentW3CSeason] = useState<number | null>(null);
   const editDialog = useRef<EditPlayerDialogHandle>(null);
   const scheduleDialog = useRef<ScheduleDialogHandle>(null);
   const reportDialog = useRef<ReportResultDialogHandle>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    resolveCurrentW3CSeason().then((season: number | null) => { if (live) setCurrentW3CSeason(season); });
-    return () => { live = false; };
-  }, []);
 
   // The side panel reads a profile over another page, so it never carries the owner's
   // actions: a click there would take his unsaved work with it.
@@ -285,7 +276,6 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                 me={me}
                 owner={owner}
                 editable={owner || isAdmin}
-                w3cSeason={currentW3CSeason}
                 onEdit={() => editDialog.current?.open(player)}
               />
             </CardContent>

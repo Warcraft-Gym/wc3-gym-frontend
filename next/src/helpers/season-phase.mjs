@@ -13,3 +13,6 @@ export const asSeason = (event) => ({ ...event, phase: seasonPhase(event) });
 
 // The backend counts a series as scored only when both sides carry a score
 export const isUnscored = (series) => series.player1_score == null || series.player2_score == null;
+
+// The backend's rule for a season that is over: closed, or its end date passed (UTC); a roster then shows mmr_entered
+export const isOver = (event) => !!event && (!!event.closed_at || (!!event.end_date && event.end_date < new Date().toISOString().slice(0, 10)));

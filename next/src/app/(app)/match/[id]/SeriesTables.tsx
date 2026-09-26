@@ -205,7 +205,6 @@ function PairingNote({ item, fresh, replaces }: { item: Row; fresh: boolean; rep
 export function DraftSeries({
   draftSeries,
   smAndDown,
-  w3cSeason,
   seasonId,
   ladderById,
   isAdmin,
@@ -221,10 +220,10 @@ export function DraftSeries({
   onPublishAll,
   onDeleteAll,
   onMeetings,
+  over = false,
 }: {
   draftSeries: Row[];
   smAndDown: boolean;
-  w3cSeason?: number;
   seasonId?: number;
   ladderById: Map<number, Row>;
   isAdmin: boolean;
@@ -240,6 +239,7 @@ export function DraftSeries({
   onPublishAll: () => void;
   onDeleteAll: () => void;
   onMeetings: (userA: number, userB: number) => Promise<Row[]>;
+  over?: boolean; // the event is over: the rows show no live MMR
 }) {
   const pairOf = pairIndex(board);
   const boardPlayer = new Map<number, Row>((board?.players || []).map((player: Row) => [player.user_id, player]));
@@ -293,27 +293,28 @@ export function DraftSeries({
         <VsRaces player={ladderById.get(row.original[`player${n}`]?.id)} race={row.original[`player${n === 1 ? 2 : 1}_race`]} />
       ),
     },
-    {
+    // a finished event shows the MMR of the time on its series rows, so the live figures stay out
+    ...(over ? [] : [{
       id: `p${n}_w3c_mmr`,
-      accessorFn: (row: Row) => mmrOf(row[`player${n}`], row[`player${n}_race`], w3cSeason) || 0,
+      accessorFn: (row: Row) => mmrOf(row[`player${n}`], row[`player${n}_race`]) || 0,
       header: () => <W3CMmr />,
       cell: ({ row }: { row: { original: Row } }) => (
         <div className="text-right">
-          <Badge className="bg-info text-on-info tnum">{mmrOf(row.original[`player${n}`], row.original[`player${n}_race`], w3cSeason) || "—"}</Badge>
+          <Badge className="bg-info text-on-info tnum">{mmrOf(row.original[`player${n}`], row.original[`player${n}_race`]) || "—"}</Badge>
           <SyncedLine player={row.original[`player${n}`]} />
         </div>
       ),
     },
     {
       id: `p${n}_w3c_high_mmr`,
-      accessorFn: (row: Row) => getHighestW3CMMR(row[`player${n}`], w3cSeason) || 0,
+      accessorFn: (row: Row) => getHighestW3CMMR(row[`player${n}`]) || 0,
       header: "Highest MMR",
       cell: ({ row }: { row: { original: Row } }) => (
         <div className="text-right">
-          <Badge className="bg-secondary text-on-secondary tnum">{getHighestW3CMMR(row.original[`player${n}`], w3cSeason) || "—"}</Badge>
+          <Badge className="bg-secondary text-on-secondary tnum">{getHighestW3CMMR(row.original[`player${n}`]) || "—"}</Badge>
         </div>
       ),
-    },
+    }]),
   ];
 
   // The pairing's own figures, which the one board read already carries

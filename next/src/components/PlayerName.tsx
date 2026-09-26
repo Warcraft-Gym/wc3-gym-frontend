@@ -35,15 +35,15 @@ export function PlayerName({
   plain?: boolean; // text only: a form in a dialog must not lose its input to a click
   noFlag?: boolean; // a line that stands alone drops the placeholder of a player with no country
   mmr?: number | false | null; // false where a column of its own sorts by MMR; a number the caller already holds, null where its payload names none
-  games?: number | null; // the current w3champions season: draws the games-rule mark on a draft surface
+  games?: boolean; // draws the games-rule mark on a draft surface
   warning?: { colour: "error" | "warning"; text: string } | null; // the same mark from a read that already applies the event's rule
   onClick?: () => void;
   children?: React.ReactNode;
 }) {
   // The ladder MMR reads the signup race alone, so a profile race prints no number
-  const rating = mmr === false ? null : (mmr ?? getW3CMMR(player, undefined, player.signup_race ?? undefined));
+  const rating = mmr === false ? null : (mmr ?? getW3CMMR(player, player.signup_race ?? undefined));
   // The games mark falls back to the profile race, the race the players page signs a player up on
-  const mark = warning !== undefined ? warning : games ? gamesWarning(player, games, player.signup_race || player.race || null) : null;
+  const mark = warning !== undefined ? warning : games ? gamesWarning(player, player.signup_race || player.race || null) : null;
   // A series where the player played another race marks him, so a reader on a
   // phone sees the exception without hovering anything
   const offRace = !!race && !!player.signup_race && race !== player.signup_race;

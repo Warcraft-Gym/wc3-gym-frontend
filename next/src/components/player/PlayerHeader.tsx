@@ -37,14 +37,12 @@ export function PlayerHeader({
   me = null,
   owner = false,
   editable = false,
-  w3cSeason = null,
   onEdit,
 }: {
   player: Row; // the full user row
   me?: Row | null; // the session, for the owner's own seasons
   owner?: boolean; // the viewer is this player, and may act
   editable?: boolean; // the viewer may open the edit dialog: the player himself, or an admin
-  w3cSeason?: number | null;
   onEdit?: () => void;
 }) {
   const { seasons } = useSeason();
@@ -181,7 +179,7 @@ export function PlayerHeader({
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <strong><W3CMmr /></strong>
-        <RaceMmrChips player={player} w3cSeason={w3cSeason ?? undefined} />
+        <RaceMmrChips player={player} />
       </div>
       <div className="mt-1 text-xs text-muted-foreground">{syncCaption}</div>
       <PlayerTrophies trophies={player.trophies} />

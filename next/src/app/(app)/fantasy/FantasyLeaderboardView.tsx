@@ -20,7 +20,6 @@ import { SeasonSelect } from "@/components/SeasonSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useAuth, useFantasyStore, useSeason, useSeasonStore, useTeamStore } from "@/stores";
-import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { ALL_COLORS, tierSelectionError } from "@/helpers/tiers.mjs";
 
 const races = [
@@ -69,7 +68,6 @@ export function FantasyLeaderboardView() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [currentW3CSeason, setCurrentW3CSeason] = useState<any>(null);
   const [editDialog, setEditDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<any>(null);
@@ -146,10 +144,6 @@ export function FantasyLeaderboardView() {
     loadTeams();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSeasonId]);
-
-  useEffect(() => {
-    resolveCurrentW3CSeason().then(setCurrentW3CSeason);
-  }, []);
 
   // An expanded row shows the breakdown, fetched once per team and season
   const loadBreakdown = async (team: any) => {
@@ -394,7 +388,6 @@ export function FantasyLeaderboardView() {
                     players={seasonSignups}
                     draftedPlayers={team.drafted_players || []}
                     seasonId={selectedSeasonId}
-                    w3cSeason={currentW3CSeason}
                   />
                 )}
               </div>

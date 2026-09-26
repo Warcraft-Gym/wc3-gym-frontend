@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { SortingState } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,6 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { W3CSyncResultDialog, type SyncEntry } from "@/components/W3CSyncResultDialog";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { PanelLinksContext } from "@/hooks/player-panel";
-import { resolveCurrentW3CSeason } from "@/helpers/current-season";
 import { draftOrder } from "@/helpers/draft.mjs";
 import { filterByMmrRange, matchesPlayerSearch } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races";
@@ -32,6 +31,8 @@ import { getW3CMMR, syncedAgo, syncedAt } from "@/helpers/w3c-stats";
 import { useAuth, useLadderStore, useSeason, useTeamStore } from "@/stores";
 
 type Row = Record<string, any>;
+// The draft order and the MMR column read the live MMR of the signup race
+const mmrOf = (p: Row) => getW3CMMR(p, p.signup_race) || 0;
 // { state: 'idle'|'loading'|'success'|'error', message?: string }
 type SyncStatus = { state: string; message?: string };
 
@@ -92,9 +93,6 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
   const signupDialog = useRef<SeasonSignupDialogHandle>(null);
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
-  // Current W3C season for stats fallback
-  const [currentW3CSeason, setCurrentW3CSeason] = useState<number | undefined>(undefined);
-
   // per-team loading state to avoid double-clicks
   const [removeLoading, setRemoveLoading] = useState<Record<string, boolean>>({});
   const [syncAllLoading, setSyncAllLoading] = useState(false);
@@ -103,13 +101,11 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
   // The draft order, so a reversed sort keeps the moved players in place
   const [sorting, setSorting] = useState<SortingState>([{ id: "w3c_mmr", desc: false }]);
 
-  const mmrOf = useCallback((p: Row) => getW3CMMR(p, currentW3CSeason, p.signup_race) || 0, [currentW3CSeason]);
-
   // The players an admin took out of the pick list
   const excludedPlayers = signedUpPlayersData.filter((p) => p.draft_excluded);
 
   // The draft order: MMR ascending, each moved player at his slot, no excluded player
-  const orderedPlayers: Row[] = useMemo(() => draftOrder(signedUpPlayersData, mmrOf), [signedUpPlayersData, mmrOf]);
+  const orderedPlayers: Row[] = useMemo(() => draftOrder(signedUpPlayersData, mmrOf), [signedUpPlayersData]);
   const positionOf = new Map<number, number>(orderedPlayers.map((p, i) => [p.id, i]));
   // One round = one pick per team
   const roundSize = teams.length || 10;
@@ -132,7 +128,6 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
     if (!seasonId) return;
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
-      setCurrentW3CSeason((await resolveCurrentW3CSeason()) ?? undefined);
       await fetchData();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,7 +182,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
     if (searchRace) list = list.filter((p) => p.signup_race === searchRace);
     // filter by mmr range — only apply if user changed from defaults
     return filterByMmrRange(list, rangeValues, mmrOf).filter((p: Row) => !assignedPlayerIds.has(p.id));
-  }, [orderedPlayers, searchName, searchRace, rangeValues, mmrOf, assignedPlayerIds]);
+  }, [orderedPlayers, searchName, searchRace, rangeValues, assignedPlayerIds]);
 
   // Count players with team selected
   const playersWithTeamSelected = Object.values(playerTeamSelection).filter((teamId) => teamId != null).length;
@@ -361,7 +356,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
                 accessorKey: "name",
                 header: "Name",
                 cell: ({ row }) => (
-                  <PlayerName player={row.original} mmr={false} games={currentW3CSeason}>
+                  <PlayerName player={row.original} mmr={false} games>
                     <PlayerCues status={perPlayerSyncStatus[row.original.id]} />
                   </PlayerName>
                 ),
@@ -375,7 +370,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
                 meta: { label: "MMR" },
                 cell: ({ row }) => (
                   <>
-                    <div className="tnum">{getW3CMMR(row.original, currentW3CSeason, row.original.signup_race) ?? "N/A"}</div>
+                    <div className="tnum">{getW3CMMR(row.original, row.original.signup_race) ?? "N/A"}</div>
                     <TapTooltip className="text-xs text-muted-foreground" content={syncedAt(row.original)}>
                       {syncedAgo(row.original)}
                     </TapTooltip>
@@ -582,7 +577,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
                     <div key={p.id} className="flex items-center justify-between py-1.5">
                       <div>
                         <div className="flex items-center gap-2">
-                          <PlayerName player={p} race={p.signup_race} games={currentW3CSeason} />
+                          <PlayerName player={p} race={p.signup_race} games />
                           <PlayerCues status={perPlayerSyncStatus[p.id]} />
                         </div>
                         <TapTooltip className="text-xs text-muted-foreground" content={syncedAt(p)}>

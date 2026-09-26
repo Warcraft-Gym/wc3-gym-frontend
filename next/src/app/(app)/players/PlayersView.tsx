@@ -26,7 +26,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { MergePlayerDialog, MoveTagDialog } from "./PersonTagDialogs";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from "@/helpers/current-season.js";
+import { resolveCurrentSeasonId } from "@/helpers/current-season.js";
 import { record as recordFigure } from "@/helpers/figures.mjs";
 import { findSeason } from "@/helpers/season-slug.mjs";
 import { filterByMmrRange, matchesPlayerSearch, playerPath, playersWithCareers } from "@/helpers/players.mjs";
@@ -54,7 +54,6 @@ export function PlayersView() {
 
   const [players, setPlayers] = useState<Row[]>([]);
   const [careers, setCareers] = useState<Row[]>([]);
-  const [w3cSeason, setW3cSeason] = useState<number | null>(null);
   const [currentSeasonId, setCurrentSeasonId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,8 +90,8 @@ export function PlayersView() {
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      const [playerRows, careerRows, current] = await Promise.all([playerStore.fetchPlayers(), careerStore.fetchAll(), resolveCurrentW3CSeason()]);
-      setPlayers(playerRows || []); setCareers(careerRows || []); setW3cSeason(current);
+      const [playerRows, careerRows] = await Promise.all([playerStore.fetchPlayers(), careerStore.fetchAll()]);
+      setPlayers(playerRows || []); setCareers(careerRows || []);
     } catch (e) { console.error("Failed to load players:", e); setError("Failed to load players. Please try again later."); }
     finally { setLoading(false); }
   };
@@ -119,14 +118,14 @@ export function PlayersView() {
     query.set("season", id ? seasonStore.slugOf(id) : "all");
     router.replace(`/players?${query}`, { scroll: false });
   };
-  const bestMmr = (player: Row) => Math.max(0, ...getAllRaceStats(player, w3cSeason ?? undefined).filter((stat: Row) => (stat.games || 0) > 0).map((stat: Row) => stat.mmr || 0));
+  const bestMmr = (player: Row) => Math.max(0, ...getAllRaceStats(player).filter((stat: Row) => !stat.stale && (stat.games || 0) > 0).map((stat: Row) => stat.mmr || 0));
   const joined: Row[] = playersWithCareers(players, careers).map((row: Row) => ({ ...row, best_mmr: row.id != null ? bestMmr(row) || null : null }));
   const base = flags.includes("unlinked") ? joined : joined.filter((row) => row.id != null);
   let filtered = base.filter((row) => !name.trim() || matchesPlayerSearch(row, name));
   if (race) filtered = filtered.filter((row) => row.race === race);
   if (seasonId) filtered = filtered.filter((row) => (row.signup_seasons || []).some((season: Row) => season.id === seasonId));
   filtered = filterByMmrRange(filtered, range, (row: Row) => row.best_mmr ?? 0);
-  if (flags.length) filtered = filtered.filter((row) => flags.some((flag) => isListFilter(flag) ? row.id != null && !!listed[flag]?.has(row.id) : flag === "unlinked" ? row.id == null && row.career?.id != null : flag === "no_stats" ? row.id != null && !hasW3CStatsTwoSeasons(row, w3cSeason ?? 0, row.race) : row.id != null && hasLowGamesTwoSeasons(row, w3cSeason ?? 0, row.race)));
+  if (flags.length) filtered = filtered.filter((row) => flags.some((flag) => isListFilter(flag) ? row.id != null && !!listed[flag]?.has(row.id) : flag === "unlinked" ? row.id == null && row.career?.id != null : flag === "no_stats" ? row.id != null && !hasW3CStatsTwoSeasons(row, row.race) : row.id != null && hasLowGamesTwoSeasons(row, row.race)));
   const sorted = [...filtered].sort((a, b) => {
     const av = a[sort.key] ?? a.career?.[sort.key] ?? null;
     const bv = b[sort.key] ?? b.career?.[sort.key] ?? null;
@@ -177,15 +176,15 @@ export function PlayersView() {
     <Card className="card gap-0 py-0">
       <StatusAlert modelValue={error} className="m-4" onClose={() => setError(null)} />
       {!error ? <div className="table-scroll overflow-x-auto"><Table className="tnum"><TableHeader><TableRow>
-        {head("Name", "name")}{isAdmin ? head("Tags", undefined, WIDE) : null}{head(<W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series record", "series_winrate", "text-right")}{head("Games record", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
+        {head("Name", "name")}{isAdmin ? head("Tags", undefined, WIDE) : null}{head(<W3CMmr />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series record", "series_winrate", "text-right")}{head("Games record", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
       </TableRow></TableHeader><TableBody>
         {shown.map((row) => <TableRow key={row.key} className={row.id != null ? "cursor-pointer" : undefined} onClick={(event) => {
           if ((event.target as Element).closest('[data-slot="tooltip-trigger"]')) return;
           if (row.id != null) router.push(playerPath(row));
         }}>
-          <TableCell>{row.id != null ? <PlayerName player={row} mmr={false} games={w3cSeason} /> : <span className="text-muted-foreground">{row.name}</span>}</TableCell>
+          <TableCell>{row.id != null ? <PlayerName player={row} mmr={false} games /> : <span className="text-muted-foreground">{row.name}</span>}</TableCell>
           {isAdmin ? <TableCell className={WIDE}>{tagsCell(row)}</TableCell> : null}
-          <TableCell className={WIDE}>{row.id != null ? <RaceMmrChips player={row} w3cSeason={w3cSeason ?? undefined} max={2} /> : null}</TableCell>
+          <TableCell className={WIDE}>{row.id != null ? <RaceMmrChips player={row} max={2} /> : null}</TableCell>
           <TableCell className="text-right">{row.rating ?? "—"}</TableCell>
           <TableCell className="whitespace-nowrap text-right">{record(row.career?.series_won, row.career?.series_lost)}</TableCell>
           <TableCell className={`${WIDE} whitespace-nowrap text-right`}>{record(row.career?.games_won, row.career?.games_lost)}</TableCell>

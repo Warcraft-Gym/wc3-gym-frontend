@@ -226,6 +226,7 @@ The events module names things the same way on every page. A league is what repe
 - A table wider than its card shows a shadow at the hidden edge.
 - A card pads its content with 16 px, the value `--card-spacing` holds. A card marked `size="sm"` pads with 12 px. A card whose content runs to its own edge, a full-width table or list, pads with none.
 - A cell the reader cannot use wears a 45° hatch, the `.hatched` utility in `globals.css`, so it reads apart from a plain fill in both themes.
+- The Settings page `/config` is one card of six sections, each an `Accordion` header that opens and closes, all closed on load so the page reads as a list of headers. A failed save opens the sections that hold unsaved edits. The Save settings and Reset buttons sit outside the sections and always show, and the About settings card folds the same way.
 - A control draws no default before its data arrives. Until the data lands the control is inert: a skeleton, or a disabled control with `aria-busy`, so a tap cannot write a value the reader never picked.
 
 ## Data display

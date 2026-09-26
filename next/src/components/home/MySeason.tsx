@@ -186,26 +186,14 @@ export function MySeason({
         <p className="text-sm">No season is running. The next one shows here as soon as it opens.</p>
       ) : state === "not_in" ? (
         <>
-          {/* the one rule the season card follows: sign up while signups are open, else ask an admin */}
-          {seasonAction(season) === "signup" ? (
-            <>
-              <p className="text-sm">You are not signed up for {season.name} yet. Signups are open.</p>
-              <Button className="mt-3" nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
-                <Icon name="mdi-account-plus" />
-                Sign up for {season.name}
-              </Button>
-            </>
-          ) : seasonAction(season) === "request" ? (
-            <>
-              <p className="text-sm">You are not signed up for {season.name}. Signups are closed, so an admin decides on your signup.</p>
-              <Button className="mt-3" nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
-                <Icon name="mdi-account-plus" />
-                Sign up for {season.name}
-              </Button>
-            </>
-          ) : (
-            <p className="text-sm">You were not signed up for {season.name}, and it is over. The next season shows here as soon as it opens.</p>
-          )}
+          {/* the sign-up button lives in the Open signups panel; this line only says where the member stands */}
+          <p className="text-sm">
+            {seasonAction(season) === "signup"
+              ? `You are not signed up for ${season.name} yet. Sign up in the Open signups panel.`
+              : seasonAction(season) === "request"
+                ? `You are not signed up for ${season.name}.`
+                : `You were not signed up for ${season.name}, and it is over. The next season shows here as soon as it opens.`}
+          </p>
         </>
       ) : (
         <>

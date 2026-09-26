@@ -473,6 +473,14 @@ export function BracketCard({
   );
 }
 
+/** The source winner, else the winner-stays-on inference, else why the order leaves it open. */
+function historyResult(row: Row): string {
+  const name = (side: number) => (side === 1 ? row.side1.name : row.side2.name);
+  if (row.winner_side) return `Winner: ${name(row.winner_side)}`;
+  if (row.inferred_winner_side) return `Winner: ${name(row.inferred_winner_side)} · inferred`;
+  return row.review_note ? `Result not recorded · ${row.review_note}` : "Result not recorded";
+}
+
 /** Historical pairings keep their source order and never imply a missing result. */
 function HistoricalBracket({ bracket }: { bracket: Row }) {
   const history: Row[] = bracket.history ?? [];
@@ -495,9 +503,7 @@ function HistoricalBracket({ bracket }: { bracket: Row }) {
             <BoardPlayer row={row.side1} plain warn={false} />
             <span className="text-xs text-muted-foreground">vs.</span>
             <BoardPlayer row={row.side2} plain warn={false} />
-            <span className="basis-full pl-5 text-xs text-muted-foreground">
-              {row.winner_side ? `Winner: ${row.winner_side === 1 ? row.side1.name : row.side2.name}` : "Result not recorded"}
-            </span>
+            <span className="basis-full pl-5 text-xs text-muted-foreground">{historyResult(row)}</span>
           </li>
         ))}
       </ol>

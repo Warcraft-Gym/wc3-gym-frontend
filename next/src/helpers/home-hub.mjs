@@ -1,20 +1,19 @@
-// The pure parts of the home hub: the panel order, the upcoming events, the member's two series, the captain row.
+// The pure parts of the home hub: the panel order, the open signups, the member's season and rounds, the captain row.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
 import { local, timeMissing } from './schedule.mjs';
 import { isUnscored } from './season-phase.mjs';
 
-// One order per panel drives both layouts: the phone stack and the panels inside each desktop column.
-const WITH_SERIES = { own: 1, next: 2, signup: 3, board: 4, cast: 5 };
-const NO_SERIES = { signup: 1, board: 2, own: 3, next: 4, cast: 5 };
+/** The CSS order of each Home panel. One order drives both layouts: the phone stack, and the panels
+ *  inside each desktop column. An open signup comes first, because it is the one thing that expires;
+ *  the upcoming events the member cannot act on yet follow the upcoming series. */
+export const PANEL_ORDER = { signup: 1, games: 2, next: 3, upcoming: 4, fantasy: 5, stats: 6 };
 
-/** The CSS order of each panel. A member with no series of his own reads the upcoming events first.
- *  @param {boolean} hasSeries */
-export const panelOrder = (hasSeries) => (hasSeries ? WITH_SERIES : NO_SERIES);
-
-/** Whether an upcoming event row keeps its button: a withdraw only while the signups are open.
- *  @param {any} row a GET /me/events row */
-export const offersAction = (row) => row?.action !== 'withdraw' || !!row.signups_open;
+/** The events the member may still enter, leave or check in to, in the order the events start.
+ *  @param {any[]} [rows] the GET /me/events rows */
+export const openSignups = (rows = []) => rows
+  .filter((row) => row.action === 'sign_up' || row.action === 'check_in' || (row.action === 'withdraw' && row.signups_open))
+  .sort((a, b) => String(a.start ?? '9999').localeCompare(String(b.start ?? '9999')));
 
 /** When a series row reads: its local day and time, "Started HH:mm" once its time has passed, or no time.
  *
@@ -36,6 +35,19 @@ const byRound = (a, b) => {
   return roundA - roundB || String(timeA).localeCompare(String(timeB));
 };
 
+/** Where the member stands in the current season, from its /me seasons row: on a team ('playing'),
+ *  signed up and waiting for the draft ('waiting'), or not in it ('not_in').
+ *  @param {any} entry */
+export const seasonState = (entry) => (entry?.team ? 'playing' : entry?.signed_up ? 'waiting' : 'not_in');
+
+/** The round cards of a season as Home lists them: the rounds still to play in round order, the one
+ *  in play first, then the rounds played, the most recent first.
+ *  @param {any[]} [cards] the cards of roundCards */
+export const homeRounds = (cards = []) => ({
+  ahead: cards.filter((card) => !card.over),
+  played: cards.filter((card) => card.over).reverse(),
+});
+
 /** The member's own next series and last result out of one season's series.
  *  @param {any[]} [series] @param {number|null} [playerId] */
 export const ownSeries = (series = [], playerId = null) => {
@@ -56,6 +68,17 @@ export const ownScore = (series, playerId = null) => {
   const text = record(my, theirs) ?? `${my} – ${theirs}`;
   const word = my > theirs ? 'Won' : my < theirs ? 'Lost' : 'Drew';
   return { text, won: my > theirs, lost: my < theirs, label: `${word} ${text}` };
+};
+
+/** The fixtures a captain still has to draft, split by where Home offers them: the current season's
+ *  on its round in My Season, every other event's in Upcoming Series. Each other one names its event.
+ *  @param {any[]} [events] the GET /me/events rows @param {number|null} [seasonId] the current season */
+export const seasonFixtures = (events = [], seasonId = null) => {
+  const own = events.find((row) => row.captain_fixture && seasonId != null && Number(row.id) === Number(seasonId));
+  return {
+    own: own?.captain_fixture ?? null,
+    others: events.filter((row) => row.captain_fixture && row !== own).map((row) => ({ ...row.captain_fixture, event: row.name })),
+  };
 };
 
 /** The fixture row a captain still has to draft: when its round runs, how much of it is drafted,

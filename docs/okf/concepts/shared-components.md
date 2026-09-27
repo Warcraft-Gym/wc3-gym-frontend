@@ -1,10 +1,10 @@
 ---
 type: Domain Concept
 title: Shared components
-description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, and what a control shows before its data arrives.
+description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T19:04:08Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T18:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -33,6 +33,15 @@ sources:
   - id: head-to-head
     resource: ../../../next/src/components/HeadToHeadCell.tsx
     title: HeadToHeadCell
+  - id: desktop-only-notice
+    resource: ../../../next/src/components/DesktopOnlyNotice.tsx
+    title: DesktopOnlyNotice
+  - id: pick-grid
+    resource: ../../../next/src/components/admin/PickGrid.tsx
+    title: PickGrid
+  - id: player-chip-picker
+    resource: ../../../next/src/components/admin/PlayerChipPicker.tsx
+    title: PlayerChipPicker
 ---
 
 `DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle.
@@ -131,6 +140,14 @@ The tag one season row was played as: "as TAG" in small muted text, no icon and 
 
 `VetoBoard` reads which side the viewer acts for from the board answer's `viewer_side`; it never works the side out from ids on the client. A side that is a team shows its team name when the answer sets `team_name`, and the player through `PlayerName` otherwise. See [the backend contract](backend-contract.md).
 
+# DesktopOnlyNotice
+
+Every view states its phone level in its page concept: Full, Read on phone or Desktop only. `DesktopOnlyNotice` is the one notice for the two lower levels. On a phone it says the task is easier on a computer and offers a copy-link button; with `desktopOnly` it hides the task, and without it the task stays readable under the notice. Above 960 px it draws its children alone. See "Views for everyone" in `DESIGN.md`.
+
+# PickGrid and the create dialogs
+
+`PickGrid` is how an admin ticks many teams or maps: a grid of picture cards, two to a row on a phone, each with a real checkbox, a search, "Select all shown" and "Clear". A list of pictures is picked with it, never with a multi-select dropdown. `NewTeamDialog` and `NewMapDialog` create one team or one map with its picture and hand the stored row back, so a page offers the create where the pick happens and the admin never leaves the task. A team stored without its icon still counts as created, and the dialog says the icon is missing. `PlayerChipPicker` picks any number of players from a list: a search adds one, and each chip takes one back out. The captains of a team page and the captains and rosters of the season wizard use it.
+
 # The rest
 
-The controls are the shadcn/ui kit in `next/src/components/ui/`; a page composes them and adds no control of its own. A `Combobox` or a `Select` under a `Field` takes its accessible name from the field label. `RowActions` folds three or more row buttons into a menu; the menu takes the width of its own items, not the width of the icon button it hangs on, so an item never wraps. `ColumnNote` is a column title with a help note. `StatusAlert` shows a load or save message with a retry. `EventHeader` and `PlayerHeader` top the event and player pages. `FixtureSeries` draws the ordered series of a fixture. `StageView` and `SeriesBox` draw a stage of any format and one series. `VetoBoard` draws the veto and embeds in the Report Result dialog. `DivisionBracketing` draws the MMR bands of the divisions.
+The controls are the shadcn/ui kit in `next/src/components/ui/`; a page composes them and adds no control of its own. A `Combobox` or a `Select` under a `Field` takes its accessible name from the field label. `RowActions` folds three or more row buttons into a menu, and fewer when it is passed `menu`, so a row can keep its main task as its own button beside the menu; the menu takes the width of its own items, not the width of the icon button it hangs on, so an item never wraps. `ColumnNote` is a column title with a help note. `StatusAlert` shows a load or save message with a retry. `EventHeader` and `PlayerHeader` top the event and player pages. `FixtureSeries` draws the ordered series of a fixture. `StageView` and `SeriesBox` draw a stage of any format and one series. `VetoBoard` draws the veto and embeds in the Report Result dialog. `DivisionBracketing` draws the MMR bands of the divisions.

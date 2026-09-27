@@ -6,7 +6,8 @@ import { box, useBox } from "./box";
 export type Seat = { teamId: number; seasonId: number; team?: string; season?: string };
 export type ViewAs = { role: string; seats?: Seat[] } | null;
 export type Me = Record<string, any> | null; // eslint-disable-line @typescript-eslint/no-explicit-any
-type User = { access_token?: string } | null;
+// `dev` marks a local dev login; the admin-token session carries none
+type User = { access_token?: string; dev?: boolean } | null;
 type AuthState = { user: User; me: Me; viewAs: ViewAs; loginError: string | null };
 
 const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -72,13 +73,29 @@ const logout = async () => {
   navigate("/login");
 };
 
-// the admin-token login at /admin-login; a super admin session with no Discord account
-const login = async (adminToken: string) => {
+// the admin-token login at /admin-login; a super admin session with no Discord account.
+// `stay` keeps the page, so the admin picks between continuing and the local dev login
+const login = async (adminToken: string, { stay = false } = {}) => {
   const user = await fetchWrapper.post(`${backendUrl}/login`, { token: adminToken });
   localStorage.setItem("user", JSON.stringify(user));
   patch({ user });
   await fetchMe(); // /me answers the legacy token: the name, the role and the running seasons
-  navigate(takeReturnUrl("/"));
+  if (!stay) navigate(takeReturnUrl("/"));
+};
+
+// leave the /admin-login choice as the super admin
+const continueAsAdmin = () => navigate(takeReturnUrl("/"));
+
+// the local dev login: a session for one player, as the role asked for; only the admin token's session
+// reaches it, and the player's token replaces it. The backend answers 404 unless it is on
+const devLogin = async (userId: number, role: "member" | "guest" | "admin") => {
+  const answer = await fetchWrapper.post(`${backendUrl}/dev/login`, { user_id: userId, role });
+  const user = { access_token: answer.access_token, dev: true };
+  localStorage.setItem("user", JSON.stringify(user));
+  patch({ user, viewAs: null });
+  localStorage.removeItem("viewAs");
+  const me = await fetchMe();
+  navigate(takeReturnUrl(me?.role === "guest" ? "/profile" : "/"));
 };
 
 // see the app as a lower role for debugging; null restores the admin
@@ -107,6 +124,8 @@ const members = ({ user, me, viewAs, loginError }: AuthState) => {
     token,
     fetchMe,
     login,
+    continueAsAdmin,
+    devLogin,
     logout,
     clear,
     setViewAs,

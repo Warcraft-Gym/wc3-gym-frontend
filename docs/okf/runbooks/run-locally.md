@@ -4,7 +4,7 @@ title: Run locally
 description: Install, copy the example environment, start the dev server against a local or the staging backend.
 resource: ../../../README.md
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:07:56Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T10:00:00Z }
 stale_after: 2027-03-14T00:00:00Z
 sources:
   - id: source
@@ -23,7 +23,9 @@ sources:
 
 # Signing in locally
 
-A member session needs the Clerk dev instance, whose publishable key goes in `.env`; Discord sign-in works on `localhost` without any dashboard change. The super admin session is `/admin-login` with the backend's admin token from its `.env`.
+A member session needs the Clerk dev instance, whose publishable key goes in `.env`; Discord sign-in works on `localhost` without any dashboard change. The super admin session is `/admin-login` with the backend's admin token from its `.env`. With the key left empty the app runs without Clerk, and `/admin-login` is the only sign-in.
+
+To test the app as a player, a captain or a guest without Discord, set `NEXT_PUBLIC_DEV_LOGIN=1` in `.env.local` and `DEV_LOGIN=1` in the local backend's `.env`, then restart both. Log in at `/admin-login` with the admin token, then choose "Sign in as a player" over "Continue as Super Admin": search a player, pick Player, Guest or Admin, and sign in. A player marked Captain signs in as a captain. Only players with a Discord id are listed. Set both values on a local machine only.
 
 # Environment values
 
@@ -34,5 +36,6 @@ A member session needs the Clerk dev instance, whose publishable key goes in `.e
 | `NEXT_PUBLIC_CLERK_PROXY_URL` | unset | set only on the Vercel production project |
 | `CLERK_SECRET_KEY` | unset | read on the server by the Clerk proxy route, in proxy mode only |
 | `PROXY_TARGET` | unset | the backend that `/api` reaches, from the shell |
+| `NEXT_PUBLIC_DEV_LOGIN` | `1` to test as a player | offers the local "Sign in as a player" card after the admin token login; never set on a deployment |
 
 Next inlines every `NEXT_PUBLIC_` value into the public bundle at build time; none is a secret. `CLERK_SECRET_KEY` has no such prefix and stays on the server. The environment beats the file.

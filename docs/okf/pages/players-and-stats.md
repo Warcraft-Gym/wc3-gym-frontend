@@ -4,7 +4,7 @@ title: Players and stats
 description: The players list with the admin's tag controls, one player's page with his tags and the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../next/src/app/(app)/players/PlayersView.tsx
 tags: [pages, players]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T14:55:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T18:00:00Z }
 sources:
   - id: players
     resource: ../../../next/src/app/(app)/players/PlayersView.tsx
@@ -53,6 +53,8 @@ sources:
 `/player-stats` redirects to `/players`. `/player/:id` takes the battle tag or the id; the page rewrites the address to the tag.
 
 # What it does
+
+The player page is mainly a page to look at: the player's record, seasons, trophies and ladder. Its owner keeps a few actions there, but a player's tasks for the week start on Home, where the current season takes its answers and its series steps.
 
 **Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series record and the games record as "19 – 11 (63%)" from ten played up and "3 – 1" under ten, under a column title that names what it counts, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and the "Show only" flags. The name search matches the name, the battle tag and every tag the player holds. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one (the edit dialog reads `GET /users/{id}` on open for the two Discord fields, which no list row carries), adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
 

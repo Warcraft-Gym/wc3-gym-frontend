@@ -98,6 +98,11 @@ export const roundCards = (
   });
 };
 
+/** The answer a round takes when the player presses one of its two buttons: the state he pressed,
+ *  or no answer when he pressed the state it already holds.
+ *  @param {boolean|null} current @param {boolean} want */
+export const nextAnswer = (current, want) => (current === want ? null : want);
+
 // The chip of a round card with no series: the answer given, the pairing state, or
 // the day the check-in opens, which is of use only to the player who checks in.
 export const roundStateChip = (card, asks = true) => {

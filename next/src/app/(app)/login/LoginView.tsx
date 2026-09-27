@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthenticateWithRedirectCallback, useAuth as useClerk, useSignIn } from "@clerk/clerk-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +10,40 @@ import { Note } from "@/components/ui/Note";
 import { DiscordJoinCard } from "@/components/DiscordJoinCard";
 import { useAuth } from "@/stores";
 import { discordMark } from "@/assets/discordMark.js";
+import { clerkEnabled } from "@/lib/clerk-provider";
 
 const REDIRECT_TIMEOUT = 15000; // Discord not reached by then is a failure, not a slow network
 
 /** The sign-in page. /login and /sso-callback share it, so the path says which one is mounted. */
 export function LoginView() {
+  return clerkEnabled ? <DiscordLoginView /> : <AdminOnlyLoginView />;
+}
+
+/** Without a Clerk key there is no Discord sign-in; the admin token is the only way in. */
+function AdminOnlyLoginView() {
+  return (
+    <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-[500px] gap-0 p-0">
+        <CardHeader className="bg-primary p-4">
+          <CardTitle className="flex items-center gap-2 text-on-primary">
+            <Icon name="mdi-lock" />
+            Log in to WC3 Gym Dashboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <Note type="info" className="mb-4">
+            Discord sign-in needs <code>NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code>. Without it, sign in with the admin token.
+          </Note>
+          <Button nativeButton={false} size="lg" className="h-11 w-full text-base" render={<Link href="/admin-login" />}>
+            Admin token login
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function DiscordLoginView() {
   const { signIn } = useSignIn();
   const { isLoaded, isSignedIn } = useClerk();
   const { me, loginError, logout, setLoginError } = useAuth();

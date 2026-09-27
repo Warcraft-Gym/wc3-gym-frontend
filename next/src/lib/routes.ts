@@ -17,6 +17,7 @@ export const ROUTES: { path: string; meta: RouteMeta }[] = [
   { path: "/sso-callback", meta: { role: "public", nav: false } },
   { path: "/admin-login", meta: { role: "public", nav: false } },
   { path: "/profile", meta: { role: "guest" } },
+  { path: "/admin", meta: { role: "admin" } },
   { path: "/seasons", meta: { role: "admin" } },
   { path: "/signup", meta: { role: "member" } },
   { path: "/player-dashboard", meta: { role: "guest" } },  // a redirect in router.js: it needs a session, any role

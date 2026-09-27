@@ -60,7 +60,7 @@ export function LadderImportDialog({
 
   return (
     <Dialog open={modelValue} onOpenChange={(open) => onUpdateModelValue?.(open)}>
-      <DialogContent showCloseButton={false} className="max-w-[760px] gap-0 p-0 sm:max-w-[760px]">
+      <DialogContent showCloseButton={false} className="max-w-[760px] gap-0 p-0 md:max-w-[760px]">
         <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
           <Icon name="mdi-download" />
           <span>Import W3C map pool</span>

@@ -8,9 +8,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
 import { HomePanel, Quiet, ROW, SkeletonRows } from "@/components/home/HomePanel";
 import { PLATFORM_ICONS, platformOf } from "@/helpers/casts.mjs";
-import { record } from "@/helpers/figures.mjs";
 import { captainRow, rowContext, seriesWhen } from "@/helpers/home-hub.mjs";
-import { local } from "@/helpers/schedule.mjs";
 import { gmt } from "@/helpers/timezone.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -18,9 +16,6 @@ type Row = Record<string, any>;
 
 // The panel shows five series at most; "All upcoming" holds the rest
 const MAX_NEXT = 5;
-
-// A row states its day in the reader's own zone
-const dayText = (row: Row) => (row.date_time ? local(row.date_time).toFormat("ccc d LLL") : "");
 
 /** The two sides of a home series row: the players, the teams that field them, or "To be decided". */
 function Versus({ row }: { row: Row }) {
@@ -53,12 +48,13 @@ const CastChip = ({ cast }: { cast: Row }) => (
   </Badge>
 );
 
-/** The next series of the whole app, and, for a captain, the fixture he still has to draft. */
+/** The next series of the whole app, and, for a captain, the fixtures of other events he still has
+ *  to draft; the current season's draft sits on its round in My Season. */
 export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: Row[]; fixtures: Row[]; loading: boolean; failed?: boolean; order: number }) {
   return (
     <HomePanel
       icon="mdi-clock-outline"
-      title="Next matches"
+      title="Upcoming Series"
       order={order}
       action={loading ? null : <Link href="/report#upcoming" className="text-on-primary underline">All upcoming</Link>}
     >
@@ -118,55 +114,6 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
             <p className="text-sm">No series is booked. A booked time shows here as soon as two players agree one.</p>
           )}
           {rows.length ? <Quiet>Times in your zone, {gmt(DateTime.local().offset)}</Quiet> : null}
-        </>
-      )}
-    </HomePanel>
-  );
-}
-
-/** What a caster claimed: the streams still to come, then the VODs of the games already played. */
-export function CastedGames({ upcoming, recent, loading, failed, order }: { upcoming: Row[]; recent: Row[]; loading: boolean; failed?: boolean; order: number }) {
-  const group = (title: string, rows: Row[], watch: { label: string; icon: string }, when: (row: Row) => string) =>
-    rows.length ? (
-      <div key={title} className="mt-3 first:mt-0">
-        <span className="text-xs font-medium text-muted-foreground">{title}</span>
-        {rows.map((row) => (
-          <div key={row.id} className={ROW}>
-            <div className="flex flex-wrap items-center gap-2">
-              {row.cast ? <CastChip cast={row.cast} /> : null}
-              {row.cast?.url ? (
-                <Button size="sm" variant="outline" className="ml-auto text-primary-text" nativeButton={false} render={<a href={row.cast.url} target="_blank" rel="noopener noreferrer" />}>
-                  <Icon name={watch.icon} />
-                  {watch.label}
-                </Button>
-              ) : null}
-            </div>
-            <Versus row={row} />
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-              <span className="tnum">{when(row)}</span>
-              {row.player1_score != null && row.player2_score != null ? (
-                <span className="tnum">· {record(row.player1_score, row.player2_score)}</span>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : null;
-
-  return (
-    <HomePanel icon="mdi-video-outline" title="Casted games" order={order}>
-      {loading ? (
-        <SkeletonRows rows={3} />
-      ) : (
-        <>
-          {/* a stream still to come names its start time; a recording names the day it was played */}
-          {group("Upcoming", upcoming, { label: "Watch", icon: "mdi-video-outline" }, seriesWhen)}
-          {group("Recent", recent, { label: "VOD", icon: "mdi-play-circle-outline" }, dayText)}
-          {upcoming.length || recent.length ? null : failed ? (
-            <Quiet>Could not be loaded.</Quiet>
-          ) : (
-            <p className="text-sm">No cast is claimed yet.</p>
-          )}
         </>
       )}
     </HomePanel>

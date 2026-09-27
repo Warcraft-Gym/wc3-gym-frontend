@@ -26,16 +26,16 @@ const ACTION_COLOR: Record<string, string> = {
   primary: "text-primary",
 };
 
-/** The buttons at the end of a row. Three or more fold into a menu.
- *  An action writes unless marked public, so only an admin sees it. */
-export function RowActions({ actions, inline = false }: { actions: RowAction[]; inline?: boolean }) {
+/** The buttons at the end of a row. Three or more fold into a menu; `menu` folds fewer too, and
+ *  `inline` folds none. An action writes unless marked public, so only an admin sees it. */
+export function RowActions({ actions, inline = false, menu = false }: { actions: RowAction[]; inline?: boolean; menu?: boolean }) {
   const { isAdmin } = useAuth();
   const visible = actions.filter((a) => isAdmin || a.public);
   if (!visible.length) return null;
 
   return (
     <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
-      {!inline && visible.length >= 3 ? (
+      {!inline && (menu || visible.length >= 3) ? (
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Row actions" />}>
             <Icon name="mdi-dots-vertical" />

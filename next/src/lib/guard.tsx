@@ -4,13 +4,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { saveReturnUrl, takeReturnUrl } from "@/helpers/return-url.mjs";
 import { useAuth, useSeasonStore } from "@/stores";
 import { canSeeRole, homePath, metaOf } from "@/lib/routes";
+import { devLoginEnabled } from "@/components/DevLoginCard";
 
 /** The port of router.js `beforeEach`. It draws nothing until the route is allowed. */
 export function Guard({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const search = useSearchParams();
   const router = useRouter();
-  const { me } = useAuth();
+  const { me, user } = useAuth();
   // useAuth answers the signed-out server snapshot until hydration, so the redirect waits for it
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const { ensureSeasons } = useSeasonStore();
@@ -31,7 +32,10 @@ export function Guard({ children }: { children: React.ReactNode }) {
   }, [meta.season, seasonsLoaded]);
   const seasonsReady = !meta.season || seasonsLoaded;
 
-  const signedInOnLogin = (path === "/login" || path === "/admin-login") && !!me;
+  // the admin token's session stays on /admin-login while the local dev login is on: it picks there
+  // between the super admin and a player
+  const choosing = path === "/admin-login" && devLoginEnabled && !!user && !user.dev && !!me?.superadmin;
+  const signedInOnLogin = (path === "/login" || path === "/admin-login") && !!me && !choosing;
   const allowed = !signedInOnLogin && (meta.role === "public" || (!!me && canSeeRole(me.role, meta.role)));
 
   useEffect(() => {

@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { NewMapDialog } from "@/components/admin/NewMapDialog";
 import { LadderImportDialog } from "@/components/LadderImportDialog";
 import type { ImportRow } from "@/components/LadderImportDialog";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -56,9 +56,6 @@ export function SeasonMapsView({ id }: { id: string }) {
   const [savedOrder, setSavedOrder] = useState("");
 
   const [newMapOpen, setNewMapOpen] = useState(false);
-  const [newMap, setNewMap] = useState({ name: "", shortname: "" });
-  const [newMapFile, setNewMapFile] = useState<File | null>(null);
-  const newMapPreview = useMemo(() => (newMapFile ? URL.createObjectURL(newMapFile) : null), [newMapFile]);
 
   const [importOpen, setImportOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
@@ -156,19 +153,8 @@ export function SeasonMapsView({ id }: { id: string }) {
       setSavedOrder(order.join("|"));
     });
 
-  const closeNewMap = () => {
-    setNewMapOpen(false);
-    setNewMap({ name: "", shortname: "" });
-    setNewMapFile(null);
-  };
-
-  const createNewMap = () =>
-    apply(async () => {
-      const created = await mapStore.createMap(newMap);
-      if (newMapFile) await mapStore.uploadMapImage(created.id, newMapFile);
-      await addMapsToSeason(seasonId!, [created.id]);
-      closeNewMap();
-    });
+  // The dialog stores the map and its picture; the page adds it to the pool
+  const addNewMap = (created: MapRow) => apply(() => addMapsToSeason(seasonId!, [created.id]));
 
   const openImport = async () => {
     setImportOpen(true);
@@ -482,42 +468,7 @@ export function SeasonMapsView({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* New Map Dialog */}
-      <Dialog open={newMapOpen} onOpenChange={(open) => open || closeNewMap()}>
-        <DialogContent showCloseButton={false} className="max-w-[560px] gap-0 p-0 sm:max-w-[560px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-            <Icon name="mdi-map-plus" />
-            New map
-          </DialogTitle>
-          <div className="p-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <Field className="md:col-span-2" label="Map Name" htmlFor="new-map-name">
-                <Input id="new-map-name" value={newMap.name} onChange={(e) => setNewMap({ ...newMap, name: e.target.value })} />
-              </Field>
-              <Field label="Short Name" htmlFor="new-map-shortname">
-                <Input id="new-map-shortname" value={newMap.shortname} onChange={(e) => setNewMap({ ...newMap, shortname: e.target.value })} />
-              </Field>
-            </div>
-            <div className="mt-4 flex items-center gap-4">
-              <span className="block h-16 w-[100px] shrink-0 overflow-hidden rounded-[3px] bg-band">
-                {newMapPreview ? <img src={newMapPreview} alt="Preview" className="block h-full w-full object-cover" /> : null}
-              </span>
-              <Field className="flex-1" label="Map Image" htmlFor="new-map-image">
-                <Input id="new-map-image" type="file" accept=".png,.jpg" onChange={(e) => setNewMapFile(e.target.files?.[0] ?? null)} />
-              </Field>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 p-4 pt-0">
-            <Button variant="ghost" onClick={closeNewMap}>
-              Cancel
-            </Button>
-            <Button disabled={!newMap.name} onClick={createNewMap}>
-              <Icon name="mdi-plus" />
-              Add to pool
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <NewMapDialog open={newMapOpen} onOpenChange={setNewMapOpen} onCreated={addNewMap} confirmLabel="Add to pool" />
 
       <LadderImportDialog modelValue={importOpen} rows={importRows} loading={importLoading} onUpdateModelValue={setImportOpen} onConfirm={confirmImport} />
     </div>

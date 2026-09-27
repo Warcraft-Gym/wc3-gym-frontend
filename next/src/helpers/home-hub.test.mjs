@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { captainRow, offersAction, ownScore, ownSeries, panelOrder, rowContext, seriesWhen } from './home-hub.mjs';
+import { PANEL_ORDER, captainRow, homeRounds, openSignups, ownScore, ownSeries, rowContext, seasonFixtures, seasonState, seriesWhen } from './home-hub.mjs';
 
-test('a member with no series of his own reads the upcoming events first', () => {
-  assert.deepEqual(panelOrder(true), { own: 1, next: 2, signup: 3, board: 4, cast: 5 });
-  assert.deepEqual(panelOrder(false), { signup: 1, board: 2, own: 3, next: 4, cast: 5 });
+test('an open signup comes first, then the games, the upcoming series, the upcoming events, fantasy and the stats', () => {
+  assert.deepEqual(PANEL_ORDER, { signup: 1, games: 2, next: 3, upcoming: 4, fantasy: 5, stats: 6 });
 });
 
 test('a series already under way reads the time it started', () => {
@@ -17,11 +16,16 @@ test('a series already under way reads the time it started', () => {
   assert.equal(seriesWhen(null, now), 'No time booked');
 });
 
-test('an upcoming event offers its button, and a withdraw only while the signups are open', () => {
-  assert.equal(offersAction({ action: 'sign_up' }), true);
-  assert.equal(offersAction({ action: 'check_in', joined: true }), true);
-  assert.equal(offersAction({ action: 'withdraw', signups_open: true }), true);
-  assert.equal(offersAction({ action: 'withdraw', signups_open: false }), false);
+test('the open signups are the rows a member may still enter, leave or check in to, by event start', () => {
+  const rows = [
+    { id: 1, action: 'sign_up', start: '2026-11-09' },
+    { id: 2, action: 'withdraw', signups_open: true, start: '2026-09-28' },
+    { id: 3, action: 'withdraw', signups_open: false, start: '2026-09-01' },
+    { id: 4, action: 'check_in', joined: true, start: '2026-09-02' },
+    { id: 5, action: 'sign_up', start: '2026-09-21' },
+  ];
+  // a check-in opens once the signups close, so the row keeps its place on the panel
+  assert.deepEqual(openSignups(rows).map((row) => row.id), [4, 5, 2, 1]);
 });
 
 test('the own panel takes the next round to play and the last round played', () => {
@@ -75,4 +79,31 @@ test('a scored series with no time never had one written down', () => {
 test('an unscored series with no time is still waiting on a booking', () => {
   const now = DateTime.fromISO('2026-09-21T12:00:00Z');
   assert.equal(seriesWhen({ date_time: null, player1_score: null, player2_score: null }, now), 'No time booked');
+});
+
+test('the member is on a team, waiting for the draft, or not in the current season', () => {
+  assert.equal(seasonState({ id: 20, team: { id: 3 }, signed_up: true }), 'playing');
+  assert.equal(seasonState({ id: 20, team: null, signed_up: true }), 'waiting');
+  assert.equal(seasonState({ id: 20, team: null, signed_up: false }), 'not_in');
+  assert.equal(seasonState(undefined), 'not_in');
+});
+
+test('the rounds to play come first in order, the rounds played after, the most recent first', () => {
+  const cards = [1, 2, 3, 4, 5].map((playday) => ({ playday, over: playday <= 2 }));
+  const { ahead, played } = homeRounds(cards);
+  assert.deepEqual(ahead.map((card) => card.playday), [3, 4, 5]);
+  assert.deepEqual(played.map((card) => card.playday), [2, 1]);
+});
+
+test("the current season's draft goes to My Season and every other event's to Upcoming Series", () => {
+  const events = [
+    { id: 19, name: 'Season 19', captain_fixture: { match_id: 1, playday: 2 } },
+    { id: 40, name: 'Cup', captain_fixture: { match_id: 2, playday: 1 } },
+    { id: 41, name: 'Open', captain_fixture: null },
+  ];
+  assert.deepEqual(seasonFixtures(events, 19), { own: { match_id: 1, playday: 2 }, others: [{ match_id: 2, playday: 1, event: 'Cup' }] });
+  // a season id read as text still finds its row
+  assert.equal(seasonFixtures(events, '19').own.match_id, 1);
+  assert.deepEqual(seasonFixtures(events, null).others.map((row) => row.event), ['Season 19', 'Cup']);
+  assert.deepEqual(seasonFixtures(undefined, 19), { own: null, others: [] });
 });

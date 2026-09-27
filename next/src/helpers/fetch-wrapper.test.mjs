@@ -75,7 +75,7 @@ test('the open events list and its league_id/kind/limit/offset queries are edge 
   ]) {
     assert.equal(eventsListEdgeCached.test(url), true, url);
   }
-  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123', '/api/events?kind=koth&limit=25&offset=0&t=123', '/api/events?limit=']) {
+  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123', '/api/events?kind=koth&limit=25&offset=0&t=123', '/api/events?limit=', '/api/me/events']) {
     assert.equal(eventsListEdgeCached.test(url), false, url);
   }
 });

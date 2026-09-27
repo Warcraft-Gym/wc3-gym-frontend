@@ -105,7 +105,8 @@ const EDGE_CACHED = /(\/events\/\d+\/ladder(\/players)?|\/events\/\d+\/series\?(
 // Career pages use query parameters for paging and sorting; a cache-busting query stays authenticated.
 const CAREER_EDGE_CACHED = /\/stats\/career(?:\/\d+)?(?:\?(?:limit|offset|search|sort|order)=[^&]*(?:&(?:limit|offset|search|sort|order)=[^&]*)*)?$/;
 // The events list takes league_id, kind, limit and offset; a cache-busting `t` or an admin-only `published` filter stays authenticated.
-const EVENTS_LIST_EDGE_CACHED = /\/events(?:\?(?:league_id=\d+|kind=\w+|limit=\d+|offset=\d+)(?:&(?:league_id=\d+|kind=\w+|limit=\d+|offset=\d+))*)?$/;
+// /me/events is the caller's own list and keeps its bearer, so a path ending in /me/events misses it.
+const EVENTS_LIST_EDGE_CACHED = /(?<!\/me)\/events(?:\?(?:league_id=\d+|kind=\w+|limit=\d+|offset=\d+)(?:&(?:league_id=\d+|kind=\w+|limit=\d+|offset=\d+))*)?$/;
 
 // exported so the raw FormData requests can send the same bearer
 export async function authHeader(method, url) {

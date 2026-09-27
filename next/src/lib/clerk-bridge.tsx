@@ -5,10 +5,22 @@ import { useRouter } from "next/navigation";
 import { saveReturnUrl, takeReturnUrl } from "@/helpers/return-url.mjs";
 import { useAuthStore, useSeasonStore, setNavigate, useClerkAuth } from "@/stores";
 import { homePath, metaOf } from "@/lib/routes";
+import { clerkEnabled } from "@/lib/clerk-provider";
+
+export function ClerkBridge() {
+  return clerkEnabled ? <ClerkSessionBridge /> : <RouterBridge />;
+}
+
+/** Without a Clerk key only the admin token signs in; the guard sends everyone else to /login. */
+function RouterBridge() {
+  const router = useRouter();
+  setNavigate((to: string) => router.push(to));
+  return null;
+}
 
 /** The port of App.vue:35-60. Clerk owns the session; the fetch wrapper reads its token
  *  through the auth box, and /me carries the role, name and avatar the nav draws. */
-export function ClerkBridge() {
+function ClerkSessionBridge() {
   const clerk = useClerk();
   const router = useRouter();
   const auth = useAuthStore();

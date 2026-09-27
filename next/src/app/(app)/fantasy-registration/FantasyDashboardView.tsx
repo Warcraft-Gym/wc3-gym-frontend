@@ -8,12 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/Combobox";
 import { DataTable } from "@/components/ui/DataTable";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { TableCell } from "@/components/ui/table";
 import { GroupedTable, type GroupedColumn } from "@/components/GroupedTable";
@@ -24,6 +21,7 @@ import { RaceIcon } from "@/components/RaceIcon";
 import { RaceSelect } from "@/components/RaceSelect";
 import { SeasonSelect } from "@/components/SeasonSelect";
 import { StatusAlert } from "@/components/StatusAlert";
+import { BetDialog } from "@/components/fantasy/BetDialog";
 import { W3CMmr } from "@/components/W3CMmr";
 import { LadderDayBars } from "@/components/ladder/LadderDayBars";
 import { MatchupCompare } from "@/components/ladder/MatchupCompare";
@@ -32,7 +30,7 @@ import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useConfigStore, useFantasyStore, useSeason, useSeasonStore, useSeriesStore, useTeamStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
 import { eventLabel } from "@/helpers/event-labels.mjs";
-import { betsOpen, isScored, validateBetPoints as checkBetPoints } from "@/helpers/bets.mjs";
+import { betsOpen, isScored } from "@/helpers/bets.mjs";
 import { ALL_COLORS, ALL_NAMES } from "@/helpers/tiers.mjs";
 import { record } from "@/helpers/figures.mjs";
 import { fillDays, maxGamesPerDay } from "@/helpers/ladder-days.mjs";
@@ -85,7 +83,6 @@ export function FantasyDashboardView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isBetSaving, setIsBetSaving] = useState(false);
   const [isCreationEnabled, setIsCreationEnabled] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -108,16 +105,8 @@ export function FantasyDashboardView() {
   // Betting state
   const [fantasySeries, setFantasySeries] = useState<any[]>([]);
   const [fantasyBets, setFantasyBets] = useState<any[]>([]);
-  const [betDialog, setBetDialog] = useState(false);
-  const [betSeries, setBetSeries] = useState<any>({});
-  const [selectedBetWinnerId, setSelectedBetWinnerId] = useState<number | null>(null);
-  const [betPoints, setBetPoints] = useState<number | null>(null);
-  const [useFixedBetPoints, setUseFixedBetPoints] = useState(false);
-  const [fixedBetPointsValue, setFixedBetPointsValue] = useState(0);
-  const [minBetPoints, setMinBetPoints] = useState<number | null>(null);
-  const [maxBetPoints, setMaxBetPoints] = useState<number | null>(null);
-  const [betPointsError, setBetPointsError] = useState<string | null>(null);
-  const [betError, setBetError] = useState<string | null>(null);
+  // the series whose bet dialog is open; null while none is
+  const [betSeries, setBetSeries] = useState<any>(null);
 
   const seasonName = eventLabel(season) || "this season";
   const phase = season?.phase ?? "open";
@@ -231,23 +220,6 @@ export function FantasyDashboardView() {
           setIsCreationEnabled(!!setting?.value && setting.value.toLowerCase() === "true");
         } catch {
           setIsCreationEnabled(false);
-        }
-
-        // Load bet points settings
-        try {
-          const fixedBetPointsSetting = await configStore.fetchSetting("fantasy_fixed_bet_points");
-          setUseFixedBetPoints(!!fixedBetPointsSetting?.value && fixedBetPointsSetting.value.toLowerCase() === "true");
-          const betPointsValueSetting = await configStore.fetchSetting("fantasy_bet_points_value");
-          setFixedBetPointsValue(betPointsValueSetting?.value ? parseInt(betPointsValueSetting.value) : 0);
-          const minBetPointsSetting = await configStore.fetchSetting("fantasy_min_bet_points");
-          setMinBetPoints(minBetPointsSetting?.value ? parseInt(minBetPointsSetting.value) : null);
-          const maxBetPointsSetting = await configStore.fetchSetting("fantasy_max_bet_points");
-          setMaxBetPoints(maxBetPointsSetting?.value ? parseInt(maxBetPointsSetting.value) : null);
-        } catch {
-          setUseFixedBetPoints(false);
-          setFixedBetPointsValue(0);
-          setMinBetPoints(null);
-          setMaxBetPoints(null);
         }
 
         // the backend reads the member off the session bearer
@@ -383,66 +355,10 @@ export function FantasyDashboardView() {
     }
   };
 
-  const validateBetPoints = (points: number | null) => checkBetPoints(points, minBetPoints, maxBetPoints);
-
-  const placeBet = (series: any) => {
-    setBetSeries(series);
-    setSelectedBetWinnerId(series.myBet?.winner_id || null);
-    setBetPoints(series.myBet?.bet_points || null);
-    setBetPointsError(null);
-    setBetError(null);
-    setBetDialog(true);
-  };
-
-  const closeBet = () => {
-    setBetDialog(false);
-    setBetError(null);
-    setBetSeries({});
-    setSelectedBetWinnerId(null);
-    setBetPoints(null);
-    setBetPointsError(null);
-  };
-
-  const saveBet = async () => {
-    setIsBetSaving(true);
-    try {
-      const betData = {
-        series_id: betSeries.id,
-        season_id: teamForm.season_id,
-        winner_id: selectedBetWinnerId,
-        bet_points: betPoints, // Send as-is, the backend applies fixed points if configured
-      };
-      if (betSeries.myBet) {
-        await fantasyStore.public_updateBet(betSeries.myBet.id, betData);
-        setSuccessMessage("Bet updated successfully!");
-      } else {
-        await fantasyStore.public_createBet(betData);
-        setSuccessMessage("Bet placed successfully!");
-      }
-      closeBet();
-      await fetchFantasyData(existingTeam, teamForm.season_id, playerData?.user?.id);
-    } catch (error: any) {
-      console.error("Error saving bet:", error);
-      setBetError(error.message || "Error saving bet. Please try again.");
-    } finally {
-      setIsBetSaving(false);
-    }
-  };
-
-  const deleteBet = async () => {
-    if (!betSeries.myBet) return;
-    setIsBetSaving(true);
-    try {
-      await fantasyStore.public_deleteBet(betSeries.myBet.id);
-      setSuccessMessage("Bet deleted successfully!");
-      closeBet();
-      await fetchFantasyData(existingTeam, teamForm.season_id, playerData?.user?.id);
-    } catch (error: any) {
-      console.error("Error deleting bet:", error);
-      setBetError(error.message || "Error deleting bet. Please try again.");
-    } finally {
-      setIsBetSaving(false);
-    }
+  const betSaved = async (message: string) => {
+    setBetSeries(null);
+    setSuccessMessage(message);
+    await fetchFantasyData(existingTeam, teamForm.season_id, playerData?.user?.id);
   };
 
   const getBetPlayerName = (series: any, bet: any) => {
@@ -530,7 +446,7 @@ export function FantasyDashboardView() {
       enableSorting: false,
       cell: ({ row }: any) =>
         !ended && betsOpen(row.original) ? (
-          <Button variant="outline" size="sm" disabled={isBetSaving} onClick={() => placeBet(row.original)}>
+          <Button variant="outline" size="sm" onClick={() => setBetSeries(row.original)}>
             {row.original.myBet ? "Change bet" : "Place bet"}
           </Button>
         ) : (
@@ -538,15 +454,6 @@ export function FantasyDashboardView() {
         ),
     },
   ];
-
-  const pointsHint =
-    minBetPoints && maxBetPoints
-      ? `Enter between ${minBetPoints} and ${maxBetPoints} points`
-      : minBetPoints
-        ? `Minimum ${minBetPoints} points`
-        : maxBetPoints
-          ? `Maximum ${maxBetPoints} points`
-          : "Enter the number of points you want to bet";
 
   return (
     <div className="p-4">
@@ -888,68 +795,7 @@ export function FantasyDashboardView() {
         </CardContent>
       </Card>
 
-      {/* Place Bet Dialog */}
-      <Dialog open={betDialog} onOpenChange={(open) => (open ? setBetDialog(true) : closeBet())} disablePointerDismissal>
-        <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[500px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">Place fantasy bet</DialogTitle>
-
-          <div className="flex flex-col gap-4 p-4">
-            <StatusAlert modelValue={betError} onClose={() => setBetError(null)} />
-            <div className="flex flex-wrap items-center gap-2">
-              {betSeries.player1 ? <PlayerName player={betSeries.player1} race={betSeries.player1_race} plain /> : null}
-              vs
-              {betSeries.player2 ? <PlayerName player={betSeries.player2} race={betSeries.player2_race} plain /> : null}
-            </div>
-
-            <RadioGroup value={selectedBetWinnerId} onValueChange={(next) => setSelectedBetWinnerId(next as number)} aria-label="Select winner">
-              {[
-                { id: betSeries.player1_id, name: betSeries.player1?.name },
-                { id: betSeries.player2_id, name: betSeries.player2?.name },
-              ].map((side) => (
-                <Label key={side.id} className="flex items-center gap-2 font-normal">
-                  <RadioGroupItem value={side.id} />
-                  {side.name}
-                </Label>
-              ))}
-            </RadioGroup>
-
-            {!useFixedBetPoints ? (
-              <Field label="Bet points" hint={pointsHint} error={betPointsError} htmlFor="bet-points">
-                <Input
-                  id="bet-points"
-                  type="number"
-                  min={minBetPoints || 1}
-                  max={maxBetPoints ?? undefined}
-                  value={betPoints ?? ""}
-                  onChange={(event) => {
-                    const points = event.target.value === "" ? null : Number(event.target.value);
-                    setBetPoints(points);
-                    setBetPointsError(validateBetPoints(points));
-                  }}
-                  onBlur={() => setBetPointsError(validateBetPoints(betPoints))}
-                />
-              </Field>
-            ) : (
-              <StatusAlert modelValue={`This bet will be worth ${fixedBetPointsValue} points`} type="info" closable={false} />
-            )}
-          </div>
-
-          <div className="flex flex-wrap justify-end gap-2 px-4 py-3">
-            {betSeries.myBet ? (
-              <Button variant="ghost" className="mr-auto text-error" disabled={isBetSaving} onClick={deleteBet}>
-                Delete bet
-              </Button>
-            ) : null}
-            <Button variant="ghost" disabled={isBetSaving} onClick={closeBet}>
-              Cancel
-            </Button>
-            <Button disabled={!selectedBetWinnerId || isBetSaving || (!useFixedBetPoints && (!!betPointsError || !betPoints))} onClick={saveBet}>
-              <Icon name={isBetSaving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
-              Save bet
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {betSeries ? <BetDialog key={betSeries.id} series={betSeries} seasonId={teamForm.season_id} onClose={() => setBetSeries(null)} onSaved={betSaved} /> : null}
     </div>
   );
 }

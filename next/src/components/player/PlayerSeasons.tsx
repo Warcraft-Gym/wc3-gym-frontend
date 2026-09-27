@@ -309,10 +309,10 @@ export function PlayerSeasons({
                       ) : null}
                     </section>
                   ) : null}
-                  {row.kind === "gnl" && row.id === openId && current ? (
-                    current(row)
-                  ) : row.kind === "gnl" ? (
+                  {row.kind === "gnl" ? (
                     <>
+                      {/* the running season draws its rounds, every other one its series; both keep the ladder tab */}
+                      {row.id === openId && current ? current(row) : (
                       <section className="pb-4">
                         <h4 className="mb-2 text-base font-medium">
                           Series by round <span className="text-xs font-normal text-muted-foreground">{record(row.wins, row.losses) ?? "—"}</span>
@@ -359,6 +359,7 @@ export function PlayerSeasons({
                           </table>
                         </div>
                       </section>
+                      )}
                       {row.ladder ? (
                         <>
                           <Separator className="mb-4" />

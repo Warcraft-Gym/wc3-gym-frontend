@@ -38,7 +38,7 @@ test('the no-stats mark drops the race on a line that names none', () => {
 
 test('gamesWarning marks a player under the rule in warning, with the count', () => {
   const player = { race_mmrs: [entry('HU', 25, 1600, 10)] };
-  assert.deepEqual(gamesWarning(player, 'HU'), { colour: 'warning', text: 'Less than 20 games (10 games) for HU' });
+  assert.deepEqual(gamesWarning(player, 'HU'), { colour: 'warning', text: 'Under 20 W3Champions ladder games on HU in the last two W3C seasons (10 games)' });
   assert.equal(hasLowGamesTwoSeasons(player, 'HU'), true);
 });
 

@@ -398,7 +398,7 @@ export function FantasyLeaderboardView() {
       {/* Create/Edit Team Dialog */}
       <Dialog open={editDialog} onOpenChange={(open) => (open ? setEditDialog(true) : closeEditDialog())} disablePointerDismissal>
         <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[900px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name={isEditing ? "mdi-pencil" : "mdi-plus"} />
             {isEditing ? "Edit fantasy team" : "Create fantasy team"}
           </DialogTitle>

@@ -161,7 +161,7 @@ export function MapsView() {
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
@@ -176,10 +176,10 @@ export function MapsView() {
 
       {/* Main Card */}
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-map" />
-            <span>All maps</span>
+            <span>All Maps</span>
           </CardTitle>
         </CardHeader>
 
@@ -246,7 +246,7 @@ export function MapsView() {
       <Dialog open={mapDialogOpen} onOpenChange={(open) => open || closeMapDialog()}>
         {selectedMap ? (
           <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
-            <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+            <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
               <Icon name={isEditing ? "mdi-pencil" : "mdi-map-plus"} />
               {isEditing ? `Edit map: ${selectedMap.name}` : "Add map"}
             </DialogTitle>

@@ -73,7 +73,7 @@ export function startZone(browserZone, country) {
 export function signupTitles(state, seasonName) {
   return {
     heading: state === 'profile' ? 'Your Profile' : 'Your Signup',
-    card: seasonName && !['profile', 'over'].includes(state) ? `Sign up for ${seasonName}` : 'Your details',
+    card: seasonName && !['profile', 'over'].includes(state) ? `Sign up for ${seasonName}` : 'Your Details',
   };
 }
 

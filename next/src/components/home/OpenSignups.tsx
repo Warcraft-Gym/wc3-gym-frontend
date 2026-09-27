@@ -71,7 +71,7 @@ export function OpenSignups({
 /** The one control a signup row offers, always outlined: choices of equal standing look equal. */
 function SignupButton({ card, acting, onAct }: { card: Card; acting: string | null; onAct: (card: Card) => void }) {
   const busy = acting === card.key;
-  const tint = card.primary.color === "error" ? "text-error" : card.primary.color === "success" ? "text-success" : "text-primary-text";
+  const tint = card.primary.color === "error" ? "text-error" : "text-primary-text";
   const body = (
     <>
       {busy ? <Icon name="mdi-loading mdi-spin" /> : card.primary.icon ? <Icon name={card.primary.icon} /> : null}

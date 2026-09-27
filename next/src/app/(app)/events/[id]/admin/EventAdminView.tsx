@@ -44,7 +44,7 @@ const seatsOf = lobbySeats as (row: Row) => Row[];
 
 // The one refusal a force answers, as app/services/stage_engine.py on_reopened words it
 const NEEDS_FORCE = "A later series already carries a result";
-const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", primary: "text-primary" };
+const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", "medal-bronze": "text-medal-bronze" };
 // Tailwind builds no class from a number held in data, so the three dialog widths are written out
 const WIDTH: Record<number, string> = { 480: "md:max-w-[480px]", 520: "md:max-w-[520px]", 560: "md:max-w-[560px]" };
 const WON = "flex-1 aria-pressed:bg-primary/15 aria-pressed:text-primary-text";
@@ -70,7 +70,7 @@ function Ask({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className={cn("gap-0 p-0", WIDTH[width])}>
-        <DialogTitle className={cn("px-4 py-3", tone === "error" ? "bg-error text-on-error" : "bg-primary text-on-primary")}>{title}</DialogTitle>
+        <DialogTitle className={cn("px-4 py-3", tone === "error" ? "bg-error text-on-error" : "banner bg-banner text-primary")}>{title}</DialogTitle>
         <div className="p-4">{children}</div>
         <div className="flex items-center justify-end gap-2 p-4 pt-0">{actions}</div>
       </DialogContent>

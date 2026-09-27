@@ -758,7 +758,7 @@ export function DiscordRolesView() {
                   accessorKey: "members",
                   header: () => <div className="text-right">In Discord</div>,
                   cell: ({ row }) => (
-                    <div className={cn("tnum text-right", row.original.binding && row.original.binding.holders !== row.original.members && "font-medium text-warning")}>
+                    <div className={cn("tnum text-right", row.original.binding && row.original.binding.holders !== row.original.members && "font-bold text-warning")}>
                       {row.original.members}
                     </div>
                   ),
@@ -802,8 +802,8 @@ export function DiscordRolesView() {
 
         {/* What the guild has and the database says it should have */}
         <Card className={cn("card gap-0 py-0", view === "columns" && "order-first")}>
-          <CardHeader className="bg-primary p-4">
-            <CardTitle className="flex items-center gap-2 text-on-primary">
+          <CardHeader className="banner bg-banner p-4">
+            <CardTitle className="flex items-center gap-2 text-primary">
               <Icon name="mdi-account-sync" />
               <span>Accounts out of sync</span>
             </CardTitle>
@@ -887,7 +887,7 @@ export function DiscordRolesView() {
         <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[640px]">
           {picker ? (
             <>
-              <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+              <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
                 <Icon name="mdi-account-group" />
                 Who holds {picker.roleName}?
               </DialogTitle>

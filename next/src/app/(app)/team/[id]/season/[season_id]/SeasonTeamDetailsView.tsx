@@ -233,13 +233,13 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
       {/* Page Header: the team, and the season it is read in */}
       <div className="mb-4">
-        <h1 className="flex items-center gap-2">
+        <h1 className="font-name flex items-center gap-2">
           <Icon name="mdi-shield-account" />
           {team?.name || "Team"}
         </h1>
@@ -252,9 +252,9 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
       {/* Team Overview */}
       {team ? (
         <Card className="card mb-4 gap-0 py-0">
-          <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-shield-account" />
-            <span>Season points</span>
+            <span>Season Points</span>
           </CardTitle>
           {currentSeasonInfo ? (
             <CardContent className="py-4">
@@ -284,9 +284,9 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
       {/* Ladder */}
       {ladderTeam ? (
         <Card className="card mb-4 gap-0 py-0">
-          <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <W3CIcon size={22} />
-            <span>W3C ladder</span>
+            <span>W3C Ladder</span>
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2 p-2">
             <Badge variant="outline">{ladderTeam.points} points</Badge>
@@ -474,7 +474,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
       {/* Add New Player Modal */}
       <Dialog open={showNewPlayerModal} onOpenChange={setShowNewPlayerModal} disablePointerDismissal>
         <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[900px] overflow-y-auto gap-0 p-0 sm:max-w-[900px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-account-multiple-plus" />
             Select players to add
           </DialogTitle>

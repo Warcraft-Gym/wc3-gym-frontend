@@ -149,7 +149,7 @@ export function SeasonsView() {
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
@@ -198,8 +198,8 @@ export function SeasonsView() {
       {/* Seasons Table */}
       {!errorMessage ? (
         <Card className="card gap-0 py-0">
-          <CardHeader className="bg-primary p-4">
-            <CardTitle className="flex items-center gap-2 text-on-primary">
+          <CardHeader className="banner bg-banner p-4">
+            <CardTitle className="flex items-center gap-2 text-primary">
               <Icon name="mdi-format-list-bulleted" />
               All Seasons
             </CardTitle>
@@ -220,7 +220,7 @@ export function SeasonsView() {
                     {tableHeader.map((column) => (
                       <TableHead
                         key={column.value}
-                        className={`${column.actions ? "text-end" : ""} ${column.mobile === false ? MOBILE_HIDDEN : ""} ${sort.value === column.value ? "text-primary" : ""}`}
+                        className={`${column.actions ? "text-end" : ""} ${column.mobile === false ? MOBILE_HIDDEN : ""} ${sort.value === column.value ? "text-primary-text" : ""}`}
                       >
                         {/* a sortable header is a button, so Tab and Enter reach the sort */}
                         {column.sortable ? (

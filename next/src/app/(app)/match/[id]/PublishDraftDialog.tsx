@@ -44,7 +44,7 @@ export function PublishDraftDialog({
   return (
     <Dialog open={!!drafts} onOpenChange={(open) => (open ? undefined : onCancel())}>
       <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[600px] gap-0 p-0 sm:max-w-[600px]`}>
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-publish" />
           {title}
         </DialogTitle>

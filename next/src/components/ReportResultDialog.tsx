@@ -361,7 +361,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
     <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : saving ? null : close())}>
       {/* One width in every state: the fold holds the board, so a missing veto never widens the dialog */}
       <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 md:max-w-[600px]">
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-trophy" />
           Report result
         </DialogTitle>
@@ -515,7 +515,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         {/* The veto never blocks, so a report that disagrees with it asks once and then goes through */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[420px] gap-0 p-0 sm:max-w-[420px]`}>
-            <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Are you sure?</DialogTitle>
+            <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Are you sure?</DialogTitle>
             <div className="p-4 text-sm">{confirmReason}</div>
             <div className="flex justify-end gap-2 p-4 pt-0">
               <Button variant="ghost" onClick={() => setConfirmOpen(false)}>

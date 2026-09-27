@@ -127,7 +127,7 @@ export const joinableEvents = (rows) => rows.filter((row) => row.action === 'sig
 const ACTION_BUTTON = {
   sign_up: { text: 'Sign up', icon: 'mdi-account-plus', color: 'primary', variant: 'elevated' },
   withdraw: { text: 'Withdraw', icon: 'mdi-account-remove', color: 'error', variant: 'outlined' },
-  check_in: { text: 'Check in', icon: 'mdi-check', color: 'success', variant: 'elevated' },
+  check_in: { text: 'Check in', icon: 'mdi-check', color: 'primary', variant: 'elevated' },
   view: { text: 'View the stage', icon: 'mdi-tournament', color: 'primary', variant: 'outlined' },
 };
 

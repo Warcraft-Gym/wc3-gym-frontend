@@ -13,7 +13,7 @@ type Summary = { seasons: number | null; thisSeason: number | null; overall: num
 function Figure({ value, label }: { value: number | null | undefined; label: string }) {
   return (
     <div className="flex flex-col">
-      {value === undefined ? <Skeleton className="skeleton h-7 w-10" /> : <span className="tnum font-heading text-2xl font-bold">{value ?? "–"}</span>}
+      {value === undefined ? <Skeleton className="skeleton h-7 w-10" /> : <span className="tnum text-2xl font-bold">{value ?? "–"}</span>}
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
@@ -26,7 +26,7 @@ function Figure({ value, label }: { value: number | null | undefined; label: str
 export function StatsPanel({ summary, seasonName, to, order }: { summary: Partial<Summary>; seasonName: string | null; to: string; order: number }) {
   const top3 = summary.top3 ?? [];
   return (
-    <HomePanel icon="mdi-account-star-outline" title="My Stats" order={order} action={<Link href={to} className="text-on-primary underline">Go to Profile</Link>}>
+    <HomePanel icon="mdi-account-star-outline" title="My Stats" order={order} action={<Link href={to} className="text-on-banner underline">Go to Profile</Link>}>
       <div className="grid grid-cols-2 gap-4">
         <Figure value={summary.seasons} label="Seasons played" />
         <Figure value={summary.score} label={seasonName ? `Points in ${seasonName}` : "Points this season"} />
@@ -40,7 +40,7 @@ export function StatsPanel({ summary, seasonName, to, order }: { summary: Partia
           <ul className="mt-1 flex flex-col gap-1.5">
             {top3.map((badge) => (
               <li key={badge.id} className="flex items-center gap-2">
-                <AchievementIcon id={badge.id} size={20} className="text-primary" />
+                <AchievementIcon id={badge.id} size={20} className="text-primary-text" />
                 <span className="flex-1">{badge.name}</span>
                 <span className="tnum text-sm text-muted-foreground">+{badge.points}</span>
               </li>

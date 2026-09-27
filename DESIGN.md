@@ -1,6 +1,6 @@
 # Design Rules
 
-The app uses one look, stone and bronze, in a light and a dark theme. This file lists the colours, the type and the rules that keep every page in that look. If a value here differs from the code, the code is correct and this file needs a fix.
+The app uses one look, stone and gold, in a light and a dark theme. This file lists the colours, the type and the rules that keep every page in that look. If a value here differs from the code, the code is correct and this file needs a fix.
 
 ## Where the look lives
 
@@ -17,7 +17,7 @@ The app uses one look, stone and bronze, in a light and a dark theme. This file 
 ## Rules
 
 - Use a theme token for every colour: `class="bg-primary"`, `class="text-win"`, `rgb(var(--v-theme-loss))`. Never write a hex value or a Tailwind palette name such as `red-500` in a view. Two exceptions are allowed: the Discord brand colours on the Discord buttons (`LoginView.tsx`, `DiscordJoinCard.tsx`), and the trophy artwork in `TrophyIcon.tsx`.
-- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text. Two exceptions, where the figure is itself the mark: the score of a result seen from one side wears `win`, `loss` or `draw`, and a wins count and a losses count may wear `win` and `loss` in a column of their own or inside a record, because the column title or the order of the record is the second channel.
+- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text. Two exceptions, where the figure is itself the mark: the score of a result seen from one side wears `win` or `loss`, and a drawn score wears body ink, and a wins count and a losses count may wear `win` and `loss` in a column of their own or inside a record, because the column title or the order of the record is the second channel.
 - Colour never carries meaning alone. Pair it with an icon, a label or a position.
 - A fill that carries text names its own ink as `on-<fill>`. The test checks that every such pair passes 4.5:1 (WCAG AA).
 - Dark is its own set of values, not an inverted light theme. A new token gets a light and a dark value.
@@ -30,37 +30,44 @@ Ink means `#1A241E`. White means `#FBF7F1`.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `background` | `#E8E9E3` | `#191A16` | The page. |
-| `surface` | `#F4F5F1` | `#232420` | Cards, tables, dialogs. |
-| `surface-bright` | `#FAFBF8` | `#2F302C` | A raised surface. |
-| `surface-light` | `#E1E4DD` | `#2D2E2A` | One tab bar, a banned veto tile, a progress-bar track, an empty heat-map cell. |
+| `background` | `#E8E9E3` | `#080503` | The page. |
+| `surface` | `#F4F5F1` | `#0C0805` | Cards, tables, dialogs. |
+| `surface-bright` | `#FAFBF8` | `#16140F` | A raised surface. |
+| `surface-light` | `#E1E4DD` | `#1B1915` | One tab bar, a banned veto tile, a progress-bar track, an empty heat-map cell. |
 | `surface-variant` / `on-surface-variant` | `#1C2420` / `#F2F4ED` | `#D5DBD1` / ink | The inverted surface, for example a tooltip. |
 | `on-surface`, `on-background` | ink | `#E7EBE3` | Body text. |
-| `band` / `on-band` | `#1C2420` / `#F2F4ED` | `#11110E` / `#F2F4ED` | The dark strip on the match, maps and veto pages, and behind a map thumbnail. |
-| `hero` / `on-hero` | `#1C2420` / `#F2F4ED` | `#332A1B` / `#F2F4ED` | The top block of the season report page. |
+| `band` / `on-band` | `#1C2420` / `#F2F4ED` | `#050301` / `#F2F4ED` | The dark strip on the match, maps and veto pages, and behind a map thumbnail. |
+| `hero` / `on-hero` | `#1C2420` / `#F2F4ED` | `#1E1710` / `#F2F4ED` | The top block of the season report page, a warm lift above the page. |
 | `band-muted` | `#B9C4B6` | `#B9C4B6` | Second-level text on the hero. |
-| `tag` / `on-tag` | `#DCE1D8` / `#3F4C43` | `#333430` / `#C3CCC1` | A quiet label on the fantasy tiers page. |
+| `tag` / `on-tag` | `#DCE1D8` / `#3F4C43` | `#221F19` / `#C3CCC1` | A quiet label on the fantasy tiers page. |
+
+The dark grounds are the public league site's warm near-black, so the two products share one ground. `on-surface` is 16.5:1 on the dark `surface`.
 
 ### Brand
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `primary` / `on-primary` | `#9A5B18` / white | `#D08B3C` / `#1A140C` | Bronze. Main buttons, card title bars, the sorted column. |
-| `primary-darken-1` | `#7C4912` | `#B57430` | The pressed state. |
-| `primary-text` | `#7C4912` | `#E3A45F` | Bronze text and links. `primary` is under 4.5:1 as text on `surface-light`. |
+| `primary` / `on-primary` | `#E7B643` / `#1A140C` | `#E7B643` / `#1A140C` | Gold. Main buttons, chips, badges, avatars, step dots, meters, focus rings, the selected tab indicator. |
+| `primary-darken-1` | `#D3A329` | `#D3A329` | A darker gold for a small mark that needs one. |
+| `banner` / `on-banner` | `#2B2117` / `#FBF7F1` | `#1E1710` / `#FBF7F1` | Card title bars, card headers, dialog title bars and the round tab bar of the match page. The title in the bar is `text-primary`: 8.4:1 on the light banner, 9.4:1 on the dark one. |
+| `primary-text` | `#916200` | `#E7B643` | Gold text and links. In light, `primary` is 1.7:1 on `surface`, so gold text takes this amber. |
 | `secondary` / `on-secondary` | `#3F4C43` / `#F2F4ED` | `#C3CCC1` / ink | Stone. Second-level chips and buttons. |
 | `secondary-darken-1` | `#2E3931` | `#A7B1A4` | The pressed state. |
 
+Gold is the highlight. A banner is a dark warm bar with cream text; its title is gold; gold fields are for buttons and small marks only. A banner carries the class `banner`: an inset light top line, an inset dark bottom line and a 1 px gold hairline at 35% (`oklch(80% 0.06 80 / 0.35)`). A badge or a button in a bar uses `on-banner` with a 40% border of the same ink.
+
+The filled button (`btn-gold`) is embossed gold: ink `oklch(22% 0.04 60)`, a top-to-bottom gradient `oklch(88% 0.13 90)`, `oklch(78% 0.14 84)` at 48%, `oklch(68% 0.13 78)`, and an inset highlight above. In dark, the inset shade below is `oklch(50% 0.1 70 / 0.6)` and the drop shadow `0 1px 2px oklch(0% 0 0 / 0.6)`; the light ground, and a disabled button on it, take `oklch(50% 0.1 70 / 0.35)` and `0 1px 1px oklch(20% 0.04 60 / 0.22)`. Hover brightens it by 5%, and a press moves it down 1 px unless the reader asks for reduced motion. Chips, badges and the rank badge keep the flat gold fill. Gold is also the hue of an amount (the `heat-*` ramp). It never marks a win, a race or a series. On a light ground gold is a fill with dark ink, never text: a text role in gold uses `primary-text`.
+
 ### Status
 
-Status colours mean a state of the app. Never use one as a chart series.
+Status colours mean a state of the app. Never use one as a chart series or for an action button.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
 | `error` | `#8C3B2A` | `#FFB4AB` | A failed action, a delete, the sit-out button. Kept apart from `loss` in dark. |
 | `warning` | `#A65200` | `#F0A04B` | A warning. Orange, never amber, because amber text does not read. |
 | `info` | `#2F6690` | `#7FB0DA` | A note, the "In progress" chip. |
-| `success` | `#2A6B36` | `#5FA870` | A saved action, the "Check in" button. |
+| `success` | `#2A6B36` | `#5FA870` | A saved state, a check mark, a positive state chip. Success is a status, never an action: an action button is `primary`. |
 
 In dark, `on-error`, `on-info`, `on-success` and `on-warning` are ink.
 
@@ -68,11 +75,11 @@ In dark, `on-error`, `on-info`, `on-success` and `on-warning` are ink.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `win` | `#1F63A6` | `#4F95D8` | A won game, series or bar. |
-| `loss` | `#B8432C` | `#DE6E52` | A lost game, series or bar. |
-| `draw` | `#5F6B61` | `#9DA89E` | A draw, no result, the Random race, a neutral bar. |
+| `win` | `#1F63A6` | `#4996F5` | A won game, series or bar. |
+| `loss` | `#B31220` | `#E24947` | A lost game, series or bar. |
+| `draw` | `#A8A29A` | `#5E5B56` | A draw, no result, the Random race, a neutral bar. |
 
-Win is blue, not green. Green and red cannot be told apart by a reader with red-green colour blindness. In dark, `on-win`, `on-loss` and `on-draw` are ink.
+Win is blue, not green. Green and red cannot be told apart by a reader with red-green colour blindness. `on-draw` is ink in light and white in dark. The draw grey is under 3:1 as text in both themes, so it is a fill or a mark only: a draw as text, a score or a tonal chip, wears body ink. In dark, `on-win` is ink and `on-loss` is `#1A140C`.
 
 ### Fantasy tiers
 
@@ -89,19 +96,20 @@ Win is blue, not green. Green and red cannot be told apart by a reader with red-
 
 ### Races, medals and the heat map
 
-The race and medal tokens are used on the season report. The `heat-*` ramp fills the heat map of the season report and the division bands of the entrants page. The Random race uses `draw`.
+The race and medal tokens are used on the season report and the event pages. The `heat-*` ramp fills the heat map of the season report and the division bands of the entrants page. The Random race uses `draw`.
 
 | Token | Light | Dark |
 |---|---|---|
-| `race-hu` | `#1689A6` | `#02809C` |
-| `race-oc` | `#D06D69` | `#BA4C4B` |
-| `race-ne` | `#086A12` | `#44AB46` |
-| `race-ud` | `#7546BA` | `#9B6FE4` |
+| `race-hu` | `#0278E7` | `#005BB5` |
+| `race-oc` | `#ED4952` | `#B71824` |
+| `race-ne` | `#00660C` | `#2DA73D` |
+| `race-ud` | `#62359C` | `#9D6FE3` |
 | `medal-gold` | `#8F6B00` | `#E0B84A` |
 | `medal-silver` | `#6E7881` | `#B9C2C8` |
-| `heat-1` to `heat-5` | `#D0A076` `#BA8351` `#A3682E` `#865017` `#683C0B` | `#784D25` `#9C642F` `#C37D39` `#E29A57` `#FABC86` |
+| `medal-bronze` | `#9A5B18` | `#D08B3C` |
+| `heat-1` to `heat-5` | `#F0D49B` `#DBB155` `#B68B16` `#8E6800` `#664700` | `#5E4300` `#805D00` `#AA7E00` `#D3A329` `#F5CB70` |
 
-Third place uses `primary` as its medal. The rank number sits beside each medal, so the rank does not depend on the colour. The heat map runs from light to dark bronze in light mode and from dark to light in dark mode. A cell with no games uses `surface-light`, and the legend shows that swatch.
+The races are the Bold set. In dark, `race-hu` and `race-oc` are 3.01:1 on `surface`: marks beside the race icon, never text. The rank number sits beside each medal, so the rank does not depend on the colour. The heat map is the gold ramp: light to dark gold in light mode, dark to light in dark mode. A cell with no games uses `surface-light`, and the legend shows that swatch.
 
 ### Borders and faded text
 
@@ -116,19 +124,22 @@ Light uses 0.78 because 0.7 put field labels under 4.5:1 on the light surface.
 
 | Face | Weights | Use |
 |---|---|---|
-| Alegreya (serif) | 700, 800 | `h1` to `h6`, `.v-card-title`, `.text-h1` to `.text-h6`. `h1`, `.text-h1` to `.text-h3` use 800. |
-| Alegreya Sans | 400, 500, 700 | Body text, controls, buttons, captions. |
+| Cinzel | 700 | The page title, `h1`, and the app bar title. Cinzel has capitals only, so it never sets a name. |
+| Cardo | 400, 700 | `h2` to `h6`, card, dialog and sheet titles, and player and team names (`.player-name .name`, `.team-name .name`, `.font-name`). A name keeps its own case. |
+| Lato | 400, 700 | Body text, controls, buttons, captions and every figure. |
 
-`@fontsource` serves both faces from the app's own bundle. Every number uses lining, equal-width digits (`tabular-nums`), so figures line up in a column.
+`next/font/google` loads the three faces in `next/src/app/layout.tsx` and serves them from the app. Every number uses lining, equal-width digits (`lining-nums tabular-nums`), so figures line up in a column. Lato has no 500: a figure that needs weight uses 700.
 
-A large number on a card uses Alegreya Sans 500 at the `.text-h2` size. The heading serif at 800 looks playful at that size.
+A large number on a card uses Lato 700, never a heading face.
 
 Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 
 ## Words on the page
 
 - Page titles (`h1`) and app bar and menu entries use Title Case: "Fantasy Bets", "Team Details".
-- Everything else uses sentence case: dialog titles, buttons, field labels, hints, table columns, alerts, chips, card titles.
+- A banner, card, dialog or section title or a sidebar group label that names a thing uses Title Case: "App Settings", "Upcoming Series", "My Accounts". One that reads as a sentence or an action uses sentence case: "Sign in as a player", "Open signups", "Add team".
+- The league is "Gym Newbie League" in a title or a group label. "GNL" stays only where the full name would wrap: a chip, a table cell, a column title, a filter option. Never "the league" for it.
+- Everything else uses sentence case: buttons, field labels, hints, table columns, alerts, chips.
 - Buttons show their label as written, in sentence case.
 - A column title is a short noun. It has no legend in brackets. On a wide screen it stays on one line.
 - Right-align numeric columns, the title and the cells.
@@ -209,7 +220,7 @@ The events module names things the same way on every page. A league is what repe
 - The run page is `/events/:id/admin`, admin only: one tab per stage, "Generate" while the stage holds no series, the same `StageView`, and "Advance" once every series carries a result. A result is entered game by game and the winners make the score. A walkover and a forfeit take a side picker. Reopening a series warns that it clears every side it feeds, and a reopen the engine refuses asks once more before it forces. A KOTH night is not run on the stage engine, so its run page address sends the admin on to `/koth/nights/:id` and draws nothing of its own.
 - `/koth` is the KOTH nights list, admin only: the nights newest first, 25 a page in the `DataTable` pager, with their date and their state, each name a link to `/koth/nights/:id`, which also holds the night's settings, "Tonight" to `/koth/dashboard`, and "Open tonight", which takes the start time and the three MMR bounds the brackets open at, prefilled from the night before, and lands on the night's run page. A night is one event of the KOTH league, so the entrants page enters a signup by hand. The entrants page of a night draws no MMR strip, no division control and no seed control, because a division write rebuilds the brackets and a seed write reorders the queue the night is running; one link, "Set the brackets on the night's run page.", points at `/koth/nights/:id` instead, and its groups read "bracket" where every other kind reads "division".
 - The entrants list is a `GroupedTable` grouped by division. An eligibility warning is a chip in `warning` with its reason as the label: under 20 games, over the MMR cap, banned. An identity that is not linked reads "Not linked" in medium emphasis, and the W3C column reads "Linked" as a link to the profile, because the W3C name is the battle tag the row already prints. A withdrawn entrant keeps its row in medium emphasis. The seed column reads the seed, and its source once the stage is locked; an admin drags a row to reorder the seeds inside its division. A player on more than one race is one row with a race row under it per race, each with its own MMR, seed, state and actions; the ban sits on his row alone, and a drag moves his races together. The MMR strip above the list is `DivisionBracketing`: its bands ascend where the divisions descend, and each band wears one step of the `heat-*` scale, because a division is a band of amounts and not a category. A phone drops the table for one card per entrant with the name, the race, the MMR and the chips. A team entrant reads as the team name with its roster under it: every member the team is rostered with for this event, through `PlayerName` on the race he signed up on, the captains marked with `mdi-star` in `primary-text`. Its MMR is the mean of those ratings, so the battle tag, Discord and W3C columns read an em dash, because a team carries no identity of its own. The Add dialog's team picker names the roster size of each team, and says which teams this event holds no roster for.
-- A KOTH night is drawn as one `BracketCard` per bracket, weakest bracket first, on the one board read, and the run page and the public page draw the same card: a `bg-primary` title bar with the bracket name and its MMR band, the throne, the series it plays now, the line waiting, the players who left and what the bracket played tonight. The throne is `mdi-crown` in `primary-text` over the king's player line and "Holds the throne", or `mdi-crown-outline` over the king from the last event and "King from last event, defending", or "No king yet". A queue row is one PLAYER with one place in line: the number, the player line, and under the name, at the indent of the race rows, a `play` chip while he is in another bracket's series and one line per race he holds in this bracket; a race the board answers no rating for wears the games mark in `error` beside its race name, as a name line wears it, and its MMR slot stays empty, and the name line wears that mark beside the name only when no race of his in this bracket holds a rating. Every other player line of a KOTH night — the throne, the defender, the open series, a played row, a player who left, the pass-the-crown list, the pair the close names and the strip of players waiting for a bracket — wears the same mark beside the name whenever the board names no rating, and a line that names no race reads "No W3C stats found". A long name truncates, so no control of the row leaves the card. Whatever comes first under the throne stands 12 px off its line. A played row reads "<winner> beat <loser>" with a `win` square, no score, because a best of one has none, a quiet "Forfeit" after the loser when he left the night, a crown where the throne moved or was held, and a "Replay" chip that opens the series. The public card carries no control at all. `next/src/components/koth/BracketCard.tsx` holds the card and its pieces; `next/src/helpers/koth-board.mjs` holds the band, the default pair, the start text, the place word and the throne word.
+- A KOTH night is drawn as one `BracketCard` per bracket, weakest bracket first, on the one board read, and the run page and the public page draw the same card: a `banner` title bar with the bracket name and its MMR band, the throne, the series it plays now, the line waiting, the players who left and what the bracket played tonight. The throne is `mdi-crown` in `primary-text` over the king's player line and "Holds the throne", or `mdi-crown-outline` over the king from the last event and "King from last event, defending", or "No king yet". A queue row is one PLAYER with one place in line: the number, the player line, and under the name, at the indent of the race rows, a `play` chip while he is in another bracket's series and one line per race he holds in this bracket; a race the board answers no rating for wears the games mark in `error` beside its race name, as a name line wears it, and its MMR slot stays empty, and the name line wears that mark beside the name only when no race of his in this bracket holds a rating. Every other player line of a KOTH night — the throne, the defender, the open series, a played row, a player who left, the pass-the-crown list, the pair the close names and the strip of players waiting for a bracket — wears the same mark beside the name whenever the board names no rating, and a line that names no race reads "No W3C stats found". A long name truncates, so no control of the row leaves the card. Whatever comes first under the throne stands 12 px off its line. A played row reads "<winner> beat <loser>" with a `win` square, no score, because a best of one has none, a quiet "Forfeit" after the loser when he left the night, a crown where the throne moved or was held, and a "Replay" chip that opens the series. The public card carries no control at all. `next/src/components/koth/BracketCard.tsx` holds the card and its pieces; `next/src/helpers/koth-board.mjs` holds the band, the default pair, the start text, the place word and the throne word.
 - An archived KOTH night, one whose board answers `historical`, is drawn by `HistoricalBoard`: one card per source bracket with its literal name, and the same head, throne and played list that `BracketCard` draws for a closed night. The throne is `mdi-crown` in `primary-text` over the reported king and "Held the throne at the end", or `mdi-crown-outline` and "No king recorded". Each BO1 is a played row in play order, "<winner> beat <loser>" with a `win` square and no score, because a best of one has none. A winner the play order infers wears `mdi-crown` in muted ink at the end of the row, and its tooltip reads "Inferred from the play order"; a recorded winner wears no mark. A series with no result reads "<a> vs <b>" with a `draw` square, and "Forfeit" in muted text where the order reads one; a review reason is an `mdi-information-outline` with the reason as its tooltip. An archived name is the written name alone, with no flag, race, rating mark or link, until an account claims it. Every mark carries its own hover, so the board draws no legend. Event videos are outline chips with `mdi-youtube` over the brackets.
 - `/koth/nights/:id` is the night's run page, admin only. Its header carries "Open stream view" and "Copy stream link" on any night that is not archived, as the night page does. It hangs the admin controls on the same cards: the card face carries three controls with no open series and five while one runs. One filled button starts the next series and names the pair, "Start A vs B"; clicking two queue rows picks that pair instead, which the button then names, and a pair that leaves the king out reads "The crown stays with <king>." under it. A bracket that plays a series draws no start button, so its queue takes no pick at all, and a pick already made there clears with the next board answer. A running series takes its winner on two filled buttons of equal weight, one per player, over a quiet "Cancel this series". A queue row carries three controls: a drag handle, and two `icon-xs` step buttons that are its keyboard and phone route, as the entrants list does, plus one remove. A played row carries two: "Add replay" and "Change the winner", each an icon button with an `aria-label` and a tooltip. The Unplaced strip sits over the brackets and gives each signup with no rating the games mark and three equal outlined bracket buttons. The step-down panel offers "Leave the throne empty" or "Pass the crown to" with one pick, and its one filled confirm names the outcome. The close confirm names each bracket's king and its played count, names every series it deletes as two player lines, and says the standing kings start the next event as King from last event. Two cards stand over the bracket cards. The Night card holds Name, Date, Start time, Stream link, Page link, the "Signups open" and "Published" switches and one filled "Save", which writes only those fields through `PUT /events/{id}`; it folds to one "Edit night" button while the night runs, which is while a series plays or signups stand open on a night not closed, and stands open otherwise. The Brackets card is the `DivisionBracketing` strip: one dot per rated race row of the board, the cuts at the lower bound of every bracket but the weakest, and one filled "Save the bounds" that writes `PUT /koth/nights/{id}/bounds` and takes the board it answers. The strip is off on a closed night only, so the bounds move while a series plays. An archived night's Brackets card draws no strip and lists each bracket's literal name, because its bounds are the source's words. Besides the stream view, the page carries no link to the public page; View As guest is how an admin reads it.
 - Every KOTH night has one public page, its event page `/events/:id`, and any reader opens it. It draws the event header, then `HistoricalBoard` for an archived night, or `KothNightBoard` for any other: a row with the sign up button while signups stand open, the withdraw buttons until the night closes, and the entrants chip, a quiet read-only strip over the brackets, "Waiting for a bracket", which lists the players no bracket holds yet with their marks and the line "An admin places these players." and shows only when that list is not empty, and the `BracketCard` grid with no control. A signed-in reader reads one `info` chip, "You are third in line", on his own row. A withdraw asks for a confirm, and a king's confirm reads "Withdrawing forfeits your next match." A guest reads the board alone. An admin also reads "Run the night", a link to `/koth/nights/:id`, and two outline buttons of the same size: "Open stream view" (`mdi-monitor`), a link that opens `/events/:id?mode=clean` in a new tab, and "Copy stream link" (`mdi-content-copy`), which copies the absolute clean URL and reads "Copied" for two seconds, or shows the URL selected in a read-only field when the browser refuses the copy. `?mode=clean` is the stream view: it drops every control and the strip, cuts the app bar down to the app title alone, with no nav, no account menu and no theme switch, drops the page footer and the "Replay" chip of a played row, because nobody clicks a link on a stream, and grows the card face and every small label on it one step, so the page can sit in a stream. `/koth/dashboard` reads `GET /koth/board` and lands on tonight's night page, keeping `?mode=clean`; while no night is open it reads the empty state "No KOTH night is open". Every KOTH page reads the board once, on load, and a reload shows new results, except the clean stream view, which reads it again every 30 seconds while visible and while the night is not closed. The public read carries no token, so the edge caches it for 15 seconds and every reader shares that answer; the run page's read carries the admin token, which the edge never caches, so it answers fresh after a write.
@@ -246,10 +257,10 @@ The nav is built from the hats a session wears (`next/src/helpers/nav-model.mjs`
 
 ## Patterns
 
-- A card title bar is `bg-primary`. A dialog that deletes something uses `bg-error`.
+- A card title bar and a dialog title bar are `banner bg-banner` with a `text-primary` title at 1.25rem. A dialog that deletes something uses `bg-error`.
 - A filled button marks the one next action of its surface; every other button on it is outlined or quiet. Choices of equal standing wear equal buttons.
 - A dialog is a full-height sheet under 768 px and a centred panel above it. A confirm keeps the centred panel at both widths, its height its content, so the form it asks about stays in view: pass `dialogCompact` from `next/src/components/ui/dialog.tsx` on its `DialogContent`.
-- Bronze text on a tab, a toolbar button or a card action button uses `primary-text`, because `primary` is 4.21:1 on `surface-light`.
+- Gold text on a tab, a toolbar button or a card action button uses `primary-text`, because light `primary` is 1.5:1 on `surface-light`.
 - The sorted column title of a table is in `primary`. An unsorted sortable column shows a faint sort icon.
 - A table wider than its card shows a shadow at the hidden edge.
 - A card pads its content with 16 px, the value `--card-spacing` holds. A card marked `size="sm"` pads with 12 px. A card whose content runs to its own edge, a full-width table or list, pads with none.
@@ -301,11 +312,11 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 
 | Set | Light, on `surface` | Dark, on `surface` | Result |
 |---|---|---|---|
-| `win` with `loss` | 27.1 full vision, 18.7 colour blind | 25.8 and 19.3 | Passes. |
-| The four `race-*` | 19.9 and 9.1 | 19.9 and 9.2 | Passes as a set of four. |
+| `win` with `loss` | 29.1 full vision, 21.4 colour blind | 32.2 and 25.8 | Passes. |
+| The four `race-*` | 19.6 and 8.7 | 20.3 and 11.8 | Passes as a set of four. |
 | The four `race-*` with `win` and `loss` | | 10.7 and 1.5 | Fails. A race colour and a result colour never share one set of marks. |
 | The six `tier-*` | 13.0 and 3.7 | | Fails. A tier is always a chip with its label, never a bare mark. |
-| `primary` with `loss` | 7.9 and 1.5 | | Fails. Bronze is a control colour and never a mark. |
+| `primary` with `loss` | | | Not measured. Gold is chrome and the amount hue, never a mark beside a result. |
 
 ### A player has many races
 
@@ -337,7 +348,7 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 ### Rules the code follows everywhere
 
 - The body rule in `globals.css` sets lining, tabular digits for every number. `.tnum` repeats it where a component resets the font. So a missing `tnum` is no fault, and a numeric column that is not right-aligned is.
-- In the light theme, `win`, `loss`, `draw` and the four status tokens name no `on-*` ink. `palette-style.ts` gives each of them the `on-primary` ink, which passes 4.5:1 on all seven, so `bg-win text-on-win` is safe in both themes.
+- In the light theme, `win`, `loss` and the four status tokens name no `on-*` ink. `palette-style.ts` gives each of them white (`#FBF7F1`), which passes 4.5:1 on all six, so `bg-win text-on-win` is safe in both themes. The light `draw` names ink.
 - A read that failed is not an empty list. An error draws `StatusAlert`, and the empty sentence shows only after a read that worked.
 - A tap on a mark opens its tooltip and never follows the link of its row. `RoundStrip`, `PlayerName` and `FlagIcon` stop the event.
 - A card of players is as synced as its least synced player: `TeamRoster` prints the oldest sync time of the card.
@@ -346,7 +357,9 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 
 ### The public league site
 
-The public league site, the `wc3-gnl-website` repository, shows the same league data in its own look, black and gold. A reader who moves between the two sites must find one way to read a record, a result and a race. Each site keeps its own look. For data, this palette is the reference for both sites: the maintainers decided on 20 September 2026 that the public site takes the dark values of `win`, `loss` and the four `race-*` tokens, which also pass the validator on a black ground. Propose a change to a rule of this section to that repository too.
+The public league site, the `wc3-gnl-website` repository, shows the same league data. A reader who moves between the two sites must find one way to read a record, a result and a race. The two sites share these exact values: the dark grounds, gold `#E7B643` with `#1A140C` ink, the embossed gold button, the dark banner with a gold title, the gold amount ramp, `win`, `loss`, `draw` and the four `race-*` tokens, and the faces Cinzel, Cardo and Lato. The maintainers decided this data language on 27 September 2026. Propose a change to a rule of this section to that repository too.
+
+The validator of the `dataviz` skill passes both sets on both grounds. The Bold races in dark: colour-blind ΔE 11.8, full vision 20.3; in light 8.7 and 19.6. Win and loss in dark: 32.2 and 25.8; in light 29.1 and 21.4. A race colour and a result colour never share one set of marks.
 
 ## Charts
 
@@ -379,7 +392,7 @@ The test checks three things. Every declared ink passes 4.5:1 on its fill. A for
 
 These parts of the app break a rule above today.
 
-- In light, `win`, `loss`, `draw`, `error`, `info`, `success` and `warning` name no `on-*` ink. A fill of one of those names picks its text colour by hand.
+- In light, `win`, `loss`, `error`, `info`, `success` and `warning` name no `on-*` ink. A fill of one of those names picks its text colour by hand.
 - Status colours mark things that are not app states. The fantasy week rank chips use `success`, `info` and `warning`. The MMR chips on the match page use `info`. Bench points use `warning`.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.

@@ -37,7 +37,7 @@ export function FantasyPanel({
       icon="mdi-cards-outline"
       title="Fantasy"
       order={order}
-      action={loading ? null : <Link href="/fantasy" className="text-on-primary underline">Leaderboard</Link>}
+      action={loading ? null : <Link href="/fantasy" className="text-on-banner underline">Leaderboard</Link>}
     >
       {loading ? (
         <SkeletonRows rows={2} />

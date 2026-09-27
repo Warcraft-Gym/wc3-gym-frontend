@@ -824,8 +824,8 @@ export function MatchDetailsView({ id }: { id: string }) {
       onClick: () => toggleDraftFantasyMatch(item),
     },
     item.replaces_series_id
-      ? { icon: "mdi-publish", label: "Publish and replace", color: "success", onClick: () => openPublishReplace(item) }
-      : { icon: "mdi-publish", label: "Publish series", color: "success", onClick: () => publishDraftSeries(item) },
+      ? { icon: "mdi-publish", label: "Publish and replace", color: "primary", onClick: () => openPublishReplace(item) }
+      : { icon: "mdi-publish", label: "Publish series", color: "primary", onClick: () => publishDraftSeries(item) },
     { icon: "mdi-delete", label: "Delete draft", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
   ];
 
@@ -835,7 +835,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     <PanelLinksContext.Provider value={true}>
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
@@ -859,19 +859,19 @@ export function MatchDetailsView({ id }: { id: string }) {
         />
 
         <Card className="card mb-4 gap-0 py-0">
-          <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-trophy-variant" />
-            Series management
+            Series Management
             <span className="flex-1" />
-            <Badge variant="outline" className="border-on-primary text-on-primary">
+            <Badge variant="outline" className="border-on-banner/40 text-on-banner">
               {series.length} published
             </Badge>
             {auth.isCaptain ? (
-              <Badge variant="outline" className="border-on-primary text-on-primary">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 {draftSeries.length} drafts
               </Badge>
             ) : null}
-            <Button variant="ghost" size="icon-sm" className="text-on-primary" aria-label="Refresh series data" onClick={fetchMatchSeries} disabled={isLoading}>
+            <Button variant="ghost" size="icon-sm" className="text-on-banner" aria-label="Refresh series data" onClick={fetchMatchSeries} disabled={isLoading}>
               <Icon name={isLoading ? "mdi-loading mdi-spin" : "mdi-refresh"} />
             </Button>
           </CardTitle>

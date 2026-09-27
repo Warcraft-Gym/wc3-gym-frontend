@@ -23,7 +23,7 @@ const ACTION_COLOR: Record<string, string> = {
   success: "text-success",
   warning: "text-warning",
   info: "text-info",
-  primary: "text-primary",
+  primary: "text-primary-text",
 };
 
 /** The buttons at the end of a row. Three or more fold into a menu; `menu` folds fewer too, and

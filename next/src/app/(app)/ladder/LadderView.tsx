@@ -210,11 +210,11 @@ export function LadderView() {
       {/* The overlay covers the page area only */}
       {isLoading ? (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary" />
+          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary-text" />
         </div>
       ) : null}
 
-      <PageHeader title="GNL Ladder Grind" lead="Ladder grind and achievements for the selected GNL season" />
+      <PageHeader title="Gym Newbie League Ladder Grind" lead="Ladder grind and achievements for the selected GNL season" />
 
       {/* Season picker and the sync of that season */}
       <div className="mb-2 flex flex-wrap items-center gap-3">
@@ -272,9 +272,9 @@ export function LadderView() {
         <>
           {/* Team standings */}
           <Card className="card mb-4 gap-0 py-0">
-            <CardTitle className="flex items-center gap-2 bg-primary p-4 text-on-primary">
+            <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
               <Icon name="mdi-trophy" />
-              <span>Team standings</span>
+              <span>Team Standings</span>
             </CardTitle>
             <div className="p-2 text-xs text-muted-foreground">{seasonDates}</div>
             {/* One group per team; its detail rows are the team's players that pass the filters */}
@@ -326,7 +326,7 @@ export function LadderView() {
 
           {/* Players */}
           <Card className="card gap-0 py-0">
-            <CardTitle className="flex items-center gap-2 bg-primary p-4 text-on-primary">
+            <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
               <Icon name="mdi-account-group" />
               <span>Players</span>
             </CardTitle>
@@ -355,7 +355,7 @@ export function LadderView() {
                 /* sticky: stays in view when the summary row scrolls sideways on a narrow window */
                 <div className="sticky left-0 max-w-[calc(100vw-48px)] p-4">
                   {!fullPlayers[row.id] ? (
-                    <div className="p-4 text-center"><Icon name="mdi-loading mdi-spin" size={32} className="text-primary" /></div>
+                    <div className="p-4 text-center"><Icon name="mdi-loading mdi-spin" size={32} className="text-primary-text" /></div>
                   ) : (
                     <PlayerLadderTab player={fullPlayers[row.id]} seasonId={selectedSeasonId as number} />
                   )}

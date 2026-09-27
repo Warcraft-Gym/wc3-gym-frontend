@@ -16,7 +16,7 @@ const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race
  *  No row carries a button: an event that takes an entry, a withdraw or a check-in sits in Open signups. */
 export function UpcomingEvents({ cards, order }: { cards: Card[]; order: number }) {
   return (
-    <HomePanel icon="mdi-calendar-outline" title="Upcoming events" order={order}>
+    <HomePanel icon="mdi-calendar-outline" title="Upcoming Events" order={order}>
       {cards.map((card) => (
         // below 600 px the chip drops to the left of the play dates
         <div key={card.key} className={cn(ROW, "flex flex-wrap items-center gap-x-2 gap-y-1")}>

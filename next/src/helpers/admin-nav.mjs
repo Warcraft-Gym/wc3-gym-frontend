@@ -4,7 +4,7 @@
 
 export const ADMIN_SECTIONS = [
   {
-    title: 'GNL',
+    title: 'Gym Newbie League',
     icon: 'mdi-trophy-outline',
     items: [
       { title: 'Seasons', to: '/seasons', icon: 'mdi-calendar-range', description: 'Create a season, open signups, set the current season' },

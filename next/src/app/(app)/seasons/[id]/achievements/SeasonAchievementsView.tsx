@@ -14,8 +14,8 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { useSeason } from "@/stores";
 
 const CARDS = [
-  { key: "player", title: "Player achievements", icon: "mdi-account-outline", team: false },
-  { key: "team", title: "Team achievements", icon: "mdi-account-group-outline", team: true },
+  { key: "player", title: "Player Achievements", icon: "mdi-account-outline", team: false },
+  { key: "team", title: "Team Achievements", icon: "mdi-account-group-outline", team: true },
 ];
 
 // Put each rule's current numbers into its description template
@@ -104,7 +104,7 @@ export function SeasonAchievementsView({ id }: { id: string }) {
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
@@ -153,13 +153,13 @@ export function SeasonAchievementsView({ id }: { id: string }) {
       <div className="grid gap-4 md:grid-cols-2">
         {CARDS.map((card) => (
           <Card key={card.key} className="card gap-0 py-0">
-            <CardHeader className="bg-primary p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name={card.icon} />
                 <span className="min-w-0 truncate" title={card.title}>
                   {card.title}
                 </span>
-                <Badge variant="outline" className="ml-auto shrink-0 border-current text-on-primary">
+                <Badge variant="outline" className="ml-auto shrink-0 border-on-banner/40 text-on-banner">
                   {rowsOf(card.team).length} rules
                 </Badge>
                 <Button size="sm" variant="outline" onClick={() => setAddOpen({ ...addOpen, [card.key]: !addOpen[card.key] })}>

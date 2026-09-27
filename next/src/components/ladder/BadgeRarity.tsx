@@ -50,7 +50,7 @@ export function BadgeRarity({
         <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-x-4 gap-y-2">
           {shown.map((tile) => (
             <TapTooltip key={tile.id} className="flex items-start border-b py-1.5" content={<span className="block max-w-[320px]">{tile.description}</span>}>
-              <AchievementIcon id={tile.id} size={22} className="mr-2 text-primary" />
+              <AchievementIcon id={tile.id} size={22} className="mr-2 text-primary-text" />
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-1.5">
                   <span className="truncate text-sm font-medium">{tile.name}</span>

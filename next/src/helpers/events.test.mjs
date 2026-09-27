@@ -110,7 +110,7 @@ test('an open check-in names the round it takes, and the button checks in', () =
     checkin_shape: 'round', checkin_open: true, next_round: { id: 3, number: 2, name: null, start_date: '2026-10-12', end_date: '2026-10-13', best_of: null } });
   const [card] = homeCards({ events: [open], me, seasons, now });
   assert.equal(card.status, 'Check-in is open for round 2');
-  assert.deepEqual(card.primary, { title: 'Check in', icon: 'mdi-check', color: 'success', variant: 'elevated', act: 'check_in' });
+  assert.deepEqual(card.primary, { title: 'Check in', icon: 'mdi-check', color: 'primary', variant: 'elevated', act: 'check_in' });
 });
 
 test('an event that checks in to itself says so without a round number', () => {

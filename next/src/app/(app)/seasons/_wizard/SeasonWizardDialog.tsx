@@ -359,10 +359,10 @@ export function SeasonWizardDialog({
         showCloseButton={false}
         className="flex max-h-[90vh] max-w-[1100px] flex-col gap-0 overflow-hidden p-0 md:max-w-[1100px] md:h-[90vh] max-md:max-h-none"
       >
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name={editing ? "mdi-pencil" : "mdi-plus-circle"} />
           <span className="min-w-0 flex-1 truncate">{editing ? `Edit season: ${editing.name}` : "New season"}</span>
-          <Button variant="ghost" size="icon-sm" aria-label="Close" className="text-on-primary" onClick={close}>
+          <Button variant="ghost" size="icon-sm" aria-label="Close" className="text-on-banner" onClick={close}>
             <Icon name="mdi-close" />
           </Button>
         </DialogTitle>
@@ -396,7 +396,7 @@ export function SeasonWizardDialog({
           <StatusAlert modelValue={error} className="mb-4" onClose={() => setError(null)} />
           {loading ? (
             <div className="flex justify-center py-12">
-              <Icon name="mdi-loading" size={48} className="animate-spin text-primary" />
+              <Icon name="mdi-loading" size={48} className="animate-spin text-primary-text" />
             </div>
           ) : key === "general" ? (
             <GeneralStep season={season} set={set} stages={stages} maxMmr={maxMmr} setMaxMmr={setMaxMmr} />

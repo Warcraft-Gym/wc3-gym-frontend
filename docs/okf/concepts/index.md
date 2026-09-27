@@ -8,4 +8,4 @@
 * [Shared components](shared-components.md) - The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 * [Stores](stores.md) - One store module per area holds every call to the backend; three of them also hold state the pages share. Views never fetch on their own.
 * [The backend contract, as consumed here](backend-contract.md) - What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
-* [Theme](theme.md) - One look, stone and bronze, in a light and a dark theme, two typefaces, every value in one palette file, the choice stored per browser.
+* [Theme](theme.md) - One look, stone and gold, in a light and a dark theme, three typefaces, every value in one palette file, the choice stored per browser.

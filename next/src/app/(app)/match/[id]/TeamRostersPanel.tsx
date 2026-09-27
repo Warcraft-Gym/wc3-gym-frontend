@@ -48,9 +48,9 @@ function RosterCard({
 
   return (
     <Card className="card gap-0 py-0">
-      <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+      <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
         <TeamName team={team} />
-        <Badge variant="outline" className="border-on-primary text-on-primary">
+        <Badge variant="outline" className="border-on-banner/40 text-on-banner">
           {selected.length} selected
         </Badge>
       </CardTitle>

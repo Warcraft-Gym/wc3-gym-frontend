@@ -41,7 +41,7 @@ export function MatchRoundNav({
         </Button>
 
         {/* One button per round; it lists that round's matches so a reader moves along the season */}
-        <div className="flex flex-1 gap-1 overflow-x-auto rounded bg-primary p-1">
+        <div className="flex flex-1 gap-1 overflow-x-auto rounded banner bg-banner p-1">
           {matchesByRound.map((round) => (
             <DropdownMenu key={round.roundNumber}>
               <DropdownMenuTrigger
@@ -49,7 +49,7 @@ export function MatchRoundNav({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={cn("flex-none text-on-primary hover:bg-on-primary/15", round.roundNumber === match.playday && "underline underline-offset-4")}
+                    className={cn("flex-none text-on-banner hover:bg-on-banner/15", round.roundNumber === match.playday && "underline underline-offset-4")}
                   />
                 }
               >

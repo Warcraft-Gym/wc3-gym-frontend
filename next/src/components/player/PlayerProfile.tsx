@@ -303,7 +303,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-success"
+                            className="text-primary-text"
                             disabled={savingWeek !== null}
                             onClick={() => setWeek(row.seasonId, row.playday, true)}
                           >
@@ -330,7 +330,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
           ) : null}
 
           <Card className="card gap-0 py-0">
-            <CardTitle className="flex items-center gap-2 bg-primary p-4 text-on-primary">
+            <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
               <Icon name="mdi-calendar-account" />
               Events
             </CardTitle>

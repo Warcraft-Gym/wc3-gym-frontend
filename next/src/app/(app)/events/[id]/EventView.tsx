@@ -38,7 +38,7 @@ type Row = Record<string, any>;
 
 const phoneCell = "hidden min-[960px]:table-cell";
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
-const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", primary: "text-primary" };
+const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", "medal-bronze": "text-medal-bronze" };
 // The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
 const placesOf = placings as (standings: Row[]) => Record<string, Row>;
 const rostersOf = rostersByEntrant as unknown as (entrants: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;
@@ -432,7 +432,7 @@ export function EventView({ id }: { id: string }) {
 
 /** The one button the server picked for this caller. */
 function ActionButton({ button, busy, onClick }: { button: Row; busy: boolean; onClick: () => void }) {
-  const tint = button.color === "error" ? "text-error" : button.color === "success" ? "text-success" : "text-primary-text";
+  const tint = button.color === "error" ? "text-error" : "text-primary-text";
   const variant = button.variant === "outlined" ? "outline" : "default";
   return (
     <Button size="sm" variant={variant} className={variant === "outline" ? tint : undefined} disabled={busy} onClick={onClick}>

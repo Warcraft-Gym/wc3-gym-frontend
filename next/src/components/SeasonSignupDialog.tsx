@@ -88,7 +88,7 @@ export function SeasonSignupDialog({ onAdded, ref }: { onAdded?: () => void; ref
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : close())}>
       <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-account-check" />
           Add signup
         </DialogTitle>

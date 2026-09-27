@@ -436,7 +436,7 @@ export function RoundDraftBoard({
                   Out
                 </Badge>
                 {own ? (
-                  <Button variant="outline" size="sm" className="text-success" disabled={busy} onClick={() => onCheckIn(teamId, player.user_id)}>
+                  <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={() => onCheckIn(teamId, player.user_id)}>
                     Check in for {player.name}
                   </Button>
                 ) : null}
@@ -475,8 +475,8 @@ export function RoundDraftBoard({
         {/* on a phone the panel takes the screen, and Close brings the rosters back */}
         {narrow && picked ? null : (
         <Card className="card gap-0 py-0">
-          <CardTitle className="flex flex-wrap items-center gap-3 bg-primary px-4 py-3 text-on-primary">
-            Draft board
+          <CardTitle className="flex flex-wrap items-center gap-3 banner bg-banner px-4 py-3 text-primary">
+            Draft Board
             <span className="flex-1" />
             <span className="inline-flex items-center gap-1 text-sm">
               <W3CIcon size={14} /> MMR of the signup race
@@ -641,7 +641,7 @@ export function RoundDraftBoard({
         <div>
           {picked ? (
             <Card className="card gap-0 py-0">
-              <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+              <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
                 {replacing
                   ? `Replace ${dropPlayer?.name ?? "a player"}, vs ${picked.name}`
                   : pickedDraft
@@ -651,7 +651,7 @@ export function RoundDraftBoard({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-on-primary"
+                  className="text-on-banner"
                   onClick={() => {
                     setPickId(null);
                     onCancelReplace?.();
@@ -729,10 +729,10 @@ export function RoundDraftBoard({
 
       {suggested ? (
         <Card className="card gap-0 py-0">
-          <CardTitle className="flex flex-wrap items-center gap-2 bg-primary px-4 py-3 text-on-primary">
-            Suggested pairings
+          <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
+            Suggested Pairings
             <span className="flex-1" />
-            <Button variant="ghost" size="sm" className="text-on-primary" onClick={() => setSuggestOpen(false)}>
+            <Button variant="ghost" size="sm" className="text-on-banner" onClick={() => setSuggestOpen(false)}>
               <Icon name="mdi-close" />
               Cancel
             </Button>

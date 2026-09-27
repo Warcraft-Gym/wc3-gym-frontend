@@ -9,9 +9,9 @@ const rgb = (hex: string) => {
   return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
 };
 
-// In light, seven fills name no ink of their own (DESIGN.md "Known gaps"); white is what
-// Vuetify picks on them, and every one of the seven carries it at 4.5:1 or more.
-const LIGHT_FALLBACK_INK = themes.light.colors['on-primary'];
+// In light, six fills name no ink of their own (DESIGN.md "Known gaps"); white is what
+// Vuetify picks on them, and every one of the six carries it at 4.5:1 or more.
+const LIGHT_FALLBACK_INK = "#FBF7F1";
 
 const body = (theme: Theme, inks: string[]) => {
   const lines = Object.entries(theme.colors).map(([token, hex]) => `--v-theme-${token}:${rgb(hex)}`);

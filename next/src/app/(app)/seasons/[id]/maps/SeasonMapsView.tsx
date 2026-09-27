@@ -23,8 +23,8 @@ import { useMapStore, useSeason } from "@/stores";
 const STEPS = [
   { value: "Ban_A", label: "+ Ban A", color: "text-error" },
   { value: "Ban_B", label: "+ Ban B", color: "text-error" },
-  { value: "Pick_A", label: "+ Pick A", color: "text-success" },
-  { value: "Pick_B", label: "+ Pick B", color: "text-success" },
+  { value: "Pick_A", label: "+ Pick A", color: "text-primary-text" },
+  { value: "Pick_B", label: "+ Pick B", color: "text-primary-text" },
 ];
 
 // What the page asks before it drops the map rules and the order it holds unsaved.
@@ -223,7 +223,7 @@ export function SeasonMapsView({ id }: { id: string }) {
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
@@ -255,11 +255,11 @@ export function SeasonMapsView({ id }: { id: string }) {
         {/* Map pool */}
         <div className="md:col-span-5">
           <Card className="card gap-0 py-0">
-            <CardHeader className="bg-primary p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-map" />
-                <span>Map pool</span>
-                <Badge variant="outline" className="ml-auto border-current text-on-primary">
+                <span>Map Pool</span>
+                <Badge variant="outline" className="ml-auto border-on-banner/40 text-on-banner">
                   {pool.length} maps
                 </Badge>
                 <Button size="sm" variant="outline" onClick={() => setAddOpen(!addOpen)}>
@@ -327,10 +327,10 @@ export function SeasonMapsView({ id }: { id: string }) {
         {/* Rules and the fixed map per round */}
         <div className="md:col-span-3">
           <Card className="card mb-4 gap-0 py-0">
-            <CardHeader className="bg-primary p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-format-list-numbered" />
-                <span>Map rule per game</span>
+                <span>Map Rule per Game</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
@@ -355,8 +355,8 @@ export function SeasonMapsView({ id }: { id: string }) {
           </Card>
 
           <Card className="card gap-0 py-0">
-            <CardHeader className="bg-primary p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-calendar-week" />
                 <span>Rounds</span>
               </CardTitle>
@@ -419,10 +419,10 @@ export function SeasonMapsView({ id }: { id: string }) {
         {/* Pick and ban order */}
         <div className="md:col-span-4">
           <Card className="card mb-4 gap-0 py-0">
-            <CardHeader className="bg-primary p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-gavel" />
-                <span>Pick and ban order</span>
+                <span>Pick and Ban Order</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
@@ -441,15 +441,15 @@ export function SeasonMapsView({ id }: { id: string }) {
               {counts.map((count) => (
                 <div key={count.label} className="flex justify-between py-1">
                   <span className="text-xs text-muted-foreground">{count.label}</span>
-                  <span className={`font-medium tnum ${count.negative ? "text-error" : ""}`}>{count.value}</span>
+                  <span className={`font-bold tnum ${count.negative ? "text-error" : ""}`}>{count.value}</span>
                 </div>
               ))}
             </CardContent>
           </Card>
 
           <Card className="card gap-0 py-0">
-            <CardHeader className="bg-primary p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-help-circle-outline" />
                 <span>What fills each game</span>
               </CardTitle>

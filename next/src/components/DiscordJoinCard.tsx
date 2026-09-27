@@ -43,8 +43,8 @@ export function DiscordJoinCard({ className }: { className?: string }) {
 
   return (
     <Card className={cn("w-full max-w-[500px] gap-0 p-0", className)}>
-      <CardHeader className="bg-primary p-4">
-        <CardTitle className="text-on-primary">Join the WC3 Gym Discord</CardTitle>
+      <CardHeader className="banner bg-banner p-4">
+        <CardTitle className="text-primary">Join the WC3 Gym Discord</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         {message ? <Note type={message === NO_MEMBERSHIP ? "info" : "error"}>{message}</Note> : null}
@@ -53,7 +53,7 @@ export function DiscordJoinCard({ className }: { className?: string }) {
           <Button
             nativeButton={false}
             render={<a href={inviteUrl} target="_blank" rel="noopener noreferrer" />}
-            className="mt-4 mr-2 bg-[#5865F2] text-white hover:bg-[#4752C4]"
+            className="mt-4 mr-2 bg-[#5865F2] bg-none shadow-none text-white hover:bg-[#4752C4]"
           >
             Join the Discord
           </Button>

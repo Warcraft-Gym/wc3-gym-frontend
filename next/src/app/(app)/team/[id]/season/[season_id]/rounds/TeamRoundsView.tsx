@@ -241,7 +241,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
@@ -295,7 +295,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
       </div>
 
       <Card className="card gap-0 py-0">
-        <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-shield-account" />
           <span>{team?.name}</span>
         </CardTitle>

@@ -143,7 +143,7 @@ export function MySeason({
   // The side of the fixture his seat names; the fixture names both teams
   const seat = viewer.seats?.find((row) => Number(row.season_id) === Number(season?.id));
   const captainTeam: Row | null = fixture && seat ? ([fixture.team1, fixture.team2].find((team: Row) => team?.id === seat.team_id) ?? null) : null;
-  const standings = season ? <Link href={`/report/${seasonSlug(season)}`} className="text-on-primary underline">Standings</Link> : null;
+  const standings = season ? <Link href={`/report/${seasonSlug(season)}`} className="text-on-banner underline">Standings</Link> : null;
 
   const roundRow = (card: Row) => {
     const series: Row | null = card.series;
@@ -183,7 +183,7 @@ export function MySeason({
                   href={`/series/${series.id}`}
                   title={score.label}
                   aria-label={score.label}
-                  className={cn("tnum font-medium no-underline hover:underline", score.won ? "text-win" : score.lost ? "text-loss" : "text-draw")}
+                  className={cn("tnum font-bold no-underline hover:underline", score.won ? "text-win" : score.lost ? "text-loss" : "text-foreground")}
                 >
                   {score.text}
                 </Link>

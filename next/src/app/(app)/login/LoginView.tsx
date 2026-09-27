@@ -24,8 +24,8 @@ function AdminOnlyLoginView() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
       <Card className="w-full max-w-[500px] gap-0 p-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-lock" />
             Log in to WC3 Gym Dashboard
           </CardTitle>
@@ -92,8 +92,8 @@ function DiscordLoginView() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
       <Card className="w-full max-w-[500px] gap-0 p-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-lock" />
             Log in to WC3 Gym Dashboard
           </CardTitle>
@@ -122,7 +122,7 @@ function DiscordLoginView() {
           ) : null}
           {!isCallback && !isSignedIn ? (
             // Discord brand: blurple, white Clyde mark, sentence case
-            <Button size="lg" className="h-11 w-full bg-[#5865F2] text-base text-white hover:bg-[#4752C4]" disabled={loading} aria-busy={loading} onClick={loginWithDiscord}>
+            <Button size="lg" className="h-11 w-full bg-[#5865F2] bg-none shadow-none text-base text-white hover:bg-[#4752C4]" disabled={loading} aria-busy={loading} onClick={loginWithDiscord}>
               {loading ? (
                 <Icon name="mdi-loading" size={24} className="mr-3 animate-spin" />
               ) : (

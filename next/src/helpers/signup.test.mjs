@@ -70,9 +70,9 @@ test('only a state that still takes a signup names the season', () => {
   assert.equal(signupTitles('request', 'GNL S18').card, 'Sign up for GNL S18');
   assert.equal(signupTitles('joined', 'GNL S18').card, 'Sign up for GNL S18');
   // the over state says the season is over right below the title, so the title must not offer a signup
-  assert.equal(signupTitles('over', 'GNL S18').card, 'Your details');
-  assert.equal(signupTitles('profile', 'GNL S18').card, 'Your details');
-  assert.equal(signupTitles('signup', '').card, 'Your details');
+  assert.equal(signupTitles('over', 'GNL S18').card, 'Your Details');
+  assert.equal(signupTitles('profile', 'GNL S18').card, 'Your Details');
+  assert.equal(signupTitles('signup', '').card, 'Your Details');
 });
 
 test('the heading follows the state: a profile-only form is not a signup', () => {

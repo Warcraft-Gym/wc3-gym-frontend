@@ -56,7 +56,7 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
       icon="mdi-clock-outline"
       title="Upcoming Series"
       order={order}
-      action={loading ? null : <Link href="/report#upcoming" className="text-on-primary underline">All upcoming</Link>}
+      action={loading ? null : <Link href="/report#upcoming" className="text-on-banner underline">All upcoming</Link>}
     >
       {loading ? (
         <SkeletonRows rows={3} />
@@ -68,7 +68,7 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
             return (
               <div key={fixture.match_id} className={ROW}>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="tnum font-medium">{row.when}</span>
+                  <span className="tnum font-bold">{row.when}</span>
                   <Button size="sm" className="ml-auto" nativeButton={false} render={<Link href={row.to} />}>
                     <Icon name="mdi-account-multiple" />
                     Draft pairings
@@ -90,7 +90,7 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
           {rows.slice(0, MAX_NEXT).map((row) => (
             <div key={row.id} className={ROW}>
               <div className="flex flex-wrap items-center gap-2">
-                <Link href={`/series/${row.id}`} className="tnum font-medium text-inherit no-underline hover:underline">
+                <Link href={`/series/${row.id}`} className="tnum font-bold text-inherit no-underline hover:underline">
                   {seriesWhen(row)}
                 </Link>
                 {row.cast ? <CastChip cast={row.cast} /> : null}

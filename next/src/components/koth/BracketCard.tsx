@@ -413,9 +413,9 @@ export function BracketCard({
   // a stream reads from further away, so every small label of the card grows one step too
   return (
     <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm")}>
-      <CardHeader className={cn("flex items-center gap-2 bg-primary p-3", clean && "p-4")}>
-        <CardTitle className={cn("flex-1 text-on-primary", clean && "text-[1.375rem]")}>{name}</CardTitle>
-        <span className="tnum text-xs text-on-primary/80">{band}</span>
+      <CardHeader className={cn("flex items-center gap-2 banner bg-banner p-3", clean && "p-4")}>
+        <CardTitle className={cn("flex-1 text-primary", clean && "text-[1.375rem]")}>{name}</CardTitle>
+        <span className="tnum text-xs text-on-banner/80">{band}</span>
       </CardHeader>
 
       <KingBlock bracket={bracket} admin={admin} />

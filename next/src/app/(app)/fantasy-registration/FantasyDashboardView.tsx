@@ -370,7 +370,7 @@ export function FantasyDashboardView() {
 
   // For the betting view the score chip only carries the result, not the captain's score
   const scoreTone = (series: any) =>
-    series.player1_score > series.player2_score ? "text-win border-win" : series.player2_score > series.player1_score ? "text-loss border-loss" : "text-draw border-draw";
+    series.player1_score > series.player2_score ? "text-win border-win" : series.player2_score > series.player1_score ? "text-loss border-loss" : "text-foreground border-draw";
 
   const teamItems = teams.map((team) => ({ value: String(team.id), title: teamTitle(team), team }));
   const teamRow = (item: { title: string; team: any }) => (
@@ -482,17 +482,17 @@ export function FantasyDashboardView() {
 
       {/* Fantasy Team Card */}
       <Card className="card mb-6 gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex flex-wrap items-center gap-2 text-on-primary">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-primary">
             <Icon name="mdi-account-group" />
-            <span>Fantasy team</span>
+            <span>Fantasy Team</span>
             {existingTeam ? (
-              <Badge variant="outline" className="border-on-primary text-on-primary">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 Registered
               </Badge>
             ) : null}
             {phase !== "open" ? (
-              <Badge variant="outline" className="border-on-primary text-on-primary">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 {seasonName} has {ended ? "ended" : "commenced"}
               </Badge>
             ) : null}
@@ -604,10 +604,10 @@ export function FantasyDashboardView() {
               }}
             >
               <Card className="card mb-4 gap-0 py-0">
-                <CardHeader className="bg-primary p-4">
-                  <CardTitle className="flex items-center gap-2 text-on-primary">
+                <CardHeader className="banner bg-banner p-4">
+                  <CardTitle className="flex items-center gap-2 text-primary">
                     <Icon name="mdi-account-group" />
-                    Team details
+                    Team Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 p-4 md:grid-cols-2">
@@ -661,8 +661,8 @@ export function FantasyDashboardView() {
               </Card>
 
               <Card className="card mb-4 gap-0 py-0">
-                <CardHeader className="bg-primary p-4">
-                  <CardTitle className="flex items-center gap-2 text-on-primary">
+                <CardHeader className="banner bg-banner p-4">
+                  <CardTitle className="flex items-center gap-2 text-primary">
                     <Icon name="mdi-account-multiple" />
                     Draft players
                   </CardTitle>
@@ -760,14 +760,14 @@ export function FantasyDashboardView() {
 
       {/* Fantasy Bets Card */}
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center justify-between gap-2 text-on-primary">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center justify-between gap-2 text-primary">
             <span className="flex items-center gap-2">
               <Icon name="mdi-crystal-ball" />
-              <span>Fantasy bets</span>
+              <span>Fantasy Bets</span>
             </span>
             {existingTeam ? (
-              <Badge variant="outline" className="border-on-primary text-on-primary">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 {fantasyBets.length} bets
               </Badge>
             ) : null}

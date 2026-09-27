@@ -130,7 +130,7 @@ export function TeamRoster({
         <span className={cn(cell, "pe-1.5")}>{player.country ? <FlagIcon countryIdentifier={player.country} /> : null}</span>
         <span className={cn(cell, "min-w-0 overflow-hidden pe-1.5")} title={player.name}>
           {player.id != null ? (
-            <Link href={playerPath(player)} className="min-w-0 truncate text-inherit no-underline hover:text-primary hover:underline">
+            <Link href={playerPath(player)} className="min-w-0 truncate text-inherit no-underline hover:text-primary-text hover:underline">
               {player.name}
             </Link>
           ) : (
@@ -160,7 +160,7 @@ export function TeamRoster({
 
   return (
     <Card className="card gap-0 pt-0">
-      <CardTitle className="mb-2 flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+      <CardTitle className="mb-2 flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
         <Icon name="mdi-account-group" />
         <span>Roster</span>
         <span className="tnum ms-auto text-sm font-normal">

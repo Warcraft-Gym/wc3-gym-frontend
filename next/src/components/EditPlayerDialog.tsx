@@ -98,7 +98,7 @@ export function EditPlayerDialog({
       <DialogContent showCloseButton={false} className="max-w-[800px] gap-0 p-0 sm:max-w-[800px]">
         {selectedPlayer ? (
           <>
-            <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+            <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
               <Icon name="mdi-pencil" />
               {self ? "Edit profile" : `Edit player: ${selectedPlayer.name}`}
             </DialogTitle>

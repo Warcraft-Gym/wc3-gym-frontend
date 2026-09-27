@@ -381,7 +381,7 @@ export function ScheduleDialog({
         showCloseButton={false}
         className={cn("max-h-[90vh] gap-0 overflow-y-auto p-0", booked ? "max-w-[520px] md:max-w-[520px]" : "max-w-[1100px] md:max-w-[1100px]")}
       >
-        <DialogTitle className="flex items-start gap-3 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-start gap-3 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-calendar-edit" className="mt-0.5" />
           <div className="min-w-0">
             <div>Schedule</div>

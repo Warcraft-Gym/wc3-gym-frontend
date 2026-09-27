@@ -22,7 +22,7 @@ export function HomePanel({
 }) {
   return (
     <Card className="card gap-0 py-0" style={{ order }}>
-      <CardTitle className="flex flex-wrap items-center gap-2 bg-primary p-4 text-on-primary">
+      <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner p-4 text-primary">
         <Icon name={icon} />
         {/* The title is a heading, so a screen reader jumps from panel to panel */}
         <h2 className="contents">{title}</h2>

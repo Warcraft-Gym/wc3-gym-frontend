@@ -40,7 +40,7 @@ const getRaceName = (race: string) => raceWrapper.getRaceObject(race)?.name || r
 const rankMedal = (rank: number) => {
   if (rank === 1) return { icon: "mdi-medal", color: "text-medal-gold" };
   if (rank === 2) return { icon: "mdi-medal", color: "text-medal-silver" };
-  if (rank === 3) return { icon: "mdi-medal", color: "text-primary" };
+  if (rank === 3) return { icon: "mdi-medal", color: "text-medal-bronze" };
   return null;
 };
 
@@ -360,7 +360,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
       aria-expanded={!collapsed.has(key)}
       onClick={() => toggle(key)}
     >
-      <Icon name={icon} className="mr-2 text-primary" />
+      <Icon name={icon} className="mr-2 text-primary-text" />
       {text}
       <Icon name={collapsed.has(key) ? "mdi-chevron-down" : "mdi-chevron-up"} className="no-print ml-2" />
     </button>
@@ -450,14 +450,14 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
             {/* ── Upcoming series: the current season only ── */}
             {selectedSeasonId === currentSeasonId ? (
               <div id="upcoming" className={cn("report-section mb-6", collapsed.has("upcoming") && "collapsed")}>
-                {sectionTitle("upcoming", "mdi-calendar-clock", "Upcoming series")}
+                {sectionTitle("upcoming", "mdi-calendar-clock", "Upcoming Series")}
                 <SeriesSchedule series={series} />
               </div>
             ) : null}
 
             {/* ── Team standings ── */}
             <div className={cn("report-section mb-6", collapsed.has("standings") && "collapsed")}>
-              {sectionTitle("standings", "mdi-trophy", "Team standings")}
+              {sectionTitle("standings", "mdi-trophy", "Team Standings")}
               <Card className="card p-0">
                 <Table className="standings-table table-scroll">
                   <TableHeader>
@@ -505,7 +505,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
 
             {/* ── Player leaderboard ── */}
             <div className={cn("report-section mb-6", collapsed.has("leaderboard") && "collapsed")}>
-              {sectionTitle("leaderboard", "mdi-account-star", "Player leaderboard")}
+              {sectionTitle("leaderboard", "mdi-account-star", "Player Leaderboard")}
               <Card className="card p-0">
                 <Table className="standings-table table-scroll">
                   <TableHeader>
@@ -560,7 +560,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
 
             {/* ── Race performance ── */}
             <div className={cn("report-section mb-6", collapsed.has("races") && "collapsed")}>
-              {sectionTitle("races", "mdi-sword-cross", "Race performance")}
+              {sectionTitle("races", "mdi-sword-cross", "Race Performance")}
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                 {raceBreakdown.map((raceEntry) => (
                   <Card key={raceEntry.race} className="race-card card gap-0 overflow-hidden p-0">
@@ -615,11 +615,11 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
             {/* ── Ladder activity ── */}
             {heatRows.length ? (
               <div className={cn("report-section mb-6", collapsed.has("ladder") && "collapsed")}>
-                {sectionTitle("ladder", "mdi-podium", "Ladder activity")}
+                {sectionTitle("ladder", "mdi-podium", "Ladder Activity")}
                 <div className="grid gap-4 md:grid-cols-2">
                   <Card className="card gap-0 p-0">
                     <CardTitle className="flex items-center p-4 text-sm">
-                      <span>Games by hour</span>
+                      <span>Games by Hour</span>
                       <span className="flex-1" />
                       <span className="text-xs font-normal text-muted-foreground">UTC</span>
                     </CardTitle>
@@ -653,7 +653,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
 
                   <Card className="card flex h-full flex-col gap-0 p-0">
                     <CardTitle className="flex items-center p-4 text-sm">
-                      <span>Games per day</span>
+                      <span>Games per Day</span>
                       <span className="flex-1" />
                       <span className="text-xs font-normal tnum text-muted-foreground">{ladder.total_games} games</span>
                     </CardTitle>
@@ -686,7 +686,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
             {/* ── Fantasy leaderboard ── */}
             {sortedFantasyTeams.length > 0 ? (
               <div className={cn("report-section mb-6", collapsed.has("fantasy") && "collapsed")}>
-                {sectionTitle("fantasy", "mdi-cards", "Fantasy league leaderboard")}
+                {sectionTitle("fantasy", "mdi-cards", "Fantasy League Leaderboard")}
                 <Card className="card p-0">
                   <Table className="standings-table table-scroll">
                     <TableHeader>

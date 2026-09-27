@@ -237,10 +237,10 @@ export function ConfigView() {
 
       {/* Application Settings Section */}
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-cog" />
-            Application settings
+            Application Settings
           </CardTitle>
         </CardHeader>
 
@@ -285,7 +285,7 @@ export function ConfigView() {
             </AccordionItem>
 
             <AccordionItem value="gnl">
-              <AccordionTrigger className="text-xl font-normal">GNL league settings</AccordionTrigger>
+              <AccordionTrigger className="text-xl font-normal">Gym Newbie League Settings</AccordionTrigger>
               <AccordionContent>
                 <div className="grid gap-4 pt-2 md:grid-cols-12">
                   {/* The label reads after the select, where the floating label of v-select sits, and order puts it back on top */}
@@ -424,7 +424,7 @@ export function ConfigView() {
                   <Card className="card p-4 md:col-span-12">
                     <div>
                       <div className="mb-2 flex items-center gap-2">
-                        <Icon name="mdi-robot" className="text-primary" />
+                        <Icon name="mdi-robot" className="text-primary-text" />
                         <span className="font-medium">Nightbot signup token</span>
                       </div>
                       <p className="mb-4 text-sm text-muted-foreground">Generate a new token if this one leaks.</p>

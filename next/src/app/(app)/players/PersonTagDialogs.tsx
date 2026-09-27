@@ -71,7 +71,7 @@ export function MoveTagDialog({ source, players, onClose, onDone }: { source: Ro
   return (
     <Dialog open={!!source} onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[520px] gap-0 p-0 sm:max-w-[520px]`}>
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-account-arrow-right" />
           {tag ? `Move tag: ${tag.tag}` : "Move tag"}
         </DialogTitle>

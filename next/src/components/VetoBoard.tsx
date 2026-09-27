@@ -310,7 +310,7 @@ export function VetoBoard({
 
       {!board && !errorMessage ? (
         <div className="flex justify-center p-8" role="status" aria-label="Loading">
-          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary" />
+          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary-text" />
         </div>
       ) : null}
 
@@ -318,10 +318,10 @@ export function VetoBoard({
         <div className="grid gap-6 min-[960px]:grid-cols-3">
           {!collapsed ? (
             <Card className="card gap-0 self-start py-0 min-[960px]:col-span-2">
-              <CardHeader className="bg-primary p-4">
-                <CardTitle className="flex items-center gap-2 text-on-primary">
+              <CardHeader className="banner bg-banner p-4">
+                <CardTitle className="flex items-center gap-2 text-primary">
                   <Icon name="mdi-map" />
-                  Map pool
+                  Map Pool
                 </CardTitle>
               </CardHeader>
               <div className="flex flex-wrap gap-3 p-4">
@@ -347,7 +347,7 @@ export function VetoBoard({
                       {tile.week ? (
                         <Badge className={toneClass("primary")}>Game 1</Badge>
                       ) : tile.canAct ? (
-                        <Button variant="outline" className={nextAction === "Pick" ? "text-success" : "text-error"} onClick={() => send({ action: recording ? "record" : "step", map_id: tile.id })}>
+                        <Button variant="outline" className={nextAction === "Pick" ? "text-primary-text" : "text-error"} onClick={() => send({ action: recording ? "record" : "step", map_id: tile.id })}>
                           {nextAction}
                         </Button>
                       ) : null}
@@ -361,8 +361,8 @@ export function VetoBoard({
           <div className={cn("flex flex-col gap-6", collapsed && "min-[960px]:col-span-3")}>
             {!collapsed ? (
               <Card className="card gap-0 py-0">
-                <CardHeader className="bg-primary p-4">
-                  <CardTitle className="flex items-center gap-2 text-on-primary">
+                <CardHeader className="banner bg-banner p-4">
+                  <CardTitle className="flex items-center gap-2 text-primary">
                     <Icon name="mdi-format-list-numbered" />
                     Order
                   </CardTitle>
@@ -386,8 +386,8 @@ export function VetoBoard({
             ) : null}
 
             <Card className="card gap-0 py-0">
-              <CardHeader className="bg-primary p-4">
-                <CardTitle className="flex items-center gap-2 text-on-primary">
+              <CardHeader className="banner bg-banner p-4">
+                <CardTitle className="flex items-center gap-2 text-primary">
                   <Icon name="mdi-tournament" />
                   Series
                 </CardTitle>

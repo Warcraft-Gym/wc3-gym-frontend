@@ -49,7 +49,7 @@ const OUTLINE: Record<string, string> = {
   success: "text-success border-success",
   info: "text-info border-info",
   warning: "text-warning border-warning",
-  draw: "text-draw border-draw",
+  draw: "text-foreground border-draw",
 };
 
 // the panels' own width, not the window's: the side panel is narrow on a wide screen
@@ -338,7 +338,7 @@ export function PlayerSeasons({
                                     {!mdAndUp ? <span className="ml-1 text-muted-foreground">{opponentTeam(series, row)}</span> : null}
                                   </TableCell>
                                   {mdAndUp ? <TableCell>{opponentTeam(series, row)}</TableCell> : null}
-                                  <TableCell className={cn("text-right font-medium", resultClass(series))}>{result(series)}</TableCell>
+                                  <TableCell className={cn("text-right font-bold", resultClass(series))}>{result(series)}</TableCell>
                                   {mdAndUp ? <TableCell className="text-right">{playedOn(series)}</TableCell> : null}
                                   {mdAndUp ? (
                                     <TableCell className="text-muted-foreground">

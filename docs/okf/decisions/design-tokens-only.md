@@ -12,7 +12,7 @@ sources:
 
 # Decision
 
-The stone and bronze look, light and dark, was approved on 2026-09-11 and written into `DESIGN.md` on 2026-09-13. `palette.mjs` is the one place a value lives; `palette.test.mjs` checks every ink on its fill.
+The stone look, light and dark, was approved on 2026-09-11 and written into `DESIGN.md` on 2026-09-13; gold replaced bronze as its brand colour on 2026-09-27. `palette.mjs` is the one place a value lives; `palette.test.mjs` checks every ink on its fill.
 
 # Why
 

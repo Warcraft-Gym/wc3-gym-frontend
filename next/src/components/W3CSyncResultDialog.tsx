@@ -36,7 +36,7 @@ export function W3CSyncResultDialog({
       <DialogContent showCloseButton={false} className="max-w-[560px] gap-0 p-0 sm:max-w-[560px]">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-sync" />
-          W3C sync results
+          W3C Sync Results
         </DialogTitle>
         <div className="p-4">
           {entries.map((entry, i) => (

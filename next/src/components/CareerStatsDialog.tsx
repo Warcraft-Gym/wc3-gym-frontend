@@ -59,7 +59,7 @@ export function CareerStatsDialog({ players, onChanged, ref }: { players: Record
       <Dialog open={show} onOpenChange={setShow}>
         <DialogContent showCloseButton={false} className="max-w-[800px] gap-0 p-0 sm:max-w-[800px]">
           {stat ? <>
-            <DialogTitle className="px-4 py-3 text-xl">Career stats: {stat.player_name}</DialogTitle>
+            <DialogTitle className="px-4 py-3 text-xl">Career Stats: {stat.player_name}</DialogTitle>
             <div className="px-4"><StatusAlert modelValue={error} onClose={() => setError(null)} /></div>
             <div className="grid gap-4 p-4 md:grid-cols-2">
               <Field label="Name in the history" htmlFor="career-name"><Input id="career-name" value={stat.player_name ?? ""} disabled /></Field>

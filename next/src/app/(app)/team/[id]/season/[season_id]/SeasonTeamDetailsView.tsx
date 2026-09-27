@@ -254,7 +254,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
         <Card className="card mb-4 gap-0 py-0">
           <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-shield-account" />
-            <span>Season points</span>
+            <span>Season Points</span>
           </CardTitle>
           {currentSeasonInfo ? (
             <CardContent className="py-4">
@@ -286,7 +286,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
         <Card className="card mb-4 gap-0 py-0">
           <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <W3CIcon size={22} />
-            <span>W3C ladder</span>
+            <span>W3C Ladder</span>
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2 p-2">
             <Badge variant="outline">{ladderTeam.points} points</Badge>

@@ -258,7 +258,7 @@ export function SeasonMapsView({ id }: { id: string }) {
             <CardHeader className="banner bg-banner p-4">
               <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-map" />
-                <span>Map pool</span>
+                <span>Map Pool</span>
                 <Badge variant="outline" className="ml-auto border-on-banner/40 text-on-banner">
                   {pool.length} maps
                 </Badge>
@@ -330,7 +330,7 @@ export function SeasonMapsView({ id }: { id: string }) {
             <CardHeader className="banner bg-banner p-4">
               <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-format-list-numbered" />
-                <span>Map rule per game</span>
+                <span>Map Rule per Game</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
@@ -422,7 +422,7 @@ export function SeasonMapsView({ id }: { id: string }) {
             <CardHeader className="banner bg-banner p-4">
               <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-gavel" />
-                <span>Pick and ban order</span>
+                <span>Pick and Ban Order</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">

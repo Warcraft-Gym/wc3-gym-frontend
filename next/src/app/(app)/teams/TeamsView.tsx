@@ -58,7 +58,7 @@ export function TeamsView() {
   const playedSeasons = (team: Row) => (team.seasons_info || []).map((info: Row) => seasonStore.seasons.find((season) => season.id === info.season_id)).filter(Boolean).sort(byNewest);
   const currentName = seasonStore.seasons.find((season) => season.id === currentSeasonId)?.name;
   const playsCurrent = (team: Row) => (team.seasons_info || []).some((info: Row) => info.season_id === currentSeasonId);
-  const groups = !currentSeasonId ? [{ title: "All teams", items: teams }] : [{ title: currentName || "Current season", items: teams.filter(playsCurrent) }, { title: "Past teams", items: teams.filter((team) => !playsCurrent(team)) }];
+  const groups = !currentSeasonId ? [{ title: "All Teams", items: teams }] : [{ title: currentName || "Current Season", items: teams.filter(playsCurrent) }, { title: "Past Teams", items: teams.filter((team) => !playsCurrent(team)) }];
   const set = (key: string, value: unknown) => setSelected((old) => ({ ...old, [key]: value }));
   const close = () => { setDialog(false); setFile(null); setSelected(emptyTeam()); if (fileInput.current) fileInput.current.value = ""; };
   const openCreate = () => { setSelected(emptyTeam()); setFile(null); setFormError(null); setEditing(false); setDialog(true); };

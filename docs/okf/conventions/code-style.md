@@ -34,7 +34,7 @@ Every colour is a theme token from `next/src/helpers/palette.mjs`: `className="t
 
 # Words on the page
 
-- Page titles (`h1`) and app bar and menu entries use Title Case. Everything else uses sentence case: dialog titles, buttons, labels, hints, columns, alerts, chips, card titles.
+- Page titles (`h1`) and app bar and menu entries use Title Case. A banner, card, dialog or section title or a sidebar group label takes Title Case when it names a thing ("My Accounts") and sentence case when it reads as a sentence or an action ("Sign in as a player"). Everything else uses sentence case: buttons, labels, hints, columns, alerts, chips. The league is "Gym Newbie League" in a title or a group label; "GNL" stays in chips and tight cells.
 - A column title is a short noun with no legend in brackets. Numeric columns are right-aligned. No table shows a database id.
 - A hint is one short instruction, or nothing.
 - Use the events vocabulary from the `Events` section of `DESIGN.md`: league, event, stage, round, fixture, series, game, division. Never "week", never "team series", never "match" for a series.

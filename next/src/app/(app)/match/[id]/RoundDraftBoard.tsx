@@ -476,7 +476,7 @@ export function RoundDraftBoard({
         {narrow && picked ? null : (
         <Card className="card gap-0 py-0">
           <CardTitle className="flex flex-wrap items-center gap-3 banner bg-banner px-4 py-3 text-primary">
-            Draft board
+            Draft Board
             <span className="flex-1" />
             <span className="inline-flex items-center gap-1 text-sm">
               <W3CIcon size={14} /> MMR of the signup race
@@ -730,7 +730,7 @@ export function RoundDraftBoard({
       {suggested ? (
         <Card className="card gap-0 py-0">
           <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
-            Suggested pairings
+            Suggested Pairings
             <span className="flex-1" />
             <Button variant="ghost" size="sm" className="text-on-banner" onClick={() => setSuggestOpen(false)}>
               <Icon name="mdi-close" />

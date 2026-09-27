@@ -485,7 +485,7 @@ export function FantasyDashboardView() {
         <CardHeader className="banner bg-banner p-4">
           <CardTitle className="flex flex-wrap items-center gap-2 text-primary">
             <Icon name="mdi-account-group" />
-            <span>Fantasy team</span>
+            <span>Fantasy Team</span>
             {existingTeam ? (
               <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 Registered
@@ -607,7 +607,7 @@ export function FantasyDashboardView() {
                 <CardHeader className="banner bg-banner p-4">
                   <CardTitle className="flex items-center gap-2 text-primary">
                     <Icon name="mdi-account-group" />
-                    Team details
+                    Team Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 p-4 md:grid-cols-2">
@@ -764,7 +764,7 @@ export function FantasyDashboardView() {
           <CardTitle className="flex items-center justify-between gap-2 text-primary">
             <span className="flex items-center gap-2">
               <Icon name="mdi-crystal-ball" />
-              <span>Fantasy bets</span>
+              <span>Fantasy Bets</span>
             </span>
             {existingTeam ? (
               <Badge variant="outline" className="border-on-banner/40 text-on-banner">

@@ -189,7 +189,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
     <Card className="card mb-6 gap-0 py-0">
       <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
         <Icon name="mdi-card-account-details" />
-        My accounts
+        My Accounts
       </CardTitle>
       <CardContent className="p-0">
         <StatusAlert modelValue={pageError} className="m-4" onClose={() => setPageError(null)} />

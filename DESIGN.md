@@ -137,7 +137,9 @@ Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 ## Words on the page
 
 - Page titles (`h1`) and app bar and menu entries use Title Case: "Fantasy Bets", "Team Details".
-- Everything else uses sentence case: dialog titles, buttons, field labels, hints, table columns, alerts, chips, card titles.
+- A banner, card, dialog or section title or a sidebar group label that names a thing uses Title Case: "App Settings", "Upcoming Series", "My Accounts". One that reads as a sentence or an action uses sentence case: "Sign in as a player", "Open signups", "Add team".
+- The league is "Gym Newbie League" in a title or a group label. "GNL" stays only where the full name would wrap: a chip, a table cell, a column title, a filter option. Never "the league" for it.
+- Everything else uses sentence case: buttons, field labels, hints, table columns, alerts, chips.
 - Buttons show their label as written, in sentence case.
 - A column title is a short noun. It has no legend in brackets. On a wide screen it stays on one line.
 - Right-align numeric columns, the title and the cells.

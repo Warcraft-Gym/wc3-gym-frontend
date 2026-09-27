@@ -14,8 +14,8 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { useSeason } from "@/stores";
 
 const CARDS = [
-  { key: "player", title: "Player achievements", icon: "mdi-account-outline", team: false },
-  { key: "team", title: "Team achievements", icon: "mdi-account-group-outline", team: true },
+  { key: "player", title: "Player Achievements", icon: "mdi-account-outline", team: false },
+  { key: "team", title: "Team Achievements", icon: "mdi-account-group-outline", team: true },
 ];
 
 // Put each rule's current numbers into its description template

@@ -39,7 +39,7 @@ export function PlayerPanel() {
         showCloseButton={false}
         className="w-[560px] max-w-full gap-0 p-0 motion-reduce:transition-none sm:max-w-[560px]"
       >
-        <SheetTitle className="sr-only">Player profile</SheetTitle>
+        <SheetTitle className="sr-only">Player Profile</SheetTitle>
         {open ? (
           // a name inside the panel swaps the panel, so the page under it keeps its work
           <PanelLinksContext.Provider value>

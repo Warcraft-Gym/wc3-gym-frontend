@@ -196,7 +196,7 @@ export function RandomStatsView() {
       {/* Search form */}
       <Card className="card mb-6 gap-0 py-0">
         <CardHeader className="banner bg-banner p-4">
-          <CardTitle className="text-primary">Player &amp; seasons</CardTitle>
+          <CardTitle className="text-primary">Player &amp; Seasons</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className="grid items-start gap-4 md:grid-cols-12">

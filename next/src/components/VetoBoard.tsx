@@ -321,7 +321,7 @@ export function VetoBoard({
               <CardHeader className="banner bg-banner p-4">
                 <CardTitle className="flex items-center gap-2 text-primary">
                   <Icon name="mdi-map" />
-                  Map pool
+                  Map Pool
                 </CardTitle>
               </CardHeader>
               <div className="flex flex-wrap gap-3 p-4">

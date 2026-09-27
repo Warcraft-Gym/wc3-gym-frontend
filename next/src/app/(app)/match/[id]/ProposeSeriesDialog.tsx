@@ -126,7 +126,7 @@ export function ProposeSeriesDialog({
       <DialogContent showCloseButton={false} className="flex max-h-[95vh] max-w-[1400px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1400px]">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-lightbulb-on" />
-          Proposed series
+          Proposed Series
         </DialogTitle>
 
         <StatusAlert modelValue={errorMessage} onClose={onErrorClose} className="mx-4 mt-4" />

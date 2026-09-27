@@ -375,7 +375,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
       <Card className="card mb-4 gap-0 py-0">
         <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-trophy" />
-          Round {selectedWeek} matches
+          Round {selectedWeek} Matches
         </CardTitle>
         {auth.isAdmin ? (
           <CardContent className="flex flex-wrap justify-end gap-2 p-2">

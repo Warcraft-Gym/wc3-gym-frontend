@@ -86,7 +86,7 @@ export function HeadToHead({ playerId }: { playerId: number }) {
       <CardTitle className="flex flex-wrap items-center justify-between gap-2 banner bg-banner px-4 py-3 text-primary">
         <div className="flex items-center gap-2">
           <Icon name="mdi-sword-cross" />
-          <span>Head to head</span>
+          <span>Head to Head</span>
         </div>
         {opponents.length ? (
           <Badge variant="outline" className="h-auto whitespace-normal border-on-banner/40 text-on-banner">

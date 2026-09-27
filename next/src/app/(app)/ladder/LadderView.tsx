@@ -214,7 +214,7 @@ export function LadderView() {
         </div>
       ) : null}
 
-      <PageHeader title="GNL Ladder Grind" lead="Ladder grind and achievements for the selected GNL season" />
+      <PageHeader title="Gym Newbie League Ladder Grind" lead="Ladder grind and achievements for the selected GNL season" />
 
       {/* Season picker and the sync of that season */}
       <div className="mb-2 flex flex-wrap items-center gap-3">
@@ -274,7 +274,7 @@ export function LadderView() {
           <Card className="card mb-4 gap-0 py-0">
             <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
               <Icon name="mdi-trophy" />
-              <span>Team standings</span>
+              <span>Team Standings</span>
             </CardTitle>
             <div className="p-2 text-xs text-muted-foreground">{seasonDates}</div>
             {/* One group per team; its detail rows are the team's players that pass the filters */}

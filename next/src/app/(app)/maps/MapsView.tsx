@@ -179,7 +179,7 @@ export function MapsView() {
         <CardHeader className="banner bg-banner p-4">
           <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-map" />
-            <span>All maps</span>
+            <span>All Maps</span>
           </CardTitle>
         </CardHeader>
 

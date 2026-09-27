@@ -128,7 +128,7 @@ export function AccessView() {
         <CardHeader className="banner bg-banner p-4">
           <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-account-key" />
-            <span>Gym admins</span>
+            <span>Gym Admins</span>
           </CardTitle>
         </CardHeader>
 

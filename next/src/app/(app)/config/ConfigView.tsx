@@ -240,7 +240,7 @@ export function ConfigView() {
         <CardHeader className="banner bg-banner p-4">
           <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-cog" />
-            Application settings
+            Application Settings
           </CardTitle>
         </CardHeader>
 
@@ -285,7 +285,7 @@ export function ConfigView() {
             </AccordionItem>
 
             <AccordionItem value="gnl">
-              <AccordionTrigger className="text-xl font-normal">GNL league settings</AccordionTrigger>
+              <AccordionTrigger className="text-xl font-normal">Gym Newbie League Settings</AccordionTrigger>
               <AccordionContent>
                 <div className="grid gap-4 pt-2 md:grid-cols-12">
                   {/* The label reads after the select, where the floating label of v-select sits, and order puts it back on top */}

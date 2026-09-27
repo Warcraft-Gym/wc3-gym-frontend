@@ -861,7 +861,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         <Card className="card mb-4 gap-0 py-0">
           <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-trophy-variant" />
-            Series management
+            Series Management
             <span className="flex-1" />
             <Badge variant="outline" className="border-on-banner/40 text-on-banner">
               {series.length} published

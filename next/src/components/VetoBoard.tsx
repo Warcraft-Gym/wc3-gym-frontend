@@ -347,7 +347,7 @@ export function VetoBoard({
                       {tile.week ? (
                         <Badge className={toneClass("primary")}>Game 1</Badge>
                       ) : tile.canAct ? (
-                        <Button variant="outline" className={nextAction === "Pick" ? "text-success" : "text-error"} onClick={() => send({ action: recording ? "record" : "step", map_id: tile.id })}>
+                        <Button variant="outline" className={nextAction === "Pick" ? "text-primary-text" : "text-error"} onClick={() => send({ action: recording ? "record" : "step", map_id: tile.id })}>
                           {nextAction}
                         </Button>
                       ) : null}

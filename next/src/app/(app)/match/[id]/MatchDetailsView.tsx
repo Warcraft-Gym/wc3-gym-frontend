@@ -824,8 +824,8 @@ export function MatchDetailsView({ id }: { id: string }) {
       onClick: () => toggleDraftFantasyMatch(item),
     },
     item.replaces_series_id
-      ? { icon: "mdi-publish", label: "Publish and replace", color: "success", onClick: () => openPublishReplace(item) }
-      : { icon: "mdi-publish", label: "Publish series", color: "success", onClick: () => publishDraftSeries(item) },
+      ? { icon: "mdi-publish", label: "Publish and replace", color: "primary", onClick: () => openPublishReplace(item) }
+      : { icon: "mdi-publish", label: "Publish series", color: "primary", onClick: () => publishDraftSeries(item) },
     { icon: "mdi-delete", label: "Delete draft", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
   ];
 

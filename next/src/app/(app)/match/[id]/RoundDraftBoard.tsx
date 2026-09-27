@@ -436,7 +436,7 @@ export function RoundDraftBoard({
                   Out
                 </Badge>
                 {own ? (
-                  <Button variant="outline" size="sm" className="text-success" disabled={busy} onClick={() => onCheckIn(teamId, player.user_id)}>
+                  <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={() => onCheckIn(teamId, player.user_id)}>
                     Check in for {player.name}
                   </Button>
                 ) : null}

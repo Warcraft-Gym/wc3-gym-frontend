@@ -419,7 +419,7 @@ export function DraftSeries({
         <div className="flex justify-end gap-2 p-2">
           {/* a replacement draft publishes from its own row, with the confirm that names what is lost */}
           {publishCount ? (
-            <Button variant="ghost" className="text-success" onClick={onPublishAll}>
+            <Button variant="ghost" className="text-primary-text" onClick={onPublishAll}>
               <Icon name="mdi-publish" />
               Publish all {publishCount}
             </Button>

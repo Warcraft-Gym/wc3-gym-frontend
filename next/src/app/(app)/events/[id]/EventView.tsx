@@ -432,7 +432,7 @@ export function EventView({ id }: { id: string }) {
 
 /** The one button the server picked for this caller. */
 function ActionButton({ button, busy, onClick }: { button: Row; busy: boolean; onClick: () => void }) {
-  const tint = button.color === "error" ? "text-error" : button.color === "success" ? "text-success" : "text-primary-text";
+  const tint = button.color === "error" ? "text-error" : "text-primary-text";
   const variant = button.variant === "outlined" ? "outline" : "default";
   return (
     <Button size="sm" variant={variant} className={variant === "outline" ? tint : undefined} disabled={busy} onClick={onClick}>

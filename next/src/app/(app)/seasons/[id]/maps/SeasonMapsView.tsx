@@ -23,8 +23,8 @@ import { useMapStore, useSeason } from "@/stores";
 const STEPS = [
   { value: "Ban_A", label: "+ Ban A", color: "text-error" },
   { value: "Ban_B", label: "+ Ban B", color: "text-error" },
-  { value: "Pick_A", label: "+ Pick A", color: "text-success" },
-  { value: "Pick_B", label: "+ Pick B", color: "text-success" },
+  { value: "Pick_A", label: "+ Pick A", color: "text-primary-text" },
+  { value: "Pick_B", label: "+ Pick B", color: "text-primary-text" },
 ];
 
 // What the page asks before it drops the map rules and the order it holds unsaved.

@@ -303,7 +303,7 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-success"
+                            className="text-primary-text"
                             disabled={savingWeek !== null}
                             onClick={() => setWeek(row.seasonId, row.playday, true)}
                           >

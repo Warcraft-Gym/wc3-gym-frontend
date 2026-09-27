@@ -90,9 +90,8 @@ const store = {
   async playerSeries(season_id: number, user_id: number) {
     return await fetchWrapper.get(`${backendUrl}/events/${season_id}/series?player_id=${user_id}`);
   },
-  async searchSeriesBySeason(season_id: number, search?: string) {
-    const suffix = search ? `?query=${search}` : "";
-    return await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search${suffix}`);
+  async searchSeriesBySeason(season_id: number, fantasyOnly?: boolean) {
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/series${fantasyOnly ? "?is_fantasy_match=true" : ""}`);
   },
 };
 

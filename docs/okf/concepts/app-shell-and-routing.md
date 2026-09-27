@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T16:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T10:00:00Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -37,7 +37,7 @@ sources:
 
 `/player-dashboard` redirects to the member's own player page and `/player-stats` to `/players`. What each page does is in the [pages](../pages/index.md) directory.
 
-The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/report` and `/player/:id` do, is not drawn again.
+The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A signed-in session on `/login` or `/admin-login` is sent on the same way, except the admin token's session on `/admin-login` while `NEXT_PUBLIC_DEV_LOGIN=1`, which stays to pick between the super admin and a player. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/report` and `/player/:id` do, is not drawn again.
 
 Routes are plain paths since 2026-09-04; there is no bridge for old `/#/x` links. See [the decision](../decisions/history-routing.md).
 

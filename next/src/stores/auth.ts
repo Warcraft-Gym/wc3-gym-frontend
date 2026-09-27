@@ -73,16 +73,21 @@ const logout = async () => {
   navigate("/login");
 };
 
-// the admin-token login at /admin-login; a super admin session with no Discord account
-const login = async (adminToken: string) => {
+// the admin-token login at /admin-login; a super admin session with no Discord account.
+// `stay` keeps the page, so the admin picks between continuing and the local dev login
+const login = async (adminToken: string, { stay = false } = {}) => {
   const user = await fetchWrapper.post(`${backendUrl}/login`, { token: adminToken });
   localStorage.setItem("user", JSON.stringify(user));
   patch({ user });
   await fetchMe(); // /me answers the legacy token: the name, the role and the running seasons
-  navigate(takeReturnUrl("/"));
+  if (!stay) navigate(takeReturnUrl("/"));
 };
 
-// the local dev login: a session for one player, as the role asked for; the backend answers 404 unless it is on
+// leave the /admin-login choice as the super admin
+const continueAsAdmin = () => navigate(takeReturnUrl("/"));
+
+// the local dev login: a session for one player, as the role asked for; only the admin token's session
+// reaches it, and the player's token replaces it. The backend answers 404 unless it is on
 const devLogin = async (userId: number, role: "member" | "guest" | "admin") => {
   const answer = await fetchWrapper.post(`${backendUrl}/dev/login`, { user_id: userId, role });
   const user = { access_token: answer.access_token, dev: true };
@@ -119,6 +124,7 @@ const members = ({ user, me, viewAs, loginError }: AuthState) => {
     token,
     fetchMe,
     login,
+    continueAsAdmin,
     devLogin,
     logout,
     clear,

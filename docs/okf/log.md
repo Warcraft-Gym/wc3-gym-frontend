@@ -2,6 +2,7 @@
 
 ## 2026-09-27
 
+* **Update**: the local dev login sits behind the admin token: `/admin-login` leads to "Continue as Super Admin" or "Sign in as a player", and `/login` no longer offers it; the guard lets that session stay on `/admin-login`; the session and routing concepts and the local runbook state it.
 * **Update**: My Season lists every round of the current season; a round with the member's series shows the series in place of the answer, and a round over with no series stays as its bare line. The captain's "Draft pairings" moves from Upcoming Series onto its round in My Season; Upcoming Series keeps the drafts of other events.
 * **Add**: the season wizard gains a Captains & rosters step. It sets each ticked team's captains from any player and its roster from the season's signups, and the save writes them after the teams. The seasons list edits a season with a pencil button on its row; Export and Delete stay in the row menu. `PlayerChipPicker` is the shared player picker, and `RowActions` takes `menu`.
 * **Add**: the season wizard gains a Matchups step. It draws the season's matchups at random so that every team meets every other team once, with one match a round per team, and the save writes them after the teams.

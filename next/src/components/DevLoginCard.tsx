@@ -47,7 +47,9 @@ export function DevLoginCard() {
           setPlayers(rows);
           setError(null);
         })
-        .catch((failure: Error) => live && setError(failure.message || "The dev login is off on the backend. Set DEV_LOGIN=1 there."));
+        .catch((failure: Error & { status?: number }) =>
+          live && setError(failure.status === 404 || !failure.message ? "The dev login is off on the backend. Set DEV_LOGIN=1 there." : failure.message),
+        );
     }, 250);
     return () => {
       live = false;
@@ -75,7 +77,7 @@ export function DevLoginCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 p-6">
-        <p className="text-sm text-muted-foreground">For local testing only. Pick a player and a role; a player with a captain seat signs in as a captain.</p>
+        <p className="text-sm text-muted-foreground">For local testing, signed in with the admin token. Pick a player and a role; a player with a captain seat signs in as a captain.</p>
 
         <Field label="Find a player" htmlFor="dev-player-search">
           <Input id="dev-player-search" value={search} placeholder="Name or battle tag" onChange={(event) => setSearch(event.target.value)} />

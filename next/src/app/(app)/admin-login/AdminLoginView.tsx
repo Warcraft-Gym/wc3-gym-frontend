@@ -9,9 +9,34 @@ import { Note } from "@/components/ui/Note";
 import { useAuth } from "@/stores";
 import { DevLoginCard, devLoginEnabled } from "@/components/DevLoginCard";
 
-/** The admin-token login: a super admin session with no Discord account. */
+/** Once the admin token is in, with the local dev login on: go on as the super admin, or sign in as a player. */
+function ContinueAs() {
+  const { continueAsAdmin } = useAuth();
+  return (
+    <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-[500px] gap-0 p-0">
+        <CardHeader className="bg-primary p-4">
+          <CardTitle className="flex items-center gap-2 text-on-primary">
+            <Icon name="mdi-shield-account" />
+            Continue as
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <Button size="lg" className="h-11 w-full text-base" onClick={continueAsAdmin}>
+            <Icon name="mdi-shield-crown" />
+            Continue as Super Admin
+          </Button>
+        </CardContent>
+      </Card>
+      <DevLoginCard />
+    </div>
+  );
+}
+
+/** The admin-token login: a super admin session with no Discord account. With the local dev login on,
+ *  the accepted token leads to a choice instead of the app, and survives a reload of this page. */
 export function AdminLoginView() {
-  const { login } = useAuth();
+  const { login, user, me } = useAuth();
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -24,13 +49,16 @@ export function AdminLoginView() {
 
     setIsSubmitting(true);
     try {
-      await login(password);
+      await login(password, { stay: devLoginEnabled });
     } catch (error) {
       setApiError((error as Error).message);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // the admin token's session, not a dev login that sits in the same slot
+  if (devLoginEnabled && user && !user.dev && me?.superadmin) return <ContinueAs />;
 
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
@@ -76,7 +104,6 @@ export function AdminLoginView() {
           </form>
         </CardContent>
       </Card>
-      {devLoginEnabled ? <DevLoginCard /> : null}
     </div>
   );
 }

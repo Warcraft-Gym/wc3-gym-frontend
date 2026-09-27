@@ -187,7 +187,7 @@ export function MyAccounts({ player, onChanged }: { player: { tags?: PlayerTag[]
 
   return (
     <Card className="card mb-6 gap-0 py-0">
-      <CardTitle className="flex items-center gap-2 bg-primary p-4 text-on-primary">
+      <CardTitle className="flex items-center gap-2 bg-primary-darken-1 p-4 text-on-primary-darken-1">
         <Icon name="mdi-card-account-details" />
         My accounts
       </CardTitle>

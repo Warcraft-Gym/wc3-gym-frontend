@@ -310,10 +310,10 @@ export function SeasonDetailsView({ id }: { id: string }) {
       {/* Series with no result, reached from the unscored count on the Seasons page */}
       {unscoredOnly ? (
         <Card className="card mb-4 gap-0 py-0">
-          <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <CardTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
             <Icon name="mdi-clipboard-alert" />
             Series
-            <Badge variant="outline" className="ml-1 border-on-primary text-on-primary">
+            <Badge variant="outline" className="ml-1 border-on-primary-darken-1 text-on-primary-darken-1">
               No result
               <button type="button" aria-label="Clear the no result filter" onClick={() => setUnscoredOnly(false)}>
                 <Icon name="mdi-close" />
@@ -373,7 +373,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
 
       {/* Action Bar */}
       <Card className="card mb-4 gap-0 py-0">
-        <CardTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <CardTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
           <Icon name="mdi-trophy" />
           Round {selectedWeek} matches
         </CardTitle>
@@ -528,7 +528,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
       {/* Team Selection Dialog */}
       <Dialog open={isTeamDialogOpen} onOpenChange={(open) => (open ? setIsTeamDialogOpen(true) : closeTeamSelectionModal())}>
         <DialogContent showCloseButton={false} className="max-w-[700px] gap-0 p-0 sm:max-w-[700px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
             <Icon name="mdi-shield-plus" />
             Add teams to the season
           </DialogTitle>
@@ -571,7 +571,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
       {newMatch ? (
         <Dialog open={isModalOpen} onOpenChange={(open) => (open ? setIsModalOpen(true) : closeMatchCreationModal())}>
           <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
-            <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+            <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
               <Icon name="mdi-calendar-plus" />
               Create a match in round {selectedWeek}
             </DialogTitle>
@@ -597,7 +597,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
       {selectedMatch ? (
         <Dialog open={editMatchDialogOpen} onOpenChange={(open) => (open ? setEditMatchDialogOpen(true) : cancelEdit())}>
           <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
-            <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+            <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
               <Icon name="mdi-pencil" />
               Edit match
             </DialogTitle>

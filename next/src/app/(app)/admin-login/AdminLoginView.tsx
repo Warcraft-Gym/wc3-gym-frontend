@@ -15,8 +15,8 @@ function ContinueAs() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
       <Card className="w-full max-w-[500px] gap-0 p-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="bg-primary-darken-1 p-4">
+          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
             <Icon name="mdi-shield-account" />
             Continue as
           </CardTitle>
@@ -63,8 +63,8 @@ export function AdminLoginView() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
       <Card className="w-full max-w-[500px] gap-0 p-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="bg-primary-darken-1 p-4">
+          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
             <Icon name="mdi-lock" />
             Admin token login
           </CardTitle>

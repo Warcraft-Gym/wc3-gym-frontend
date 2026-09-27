@@ -26,7 +26,7 @@ function Figure({ value, label }: { value: number | null | undefined; label: str
 export function StatsPanel({ summary, seasonName, to, order }: { summary: Partial<Summary>; seasonName: string | null; to: string; order: number }) {
   const top3 = summary.top3 ?? [];
   return (
-    <HomePanel icon="mdi-account-star-outline" title="My Stats" order={order} action={<Link href={to} className="text-on-primary underline">Go to Profile</Link>}>
+    <HomePanel icon="mdi-account-star-outline" title="My Stats" order={order} action={<Link href={to} className="text-on-primary-darken-1 underline">Go to Profile</Link>}>
       <div className="grid grid-cols-2 gap-4">
         <Figure value={summary.seasons} label="Seasons played" />
         <Figure value={summary.score} label={seasonName ? `Points in ${seasonName}` : "Points this season"} />

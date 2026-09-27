@@ -63,7 +63,7 @@ export function CreateSeriesDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onCancel())} disablePointerDismissal>
       <DialogContent showCloseButton={false} className="flex max-h-[95vh] w-[95vw] max-w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[95vw]">
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
           <Icon name="mdi-plus-circle" />
           Add new series
         </DialogTitle>
@@ -74,7 +74,7 @@ export function CreateSeriesDialog({
           {sideTeams.map((side, i) => (
             <div key={i} className="flex flex-1 flex-col gap-4 min-[960px]:flex-row">
               <div className="card flex flex-1 flex-col overflow-hidden rounded">
-                <div className="flex flex-wrap items-center gap-2 bg-primary px-3 py-2 text-on-primary">
+                <div className="flex flex-wrap items-center gap-2 bg-primary-darken-1 px-3 py-2 text-on-primary-darken-1">
                   {/* the dialog holds unsaved picks, so the team reads as plain text */}
                   <TeamName team={side.team} plain className="font-bold" />
                   <Input

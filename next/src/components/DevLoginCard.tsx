@@ -70,8 +70,8 @@ export function DevLoginCard() {
 
   return (
     <Card className="mt-4 w-full max-w-[500px] gap-0 p-0">
-      <CardHeader className="bg-primary p-4">
-        <CardTitle className="flex items-center gap-2 text-on-primary">
+      <CardHeader className="bg-primary-darken-1 p-4">
+        <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
           <Icon name="mdi-account-switch" />
           Sign in as a player
         </CardTitle>

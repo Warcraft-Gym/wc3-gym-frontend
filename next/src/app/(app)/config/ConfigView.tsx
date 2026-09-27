@@ -237,8 +237,8 @@ export function ConfigView() {
 
       {/* Application Settings Section */}
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="bg-primary-darken-1 p-4">
+          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
             <Icon name="mdi-cog" />
             Application settings
           </CardTitle>

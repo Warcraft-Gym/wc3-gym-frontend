@@ -14,7 +14,8 @@ export const themes = {
             'on-background': '#1A241E',
             'on-surface': '#1A241E',
             primary: '#E7B643',
-            'primary-darken-1': '#D3A329',
+            'primary-darken-1': '#886200',  // the shade a banner wears; gold is the highlight
+            'on-primary-darken-1': '#FBF7F1',
             'on-primary': '#1A140C',
             secondary: '#3F4C43',
             'secondary-darken-1': '#2E3931',
@@ -71,17 +72,18 @@ export const themes = {
     dark: {
         dark: true,
         colors: {
-            // Dark surfaces sit on the light stone's hue (OKLCH 118, chroma 0.007), not on the ink's green
-            background: '#191A16',
-            surface: '#232420',
-            'surface-bright': '#2F302C',
-            'surface-light': '#2D2E2A',
+            // Dark grounds are the public site's warm near-black, so both products share one ground
+            background: '#080503',
+            surface: '#0C0805',
+            'surface-bright': '#16140F',
+            'surface-light': '#1B1915',
             'surface-variant': '#D5DBD1',
             'on-surface-variant': '#1A241E',
             'on-background': '#E7EBE3',
             'on-surface': '#E7EBE3',
             primary: '#E7B643',
-            'primary-darken-1': '#D3A329',
+            'primary-darken-1': '#886200',  // the shade a banner wears; gold is the highlight
+            'on-primary-darken-1': '#FBF7F1',
             'on-primary': '#1A140C',
             secondary: '#C3CCC1',
             'secondary-darken-1': '#A7B1A4',
@@ -91,12 +93,12 @@ export const themes = {
             info: '#7FB0DA',
             success: '#5FA870',  // inside the dark lightness band the chart-mark validator checks, still 4.62:1 or more as text
             'primary-text': '#E7B643',
-            band: '#11110E',
+            band: '#050301',
             'on-band': '#F2F4ED',
-            hero: '#332A1B',  // lighter than the page, so the hero stands out from it
+            hero: '#1E1710',  // lighter than the page, so the hero stands out from it
             'on-hero': '#F2F4ED',
             'band-muted': '#B9C4B6',
-            tag: '#333430',
+            tag: '#221F19',
             'on-tag': '#C3CCC1',
             win: '#4996F5',
             loss: '#E24947',

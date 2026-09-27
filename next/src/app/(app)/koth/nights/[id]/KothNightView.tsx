@@ -363,9 +363,9 @@ export function KothNightView({ id }: { id: string }) {
       {/* The signups W3Champions gave no rating for wait over the brackets until one is picked */}
       {unplaced.length ? (
         <Card className="card mb-4 gap-0 py-0">
-          <CardHeader className="flex items-center gap-2 bg-primary p-3">
-            <CardTitle className="flex-1 text-on-primary">Unplaced</CardTitle>
-            <span className="tnum text-xs text-on-primary/80">
+          <CardHeader className="flex items-center gap-2 bg-primary-darken-1 p-3">
+            <CardTitle className="flex-1 text-on-primary-darken-1">Unplaced</CardTitle>
+            <span className="tnum text-xs text-on-primary-darken-1/80">
               {unplaced.length} {unplaced.length === 1 ? "player" : "players"}
             </span>
           </CardHeader>
@@ -417,7 +417,7 @@ export function KothNightView({ id }: { id: string }) {
       {/* The king leaves the throne empty for the next series, or hands the crown to one player */}
       <Dialog open={!!stepDown} onOpenChange={(open) => !open && setStepDown(null)}>
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
-          <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Step down</DialogTitle>
+          <DialogTitle className="bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">Step down</DialogTitle>
           {stepDown ? (
             <>
               <p className="mb-0 px-4 pt-3 text-sm text-muted-foreground">
@@ -493,7 +493,7 @@ export function KothNightView({ id }: { id: string }) {
       {/* The close deletes every series nobody scored, and each standing king defends next time */}
       <Dialog open={closing} onOpenChange={setClosing}>
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
-          <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Close the night</DialogTitle>
+          <DialogTitle className="bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">Close the night</DialogTitle>
           <div className="p-4">
             <ul className="mb-0 flex flex-col gap-1">
               {brackets.map((bracket: Row) => (
@@ -541,7 +541,7 @@ export function KothNightView({ id }: { id: string }) {
       {/* A late arrival enters by battle tag; W3Champions picks his bracket, or he waits unplaced */}
       <Dialog open={addTo} onOpenChange={setAddTo}>
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[480px]", dialogCompact)}>
-          <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Add player</DialogTitle>
+          <DialogTitle className="bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">Add player</DialogTitle>
           <div className="flex flex-col gap-3 p-4">
             <Field label="Battle tag" hint="The name and the numbers, like Mirren#4410." error={addError} htmlFor="koth-add-tag">
               <Input id="koth-add-tag" aria-invalid={!!addError} value={addTag} onChange={(event) => { setAddTag(event.target.value); setAddError(null); }} />

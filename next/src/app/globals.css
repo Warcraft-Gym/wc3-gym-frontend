@@ -27,6 +27,7 @@
   --color-on-surface: rgb(var(--v-theme-on-surface));
   --color-primary: rgb(var(--v-theme-primary));
   --color-primary-darken-1: rgb(var(--v-theme-primary-darken-1));
+  --color-on-primary-darken-1: rgb(var(--v-theme-on-primary-darken-1));
   --color-on-primary: rgb(var(--v-theme-on-primary));
   --color-secondary: rgb(var(--v-theme-secondary));
   --color-secondary-darken-1: rgb(var(--v-theme-secondary-darken-1));

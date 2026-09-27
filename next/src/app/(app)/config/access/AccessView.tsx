@@ -125,8 +125,8 @@ export function AccessView() {
       <StatusAlert modelValue={successMessage} type="success" onClose={() => setSuccessMessage(null)} />
 
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="bg-primary-darken-1 p-4">
+          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
             <Icon name="mdi-account-key" />
             <span>Gym admins</span>
           </CardTitle>
@@ -193,7 +193,7 @@ export function AccessView() {
 
       <Dialog open={addDialog} onOpenChange={setAddDialog} disablePointerDismissal>
         <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[600px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+          <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
             <Icon name="mdi-plus-circle" />
             Add admin
           </DialogTitle>

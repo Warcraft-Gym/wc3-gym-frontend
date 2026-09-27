@@ -43,8 +43,8 @@ export function DiscordJoinCard({ className }: { className?: string }) {
 
   return (
     <Card className={cn("w-full max-w-[500px] gap-0 p-0", className)}>
-      <CardHeader className="bg-primary p-4">
-        <CardTitle className="text-on-primary">Join the WC3 Gym Discord</CardTitle>
+      <CardHeader className="bg-primary-darken-1 p-4">
+        <CardTitle className="text-on-primary-darken-1">Join the WC3 Gym Discord</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         {message ? <Note type={message === NO_MEMBERSHIP ? "info" : "error"}>{message}</Note> : null}

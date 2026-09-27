@@ -170,7 +170,7 @@ export function KothView() {
       {/* Tonight's night: when it starts, and where its three brackets cut */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent showCloseButton={false} className="max-w-[520px] gap-0 p-0 sm:max-w-[520px]">
-          <DialogTitle className="bg-primary px-4 py-3 text-on-primary">Open tonight</DialogTitle>
+          <DialogTitle className="bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">Open tonight</DialogTitle>
           <div className="flex flex-col gap-3 p-4">
             <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
             <Field label="Starts at" htmlFor="night-starts-at">

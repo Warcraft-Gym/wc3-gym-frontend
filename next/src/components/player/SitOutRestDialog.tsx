@@ -52,7 +52,7 @@ export function SitOutRestDialog({ label, cards, onConfirm }: {
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent showCloseButton={false} className="max-w-[520px] gap-0 p-0 sm:max-w-[520px]">
-          <DialogTitle className="flex flex-col gap-0.5 bg-primary px-4 py-3 text-on-primary">
+          <DialogTitle className="flex flex-col gap-0.5 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
             Sit out all remaining rounds
             <span className="text-sm font-normal">{label}</span>
           </DialogTitle>

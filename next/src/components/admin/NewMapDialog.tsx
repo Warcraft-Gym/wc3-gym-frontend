@@ -55,7 +55,7 @@ export function NewMapDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent showCloseButton={false} className="max-w-[560px] gap-0 p-0 md:max-w-[560px]">
-        <DialogTitle className="flex items-center gap-2 bg-primary px-4 py-3 text-on-primary">
+        <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
           <Icon name="mdi-map-plus" />
           New map
         </DialogTitle>

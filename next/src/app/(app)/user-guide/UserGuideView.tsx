@@ -12,8 +12,8 @@ export function UserGuideView({ htmlContent }: { htmlContent: string }) {
       <PageHeader title={<><Icon name="mdi-book-open-page-variant" className="mr-2" />User Guide</>} />
 
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
+        <CardHeader className="bg-primary-darken-1 p-4">
+          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
             <Icon name="mdi-file-document" />
             <span>Documentation</span>
           </CardTitle>

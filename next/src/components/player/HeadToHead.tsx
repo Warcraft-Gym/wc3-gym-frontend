@@ -83,13 +83,13 @@ export function HeadToHead({ playerId }: { playerId: number }) {
 
   return (
     <Card className="card mt-6 gap-0 py-0">
-      <CardTitle className="flex flex-wrap items-center justify-between gap-2 bg-primary px-4 py-3 text-on-primary">
+      <CardTitle className="flex flex-wrap items-center justify-between gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
         <div className="flex items-center gap-2">
           <Icon name="mdi-sword-cross" />
           <span>Head to head</span>
         </div>
         {opponents.length ? (
-          <Badge variant="outline" className="h-auto whitespace-normal border-current text-on-primary">
+          <Badge variant="outline" className="h-auto whitespace-normal border-current text-on-primary-darken-1">
             {/* one string, so the count and its plural stay one text node, as the Vue chip reads */}
             {`${opponents.length} player${opponents.length === 1 ? "" : "s"} faced in ${eventCount} event${eventCount === 1 ? "" : "s"}, lifetime`}
           </Badge>

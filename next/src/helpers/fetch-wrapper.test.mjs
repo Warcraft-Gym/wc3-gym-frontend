@@ -62,7 +62,7 @@ test('caller-dependent reads and other queries keep the bearer', () => {
     '/api/leagues/5', '/api/events/5', '/api/config/settings', '/api/maps/ladder-import',
     '/api/users/3/ladder?t=123', '/api/users/3/ladder?season_id=2&t=123', '/api/events/12/teams?t=123',
     '/api/events/12/teams/7/availability', '/api/config/discord-roles',
-    '/api/events/12/series', '/api/events/12/series?match_id=5', '/api/events/12/entrants', '/api/events/12/entrants?t=123', '/api/events/12/stages/4/series?t=123',
+    '/api/events/12/series', '/api/events/12/series?match_id=5', '/api/events/12/series?team_id=5', '/api/events/12/entrants', '/api/events/12/entrants?t=123', '/api/events/12/stages/4/series?t=123',
   ]) {
     assert.equal(edgeCached.test(url), false, url);
   }

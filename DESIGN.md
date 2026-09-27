@@ -1,6 +1,6 @@
 # Design Rules
 
-The app uses one look, stone and bronze, in a light and a dark theme. This file lists the colours, the type and the rules that keep every page in that look. If a value here differs from the code, the code is correct and this file needs a fix.
+The app uses one look, stone and gold, in a light and a dark theme. This file lists the colours, the type and the rules that keep every page in that look. If a value here differs from the code, the code is correct and this file needs a fix.
 
 ## Where the look lives
 
@@ -45,11 +45,13 @@ Ink means `#1A241E`. White means `#FBF7F1`.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `primary` / `on-primary` | `#9A5B18` / white | `#D08B3C` / `#1A140C` | Bronze. Main buttons, card title bars, the sorted column. |
-| `primary-darken-1` | `#7C4912` | `#B57430` | The pressed state. |
-| `primary-text` | `#7C4912` | `#E3A45F` | Bronze text and links. `primary` is under 4.5:1 as text on `surface-light`. |
+| `primary` / `on-primary` | `#E7B643` / `#1A140C` | `#E7B643` / `#1A140C` | Gold. Main buttons, card title bars, the sorted column. |
+| `primary-darken-1` | `#D3A329` | `#D3A329` | The pressed state. |
+| `primary-text` | `#916200` | `#E7B643` | Gold text and links. In light, `primary` is 1.7:1 on `surface`, so gold text takes this amber. |
 | `secondary` / `on-secondary` | `#3F4C43` / `#F2F4ED` | `#C3CCC1` / ink | Stone. Second-level chips and buttons. |
 | `secondary-darken-1` | `#2E3931` | `#A7B1A4` | The pressed state. |
+
+Gold is the chrome of the app and the hue of an amount (the `heat-*` ramp). It never marks a win, a race or a series. On a light ground gold is a fill with dark ink, never text: a text role in gold uses `primary-text`.
 
 ### Status
 
@@ -68,11 +70,11 @@ In dark, `on-error`, `on-info`, `on-success` and `on-warning` are ink.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `win` | `#1F63A6` | `#4F95D8` | A won game, series or bar. |
-| `loss` | `#B8432C` | `#DE6E52` | A lost game, series or bar. |
-| `draw` | `#5F6B61` | `#9DA89E` | A draw, no result, the Random race, a neutral bar. |
+| `win` | `#1F63A6` | `#4996F5` | A won game, series or bar. |
+| `loss` | `#B31220` | `#E24947` | A lost game, series or bar. |
+| `draw` | `#A8A29A` | `#5E5B56` | A draw, no result, the Random race, a neutral bar. |
 
-Win is blue, not green. Green and red cannot be told apart by a reader with red-green colour blindness. In dark, `on-win`, `on-loss` and `on-draw` are ink.
+Win is blue, not green. Green and red cannot be told apart by a reader with red-green colour blindness. `on-draw` is ink in light and white in dark. In dark, `on-win` is ink and `on-loss` is `#1A140C`.
 
 ### Fantasy tiers
 
@@ -89,19 +91,20 @@ Win is blue, not green. Green and red cannot be told apart by a reader with red-
 
 ### Races, medals and the heat map
 
-The race and medal tokens are used on the season report. The `heat-*` ramp fills the heat map of the season report and the division bands of the entrants page. The Random race uses `draw`.
+The race and medal tokens are used on the season report and the event pages. The `heat-*` ramp fills the heat map of the season report and the division bands of the entrants page. The Random race uses `draw`.
 
 | Token | Light | Dark |
 |---|---|---|
-| `race-hu` | `#1689A6` | `#02809C` |
-| `race-oc` | `#D06D69` | `#BA4C4B` |
-| `race-ne` | `#086A12` | `#44AB46` |
-| `race-ud` | `#7546BA` | `#9B6FE4` |
+| `race-hu` | `#0278E7` | `#005BB5` |
+| `race-oc` | `#ED4952` | `#B71824` |
+| `race-ne` | `#00660C` | `#2DA73D` |
+| `race-ud` | `#62359C` | `#9D6FE3` |
 | `medal-gold` | `#8F6B00` | `#E0B84A` |
 | `medal-silver` | `#6E7881` | `#B9C2C8` |
-| `heat-1` to `heat-5` | `#D0A076` `#BA8351` `#A3682E` `#865017` `#683C0B` | `#784D25` `#9C642F` `#C37D39` `#E29A57` `#FABC86` |
+| `medal-bronze` | `#9A5B18` | `#D08B3C` |
+| `heat-1` to `heat-5` | `#F0D49B` `#DBB155` `#B68B16` `#8E6800` `#664700` | `#5E4300` `#805D00` `#AA7E00` `#D3A329` `#F5CB70` |
 
-Third place uses `primary` as its medal. The rank number sits beside each medal, so the rank does not depend on the colour. The heat map runs from light to dark bronze in light mode and from dark to light in dark mode. A cell with no games uses `surface-light`, and the legend shows that swatch.
+The races are the Bold set. In dark, `race-hu` and `race-oc` are under 3:1 on `surface`, so they are marks beside the race icon, never text. The rank number sits beside each medal, so the rank does not depend on the colour. The heat map is the gold ramp: light to dark gold in light mode, dark to light in dark mode. A cell with no games uses `surface-light`, and the legend shows that swatch.
 
 ### Borders and faded text
 
@@ -116,12 +119,13 @@ Light uses 0.78 because 0.7 put field labels under 4.5:1 on the light surface.
 
 | Face | Weights | Use |
 |---|---|---|
-| Alegreya (serif) | 700, 800 | `h1` to `h6`, `.v-card-title`, `.text-h1` to `.text-h6`. `h1`, `.text-h1` to `.text-h3` use 800. |
-| Alegreya Sans | 400, 500, 700 | Body text, controls, buttons, captions. |
+| Cinzel | 700 | The page title, `h1`. Cinzel has capitals only, so it never sets a name. |
+| Cardo | 400, 700 | `h2` to `h6`, card, dialog and sheet titles, and player and team names (`.player-name .name`, `.team-name .name`, `.font-name`). A name keeps its own case. |
+| Lato | 400, 700 | Body text, controls, buttons, captions and every figure. |
 
-`@fontsource` serves both faces from the app's own bundle. Every number uses lining, equal-width digits (`tabular-nums`), so figures line up in a column.
+`next/font/google` loads the three faces in `next/src/app/layout.tsx` and serves them from the app. Every number uses lining, equal-width digits (`lining-nums tabular-nums`), so figures line up in a column. Lato has no 500: a figure that needs weight uses 700.
 
-A large number on a card uses Alegreya Sans 500 at the `.text-h2` size. The heading serif at 800 looks playful at that size.
+A large number on a card uses Lato 700, never a heading face.
 
 Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 
@@ -249,7 +253,7 @@ The nav is built from the hats a session wears (`next/src/helpers/nav-model.mjs`
 - A card title bar is `bg-primary`. A dialog that deletes something uses `bg-error`.
 - A filled button marks the one next action of its surface; every other button on it is outlined or quiet. Choices of equal standing wear equal buttons.
 - A dialog is a full-height sheet under 768 px and a centred panel above it. A confirm keeps the centred panel at both widths, its height its content, so the form it asks about stays in view: pass `dialogCompact` from `next/src/components/ui/dialog.tsx` on its `DialogContent`.
-- Bronze text on a tab, a toolbar button or a card action button uses `primary-text`, because `primary` is 4.21:1 on `surface-light`.
+- Gold text on a tab, a toolbar button or a card action button uses `primary-text`, because light `primary` is 1.5:1 on `surface-light`.
 - The sorted column title of a table is in `primary`. An unsorted sortable column shows a faint sort icon.
 - A table wider than its card shows a shadow at the hidden edge.
 - A card pads its content with 16 px, the value `--card-spacing` holds. A card marked `size="sm"` pads with 12 px. A card whose content runs to its own edge, a full-width table or list, pads with none.
@@ -301,11 +305,11 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 
 | Set | Light, on `surface` | Dark, on `surface` | Result |
 |---|---|---|---|
-| `win` with `loss` | 27.1 full vision, 18.7 colour blind | 25.8 and 19.3 | Passes. |
-| The four `race-*` | 19.9 and 9.1 | 19.9 and 9.2 | Passes as a set of four. |
+| `win` with `loss` | 29.1 full vision, 21.4 colour blind | 32.2 and 25.8 | Passes. |
+| The four `race-*` | 19.6 and 8.7 | 20.3 and 11.8 | Passes as a set of four. |
 | The four `race-*` with `win` and `loss` | | 10.7 and 1.5 | Fails. A race colour and a result colour never share one set of marks. |
 | The six `tier-*` | 13.0 and 3.7 | | Fails. A tier is always a chip with its label, never a bare mark. |
-| `primary` with `loss` | 7.9 and 1.5 | | Fails. Bronze is a control colour and never a mark. |
+| `primary` with `loss` | | | Not measured. Gold is chrome and the amount hue, never a mark beside a result. |
 
 ### A player has many races
 
@@ -337,7 +341,7 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 ### Rules the code follows everywhere
 
 - The body rule in `globals.css` sets lining, tabular digits for every number. `.tnum` repeats it where a component resets the font. So a missing `tnum` is no fault, and a numeric column that is not right-aligned is.
-- In the light theme, `win`, `loss`, `draw` and the four status tokens name no `on-*` ink. `palette-style.ts` gives each of them the `on-primary` ink, which passes 4.5:1 on all seven, so `bg-win text-on-win` is safe in both themes.
+- In the light theme, `win`, `loss` and the four status tokens name no `on-*` ink. `palette-style.ts` gives each of them white (`#FBF7F1`), which passes 4.5:1 on all six, so `bg-win text-on-win` is safe in both themes. The light `draw` names ink.
 - A read that failed is not an empty list. An error draws `StatusAlert`, and the empty sentence shows only after a read that worked.
 - A tap on a mark opens its tooltip and never follows the link of its row. `RoundStrip`, `PlayerName` and `FlagIcon` stop the event.
 - A card of players is as synced as its least synced player: `TeamRoster` prints the oldest sync time of the card.
@@ -346,7 +350,9 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 
 ### The public league site
 
-The public league site, the `wc3-gnl-website` repository, shows the same league data in its own look, black and gold. A reader who moves between the two sites must find one way to read a record, a result and a race. Each site keeps its own look. For data, this palette is the reference for both sites: the maintainers decided on 20 September 2026 that the public site takes the dark values of `win`, `loss` and the four `race-*` tokens, which also pass the validator on a black ground. Propose a change to a rule of this section to that repository too.
+The public league site, the `wc3-gnl-website` repository, shows the same league data. A reader who moves between the two sites must find one way to read a record, a result and a race. The two sites share these exact values: gold `#E7B643` with `#1A140C` ink, the gold amount ramp, `win`, `loss`, `draw` and the four `race-*` tokens, and the faces Cinzel, Cardo and Lato. The maintainers decided this data language on 27 September 2026. Propose a change to a rule of this section to that repository too.
+
+The validator of the `dataviz` skill passes both sets on both grounds. The Bold races in dark: colour-blind ΔE 11.8, full vision 20.3; in light 8.7 and 19.6. Win and loss in dark: 32.2 and 25.8; in light 29.1 and 21.4. A race colour and a result colour never share one set of marks.
 
 ## Charts
 
@@ -379,7 +385,9 @@ The test checks three things. Every declared ink passes 4.5:1 on its fill. A for
 
 These parts of the app break a rule above today.
 
-- In light, `win`, `loss`, `draw`, `error`, `info`, `success` and `warning` name no `on-*` ink. A fill of one of those names picks its text colour by hand.
+- In light, `win`, `loss`, `error`, `info`, `success` and `warning` name no `on-*` ink. A fill of one of those names picks its text colour by hand.
+- `draw` is under 3:1 on `surface` in both themes (2.3:1), so `text-draw` and the tonal draw chip do not read as text. The letter or the score beside a draw mark carries the meaning.
+- In light, about thirty icons and the sorted column head use `text-primary`, which is gold at 1.7:1 on `surface`. They need `text-primary-text`.
 - Status colours mark things that are not app states. The fantasy week rank chips use `success`, `info` and `warning`. The MMR chips on the match page use `info`. Bench points use `warning`.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.

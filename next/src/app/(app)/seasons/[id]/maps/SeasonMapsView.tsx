@@ -441,7 +441,7 @@ export function SeasonMapsView({ id }: { id: string }) {
               {counts.map((count) => (
                 <div key={count.label} className="flex justify-between py-1">
                   <span className="text-xs text-muted-foreground">{count.label}</span>
-                  <span className={`font-medium tnum ${count.negative ? "text-error" : ""}`}>{count.value}</span>
+                  <span className={`font-bold tnum ${count.negative ? "text-error" : ""}`}>{count.value}</span>
                 </div>
               ))}
             </CardContent>

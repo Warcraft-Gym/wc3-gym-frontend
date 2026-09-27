@@ -183,7 +183,7 @@ export function MySeason({
                   href={`/series/${series.id}`}
                   title={score.label}
                   aria-label={score.label}
-                  className={cn("tnum font-medium no-underline hover:underline", score.won ? "text-win" : score.lost ? "text-loss" : "text-draw")}
+                  className={cn("tnum font-bold no-underline hover:underline", score.won ? "text-win" : score.lost ? "text-loss" : "text-draw")}
                 >
                   {score.text}
                 </Link>

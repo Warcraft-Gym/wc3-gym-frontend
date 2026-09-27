@@ -43,7 +43,7 @@ export function TeamName({
   );
 
   // A team header sits on the primary colour, so the hover cue is the underline, never a colour
-  const classes = cn("inline-flex min-w-0 items-center gap-1.5 text-inherit no-underline", to && "[&:hover_.name]:underline", className);
+  const classes = cn("team-name inline-flex min-w-0 items-center gap-1.5 text-inherit no-underline", to && "[&:hover_.name]:underline", className);
   if (to) return <Link href={to} className={classes}>{body}</Link>;
   return <span className={classes}>{body}</span>;
 }

@@ -338,7 +338,7 @@ export function PlayerSeasons({
                                     {!mdAndUp ? <span className="ml-1 text-muted-foreground">{opponentTeam(series, row)}</span> : null}
                                   </TableCell>
                                   {mdAndUp ? <TableCell>{opponentTeam(series, row)}</TableCell> : null}
-                                  <TableCell className={cn("text-right font-medium", resultClass(series))}>{result(series)}</TableCell>
+                                  <TableCell className={cn("text-right font-bold", resultClass(series))}>{result(series)}</TableCell>
                                   {mdAndUp ? <TableCell className="text-right">{playedOn(series)}</TableCell> : null}
                                   {mdAndUp ? (
                                     <TableCell className="text-muted-foreground">

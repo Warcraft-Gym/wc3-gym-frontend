@@ -13,7 +13,7 @@ type Summary = { seasons: number | null; thisSeason: number | null; overall: num
 function Figure({ value, label }: { value: number | null | undefined; label: string }) {
   return (
     <div className="flex flex-col">
-      {value === undefined ? <Skeleton className="skeleton h-7 w-10" /> : <span className="tnum font-heading text-2xl font-bold">{value ?? "–"}</span>}
+      {value === undefined ? <Skeleton className="skeleton h-7 w-10" /> : <span className="tnum text-2xl font-bold">{value ?? "–"}</span>}
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );

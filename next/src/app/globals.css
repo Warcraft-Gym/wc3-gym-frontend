@@ -117,9 +117,10 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  --font-sans: var(--font-body), "Alegreya Sans", "Helvetica Neue", Arial, sans-serif;
-  --font-heading: var(--font-display), Alegreya, Georgia, serif;
-  --font-display: var(--font-display), Alegreya, Georgia, serif;
+  --font-sans: var(--font-lato), Lato, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: var(--font-cardo), Cardo, Georgia, serif;
+  --font-display: var(--font-cardo), Cardo, Georgia, serif;
+  --font-title: var(--font-cinzel), Cinzel, Georgia, serif;
 }
 
 /* The shadcn components read these names, so they take their colours from the same palette. */
@@ -165,7 +166,7 @@
   /* A border utility with no colour draws the theme hairline, not the text colour. */
   *, ::before, ::after { border-color: var(--color-border); }
 
-  /* Alegreya Sans for body and controls; numbers use lining, equal-width digits so columns line up. */
+  /* Lato for body, controls and every figure; numbers use lining, equal-width digits so columns line up. */
   html,
   body {
     background-color: rgb(var(--v-theme-background));
@@ -174,12 +175,12 @@
     font-variant-numeric: lining-nums tabular-nums;
   }
 
-  /* Alegreya for titles and headings. */
+  /* Cardo for headings, Cinzel for the page title. Cinzel has capitals only, so a name never takes it. */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     font-weight: 700;
   }
-  h1 { font-weight: 800; font-size: 2.125rem; line-height: 1.2; }
+  h1 { font-family: var(--font-title); font-size: 2.125rem; line-height: 1.2; }
   h2 { font-size: 1.5rem; }
 
   /* Phones and small tablets: tighter titles. */
@@ -198,6 +199,11 @@
 .text-on-hero { color: rgb(var(--v-theme-on-hero)); }
 .text-on-primary { color: rgb(var(--v-theme-on-primary)); }
 .text-on-error { color: rgb(var(--v-theme-on-error)); }
+
+/* A player or team name reads in Cardo 700, in its own case. */
+.player-name .name,
+.team-name .name,
+.font-name { font-family: var(--font-heading); font-weight: 700; text-transform: none; }
 
 /* Every number column lines up. */
 .tnum { font-variant-numeric: lining-nums tabular-nums; }

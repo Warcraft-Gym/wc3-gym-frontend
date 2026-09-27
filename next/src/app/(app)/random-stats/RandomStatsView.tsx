@@ -327,8 +327,8 @@ export function RandomStatsView() {
                       <span>{oppRace}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-medium tnum text-win">{matchup.wins}</TableCell>
-                  <TableCell className="text-right font-medium tnum text-loss">{matchup.losses}</TableCell>
+                  <TableCell className="text-right font-bold tnum text-win">{matchup.wins}</TableCell>
+                  <TableCell className="text-right font-bold tnum text-loss">{matchup.losses}</TableCell>
                   <TableCell className="text-right tnum">{matchup.wins + matchup.losses}</TableCell>
                   <TableCell className="text-right">
                     <Badge variant="secondary" className="tnum">

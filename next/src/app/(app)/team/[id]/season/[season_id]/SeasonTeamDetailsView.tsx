@@ -239,7 +239,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
 
       {/* Page Header: the team, and the season it is read in */}
       <div className="mb-4">
-        <h1 className="flex items-center gap-2">
+        <h1 className="font-name flex items-center gap-2">
           <Icon name="mdi-shield-account" />
           {team?.name || "Team"}
         </h1>

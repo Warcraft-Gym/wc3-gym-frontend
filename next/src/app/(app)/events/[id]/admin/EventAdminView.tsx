@@ -70,7 +70,7 @@ function Ask({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className={cn("gap-0 p-0", WIDTH[width])}>
-        <DialogTitle className={cn("px-4 py-3", tone === "error" ? "bg-error text-on-error" : "bg-primary-darken-1 text-on-primary-darken-1")}>{title}</DialogTitle>
+        <DialogTitle className={cn("px-4 py-3", tone === "error" ? "bg-error text-on-error" : "banner bg-banner text-primary")}>{title}</DialogTitle>
         <div className="p-4">{children}</div>
         <div className="flex items-center justify-end gap-2 p-4 pt-0">{actions}</div>
       </DialogContent>

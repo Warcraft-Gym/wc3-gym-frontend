@@ -14,7 +14,7 @@ export function AdminHomeView() {
       <div className="grid gap-5 min-[960px]:grid-cols-2">
         {ADMIN_SECTIONS.map((section) => (
           <Card key={section.title} className="card gap-0 py-0">
-            <CardTitle className="flex items-center gap-2 bg-primary-darken-1 p-4 text-on-primary-darken-1">
+            <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
               <Icon name={section.icon} />
               <h2 className="contents">{section.title}</h2>
             </CardTitle>

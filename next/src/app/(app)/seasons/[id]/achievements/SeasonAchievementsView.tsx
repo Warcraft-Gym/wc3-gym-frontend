@@ -153,13 +153,13 @@ export function SeasonAchievementsView({ id }: { id: string }) {
       <div className="grid gap-4 md:grid-cols-2">
         {CARDS.map((card) => (
           <Card key={card.key} className="card gap-0 py-0">
-            <CardHeader className="bg-primary-darken-1 p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name={card.icon} />
                 <span className="min-w-0 truncate" title={card.title}>
                   {card.title}
                 </span>
-                <Badge variant="outline" className="ml-auto shrink-0 border-current text-on-primary-darken-1">
+                <Badge variant="outline" className="ml-auto shrink-0 border-on-banner/40 text-on-banner">
                   {rowsOf(card.team).length} rules
                 </Badge>
                 <Button size="sm" variant="outline" onClick={() => setAddOpen({ ...addOpen, [card.key]: !addOpen[card.key] })}>

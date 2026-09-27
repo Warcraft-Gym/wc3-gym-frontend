@@ -495,7 +495,7 @@ export function FantasyBetsView() {
       {/* Add Bet Dialog */}
       <Dialog open={addBetDialog} onOpenChange={(open) => (open ? setAddBetDialog(true) : closeAddBetDialog())} disablePointerDismissal>
         <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[600px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+          <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-plus" />
             Add new fantasy bet
           </DialogTitle>
@@ -565,7 +565,7 @@ export function FantasyBetsView() {
       {/* Edit Bet Dialog */}
       <Dialog open={betDialog} onOpenChange={(open) => (open ? setBetDialog(true) : closeBetDialog())} disablePointerDismissal>
         <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[500px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+          <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-pencil" />
             Edit fantasy bet
           </DialogTitle>

@@ -70,8 +70,8 @@ export function AvailabilityView() {
       </Field>
 
       <Card className="gap-0 p-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-calendar-remove" />
             When you can&apos;t play
           </CardTitle>

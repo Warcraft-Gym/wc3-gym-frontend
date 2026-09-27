@@ -859,19 +859,19 @@ export function MatchDetailsView({ id }: { id: string }) {
         />
 
         <Card className="card mb-4 gap-0 py-0">
-          <CardTitle className="flex flex-wrap items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+          <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-trophy-variant" />
             Series management
             <span className="flex-1" />
-            <Badge variant="outline" className="border-on-primary-darken-1 text-on-primary-darken-1">
+            <Badge variant="outline" className="border-on-banner/40 text-on-banner">
               {series.length} published
             </Badge>
             {auth.isCaptain ? (
-              <Badge variant="outline" className="border-on-primary-darken-1 text-on-primary-darken-1">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 {draftSeries.length} drafts
               </Badge>
             ) : null}
-            <Button variant="ghost" size="icon-sm" className="text-on-primary-darken-1" aria-label="Refresh series data" onClick={fetchMatchSeries} disabled={isLoading}>
+            <Button variant="ghost" size="icon-sm" className="text-on-banner" aria-label="Refresh series data" onClick={fetchMatchSeries} disabled={isLoading}>
               <Icon name={isLoading ? "mdi-loading mdi-spin" : "mdi-refresh"} />
             </Button>
           </CardTitle>

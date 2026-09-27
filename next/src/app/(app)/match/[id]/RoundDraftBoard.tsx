@@ -475,7 +475,7 @@ export function RoundDraftBoard({
         {/* on a phone the panel takes the screen, and Close brings the rosters back */}
         {narrow && picked ? null : (
         <Card className="card gap-0 py-0">
-          <CardTitle className="flex flex-wrap items-center gap-3 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+          <CardTitle className="flex flex-wrap items-center gap-3 banner bg-banner px-4 py-3 text-primary">
             Draft board
             <span className="flex-1" />
             <span className="inline-flex items-center gap-1 text-sm">
@@ -641,7 +641,7 @@ export function RoundDraftBoard({
         <div>
           {picked ? (
             <Card className="card gap-0 py-0">
-              <CardTitle className="flex flex-wrap items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+              <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
                 {replacing
                   ? `Replace ${dropPlayer?.name ?? "a player"}, vs ${picked.name}`
                   : pickedDraft
@@ -651,7 +651,7 @@ export function RoundDraftBoard({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-on-primary-darken-1"
+                  className="text-on-banner"
                   onClick={() => {
                     setPickId(null);
                     onCancelReplace?.();
@@ -729,10 +729,10 @@ export function RoundDraftBoard({
 
       {suggested ? (
         <Card className="card gap-0 py-0">
-          <CardTitle className="flex flex-wrap items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+          <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             Suggested pairings
             <span className="flex-1" />
-            <Button variant="ghost" size="sm" className="text-on-primary-darken-1" onClick={() => setSuggestOpen(false)}>
+            <Button variant="ghost" size="sm" className="text-on-banner" onClick={() => setSuggestOpen(false)}>
               <Icon name="mdi-close" />
               Cancel
             </Button>

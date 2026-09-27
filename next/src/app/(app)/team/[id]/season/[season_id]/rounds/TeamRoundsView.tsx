@@ -295,7 +295,7 @@ export function TeamRoundsView({ id, seasonKey }: { id: string; seasonKey: strin
       </div>
 
       <Card className="card gap-0 py-0">
-        <CardTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+        <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-shield-account" />
           <span>{team?.name}</span>
         </CardTitle>

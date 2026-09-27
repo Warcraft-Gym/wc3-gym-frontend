@@ -14,9 +14,10 @@ export const themes = {
             'on-background': '#1A241E',
             'on-surface': '#1A241E',
             primary: '#E7B643',
-            'primary-darken-1': '#886200',  // the shade a banner wears; gold is the highlight
-            'on-primary-darken-1': '#FBF7F1',
+            'primary-darken-1': '#D3A329',
             'on-primary': '#1A140C',
+            banner: '#2B2117',  // a dark warm bar with cream ink and a gold title
+            'on-banner': '#FBF7F1',
             secondary: '#3F4C43',
             'secondary-darken-1': '#2E3931',
             'on-secondary': '#F2F4ED',
@@ -82,9 +83,10 @@ export const themes = {
             'on-background': '#E7EBE3',
             'on-surface': '#E7EBE3',
             primary: '#E7B643',
-            'primary-darken-1': '#886200',  // the shade a banner wears; gold is the highlight
-            'on-primary-darken-1': '#FBF7F1',
+            'primary-darken-1': '#D3A329',
             'on-primary': '#1A140C',
+            banner: '#1E1710',
+            'on-banner': '#FBF7F1',
             secondary: '#C3CCC1',
             'secondary-darken-1': '#A7B1A4',
             'on-secondary': '#1A241E',

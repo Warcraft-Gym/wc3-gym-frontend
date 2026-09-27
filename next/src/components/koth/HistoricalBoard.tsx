@@ -55,8 +55,8 @@ function HistoricalBracket({ bracket }: { bracket: Row }) {
   const history: Row[] = bracket.history ?? [];
   return (
     <Card className="card h-full gap-0 py-0">
-      <CardHeader className="bg-primary-darken-1 p-3">
-        <CardTitle className="text-on-primary-darken-1">{bracket.name}</CardTitle>
+      <CardHeader className="banner bg-banner p-3">
+        <CardTitle className="text-primary">{bracket.name}</CardTitle>
       </CardHeader>
       <div className="flex min-h-[64px] items-start gap-3 p-4">
         <Icon name={king ? "mdi-crown" : "mdi-crown-outline"} size={26} className={king ? "text-primary-text" : "text-muted-foreground"} />

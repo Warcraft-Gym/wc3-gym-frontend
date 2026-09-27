@@ -301,7 +301,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
 
         {/* Top: Filters + Draft players for season */}
         <Card className="card mb-4 gap-0 py-0">
-          <CardTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+          <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-account-multiple" />
             <span>{seasonName}</span>
           </CardTitle>
@@ -568,7 +568,7 @@ export function SeasonTeamAssignView({ id }: { id: string }) {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
           {teams.map((team) => (
             <Card key={team.id} className="card gap-0 py-0">
-              <CardTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+              <CardTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
                 <TeamName team={team} />
               </CardTitle>
               <CardContent className="py-3">

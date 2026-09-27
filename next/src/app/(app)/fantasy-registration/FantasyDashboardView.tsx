@@ -482,17 +482,17 @@ export function FantasyDashboardView() {
 
       {/* Fantasy Team Card */}
       <Card className="card mb-6 gap-0 py-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="flex flex-wrap items-center gap-2 text-on-primary-darken-1">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-primary">
             <Icon name="mdi-account-group" />
             <span>Fantasy team</span>
             {existingTeam ? (
-              <Badge variant="outline" className="border-on-primary-darken-1 text-on-primary-darken-1">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 Registered
               </Badge>
             ) : null}
             {phase !== "open" ? (
-              <Badge variant="outline" className="border-on-primary-darken-1 text-on-primary-darken-1">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 {seasonName} has {ended ? "ended" : "commenced"}
               </Badge>
             ) : null}
@@ -604,8 +604,8 @@ export function FantasyDashboardView() {
               }}
             >
               <Card className="card mb-4 gap-0 py-0">
-                <CardHeader className="bg-primary-darken-1 p-4">
-                  <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+                <CardHeader className="banner bg-banner p-4">
+                  <CardTitle className="flex items-center gap-2 text-primary">
                     <Icon name="mdi-account-group" />
                     Team details
                   </CardTitle>
@@ -661,8 +661,8 @@ export function FantasyDashboardView() {
               </Card>
 
               <Card className="card mb-4 gap-0 py-0">
-                <CardHeader className="bg-primary-darken-1 p-4">
-                  <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+                <CardHeader className="banner bg-banner p-4">
+                  <CardTitle className="flex items-center gap-2 text-primary">
                     <Icon name="mdi-account-multiple" />
                     Draft players
                   </CardTitle>
@@ -760,14 +760,14 @@ export function FantasyDashboardView() {
 
       {/* Fantasy Bets Card */}
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="flex items-center justify-between gap-2 text-on-primary-darken-1">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center justify-between gap-2 text-primary">
             <span className="flex items-center gap-2">
               <Icon name="mdi-crystal-ball" />
               <span>Fantasy bets</span>
             </span>
             {existingTeam ? (
-              <Badge variant="outline" className="border-on-primary-darken-1 text-on-primary-darken-1">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 {fantasyBets.length} bets
               </Badge>
             ) : null}

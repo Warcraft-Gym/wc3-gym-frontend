@@ -255,11 +255,11 @@ export function SeasonMapsView({ id }: { id: string }) {
         {/* Map pool */}
         <div className="md:col-span-5">
           <Card className="card gap-0 py-0">
-            <CardHeader className="bg-primary-darken-1 p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-map" />
                 <span>Map pool</span>
-                <Badge variant="outline" className="ml-auto border-current text-on-primary-darken-1">
+                <Badge variant="outline" className="ml-auto border-on-banner/40 text-on-banner">
                   {pool.length} maps
                 </Badge>
                 <Button size="sm" variant="outline" onClick={() => setAddOpen(!addOpen)}>
@@ -327,8 +327,8 @@ export function SeasonMapsView({ id }: { id: string }) {
         {/* Rules and the fixed map per round */}
         <div className="md:col-span-3">
           <Card className="card mb-4 gap-0 py-0">
-            <CardHeader className="bg-primary-darken-1 p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-format-list-numbered" />
                 <span>Map rule per game</span>
               </CardTitle>
@@ -355,8 +355,8 @@ export function SeasonMapsView({ id }: { id: string }) {
           </Card>
 
           <Card className="card gap-0 py-0">
-            <CardHeader className="bg-primary-darken-1 p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-calendar-week" />
                 <span>Rounds</span>
               </CardTitle>
@@ -419,8 +419,8 @@ export function SeasonMapsView({ id }: { id: string }) {
         {/* Pick and ban order */}
         <div className="md:col-span-4">
           <Card className="card mb-4 gap-0 py-0">
-            <CardHeader className="bg-primary-darken-1 p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-gavel" />
                 <span>Pick and ban order</span>
               </CardTitle>
@@ -448,8 +448,8 @@ export function SeasonMapsView({ id }: { id: string }) {
           </Card>
 
           <Card className="card gap-0 py-0">
-            <CardHeader className="bg-primary-darken-1 p-4">
-              <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+            <CardHeader className="banner bg-banner p-4">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Icon name="mdi-help-circle-outline" />
                 <span>What fills each game</span>
               </CardTitle>

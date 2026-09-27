@@ -272,7 +272,7 @@ export function LadderView() {
         <>
           {/* Team standings */}
           <Card className="card mb-4 gap-0 py-0">
-            <CardTitle className="flex items-center gap-2 bg-primary-darken-1 p-4 text-on-primary-darken-1">
+            <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
               <Icon name="mdi-trophy" />
               <span>Team standings</span>
             </CardTitle>
@@ -326,7 +326,7 @@ export function LadderView() {
 
           {/* Players */}
           <Card className="card gap-0 py-0">
-            <CardTitle className="flex items-center gap-2 bg-primary-darken-1 p-4 text-on-primary-darken-1">
+            <CardTitle className="flex items-center gap-2 banner bg-banner p-4 text-primary">
               <Icon name="mdi-account-group" />
               <span>Players</span>
             </CardTitle>

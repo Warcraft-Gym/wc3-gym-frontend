@@ -164,8 +164,8 @@ export function PublicSignupView() {
       <PageHeader title={<><Icon name="mdi-account-plus" className="mr-2" />{titles.heading}</>} />
 
       <Card className="gap-0 p-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="flex items-center gap-2 text-wrap text-on-primary-darken-1">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-wrap text-primary">
             <Icon name="mdi-clipboard-account" />
             {titles.card}
           </CardTitle>

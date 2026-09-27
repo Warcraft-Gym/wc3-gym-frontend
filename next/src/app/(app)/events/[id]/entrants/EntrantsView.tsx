@@ -653,7 +653,7 @@ export function EntrantsView({ id }: { id: string }) {
 
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent showCloseButton={false} className="gap-0 p-0 md:max-w-[600px]">
-          <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+          <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-account-plus" />
             Add entrant
           </DialogTitle>

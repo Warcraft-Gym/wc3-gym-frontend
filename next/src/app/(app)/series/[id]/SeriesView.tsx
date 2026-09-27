@@ -406,7 +406,7 @@ export function SeriesView({ id }: { id: string }) {
           {/* A captain names the players his side fields, out of the roster his team holds */}
           <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
             <DialogContent showCloseButton={false} className="max-w-[520px] gap-0 p-0 sm:max-w-[520px]">
-              <DialogTitle className="bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">Name the roster</DialogTitle>
+              <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Name the roster</DialogTitle>
               <div className="p-4">
                 <StatusAlert modelValue={rosterError} onClose={() => setRosterError(null)} />
                 <Field label={teamName(rosterSide)} htmlFor="series-roster" hint={`Pick ${sideSize} ${sideSize === 1 ? "player" : "players"}.`}>
@@ -439,7 +439,7 @@ export function SeriesView({ id }: { id: string }) {
           {/* An admin scores a series nobody played: the side that takes it, then the kind */}
           <Dialog open={awardOpen} onOpenChange={setAwardOpen}>
             <DialogContent showCloseButton={false} className="max-w-[480px] gap-0 p-0 sm:max-w-[480px]">
-              <DialogTitle className="bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">No game played</DialogTitle>
+              <DialogTitle className="banner bg-banner px-4 py-3 text-primary">No game played</DialogTitle>
               <div className="p-4">
                 <StatusAlert modelValue={awardError} onClose={() => setAwardError(null)} />
                 <p className="mb-3">Pick the side that takes the series.</p>

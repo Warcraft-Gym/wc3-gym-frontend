@@ -124,7 +124,7 @@ export function ProposeSeriesDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onCancel())}>
       <DialogContent showCloseButton={false} className="flex max-h-[95vh] max-w-[1400px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1400px]">
-        <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+        <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-lightbulb-on" />
           Proposed series
         </DialogTitle>

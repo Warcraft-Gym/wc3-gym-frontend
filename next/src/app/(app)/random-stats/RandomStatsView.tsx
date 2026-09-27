@@ -195,8 +195,8 @@ export function RandomStatsView() {
 
       {/* Search form */}
       <Card className="card mb-6 gap-0 py-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="text-on-primary-darken-1">Player &amp; seasons</CardTitle>
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="text-primary">Player &amp; seasons</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className="grid items-start gap-4 md:grid-cols-12">
@@ -261,8 +261,8 @@ export function RandomStatsView() {
       {/* Overall summary */}
       {hasResults && !isLoading ? (
         <Card className="card mb-6 gap-0 py-0">
-          <CardHeader className="bg-primary-darken-1 p-4">
-            <CardTitle className="text-on-primary-darken-1">
+          <CardHeader className="banner bg-banner p-4">
+            <CardTitle className="text-primary">
               Summary — {resolvedTag}
               <span className="ml-2 text-sm opacity-80">(seasons {selectedSeasons.join(", ")})</span>
             </CardTitle>
@@ -293,16 +293,16 @@ export function RandomStatsView() {
       {/* Per-race breakdown cards */}
       {hasResults && !isLoading ? rows.map(([raceName, data]) => (
         <Card key={raceName} className="card mb-5 gap-0 py-0">
-          <CardHeader className="bg-primary-darken-1 p-4">
-            <CardTitle className="flex flex-wrap items-center gap-1 text-on-primary-darken-1">
+          <CardHeader className="banner bg-banner p-4">
+            <CardTitle className="flex flex-wrap items-center gap-1 text-primary">
               <RaceIcon raceIdentifier={raceIdMap[raceName]} />
               <span className="mr-2">Playing as {raceName}</span>
               <span className="flex-1" />
               {/* outlined, not tonal: a tonal wash over the bronze band leaves its own text at 4.02:1 */}
-              <Badge variant="outline" className="mr-2 border-on-primary-darken-1 text-on-primary-darken-1">
+              <Badge variant="outline" className="mr-2 border-on-banner/40 text-on-banner">
                 {data.wins + data.losses} games
               </Badge>
-              <Badge variant="outline" className="border-on-primary-darken-1 text-on-primary-darken-1">
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
                 {Math.round(data.wins / (data.wins + data.losses) * 100)}% WR
               </Badge>
             </CardTitle>

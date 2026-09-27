@@ -176,8 +176,8 @@ export function MapsView() {
 
       {/* Main Card */}
       <Card className="card gap-0 py-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-map" />
             <span>All maps</span>
           </CardTitle>
@@ -246,7 +246,7 @@ export function MapsView() {
       <Dialog open={mapDialogOpen} onOpenChange={(open) => open || closeMapDialog()}>
         {selectedMap ? (
           <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
-            <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+            <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
               <Icon name={isEditing ? "mdi-pencil" : "mdi-map-plus"} />
               {isEditing ? `Edit map: ${selectedMap.name}` : "Add map"}
             </DialogTitle>

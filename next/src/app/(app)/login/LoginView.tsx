@@ -24,8 +24,8 @@ function AdminOnlyLoginView() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
       <Card className="w-full max-w-[500px] gap-0 p-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-lock" />
             Log in to WC3 Gym Dashboard
           </CardTitle>
@@ -92,8 +92,8 @@ function DiscordLoginView() {
   return (
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
       <Card className="w-full max-w-[500px] gap-0 p-0">
-        <CardHeader className="bg-primary-darken-1 p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+        <CardHeader className="banner bg-banner p-4">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Icon name="mdi-lock" />
             Log in to WC3 Gym Dashboard
           </CardTitle>

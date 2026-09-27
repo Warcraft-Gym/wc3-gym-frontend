@@ -160,7 +160,7 @@ export function TeamRoster({
 
   return (
     <Card className="card gap-0 pt-0">
-      <CardTitle className="mb-2 flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+      <CardTitle className="mb-2 flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
         <Icon name="mdi-account-group" />
         <span>Roster</span>
         <span className="tnum ms-auto text-sm font-normal">

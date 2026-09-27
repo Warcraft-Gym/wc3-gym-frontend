@@ -198,8 +198,8 @@ export function SeasonsView() {
       {/* Seasons Table */}
       {!errorMessage ? (
         <Card className="card gap-0 py-0">
-          <CardHeader className="bg-primary-darken-1 p-4">
-            <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+          <CardHeader className="banner bg-banner p-4">
+            <CardTitle className="flex items-center gap-2 text-primary">
               <Icon name="mdi-format-list-bulleted" />
               All Seasons
             </CardTitle>

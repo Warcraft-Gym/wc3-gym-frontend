@@ -61,10 +61,10 @@ export function LadderImportDialog({
   return (
     <Dialog open={modelValue} onOpenChange={(open) => onUpdateModelValue?.(open)}>
       <DialogContent showCloseButton={false} className="max-w-[760px] gap-0 p-0 md:max-w-[760px]">
-        <DialogTitle className="flex items-center gap-2 bg-primary-darken-1 px-4 py-3 text-on-primary-darken-1">
+        <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-download" />
           <span>Import W3C map pool</span>
-          <Badge variant="outline" className="ml-auto border-current text-on-primary-darken-1">
+          <Badge variant="outline" className="ml-auto border-on-banner/40 text-on-banner">
             {poolRows.length} maps in the W3C 1v1 pool
           </Badge>
         </DialogTitle>

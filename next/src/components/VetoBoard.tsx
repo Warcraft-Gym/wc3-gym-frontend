@@ -318,8 +318,8 @@ export function VetoBoard({
         <div className="grid gap-6 min-[960px]:grid-cols-3">
           {!collapsed ? (
             <Card className="card gap-0 self-start py-0 min-[960px]:col-span-2">
-              <CardHeader className="bg-primary-darken-1 p-4">
-                <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+              <CardHeader className="banner bg-banner p-4">
+                <CardTitle className="flex items-center gap-2 text-primary">
                   <Icon name="mdi-map" />
                   Map pool
                 </CardTitle>
@@ -361,8 +361,8 @@ export function VetoBoard({
           <div className={cn("flex flex-col gap-6", collapsed && "min-[960px]:col-span-3")}>
             {!collapsed ? (
               <Card className="card gap-0 py-0">
-                <CardHeader className="bg-primary-darken-1 p-4">
-                  <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+                <CardHeader className="banner bg-banner p-4">
+                  <CardTitle className="flex items-center gap-2 text-primary">
                     <Icon name="mdi-format-list-numbered" />
                     Order
                   </CardTitle>
@@ -386,8 +386,8 @@ export function VetoBoard({
             ) : null}
 
             <Card className="card gap-0 py-0">
-              <CardHeader className="bg-primary-darken-1 p-4">
-                <CardTitle className="flex items-center gap-2 text-on-primary-darken-1">
+              <CardHeader className="banner bg-banner p-4">
+                <CardTitle className="flex items-center gap-2 text-primary">
                   <Icon name="mdi-tournament" />
                   Series
                 </CardTitle>

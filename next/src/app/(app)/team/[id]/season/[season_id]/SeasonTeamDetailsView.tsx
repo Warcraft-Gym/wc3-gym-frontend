@@ -6,13 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Combobox } from "@/components/ui/Combobox";
 import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { toneClass } from "@/components/ui/tone";
+import { PlayerChipPicker } from "@/components/admin/PlayerChipPicker";
 import { AchievementChip } from "@/components/AchievementChip";
 import { ColumnNote } from "@/components/ColumnNote";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -88,7 +88,6 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
   const currentSeasonInfo = team?.seasons_info ? team.seasons_info.find((s: Row) => s.season_id === seasonId) ?? team.seasons_info[0] : null;
 
   const seasonCaptains: Row[] = rosterOf(team, seasonId).captains;
-  const chosenCaptains = captainIds.map((captainId) => allAvailableUsers.find((user) => user.id === captainId) ?? { id: captainId, name: String(captainId) });
 
   const ladderTeam: Row | null = (seasonLadder?.teams ?? []).find((t: Row) => String(t.id) === String(teamId)) ?? null;
 
@@ -378,29 +377,8 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
             ) : (
               <>
                 <p className="mb-3 text-sm font-medium">Assign the captains of this season:</p>
-                {/* Any number of captains: the picker adds one, and each chip takes one back out */}
-                <Combobox
-                  label="Captains"
-                  placeholder="Start typing to search..."
-                  items={allAvailableUsers.filter((user) => !captainIds.includes(user.id)).map((user) => ({ value: String(user.id), title: user.name ?? "" }))}
-                  value={null}
-                  onChange={(value) => (value == null ? undefined : setCaptainIds((was) => [...was, Number(value)]))}
-                />
+                <PlayerChipPicker label="Captains" players={allAvailableUsers} selected={captainIds} onChange={setCaptainIds} />
                 <p className="mt-1 text-xs text-muted-foreground">Any number of captains</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {chosenCaptains.map((captain) => (
-                    <Badge key={captain.id} variant="secondary">
-                      {captain.name}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${captain.name}`}
-                        onClick={() => setCaptainIds((was) => was.filter((captainId) => captainId !== captain.id))}
-                      >
-                        <Icon name="mdi-close" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
               </>
             )}
 

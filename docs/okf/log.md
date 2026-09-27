@@ -1,7 +1,13 @@
 # Bundle history
 
+## 2026-09-27
+
+* **Add**: the season wizard gains a Captains & rosters step. It sets each ticked team's captains from any player and its roster from the season's signups, and the save writes them after the teams. The seasons list edits a season with a pencil button on its row; Export and Delete stay in the row menu. `PlayerChipPicker` is the shared player picker, and `RowActions` takes `menu`.
+* **Add**: the season wizard gains a Matchups step. It draws the season's matchups at random so that every team meets every other team once, with one match a round per team, and the save writes them after the teams.
+
 ## 2026-09-26
 
+* **Update**: a GNL season is created and edited in a four-step wizard: General, Teams, Maps and Round maps. Teams and maps are ticked on picture cards, a team, a map or the W3C map pool is added without leaving the wizard, and each round picks the map game 1 is played on. Nothing of the season is written before the last button. The GNL season page concept and the shared-component concept state the wizard, its save order, `PickGrid` and the two create dialogs.
 * **Update**: Home follows the current season in every panel. My Games becomes My Season, the season round by round with the Available / Out answer and the series; the player page is named a page to look at, with the tasks on Home.
 * **Update**: a local dev login signs in as any player with a Discord id, as a player, guest or admin, behind `NEXT_PUBLIC_DEV_LOGIN`; the session concept and the local runbook state it. A GNL signup card the admin token reads says why it has no button.
 * **Update**: the nav shows only the hats a person wears: Home, My Stats, My Team and Admin; the Season, Fantasy and Events menus and the drawer are gone. Home is the player's page for the week: open signups, the season's games with their next step, the upcoming series, a fantasy panel that creates a team or places bets through the shared `BetDialog`, and a stats panel. `GET /events/{id}/series` joins `EDGE_CACHED`. The shell, member and fantasy concepts and `DESIGN.md` state the change.

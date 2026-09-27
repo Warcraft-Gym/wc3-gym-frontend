@@ -152,7 +152,7 @@ Use these instead of drawing the same thing again.
 | `TeamName` | A team as its logo and its name, linked to its team page. On a drafting page it is plain text; pass `plain` inside another link, a button or the team's own heading. |
 | `RaceIcon`, `FlagIcon` | One race or one country. Show a race only when the row has one: this game, a scheduled series, or a KOTH signup. A player's profile race is not a race for a row. |
 | `GroupedTable` | Groups of rows, each under one header row that opens and closes. Detail rows share the group's columns, so they add up under its total. Never put a table inside a table cell. |
-| `RowActions` | The buttons at the end of a row. Three or more fold into a menu. |
+| `RowActions` | The buttons at the end of a row. Three or more fold into a menu; `menu` folds fewer, next to a row's main task as its own button. |
 | `ColumnNote` | A column title with a help note. |
 | `StatusAlert` | A load or save message. It offers a retry when the page can load again. |
 | `EventHeader`, `PlayerHeader` | The top of an event page and of a player page. |

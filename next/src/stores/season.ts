@@ -64,6 +64,9 @@ const members = ({ seasons, current_season, selectedSeasonId }: SeasonState) => 
     async addTeamsToSeason(season_id: number, team_ids: number[]) {
       await fetchWrapper.post(`${backendUrl}/events/${season_id}/teams`, { team_ids });
     },
+    async removeTeamsFromSeason(season_id: number, team_ids: number[]) {
+      await fetchWrapper.delete(`${backendUrl}/events/${season_id}/teams`, { team_ids });
+    },
     async addMapsToSeason(season_id: number, map_ids: number[]) {
       await fetchWrapper.post(`${backendUrl}/events/${season_id}/maps`, { map_ids });
     },

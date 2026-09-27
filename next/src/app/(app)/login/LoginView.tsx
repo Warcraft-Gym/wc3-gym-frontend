@@ -122,7 +122,7 @@ function DiscordLoginView() {
           ) : null}
           {!isCallback && !isSignedIn ? (
             // Discord brand: blurple, white Clyde mark, sentence case
-            <Button size="lg" className="h-11 w-full bg-[#5865F2] text-base text-white hover:bg-[#4752C4]" disabled={loading} aria-busy={loading} onClick={loginWithDiscord}>
+            <Button size="lg" className="h-11 w-full bg-[#5865F2] bg-none shadow-none text-base text-white hover:bg-[#4752C4]" disabled={loading} aria-busy={loading} onClick={loginWithDiscord}>
               {loading ? (
                 <Icon name="mdi-loading" size={24} className="mr-3 animate-spin" />
               ) : (

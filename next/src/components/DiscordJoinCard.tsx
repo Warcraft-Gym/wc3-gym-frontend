@@ -53,7 +53,7 @@ export function DiscordJoinCard({ className }: { className?: string }) {
           <Button
             nativeButton={false}
             render={<a href={inviteUrl} target="_blank" rel="noopener noreferrer" />}
-            className="mt-4 mr-2 bg-[#5865F2] text-white hover:bg-[#4752C4]"
+            className="mt-4 mr-2 bg-[#5865F2] bg-none shadow-none text-white hover:bg-[#4752C4]"
           >
             Join the Discord
           </Button>

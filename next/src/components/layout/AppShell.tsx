@@ -82,7 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ClerkBridge />
       <header className="flex items-center gap-2 border-b border-border bg-surface px-2 py-1.5">
         {/* the app title is the way home from every page, so it always points at /; truncate keeps it on one line */}
-        <Link href="/" className="truncate font-heading text-lg font-bold text-foreground no-underline">WC3 Gym Dashboard</Link>
+        <Link href="/" className="truncate font-title text-lg font-bold text-foreground no-underline">WC3 Gym Dashboard</Link>
         <div className="flex-1" />
         {tabs.length ? (
           // from 960 px the tabs sit in the bar; below it, in the bottom tab bar

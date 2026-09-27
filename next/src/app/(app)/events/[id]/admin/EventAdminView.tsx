@@ -44,7 +44,7 @@ const seatsOf = lobbySeats as (row: Row) => Row[];
 
 // The one refusal a force answers, as app/services/stage_engine.py on_reopened words it
 const NEEDS_FORCE = "A later series already carries a result";
-const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", primary: "text-primary" };
+const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", "medal-bronze": "text-medal-bronze" };
 // Tailwind builds no class from a number held in data, so the three dialog widths are written out
 const WIDTH: Record<number, string> = { 480: "md:max-w-[480px]", 520: "md:max-w-[520px]", 560: "md:max-w-[560px]" };
 const WON = "flex-1 aria-pressed:bg-primary/15 aria-pressed:text-primary-text";

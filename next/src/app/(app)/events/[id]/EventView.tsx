@@ -38,7 +38,7 @@ type Row = Record<string, any>;
 
 const phoneCell = "hidden min-[960px]:table-cell";
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
-const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", primary: "text-primary" };
+const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", "medal-bronze": "text-medal-bronze" };
 // The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
 const placesOf = placings as (standings: Row[]) => Record<string, Row>;
 const rostersOf = rostersByEntrant as unknown as (entrants: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;

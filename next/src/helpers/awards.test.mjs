@@ -25,7 +25,7 @@ test('a place carries the name the award row holds', () => {
 });
 
 test('the first three places wear a medal and the rest wear none', () => {
-  assert.deepEqual([1, 2, 3, 4].map(placeMedal), ['medal-gold', 'medal-silver', 'primary', null]);
+  assert.deepEqual([1, 2, 3, 4].map(placeMedal), ['medal-gold', 'medal-silver', 'medal-bronze', null]);
   assert.equal(placeIcon(1), 'mdi-trophy');
   assert.equal(placeIcon(2), 'mdi-medal');
 });

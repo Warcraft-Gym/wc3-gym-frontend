@@ -130,7 +130,7 @@ export function TeamRoster({
         <span className={cn(cell, "pe-1.5")}>{player.country ? <FlagIcon countryIdentifier={player.country} /> : null}</span>
         <span className={cn(cell, "min-w-0 overflow-hidden pe-1.5")} title={player.name}>
           {player.id != null ? (
-            <Link href={playerPath(player)} className="min-w-0 truncate text-inherit no-underline hover:text-primary hover:underline">
+            <Link href={playerPath(player)} className="min-w-0 truncate text-inherit no-underline hover:text-primary-text hover:underline">
               {player.name}
             </Link>
           ) : (

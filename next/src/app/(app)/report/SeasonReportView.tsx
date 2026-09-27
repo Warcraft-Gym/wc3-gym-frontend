@@ -40,7 +40,7 @@ const getRaceName = (race: string) => raceWrapper.getRaceObject(race)?.name || r
 const rankMedal = (rank: number) => {
   if (rank === 1) return { icon: "mdi-medal", color: "text-medal-gold" };
   if (rank === 2) return { icon: "mdi-medal", color: "text-medal-silver" };
-  if (rank === 3) return { icon: "mdi-medal", color: "text-primary" };
+  if (rank === 3) return { icon: "mdi-medal", color: "text-medal-bronze" };
   return null;
 };
 

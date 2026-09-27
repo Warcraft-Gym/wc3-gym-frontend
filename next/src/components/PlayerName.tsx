@@ -54,7 +54,7 @@ export function PlayerName({
   const opensPanel = clickable && inPanelMode;
   const to = clickable && !inPanelMode ? playerPath(player) : null;
 
-  const className = cn("player-name inline-flex items-center gap-1.5 whitespace-nowrap text-inherit no-underline border-0 bg-transparent p-0", (onClick || clickable) && "cursor-pointer hover:text-primary [&:hover_.name]:underline");
+  const className = cn("player-name inline-flex items-center gap-1.5 whitespace-nowrap text-inherit no-underline border-0 bg-transparent p-0", (onClick || clickable) && "cursor-pointer hover:text-primary-text [&:hover_.name]:underline");
   const body = (
     <>
       {/* the mark leads the line, and its tap opens the tooltip instead of the player page */}

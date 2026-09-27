@@ -5,8 +5,8 @@
 const TITLES = { 1: 'Champion', 2: 'Runner-up', 3: 'Third' };
 export const placeTitle = (place) => TITLES[place] || `Placed ${place}`;
 
-// The mark a place wears beside its name; third takes bronze, which is the app's primary
-const MEDALS = { 1: 'medal-gold', 2: 'medal-silver', 3: 'primary' };
+// The mark a place wears beside its name; third takes the medal-bronze token
+const MEDALS = { 1: 'medal-gold', 2: 'medal-silver', 3: 'medal-bronze' };
 export const placeMedal = (place) => MEDALS[place] || null;
 export const placeIcon = (place) => (place === 1 ? 'mdi-trophy' : 'mdi-medal');
 

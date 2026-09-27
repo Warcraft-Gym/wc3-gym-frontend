@@ -64,6 +64,7 @@
   --color-race-ud: rgb(var(--v-theme-race-ud));
   --color-medal-gold: rgb(var(--v-theme-medal-gold));
   --color-medal-silver: rgb(var(--v-theme-medal-silver));
+  --color-medal-bronze: rgb(var(--v-theme-medal-bronze));
   --color-heat-1: rgb(var(--v-theme-heat-1));
   --color-heat-2: rgb(var(--v-theme-heat-2));
   --color-heat-3: rgb(var(--v-theme-heat-3));
@@ -188,7 +189,7 @@
   }
 
   a { color: rgb(var(--v-theme-primary-text)); }
-  a:hover { color: rgb(var(--v-theme-primary)); }
+  a:hover { color: rgb(var(--v-theme-primary-text)); text-decoration: underline; }
   code, kbd { color: rgb(var(--v-theme-primary-text)); }
 }
 

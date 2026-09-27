@@ -122,15 +122,16 @@ Light uses 0.78 because 0.7 put field labels under 4.5:1 on the light surface.
 
 ## Type
 
+This branch exists to compare the faces: it is PR #477 with the Alegreya faces instead of Cinzel, Cardo and Lato.
+
 | Face | Weights | Use |
 |---|---|---|
-| Cinzel | 700 | The page title, `h1`, and the app bar title. Cinzel has capitals only, so it never sets a name. |
-| Cardo | 400, 700 | `h2` to `h6`, card, dialog and sheet titles, and player and team names (`.player-name .name`, `.team-name .name`, `.font-name`). A name keeps its own case. |
-| Lato | 400, 700 | Body text, controls, buttons, captions and every figure. |
+| Alegreya (serif) | 700, 800 | `h1` to `h6`, card, dialog and sheet titles, and the app bar title. `h1` uses 800. |
+| Alegreya Sans | 400, 500, 700 | Body text, controls, buttons, captions and figures. |
 
-`next/font/google` loads the three faces in `next/src/app/layout.tsx` and serves them from the app. Every number uses lining, equal-width digits (`lining-nums tabular-nums`), so figures line up in a column. Lato has no 500: a figure that needs weight uses 700.
+`next/font/google` loads both faces in `next/src/app/layout.tsx` and serves them from the app. Every number uses lining, equal-width digits (`lining-nums tabular-nums`), so figures line up in a column.
 
-A large number on a card uses Lato 700, never a heading face.
+A large number on a card uses Alegreya Sans 500 at the `h2` size. The heading serif at 800 looks playful at that size.
 
 Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 
@@ -357,7 +358,7 @@ The `dataviz` skill ships a palette validator, `validate_palette.js`. It measure
 
 ### The public league site
 
-The public league site, the `wc3-gnl-website` repository, shows the same league data. A reader who moves between the two sites must find one way to read a record, a result and a race. The two sites share these exact values: the dark grounds, gold `#E7B643` with `#1A140C` ink, the embossed gold button, the dark banner with a gold title, the gold amount ramp, `win`, `loss`, `draw` and the four `race-*` tokens, and the faces Cinzel, Cardo and Lato. The maintainers decided this data language on 27 September 2026. Propose a change to a rule of this section to that repository too.
+The public league site, the `wc3-gnl-website` repository, shows the same league data. A reader who moves between the two sites must find one way to read a record, a result and a race. The two sites share these exact values: the dark grounds, gold `#E7B643` with `#1A140C` ink, the embossed gold button, the dark banner with a gold title, the gold amount ramp, `win`, `loss`, `draw` and the four `race-*` tokens. The maintainers decided this data language on 27 September 2026. Propose a change to a rule of this section to that repository too.
 
 The validator of the `dataviz` skill passes both sets on both grounds. The Bold races in dark: colour-blind ΔE 11.8, full vision 20.3; in light 8.7 and 19.6. Win and loss in dark: 32.2 and 25.8; in light 29.1 and 21.4. A race colour and a result colour never share one set of marks.
 

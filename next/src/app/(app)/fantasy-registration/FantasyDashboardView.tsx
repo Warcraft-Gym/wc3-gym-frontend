@@ -125,7 +125,6 @@ export function FantasyDashboardView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [ladderPlayers, ladderWindow?.start, ladderWindow?.end],
   );
-  const gnlOf = (player: any) => player.gnl_stats?.find((row: any) => row.season_id === selectedSeasonId) ?? player.gnl_stats?.[0] ?? null;
   const seasonParam = searchParams.get("season");
   const ladderTo = seasonParam ? `/ladder?season=${seasonParam}` : "/ladder";
   const toggleRow = (id: number) =>
@@ -201,7 +200,7 @@ export function FantasyDashboardView() {
     if (!team || !seasonId) return;
     try {
       // The fantasy matches of the season, where is_fantasy_match = true
-      setFantasySeries((await seriesStore.searchSeriesBySeason(seasonId, "is_fantasy_match==True")) ?? []);
+      setFantasySeries((await seriesStore.searchSeriesBySeason(seasonId, true)) ?? []);
       if (userId) setFantasyBets(await fantasyStore.searchBets(`season_id == ${seasonId} AND user_id == ${userId}`));
     } catch (error) {
       console.error("Error fetching fantasy data:", error);
@@ -262,7 +261,7 @@ export function FantasyDashboardView() {
         setTierCount(count);
         setTeams((await teamStore.fetchTeamsBySeasonBasic(seasonId)) || []);
 
-        // The draft pool: the season's signups, carrying signup_race and w3c_stats
+        // The draft pool: the season's signups, carrying signup_race and race_mmrs
         let pool = (await seasonStore.fetchSeasonSignups(seasonId)) || [];
         setLadderPlayers(await seasonStore.fetchSeasonLadderPlayers(seasonId).catch(() => []));
 
@@ -397,8 +396,8 @@ export function FantasyDashboardView() {
             raceB={row.original.player2_race}
             la={ladderById.get(row.original.player1.id)}
             lb={ladderById.get(row.original.player2.id)}
-            ga={gnlOf(row.original.player1)}
-            gb={gnlOf(row.original.player2)}
+            ga={row.original.player1.record}
+            gb={row.original.player2.record}
             daysA={daysById.get(row.original.player1.id)}
             daysB={daysById.get(row.original.player2.id)}
             ymax={ymax}

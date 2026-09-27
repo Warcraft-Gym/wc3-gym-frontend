@@ -1,6 +1,6 @@
 // The pure parts of a stage drawing: what state a series is in, which sides walked
-// through, the columns of a bracket and where each box sits, the order of a KOTH
-// chain, and the standings rows a table shows.
+// through, the columns of a bracket and where each box sits, and the standings rows a
+// table shows.
 
 // A generated series carries a result kind; an unscored one is open once both sides are known
 export const SERIES_STATES = ['pending', 'open', 'played', 'walkover', 'forfeit'];
@@ -135,21 +135,6 @@ export function blocks(cols) {
   return made;
 }
 
-// A KOTH chain in play order: the first series, then whichever takes its winner, and on.
-// A series the chain never reaches is appended, so nothing is dropped from the screen.
-export function chainOrder(series) {
-  const next = new Map(series.map((row) => [row.slot1_from_series_id, row]));
-  const chain = [];
-  const seen = new Set();
-  let row = series.find((candidate) => !candidate.slot1_from_series_id);
-  while (row && !seen.has(row.id)) {
-    seen.add(row.id);
-    chain.push(row);
-    row = next.get(row.id);
-  }
-  return [...chain, ...series.filter((other) => !seen.has(other.id))];
-}
-
 // One group of standings per table the stage answers, in division order: a division, or
 // one group of a division where the stage splits into groups. The key carries the group,
 // so a grouped stage reads one table per group under the division that holds it.
@@ -253,27 +238,6 @@ export function advancingRows(standings = [], advanceCount = null) {
   return standings.flatMap((group) => (advanceCount
     ? (group.rows || []).slice(0, advanceCount)
     : group.rows || []));
-}
-
-// The series closing a KOTH night deletes, read the way app/services/koth_night
-// close_night does: the unplayed tail of every division's chain, in play order.
-export function pendingChainSeries(series = [], divisions = []) {
-  const bands = divisions.length ? divisions.map((band) => band.id) : [null];
-  return bands.flatMap((id) => {
-    const chain = [...inDivision(series, id)]
-      .sort((a, b) => (a.sequence ?? a.id) - (b.sequence ?? b.id));
-    let tail = chain.length;
-    while (tail > 0 && !isScored(chain[tail - 1])) tail -= 1;
-    return chain.slice(tail);
-  });
-}
-
-// The entrants a chain can still take: standing, and on no side of any series yet
-export function chainChallengers(entrants = [], series = []) {
-  const playing = new Set(series
-    .flatMap((row) => [row.player1_id, row.player2_id])
-    .filter((id) => id != null));
-  return entrants.filter((row) => !row.withdrawn_at && !playing.has(row.user?.id ?? row.user_id));
 }
 
 // A free for all series is a lobby: one series holding one `series_side` row a seat, each

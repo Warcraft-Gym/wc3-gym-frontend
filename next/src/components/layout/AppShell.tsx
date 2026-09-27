@@ -43,9 +43,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const themeIcon = THEMES.find((t) => t.value === themeMode)?.icon || "mdi-theme-light-dark";
 
-  // the KOTH board on a stream wears the app title alone: no nav, no account, no theme
+  // a KOTH night on a stream wears the app title alone: no nav, no account, no theme
   const mode = useSearchParams().get("mode");
-  const clean = path === "/koth/dashboard" && mode === "clean";
+  const clean = /^\/(events\/\d+|koth\/dashboard)$/.test(path) && mode === "clean";
   // the nav links are drawn for a session on any route that does not opt out with meta.nav
   const showNavLinks = !!me && metaOf(path).nav !== false && !clean;
   // a link is drawn only when the session role reaches the target route's meta.role

@@ -168,10 +168,10 @@ admin's own timezone; the stored value is UTC), **Is fantasy match**, and the re
 The result takes the score for each side, the race each player played, the map of each game
 and the replay files. A series with a veto shows the maps the players chose.
 
-### Upcoming
+### Upcoming series
 
-GNL → Upcoming (`/upcoming`) lists the scheduled series of the current season with their
-times in the reader's own timezone, and who has claimed the cast.
+GNL → Season (`/report`) opens on "Upcoming series" for the current season: the scheduled
+series with their times in the reader's own timezone, and who has claimed the cast.
 
 ---
 
@@ -203,8 +203,8 @@ the override.
 
 An event carries a name, a date, a description and the two bracket thresholds. Players sign
 up with a BattleTag, a Twitch username and their races, either on this page or through the
-Nightbot command configured on `/config`. The public board is `/koth/dashboard`; add
-`?readonly=1` to hide the app bar when you show it on stream.
+Nightbot command configured on `/config`. Each night's public page is its event page,
+`/events/:id`, and `/koth/dashboard` opens tonight's. Add `?mode=clean` to show it on stream.
 
 ---
 

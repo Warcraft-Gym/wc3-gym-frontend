@@ -1,22 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { gamesWarning, getW3CGamesCount, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons, noStatsWarning } from './games-rule.mjs';
+import { gamesWarning, getRaceMmr, getW3CGamesCount, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons, noStatsWarning } from './games-rule.mjs';
 
-const stat = (race, wc3_season, wins, losses) => ({ race, wc3_season, wins, losses });
+// One race_mmrs entry: window games over the current and the previous season, stale for an older row
+const entry = (race, wc3_season, mmr, games, stale = false) => ({ race, wc3_season, mmr, games, wins: null, losses: null, stale });
 
-test('the games count adds the current and the previous season of one race', () => {
-  const player = { w3c_stats: [stat('HU', 25, 4, 3), stat('HU', 24, 2, 1), stat('HU', 23, 40, 40), stat('NE', 25, 9, 9)] };
-  assert.equal(getW3CGamesCount(player, 25, 'HU'), 10);
-  assert.equal(getW3CGamesCount(player, 25, 'ne'), 18);
-  assert.equal(getW3CGamesCount(player, 25, null), 0);
+test('the games count reads the window entry of one race', () => {
+  const player = { race_mmrs: [entry('HU', 25, 1600, 10), entry('NE', 24, 1500, 18)] };
+  assert.equal(getW3CGamesCount(player, 'HU'), 10);
+  assert.equal(getW3CGamesCount(player, 'ne'), 18);
+  assert.equal(getW3CGamesCount(player, null), 0);
 });
 
 test('gamesWarning marks a race W3C holds no stats for in error', () => {
-  const player = { w3c_stats: [stat('HU', 25, 30, 10)] };
-  assert.deepEqual(gamesWarning(player, 25, 'NE'), { colour: 'error', text: 'No W3C stats found for NE' });
-  assert.equal(gamesWarning({ w3c_stats: [] }, 25, 'HU').colour, 'error');
-  assert.equal(hasW3CStatsTwoSeasons(player, 25, 'HU'), true);
+  const player = { race_mmrs: [entry('HU', 25, 1600, 40)] };
+  assert.deepEqual(gamesWarning(player, 'NE'), { colour: 'error', text: 'No W3C stats found for NE' });
+  assert.equal(gamesWarning({ race_mmrs: [] }, 'HU').colour, 'error');
+  assert.equal(gamesWarning({}, 'HU').colour, 'error');
+  assert.equal(hasW3CStatsTwoSeasons(player, 'HU'), true);
+  assert.equal(getRaceMmr(player, 'NE'), null);
+});
+
+test('a stale entry shows its season but counts as no window stats', () => {
+  const player = { race_mmrs: [entry('HU', 25, 1600, 40), entry('UD', 21, 1800, 90, true)] };
+  assert.equal(getRaceMmr(player, 'UD').wc3_season, 21);
+  assert.equal(hasW3CStatsTwoSeasons(player, 'UD'), false);
+  assert.equal(getW3CGamesCount(player, 'UD'), 0);
+  assert.deepEqual(gamesWarning(player, 'UD'), { colour: 'error', text: 'No W3C stats found for UD' });
 });
 
 test('the no-stats mark drops the race on a line that names none', () => {
@@ -26,19 +37,18 @@ test('the no-stats mark drops the race on a line that names none', () => {
 });
 
 test('gamesWarning marks a player under the rule in warning, with the count', () => {
-  const player = { w3c_stats: [stat('HU', 25, 4, 3), stat('HU', 24, 2, 1)] };
-  assert.deepEqual(gamesWarning(player, 25, 'HU'), { colour: 'warning', text: 'Less than 20 games (10 games) for HU' });
-  assert.equal(hasLowGamesTwoSeasons(player, 25, 'HU'), true);
+  const player = { race_mmrs: [entry('HU', 25, 1600, 10)] };
+  assert.deepEqual(gamesWarning(player, 'HU'), { colour: 'warning', text: 'Less than 20 games (10 games) for HU' });
+  assert.equal(hasLowGamesTwoSeasons(player, 'HU'), true);
 });
 
 test('gamesWarning takes the threshold the event sets', () => {
-  const player = { w3c_stats: [stat('HU', 25, 20, 5)] };
-  assert.equal(gamesWarning(player, 25, 'HU'), null);
-  assert.equal(gamesWarning(player, 25, 'HU', 40).colour, 'warning');
+  const player = { race_mmrs: [entry('HU', 25, 1600, 25)] };
+  assert.equal(gamesWarning(player, 'HU'), null);
+  assert.equal(gamesWarning(player, 'HU', 40).colour, 'warning');
 });
 
-test('gamesWarning stays quiet without a race or a season', () => {
-  const player = { w3c_stats: [stat('HU', 25, 1, 1)] };
-  assert.equal(gamesWarning(player, 25, null), null);
-  assert.equal(gamesWarning(player, null, 'HU'), null);
+test('gamesWarning stays quiet without a race', () => {
+  const player = { race_mmrs: [entry('HU', 25, 1600, 2)] };
+  assert.equal(gamesWarning(player, null), null);
 });

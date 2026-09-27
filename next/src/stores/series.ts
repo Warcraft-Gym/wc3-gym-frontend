@@ -82,21 +82,16 @@ const store = {
   async playerMeetings(user_a: number, user_b: number) {
     return await fetchWrapper.get(`${backendUrl}/users/${user_a}/meetings/${user_b}`);
   },
-  async getSeriesByMatchId(match_id: number) {
-    return await fetchWrapper.post(`${backendUrl}/series/search?query=match_id == ${match_id}`);
+  // One match's series; a read after a write skips the browser cache
+  async getSeriesByMatchId(season_id: number, match_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/series?match_id=${match_id}`, undefined, fresh ? { cache: "no-store" } : undefined);
   },
   // One player's series in one season, filtered on the server
   async playerSeries(season_id: number, user_id: number) {
-    const query = encodeURIComponent(`player1_id == ${user_id} or player2_id == ${user_id}`);
-    return await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search?query=${query}`);
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/series?player_id=${user_id}`);
   },
-  // Every series of an event in one open read, edge cached, so it goes without a bearer
-  async eventSeries(event_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/series`);
-  },
-  async searchSeriesBySeason(season_id: number, search?: string) {
-    const suffix = search ? `?query=${search}` : "";
-    return await fetchWrapper.post(`${backendUrl}/events/${season_id}/series/search${suffix}`);
+  async searchSeriesBySeason(season_id: number, fantasyOnly?: boolean) {
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/series${fantasyOnly ? "?is_fantasy_match=true" : ""}`);
   },
 };
 

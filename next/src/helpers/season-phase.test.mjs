@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { asSeason, PHASE_LABEL, isUnscored, seasonPhase } from './season-phase.mjs';
+import { asSeason, PHASE_LABEL, isUnscored, seasonPhase, isOver } from './season-phase.mjs';
 
 test('every phase has a label', () => {
   assert.deepEqual(Object.keys(PHASE_LABEL), ['open', 'commenced', 'overdue', 'complete']);
@@ -29,4 +29,12 @@ test('a series is unscored until both sides carry a score', () => {
   assert.equal(isUnscored({ player1_score: 2, player2_score: null }), true);
   assert.equal(isUnscored({ player1_score: 0, player2_score: 2 }), false);
   assert.equal(isUnscored({ player1_score: 0, player2_score: 0 }), false);
+});
+
+test('a season is over once closed or past its end date', () => {
+  assert.equal(isOver({ closed_at: '2026-01-02T00:00:00Z', end_date: null }), true);
+  assert.equal(isOver({ closed_at: null, end_date: '2020-01-01' }), true);
+  assert.equal(isOver({ closed_at: null, end_date: '2999-01-01' }), false);
+  assert.equal(isOver({ closed_at: null, end_date: null }), false);
+  assert.equal(isOver(null), false);
 });

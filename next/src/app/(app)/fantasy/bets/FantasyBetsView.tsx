@@ -147,7 +147,7 @@ export function FantasyBetsView() {
       setBets(rows);
       setTotalBets(total);
 
-      setAllSeries((await seriesStore.searchSeriesBySeason(selectedSeasonId, "is_fantasy_match==True")) || []);
+      setAllSeries((await seriesStore.searchSeriesBySeason(selectedSeasonId, true)) || []);
       setFantasyTeams((await fantasyStore.searchTeams(`season_id == ${selectedSeasonId}`)) || []);
     } catch (error: any) {
       console.error("Failed to fetch data:", error);

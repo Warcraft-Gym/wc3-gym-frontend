@@ -111,7 +111,7 @@ export function RoundStrip({
               {mark.series.length ? (
                 mark.series.map((one, at) => {
                   // the rating the row names on the race this series played, else the one the opponent's own stats give on it
-                  const mmr = one.opponentMmr ?? (one.opponent ? getW3CMMR(one.opponent, undefined, one.opponentRace ?? undefined) : null);
+                  const mmr = one.opponentMmr ?? (one.opponent ? getW3CMMR(one.opponent, one.opponentRace ?? undefined) : null);
                   return (
                     <span key={at} className="block">
                       <span className="block">{seriesHead_(mark.round, one)}</span>

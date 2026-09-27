@@ -8,20 +8,18 @@ import { defaultSignupRace, kingPlayer, matchesPlayerSearch, myProfilePath, play
 test('the signup race comes from the last season he registered on', () => {
   const player = {
     signup_seasons: [{ id: 4, signup_race: 'UD' }, { id: 6, signup_race: 'NE' }],
-    w3c_stats: [{ race: 'HU' }],
+    main_race: 'HU',
   };
-  assert.equal(defaultSignupRace(player, () => 500), 'NE');
+  assert.equal(defaultSignupRace(player), 'NE');
 });
 
-test('a player with no signup falls back to his most played ladder race', () => {
-  const player = { w3c_stats: [{ race: 'HU' }, { race: 'OC' }] };
-  const games = { HU: 12, OC: 80 };
-  assert.equal(defaultSignupRace(player, race => games[race]), 'OC');
+test('a player with no signup falls back to his main ladder race', () => {
+  assert.equal(defaultSignupRace({ main_race: 'OC', race_mmrs: [{ race: 'HU' }, { race: 'OC' }] }), 'OC');
 });
 
-test('a signup with no race and a ladder with no games prefill nothing', () => {
-  assert.equal(defaultSignupRace({ signup_seasons: [{ id: 6 }], w3c_stats: [{ race: 'HU' }] }, () => 0), null);
-  assert.equal(defaultSignupRace(null, () => 99), null);
+test('a signup with no race and no main race prefill nothing', () => {
+  assert.equal(defaultSignupRace({ signup_seasons: [{ id: 6 }], main_race: null, race_mmrs: [{ race: 'HU' }] }), null);
+  assert.equal(defaultSignupRace(null), null);
 });
 
 // The players page lists every player once, with his career totals, and keeps

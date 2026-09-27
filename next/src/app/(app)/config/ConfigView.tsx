@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useState } from "react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/Field";
@@ -50,6 +51,15 @@ const DISCORD_FIELDS = [
   { key: "content_channel_id", label: "Content channel ID", hint: "Where cast claims and stream reminders are posted", icon: "mdi-broadcast", wide: false },
 ];
 
+// The keys each section holds, so a failed save opens the sections with unsaved edits
+const SECTION_KEYS: Record<string, string[]> = {
+  w3c: ["current_w3c_season", "w3c_url"],
+  gnl: ["current_gnl_season"],
+  access: ["fantasy_team_creation_enabled"],
+  betting: ["fantasy_fixed_bet_points", "fantasy_bet_points_value", "fantasy_min_bet_points", "fantasy_max_bet_points"],
+  discord: DISCORD_FIELDS.map((field) => field.key),
+};
+
 /** The configuration the backend keeps in the database, plus the Nightbot token KOTH signups carry. */
 export function ConfigView() {
   const configStore = useConfigStore();
@@ -72,10 +82,14 @@ export function ConfigView() {
   // What the backend uses while these two fields are blank
   const [w3cConfig, setW3cConfig] = useState<any>(null);
 
+  // The sections open now; the page opens with all of them closed
+  const [openSections, setOpenSections] = useState<string[]>([]);
+
   const setSetting = (key: string, value: any) => setSettingsMap((current) => ({ ...current, [key]: value }));
 
-  // Both loads write this one alert, so the later failure must not hide the earlier
-  const addError = (message: string) => setErrorMessage((current) => (current ? current + " " + message : message));
+  // Both loads write this one alert, so the later failure must not hide the earlier, and a load run twice adds nothing
+  const addError = (message: string) =>
+    setErrorMessage((current) => (!current ? message : current.includes(message) ? current : current + " " + message));
 
   // Read the stored rows into the form. The overlay and the alert belong to the caller.
   const fetchSettings = useCallback(async () => {
@@ -117,9 +131,11 @@ export function ConfigView() {
       try {
         const response = await configStore.fetchKothNightbotToken();
         setKothNightbotToken(response.token || "");
-      } catch (error) {
-        console.error("Failed to fetch KOTH token:", error);
+      } catch (error: any) {
         setKothNightbotToken("");
+        // A 404 means no token was generated yet, which the blank field already shows
+        if (error?.status === 404) return;
+        console.error("Failed to fetch KOTH token:", error);
         addError("Could not read the current token.");
       }
     };
@@ -140,8 +156,8 @@ export function ConfigView() {
     setIsSaving(true);
     setErrorMessage(null);
     setSuccessMessage(null);
+    const settingsToSave = changedSettings(loadedSettings, settingsMap);
     try {
-      const settingsToSave = changedSettings(loadedSettings, settingsMap);
       if (!Object.keys(settingsToSave).length) {
         setSuccessMessage("Nothing to save.");
         return;
@@ -152,6 +168,8 @@ export function ConfigView() {
       setSuccessMessage("Settings saved.");
     } catch (error: any) {
       setErrorMessage("Failed to save settings: " + error.message);
+      const unsaved = Object.keys(SECTION_KEYS).filter((section) => SECTION_KEYS[section].some((key) => Object.hasOwn(settingsToSave, key)));
+      setOpenSections((current) => [...new Set([...current, ...unsaved])]);
     } finally {
       setIsSaving(false);
     }
@@ -229,205 +247,229 @@ export function ConfigView() {
         <CardContent className="p-4">
           <p className="mb-4 text-muted-foreground">Manage application configuration settings stored in the database.</p>
 
-          <div className="grid gap-4 md:grid-cols-12">
-            {/* W3Champions Settings */}
-            <h3 className="text-xl md:col-span-12">Warcraft 3 Champions integration</h3>
+          <Accordion multiple value={openSections} onValueChange={(value) => setOpenSections(value as string[])}>
+            <AccordionItem value="w3c">
+              <AccordionTrigger className="text-xl font-normal">Warcraft 3 Champions integration</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-4 pt-2 md:grid-cols-12">
+                  <Field className="md:col-span-6" label="Current W3C season" hint="Leave blank to follow the latest W3Champions season." htmlFor="current-w3c-season">
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Icon name="mdi-trophy" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        id="current-w3c-season"
+                        type="number"
+                        placeholder={w3cSeasonPlaceholder}
+                        value={settingsMap.current_w3c_season}
+                        onChange={(event) => setSetting("current_w3c_season", event.target.value)}
+                      />
+                    </InputGroup>
+                  </Field>
 
-            <Field className="md:col-span-6" label="Current W3C season" hint="Leave blank to follow the latest W3Champions season." htmlFor="current-w3c-season">
-              <InputGroup>
-                <InputGroupAddon>
-                  <Icon name="mdi-trophy" />
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="current-w3c-season"
-                  type="number"
-                  placeholder={w3cSeasonPlaceholder}
-                  value={settingsMap.current_w3c_season}
-                  onChange={(event) => setSetting("current_w3c_season", event.target.value)}
-                />
-              </InputGroup>
-            </Field>
-
-            <Field className="md:col-span-6" label="W3Champions API URL" hint="Base URL for W3Champions API. Leave blank to use the default." htmlFor="w3c-url">
-              <InputGroup>
-                <InputGroupAddon>
-                  <Icon name="mdi-api" />
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="w3c-url"
-                  placeholder={w3cUrlPlaceholder}
-                  value={settingsMap.w3c_url}
-                  onChange={(event) => setSetting("w3c_url", event.target.value)}
-                />
-              </InputGroup>
-            </Field>
-
-            {/* GNL Settings */}
-            <h3 className="mt-4 text-xl md:col-span-12">GNL league settings</h3>
-
-            {/* The label reads after the select, where the floating label of v-select sits, and order puts it back on top */}
-            <div className="flex flex-col gap-1.5 md:col-span-6">
-              {/* The port of the clearable select: the blank item is how a season is taken back off */}
-              <Select
-                items={seasons.map((season: any) => ({ value: season.id, label: season.name }))}
-                value={settingsMap.current_gnl_season === "" ? null : settingsMap.current_gnl_season}
-                onValueChange={(value) => setSetting("current_gnl_season", value ?? "")}
-              >
-                <SelectTrigger id="current-gnl-season" className="w-full">
-                  <Icon name="mdi-calendar" className="text-muted-foreground" />
-                  <SelectValue placeholder="Current GNL season" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>No season</SelectItem>
-                  {seasons.map((season: any) => (
-                    <SelectItem key={season.id} value={season.id}>
-                      {season.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Label htmlFor="current-gnl-season" className="order-first">Current GNL season</Label>
-              <p className="text-xs text-muted-foreground">Active league season</p>
-            </div>
-
-            {/* Public Access Settings */}
-            <h3 className="mt-4 text-xl md:col-span-12">Public access settings</h3>
-
-            <div className="md:col-span-6">
-              <label className="flex items-center gap-3" htmlFor="fantasy-team-creation">
-                <Switch
-                  id="fantasy-team-creation"
-                  checked={settingsMap.fantasy_team_creation_enabled === "true"}
-                  onCheckedChange={(checked) => setSetting("fantasy_team_creation_enabled", checked ? "true" : "false")}
-                />
-                <span>Fantasy team creation enabled</span>
-              </label>
-              <p className="mt-1 text-xs text-muted-foreground">Off closes team creation for every season</p>
-            </div>
-
-            {/* Fantasy Betting Settings */}
-            <h3 className="mt-4 text-xl md:col-span-12">Fantasy betting settings</h3>
-
-            <div className="md:col-span-6">
-              <label className="flex items-center gap-3" htmlFor="fantasy-fixed-bet-points">
-                <Switch
-                  id="fantasy-fixed-bet-points"
-                  checked={settingsMap.fantasy_fixed_bet_points === "true"}
-                  onCheckedChange={(checked) => setSetting("fantasy_fixed_bet_points", checked ? "true" : "false")}
-                />
-                <span>Use fixed bet points</span>
-              </label>
-              <p className="mt-1 text-xs text-muted-foreground">If enabled, all bets use a fixed point value instead of user input</p>
-            </div>
-
-            <Field className="md:col-span-6" label="Fixed bet points value" hint="Point value for bets when using fixed bet points" htmlFor="fantasy-bet-points-value">
-              <InputGroup>
-                <InputGroupAddon>
-                  <Icon name="mdi-numeric" />
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="fantasy-bet-points-value"
-                  type="number"
-                  disabled={settingsMap.fantasy_fixed_bet_points !== "true"}
-                  value={settingsMap.fantasy_bet_points_value}
-                  onChange={(event) => setSetting("fantasy_bet_points_value", event.target.value)}
-                />
-              </InputGroup>
-            </Field>
-
-            <Field className="md:col-span-6" label="Minimum bet points" hint="Minimum point value allowed when using custom bet points" htmlFor="fantasy-min-bet-points">
-              <InputGroup>
-                <InputGroupAddon>
-                  <Icon name="mdi-arrow-down" />
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="fantasy-min-bet-points"
-                  type="number"
-                  disabled={settingsMap.fantasy_fixed_bet_points === "true"}
-                  value={settingsMap.fantasy_min_bet_points}
-                  onChange={(event) => setSetting("fantasy_min_bet_points", event.target.value)}
-                />
-              </InputGroup>
-            </Field>
-
-            <Field className="md:col-span-6" label="Maximum bet points" hint="Maximum point value allowed when using custom bet points" htmlFor="fantasy-max-bet-points">
-              <InputGroup>
-                <InputGroupAddon>
-                  <Icon name="mdi-arrow-up" />
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="fantasy-max-bet-points"
-                  type="number"
-                  disabled={settingsMap.fantasy_fixed_bet_points === "true"}
-                  value={settingsMap.fantasy_max_bet_points}
-                  onChange={(event) => setSetting("fantasy_max_bet_points", event.target.value)}
-                />
-              </InputGroup>
-            </Field>
-
-            {/* Discord Settings */}
-            <h3 className="mt-4 text-xl md:col-span-12">Discord bot settings</h3>
-
-            {DISCORD_FIELDS.map((field) => (
-              <Field key={field.key} className={field.wide ? "md:col-span-6" : "md:col-span-4"} label={field.label} hint={field.hint} htmlFor={field.key}>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <Icon name={field.icon} />
-                  </InputGroupAddon>
-                  <InputGroupInput id={field.key} value={settingsMap[field.key]} onChange={(event) => setSetting(field.key, event.target.value)} />
-                </InputGroup>
-              </Field>
-            ))}
-
-            {/* KOTH Integration Settings */}
-            <h3 className="mt-4 text-xl md:col-span-12">KOTH Nightbot integration</h3>
-
-            <Card className="card p-4 md:col-span-12">
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <Icon name="mdi-robot" className="text-primary" />
-                  <span className="font-medium">Nightbot signup token</span>
+                  <Field className="md:col-span-6" label="W3Champions API URL" hint="Base URL for W3Champions API. Leave blank to use the default." htmlFor="w3c-url">
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Icon name="mdi-api" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        id="w3c-url"
+                        placeholder={w3cUrlPlaceholder}
+                        value={settingsMap.w3c_url}
+                        onChange={(event) => setSetting("w3c_url", event.target.value)}
+                      />
+                    </InputGroup>
+                  </Field>
                 </div>
-                <p className="mb-4 text-sm text-muted-foreground">Generate a new token if this one leaks.</p>
-              </div>
+              </AccordionContent>
+            </AccordionItem>
 
-              <div className="grid items-end gap-4 md:grid-cols-12">
-                <Field className="md:col-span-8" label="Current token" hint="Click the eye icon to show/hide the token" htmlFor="koth-token">
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <Icon name="mdi-key" />
-                    </InputGroupAddon>
-                    <InputGroupInput id="koth-token" readOnly type={kothTokenVisible ? "text" : "password"} value={kothNightbotToken} />
-                    <InputGroupAddon align="inline-end">
-                      <Button variant="ghost" size="icon-sm" aria-label={kothTokenVisible ? "Hide the token" : "Show the token"} onClick={() => setKothTokenVisible(!kothTokenVisible)}>
-                        <Icon name={kothTokenVisible ? "mdi-eye-off" : "mdi-eye"} />
-                      </Button>
-                      <Button variant="ghost" size="icon-sm" aria-label="Copy the token" disabled={!kothNightbotToken} onClick={copyKothToken}>
-                        <Icon name="mdi-content-copy" />
-                      </Button>
-                    </InputGroupAddon>
-                  </InputGroup>
-                </Field>
-
-                <div className="md:col-span-4">
-                  <Button className="w-full" onClick={generateKothToken} disabled={isGeneratingKothToken}>
-                    <Icon name={isGeneratingKothToken ? "mdi-loading mdi-spin" : "mdi-refresh"} />
-                    Generate new token
-                  </Button>
-                </div>
-
-                {kothNightbotToken ? (
-                  <div className="md:col-span-12">
-                    <div className="alert rounded-md border border-current/20 p-3 text-sm text-info">
-                      <strong>Nightbot command example:</strong>
-                      <br />
-                      <code className="mt-1 inline-block break-all">{nightbotCommand}</code>
-                    </div>
+            <AccordionItem value="gnl">
+              <AccordionTrigger className="text-xl font-normal">GNL league settings</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-4 pt-2 md:grid-cols-12">
+                  {/* The label reads after the select, where the floating label of v-select sits, and order puts it back on top */}
+                  <div className="flex flex-col gap-1.5 md:col-span-6">
+                    {/* The port of the clearable select: the blank item is how a season is taken back off */}
+                    <Select
+                      items={seasons.map((season: any) => ({ value: season.id, label: season.name }))}
+                      value={settingsMap.current_gnl_season === "" ? null : settingsMap.current_gnl_season}
+                      onValueChange={(value) => setSetting("current_gnl_season", value ?? "")}
+                    >
+                      <SelectTrigger id="current-gnl-season" className="w-full">
+                        <Icon name="mdi-calendar" className="text-muted-foreground" />
+                        <SelectValue placeholder="Current GNL season" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={null}>No season</SelectItem>
+                        {seasons.map((season: any) => (
+                          <SelectItem key={season.id} value={season.id}>
+                            {season.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Label htmlFor="current-gnl-season" className="order-first">Current GNL season</Label>
+                    <p className="text-xs text-muted-foreground">Active league season</p>
                   </div>
-                ) : null}
-              </div>
-            </Card>
-          </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="access">
+              <AccordionTrigger className="text-xl font-normal">Public access settings</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-4 pt-2 md:grid-cols-12">
+                  <div className="md:col-span-6">
+                    <label className="flex items-center gap-3" htmlFor="fantasy-team-creation">
+                      <Switch
+                        id="fantasy-team-creation"
+                        checked={settingsMap.fantasy_team_creation_enabled === "true"}
+                        onCheckedChange={(checked) => setSetting("fantasy_team_creation_enabled", checked ? "true" : "false")}
+                      />
+                      <span>Fantasy team creation enabled</span>
+                    </label>
+                    <p className="mt-1 text-xs text-muted-foreground">Off closes team creation for every season</p>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="betting">
+              <AccordionTrigger className="text-xl font-normal">Fantasy betting settings</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-4 pt-2 md:grid-cols-12">
+                  <div className="md:col-span-6">
+                    <label className="flex items-center gap-3" htmlFor="fantasy-fixed-bet-points">
+                      <Switch
+                        id="fantasy-fixed-bet-points"
+                        checked={settingsMap.fantasy_fixed_bet_points === "true"}
+                        onCheckedChange={(checked) => setSetting("fantasy_fixed_bet_points", checked ? "true" : "false")}
+                      />
+                      <span>Use fixed bet points</span>
+                    </label>
+                    <p className="mt-1 text-xs text-muted-foreground">If enabled, all bets use a fixed point value instead of user input</p>
+                  </div>
+
+                  <Field className="md:col-span-6" label="Fixed bet points value" hint="Point value for bets when using fixed bet points" htmlFor="fantasy-bet-points-value">
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Icon name="mdi-numeric" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        id="fantasy-bet-points-value"
+                        type="number"
+                        disabled={settingsMap.fantasy_fixed_bet_points !== "true"}
+                        value={settingsMap.fantasy_bet_points_value}
+                        onChange={(event) => setSetting("fantasy_bet_points_value", event.target.value)}
+                      />
+                    </InputGroup>
+                  </Field>
+
+                  <Field className="md:col-span-6" label="Minimum bet points" hint="Minimum point value allowed when using custom bet points" htmlFor="fantasy-min-bet-points">
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Icon name="mdi-arrow-down" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        id="fantasy-min-bet-points"
+                        type="number"
+                        disabled={settingsMap.fantasy_fixed_bet_points === "true"}
+                        value={settingsMap.fantasy_min_bet_points}
+                        onChange={(event) => setSetting("fantasy_min_bet_points", event.target.value)}
+                      />
+                    </InputGroup>
+                  </Field>
+
+                  <Field className="md:col-span-6" label="Maximum bet points" hint="Maximum point value allowed when using custom bet points" htmlFor="fantasy-max-bet-points">
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Icon name="mdi-arrow-up" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        id="fantasy-max-bet-points"
+                        type="number"
+                        disabled={settingsMap.fantasy_fixed_bet_points === "true"}
+                        value={settingsMap.fantasy_max_bet_points}
+                        onChange={(event) => setSetting("fantasy_max_bet_points", event.target.value)}
+                      />
+                    </InputGroup>
+                  </Field>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="discord">
+              <AccordionTrigger className="text-xl font-normal">Discord bot settings</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-4 pt-2 md:grid-cols-12">
+                  {DISCORD_FIELDS.map((field) => (
+                    <Field key={field.key} className={field.wide ? "md:col-span-6" : "md:col-span-4"} label={field.label} hint={field.hint} htmlFor={field.key}>
+                      <InputGroup>
+                        <InputGroupAddon>
+                          <Icon name={field.icon} />
+                        </InputGroupAddon>
+                        <InputGroupInput id={field.key} value={settingsMap[field.key]} onChange={(event) => setSetting(field.key, event.target.value)} />
+                      </InputGroup>
+                    </Field>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="koth">
+              <AccordionTrigger className="text-xl font-normal">KOTH Nightbot integration</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-4 pt-2 md:grid-cols-12">
+                  <Card className="card p-4 md:col-span-12">
+                    <div>
+                      <div className="mb-2 flex items-center gap-2">
+                        <Icon name="mdi-robot" className="text-primary" />
+                        <span className="font-medium">Nightbot signup token</span>
+                      </div>
+                      <p className="mb-4 text-sm text-muted-foreground">Generate a new token if this one leaks.</p>
+                    </div>
+
+                    <div className="grid items-end gap-4 md:grid-cols-12">
+                      <Field className="md:col-span-8" label="Current token" hint="Click the eye icon to show/hide the token" htmlFor="koth-token">
+                        <InputGroup>
+                          <InputGroupAddon>
+                            <Icon name="mdi-key" />
+                          </InputGroupAddon>
+                          <InputGroupInput id="koth-token" readOnly type={kothTokenVisible ? "text" : "password"} value={kothNightbotToken} />
+                          <InputGroupAddon align="inline-end">
+                            <Button variant="ghost" size="icon-sm" aria-label={kothTokenVisible ? "Hide the token" : "Show the token"} onClick={() => setKothTokenVisible(!kothTokenVisible)}>
+                              <Icon name={kothTokenVisible ? "mdi-eye-off" : "mdi-eye"} />
+                            </Button>
+                            <Button variant="ghost" size="icon-sm" aria-label="Copy the token" disabled={!kothNightbotToken} onClick={copyKothToken}>
+                              <Icon name="mdi-content-copy" />
+                            </Button>
+                          </InputGroupAddon>
+                        </InputGroup>
+                      </Field>
+
+                      <div className="md:col-span-4">
+                        <Button className="w-full" onClick={generateKothToken} disabled={isGeneratingKothToken}>
+                          <Icon name={isGeneratingKothToken ? "mdi-loading mdi-spin" : "mdi-refresh"} />
+                          Generate new token
+                        </Button>
+                      </div>
+
+                      {kothNightbotToken ? (
+                        <div className="md:col-span-12">
+                          <div className="alert rounded-md border border-current/20 p-3 text-sm text-info">
+                            <strong>Nightbot command example:</strong>
+                            <br />
+                            <code className="mt-1 inline-block break-all">{nightbotCommand}</code>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </Card>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
 
         <div className="flex gap-2 px-4 pb-4">
@@ -443,28 +485,30 @@ export function ConfigView() {
         </div>
       </Card>
 
-      {/* Info Card */}
-      <Card className="card mt-4 gap-0 py-0">
-        <CardHeader className="bg-primary p-4">
-          <CardTitle className="flex items-center gap-2 text-on-primary">
-            <Icon name="mdi-information" />
-            About settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <ul className="list-disc space-y-2 pl-5">
-            <li><strong>Database storage:</strong> Settings are stored in the database and persist across backend restarts.</li>
-            <li><strong>Public access toggles:</strong> Enable/disable fantasy team creation. Player signups open and close per season on the Seasons page.</li>
-            <li><strong>Discord IDs:</strong> Role and channel IDs can be found by enabling Developer Mode in Discord and right-clicking on roles/channels.</li>
-            <li><strong>Current GNL season:</strong> The current season is used for public player signups, fantasy team registration, and all league operations.</li>
-            <li><strong>W3Champions:</strong> The W3C season and URL are used for fetching player statistics and MMR data.</li>
-            <li><strong>Player profile channel:</strong> The channel where the button that opens a player&apos;s own profile is posted.</li>
-            <li><strong>Scheduling channel:</strong> Where scheduling notifications are posted when players schedule their matches from their profile.</li>
-            <li><strong>Results channel:</strong> Where score update notifications and replay files are posted when players submit results from their profile.</li>
-            <li><strong>Fantasy dashboard channel:</strong> The channel where the fantasy league dashboard button is posted.</li>
-          </ul>
-        </CardContent>
-      </Card>
+      {/* About the settings, closed until opened */}
+      <Accordion className="card mt-4 rounded-lg px-4">
+        <AccordionItem value="about">
+          <AccordionTrigger className="text-lg">
+            <span className="flex items-center gap-2">
+              <Icon name="mdi-information" />
+              About settings
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <ul className="list-disc space-y-2 pl-5">
+              <li><strong>Database storage:</strong> Settings are stored in the database and persist across backend restarts.</li>
+              <li><strong>Public access toggles:</strong> Enable/disable fantasy team creation. Player signups open and close per season on the Seasons page.</li>
+              <li><strong>Discord IDs:</strong> Role and channel IDs can be found by enabling Developer Mode in Discord and right-clicking on roles/channels.</li>
+              <li><strong>Current GNL season:</strong> The current season is used for public player signups, fantasy team registration, and all league operations.</li>
+              <li><strong>W3Champions:</strong> The W3C season and URL are used for fetching player statistics and MMR data.</li>
+              <li><strong>Player profile channel:</strong> The channel where the button that opens a player&apos;s own profile is posted.</li>
+              <li><strong>Scheduling channel:</strong> Where scheduling notifications are posted when players schedule their matches from their profile.</li>
+              <li><strong>Results channel:</strong> Where score update notifications and replay files are posted when players submit results from their profile.</li>
+              <li><strong>Fantasy dashboard channel:</strong> The channel where the fantasy league dashboard button is posted.</li>
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }

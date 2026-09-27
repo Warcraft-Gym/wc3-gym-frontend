@@ -30,6 +30,7 @@ export const ADMIN_SECTIONS = [
     icon: 'mdi-calendar-star',
     items: [
       { title: 'KOTH Nights', to: '/koth', icon: 'mdi-crown-outline', description: 'Run a King of the Hill night' },
+      { title: 'Leagues', to: '/leagues', icon: 'mdi-trophy-variant-outline', description: 'The leagues and the events each one runs' },
       { title: 'Events', to: '/events', icon: 'mdi-calendar-star', description: 'All events and tournaments' },
       { title: 'New Event', to: '/events/new', icon: 'mdi-calendar-plus', description: 'Create a tournament or event' },
     ],

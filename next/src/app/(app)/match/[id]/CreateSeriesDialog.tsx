@@ -13,7 +13,6 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { TeamName } from "@/components/TeamName";
 import { W3CIcon } from "@/components/W3CIcon";
 import { W3CMmr } from "@/components/W3CMmr";
-import { mmrSeasonLabel } from "@/helpers/w3c-stats";
 import { SyncedLine, mmrOf, type Row } from "./match-cells";
 
 export type SideTeam = { team: Row; roster: Row[]; isOut: (player: Row) => boolean };
@@ -35,7 +34,6 @@ export function CreateSeriesDialog({
   onSearchChange,
   isDraft,
   onIsDraftChange,
-  w3cSeason,
   isAdmin,
   isLoading,
   error,
@@ -52,7 +50,6 @@ export function CreateSeriesDialog({
   onSearchChange: (side: number, value: string) => void;
   isDraft: boolean;
   onIsDraftChange: (value: boolean) => void;
-  w3cSeason?: number;
   isAdmin: boolean;
   isLoading: boolean;
   error: string | null;
@@ -119,14 +116,11 @@ export function CreateSeriesDialog({
                     },
                     {
                       id: "w3c_mmr",
-                      accessorFn: (row: Row) => mmrOf(row, row.signup_race, w3cSeason) || 0,
-                      header: () => <W3CMmr suffix={w3cSeason ? ` (S${w3cSeason})` : ""} />,
+                      accessorFn: (row: Row) => mmrOf(row, row.signup_race) || 0,
+                      header: () => <W3CMmr />,
                       cell: ({ row }) => (
                         <>
-                          <span className="tnum">{mmrOf(row.original, row.original.signup_race, w3cSeason) || "N/A"}</span>
-                          {mmrSeasonLabel(row.original, w3cSeason as number, row.original.signup_race) ? (
-                            <span className="ms-1 text-xs text-muted-foreground">{mmrSeasonLabel(row.original, w3cSeason as number, row.original.signup_race)}</span>
-                          ) : null}
+                          <span className="tnum">{mmrOf(row.original, row.original.signup_race) || "N/A"}</span>
                           <SyncedLine player={row.original} />
                         </>
                       ),

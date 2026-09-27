@@ -5,8 +5,9 @@ import { local, timeMissing } from './schedule.mjs';
 import { isUnscored } from './season-phase.mjs';
 
 /** The CSS order of each Home panel. One order drives both layouts: the phone stack, and the panels
- *  inside each desktop column. An open signup comes first, because it is the one thing that expires. */
-export const PANEL_ORDER = { signup: 1, games: 2, next: 3, fantasy: 4, stats: 5 };
+ *  inside each desktop column. An open signup comes first, because it is the one thing that expires;
+ *  the upcoming events the member cannot act on yet follow the upcoming series. */
+export const PANEL_ORDER = { signup: 1, games: 2, next: 3, upcoming: 4, fantasy: 5, stats: 6 };
 
 /** The events the member may still enter, leave or check in to, in the order the events start.
  *  @param {any[]} [rows] the GET /me/events rows */

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { LadderImportDialog } from "@/components/LadderImportDialog";
 import type { ImportRow } from "@/components/LadderImportDialog";
@@ -164,7 +165,12 @@ export function MapsView() {
         </div>
       ) : null}
 
-      <PageHeader title={<><Icon name="mdi-map" className="mr-2" />1v1 Maps</>} />
+      <PageHeader title={<><Icon name="mdi-map" className="mr-2" />Maps</>} />
+
+      {/* ponytail: every map is 1v1; add 2v2 here with a mode on the map row */}
+      <ToggleGroup variant="outline" spacing={0} className="mb-4" aria-label="Game mode" value={["1v1"]}>
+        <ToggleGroupItem value="1v1">1v1</ToggleGroupItem>
+      </ToggleGroup>
 
       <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
 

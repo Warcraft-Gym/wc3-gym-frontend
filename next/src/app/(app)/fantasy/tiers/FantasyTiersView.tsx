@@ -19,9 +19,8 @@ import { W3CMmr } from "@/components/W3CMmr";
 import { useLadderStore, usePlayerStore, useSeason, useSeasonStore, useTeamStore } from "@/stores";
 import { bandOf, domainOf, quantileCuts, rangeText } from "@/helpers/divisions.mjs";
 import { eventLabel } from "@/helpers/event-labels.mjs";
-import { resolveCurrentW3CSeason } from "@/helpers/current-season.js";
 import { ALL_COLORS, ALL_NAMES, tierChanges } from "@/helpers/tiers.mjs";
-import { getW3CStatsWithFallback } from "@/helpers/w3c-stats";
+import { getW3CMMR } from "@/helpers/w3c-stats";
 import { cn } from "@/lib/utils";
 
 // Bands ascend by MMR; tier numbers descend, so the top band is always tier 1.
@@ -45,7 +44,7 @@ const TIER_CHIP: Record<string, string> = {
 type Row = { id: number; player: any; race: string | null; mmr: number; team: any };
 
 // The pool: every signup on a team this season, with its team name
-const poolRows = (signups: any[], teams: any[], seasonId: number | null, w3cSeason: any): Row[] => {
+const poolRows = (signups: any[], teams: any[], seasonId: number | null): Row[] => {
   const teamOf = new Map<number, any>();
   for (const team of teams || []) {
     for (const player of team.player_by_season?.[seasonId as number] || []) teamOf.set(player.id, team);
@@ -56,7 +55,7 @@ const poolRows = (signups: any[], teams: any[], seasonId: number | null, w3cSeas
       id: player.id,
       player,
       race: player.signup_race,
-      mmr: (getW3CStatsWithFallback(player, player.signup_race, w3cSeason) as any)?.mmr ?? 0,
+      mmr: getW3CMMR(player, player.signup_race) ?? 0,
       team: teamOf.get(player.id),
     }));
 };
@@ -84,7 +83,6 @@ export function FantasyTiersView() {
   const [currentSeason, setCurrentSeason] = useState<any>(null);
   // A commenced season's tiers are locked until the admin unlocks them: moving a cut moves drafted players
   const [locked, setLocked] = useState(false);
-  const [currentW3CSeason, setCurrentW3CSeason] = useState<any>(null);
   const [tierCount, setTierCount] = useState(NAMES.length);
   const [signups, setSignups] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
@@ -102,7 +100,7 @@ export function FantasyTiersView() {
     ...names.map((name, i) => ({ value: i, title: `Tier ${tierOf(i)} · ${name}` })).reverse(),
   ];
 
-  const rows = useMemo(() => poolRows(signups, teams, currentSeasonId, currentW3CSeason), [signups, teams, currentSeasonId, currentW3CSeason]);
+  const rows = useMemo(() => poolRows(signups, teams, currentSeasonId), [signups, teams, currentSeasonId]);
   const domain = domainOf(rows.map((row) => row.mmr));
   const bandFor = (row: Row) => moves[row.id] ?? (row.mmr > 0 ? (bandOf(row.mmr, cuts) as number) : null);
   const stripPlayers = rows.map((row) => ({ id: row.id, label: row.player.name, mmr: row.mmr, band: bandFor(row), pinned: row.id in moves }));
@@ -166,8 +164,6 @@ export function FantasyTiersView() {
         const season = await seasonStore.fetchSeason(seasonId);
         setCurrentSeason(season);
         setLocked((season.phase ?? "open") !== "open");
-        const w3cSeason = await resolveCurrentW3CSeason();
-        setCurrentW3CSeason(w3cSeason);
         const signupRows = (await seasonStore.fetchSeasonSignups(seasonId)) || [];
         setSignups(signupRows);
         const teamRows = (await teamStore.fetchTeamsBySeason(seasonId)) || [];
@@ -180,7 +176,7 @@ export function FantasyTiersView() {
           // A tier set by hand comes back as its pin; the rest follow the MMR
           setMoves(Object.fromEntries(signupRows.filter((p: any) => p.fantasy_tier_pinned).map((p: any) => [p.id, count - p.fantasy_tier])));
         } else {
-          setCuts(quantileCuts(poolRows(signupRows, teamRows, seasonId, w3cSeason).map((row) => row.mmr), tierCount));
+          setCuts(quantileCuts(poolRows(signupRows, teamRows, seasonId).map((row) => row.mmr), tierCount));
         }
       } catch (error) {
         console.error("Error loading data:", error);

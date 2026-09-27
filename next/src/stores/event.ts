@@ -24,6 +24,10 @@ const store = {
     const query = filters.length ? `?${filters.join("&")}` : "";
     return await fetchWrapper.get(`${backendUrl}/events${query}`);
   },
+  // One page of one kind's events, newest first, with the count of all of them
+  async fetchEventsPage(kind: string, limit: number, offset: number) {
+    return await fetchWrapper.getPage(`${backendUrl}/events?kind=${kind}&limit=${limit}&offset=${offset}`);
+  },
   async fetchEvent(event_id: number) {
     return await fetchWrapper.get(`${backendUrl}/events/${event_id}`);
   },
@@ -32,6 +36,9 @@ const store = {
   },
   async updateEvent(event_id: number, event: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}`, event);
+  },
+  async deleteEvent(event_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}`);
   },
   // The stages are written for the whole event at once: their positions must stay 1..n
   async setStages(event_id: number, stages: any) {
@@ -108,10 +115,6 @@ const store = {
   // Pairs one more round of a stage that draws round by round, per division
   async drawNextRound(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/rounds`);
-  },
-  // Appends one entrant to the end of the chain his division plays
-  async addChallenger(event_id: number, stage_id: number, entrant_id: number) {
-    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`, { entrant_id });
   },
   // A KOTH night is an event, so the module owns only these writes
   async openNight(night: any) {

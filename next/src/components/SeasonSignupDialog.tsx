@@ -11,8 +11,8 @@ import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { usePlayerStore, useSeason } from "@/stores";
-import { resolveCurrentSeasonId, resolveCurrentW3CSeason } from "@/helpers/current-season.js";
-import { getW3CGames, getW3CMMR } from "@/helpers/w3c-stats.js";
+import { resolveCurrentSeasonId } from "@/helpers/current-season.js";
+import { getW3CMMR } from "@/helpers/w3c-stats.js";
 import { defaultSignupRace } from "@/helpers/players.mjs";
 
 type Season = { id: number; name: string };
@@ -33,20 +33,19 @@ export function SeasonSignupDialog({ onAdded, ref }: { onAdded?: () => void; ref
   const [race, setRace] = useState<string | null>(null);
   const [presetSeason, setPresetSeason] = useState<Season | null>(null);
   const [presetPlayer, setPresetPlayer] = useState<Player | null>(null);
-  const [currentW3CSeason, setCurrentW3CSeason] = useState<number | null>(null);
   // The ported player store keeps no rows, so the list the picker offers lives here
   const [players, setPlayers] = useState<Player[]>([]);
 
   const selectedPlayer = players.find((player) => player.id === playerId) ?? null;
-  const mmr = selectedPlayer && race ? getW3CMMR(selectedPlayer, currentW3CSeason ?? undefined, race) : null;
+  const mmr = selectedPlayer && race ? getW3CMMR(selectedPlayer, race) : null;
 
-  // The signup opens on the race the player last registered on, or the race he
-  // plays most on the ladder. Picking another player moves it.
+  // The signup opens on the race the player last registered on, or his main
+  // ladder race. Picking another player moves it.
   const [raceKey, setRaceKey] = useState<string | null>(null);
-  const key = `${selectedPlayer?.id ?? ""}:${currentW3CSeason ?? ""}`;
+  const key = `${selectedPlayer?.id ?? ""}`;
   if (raceKey !== key) {
     setRaceKey(key);
-    setRace(selectedPlayer ? defaultSignupRace(selectedPlayer, (r: string) => getW3CGames(selectedPlayer, currentW3CSeason ?? undefined, r)) : null);
+    setRace(selectedPlayer ? defaultSignupRace(selectedPlayer) : null);
   }
 
   useImperativeHandle(ref, () => ({
@@ -63,7 +62,6 @@ export function SeasonSignupDialog({ onAdded, ref }: { onAdded?: () => void; ref
         if (!seasonStore.seasons.length) await seasonStore.fetchSeasons();
         if (!players.length) setPlayers(await playerStore.fetchPlayers());
         if (!season?.id) setSeasonId(await resolveCurrentSeasonId());
-        setCurrentW3CSeason(await resolveCurrentW3CSeason());
       } catch (err) {
         console.error("Failed to load the signup dialog lists:", err);
       }

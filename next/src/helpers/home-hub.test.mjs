@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
 import { PANEL_ORDER, captainRow, homeRounds, openSignups, ownScore, ownSeries, rowContext, seasonFixtures, seasonState, seriesWhen } from './home-hub.mjs';
 
-test('an open signup comes first, then the games, the upcoming series, fantasy and the stats', () => {
-  assert.deepEqual(PANEL_ORDER, { signup: 1, games: 2, next: 3, fantasy: 4, stats: 5 });
+test('an open signup comes first, then the games, the upcoming series, the upcoming events, fantasy and the stats', () => {
+  assert.deepEqual(PANEL_ORDER, { signup: 1, games: 2, next: 3, upcoming: 4, fantasy: 5, stats: 6 });
 });
 
 test('a series already under way reads the time it started', () => {

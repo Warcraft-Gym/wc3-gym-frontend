@@ -353,6 +353,8 @@ export function PlayedRow({ played, admin, clean }: { played: Row; admin?: Brack
       <BoardPlayer row={played.winner} />
       <span className="text-xs text-muted-foreground">beat</span>
       <BoardPlayer row={played.loser} />
+      {/* the loser left the night, so no game was played */}
+      {played.forfeit ? <span className="text-xs text-muted-foreground">Forfeit</span> : null}
       <span className="ml-auto flex shrink-0 items-center gap-1">
         {throne ? (
           <TapTooltip content={throne}>

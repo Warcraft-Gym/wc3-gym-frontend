@@ -18,9 +18,9 @@ sources:
   - id: veto-board
     resource: ../../../next/src/components/VetoBoard.tsx
     title: The veto board
-  - id: upcoming
-    resource: ../../../next/src/app/(app)/upcoming/UpcomingView.tsx
-    title: The upcoming series
+  - id: schedule
+    resource: ../../../next/src/components/SeriesSchedule.tsx
+    title: The series schedule
   - id: report
     resource: ../../../next/src/components/ReportResultDialog.tsx
     title: The Report Result dialog
@@ -54,7 +54,6 @@ sources:
 | `/match/:id` | member | `MatchDetailsView` |
 | `/series/:id` | public | `SeriesView` |
 | `/player-series/:id/veto` | member | `VetoBoardView` |
-| `/upcoming` | member | `UpcomingView` |
 
 # What it does
 
@@ -70,7 +69,7 @@ Replacing a player in a published series opens the same panel with the pick fixe
 
 **The veto (`/player-series/:id/veto`).** The veto board on its own page: the pool, the pick and ban order, the step on turn, and the map each game gets from the steps taken. The board reads which side the viewer acts for from the answer and polls the other side's steps every five seconds. A step writes the map picked or banned; the last step can be undone.
 
-**Upcoming (`/upcoming`).** Every scheduled series of the current season, grouped by day in the viewer's zone: the time, the round and the fixture, the two players with the rating the row names on the race each plays, the score, and the casts, with how many series of the day are cast.
+**The series schedule.** The "Upcoming series" section at the top of the Season page (`/report#upcoming`) while the current season is selected; it reuses the season's series read, so it adds no request. Every scheduled series of the season from a few days back, grouped by day in the viewer's zone: the time, the round and the fixture, the two players with the rating the row names on the race each plays, the score, and the casts, with how many series of the day are cast.
 
 **The Report Result dialog.** Opened from the series page and from the owner's own player page. It keeps one width in every state. The veto sits at the top under a disclosure row, a button with `aria-expanded` that says where the veto stands ("Map veto complete", "Map veto: 2 of 6 steps done", "No veto recorded") and opens the board in report mode in place; the row is closed when the dialog opens, and a series whose rules play no veto, which answers an empty order, carries neither the row nor the warning. A veto that is not complete reads as a heading in `warning` with its icon, "The map veto is not complete", over the line "Enter it below, or report the result without it.", and the save button reads "Report without a veto": the veto warns and never blocks. The board stays loaded while the row is folded, because it names the map each game offers. A solo series offers "Played a different race" for the off-race of either side. Then one card per game: the winner, the map played (the map the rules and the veto offer, or the one a picked replay names), and the replay file. A first report needs a replay for every game played; a fix keeps the stored replays unless a new file is picked. Each game group is titled "Game 1 · <map>", on the map the veto gives that game, else the map named for the game. The dialog reads the replay in the browser and warns when it names other players, or when its map is not the one the veto gives that game, or not the map named for that game: the warning names the map the file was played on and the map the veto gives that game, then what to do with it, "Move it to game 2, or set game 1 to <map>"; when the map field already holds the map the file was played on, that way out reads "or keep game 1 on <map>", because the field asks for no step, and a replay the veto gives no game at all drops the move clause. Every game whose replay the dialog holds, and every game whose replay is stored, carries a "Move to game" menu over the games the series played; a file the reporter picked is not uploaded yet, so the two games swap it inside the form, with the map field the file itself wrote, and a stored replay moves through the move route, which swaps when the target holds one and answers every replay of the series, so a surface that lists them takes that answer and reads nothing again. Saving asks once when a replay was played on a map other than the one its game plays, and once when the series plays a veto and records no step: a small confirm names the reason and offers "Report anyway" and "Go back". One game reads "The replay of game 2 was played on another map than the veto gives it." and more than one reads "The replays of games 1, 2 and 3 were played on other maps than the veto gives them.", the games listed with commas and "and". The confirm is a centred panel at every width, its height its content, so the form behind it stays in view. Each replay goes from the browser to a signed upload link the backend answers per game, then the score writes with one entry per game; when only files changed, each new file replaces one stored replay.
 

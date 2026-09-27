@@ -5,7 +5,7 @@ import { SeriesBox } from "@/components/SeriesBox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHideResults } from "@/components/hide-results";
 import { SM_AND_DOWN, useBreakpoint } from "@/hooks/breakpoint";
-import { blocks, buchholz, chainOrder, columns, inDivision, layout, ranking, standingsGroups } from "@/helpers/stage-view.mjs";
+import { blocks, buchholz, columns, inDivision, layout, ranking, standingsGroups } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -35,8 +35,8 @@ const signed = (value: number) => (value > 0 ? `+${value}` : String(value ?? 0))
 const phoneCell = "hidden min-[960px]:table-cell";
 
 /** One stage, drawn once per division. An elimination stage is bracket columns joined by their
- *  feeder lines, a round robin and a Swiss stage are their standings and their rounds, a KOTH
- *  night is the chain from the king down. A stage split into groups reads one table a group.
+ *  feeder lines, a round robin and a Swiss stage are their standings and their rounds. A stage
+ *  split into groups reads one table a group.
  *  A phone stacks the columns into one list per round. */
 export function StageView({
   stage,
@@ -60,7 +60,6 @@ export function StageView({
   const stacked = useBreakpoint(SM_AND_DOWN);
 
   const isBracket = ["single_elimination", "double_elimination"].includes(stage.format);
-  const isChain = stage.format === "koth";
   // A free for all plays lobbies: a bracket of them round by round, or one league lobby
   const isLobbyStage = stage.format === "ffa";
   // A table reads a Buchholz column only where the stage's ranking rule breaks ties on it
@@ -78,7 +77,7 @@ export function StageView({
   const groups = bands
     .map((band) => {
       const rows = inDivision(series, band.id);
-      const cols = isChain ? [{ key: "chain", name: "The chain", series: chainOrder(rows) }] : columns(rows, rounds);
+      const cols = columns(rows, rounds);
       return {
         key: band.id ?? "all",
         name: band.name || `Division ${band.position}`,
@@ -180,7 +179,7 @@ export function StageView({
               ))}
             </div>
           ) : (
-            /* a phone, a round robin and a KOTH chain all read as one list per round */
+            /* a phone and a round robin both read as one list per round */
             group.columns.map((column: Row) => (
               <Card key={column.key} className="card mb-3 max-w-[560px]">
                 <CardHeader>
@@ -193,7 +192,6 @@ export function StageView({
                       series={row}
                       flat
                       rosters={rosters}
-                      crown={isChain}
                       round={column.name}
                       label={boxLabel(group, column, row)}
                       fed={isLobbyStage && column.index > 0}

@@ -58,7 +58,7 @@ export function SignupDialog({
   const taken: string[] = event.multi_entry ? held : [];
   const another = taken.length > 0;
 
-  const usual = defaultSignupRace(auth.me?.user, () => 0);
+  const usual = defaultSignupRace(auth.me?.user);
   const [race, setRace] = useState<string | null>(taken.includes(usual) ? null : usual);
   const [battleTag, setBattleTag] = useState("");
   const [note, setNote] = useState("");

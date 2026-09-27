@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T10:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T18:00:00Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -31,7 +31,7 @@ sources:
 |---|---|
 | public | `/login`, `/sso-callback`, `/admin-login`, `/series/:id`, `/leagues`, `/leagues/:id`, `/events`, `/events/:id`, `/report`, `/report/:id`, `/koth/dashboard`, `/random-stats`, `/credits`, `/no-access` |
 | guest | `/profile` only; it shows the join-the-Discord card |
-| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/upcoming`, `/seasons/:id`, `/match/:id`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/fantasy`, `/fantasy-registration`, `/ladder` |
+| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/seasons/:id`, `/match/:id`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/fantasy`, `/fantasy-registration`, `/ladder` |
 | captain | `/seasons/:id/assign`, `/team/:id/season/:season_id/rounds` (reads; the view gates writes to admins) |
 | admin | `/admin`, `/seasons`, `/seasons/:id/maps`, `/seasons/:id/achievements`, `/maps`, `/config`, `/config/discord-roles`, `/config/access`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/events/new`, `/events/:id/admin`, `/user-guide` |
 
@@ -49,7 +49,7 @@ A season in a path is its slug, `gnl-s18`, made from its name; a bare id still r
 
 The bar opens with the app title, "WC3 Gym Dashboard", which links to `/` from every page and is the way home. The same words are the default title of the browser tab, and a page title reads `<page> · WC3 Gym Dashboard`.
 
-`AppShell.tsx` draws the account from `/me`: the name and avatar, the role, and the theme menu (light, dark, system, stored in `localStorage`). The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
+`AppShell.tsx` draws the account from `/me`: the name and avatar, the role, and the theme menu (light, dark, system, stored in `localStorage`). `?mode=clean` on `/events/:id` or `/koth/dashboard` cuts the bar down to the app title and drops the tabs and the footer, for a KOTH night on a stream. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
 
 # The nav
 
@@ -64,7 +64,7 @@ A player therefore sees Home and My Stats alone. The shared pages (standings, up
 
 # The admin frame
 
-`/admin` lists every admin task, one card per section of `next/src/helpers/admin-nav.mjs`: GNL (Seasons, Teams, Maps, Players, Fantasy Tiers, Fantasy Bets), App Settings (Settings, Discord, Access, User Guide) and Other Events (KOTH Nights, Events, New Event). For an admin, `/admin`, every page the sections list and every admin-only route are drawn in the admin frame: the sections as a sidebar from 960 px, and a link back to `/admin` on a phone, where `/admin` itself is the menu.
+`/admin` lists every admin task, one card per section of `next/src/helpers/admin-nav.mjs`: GNL (Seasons, Teams, Maps, Players, Fantasy Tiers, Fantasy Bets), App Settings (Settings, Discord, Access, User Guide) and Other Events (KOTH Nights, Leagues, Events, New Event). The KOTH board, the leagues and the events are public pages, reached by link; the nav names none of them. For an admin, `/admin`, every page the sections list and every admin-only route are drawn in the admin frame: the sections as a sidebar from 960 px, and a link back to `/admin` on a phone, where `/admin` itself is the menu.
 
 # The app icon
 

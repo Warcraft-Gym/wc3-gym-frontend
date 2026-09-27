@@ -13,6 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toneClass } from "@/components/ui/tone";
 import { ColumnNote } from "@/components/ColumnNote";
 import { EventHeader } from "@/components/EventHeader";
+import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
+import { KothNightBoard } from "@/components/koth/KothNightBoard";
+import { StreamLinks } from "@/components/koth/StreamLinks";
 import { HIDE_RESULTS, useHideResultsSwitch } from "@/components/hide-results";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
@@ -44,15 +47,18 @@ const act_ = actOnEvent as unknown as (action: string, options: Record<string, u
 /** One event, open to everyone: what it is, how it plays, who is in it, and the one thing the
  *  reader can do about it. An event with no stage is a sign-up list, so it reads its entrants
  *  against the cap in place of the stage table. A GNL season keeps its own pages, so this one
- *  links to them rather than redrawing them. The spoiler switch is the reader's own, kept in
- *  this browser. */
+ *  links to them rather than redrawing them. A KOTH night draws its board, live or archived, in
+ *  place of the entrants and the stages, and `?mode=clean` draws it for a stream. The spoiler switch is the reader's own, kept in this
+ *  browser. */
 export function EventView({ id }: { id: string }) {
   const router = useRouter();
   const search = useSearchParams();
+  const clean = search.get("mode") === "clean";
   const auth = useAuth();
   const store = useEventStore();
   const teamStore = useTeamStore();
 
+  const [board, setBoard] = useState<Row | null>(null); // a KOTH night's board, in place of its entrants and stages
   const [event, setEvent] = useState<Row | null>(null);
   const [leagues, setLeagues] = useState<Row[]>([]);
   const [entrants, setEntrants] = useState<Row[]>([]);
@@ -162,6 +168,11 @@ export function EventView({ id }: { id: string }) {
         const [loaded, leagueRows] = await Promise.all([store.fetchEvent(Number(id)), store.fetchLeagues()]);
         setEvent(loaded);
         setLeagues(leagueRows);
+        setBoard(null);
+        if (loaded.kind === "koth") {
+          setBoard(await store.fetchBoard(loaded.id));
+          return;
+        }
         await reload(loaded);
         const drawings = await Promise.all(
           [...(loaded.stages || [])].map(async (stage: Row) => {
@@ -180,6 +191,38 @@ export function EventView({ id }: { id: string }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  if (board && event) {
+    const runLink = auth.isAdmin ? (
+      <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/koth/nights/${event.id}`} />}>
+        <Icon name="mdi-play-circle-outline" />
+        Run the night
+      </Button>
+    ) : null;
+    // an admin puts the night on a stream without typing the clean link
+    const adminLinks = runLink ? (
+      <>
+        {runLink}
+        <StreamLinks eventId={event.id} />
+      </>
+    ) : null;
+    return (
+      <>
+        <StatusAlert modelValue={error} onClose={() => setError(null)} />
+        <EventHeader event={event} league={league} />
+        {board.historical ? (
+          <>
+            {runLink ? <div className="mt-4 flex flex-wrap gap-2">{runLink}</div> : null}
+            <HistoricalBoard board={board} />
+          </>
+        ) : (
+          <KothNightBoard event={event} board={board} clean={clean} onError={setError}>
+            {adminLinks}
+          </KothNightBoard>
+        )}
+      </>
+    );
+  }
 
   return (
     <HIDE_RESULTS.Provider value={hideResults}>

@@ -19,9 +19,9 @@ import { PanelLinksContext } from "@/hooks/player-panel";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
 import { checkInStatus } from "@/helpers/check-in.mjs";
-import { resolveCurrentW3CSeason } from "@/helpers/current-season";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
 import { placeTakers } from "@/helpers/draft-suggest.mjs";
+import { isOver } from "@/helpers/season-phase.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { pickedInstant, pickerParts, storedUtc, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { useAuth, useAvailabilityStore, useEventStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
@@ -106,7 +106,6 @@ export function MatchDetailsView({ id }: { id: string }) {
   const [isLoading, setIsLoading] = useState(false);
   // Every write that has no dialog of its own reports its failure here
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [currentW3CSeason, setCurrentW3CSeason] = useState<number | undefined>(undefined);
 
   const [createNewSeriesDialogOpen, setCreateNewSeriesDialogOpen] = useState(false);
   const [newSeriesPlayers, setNewSeriesPlayers] = useState<number[][]>([[], []]);
@@ -247,9 +246,9 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  const fetchSeriesRows = async () => {
+  const fetchSeriesRows = async (seasonId: number, fresh = false) => {
     const [rows, drafts] = await Promise.all([
-      seriesStore.getSeriesByMatchId(matchId),
+      seriesStore.getSeriesByMatchId(seasonId, matchId, fresh),
       // drafts are captain-only on the backend, and a refused draft list must not blank the series table
       auth.isCaptain ? seriesStore.getDraftSeriesByMatchId(matchId).catch(() => []) : Promise.resolve([]),
       // a failed replay list must not blank the series table
@@ -360,7 +359,7 @@ export function MatchDetailsView({ id }: { id: string }) {
       const [teams, , rowsAndDrafts, , availability] = await Promise.all([
         row.team1_id && row.team2_id ? fetchTeamDetails(row) : Promise.resolve([{}, {}] as Row[]),
         fetchSeason(row.season_id).catch(() => null),
-        fetchSeriesRows(),
+        fetchSeriesRows(row.season_id),
         fetchSeasonMatches(row),
         fetchAvailability(row),
         fetchLadderPlayers(row),
@@ -383,7 +382,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const { rows, drafts } = await fetchSeriesRows();
+      const { rows, drafts } = await fetchSeriesRows(match.season_id, true);
       await Promise.all([loadMissingSeriesPlayers(rows, drafts, seriesPlayerById), fetchDraftBoard(match, true)]);
     } catch (error) {
       console.error("Failed to fetch match series:", error);
@@ -396,9 +395,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
       setReplacing(null); // another fixture holds none of the series this replacement names
-      // The w3champions season does not depend on the match, so both reads start together
-      const [w3cSeason, loaded] = await Promise.all([resolveCurrentW3CSeason(), fetchMatchDetails()]);
-      setCurrentW3CSeason(w3cSeason ?? undefined);
+      const loaded = await fetchMatchDetails();
       if (loaded) await loadFixtureSeries(loaded.row, loaded.teams);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -730,7 +727,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     let existing = 0;
 
     for (const p1 of t1Players) {
-      const p1Mmr = mmrOf(p1, p1.signup_race, currentW3CSeason) || 0;
+      const p1Mmr = mmrOf(p1, p1.signup_race) || 0;
       for (const p2 of t2Players) {
         // A published or draft series for this pair already exists
         if ([...series, ...draftSeries].some((s) => p1.id === s.player1_id && p2.id === s.player2_id)) {
@@ -742,7 +739,7 @@ export function MatchDetailsView({ id }: { id: string }) {
           rows.push(keptSeries);
           continue;
         }
-        const p2Mmr = mmrOf(p2, p2.signup_race, currentW3CSeason) || 0;
+        const p2Mmr = mmrOf(p2, p2.signup_race) || 0;
         if (Math.abs(p1Mmr - p2Mmr) <= maxDiff) {
           rows.push({
             key: proposedKey(p1, p2),
@@ -946,8 +943,6 @@ export function MatchDetailsView({ id }: { id: string }) {
                 <DraftSeries
                   draftSeries={enrichedDraftSeries}
                   smAndDown={smAndDown}
-                  w3cSeason={currentW3CSeason}
-                  seasonId={match.season_id}
                   ladderById={ladderById}
                   isAdmin={auth.isAdmin}
                   canDraft={canDraft}
@@ -962,6 +957,7 @@ export function MatchDetailsView({ id }: { id: string }) {
                   onAddDraftSeries={openCreateNewDraftSeries}
                   onPublishAll={openPublishAll}
                   onDeleteAll={() => openDeleteDialog(null, removeAllDraftSeries)}
+                  over={isOver(season)}
                 />
               </TabsContent>
             ) : null}
@@ -990,7 +986,7 @@ export function MatchDetailsView({ id }: { id: string }) {
             onMmrDiffChange={setProposeSeriesMMRDiff}
             canPropose={isProposeValid}
             onPropose={openProposeSeries}
-            w3cSeason={currentW3CSeason}
+            over={isOver(season)}
           />
         ) : null}
       </div>
@@ -1004,7 +1000,6 @@ export function MatchDetailsView({ id }: { id: string }) {
         onSearchChange={(side, value) => setSearchQueryTeam((was) => was.map((one, i) => (i === side ? value : one)))}
         isDraft={newSeriesIsDraft}
         onIsDraftChange={setNewSeriesIsDraft}
-        w3cSeason={currentW3CSeason}
         isAdmin={auth.isAdmin}
         isLoading={isLoading}
         error={creationSeriesError}
@@ -1043,8 +1038,6 @@ export function MatchDetailsView({ id }: { id: string }) {
           pairs={proposePairs}
           existing={proposeExisting}
           ladderById={ladderById}
-          seasonId={match.season_id}
-          w3cSeason={currentW3CSeason}
           hasSeries={hasSeries}
           errorMessage={errorMessage}
           onErrorClose={() => setErrorMessage(null)}

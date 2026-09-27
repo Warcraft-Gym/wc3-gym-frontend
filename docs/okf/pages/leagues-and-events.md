@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T14:02:48Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T14:55:00Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -45,7 +45,7 @@ A league is what repeats. An event is one run of it: a GNL season, a KOTH night,
 
 Outside its own page an event is named by its league and its name, "GNL · Season 18". A wide screen reads the long league name, "Gym Newbie League · Season 18"; a phone keeps the short one. An event whose name already opens with the short name, "GNL S18", is named alone.
 
-**Leagues (`/leagues`).** One row per league: name, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
+**Leagues (`/leagues`).** One row per league: name, linked to the home page of its menu for GNL (`/report`) and KOTH (`/koth/dashboard`, which lands on tonight's night page) and to `/leagues/:id` for any other kind, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
 
 **One league (`/leagues/:id`).** The league's events, newest first, with kind, dates and state. A member reads the published events; an admin also reads the drafts. An admin sees "New event", which opens the wizard with this league preset.
 
@@ -57,7 +57,7 @@ The signup dialog asks for the race, a note on a signup-only event, and a battle
 
 The dialog ends on a state with a "Done" button. On a KOTH night the end state names where the entrant stands: an entrant the night placed reads its bracket and its place in line, counted from one read of the public board, the bracket alone when that read answers nothing, and the line every other event reads, "You are in. See you on the ladder.", when neither the board nor the event row names a bracket. An entrant W3Champions rated no race for reads that an admin places it in a bracket, with the no-stats mark on the race. Both states draw the player line the app draws everywhere: the flag, the name, the race and the one rating.
 
-**Entrants (`/events/:id/entrants`).** A grouped table, one group per division: the entrant, the MMR the seed was cut from, the battle tag, the Discord tag, whether W3Champions knows the player, the eligibility warnings (under the game count, over the MMR cap, banned), the seed with its source once locked, and the status (signed up, checked in, withdrawn, and a pin when placed by hand). A team entrant reads as the team name over the roster it fields for this event, captains starred; its MMR is the mean of the roster's ratings. A phone reads one card per entrant. A member reads all of this and none of the controls.
+**Entrants (`/events/:id/entrants`).** A grouped table, one group per division: the entrant, the MMR the seed was cut from, the battle tag, whether W3Champions knows the player, the eligibility warnings (under the game count, over the MMR cap, banned), the seed with its source once locked, and the status (signed up, checked in, withdrawn, and a pin when placed by hand). A team entrant reads as the team name over the roster it fields for this event, captains starred; its MMR is the mean of the roster's ratings. A phone reads one card per entrant. A member reads all of this and none of the controls.
 
 # Writes
 
@@ -76,3 +76,7 @@ The dialog ends on a state with a "Done" button. On a KOTH night the end state n
 - The race shown is the signup race, never the profile race: [a race icon needs a race for the row](../pitfalls/race-icon-context.md).
 - The entrants list is a grouped table: [one grouped table component](../decisions/grouped-table.md).
 - The vocabulary of leagues, events, stages, rounds, fixtures, series, games and divisions: the events section of `DESIGN.md`.
+
+# KOTH nights
+
+The public event page of a KOTH night reads the event row and the night's board, `GET /koth/nights/{id}/board`: it skips the entrant, stage and standings reads and draws the event header over the board. An archived night, one whose board answers `historical` true, draws the same historical component as the night's run page: every source bracket, its reported crown, ordered BO1s and event video links. Unknown results remain visible, and unconfirmed source names do not link to accounts. The backend owns the evidence and nullable identity contract. Any other night draws `KothNightBoard`: the bracket cards, and for a member the sign up and withdraw buttons, his place in line and the "Waiting for a bracket" strip; an admin also reads one "Run the night" link to the night's run page. See [KOTH](koth.md). The board route has a fifteen-second edge cache; the page reads it once on load, and `?mode=clean` reads it again every thirty seconds while the tab is visible and the night is not closed.

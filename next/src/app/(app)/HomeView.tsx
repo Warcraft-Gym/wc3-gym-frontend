@@ -11,6 +11,7 @@ import { FantasyPanel } from "@/components/home/FantasyPanel";
 import { MySeason } from "@/components/home/MySeason";
 import { NextMatches } from "@/components/home/SeriesPanels";
 import { OpenSignups } from "@/components/home/OpenSignups";
+import { UpcomingEvents } from "@/components/home/UpcomingEvents";
 import { StatsPanel } from "@/components/home/StatsPanel";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { actOnEvent, homeCards } from "@/helpers/events.mjs";
@@ -80,21 +81,21 @@ export function HomeView() {
   const currentEntry: Row | null = ((me?.seasons ?? []) as Row[]).find((season) => Number(season.id) === Number(currentId)) ?? null;
   const fantasySeasonId: number | null = currentId;
 
-  // The signup rows reuse the home card, so the dialog, the GNL link and the withdraw stay
-  const cards = buildCards({ events: myEvents, me, seasons });
-  const signupRows = openSignups(myEvents)
-    .map((row: Row) => {
-      const card = cards.find((entry) => entry.id === row.id);
-      return card
-        ? {
-            ...card,
-            dates: dateRange({ start_date: row.start, end_date: row.end }),
-            chip: row.checked_in_at ? "Checked in" : row.joined ? (row.entrant_races?.length ? "Signed up as" : "Signed up") : null,
-            races: row.checked_in_at ? [] : (row.entrant_races ?? []),
-          }
-        : null;
-    })
-    .filter(Boolean) as Row[];
+  // One row per home card, so the dialog, the GNL link and the withdraw stay
+  const cards = buildCards({ events: myEvents, me, seasons }).map((card): Row => {
+    const row: Row = myEvents.find((entry) => entry.id === card.id) ?? {};
+    return {
+      ...card,
+      dates: dateRange({ start_date: row.start, end_date: row.end }),
+      chip: row.checked_in_at ? "Checked in" : row.joined ? (row.entrant_races?.length ? "Signed up as" : "Signed up") : null,
+      races: row.checked_in_at ? [] : (row.entrant_races ?? []),
+    };
+  });
+  // the events he may still enter, leave or check in to, by start; every other upcoming event is
+  // listed below them without a button
+  const signupIds = openSignups(myEvents).map((row: Row) => row.id);
+  const signupRows = signupIds.map((id: number) => cards.find((card) => card.id === id)).filter(Boolean) as Row[];
+  const upcomingRows = cards.filter((card) => !signupIds.includes(card.id));
 
   // The fixtures a captain has still to draft: the current season's sits on its round in My Season,
   // which only a member with a player row sees; every other one stays in Upcoming Series
@@ -138,7 +139,7 @@ export function HomeView() {
       const state = fantasyState({ open: creationOpen(setting), team: teams?.[0] ?? null });
       if (state !== "bets") return setFantasy({ state, rows: [], loading: false });
       const [series, bets] = await Promise.all([
-        seriesStore.eventSeries(fantasySeasonId).catch(() => []),
+        seriesStore.searchSeriesBySeason(fantasySeasonId, true).catch(() => []),
         fantasyStore.searchBets(`season_id == ${fantasySeasonId} AND user_id == ${playerId}`).catch(() => []),
       ]);
       setFantasy({ state, rows: openBets(series ?? [], bets ?? []), loading: false });
@@ -256,6 +257,7 @@ export function HomeView() {
             />
           ) : null}
           <NextMatches rows={hub?.next ?? []} fixtures={drafts.others} loading={loading} failed={!hub} order={PANEL_ORDER.next} />
+          {!loading && upcomingRows.length ? <UpcomingEvents cards={upcomingRows} order={PANEL_ORDER.upcoming} /> : null}
         </div>
         <div className="contents min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-col min-[960px]:gap-5">
           {playerId ? (

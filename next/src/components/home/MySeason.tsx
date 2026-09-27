@@ -9,7 +9,7 @@ import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { TeamName } from "@/components/TeamName";
 import { HomePanel, Quiet, ROW, SkeletonRows } from "@/components/home/HomePanel";
 import { seasonAction } from "@/helpers/events.mjs";
-import { homeRounds, ownScore, seasonState } from "@/helpers/home-hub.mjs";
+import { captainRow, homeRounds, ownScore, seasonState } from "@/helpers/home-hub.mjs";
 import { cardStatus, checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { local } from "@/helpers/schedule.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
@@ -81,8 +81,24 @@ function Availability({ card, saving, onAnswer }: { card: Row; saving: boolean; 
   );
 }
 
-/** The current season on Home, round by round: when each round runs, the member's answer for it,
- *  and once he is paired, his opponent and the next step of the series, or its result. */
+/** The captain's draft of one fixture: how much of it is drafted and the page that drafts it. */
+function DraftPairings({ fixture }: { fixture: Row }) {
+  const row = captainRow(fixture);
+  if (!row) return null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 font-normal">
+      <span className="text-sm text-muted-foreground">{row.drafted}</span>
+      <Button size="sm" className="ml-auto" nativeButton={false} render={<Link href={row.to} />}>
+        <Icon name="mdi-account-multiple" />
+        Draft pairings
+      </Button>
+    </div>
+  );
+}
+
+/** The current season on Home, every round of it: when each round runs, and either his series in it
+ *  (the opponent and the next step, or the result) or, with none, his answer for it while it takes
+ *  one. A captain drafts his team's next fixture on its round. */
 export function MySeason({
   season,
   entry,
@@ -91,6 +107,7 @@ export function MySeason({
   viewer,
   loading,
   savingRound,
+  fixture,
   order,
   onAnswer,
   onSchedule,
@@ -103,6 +120,7 @@ export function MySeason({
   viewer: Viewer;
   loading: boolean;
   savingRound: number | null;
+  fixture: Row | null; // the captain_fixture of the current season: the fixture his team still has to draft
   order: number;
   onAnswer: (playday: number, want: boolean) => void;
   onSchedule: (series: Row) => void;
@@ -122,6 +140,9 @@ export function MySeason({
       } as any)
     : [];
   const { ahead, played } = homeRounds(cards);
+  // The side of the fixture his seat names; the fixture names both teams
+  const seat = viewer.seats?.find((row) => Number(row.season_id) === Number(season?.id));
+  const captainTeam: Row | null = fixture && seat ? ([fixture.team1, fixture.team2].find((team: Row) => team?.id === seat.team_id) ?? null) : null;
   const standings = season ? <Link href={`/report/${seasonSlug(season)}`} className="text-on-primary underline">Standings</Link> : null;
 
   const roundRow = (card: Row) => {
@@ -138,8 +159,9 @@ export function MySeason({
         </div>
         {when ? <div className="text-sm font-normal text-muted-foreground">{when}</div> : null}
 
-        {/* the answer: two buttons while the round takes one, else the state it holds */}
-        {asks && !card.over && state !== "not_in" ? (
+        {/* the answer: two buttons while the round takes one, else the state it holds; a round that
+            holds his series shows the series instead */}
+        {asks && !card.over && state !== "not_in" && !series ? (
           card.blocked && !card.pending ? (
             <Link href="/availability" className="mt-2 inline-flex text-sm" title="Your blocked times cover this round">
               <Badge className={toneClass(status.color)}>{status.icon ? <Icon name={status.icon} size={12} /> : null}{status.title}</Badge>
@@ -171,9 +193,10 @@ export function MySeason({
               <SeriesActionBar className="mt-2" series={series} viewer={viewer} variant="compact" onSchedule={() => onSchedule(series)} onReport={() => onReport(series)} />
             )}
           </div>
-        ) : state === "playing" ? (
-          <div className="mt-1 text-sm font-normal text-muted-foreground">{card.over ? "Not paired" : "Not paired yet"}</div>
         ) : null}
+        {/* a round with no series of his stays as its bare line, so he sees he had no game there */}
+
+        {fixture && fixture.playday === card.playday ? <DraftPairings fixture={fixture} /> : null}
       </div>
     );
   };
@@ -194,13 +217,24 @@ export function MySeason({
                 ? `You are not signed up for ${season.name}.`
                 : `You were not signed up for ${season.name}, and it is over. The next season shows here as soon as it opens.`}
           </p>
+          {/* a captain who plays on no roster still drafts his team's fixture here */}
+          {fixture ? (
+            <div className={cn(ROW, "mt-3")}>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span>You captain</span>
+                <TeamName team={captainTeam ?? fixture.team1} seasonKey={season.id} />
+                <span className="text-sm text-muted-foreground">· {captainRow(fixture)?.when}</span>
+              </div>
+              <DraftPairings fixture={fixture} />
+            </div>
+          ) : null}
         </>
       ) : (
         <>
           {state === "waiting" ? <p className="text-sm">You are signed up. The draft places you in a team before round 1.</p> : null}
           {ahead.length ? <span className={LABEL}>Rounds to play</span> : null}
           {ahead.map(roundRow)}
-          {played.length ? <span className={LABEL}>Played</span> : null}
+          {played.length ? <span className={LABEL}>Past rounds</span> : null}
           {played.map(roundRow)}
           {!cards.length && state === "playing" ? <p className="text-sm">The rounds of {season.name} are not set yet.</p> : null}
           {asks ? (

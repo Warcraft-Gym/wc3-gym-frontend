@@ -48,7 +48,8 @@ const CastChip = ({ cast }: { cast: Row }) => (
   </Badge>
 );
 
-/** The next series of the whole app, and, for a captain, the fixture he still has to draft. */
+/** The next series of the whole app, and, for a captain, the fixtures of other events he still has
+ *  to draft; the current season's draft sits on its round in My Season. */
 export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: Row[]; fixtures: Row[]; loading: boolean; failed?: boolean; order: number }) {
   return (
     <HomePanel

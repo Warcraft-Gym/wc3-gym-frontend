@@ -69,6 +69,17 @@ export const ownScore = (series, playerId = null) => {
   return { text, won: my > theirs, lost: my < theirs, label: `${word} ${text}` };
 };
 
+/** The fixtures a captain still has to draft, split by where Home offers them: the current season's
+ *  on its round in My Season, every other event's in Upcoming Series. Each other one names its event.
+ *  @param {any[]} [events] the GET /me/events rows @param {number|null} [seasonId] the current season */
+export const seasonFixtures = (events = [], seasonId = null) => {
+  const own = events.find((row) => row.captain_fixture && seasonId != null && Number(row.id) === Number(seasonId));
+  return {
+    own: own?.captain_fixture ?? null,
+    others: events.filter((row) => row.captain_fixture && row !== own).map((row) => ({ ...row.captain_fixture, event: row.name })),
+  };
+};
+
 /** The fixture row a captain still has to draft: when its round runs, how much of it is drafted,
  *  and the page that drafts it. Null for an event that hands in no fixture.
  *  @param {any} fixture the captain_fixture of a GET /me/events row @param {*} [today] */

@@ -15,7 +15,7 @@ import { StatsPanel } from "@/components/home/StatsPanel";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { actOnEvent, homeCards } from "@/helpers/events.mjs";
 import { creationOpen, fantasyState, openBets } from "@/helpers/fantasy-panel.mjs";
-import { PANEL_ORDER, openSignups } from "@/helpers/home-hub.mjs";
+import { PANEL_ORDER, openSignups, seasonFixtures } from "@/helpers/home-hub.mjs";
 import { nextAnswer } from "@/helpers/rounds.mjs";
 import { achievementSummary, gnlSeasons, seasonScore, seasonsPlayed } from "@/helpers/player-summary.mjs";
 import { myProfilePath } from "@/helpers/players.mjs";
@@ -96,8 +96,9 @@ export function HomeView() {
     })
     .filter(Boolean) as Row[];
 
-  // Every event whose row hands a captain a fixture he has still to draft; the row names its event
-  const fixtures: Row[] = myEvents.filter((row) => row.captain_fixture).map((row) => ({ ...row.captain_fixture, event: row.name }));
+  // The fixtures a captain has still to draft: the current season's sits on its round in My Season,
+  // which only a member with a player row sees; every other one stays in Upcoming Series
+  const drafts = seasonFixtures(myEvents, playerId ? currentId : null);
 
   const loadGames = async (seasonId: number | null) => {
     if (!seasonId || !playerId) return setGames(null);
@@ -247,13 +248,14 @@ export function HomeView() {
               viewer={viewer}
               loading={loading}
               savingRound={savingRound}
+              fixture={drafts.own}
               order={PANEL_ORDER.games}
               onAnswer={answerRound}
               onSchedule={(series) => scheduleDialog.current?.open(series)}
               onReport={(series) => reportDialog.current?.open(series)}
             />
           ) : null}
-          <NextMatches rows={hub?.next ?? []} fixtures={fixtures} loading={loading} failed={!hub} order={PANEL_ORDER.next} />
+          <NextMatches rows={hub?.next ?? []} fixtures={drafts.others} loading={loading} failed={!hub} order={PANEL_ORDER.next} />
         </div>
         <div className="contents min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-col min-[960px]:gap-5">
           {playerId ? (

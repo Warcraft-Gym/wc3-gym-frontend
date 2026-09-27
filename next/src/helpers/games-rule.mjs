@@ -91,7 +91,8 @@ export function gamesWarning(player, race = null, threshold = 20) {
 
   if (hasLowGamesTwoSeasons(player, race, threshold)) {
     const games = getW3CGamesCount(player, race);
-    return { colour: 'warning', text: `Less than ${threshold} games (${games} games) for ${race}` };
+    // the count is W3Champions ladder games, not GNL series, so the mark says so
+    return { colour: 'warning', text: `Under ${threshold} W3Champions ladder games on ${race} in the last two W3C seasons (${games} games)` };
   }
 
   return null;

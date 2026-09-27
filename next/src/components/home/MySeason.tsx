@@ -207,15 +207,16 @@ export function MySeason({
         <SkeletonRows rows={3} />
       ) : !season ? (
         <p className="text-sm">No season is running. The next one shows here as soon as it opens.</p>
+      ) : season.phase === "complete" ? (
+        // /me lists no complete season, so a finished one says only that it is over
+        <p className="text-sm">{season.name} is over. The next season shows here as soon as it opens.</p>
       ) : state === "not_in" ? (
         <>
           {/* the sign-up button lives in the Open signups panel; this line only says where the member stands */}
           <p className="text-sm">
             {seasonAction(season) === "signup"
               ? `You are not signed up for ${season.name} yet. Sign up in the Open signups panel.`
-              : seasonAction(season) === "request"
-                ? `You are not signed up for ${season.name}.`
-                : `You were not signed up for ${season.name}, and it is over. The next season shows here as soon as it opens.`}
+              : `You are not signed up for ${season.name}.`}
           </p>
           {/* a captain who plays on no roster still drafts his team's fixture here */}
           {fixture ? (

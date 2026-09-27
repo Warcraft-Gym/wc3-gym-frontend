@@ -223,7 +223,7 @@ export function SeasonMapsView({ id }: { id: string }) {
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 

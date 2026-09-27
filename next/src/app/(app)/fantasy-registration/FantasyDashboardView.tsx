@@ -370,7 +370,7 @@ export function FantasyDashboardView() {
 
   // For the betting view the score chip only carries the result, not the captain's score
   const scoreTone = (series: any) =>
-    series.player1_score > series.player2_score ? "text-win border-win" : series.player2_score > series.player1_score ? "text-loss border-loss" : "text-draw border-draw";
+    series.player1_score > series.player2_score ? "text-win border-win" : series.player2_score > series.player1_score ? "text-loss border-loss" : "text-foreground border-draw";
 
   const teamItems = teams.map((team) => ({ value: String(team.id), title: teamTitle(team), team }));
   const teamRow = (item: { title: string; team: any }) => (

@@ -191,7 +191,7 @@ export function DataTable<T extends RowData>({
                       aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
                       onClick={header.column.getToggleSortingHandler()}
                       // The column the table is sorted by reads in the primary colour.
-                      className={cn(header.column.getCanSort() && "cursor-pointer select-none", sorted && "text-primary")}
+                      className={cn(header.column.getCanSort() && "cursor-pointer select-none", sorted && "text-primary-text")}
                     >
                       {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                       {/* An unsorted sortable column shows a faint sort icon. The arrow is the keyboard

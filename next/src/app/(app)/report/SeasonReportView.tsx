@@ -360,7 +360,7 @@ export function SeasonReportView({ seasonKey }: { seasonKey?: string }) {
       aria-expanded={!collapsed.has(key)}
       onClick={() => toggle(key)}
     >
-      <Icon name={icon} className="mr-2 text-primary" />
+      <Icon name={icon} className="mr-2 text-primary-text" />
       {text}
       <Icon name={collapsed.has(key) ? "mdi-chevron-down" : "mdi-chevron-up"} className="no-print ml-2" />
     </button>

@@ -49,7 +49,7 @@ const OUTLINE: Record<string, string> = {
   success: "text-success border-success",
   info: "text-info border-info",
   warning: "text-warning border-warning",
-  draw: "text-draw border-draw",
+  draw: "text-foreground border-draw",
 };
 
 // the panels' own width, not the window's: the side panel is narrow on a wide screen

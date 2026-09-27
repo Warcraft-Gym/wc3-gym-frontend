@@ -138,7 +138,7 @@ export function PlayersView() {
   const count = filtered.length === base.length ? `${base.length} players` : `${filtered.length} of ${base.length} players`;
 
   const toggleSort = (key: string) => { setSort((old) => ({ key, desc: old.key === key ? !old.desc : false })); setPage(0); };
-  const head = (label: React.ReactNode, key?: string, className = "") => <TableHead className={className}>{key ? <button type="button" className="whitespace-nowrap" onClick={() => toggleSort(key)}>{label}<Icon name={sort.key === key && sort.desc ? "mdi-arrow-down" : "mdi-arrow-up"} className={`ml-1 text-xs ${sort.key === key ? "text-primary" : "opacity-25"}`} /></button> : label}</TableHead>;
+  const head = (label: React.ReactNode, key?: string, className = "") => <TableHead className={className}>{key ? <button type="button" className="whitespace-nowrap" onClick={() => toggleSort(key)}>{label}<Icon name={sort.key === key && sort.desc ? "mdi-arrow-down" : "mdi-arrow-up"} className={`ml-1 text-xs ${sort.key === key ? "text-primary-text" : "opacity-25"}`} /></button> : label}</TableHead>;
   // the column title names what the figure counts, so the cell is the record alone
   const record = (won?: number | null, lost?: number | null) => (won == null || lost == null ? "—" : recordFigure(won, lost) ?? "—");
   // the active tag, then a count that opens the rest
@@ -164,7 +164,7 @@ export function PlayersView() {
   };
 
   return <div className="p-4">
-    {loading && !players.length ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60" role="status" aria-label="Loading"><Icon name="mdi-loading" size={64} className="animate-spin text-primary" /></div> : null}
+    {loading && !players.length ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60" role="status" aria-label="Loading"><Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" /></div> : null}
     <div className="flex flex-wrap items-start justify-between gap-3"><PageHeader title={<span className="inline-flex items-center gap-2"><Icon name="mdi-account-group" />Players</span>} />{isAdmin ? <Button onClick={() => { setNewPlayer(emptyPlayer()); setCreationError(null); setNewOpen(true); }}><Icon name="mdi-plus" />Add Player</Button> : null}</div>
     <FilterPanel
       seasons={seasonStore.seasons as { id: number; name: string }[]} searchName={name} onSearchNameChange={(value) => { setName(value); setPage(0); }} searchRace={race} onSearchRaceChange={(value) => { setRace(value); setPage(0); }}

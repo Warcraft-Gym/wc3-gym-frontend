@@ -17,7 +17,7 @@ The app uses one look, stone and gold, in a light and a dark theme. This file li
 ## Rules
 
 - Use a theme token for every colour: `class="bg-primary"`, `class="text-win"`, `rgb(var(--v-theme-loss))`. Never write a hex value or a Tailwind palette name such as `red-500` in a view. Two exceptions are allowed: the Discord brand colours on the Discord buttons (`LoginView.tsx`, `DiscordJoinCard.tsx`), and the trophy artwork in `TrophyIcon.tsx`.
-- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text. Two exceptions, where the figure is itself the mark: the score of a result seen from one side wears `win`, `loss` or `draw`, and a wins count and a losses count may wear `win` and `loss` in a column of their own or inside a record, because the column title or the order of the record is the second channel.
+- Text wears a text token. A result, a tier or a race gets a small coloured mark beside the text, not coloured text. Two exceptions, where the figure is itself the mark: the score of a result seen from one side wears `win` or `loss`, and a drawn score wears body ink, and a wins count and a losses count may wear `win` and `loss` in a column of their own or inside a record, because the column title or the order of the record is the second channel.
 - Colour never carries meaning alone. Pair it with an icon, a label or a position.
 - A fill that carries text names its own ink as `on-<fill>`. The test checks that every such pair passes 4.5:1 (WCAG AA).
 - Dark is its own set of values, not an inverted light theme. A new token gets a light and a dark value.
@@ -74,7 +74,7 @@ In dark, `on-error`, `on-info`, `on-success` and `on-warning` are ink.
 | `loss` | `#B31220` | `#E24947` | A lost game, series or bar. |
 | `draw` | `#A8A29A` | `#5E5B56` | A draw, no result, the Random race, a neutral bar. |
 
-Win is blue, not green. Green and red cannot be told apart by a reader with red-green colour blindness. `on-draw` is ink in light and white in dark. In dark, `on-win` is ink and `on-loss` is `#1A140C`.
+Win is blue, not green. Green and red cannot be told apart by a reader with red-green colour blindness. `on-draw` is ink in light and white in dark. The draw grey is under 3:1 as text in both themes, so it is a fill or a mark only: a draw as text, a score or a tonal chip, wears body ink. In dark, `on-win` is ink and `on-loss` is `#1A140C`.
 
 ### Fantasy tiers
 
@@ -386,8 +386,6 @@ The test checks three things. Every declared ink passes 4.5:1 on its fill. A for
 These parts of the app break a rule above today.
 
 - In light, `win`, `loss`, `error`, `info`, `success` and `warning` name no `on-*` ink. A fill of one of those names picks its text colour by hand.
-- `draw` is under 3:1 on `surface` in both themes (2.3:1), so `text-draw` and the tonal draw chip do not read as text. The letter or the score beside a draw mark carries the meaning.
-- In light, about thirty icons and the sorted column head use `text-primary`, which is gold at 1.7:1 on `surface`. They need `text-primary-text`.
 - Status colours mark things that are not app states. The fantasy week rank chips use `success`, `info` and `warning`. The MMR chips on the match page use `info`. Bench points use `warning`.
 - The fantasy bet-points chip colours its text in `win` or `loss`.
 - `LadderDayBars` is a fixed 224 px wide. Its stacked bars have a 1 px gap.

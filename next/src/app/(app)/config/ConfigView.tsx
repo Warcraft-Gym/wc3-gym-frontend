@@ -424,7 +424,7 @@ export function ConfigView() {
                   <Card className="card p-4 md:col-span-12">
                     <div>
                       <div className="mb-2 flex items-center gap-2">
-                        <Icon name="mdi-robot" className="text-primary" />
+                        <Icon name="mdi-robot" className="text-primary-text" />
                         <span className="font-medium">Nightbot signup token</span>
                       </div>
                       <p className="mb-4 text-sm text-muted-foreground">Generate a new token if this one leaks.</p>

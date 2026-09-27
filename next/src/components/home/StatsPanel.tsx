@@ -40,7 +40,7 @@ export function StatsPanel({ summary, seasonName, to, order }: { summary: Partia
           <ul className="mt-1 flex flex-col gap-1.5">
             {top3.map((badge) => (
               <li key={badge.id} className="flex items-center gap-2">
-                <AchievementIcon id={badge.id} size={20} className="text-primary" />
+                <AchievementIcon id={badge.id} size={20} className="text-primary-text" />
                 <span className="flex-1">{badge.name}</span>
                 <span className="tnum text-sm text-muted-foreground">+{badge.points}</span>
               </li>

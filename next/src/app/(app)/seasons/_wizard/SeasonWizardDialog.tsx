@@ -396,7 +396,7 @@ export function SeasonWizardDialog({
           <StatusAlert modelValue={error} className="mb-4" onClose={() => setError(null)} />
           {loading ? (
             <div className="flex justify-center py-12">
-              <Icon name="mdi-loading" size={48} className="animate-spin text-primary" />
+              <Icon name="mdi-loading" size={48} className="animate-spin text-primary-text" />
             </div>
           ) : key === "general" ? (
             <GeneralStep season={season} set={set} stages={stages} maxMmr={maxMmr} setMaxMmr={setMaxMmr} />

@@ -214,7 +214,7 @@ export function PlayerLadderTab({ player, seasonId }: { player: any; seasonId: n
             <div className={SUB}>Achievements</div>
             {earned.map((badge) => (
               <div key={badge.id} className="flex items-center border-b py-1">
-                <AchievementIcon id={badge.id} className="mr-3 text-primary" />
+                <AchievementIcon id={badge.id} className="mr-3 text-primary-text" />
                 <span className="mr-3 text-sm font-medium">{badge.name}</span>
                 {mdAndUp ? <span className="text-xs text-muted-foreground">{badge.description}</span> : null}
                 <span className="ml-auto" />

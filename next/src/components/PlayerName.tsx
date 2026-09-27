@@ -75,7 +75,7 @@ export function PlayerName({
       {/* the MMR never shrinks, so a narrow cell truncates the name and keeps the number whole */}
       {rating != null ? <span className="shrink-0 tnum font-normal text-muted-foreground">{rating}</span> : null}
       {/* the cue is always coloured, so a reader knows before the click that the page stays */}
-      {opensPanel ? <Icon name="mdi-dock-right" size={16} className="-ml-0.5 text-primary" /> : null}
+      {opensPanel ? <Icon name="mdi-dock-right" size={16} className="-ml-0.5 text-primary-text" /> : null}
       {offRace ? <Badge variant="outline" title={offRaceHint} className="text-warning border-warning">off-race</Badge> : null}
       {host ? <Badge variant="outline" className="text-primary-text border-primary">Host</Badge> : null}
       {children}

@@ -189,7 +189,7 @@ export function RandomStatsView() {
   return (
     <div className="mx-auto max-w-[960px] p-6">
       <PageHeader
-        title={<><Icon name="mdi-dice-multiple" className="mr-3 text-primary" />Random Stats Helper</>}
+        title={<><Icon name="mdi-dice-multiple" className="mr-3 text-primary-text" />Random Stats Helper</>}
         lead="Breakdown of drawn race vs opponent race for Random games only"
       />
 

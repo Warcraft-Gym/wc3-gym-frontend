@@ -310,7 +310,7 @@ export function VetoBoard({
 
       {!board && !errorMessage ? (
         <div className="flex justify-center p-8" role="status" aria-label="Loading">
-          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary" />
+          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary-text" />
         </div>
       ) : null}
 

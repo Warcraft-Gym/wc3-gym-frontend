@@ -34,7 +34,7 @@ function BnetVerified() {
           />
         }
       >
-        <Icon name="mdi-check-decagram" size={16} className="text-primary" />
+        <Icon name="mdi-check-decagram" size={16} className="text-primary-text" />
         Battle.net
       </TooltipTrigger>
       <TooltipContent>Verified on Battle.net</TooltipContent>

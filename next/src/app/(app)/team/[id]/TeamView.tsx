@@ -76,7 +76,7 @@ export function TeamView({ id }: { id: string }) {
   }, [seasonId, teamId]);
 
   return <div className="p-4">
-    {loading ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60"><Icon name="mdi-loading" size={64} className="animate-spin text-primary" /></div> : null}
+    {loading ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60"><Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" /></div> : null}
     <StatusAlert modelValue={error} onClose={() => setError(null)} />
     {team ? <Card className="card mb-4 gap-0 py-0"><CardTitle className="flex items-center gap-3 bg-primary p-4 text-on-primary"><span className="block size-10 overflow-hidden rounded-full"><img className="size-full object-contain" src={teamImageUrl(team)} alt="" onError={showDefaultTeamImage} /></span><span><span className="block">{team.long_name || team.name}</span>{team.long_name ? <span className="block text-xs font-normal">{team.name}</span> : null}</span></CardTitle>
       {tabs.length ? <Tabs value={seasonId} onValueChange={(value) => setSeasonId(Number(value))} className="border-b px-4"><TabsList variant="line" className="max-w-full justify-start overflow-x-auto">{tabs.map((tab) => <TabsTrigger key={tab.id} value={tab.id} className="flex-none px-3">{tab.label}{tab.id === currentSeasonId ? <Icon name="mdi-star" title="Current season" /> : null}</TabsTrigger>)}</TabsList></Tabs> : null}

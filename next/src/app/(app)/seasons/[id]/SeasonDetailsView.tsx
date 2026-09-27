@@ -287,7 +287,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
     <div className="p-4">
       {isLoading ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading" size={64} className="animate-spin text-primary" />
+          <Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" />
         </div>
       ) : null}
 
@@ -418,7 +418,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
                       </div>
                     ) : (
                       <div key={i} className="flex flex-col items-center justify-center">
-                        <Icon name="mdi-sword-cross" size={40} className="text-primary" />
+                        <Icon name="mdi-sword-cross" size={40} className="text-primary-text" />
                         <div className="mt-2 text-xs whitespace-nowrap text-muted-foreground">{roundLabel(roundOf(season, match.playday))}</div>
                       </div>
                     ),

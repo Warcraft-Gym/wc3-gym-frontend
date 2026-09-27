@@ -6,7 +6,7 @@ const TONE: Record<string, string> = {
   info: "bg-info/12 text-info",
   warning: "bg-warning/12 text-warning",
   error: "bg-error/12 text-error",
-  draw: "bg-draw/12 text-draw",
+  draw: "bg-draw/12 text-foreground",  // the draw grey is under 3:1 as text, so a draw reads in body ink
 };
 
 /** The classes a tonal chip wears for one theme token; a chip with no colour stays neutral. */

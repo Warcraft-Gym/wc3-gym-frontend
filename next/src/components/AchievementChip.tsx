@@ -19,7 +19,7 @@ export function AchievementChip({
       <div className="flex flex-wrap items-center gap-[2px]">
         {badges.map((badge) => (
           <TapTooltip key={badge.id} className="cursor-help leading-none" content={`${badge.name} (+${badge.points})`}>
-            <AchievementIcon id={badge.id} size={16} className="text-primary" />
+            <AchievementIcon id={badge.id} size={16} className="text-primary-text" />
           </TapTooltip>
         ))}
       </div>

@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 type Row = Record<string, any>;
 
 const CAPTION = "text-xs text-muted-foreground";
-const SCORE: Record<string, string> = { win: "text-win border-win", loss: "text-loss border-loss", draw: "text-draw border-draw" };
+const SCORE: Record<string, string> = { win: "text-win border-win", loss: "text-loss border-loss", draw: "text-foreground border-draw" };
 
 /** One card per round of a season: the window, the team faced, and the player's
  *  series of that round. The player's own page fills `seriesActions` and `question`

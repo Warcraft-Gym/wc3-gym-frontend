@@ -210,7 +210,7 @@ export function LadderView() {
       {/* The overlay covers the page area only */}
       {isLoading ? (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60">
-          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary" />
+          <Icon name="mdi-loading mdi-spin" size={64} className="text-primary-text" />
         </div>
       ) : null}
 
@@ -355,7 +355,7 @@ export function LadderView() {
                 /* sticky: stays in view when the summary row scrolls sideways on a narrow window */
                 <div className="sticky left-0 max-w-[calc(100vw-48px)] p-4">
                   {!fullPlayers[row.id] ? (
-                    <div className="p-4 text-center"><Icon name="mdi-loading mdi-spin" size={32} className="text-primary" /></div>
+                    <div className="p-4 text-center"><Icon name="mdi-loading mdi-spin" size={32} className="text-primary-text" /></div>
                   ) : (
                     <PlayerLadderTab player={fullPlayers[row.id]} seasonId={selectedSeasonId as number} />
                   )}

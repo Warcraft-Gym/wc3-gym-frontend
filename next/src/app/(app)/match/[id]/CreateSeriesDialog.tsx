@@ -131,7 +131,7 @@ export function CreateSeriesDialog({
 
               {i === 0 ? (
                 <div className="hidden flex-col items-center justify-center gap-4 min-[960px]:flex">
-                  <Icon name="mdi-sword-cross" size={80} className="text-primary" />
+                  <Icon name="mdi-sword-cross" size={80} className="text-primary-text" />
                   {isAdmin ? (
                     <TapTooltip content="MMR and ladder matches">
                       <Button onClick={onSyncW3C} disabled={isLoading}>

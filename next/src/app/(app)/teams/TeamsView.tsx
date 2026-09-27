@@ -84,7 +84,7 @@ export function TeamsView() {
   const remove = async (id?: number | string) => { setError(null); try { await teamStore.deleteTeam(Number(id)); await fetchTeams(); } catch (e) { console.error("Error deleting Team:", e); setError("Error deleting Team: " + errorText(e)); } };
 
   return <div className="p-4">
-    {loading ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60"><Icon name="mdi-loading" size={64} className="animate-spin text-primary" /></div> : null}
+    {loading ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60"><Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" /></div> : null}
     <PageHeader title={<span className="inline-flex items-center gap-2"><Icon name="mdi-shield-account" />Teams</span>} />
     <StatusAlert modelValue={error} onClose={() => setError(null)} />
     {isAdmin ? <div className="mb-4 flex justify-end"><Button onClick={openCreate}><Icon name="mdi-plus" />Add team</Button></div> : null}

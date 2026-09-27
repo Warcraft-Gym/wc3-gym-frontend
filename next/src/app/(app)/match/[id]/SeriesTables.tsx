@@ -127,10 +127,10 @@ export function PublishedSeries({
             { id: "player2.name", accessorFn: (row: Row) => row.player2?.name ?? "", header: "Player 2", cell: ({ row }) => nameCell(row.original, 2) },
             {
               id: "fantasy",
-              header: () => <Icon name="mdi-star" className="text-primary" title="Fantasy match" aria-label="Fantasy match" />,
+              header: () => <Icon name="mdi-star" className="text-primary-text" title="Fantasy match" aria-label="Fantasy match" />,
               enableSorting: false,
               cell: ({ row }) =>
-                row.original.is_fantasy_match ? <Icon name="mdi-star" className="text-primary" title="Fantasy match" /> : <span className="text-muted-foreground">—</span>,
+                row.original.is_fantasy_match ? <Icon name="mdi-star" className="text-primary-text" title="Fantasy match" /> : <span className="text-muted-foreground">—</span>,
             },
             { id: "actions", header: "", enableSorting: false, cell: ({ row }) => <RowActions actions={seriesActions(row.original)} /> },
           ]}
@@ -382,7 +382,7 @@ export function DraftSeries({
                     enableSorting: false,
                     cell: ({ row }: { row: { original: Row } }) =>
                       row.original.is_fantasy_match ? (
-                        <Icon name="mdi-star" className="text-primary" title="Marked to count for fantasy when published" />
+                        <Icon name="mdi-star" className="text-primary-text" title="Marked to count for fantasy when published" />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       ),
@@ -400,7 +400,7 @@ export function DraftSeries({
             <div key={item.id}>
               <SeriesCard
                 series={item}
-                title={item.is_fantasy_match ? <Icon name="mdi-star" className="text-primary" title="Marked to count for fantasy when published" /> : null}
+                title={item.is_fantasy_match ? <Icon name="mdi-star" className="text-primary-text" title="Marked to count for fantasy when published" /> : null}
                 actions={canDraft ? <RowActions actions={draftActions(item)} /> : null}
               />
               {board ? (

@@ -16,9 +16,9 @@ const between = 26;
 const mH = 72; // MMR plot height
 
 // An SVG attribute takes no Tailwind class, so every mark names its theme token here.
-const CAP = { fontSize: 11, fontWeight: 400, fill: "rgba(var(--v-theme-on-surface), 0.6)" };
+const CAP = { fontSize: 11, fontWeight: 500, fill: "rgba(var(--v-theme-on-surface), 0.6)" };
 const TICK = { fontSize: 11, fill: "rgba(var(--v-theme-on-surface), 0.6)" };
-const END = { fontSize: 11, fontWeight: 700, fill: "rgba(var(--v-theme-on-surface), 0.87)" };
+const END = { fontSize: 11, fontWeight: 500, fill: "rgba(var(--v-theme-on-surface), 0.87)" };
 const GRID = { stroke: "rgba(var(--v-theme-on-surface), 0.08)" };
 const AXIS = { stroke: "rgba(var(--v-theme-on-surface), 0.2)" };
 const AREA = { fill: "rgb(var(--v-theme-on-surface))", fillOpacity: 0.1 };

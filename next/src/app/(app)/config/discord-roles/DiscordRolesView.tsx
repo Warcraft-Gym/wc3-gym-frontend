@@ -758,7 +758,7 @@ export function DiscordRolesView() {
                   accessorKey: "members",
                   header: () => <div className="text-right">In Discord</div>,
                   cell: ({ row }) => (
-                    <div className={cn("tnum text-right", row.original.binding && row.original.binding.holders !== row.original.members && "font-bold text-warning")}>
+                    <div className={cn("tnum text-right", row.original.binding && row.original.binding.holders !== row.original.members && "font-medium text-warning")}>
                       {row.original.members}
                     </div>
                   ),

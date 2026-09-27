@@ -22,6 +22,6 @@ test('the season clients use the event API and no deprecated season route', () =
   assert.match(store.ladder, /\/events\/\$\{season_id\}\/ladder/);
   assert.match(store.team, /\/leagues\/\$\{leagueId\}\/teams/);
   assert.match(store.team, /\/events\/\$\{season_id\}\/teams/);
-  assert.match(store.series, /\/events\/\$\{season_id\}\/series\/search/);
+  assert.match(store.series, /\/events\/\$\{season_id\}\/series\$\{fantasyOnly/);
   assert.match(fetchWrapper, /\\\/events\\\/\\d\+\\\/ladder/);
 });

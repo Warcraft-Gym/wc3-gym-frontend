@@ -211,7 +211,7 @@ export function FantasyDashboardView() {
     if (!team || !seasonId) return;
     try {
       // The fantasy matches of the season, where is_fantasy_match = true
-      setFantasySeries((await seriesStore.searchSeriesBySeason(seasonId, "is_fantasy_match==True")) ?? []);
+      setFantasySeries((await seriesStore.searchSeriesBySeason(seasonId, true)) ?? []);
       if (userId) setFantasyBets(await fantasyStore.searchBets(`season_id == ${seasonId} AND user_id == ${userId}`));
     } catch (error) {
       console.error("Error fetching fantasy data:", error);

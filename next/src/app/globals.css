@@ -216,17 +216,24 @@
 .banner:is([data-slot="card-title"], [data-slot="dialog-title"]):not([class*="text-["]),
 .banner [data-slot="card-title"]:not([class*="text-["]) { font-size: 1.25rem; line-height: 1.3; }
 
-/* The filled button is embossed gold, the public site's recipe, the same in both themes. A utility on one button, such as the Discord blue, still wins.
-   The 1 px press is the button's own translate-y-px, which button.tsx turns off under reduced motion. */
+/* The filled button is embossed gold, the public site's recipe. A utility on one button, such as the Discord blue, still wins.
+   The recipe's drop shadow and bottom line were made for a black ground, so the light ground (and a
+   disabled button on it) takes a softer pair. The 1 px press is the button's own translate-y-px,
+   which button.tsx turns off under reduced motion. */
+:root { --btn-gold-edge: oklch(50% 0.1 70 / 0.35); --btn-gold-drop: 0 1px 1px oklch(20% 0.04 60 / 0.22); }
+:root[data-theme="dark"] { --btn-gold-edge: oklch(50% 0.1 70 / 0.6); --btn-gold-drop: 0 1px 2px oklch(0% 0 0 / 0.6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) { --btn-gold-edge: oklch(50% 0.1 70 / 0.6); --btn-gold-drop: 0 1px 2px oklch(0% 0 0 / 0.6); }
+}
 @layer components {
   .btn-gold {
     color: oklch(22% 0.04 60);
     background-image: linear-gradient(180deg, oklch(88% 0.13 90) 0%, oklch(78% 0.14 84) 48%, oklch(68% 0.13 78) 100%);
-    box-shadow: inset 0 1px 0 oklch(97% 0.06 95 / 0.8), inset 0 -1px 0 oklch(50% 0.1 70 / 0.6), 0 1px 2px oklch(0% 0 0 / 0.6);
+    box-shadow: inset 0 1px 0 oklch(97% 0.06 95 / 0.8), inset 0 -1px 0 var(--btn-gold-edge), var(--btn-gold-drop);
   }
   .btn-gold:hover {
     filter: brightness(1.05);
-    box-shadow: inset 0 1px 0 oklch(97% 0.06 95 / 0.9), inset 0 -1px 0 oklch(50% 0.1 70 / 0.6), 0 1px 2px oklch(0% 0 0 / 0.6);
+    box-shadow: inset 0 1px 0 oklch(97% 0.06 95 / 0.9), inset 0 -1px 0 var(--btn-gold-edge), var(--btn-gold-drop);
   }
 }
 

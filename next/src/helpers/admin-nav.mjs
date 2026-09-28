@@ -43,8 +43,32 @@ export const ADMIN_PATHS = ADMIN_SECTIONS.flatMap((section) => section.items.map
  *  page only an admin reaches (`adminOnly`, from the route table). */
 export const inAdminFrame = (path, adminOnly) => path === '/admin' || ADMIN_PATHS.includes(path) || adminOnly;
 
-/** The sidebar item a page belongs to: the longest listed path that is the page or a parent of it. */
+// Pages outside the sections that an admin opens from one of them: a match and a series, reached
+// from a season, and a team, overall or in a season. They keep the sidebar and mark their section.
+const ADMIN_CONTEXT = [
+  { prefix: '/match/', section: '/seasons' },
+  { prefix: '/series/', section: '/seasons' },
+  { prefix: '/team/', section: '/teams' },
+];
+
+/** The sidebar item a page belongs to: the longest listed path that is the page or a parent of it,
+ *  else the section a match or a series page is opened from, else none. */
 export function activeAdminPath(path) {
   return ADMIN_PATHS.filter((to) => to === path || path.startsWith(`${to}/`))
-    .sort((a, b) => b.length - a.length)[0] ?? null;
+    .sort((a, b) => b.length - a.length)[0]
+    ?? ADMIN_CONTEXT.find((context) => path.startsWith(context.prefix))?.section
+    ?? null;
 }
+
+/** How the admin frame draws a page. The sidebar shows for the admin hat on the pages the Admin tab
+ *  leads to: the admin area, every page under a section (a season, its draft, an event), a match or a
+ *  series opened from a season, and a team page. Home and a player page keep the plain layout, and a
+ *  player, a captain or an admin viewing as one never has the hat. The phone's "← Admin" link stays
+ *  on the pages of the admin area, where it leads back to their home. */
+export const adminFrame = (path, { adminHat, adminOnly }) => {
+  const area = !!inAdminFrame(path, adminOnly);
+  return {
+    sidebar: !!adminHat && (area || activeAdminPath(path) !== null),
+    backLink: !!adminHat && path !== '/admin' && area,
+  };
+};

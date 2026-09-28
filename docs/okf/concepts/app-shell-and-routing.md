@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T18:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-28T20:00:00Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -64,7 +64,7 @@ A player therefore sees Home and My Stats alone. The shared pages (standings, up
 
 # The admin frame
 
-`/admin` lists every admin task, one card per section of `next/src/helpers/admin-nav.mjs`: GNL (Seasons, Teams, Maps, Players, Fantasy Tiers, Fantasy Bets), App Settings (Settings, Discord, Access, User Guide) and Other Events (KOTH Nights, Leagues, Events, New Event). The KOTH board, the leagues and the events are public pages, reached by link; the nav names none of them. For an admin, `/admin`, every page the sections list and every admin-only route are drawn in the admin frame: the sections as a sidebar from 960 px, and a link back to `/admin` on a phone, where `/admin` itself is the menu.
+`/admin` lists every admin task, one card per section of `next/src/helpers/admin-nav.mjs`: GNL (Seasons, Teams, Maps, Players, Fantasy Tiers, Fantasy Bets), App Settings (Settings, Discord, Access, User Guide) and Other Events (KOTH Nights, Leagues, Events, New Event). The KOTH board, the leagues and the events are public pages, reached by link; the nav names none of them. A session with the admin hat has the pages the Admin tab leads to drawn in the admin frame: the admin area, every page under a section (a season, its draft, an event), a match or a series page, which an admin opens from a season and which marks Seasons, and a team page, overall or in a season, which marks Teams; an admin's own team page, which the My Team tab opens, is a team page like any other. From 960 px the sections stand there as a sidebar, with the section the page belongs to marked. Home, a player page and the account pages keep the plain layout. `adminFrame` in the same helper decides it; a player, a captain and an admin viewing as either have no hat and no frame. The admin slides the sidebar out to the left with "Hide admin menu" and back with the slim "Show admin menu" tab; the choice stays in this browser's storage, and the first paint is always open. On a phone there is no sidebar: `/admin`, every page the sections list and every admin-only route (the admin area, `inAdminFrame`) carry a link back to `/admin`, which is the menu there; the Admin tab is marked on those pages only, and they take the wider page width.
 
 # The app icon
 

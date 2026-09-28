@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-24T15:45:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-28T16:00:00Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -69,7 +69,7 @@ The database cost of a backend read is the rows one call reads times the calls t
 
 - A read that every visitor of a page makes goes through a route the backend edge-caches and is listed in `EDGE_CACHED`. When the backend route has no cache time yet, ask the backend for one in the same change.
 - Read the narrowest route the page needs: one player's row, not the full list filtered in the browser. When no narrow route exists, ask the backend for one.
-- A read after a write, and every admin read, carries the bearer, so the person who changed something sees it at once. Everyone else sees it once the edge entry expires.
+- A read after a write, and every admin read, carries the bearer. A page that re-reads an edge-cached route right after its own write also adds `?t=`, so the browser's own cache cannot answer with the copy from before the write (see the pitfall). Everyone else sees the change once the edge entry expires.
 - The backend states the rules for choosing a cache time in its `docs/okf/api/overview.md`, section "What a read costs".
 
 # What the app never does

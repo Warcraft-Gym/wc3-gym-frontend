@@ -2,6 +2,8 @@
 
 ## 2026-09-28
 
+* **Add**: on the draft page an admin moves a player from one team to another by dragging them onto the other team's card, and each team card shows its player count and average MMR. A move removes and then adds, and puts the player back on a failed add. The GNL season page states it.
+* **Update**: the draft page lists the available players in one table paged by pick set, one player for each team a page, opening on the next set. An admin gives a player a draft MMR, kept in the page only, to move them to an earlier or a later set; it replaces the round picker and `draft_position` is no longer written. Teams are picked with chips that show the logo and the short name, and the race is an icon. After an assign or a remove the rosters change at once and the teams are read again with `?t=`, since the browser's own cache may answer a repeat of an edge-cached URL with its old copy. The GNL season page, the backend contract and the edge-cache pitfall state it.
 * **Add**: an admin ticks players on `/players` and adds them to a season, a race each, syncs them from W3Champions, or deletes them. The bar of actions shows only while a player is ticked, over the table on a computer and above the tab bar on a phone. The browser makes the existing calls, one signup call per race and one sync or delete per player; the players that failed stay ticked. The players page concept states it.
 
 ## 2026-09-27

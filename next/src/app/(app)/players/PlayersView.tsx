@@ -5,12 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BulkSeasonSignupDialog, type BulkSeasonSignupDialogHandle } from "@/components/BulkSeasonSignupDialog";
 import { CareerStatsDialog, type CareerStatsDialogHandle } from "@/components/CareerStatsDialog";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { CountrySelect } from "@/components/CountrySelect";
@@ -25,11 +27,12 @@ import { SeasonSignupDialog, type SeasonSignupDialogHandle } from "@/components/
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { MergePlayerDialog, MoveTagDialog } from "./PersonTagDialogs";
+import { PHONE_BAR_SPACE, PlayerBulkBar, type BulkBusy } from "./PlayerBulkBar";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { resolveCurrentSeasonId } from "@/helpers/current-season.js";
 import { record as recordFigure } from "@/helpers/figures.mjs";
 import { findSeason } from "@/helpers/season-slug.mjs";
-import { filterByMmrRange, matchesPlayerSearch, playerPath, playersWithCareers } from "@/helpers/players.mjs";
+import { filterByMmrRange, matchesPlayerSearch, playerPath, playersWithCareers, runEach, toggleIds } from "@/helpers/players.mjs";
 import { isListFilter, listFilterQuery, tagsActiveFirst } from "@/helpers/tags.mjs";
 import { getAllRaceStats, hasLowGamesTwoSeasons, hasW3CStatsTwoSeasons } from "@/helpers/w3c-stats.js";
 import { useAuth, usePlayerCareerStatsStore, usePlayerStore, useSeason } from "@/stores";
@@ -51,6 +54,7 @@ export function PlayersView() {
   const editDialog = useRef<EditPlayerDialogHandle>(null);
   const signupDialog = useRef<SeasonSignupDialogHandle>(null);
   const careerDialog = useRef<CareerStatsDialogHandle>(null);
+  const bulkSignupDialog = useRef<BulkSeasonSignupDialogHandle>(null);
 
   const [players, setPlayers] = useState<Row[]>([]);
   const [careers, setCareers] = useState<Row[]>([]);
@@ -71,6 +75,11 @@ export function PlayersView() {
   const deletion = useDeleteDialog();
   const [moving, setMoving] = useState<Row | null>(null);
   const [merging, setMerging] = useState<Row | null>(null);
+  // the ticked players an admin runs one action on; a filter change clears them, so none is out of view
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState<BulkBusy>(null);
+  const [bulkNotice, setBulkNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   // the ids each server-side "Show only" entry selects; the full list stays loaded for the person search
   const [listed, setListed] = useState<Partial<Record<Flag, Set<number>>>>({});
 
@@ -86,6 +95,8 @@ export function PlayersView() {
     // the store's members are rebuilt every render, so the chosen entries drive the read
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverKey]);
+
+  const refilter = () => { setPage(0); setSelected(new Set()); };
 
   const load = async () => {
     setLoading(true); setError(null);
@@ -113,7 +124,7 @@ export function PlayersView() {
   const seasonId = seasonParam === "all" ? null : seasonParam ? findSeason(seasonStore.seasons, seasonParam)?.id ?? null : currentSeasonId;
 
   const chooseSeason = (id: number | null) => {
-    setPage(0);
+    refilter();
     const query = new URLSearchParams(searchParams.toString());
     query.set("season", id ? seasonStore.slugOf(id) : "all");
     router.replace(`/players?${query}`, { scroll: false });
@@ -147,8 +158,8 @@ export function PlayersView() {
     if (!tags.length) return "—";
     return <span className="inline-flex items-center gap-1 whitespace-nowrap">{tags[0].tag}{tags.length > 1 ? <DropdownMenu><DropdownMenuTrigger render={<Button variant="outline" size="sm" aria-label={`${tags.length} tags`} onClick={(e) => e.stopPropagation()} />}>+{tags.length - 1}</DropdownMenuTrigger><DropdownMenuContent>{tags.map((tag) => <DropdownMenuItem key={tag.id}>{tag.tag}{tag.active ? <span className="text-xs text-muted-foreground">Active</span> : null}{tag.source === "claim" ? <span className="text-xs text-muted-foreground">Claimed</span> : null}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu> : null}</span>;
   };
-  const clear = () => { setName(""); setRace(null); chooseSeason(null); setRange([0, 3000]); setFlags([]); setPage(0); };
-  const toggleFlag = (flag: Flag) => { setFlags((old) => old.includes(flag) ? old.filter((item) => item !== flag) : [...old, flag]); setPage(0); };
+  const clear = () => { setName(""); setRace(null); chooseSeason(null); setRange([0, 3000]); setFlags([]); refilter(); };
+  const toggleFlag = (flag: Flag) => { setFlags((old) => old.includes(flag) ? old.filter((item) => item !== flag) : [...old, flag]); refilter(); };
   const setNew = (key: string, value: unknown) => setNewPlayer((old) => ({ ...old, [key]: value }));
   const create = async () => {
     setCreating(true); setCreationError(null);
@@ -163,25 +174,59 @@ export function PlayersView() {
     catch (e) { console.error("Error syncing player:", id, e); setSync((old) => ({ ...old, [id]: "error" })); }
   };
 
+  // the ticked players, in the order the table shows them
+  const chosen = sorted.filter((row) => row.id != null && selected.has(row.id));
+  const names = (rows: Row[]) => rows.map((row) => row.name).join(", ");
+  const plural = (count: number) => `${count} ${count === 1 ? "player" : "players"}`;
+  const pageIds = shown.filter((row) => row.id != null).map((row) => row.id as number);
+  const pageTicked = pageIds.filter((id) => selected.has(id)).length;
+  // the players that failed stay ticked, so a second click retries only them
+  const bulkDone = (done: unknown[], failed: { item: Row }[], did: string, failedText: string) => {
+    setBulkBusy(null);
+    setSelected(new Set(failed.map(({ item }) => item.id)));
+    const text = `${plural(done.length)} ${did}`;
+    setBulkNotice(failed.length ? { type: "error", text: `${text}, ${failed.length} ${failedText}: ${names(failed.map(({ item }) => item))}` } : { type: "success", text });
+  };
+  const bulkSync = async () => {
+    setBulkNotice(null);
+    const { done, failed } = await runEach(chosen, async (row: Row) => {
+      setSync((old) => ({ ...old, [row.id]: "loading" }));
+      try { const updated = await playerStore.syncW3CPlayer(row.id); if (updated) setPlayers((old) => playerStore.patchPlayers(old, updated)); setSync((old) => ({ ...old, [row.id]: "success" })); }
+      catch (e) { setSync((old) => ({ ...old, [row.id]: "error" })); throw e; }
+    }, (step) => setBulkBusy({ action: "sync", step, total: chosen.length }));
+    bulkDone(done, failed, "synced", "failed");
+  };
+  const bulkDelete = async () => {
+    setBulkDeleteOpen(false); setBulkNotice(null);
+    const { done, failed } = await runEach(chosen, (row: Row) => playerStore.deletePlayer(row.id), (step) => setBulkBusy({ action: "delete", step, total: chosen.length }));
+    bulkDone(done, failed, "deleted", "could not be deleted");
+    await load();
+  };
+  // a race group that failed keeps the ticks and the dialog open; the list reloads either way
+  const bulkSignedUp = (complete: boolean) => { if (complete) setSelected(new Set()); load(); };
+
   return <div className="p-4">
     {loading && !players.length ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60" role="status" aria-label="Loading"><Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" /></div> : null}
     <div className="flex flex-wrap items-start justify-between gap-3"><PageHeader title={<span className="inline-flex items-center gap-2"><Icon name="mdi-account-group" />Players</span>} />{isAdmin ? <Button onClick={() => { setNewPlayer(emptyPlayer()); setCreationError(null); setNewOpen(true); }}><Icon name="mdi-plus" />Add Player</Button> : null}</div>
     <FilterPanel
-      seasons={seasonStore.seasons as { id: number; name: string }[]} searchName={name} onSearchNameChange={(value) => { setName(value); setPage(0); }} searchRace={race} onSearchRaceChange={(value) => { setRace(value); setPage(0); }}
-      selectedSeasonFilter={seasonId} onSelectedSeasonFilterChange={chooseSeason} rangeValues={range} onRangeValuesChange={(value) => { setRange(value); setPage(0); }} extraActive={flags.length} onReset={clear} summary={<span className="text-sm text-muted-foreground">{count}</span>}
+      seasons={seasonStore.seasons as { id: number; name: string }[]} searchName={name} onSearchNameChange={(value) => { setName(value); refilter(); }} searchRace={race} onSearchRaceChange={(value) => { setRace(value); refilter(); }}
+      selectedSeasonFilter={seasonId} onSelectedSeasonFilterChange={chooseSeason} rangeValues={range} onRangeValuesChange={(value) => { setRange(value); refilter(); }} extraActive={flags.length} onReset={clear} summary={<span className="text-sm text-muted-foreground">{count}</span>}
       after={<DropdownMenu><DropdownMenuTrigger render={<Button variant="outline" className="min-w-40 justify-between" />}><span className="inline-flex items-center gap-2"><Icon name="mdi-alert-outline" />{flags.length ? `${flags.length} selected` : "Show only"}</span><Icon name="mdi-chevron-down" /></DropdownMenuTrigger><DropdownMenuContent align="start">
         {([["no_stats", "No W3C stats"], ["low_games", "Less than 20 games"], ...(isAdmin ? [["unlinked", "Unlinked players"], ["no_discord", "No Discord"], ["claimed", "Claimed tags"]] : [])] as [Flag, string][]).map(([value, label]) => <DropdownMenuItem key={value} onClick={(event) => { event.preventDefault(); toggleFlag(value); }}><Icon name={flags.includes(value) ? "mdi-checkbox-marked" : "mdi-checkbox-blank-outline"} />{label}</DropdownMenuItem>)}
       </DropdownMenuContent></DropdownMenu>}
     />
     <Card className="card gap-0 py-0">
+      {isAdmin && selected.size ? <PlayerBulkBar count={selected.size} busy={bulkBusy} onSignup={() => bulkSignupDialog.current?.open({ players: chosen as never, seasonId })} onSync={bulkSync} onDelete={() => setBulkDeleteOpen(true)} onClear={() => setSelected(new Set())} /> : null}
+      <StatusAlert modelValue={bulkNotice?.text} type={bulkNotice?.type} className="m-4 mb-0" onClose={() => setBulkNotice(null)} />
       <StatusAlert modelValue={error} className="m-4" onClose={() => setError(null)} />
       {!error ? <div className="table-scroll overflow-x-auto"><Table className="tnum"><TableHeader><TableRow>
-        {head("Name", "name")}{isAdmin ? head("Tags", undefined, WIDE) : null}{head(<W3CMmr />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series record", "series_winrate", "text-right")}{head("Games record", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
+        {isAdmin ? <TableHead className="w-10"><Checkbox aria-label="Select the players on this page" checked={pageIds.length > 0 && pageTicked === pageIds.length} indeterminate={pageTicked > 0 && pageTicked < pageIds.length} disabled={!pageIds.length || !!bulkBusy} onCheckedChange={(on) => setSelected((old) => toggleIds(old, pageIds, on))} /></TableHead> : null}{head("Name", "name")}{isAdmin ? head("Tags", undefined, WIDE) : null}{head(<W3CMmr />, "best_mmr", WIDE)}{head("Rating", "rating", "text-right")}{head("Series record", "series_winrate", "text-right")}{head("Games record", "games_winrate", `${WIDE} text-right`)}{head("Seasons", "seasons_played", `${WIDE} text-right`)}{head("Events", undefined, WIDE)}{isAdmin ? <TableHead /> : null}
       </TableRow></TableHeader><TableBody>
-        {shown.map((row) => <TableRow key={row.key} className={row.id != null ? "cursor-pointer" : undefined} onClick={(event) => {
+        {shown.map((row) => <TableRow key={row.key} data-state={row.id != null && selected.has(row.id) ? "selected" : undefined} className={row.id != null ? "cursor-pointer" : undefined} onClick={(event) => {
           if ((event.target as Element).closest('[data-slot="tooltip-trigger"]')) return;
           if (row.id != null) router.push(playerPath(row));
         }}>
+          {isAdmin ? <TableCell className="w-10" onClick={(event) => event.stopPropagation()}>{row.id != null ? <Checkbox aria-label={`Select ${row.name}`} checked={selected.has(row.id)} disabled={!!bulkBusy} onCheckedChange={(on) => setSelected((old) => toggleIds(old, [row.id], on))} /> : null}</TableCell> : null}
           <TableCell>{row.id != null ? <PlayerName player={row} mmr={false} games /> : <span className="text-muted-foreground">{row.name}</span>}</TableCell>
           {isAdmin ? <TableCell className={WIDE}>{tagsCell(row)}</TableCell> : null}
           <TableCell className={WIDE}>{row.id != null ? <RaceMmrChips player={row} max={2} /> : null}</TableCell>
@@ -197,7 +242,7 @@ export function PlayersView() {
             ...(row.career?.id != null ? [{ icon: "mdi-history", label: "Career stats", onClick: () => careerDialog.current?.open(row.career) }] : []), { icon: "mdi-delete", label: "Delete", color: "error", onClick: () => deletion.openDeleteDialog(row.id, remove) },
           ]} /></TableCell> : null}
         </TableRow>)}
-        {!shown.length && !loading ? <TableRow><TableCell colSpan={isAdmin ? 9 : 7} className="py-8 text-center text-muted-foreground">No players match these filters</TableCell></TableRow> : null}
+        {!shown.length && !loading ? <TableRow><TableCell colSpan={isAdmin ? 10 : 7} className="py-8 text-center text-muted-foreground">No players match these filters</TableCell></TableRow> : null}
       </TableBody></Table></div> : null}
       {!error && sorted.length ? <div className="flex items-center justify-end gap-4 px-4 py-2 text-sm text-muted-foreground"><span>Items per page: {PAGE_SIZE}</span><span>{Math.min(page, pages - 1) * PAGE_SIZE + 1}-{Math.min(sorted.length, (Math.min(page, pages - 1) + 1) * PAGE_SIZE)} of {sorted.length}</span><Button variant="ghost" size="icon-sm" aria-label="Previous page" disabled={page <= 0} onClick={() => setPage((p) => Math.max(0, p - 1))}><Icon name="mdi-chevron-left" /></Button><Button variant="ghost" size="icon-sm" aria-label="Next page" disabled={page >= pages - 1} onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}><Icon name="mdi-chevron-right" /></Button></div> : null}
     </Card>
@@ -205,6 +250,9 @@ export function PlayersView() {
     <Dialog open={newOpen} onOpenChange={setNewOpen}><DialogContent showCloseButton={false} className="max-w-[800px] gap-0 p-0 sm:max-w-[800px]"><DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary"><Icon name="mdi-account-plus" />Add new player</DialogTitle><div className="p-4 pb-0"><StatusAlert modelValue={creationError} onClose={() => setCreationError(null)} /></div><div className="grid gap-4 p-4 md:grid-cols-2"><Field label="Player Name" htmlFor="new-player-name"><Input id="new-player-name" value={newPlayer.name} onChange={(e) => setNew("name", e.target.value)} /></Field><Field label="BattleTag" htmlFor="new-player-battle-tag"><Input id="new-player-battle-tag" value={newPlayer.battleTag} onChange={(e) => setNew("battleTag", e.target.value)} /></Field><CountrySelect value={newPlayer.country || null} onChange={(value) => setNew("country", value || "")} /><Field label="Discord Tag" htmlFor="new-player-discord-tag"><Input id="new-player-discord-tag" value={newPlayer.discordTag} onChange={(e) => setNew("discordTag", e.target.value)} /></Field><Field label="Discord ID" htmlFor="new-player-discord-id" hint="Numeric Discord user ID (required)"><Input id="new-player-discord-id" value={newPlayer.discordId} onChange={(e) => setNew("discordId", e.target.value)} /></Field><RaceSelect value={newPlayer.race || null} onChange={(value) => setNew("race", value || "")} /></div><div className="flex justify-end gap-2 p-4 pt-0"><Button variant="ghost" onClick={() => setNewOpen(false)}>Cancel</Button>{isAdmin ? <Button disabled={creating} onClick={create}><Icon name={creating ? "mdi-loading mdi-spin" : "mdi-plus"} />Add Player</Button> : null}</div></DialogContent></Dialog>
     <EditPlayerDialog ref={editDialog} canSave={isAdmin} refresh={load} />
     <SeasonSignupDialog ref={signupDialog} onAdded={load} />
+    {isAdmin ? <BulkSeasonSignupDialog ref={bulkSignupDialog} onAdded={bulkSignedUp} /> : null}
+    {isAdmin ? <ConfirmDeleteDialog modelValue={bulkDeleteOpen} message={`Delete ${plural(chosen.length)}? ${names(chosen)}. This cannot be undone.`} deleteIcon="mdi-delete" onConfirm={bulkDelete} onCancel={() => setBulkDeleteOpen(false)} onUpdateModelValue={(open) => !open && setBulkDeleteOpen(false)} /> : null}
+    {isAdmin && selected.size ? <div className={PHONE_BAR_SPACE} aria-hidden /> : null}
     {isAdmin ? <MoveTagDialog key={`move-${moving?.id}`} source={moving} players={players} onClose={() => setMoving(null)} onDone={load} /> : null}
     {isAdmin ? <MergePlayerDialog key={`merge-${merging?.id}`} source={merging} players={players} onClose={() => setMerging(null)} onDone={load} /> : null}
     {isAdmin ? <CareerStatsDialog ref={careerDialog} players={players} onChanged={load} /> : null}

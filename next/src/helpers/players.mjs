@@ -74,3 +74,57 @@ export const defaultSignupRace = (player) => {
 // Where the account's own profile lives. A member with no player row has only
 // the /profile page, which offers him the signup.
 export const myProfilePath = (me) => (me?.user ? playerPath(me.user) : '/profile');
+
+// The ticked ids with these ids ticked or unticked. A new set, so React sees
+// the change.
+export const toggleIds = (selected, ids, on) => {
+  const next = new Set(selected);
+  for (const id of ids) {
+    if (on) next.add(id);
+    else next.delete(id);
+  }
+  return next;
+};
+
+// A bulk signup for one season: the signup call takes one race for all its
+// players, so the players go out in one group per race. A player already
+// signed up to the season is left out, and a player with no race yet holds
+// the save back.
+export const signupGroups = (players, races, seasonId) => {
+  const skipped = [];
+  const missingRace = [];
+  const byRace = new Map();
+  for (const player of players) {
+    if ((player.signup_seasons || []).some((season) => season.id === seasonId)) {
+      skipped.push(player);
+      continue;
+    }
+    const race = races[player.id];
+    if (!race) {
+      missingRace.push(player);
+      continue;
+    }
+    byRace.set(race, [...(byRace.get(race) || []), player.id]);
+  }
+  return { groups: [...byRace].map(([race, ids]) => ({ race, ids })), skipped, missingRace };
+};
+
+// Runs one call per item, one after another, so a bulk action never fires a
+// burst of calls at the backend or at W3Champions. A failed item does not stop
+// the rest.
+/** @template T, R
+ *  @param {T[]} items @param {(item: T) => Promise<R>} fn @param {(index: number) => void} [onStep]
+ *  @returns {Promise<{ done: { item: T, result: R }[], failed: { item: T, error: unknown }[] }>} */
+export const runEach = async (items, fn, onStep = () => {}) => {
+  const done = [];
+  const failed = [];
+  for (const [index, item] of items.entries()) {
+    onStep(index);
+    try {
+      done.push({ item, result: await fn(item) });
+    } catch (error) {
+      failed.push({ item, error });
+    }
+  }
+  return { done, failed };
+};

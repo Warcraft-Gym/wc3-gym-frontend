@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSignupRace, kingPlayer, matchesPlayerSearch, myProfilePath, playersWithCareers } from './players.mjs';
+import { defaultSignupRace, kingPlayer, matchesPlayerSearch, myProfilePath, playersWithCareers, runEach, signupGroups, toggleIds } from './players.mjs';
 
 // A signup needs the race of THIS season, and the profile race cannot carry
 // that for a player who plays two. The last signup is his own answer; the
@@ -72,4 +72,52 @@ test('the player search ignores a Discord handle', () => {
   const player = { name: 'FattsRussell', battleTag: 'BeLit#11855', discordTag: 'fatts' };
   assert.equal(matchesPlayerSearch(player, 'fatts'), true);
   assert.equal(matchesPlayerSearch({ ...player, name: 'Other' }, 'fatts'), false);
+});
+
+// The row and the header checkboxes of the players page tick and untick ids
+// without touching the set the page holds.
+test('ticking and unticking ids answers a new set', () => {
+  const selected = new Set([1, 2]);
+  assert.deepEqual([...toggleIds(selected, [3, 4], true)], [1, 2, 3, 4]);
+  assert.deepEqual([...toggleIds(selected, [2, 5], false)], [1]);
+  assert.deepEqual([...selected], [1, 2]);
+});
+
+// The signup call takes one race for all its players, so a bulk signup sends
+// one call per race and leaves out who is already in the season.
+test('a bulk signup groups the players by race and skips the signed up', () => {
+  const players = [
+    { id: 1, signup_seasons: [] },
+    { id: 2, signup_seasons: [{ id: 7 }] },
+    { id: 3 },
+    { id: 4, signup_seasons: [{ id: 6 }] },
+  ];
+  const { groups, skipped, missingRace } = signupGroups(players, { 1: 'HU', 2: 'OC', 3: 'OC', 4: 'HU' }, 7);
+  assert.deepEqual(groups, [{ race: 'HU', ids: [1, 4] }, { race: 'OC', ids: [3] }]);
+  assert.deepEqual(skipped.map((player) => player.id), [2]);
+  assert.deepEqual(missingRace, []);
+});
+
+test('a player with no race holds the bulk signup back', () => {
+  const { groups, missingRace } = signupGroups([{ id: 1 }, { id: 2 }], { 1: 'NE' }, 7);
+  assert.deepEqual(groups, [{ race: 'NE', ids: [1] }]);
+  assert.deepEqual(missingRace.map((player) => player.id), [2]);
+});
+
+// A failed sync or delete must not stop the rest, and the page keeps the
+// failed players ticked for a retry.
+test('a bulk run goes one item after another and collects the failures', async () => {
+  const order = [];
+  const steps = [];
+  const { done, failed } = await runEach([1, 2, 3], async (id) => {
+    order.push(id);
+    if (id === 2) throw new Error('down');
+    return id * 10;
+  }, (index) => steps.push(index));
+  assert.deepEqual(order, [1, 2, 3]);
+  assert.deepEqual(steps, [0, 1, 2]);
+  assert.deepEqual(done, [{ item: 1, result: 10 }, { item: 3, result: 30 }]);
+  assert.equal(failed.length, 1);
+  assert.equal(failed[0].item, 2);
+  assert.equal(failed[0].error.message, 'down');
 });

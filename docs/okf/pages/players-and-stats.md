@@ -4,7 +4,7 @@ title: Players and stats
 description: The players list with the admin's tag controls, one player's page with his tags and the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../next/src/app/(app)/players/PlayersView.tsx
 tags: [pages, players]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T18:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-28T12:00:00Z }
 sources:
   - id: players
     resource: ../../../next/src/app/(app)/players/PlayersView.tsx
@@ -24,6 +24,12 @@ sources:
   - id: accounts
     resource: ../../../next/src/components/player/MyAccounts.tsx
     title: The owner's My accounts card
+  - id: bulk-bar
+    resource: ../../../next/src/app/(app)/players/PlayerBulkBar.tsx
+    title: The bar of actions on the ticked players
+  - id: bulk-signup
+    resource: ../../../next/src/components/BulkSeasonSignupDialog.tsx
+    title: The dialog that signs the ticked players up for a season
   - id: tag-dialogs
     resource: ../../../next/src/app/(app)/players/PersonTagDialogs.tsx
     title: The Move tag and Merge into dialogs
@@ -59,6 +65,14 @@ The player page is mainly a page to look at: the player's record, seasons, troph
 **Players (`/players`).** Every player with their career row: the name, with a warning when W3Champions holds no stats or under twenty games for the main race, the race and MMR chips, the rating, the series record and the games record as "19 – 11 (63%)" from ten played up and "3 – 1" under ten, under a column title that names what it counts, the seasons played and the events entered. Filters: name, race, season (`?season=<slug>`), MMR range, and the "Show only" flags. The name search matches the name, the battle tag and every tag the player holds. A row opens the player page. An admin adds a player (name, battle tag, country, Discord tag and id, race), edits one (the edit dialog reads `GET /users/{id}` on open for the two Discord fields, which no list row carries), adds one to a season, syncs one from W3Champions, edits or deletes the career row, and deletes the player.
 
 The admin sees the same page with more on it. A Tags column shows the active tag and a count of the others, which opens the full list. "Show only" adds "Unlinked players", "No Discord" and "Claimed tags". The last two are server filters: each one reads `GET /users?no_discord=true` or `GET /users?tag_source=claim` once when it is picked, and the page keeps the full list for the person search. Like the other flags, two picked flags show a row that matches either. The row menu adds "Move tag" and "Merge into". "Move tag" picks one of the person's tags and a person to move it to. "Merge into" picks the person who stays, then runs the merge with `dry_run: true` and lists what stops the merge, what the merge removes and what it moves, in the backend's own words. The Merge button stays off while anything stops the merge. Both dialogs find a person by name or tag, and show his battle tag, tags and newest season so two people with one name read apart.
+
+**Actions on several players.** The admin's table opens with a checkbox column; a row with no player, a career row no one claims, has no checkbox. The header checkbox ticks or unticks the players on the page shown. Any number of players can be ticked, and the ticks stay while the admin pages or sorts; a change of the search, the race, the season, the MMR range or "Show only" clears them, so no ticked player is out of view. While a player is ticked, a bar names the count and offers "Add to season", "Sync W3C", "Delete" and "Clear"; above 960 px it sits over the table, and on a phone it is fixed above the tab bar, with room left under the list so the last row and the pager scroll clear of it. The page is Full on a phone.
+
+- **Add to season** opens one dialog for all the ticked players. The season opens on the page's season filter, else the current season. Each player gets a race that opens on the race of their last signup, else their main ladder race; a player already in the season reads "Already signed up" and is left out. The button names what holds it back, a missing season or a missing race, and else "Add N players". The signup call takes one race for all its players, so the save sends one `POST /events/{id}/signups` per race; a signup already stored stays as it is, so a retry is safe. A failed call keeps the dialog open and the ticks.
+- **Sync W3C** syncs the ticked players one after another with `POST /users/{id}/w3c-sync`, each row showing the sync icon of its row menu, and the bar counts "Syncing 2 of 5…".
+- **Delete** asks first, naming every ticked player, then deletes them one after another and reads the list once.
+
+After a sync or a delete a line over the table counts what went through and names the players that failed; they stay ticked, so a second click retries only them.
 
 The list pages 25 rows at a time, and its country flags and race/MMR chips carry tap-accessible tooltips on a touch screen.
 

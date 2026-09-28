@@ -159,7 +159,7 @@ Setting up a season happens once or twice a year, so admins do not remember the 
 | 2 | Maintain teams | `teams/TeamsView` | League-wide team list: name, logo, Discord role |
 | 3 | Maintain maps | `maps/MapsView` | Map pool with images; ladder import |
 | 4 | Open the season for signup | `SeasonsView` switch `signups_open` | Also offers "Publish season" (`PUT /events/{id}` `published`; there is no UI for it today). Shows the signup count |
-| 5 | Maintain players | `players/PlayersView` | Find, edit, merge, tag. Merge and tags are desktop only |
+| 5 | Maintain players | `players/PlayersView` | Find, edit, merge, tag. Merge and tags are desktop only. **Done:** tick any number of players and add them to a season (a race each), sync them from W3Champions, or delete them; the bar shows only while a player is ticked |
 | 6 | Add teams to the season with season data (captains, season name or logo, etc.) | `team/[id]/season/[sid]`, `/events/{id}/teams`, `PUT .../captains` | One season page listing its teams, each with captains and settings |
 | 7 | Assign maps to the season | `seasons/[id]/maps` | Pick from the pool, set the order |
 | 8 | Define team matchups for rounds (each team plays each other at least once) | `seasons/[id]` (matches are created one by one, `POST /matches`) | **New:** generate a round-robin schedule (a pure helper with tests) as a preview the admin can adjust, then save. Check whether a bulk backend route is needed or `POST /matches` per fixture is enough |

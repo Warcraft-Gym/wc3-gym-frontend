@@ -7,8 +7,10 @@ const store = {
   async gnlLeagueId() {
     return (await gnlLeague()).id;
   },
-  async fetchTeamsBySeason(season_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams`);
+  // The answer allows stale-while-revalidate, so the browser may hand back its old copy once, bearer
+  // or not; fresh adds a query no cache holds, so a page re-reading the rosters after its own write sees it
+  async fetchTeamsBySeason(season_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams${fresh ? `?t=${Date.now()}` : ""}`);
   },
   async fetchTeamsBySeasonBasic(season_id: number) {
     return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams/basic`);

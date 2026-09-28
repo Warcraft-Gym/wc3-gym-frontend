@@ -36,6 +36,7 @@ export function FilterPanel({
   onRangeValuesChange,
   onReset,
   after,
+  actions,
   summary,
 }: {
   seasons?: EventRow[];
@@ -58,6 +59,7 @@ export function FilterPanel({
   onRangeValuesChange?: (value: number[]) => void;
   onReset?: () => void;
   after?: React.ReactNode;
+  actions?: React.ReactNode; // the page's buttons, at the end of the search row
   summary?: React.ReactNode;
 }) {
   const events = [...seasons].sort((a, b) => b.id - a.id);
@@ -125,6 +127,9 @@ export function FilterPanel({
         ) : null}
 
         {expanded ? after : null}
+
+        {/* the page's own buttons close the first row and stay in view on a phone too */}
+        {actions ? <div className="ms-auto flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
 
       {showRace || showMMR || showReset ? (

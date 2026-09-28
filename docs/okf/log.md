@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-09-28
+
+* **Add**: an admin ticks players on `/players` and adds them to a season, a race each, syncs them from W3Champions, or deletes them. The bar of actions shows only while a player is ticked, over the table on a computer and above the tab bar on a phone. The browser makes the existing calls, one signup call per race and one sync or delete per player; the players that failed stay ticked. The players page concept states it.
+
 ## 2026-09-27
 
 * **Update**: the role-based rework takes in the menus of 26 September: the nav stays Home, My Stats, My Team and Admin, and Leagues joins KOTH Nights and Events under Other Events in the admin frame; the KOTH board, the leagues and the events are public pages reached by link. Home keeps "Open signups" first and gains "Upcoming events", the rest of the upcoming events of every league with no button. The fantasy panel reads the season's fantasy series through the edge-cached `?is_fantasy_match=true` read. The shell, routing and member concepts and `DESIGN.md` state it.

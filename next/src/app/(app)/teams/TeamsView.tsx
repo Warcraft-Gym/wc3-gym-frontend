@@ -43,9 +43,10 @@ export function TeamsView() {
   const [file, setFile] = useState<File | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchTeams = async () => {
+  // after a save the list is read fresh, past the browser's copy from before it
+  const fetchTeams = async (afterSave = false) => {
     setLoading(true); setError(null);
-    try { setTeams((await teamStore.fetchTeams()) || []); }
+    try { setTeams((await teamStore.fetchTeams(afterSave)) || []); }
     catch (e) { console.error("Failed to load teams:", e); setError("Failed to load Teams. Please try again later."); }
     finally { setLoading(false); }
   };
@@ -66,7 +67,7 @@ export function TeamsView() {
   const save = async () => {
     setFormError(null);
     if (editing) {
-      try { await teamStore.updateTeam(selected); if (file) await teamStore.uploadTeamImage(selected.id, file, selected.league_id); await fetchTeams(); close(); }
+      try { await teamStore.updateTeam(selected); if (file) await teamStore.uploadTeamImage(selected.id, file, selected.league_id); await fetchTeams(true); close(); }
       catch (e) { console.error("Error updating Team:", e); setFormError("Error updating Team: " + errorText(e)); }
       return;
     }
@@ -77,11 +78,11 @@ export function TeamsView() {
     } catch (e) { console.error("Error creating Team:", e); setFormError("Error creating Team: " + errorText(e)); return; }
     if (file) {
       try { await teamStore.uploadTeamImage(created.id, file, created.league_id); }
-      catch (e) { console.error("Error uploading team icon:", e); await fetchTeams(); setFile(null); setSelected({ id: created.id, league_id: created.league_id, name: created.name, long_name: created.long_name }); setFormError("Team created, but icon upload failed: " + errorText(e)); setEditing(true); return; }
+      catch (e) { console.error("Error uploading team icon:", e); await fetchTeams(true); setFile(null); setSelected({ id: created.id, league_id: created.league_id, name: created.name, long_name: created.long_name }); setFormError("Team created, but icon upload failed: " + errorText(e)); setEditing(true); return; }
     }
-    await fetchTeams(); close();
+    await fetchTeams(true); close();
   };
-  const remove = async (id?: number | string) => { setError(null); try { await teamStore.deleteTeam(Number(id)); await fetchTeams(); } catch (e) { console.error("Error deleting Team:", e); setError("Error deleting Team: " + errorText(e)); } };
+  const remove = async (id?: number | string) => { setError(null); try { await teamStore.deleteTeam(Number(id)); await fetchTeams(true); } catch (e) { console.error("Error deleting Team:", e); setError("Error deleting Team: " + errorText(e)); } };
 
   return <div className="p-4">
     {loading ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60"><Icon name="mdi-loading" size={64} className="animate-spin text-primary-text" /></div> : null}

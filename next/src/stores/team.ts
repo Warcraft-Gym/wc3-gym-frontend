@@ -7,16 +7,16 @@ const store = {
   async gnlLeagueId() {
     return (await gnlLeague()).id;
   },
-  // The answer allows stale-while-revalidate, so the browser may hand back its old copy once, bearer
-  // or not; fresh adds a query no cache holds, so a page re-reading the rosters after its own write sees it
+  // The team reads allow stale-while-revalidate, so the browser may hand back its old copy once, bearer
+  // or not; fresh adds a query no cache holds, so a page re-reading them after its own write sees it
   async fetchTeamsBySeason(season_id: number, fresh = false) {
     return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams${fresh ? `?t=${Date.now()}` : ""}`);
   },
-  async fetchTeamsBySeasonBasic(season_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams/basic`);
+  async fetchTeamsBySeasonBasic(season_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams/basic${fresh ? `?t=${Date.now()}` : ""}`);
   },
-  async fetchTeams() {
-    return await fetchWrapper.get(`${backendUrl}/leagues/${await store.gnlLeagueId()}/teams`);
+  async fetchTeams(fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/leagues/${await store.gnlLeagueId()}/teams${fresh ? `?t=${Date.now()}` : ""}`);
   },
   async getTeamsBasic() {
     return await fetchWrapper.get(`${backendUrl}/leagues/${await store.gnlLeagueId()}/teams/basic`);
@@ -36,8 +36,8 @@ const store = {
     const leagueId = league_id ?? (await store.gnlLeagueId());
     await fetchWrapper.fileUpload(`${backendUrl}/leagues/${leagueId}/teams/${team_id}/image`, formData);
   },
-  async fetchTeamBySeason(team_id: number, season_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams/${team_id}`);
+  async fetchTeamBySeason(team_id: number, season_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/teams/${team_id}${fresh ? `?t=${Date.now()}` : ""}`);
   },
   async updateTeam(team: any) {
     const leagueId = team.league_id ?? (await store.gnlLeagueId());

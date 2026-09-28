@@ -49,11 +49,12 @@ export function MapsView() {
   // Delete dialog state
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
 
-  const fetchMaps = async () => {
+  // after a save the pool is read fresh, past the browser's copy from before it
+  const fetchMaps = async (afterSave = false) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      setMaps((await mapStore.fetchMaps()) || []);
+      setMaps((await mapStore.fetchMaps(afterSave)) || []);
     } catch (error) {
       console.error("Failed to fetch maps", error);
       setErrorMessage("Failed to load maps. Please try again later.");
@@ -64,7 +65,7 @@ export function MapsView() {
 
   useEffect(() => {
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
-    queueMicrotask(fetchMaps);
+    queueMicrotask(() => fetchMaps());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,7 +94,7 @@ export function MapsView() {
     try {
       await mapStore.updateMap(selectedMap);
       await uploadPicture(selectedMap!.id);
-      await fetchMaps();
+      await fetchMaps(true);
       closeMapDialog();
     } catch (error) {
       console.error("Error updating map:", error);
@@ -106,7 +107,7 @@ export function MapsView() {
     try {
       const created = await mapStore.createMap(selectedMap);
       await uploadPicture(created.id);
-      await fetchMaps();
+      await fetchMaps(true);
       closeMapDialog();
     } catch (error) {
       console.error("Error creating map:", error);
@@ -117,7 +118,7 @@ export function MapsView() {
   const removeMap = async (mapId?: number | string) => {
     try {
       await mapStore.deleteMap(Number(mapId));
-      await fetchMaps();
+      await fetchMaps(true);
     } catch (error) {
       console.error("Error deleting map:", error);
     }
@@ -143,7 +144,7 @@ export function MapsView() {
     try {
       await mapStore.importLadderMaps(names);
       setImportOpen(false);
-      await fetchMaps();
+      await fetchMaps(true);
     } catch (error) {
       console.error("Failed to import the ladder pool", error);
       setErrorMessage((error as Error).message);

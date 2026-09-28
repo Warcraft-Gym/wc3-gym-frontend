@@ -107,6 +107,7 @@ WC3 Gym   Home   My Team ▾   Season ▾   Fantasy   Events ▾   Admin        
     - New Event
     - This section links to today's pages and is not reworked until GNL is done for all roles.
 - The sidebar shows on `/admin` **and on every existing admin page listed in it**. No page moves or redirects in this step; later steps move or rework pages section by section.
+- **Later decision (2026-09-28):** the sidebar shows for a session with the admin hat on **every page the Admin tab leads to**: the admin sections, the pages under them (a season, its draft, an event), match and series pages opened from a season, and every team page (overall and in a season, the admin's own My Team included). Home and the player page keep the plain layout. The admin can slide it out to the left and back; the browser remembers the choice. Players, captains and view-as never see it.
 - **Phone:** no sidebar. `/admin` shows the same sections as a list of large rows with icons and one-line descriptions, and each admin page gets a "← Admin" back link in its header.
 - Admin pages that are not yet phone-ready show the shared desktop notice. Their levels are set when each section is reworked; until then they keep today's behaviour.
 

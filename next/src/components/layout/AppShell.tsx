@@ -19,7 +19,7 @@ import { canSeeRole, metaOf } from "@/lib/routes";
 import { useAuth } from "@/stores";
 import { myProfilePath } from "@/helpers/players.mjs";
 import { buildNav, isActive, navTabs } from "@/helpers/nav-model.mjs";
-import { inAdminFrame } from "@/helpers/admin-nav.mjs";
+import { adminFrame, inAdminFrame } from "@/helpers/admin-nav.mjs";
 import { cn } from "@/lib/utils";
 
 const BAR_LINK = "text-primary-text";
@@ -53,8 +53,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // every hat the session wears adds its place: Home and My Stats, My Team, Admin
   const nav = buildNav(me, canSee);
   const tabs = showNavLinks ? navTabs(nav) : [];
-  // an admin page sits in the admin frame; a viewed lower role never reaches one
-  const adminFrame = showNavLinks && !!nav.admin && inAdminFrame(path, metaOf(path).role === "admin");
+  // an admin page is a page of the admin area; a viewed lower role never reaches one
+  const adminOnly = metaOf(path).role === "admin";
+  const adminPage = showNavLinks && !!nav.admin && inAdminFrame(path, adminOnly);
+  // the admin hat keeps the sidebar on every page; a player, a captain and a viewed lower role have none
+  const frame = adminFrame(path, { adminHat: showNavLinks && !!nav.admin, adminOnly });
   const current = (to: string) => (isActive(to, path) ? "page" : undefined);
 
   const avatarUrl: string | null = me?.avatar || null; // /me already answers the CDN URL
@@ -89,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <nav className="hidden items-center min-[960px]:flex" aria-label="Main">
             {tabs.map((tab) =>
               tab.to ? (
-                <Button key={tab.key} variant="ghost" className={BAR_LINK} nativeButton={false} render={<Link href={tab.to} aria-current={tab.key === "admin" ? (adminFrame ? "page" : undefined) : current(tab.to)} />}>
+                <Button key={tab.key} variant="ghost" className={BAR_LINK} nativeButton={false} render={<Link href={tab.to} aria-current={tab.key === "admin" ? (adminPage ? "page" : undefined) : current(tab.to)} />}>
                   <Icon name={tab.icon} />
                   {tab.title}
                 </Button>
@@ -169,9 +172,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Alert>
         ) : null}
         {viewAsOpen ? <ViewAsDialog onOpenChange={setViewAsOpen} /> : null}
-        <div className={cn("mx-auto w-full px-2 py-3 md:px-4", adminFrame ? "max-w-[1520px]" : "max-w-[1280px]")}>
-          {adminFrame ? (
-            <AdminFrame path={path}>
+        <div className={cn("mx-auto w-full px-2 py-3 md:px-4", frame.sidebar ? "max-w-[1520px]" : "max-w-[1280px]")}>
+          {frame.sidebar ? (
+            <AdminFrame path={path} backLink={frame.backLink}>
               <Guard>{children}</Guard>
             </AdminFrame>
           ) : (
@@ -183,7 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* a stream shows the brackets alone, so the clean page carries no footer link either */}
-      {tabs.length ? <BottomNav tabs={tabs} teams={nav.teams} path={path} adminActive={adminFrame} /> : null}
+      {tabs.length ? <BottomNav tabs={tabs} teams={nav.teams} path={path} adminActive={adminPage} /> : null}
 
       {!clean ? (
         <footer className="flex justify-end px-3 py-1 text-xs">

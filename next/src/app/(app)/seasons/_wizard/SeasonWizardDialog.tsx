@@ -164,8 +164,9 @@ export function SeasonWizardDialog({
           const [full, event, seasonTeams, matches, signedUp] = await Promise.all([
             seasonStore.fetchSeason(id),
             eventStore.fetchEvent(id),
-            // the team read with the rosters and the captains of this season
-            teamStore.fetchTeamsBySeason(id),
+            // the team read with the rosters and the captains of this season; read fresh, so a wizard
+            // reopened right after a save shows it and not the browser's copy from before
+            teamStore.fetchTeamsBySeason(id, true),
             matchStore.searchMatchesBySeason(id),
             seasonStore.fetchSeasonSignups(id),
           ]);
@@ -245,7 +246,7 @@ export function SeasonWizardDialog({
 
   // The map list is read again after a new map or an import, and the maps the step names are ticked
   const reloadMaps = async (pick: (maps: Row[]) => number[]) => {
-    const maps: Row[] = (await mapStore.fetchMaps()) || [];
+    const maps: Row[] = (await mapStore.fetchMaps(true)) || [];
     setAllMaps(maps);
     const picked = pick(maps);
     setMapIds((was) => [...was, ...picked.filter((id) => !was.includes(id))]);

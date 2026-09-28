@@ -121,9 +121,10 @@ export function SeasonDetailsView({ id }: { id: string }) {
     }
   };
 
-  const fetchTeams = async () => {
+  // after adding teams the list is read fresh, past the browser's copy from before the save
+  const fetchTeams = async (afterSave = false) => {
     try {
-      setTeams((await teamStore.fetchTeamsBySeasonBasic(seasonId as number)) || []);
+      setTeams((await teamStore.fetchTeamsBySeasonBasic(seasonId as number, afterSave)) || []);
     } catch (error) {
       console.error("Failed to fetch teams for the season:", error);
     }
@@ -199,7 +200,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
     setIsLoading(true);
     try {
       await addTeamsToSeason(seasonId as number, selectedTeams);
-      await fetchTeams();
+      await fetchTeams(true);
     } catch (error) {
       console.error("Failed to add teams to season:", error);
     } finally {

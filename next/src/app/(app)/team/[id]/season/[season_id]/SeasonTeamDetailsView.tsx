@@ -108,17 +108,18 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
   // The teams of the answer are ordered by ladder points
   const ladderRank = (seasonLadder?.teams ?? []).findIndex((t: Row) => String(t.id) === String(teamId)) + 1;
 
-  const fetchTeam = async () => {
+  // After a save of this page the team is read fresh, past the browser's copy from before it; the
+  // player list for the captain picker is read on the first load only, since no save here changes it
+  const fetchTeam = async (afterSave = false) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const loaded = await teamStore.fetchTeamBySeason(teamId, seasonId as number);
+      const loaded = await teamStore.fetchTeamBySeason(teamId, seasonId as number, afterSave);
       setTeam(loaded);
       if (!loaded) setErrorMessage("No team information found.");
       setPlayers(rosterOf(loaded, seasonId).members);
       // Load ALL users for captain selection (captains can be anyone, not just season players)
-      const users = (await playerStore.fetchPlayers()) || [];
-      setAllAvailableUsers(users);
+      if (!afterSave) setAllAvailableUsers((await playerStore.fetchPlayers()) || []);
       // Initialize captain selections based on current captains (order is preserved)
       setCaptainIds(rosterOf(loaded, seasonId).captains.map((captain: Row) => captain.id));
       return loaded;
@@ -168,7 +169,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     try {
       const saved = await teamStore.setCaptains(teamId, seasonId as number, captainIds);
       // Refresh team data to show updated captain status
-      await fetchTeam();
+      await fetchTeam(true);
       setDiscordRoleMissing(saved?.discord_role_missing || []);
     } catch (error) {
       console.error("Failed to save captains:", error);
@@ -182,7 +183,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     try {
       await teamStore.addPlayersToTeamForSeason(teamId, seasonId as number, selectedPlayers);
       setSelectedPlayers([]);
-      await fetchTeam();
+      await fetchTeam(true);
       setShowNewPlayerModal(false);
     } catch (error) {
       console.error("Failed to save selected players:", error);
@@ -193,7 +194,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     if (!confirm("Remove this player from the team?")) return;
     try {
       await teamStore.removePlayersFromTeamForSeason(teamId, seasonId as number, [playerId]);
-      await fetchTeam();
+      await fetchTeam(true);
     } catch (error) {
       console.error("Error removing player:", error);
     }
@@ -205,7 +206,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
     setSyncDialog(true);
     try {
       setSyncEntries([{ title: team?.name ?? "Team", result: await teamStore.syncPlayersW3C(teamId, seasonId as number) }]);
-      await fetchTeam();
+      await fetchTeam(true);
     } catch (error) {
       console.error("Error syncing W3C data:", error);
       setSyncEntries([{ title: team?.name ?? "Team", error: error as Error }]);

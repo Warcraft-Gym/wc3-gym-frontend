@@ -60,7 +60,8 @@ const showHeld = (file?: File | null) => (input: HTMLInputElement | null) => {
 const offeredMaps = (form: Form, veto: Row | null): (number | null)[] => mapsByGame(form.map_rules, veto?.week_map_id, picksOf(veto?.steps), form.winners || []);
 const mapOfIn = (form: Form, veto: Row | null, game: number) => form.maps?.[game] ?? offeredMaps(form, veto)[game - 1] ?? null;
 // Names the games saved without a replay, or null
-const missingLine = (games: number[]) => (games.length ? `No replay for game${games.length > 1 ? "s" : ""} ${games.join(", ")}.` : null);
+const missingLine = (games: number[]) =>
+  games.length ? `No replay for game${games.length > 1 ? `s ${games.slice(0, -1).join(", ")} and` : ""} ${games[games.length - 1]}.` : null;
 
 /** The player reports one series: the map veto, the winner and map of each game, and
  *  the replay file per game. A roster member reports for a team side, which names no

@@ -59,10 +59,13 @@ const showHeld = (file?: File | null) => (input: HTMLInputElement | null) => {
 // The map the season's rules offer for each game, given the veto and who won the games before
 const offeredMaps = (form: Form, veto: Row | null): (number | null)[] => mapsByGame(form.map_rules, veto?.week_map_id, picksOf(veto?.steps), form.winners || []);
 const mapOfIn = (form: Form, veto: Row | null, game: number) => form.maps?.[game] ?? offeredMaps(form, veto)[game - 1] ?? null;
+// Names the games saved without a replay, or null
+const missingLine = (games: number[]) => (games.length ? `No replay for game${games.length > 1 ? "s" : ""} ${games.join(", ")}.` : null);
 
 /** The player reports one series: the map veto, the winner and map of each game, and
  *  the replay file per game. A roster member reports for a team side, which names no
- *  race of its own. The veto warns when it is not complete; it never blocks. The caller
+ *  race of its own. The veto warns when it is not complete, and a game played without its
+ *  replay warns too; neither blocks. The caller
  *  opens it through its ref and hands in the series row. */
 export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (message: string) => void; onMoved?: (replays: Row[]) => void; ref?: React.Ref<ReportResultDialogHandle> }) {
   const mapStore = useMapStore();
@@ -200,9 +203,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
       ? `Map veto: ${vetoSteps} of ${scoreVeto?.order?.length} steps done`
       : "No veto recorded";
   const hasReplay = (game: number) => series.replays?.[game] instanceof File;
-  // A first report needs every game's file; a fix keeps the stored ones unless a new file is picked
+  // A first report wants every game's file; a fix keeps the stored ones unless a new file is picked
   const needsFile = (game: number) => game > (series.reported || 0);
-  const fileHint = (game: number) => (needsFile(game) ? undefined : "Leave empty to keep the stored replay");
 
   // One row per game played, plus the next while neither side has won the series
   const gameRows = Array.from({ length: gameSlots(seriesGames, series.winners || []) }, (_, index) => index + 1);
@@ -220,6 +222,9 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
     });
 
   const [p1, p2] = reportedScore;
+  // The games played that carry no replay: the report still saves, but warns and asks once
+  const replaysMissing = Array.from({ length: replaysNeeded(p1, p2) }, (_, index) => index + 1).filter((game) => needsFile(game) && !hasReplay(game));
+  const fileHint = (game: number) => (!needsFile(game) ? "Leave empty to keep the stored replay" : replaysMissing.includes(game) ? "Every game needs its replay" : undefined);
   const scoreProblem = isValidResult(p1, p2, seriesWins) ? null : "Tap the winner of each game played";
   const resultLine = `${name(1)} ${p1} – ${p2} ${name(2)}`;
 
@@ -228,7 +233,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
   const wantedMaps = gameRows.map((game) => offered[game - 1] ?? series.maps?.[game] ?? null);
   const replayMaps = gameRows.map((game) => matchMap(series.reads?.[game]?.mapPath, maps)?.id ?? null);
   // Why the report asks once before it saves, or null: only a series that plays a veto and records no step asks about the veto
-  const confirmReason: string | null = reportWarning(hasVeto && !vetoSteps, mapMismatches(replayMaps, wantedMaps));
+  const confirmReason: string | null =
+    [missingLine(replaysMissing), reportWarning(hasVeto && !vetoSteps, mapMismatches(replayMaps, wantedMaps))].filter(Boolean).join(" ") || null;
   // The group title names the map the game should play: the veto's, else the one named for the game
   const titleMapOf = (game: number) => maps.find((map) => map.id === (offered[game - 1] ?? mapOf(game)))?.name;
 
@@ -293,14 +299,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
     }
   };
 
-  // Allowed score combinations, every required file present, and every file a .w3g
-  const isValid = (() => {
-    if (!isValidResult(p1, p2, seriesWins)) return false;
-    if (gameRows.some((game) => !isW3g(series.replays[game]))) return false;
-    const played = replaysNeeded(p1, p2);
-    for (let game = 1; game <= played; game++) if (needsFile(game) && !hasReplay(game)) return false;
-    return true;
-  })();
+  // Allowed score combinations and every picked file a .w3g; a missing file warns instead
+  const isValid = isValidResult(p1, p2, seriesWins) && !gameRows.some((game) => !isW3g(series.replays[game]));
 
   const save = async () => {
     setSaving(true);
@@ -309,22 +309,22 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
       const games = gamesReported(series.winners, mapOf);
 
       const played = replaysNeeded(p1, p2);
-      for (let game = 1; game <= played; game++) {
-        if (needsFile(game) && !hasReplay(game)) {
-          setErrorMessage(`Game ${game} replay file is required for a ${p1}:${p2} result.`);
-          return;
-        }
-      }
-
       const id = series.id!;
+      const fix = played === series.reported && JSON.stringify(games) === series.storedGames;
       const uploaded: number[] = [];
       for (let game = 1; game <= played; game++) {
         if (!hasReplay(game)) continue;
-        await uploadReplay(id, game, series.replays[game] as File);
-        uploaded.push(game);
+        try {
+          await uploadReplay(id, game, series.replays[game] as File);
+          uploaded.push(game);
+        } catch (error) {
+          // a failed upload never holds a result back: the report lists the game as missing
+          if (fix) throw error;
+        }
       }
 
-      if (played === series.reported && uploaded.length && JSON.stringify(games) === series.storedGames) {
+      let missing: number[] = [];
+      if (fix && uploaded.length) {
         // the result stands; each new file replaces one stored replay
         for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}`);
       } else {
@@ -346,10 +346,11 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
           const errorData = await response.json();
           throw new Error(errorData.error || "Update failed");
         }
+        missing = (await response.json()).replays_missing || [];
       }
 
       close();
-      onSaved?.("Result reported successfully!");
+      onSaved?.(missing.length ? `Result reported. ${missingLine(missing)} Add ${missing.length > 1 ? "them" : "it"} with Edit result.` : "Result reported successfully!");
     } catch (error) {
       setErrorMessage((error as Error).message || "Error reporting result.");
     } finally {
@@ -368,6 +369,15 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         <div className="flex flex-col gap-3 p-4">
           <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
           <StatusAlert modelValue={moved} type="success" onClose={() => setMoved(null)} className="mb-0" />
+          {replaysMissing.length ? (
+            <div>
+              <h3 className="flex items-center gap-2 text-warning">
+                <Icon name="mdi-alert-outline" />
+                {replaysMissing.length === 1 ? "A replay is missing" : "Replays are missing"}
+              </h3>
+              <div className="text-sm">Every game needs its replay. Add them below, or report the result without them.</div>
+            </div>
+          ) : null}
           {vetoMissing ? (
             <div>
               <h3 className="flex items-center gap-2 text-warning">
@@ -486,7 +496,6 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
                   ref={showHeld(series.replays[game])}
                   type="file"
                   accept=".w3g"
-                  required={needsFile(game)}
                   onChange={(event) => readGameReplay(game, event.target.files?.[0] ?? null)}
                 />
               </Field>
@@ -503,16 +512,16 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
             Close
           </Button>
           <Button
-            variant={vetoMissing ? "outline" : "default"}
-            className={vetoMissing ? "text-warning" : undefined}
+            variant={replaysMissing.length || vetoMissing ? "outline" : "default"}
+            className={replaysMissing.length || vetoMissing ? "text-warning" : undefined}
             disabled={!isValid || saving}
             onClick={() => (confirmReason ? setConfirmOpen(true) : save())}
           >
             <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
-            {vetoMissing ? "Report without a veto" : "Save result"}
+            {replaysMissing.length ? "Report without replays" : vetoMissing ? "Report without a veto" : "Save result"}
           </Button>
         </div>
-        {/* The veto never blocks, so a report that disagrees with it asks once and then goes through */}
+        {/* Neither a missing replay nor the veto blocks, so a report short of either asks once and then goes through */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[420px] gap-0 p-0 sm:max-w-[420px]`}>
             <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Are you sure?</DialogTitle>

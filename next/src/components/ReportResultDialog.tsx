@@ -233,9 +233,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
   const offered = offeredMaps(series, scoreVeto);
   const wantedMaps = gameRows.map((game) => offered[game - 1] ?? series.maps?.[game] ?? null);
   const replayMaps = gameRows.map((game) => matchMap(series.reads?.[game]?.mapPath, maps)?.id ?? null);
-  // Why the report asks once before it saves, or null: only a series that plays a veto and records no step asks about the veto
-  const confirmReason: string | null =
-    [missingLine(replaysMissing), reportWarning(hasVeto && !vetoSteps, mapMismatches(replayMaps, wantedMaps))].filter(Boolean).join(" ") || null;
+  // Why the report asks once before it saves, one line per check: only a series that plays a veto and records no step asks about the veto
+  const confirmReasons = [missingLine(replaysMissing), reportWarning(hasVeto && !vetoSteps, mapMismatches(replayMaps, wantedMaps))].filter(Boolean) as string[];
   // The group title names the map the game should play: the veto's, else the one named for the game
   const titleMapOf = (game: number) => maps.find((map) => map.id === (offered[game - 1] ?? mapOf(game)))?.name;
 
@@ -516,17 +515,24 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
             variant={replaysMissing.length || vetoMissing ? "outline" : "default"}
             className={replaysMissing.length || vetoMissing ? "text-warning" : undefined}
             disabled={!isValid || saving}
-            onClick={() => (confirmReason ? setConfirmOpen(true) : save())}
+            onClick={() => (confirmReasons.length ? setConfirmOpen(true) : save())}
           >
             <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
-            {replaysMissing.length ? "Report without replays" : vetoMissing ? "Report without a veto" : "Save result"}
+            {replaysMissing.length || vetoMissing ? "Report with incomplete data" : "Save result"}
           </Button>
         </div>
         {/* Neither a missing replay nor the veto blocks, so a report short of either asks once and then goes through */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[420px] gap-0 p-0 sm:max-w-[420px]`}>
             <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Are you sure?</DialogTitle>
-            <div className="p-4 text-sm">{confirmReason}</div>
+            <ul className="flex flex-col gap-3 p-4 text-sm">
+              {confirmReasons.map((reason) => (
+                <li key={reason} className="flex gap-2">
+                  <Icon name="mdi-alert-outline" className="mt-0.5 shrink-0 text-warning" />
+                  {reason}
+                </li>
+              ))}
+            </ul>
             <div className="flex justify-end gap-2 p-4 pt-0">
               <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
                 Go back

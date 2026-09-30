@@ -12,7 +12,16 @@ test('the common event phases read in the season lifecycle', () => {
   assert.equal(seasonPhase({ phase: 'checkin' }), 'open');
   assert.equal(seasonPhase({ phase: 'seeded' }), 'open');
   assert.equal(seasonPhase({ phase: 'running' }), 'commenced');
-  assert.equal(seasonPhase({ phase: 'finished', unscored_series: 2 }), 'overdue');
+  assert.equal(seasonPhase({ phase: 'running', end_date: '2999-01-01' }), 'commenced');
+});
+
+test('only the close completes a season', () => {
+  // every series scored, and still running: the next round is not drafted yet
+  assert.equal(seasonPhase({ phase: 'running', unscored_series: 0, end_date: '2999-01-01' }), 'commenced');
+  assert.equal(seasonPhase({ phase: 'running', unscored_series: 0, end_date: '2020-01-01' }), 'overdue');
+  assert.equal(seasonPhase({ phase: 'running', unscored_series: 2, end_date: '2020-01-01' }), 'overdue');
+  // closed with results missing
+  assert.equal(seasonPhase({ phase: 'finished', unscored_series: 2 }), 'complete');
   assert.equal(seasonPhase({ phase: 'finished', unscored_series: 0 }), 'complete');
 });
 

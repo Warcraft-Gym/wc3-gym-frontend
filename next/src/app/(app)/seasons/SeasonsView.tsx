@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle, dialogCompact } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import { PHASE_LABEL } from "@/helpers/season-phase.mjs";
 import { SERIES_PER_FIXTURE } from "@/helpers/event-labels.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { useAuth, useSeason } from "@/stores";
+import { cn } from "@/lib/utils";
 import { SeasonWizardDialog } from "./_wizard/SeasonWizardDialog";
 
 type Season = Record<string, any>;
@@ -30,7 +32,7 @@ type Column = { title: string; value: string; sortable: boolean; mobile?: boolea
 
 export function SeasonsView() {
   const router = useRouter();
-  const { seasons, fetchSeasons, deleteSeason, uploadSeasonFile, exportSeason } = useSeason();
+  const { seasons, fetchSeasons, deleteSeason, closeSeason, reopenSeason, uploadSeasonFile, exportSeason } = useSeason();
   const { isAdmin } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +48,8 @@ export function SeasonsView() {
   const [wizardSeason, setWizardSeason] = useState<Season | null | undefined>(undefined);
   const [sort, setSort] = useState<{ value: string; desc: boolean }>({ value: "", desc: false });
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
+  // The season the close asks about; null while the ask is shut
+  const [closing, setClosing] = useState<Season | null>(null);
 
   const tableHeader: Column[] = [
     { title: "Name", value: "name", sortable: true },
@@ -93,6 +97,19 @@ export function SeasonsView() {
     } catch (err) {
       console.error("Error deleting season:", err);
       setErrorMessage("Error deleting season: " + (err as Error).message);
+    }
+  };
+
+  // Only the close ends a season; the reopen takes it back. Either way the list is read again.
+  const setClosed = async (season: Season, closed: boolean) => {
+    setErrorMessage(null);
+    setClosing(null);
+    try {
+      await (closed ? closeSeason(season.id) : reopenSeason(season.id));
+      await loadSeasons();
+    } catch (err) {
+      console.error("Error closing or reopening season:", err);
+      setErrorMessage(`Error ${closed ? "closing" : "reopening"} ${season.name}: ${(err as Error).message}`);
     }
   };
 
@@ -289,6 +306,9 @@ export function SeasonsView() {
                             <RowActions
                               menu
                               actions={[
+                                item.phase === "complete"
+                                  ? { icon: "mdi-lock-open-variant", label: "Reopen Season", onClick: () => setClosed(item, false) }
+                                  : { icon: "mdi-flag-checkered", label: "Close Season", onClick: () => setClosing(item) },
                                 { icon: "mdi-download", label: "Export Season", onClick: () => downloadSeason(item.id, item.name) },
                                 { icon: "mdi-delete", label: "Delete Season", color: "error", onClick: () => openDeleteDialog(item.id, removeSeason) },
                               ]}
@@ -317,6 +337,30 @@ export function SeasonsView() {
       ) : null}
 
       <SeasonWizardDialog open={wizardSeason !== undefined} season={wizardSeason ?? null} onClose={() => setWizardSeason(undefined)} onSaved={loadSeasons} />
+
+      {/* Closing ends the season for everyone, so it says what the close does and what it leaves */}
+      <Dialog open={!!closing} onOpenChange={(open) => !open && setClosing(null)}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[480px]", dialogCompact)}>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Close {closing?.name}</DialogTitle>
+          <div className="p-4">
+            <p>The season reads complete: signups shut, the captains lose their seats and the leading team takes the championship.</p>
+            {closing?.unscored_series ? (
+              <p className="mt-3">
+                <strong>{closing.unscored_series} series</strong> {closing.unscored_series === 1 ? "has" : "have"} no result. {closing.unscored_series === 1 ? "It stays" : "They stay"} unscored
+                and count for neither team.
+              </p>
+            ) : null}
+            <p className="mt-3 text-xs text-muted-foreground">Reopen Season in the row menu takes the close back.</p>
+          </div>
+          <div className="flex items-center justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setClosing(null)}>Cancel</Button>
+            <Button onClick={() => closing && setClosed(closing, true)}>
+              <Icon name="mdi-flag-checkered" />
+              Close Season
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDeleteDialog
         modelValue={showDeleteDialog}

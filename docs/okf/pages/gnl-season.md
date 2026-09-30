@@ -4,7 +4,7 @@ title: The GNL season
 description: The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
 resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-28T18:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-30T14:29:12Z }
 sources:
   - id: seasons
     resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
@@ -53,7 +53,7 @@ sources:
 
 A GNL season is the GNL-kind event of the GNL league. It keeps these pages of its own; the event page links to them.
 
-**Seasons (`/seasons`).** One row per season: name, rounds, pick and ban order, series per fixture, and the phase (open, commenced, overdue, complete), with a warning mark on an overdue season and a chip that counts the series with no result, which opens the season with that list. A row opens the season. An admin creates a season in the season wizard, see below, and edits one with the pencil button on its row, which opens the same wizard. The row menu exports the season as a spreadsheet and deletes it. A panel imports a season from a spreadsheet, by season name or id.
+**Seasons (`/seasons`).** One row per season: name, rounds, pick and ban order, series per fixture, and the phase (open, commenced, overdue, complete), with a warning mark on an overdue season and a chip that counts the series with no result, which opens the season with that list. A row opens the season. An admin creates a season in the season wizard, see below, and edits one with the pencil button on its row, which opens the same wizard. The row menu closes the season, exports it as a spreadsheet and deletes it. Only the close completes a season: one with every series scored stays commenced, and one past its end date reads overdue. "Close Season" asks first, names the count of series with no result when there is one, and writes `POST /events/{id}/finish`. On a complete season the same place reads "Reopen Season" and writes `POST /events/{id}/reopen`. A panel imports a season from a spreadsheet, by season name or id.
 
 **The season wizard.** "Add New Season" and the row's pencil open one wizard, a large dialog that fills a phone screen (Full). Its steps are General, Teams, Captains & rosters, Matchups, Maps and Round maps; the Round maps step shows only while the season's map rules use the fixed map, and a season with no rules does. A step opens once every step before it is answered, so an edit can go straight to any step. Nothing of the season is written before the last button: "Create season" on the last step for a new season, "Save changes" on any step for an edit. Closing a wizard with changes asks first.
 

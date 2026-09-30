@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-28T16:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-30T14:29:12Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -28,7 +28,7 @@ The backend repository, `wc3-gym-backend`, owns every definition below. This fil
 - Every error is `{"error": "<text>"}`, sometimes with a `message` beside an `error` code. The wrapper reads both.
 - List routes take `limit` (up to 500) and `offset` and answer `X-Total-Count`; `sort` and `order` on the routes that support them.
 - Reads are open. A write needs an admin or the owning member; the app hides the buttons of writes the role cannot make, because a 401 ends the session.
-- The event API answers a GNL run with the common phase words. The season store translates them to `open`, `commenced`, `overdue` and `complete`; `finished` with an unscored count is overdue.
+- The event API answers a GNL run with the common phase words. The season store translates them to `open`, `commenced`, `overdue` and `complete`; `running` past the end date is overdue, and `finished` is complete whatever results are missing, because only an admin's close finishes a season.
 - Payloads nested under the older GNL routes keep `season_id`, `playday` and the four season phase words.
 - A series answers `player1_race` / `player2_race` resolved, and takes `player1_off_race` / `player2_off_race` on a write.
 - Every datetime is UTC and ends in `Z`; Luxon reads it and shows the viewer's zone.
@@ -48,8 +48,8 @@ A user row carries `tags`: a list of `{id, tag, verified, active, source, first_
 | Store | Routes |
 |---|---|
 | `auth` | `POST /login`, `GET /me` |
-| `season` | `/leagues`, `/events?league_id={id}`, `/events/{id}`, `/events/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements`, `/import`, `/export` |
-| `event` | `/leagues`, `/leagues/{id}`, `/events`, `/events/{id}`, `/me/events`, `/events/{id}/entrants...`, `/divisions`, `/divisions/assign`, `/stages`, `/stages/{id}/seeds`, `/seeds/lock`, `/generate`, `/rounds`, `/series`, `/standings`, `/advance`, `/finish`, `/koth/nights`, `/koth/nights/{id}/close` |
+| `season` | `/leagues`, `/events?league_id={id}`, `/events/{id}`, `/events/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements`, `/finish`, `/reopen`, `/import`, `/export` |
+| `event` | `/leagues`, `/leagues/{id}`, `/events`, `/events/{id}`, `/me/events`, `/events/{id}/entrants...`, `/divisions`, `/divisions/assign`, `/stages`, `/stages/{id}/seeds`, `/seeds/lock`, `/generate`, `/rounds`, `/series`, `/standings`, `/advance`, `/finish`, `/reopen`, `/koth/nights`, `/koth/nights/{id}/close` |
 | `player` | `/users`, `/users?no_discord=true`, `/users?tag_source=claim`, `/users/{id}`, `/users/me/tags`, `/users/me/tags/{tag_id}`, `/users/me/tags/{tag_id}/active`, `/users/{id}/tags/{tag_id}/move`, `/users/{id}/merge`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/player-series`, `/player-history` |
 | `team` | `/leagues/{league_id}/teams`, `/leagues/{league_id}/teams/basic`, `/leagues/{league_id}/teams/{id}`, `/events/{event_id}/teams`, `/events/{event_id}/teams/basic`, `/events/{event_id}/teams/{id}`, `/players`, `/captains`, `/availability`, `/ladder-sync`, `/image` |
 | `match` | `/matches`, `/matches/{id}`, `/matches/{id}/replays`, `/player-series/{id}/replays/{game}/move/{to_game}`, `/matches/search`, `/draft-series...`, `/draft-series/{id}/promote` |

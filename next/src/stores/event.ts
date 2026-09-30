@@ -185,6 +185,10 @@ const store = {
   async finishEvent(event_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/finish`);
   },
+  // Takes the close back: the event reads by its series again and its places go
+  async reopenEvent(event_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/reopen`);
+  },
   // The series one fixture holds, with the event that runs it. A fixture plays one
   // stage, so the first stage that answers it is the one it belongs to. A GNL season
   // draws its fixtures on its own pages and answers no rows here.

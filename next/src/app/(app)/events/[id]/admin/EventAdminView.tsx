@@ -237,6 +237,9 @@ export function EventAdminView({ id }: { id: string }) {
       await readEvent();
     }
   };
+  const reopenEvent = async () => {
+    if (!(await run(() => store.reopenEvent(event!.id)))) await readEvent();
+  };
 
   // One series in the dialog: its games open on the score it already carries. A free for
   // all lobby carries places instead of a score, so it opens the placement dialog.
@@ -388,6 +391,13 @@ export function EventAdminView({ id }: { id: string }) {
                   <Button variant="outline" className="text-primary-text" disabled={saving} onClick={() => setConfirmFinish(true)}>
                     <Icon name="mdi-trophy" />
                     Finish
+                  </Button>
+                ) : null}
+                {/* Finish stamps the event closed; the reopen clears the stamp and the places it paid */}
+                {lastStage && event.closed_at ? (
+                  <Button variant="outline" disabled={saving} onClick={reopenEvent}>
+                    <Icon name="mdi-lock-open-variant" />
+                    Reopen
                   </Button>
                 ) : null}
               </div>

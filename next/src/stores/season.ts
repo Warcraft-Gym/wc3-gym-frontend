@@ -61,6 +61,13 @@ const members = ({ seasons, current_season, selectedSeasonId }: SeasonState) => 
     async deleteSeason(season_id: number) {
       await fetchWrapper.delete(`${backendUrl}/events/${season_id}`);
     },
+    // Only the close ends a season, whatever results it still misses; the reopen takes it back
+    async closeSeason(season_id: number) {
+      await fetchWrapper.post(`${backendUrl}/events/${season_id}/finish`);
+    },
+    async reopenSeason(season_id: number) {
+      await fetchWrapper.post(`${backendUrl}/events/${season_id}/reopen`);
+    },
     async addTeamsToSeason(season_id: number, team_ids: number[]) {
       await fetchWrapper.post(`${backendUrl}/events/${season_id}/teams`, { team_ids });
     },

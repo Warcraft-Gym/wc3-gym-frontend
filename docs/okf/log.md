@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-09-30
+
+* **Update**: only an admin's close completes a GNL season. The seasons list's row menu closes a season, with a confirm that names the count of series with no result, and reopens a complete one; a season with every series scored stays commenced and one past its end date reads overdue; the run page reopens a closed event. The GNL season page, the event management page and the backend contract state it.
+
 ## 2026-09-28
 
 * **Update**: the views that showed the copy from before their own save read fresh right after it, with `?t=`: a season's team page after captains, roster changes and a sync, the season page after adding teams, the Teams and Maps pages after their writes, and the season wizard when it opens a season and after a new map. A season's team page no longer re-reads the full player list after a save. The edge-cache pitfall states it.

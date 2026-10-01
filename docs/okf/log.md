@@ -2,6 +2,7 @@
 
 ## 2026-10-01
 
+* **Creation**: the runbook that captures the screens, with the scripts under `next/scripts/shots/`; the admin guide follows the Admin area and the season wizard.
 * **Update**: the KOTH page says the board reads go without a token for a non-admin only; an admin's read, the run page's included, carries the bearer and is never edge cached.
 * **Update**: the member page's availability section no longer sends the reader to the player page alone: Home's My Season panel and the owner's round cards take the round answer and take a round back.
 * **Update**: the players and stats page no longer says the round check-in lives only there: Home's My Season panel and the owner's round cards take the round answer through the same write, `PUT /player-availability`, as the member concept states.

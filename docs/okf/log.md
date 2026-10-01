@@ -1,5 +1,14 @@
 # Bundle history
 
+## 2026-10-01
+
+* **Update**: the players and stats page no longer says the round check-in lives only there: Home's My Season panel and the owner's round cards take the round answer through the same write, `PUT /player-availability`, as the member concept states.
+* **Add**: the backend contract's read cost section lists the requests each surface makes on load, with its cache or its polling: Home, the round draft board, a KOTH night page and run page, the veto page, the schedule dialog, the series head to head, the team page roster strip and the upcoming series on the season report.
+* **Add**: the overview draws the system in one picture: the browser, Clerk, the Vercel edge cache, the backend API, Supabase Postgres, W3Champions and the Discord bot, with the two request paths out of the browser.
+* **Add**: the question list gains "The flows", one question per flow.
+* **Add**: `flows/` holds five flows that cross pages and roles: a member's GNL season, running a cup, a KOTH night, the life of one series and a fantasy season. Each has a steps table that names who acts, where, the route written and the page concept that owns the step, one Mermaid diagram, and the rules of its hand-offs. The bundle map lists the directory.
+* **Add**: the `Flow` type joins the bundle's type table, and a pull request that moves a step from one page to another also edits the flow that names it.
+
 ## 2026-09-30
 
 * **Update**: only an admin's close completes a GNL season. The seasons list's row menu closes a season, with a confirm that names the count of series with no result, and reopens a complete one; a season with every series scored stays commenced and one past its end date reads overdue; the run page reopens a closed event. The GNL season page, the event management page and the backend contract state it.

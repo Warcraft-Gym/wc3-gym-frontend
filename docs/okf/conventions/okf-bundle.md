@@ -4,7 +4,7 @@ title: How this bundle is written
 description: The rules for every file under docs/okf, and the one rule for talking about the other repositories.
 resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
 tags: [tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-01T09:45:36Z }
 sources:
   - id: okf-spec
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
@@ -31,6 +31,7 @@ Every concept starts with a YAML block. `type` is required. The types this bundl
 | API Area | a group of routes and their rules |
 | Integration | how this repository talks to a service outside it |
 | Page | a page area: its routes, what each role does there, the writes it makes |
+| Flow | a sequence of steps that crosses pages and roles: who acts, where, in which order, and which page concept owns each step |
 | Runbook | steps to do one operational task |
 | Decision | a choice that was made, when, and why it stands |
 | Pitfall | a mistake that was made once, and how to not repeat it |
@@ -78,6 +79,7 @@ The bundle is public. Never write a secret, a token, a database URL, an account 
 # Keeping it true
 
 - A pull request that changes a fact this bundle states changes the concept in the same pull request and updates `generated.at`.
+- A pull request that moves a step from one page to another also edits the flow that names it.
 - A concept that no longer holds gets `status: deprecated` and one line naming what replaced it. It is not deleted, so links keep working.
 - `log.md` gets one line per change, newest first.
 - GitHub Pages serves a graph viewer of this bundle, built from the bundle by the `pages.yml` workflow on every push to `main` with the viewer from the OKF reference repository. Nothing is committed for it: `just okf-graph` writes a local preview to `docs/okf/index.html`, which git ignores.

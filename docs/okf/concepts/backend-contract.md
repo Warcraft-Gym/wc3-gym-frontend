@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-30T14:29:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-01T09:45:36Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -71,6 +71,20 @@ The database cost of a backend read is the rows one call reads times the calls t
 - Read the narrowest route the page needs: one player's row, not the full list filtered in the browser. When no narrow route exists, ask the backend for one.
 - A read after a write, and every admin read, carries the bearer. A page that re-reads an edge-cached route right after its own write also adds `?t=`, so the browser's own cache cannot answer with the copy from before the write (see the pitfall). Everyone else sees the change once the edge entry expires.
 - The backend states the rules for choosing a cache time in its `docs/okf/api/overview.md`, section "What a read costs".
+
+Requests on load, by surface. The first column links the page concept of each surface.
+
+| Surface | Requests on load | Cache or polling |
+|---|---|---|
+| [Home](../pages/member.md) | 5 first: `/me`, `GET /seasons`, `GET /me/events`, `GET /home/series` and one `GET /player-series?season_id=`; the fantasy and stats panels read after the panels have drawn | `/home/series`, the setting, the fantasy series, the history and the ladders are edge cached; the rest carry the bearer |
+| [The round draft board](../pages/fixtures-and-series.md) | 2: the draft board and the draft state | a write that moves a pairing reads both again with no browser cache; nothing is read per row |
+| [A KOTH night page](../pages/koth.md) | 2: the board and the event row | the board is edge cached for fifteen seconds; the clean stream view reads it again every thirty seconds while the tab is visible and the night is not closed |
+| [A KOTH run page](../pages/koth.md) | 2: the board and the event row | an admin read carries the bearer, so the board answers fresh; every admin write answers the whole board |
+| [The veto page](../pages/fixtures-and-series.md) | 2: the veto board and the map list | the map list is edge cached; the board is read again every five seconds while the other side is on turn and the tab is visible, until the veto is complete |
+| [The schedule dialog](../pages/fixtures-and-series.md) | 1: the pair's free hours, `GET /player-series/{id}/free-time` | read once, when the dialog opens |
+| [The series head to head](../pages/fixtures-and-series.md) | 1: the meetings of the pair, for a series of two players and a signed-in reader | the meetings open under it with no second read |
+| [The team page roster strip](../pages/teams.md) | 0 extra | reuses the event's series read that the rounds table already made |
+| [Upcoming series on the season report](../pages/fixtures-and-series.md) | 0 extra | reuses the season's series read |
 
 # What the app never does
 

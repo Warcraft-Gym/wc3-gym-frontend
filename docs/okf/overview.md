@@ -4,7 +4,7 @@ title: wc3-gym-frontend
 description: The Next.js web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
 resource: https://github.com/Warcraft-Gym/wc3-gym-frontend
 tags: [design, deploy]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:38:38Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-01T09:45:36Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -29,6 +29,29 @@ One app for everyone: the public event and series pages, a member's profile, sig
 | staging | the `staging` branch, force-pushed to the merged commit on every push to `main`; a public preview at a fixed alias, on the Clerk dev instance, pointed at the staging backend |
 | other branches | no git deployment: `next/vercel.json` enables `main` and `staging` only |
 | local | `pnpm dev` in `next/` on port 3000, with `PROXY_TARGET` naming the backend that `/api` reaches |
+
+# The system in one picture
+
+```mermaid
+flowchart LR
+    browser["Browser: the Next.js app"]
+    clerk["Clerk: Discord OAuth, production through the /__clerk proxy route"]
+    cache["Vercel edge cache: open reads without a bearer"]
+    api["Backend API: owns every rule, GET /me is the session"]
+    db[("Supabase Postgres")]
+    w3c["W3Champions API"]
+    bot["Discord bot: posts cards"]
+    browser -->|"sign in"| clerk
+    browser -->|"open read, no bearer"| cache
+    cache -->|"miss"| api
+    browser -->|"bearer: every write, every admin read, a read after a write"| api
+    api --> db
+    api -->|"syncs the ratings"| w3c
+    api -.->|"a schedule write refreshes the series post"| bot
+    bot -->|"card buttons deep-link into the app"| browser
+```
+
+Two request paths leave the browser. An open read listed in `EDGE_CACHED` leaves without a bearer for a non-admin, so the Vercel edge can answer it from its cache. Every write, every admin read and a read right after a write carries the bearer and reaches the backend. [Read cost and the edge cache](concepts/backend-contract.md#read-cost-and-the-edge-cache) lists the rules.
 
 # Layout
 

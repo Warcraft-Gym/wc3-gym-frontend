@@ -3,7 +3,7 @@ type: Guide
 title: Start here by question
 description: The questions a new contributor or an agent asks first, each with the concept that answers it; the list is also the benchmark the bundle is read against.
 tags: [tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T08:43:31Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-01T09:45:36Z }
 sources:
   - id: index
     resource: index.md
@@ -36,6 +36,14 @@ sources:
 - Where does a member sign up for a season and set availability? [Member self-service](pages/member.md).
 - What can a captain do on the draft page? [The GNL season](pages/gnl-season.md).
 - Where is a result reported and the veto entered? [Fixtures and series](pages/fixtures-and-series.md).
+
+# The flows
+
+- What has to happen between a signup and the first reported result, and who is waiting on whom? [A member's GNL season](flows/gnl-season-for-a-member.md).
+- Which steps take a cup from an empty league to its awards, and where do the members act? [Run a cup](flows/run-a-cup.md).
+- How does a KOTH night run from "Open tonight" to the close, and which pages read its board? [A KOTH night](flows/koth-night.md).
+- Which states does a series pass through, and who moves it out of each one? [The life of one series](flows/series-lifecycle.md).
+- When does a member register a fantasy team, until when may he bet, and when does the team freeze? [A fantasy season](flows/fantasy-season.md).
 
 # The benchmark
 

@@ -1,7 +1,9 @@
 # GNL app user guide
 
-This guide is for gym admins. It follows the app's own top navigation bar, and the page it
-describes is always named by its route, so a link can be pasted straight into Discord.
+This guide is for gym admins. It follows the Admin area and its three sections: Gym Newbie
+League, App Settings and Other Events. The **Admin** tab of the top bar opens the area; on a
+phone the tab sits in the bar at the bottom. Each page is named by its route, so a link can be
+pasted straight into Discord.
 
 ## Table of contents
 
@@ -20,23 +22,24 @@ describes is always named by its route, so a link can be pasted straight into Di
 
 ## Configuration
 
-**Where:** Config → Settings (`/config`)
+**Where:** Admin → App Settings → Settings (`/config`)
 
 The page holds the settings the backend and the Discord bot read. Edit a field and press
-**Save Settings**; only the fields you changed are sent. **Reset** reloads the stored values
+**Save settings**; only the fields you changed are sent. **Reset** reloads the stored values
 and drops your edits.
 
-### W3Champions integration
+### Warcraft 3 Champions integration
 
 - **Current W3C season**: leave blank to follow the latest W3Champions season.
 - **W3Champions API URL**: leave blank to use the backend default.
 
-### GNL league settings
+### Gym Newbie League Settings
 
 - **Current GNL season**: the season public signups, fantasy registration and the Discord
   bot work against. Set it once per season.
 
-Player signups are opened and closed per season on the Seasons page, not here.
+Player signups are opened and closed per season, with **Signups open** in the season wizard,
+not here.
 
 ### Public access settings
 
@@ -53,8 +56,8 @@ Player signups are opened and closed per season on the Seasons page, not here.
 
 - **Discord invite URL**: the invite offered to a signed-in visitor who is not in the
   server. Without it the join card on `/profile` has nothing to click.
-- **Captain/Coach role ID** and **Admin role ID**: the two Discord roles the bot reads.
-- The channel ids say where the bot posts: signup, player dashboard, fantasy dashboard,
+- **Captain/coach role ID** and **Admin role ID**: the two Discord roles the bot reads.
+- The channel ids say where the bot posts: signup, player profile, fantasy dashboard,
   scheduling, results and content (cast claims and stream reminders).
 
 To read an id in Discord, turn on Settings → Advanced → Developer Mode, then right-click a
@@ -70,7 +73,8 @@ command into Nightbot straight after.
 
 ## Discord roles and access
 
-**Where:** Config → Discord Roles (`/config/discord-roles`), Config → Access (`/config/access`)
+**Where:** Admin → App Settings → Discord (`/config/discord-roles`), Admin → App Settings →
+Access (`/config/access`)
 
 ### Bind a Discord role
 
@@ -97,10 +101,14 @@ cannot remove themself.
 
 ## Players
 
-**Where:** GNL → Players (`/players`)
+**Where:** Admin → Gym Newbie League → Players (`/players`)
 
-A player row carries the name, Discord tag and id, BattleTag, country, race and MMR. Discord
-details are filled in when the player signs up, so most edits are MMR, race and country.
+**Edit** on a row takes the name, BattleTag, timezone, country, Discord tag and id, race, and
+the Twitch and YouTube channels. Discord details are filled in when the player signs up, so
+most edits are race and country. MMR comes from W3Champions: **Sync W3C** reads it again.
+
+Tick several players to act on them at once: **Add to season**, **Sync W3C** or **Delete**.
+**Move tag** and **Merge into**, in the row menu, fix two rows that are one person.
 
 A player's own page is `/player/<id>`: career record, races played and head-to-head.
 
@@ -108,103 +116,145 @@ A player's own page is `/player/<id>`: career record, races played and head-to-h
 
 ## Seasons and rounds
 
-**Where:** GNL → Seasons (`/seasons`)
+**Where:** Admin → Gym Newbie League → Seasons (`/seasons`)
+
+One row per season, with its phase. A row opens the season. The phase is derived, never
+stored:
+
+- **Open**: the season is being set up. It takes signups while **Signups open** is on.
+- **Commenced**: a series is scored or past its time. Fantasy teams freeze, and a signup
+  becomes a request for an admin to add the player.
+- **Overdue**: commenced and past its end date. The row wears a warning mark.
+- **Complete**: an admin closed the season.
+
+Only **Close Season**, in the row menu, completes a season. A season with every series scored
+stays commenced. The close asks first and counts the series with no result; they stay
+unscored and count for neither team. On a closed season the same place reads **Reopen
+Season**, which takes the close back. The row menu also exports and deletes a season.
 
 ### Create a season
 
-**Create Season** opens the dialog:
+**Add New Season** opens the season wizard. The pencil on a season's row opens the same
+wizard to edit it. The steps, in order:
 
-- **Season name** and **Season ID** (the short id used in links, for example `gnl-s18`).
-- **Start date** and **End date**.
-- **Number of rounds** and **Series per round**.
-- **Map pool**: the maps this season plays on.
-- **Signups open**: open or close signups for this season.
-- **Availability tools**: lets players enter blocked times and schedule their own series.
-- **Fantasy grind pick**: bettors pick a team and its achievement points pay by rank.
-- **Discord role ID**: the role given to this season's participants.
+1. **General**: the name, the number of rounds, the start and end date, the pick and ban
+   order, the series per fixture, the score system, the Discord role id and the round end
+   zone. The switches **Signups open**, **Availability tools**, **Check-in** (with
+   **Early check-in**) and **Fantasy grind pick**. The recent games floor, and the largest
+   MMR difference of the captain draft.
+2. **Teams**: tick the teams of the season. **New team** creates one and ticks it.
+3. **Captains & rosters**: the captains and the players of each ticked team. Players come
+   from the signups, so a new season sets its captains only.
+4. **Matchups**: optional. **Draw the matchups at random** draws a single round robin;
+   **Draw again** draws anew.
+5. **Maps**: tick the map pool. **New map** and **Import W3C map pool** add maps.
+6. **Round maps**: the map game 1 of each round is played on. **Fill in pool order** fills
+   the empty rounds. The step shows only while the season plays a fixed map.
 
-A season's phase is derived, never stored: **Open** until a series is scored or past its
-time, **Commenced** from then on, **Complete** once every series has a result.
+A step opens once every step before it is answered, so an edit can go straight to any step.
+Nothing is written before the last button: **Create season** on the last step of a new
+season, **Save changes** on any step of an edit. A failed write names its step; press the
+button again and it writes only what is still missing.
+
+A season's link uses a slug made from its name, for example `gnl-s18`.
 
 ### The season pages
 
 - `/seasons/<season>`: rounds, matches and the teams in the season.
+- `/seasons/<season>/assign`: the draft, where you assign the signups to teams.
 - `/seasons/<season>/maps`: the map pool, the map rule for each game and the pick/ban order.
 - `/seasons/<season>/achievements`: the achievement rules and what each one pays.
 
 ### Set the current season
 
-Config → Settings → **Current GNL season**. Everything public (signups, fantasy
+Admin → App Settings → Settings → **Current GNL season**. Everything public (signups, fantasy
 registration, the bot) reads that one value.
 
 ---
 
 ## Teams
 
-**Where:** GNL → Teams (`/teams`)
+**Where:** Admin → Gym Newbie League → Teams (`/teams`)
 
 A team carries a name, a long name and an icon. A team page is `/team/<id>`; its roster for
 one season is `/team/<id>/season/<season>`, where an admin adds players and seats the
-captains. `/team/<id>/season/<season>/rounds` shows the team's series round by round.
+captains. **Team rounds** opens `/team/<id>/season/<season>/rounds`, the team's round
+check-in: who checked in, who sits out, and who still needs a game.
 
 ---
 
 ## Matches and series
 
-**Where:** a season page (`/seasons/<season>`), a match page (`/match/<id>`)
+**Where:** Admin → Gym Newbie League → Seasons, then a season (`/seasons/<season>`) and a
+match (`/match/<id>`)
 
 A match is two teams in one round. A series is two players inside a match.
 
 ### Create a match
 
-On the season page, **Create match** takes Team 1, Team 2 and the round. Open the match to
-add the series.
+On the season page, **Add match** takes Team 1 and Team 2 in the selected round. The
+wizard's Matchups step draws every match at once. Open the match to add the series.
 
 ### Create and edit a series
 
-On the match page, **Edit series** sets the two players, the scheduled date and time (in the
-admin's own timezone; the stored value is UTC), **Is fantasy match**, and the result.
+On the match page, the captains draft the pairings on the **Draft series** tab, and an admin
+publishes them with **Publish all**. **Add series** adds a published series directly.
 
-The result takes the score for each side, the race each player played, the map of each game
-and the replay files. A series with a veto shows the maps the players chose.
+**Edit series** sets the scheduled date and time (in the admin's own timezone; the stored
+value is UTC), the score of each side or **Not played**, the race each player played, the
+host and **Is fantasy match**.
+
+Players report the result on the series page, `/series/<id>`: the winner, the map and the
+replay of each game. A missing replay or an incomplete veto warns and never blocks.
 
 ### Upcoming series
 
-GNL → Season (`/report`) opens on "Upcoming series" for the current season: the scheduled
-series with their times in the reader's own timezone, and who has claimed the cast.
+The season report (`/report#upcoming`) opens with "Upcoming series" while the current season
+is selected: the scheduled series with their times in the reader's own timezone, and who has
+claimed the cast. **All upcoming** on Home links there.
 
 ---
 
 ## Fantasy league
 
-**Where:** Fantasy → Leaderboard (`/fantasy`), Manage Bets (`/fantasy/bets`), Player Tiers (`/fantasy/tiers`)
+**Where:** Admin → Gym Newbie League → Fantasy Tiers (`/fantasy/tiers`), Admin → Gym Newbie
+League → Fantasy Bets (`/fantasy/bets`); the leaderboard is `/fantasy`
 
 ### Set the player tiers
 
-On `/fantasy/tiers`, **Even split** proposes six tiers by MMR and **Apply tiers** stores
-them. Every fantasy team drafts one player from each tier, so a season needs all six.
+On `/fantasy/tiers`, pick the number of **Tiers**, two to six. **Even split** proposes the
+cuts by MMR; drag a cut to move it. **Apply tiers** stores them. Every fantasy team drafts one
+player from each tier, so registration waits until the tiers are applied. A commenced
+season's tiers are locked; **Unlock** opens them.
 
 ### Open registration
 
-Config → Settings → **Fantasy team creation enabled**. A member registers a team on
-`/fantasy-registration`; an admin can create or edit one from the leaderboard.
+Admin → App Settings → Settings → **Fantasy team creation enabled**. A member registers a team
+on `/fantasy-registration`; an admin can create or edit one from the leaderboard.
 
 ### Bets
 
-`/fantasy/bets` lists every bet and lets an admin add or correct one. A bet locks once its
-series starts, and no bet or team may be edited after the season ends; the admin pages are
-the override.
+`/fantasy/bets` lists every bet and lets an admin add or correct one. A member's bet locks
+once its series has a result, and a member's team freezes once the season commences; the
+admin pages are the override.
 
 ---
 
 ## KOTH
 
-**Where:** KOTH (`/koth`)
+**Where:** Admin → Other Events → KOTH Nights (`/koth`)
 
-An event carries a name, a date, a description and the two bracket thresholds. Players sign
-up with a BattleTag, a Twitch username and their races, either on this page or through the
-Nightbot command configured on `/config`. Each night's public page is its event page,
-`/events/:id`, and `/koth/dashboard` opens tonight's. Add `?mode=clean` to show it on stream.
+`/koth` lists the nights, newest first. **Open tonight** takes the start time and the MMR each
+of the three brackets opens at, filled in from the night before, and lands on the night's run
+page. **Tonight** opens tonight's night page. A night's name opens its run page,
+`/koth/nights/<id>`, where you pair the series, take the results and set **Signups open** and
+**Published**. Only **Close the night** ends a night.
+
+Players sign up on the night page, or through the Nightbot command set up on `/config`.
+Every night has a public page, its event page `/events/<id>`. `/koth/dashboard` lands on
+tonight's night page, so one saved link follows each new night.
+The run page carries **Open stream view**, which opens the night page in its stream view
+(`?mode=clean`) in a new tab, and **Copy stream link**, which copies that link for the stream.
 
 ---
 
@@ -212,27 +262,30 @@ Nightbot command configured on `/config`. Each night's public page is its event 
 
 ### Start a season
 
-1. Create the season (Seasons → Create Season) with its rounds and map pool.
-2. Set it as the current season (Config → Settings).
-3. Open signups on the season (Seasons → edit → Signups open).
-4. Players sign up; add late ones by hand from the season page.
-5. Create or update the teams, then fill each team's roster for the season.
-6. Create the matches for each round, then the series inside each match.
-7. Close signups once the rosters are final.
+1. Seasons → **Add New Season**. In **General**, set the rounds and dates and check that
+   **Signups open** is on.
+2. Tick the teams, set the captains, draw the matchups if you want them now, and tick the map
+   pool and the round maps. Press **Create season**.
+3. Set it as the current season (Admin → App Settings → Settings).
+4. Players sign up; add late ones with **Add to season** on `/players`.
+5. Assign the signups to teams on the draft, `/seasons/<season>/assign`.
+6. Add any missing matches on the season page (**Add match**).
+7. Turn off **Signups open** (the row's pencil, General step) once the rosters are final.
 
 ### Run a round
 
-1. Players schedule their own series, or an admin sets the time on the match page.
-2. Mark the series that count for fantasy.
-3. Bettors place their bets before each series starts.
-4. Players report the result; an admin corrects it on the match page.
-5. Check the leaderboard and the season report.
+1. The captains draft the pairings on each match's **Draft series** tab; publish them.
+2. Players schedule their own series, or an admin sets the time on the match page.
+3. Mark the series that count for fantasy.
+4. Bettors place their bets before each series has a result.
+5. Players report the result; an admin corrects it on the match page.
+6. Check the leaderboard (`/fantasy`) and the season report (`/report`).
 
 ### Set up the fantasy league
 
-1. Assign the six player tiers (`/fantasy/tiers`).
-2. Enable fantasy team creation (Config → Settings).
-3. Configure the bet points (Config → Settings).
+1. Apply the player tiers (Admin → Gym Newbie League → Fantasy Tiers).
+2. Enable fantasy team creation (Admin → App Settings → Settings).
+3. Configure the bet points (Admin → App Settings → Settings).
 4. Bettors register their teams.
 5. Mark the fantasy series each round.
 
@@ -242,7 +295,8 @@ Nightbot command configured on `/config`. Each night's public page is its event 
 
 ### Players cannot sign up
 
-- Check **Signups open** on the season, and that the season is not complete.
+- Check **Signups open** on the season, and that the season has not commenced. A commenced
+  season takes a request only, and a complete one takes nothing.
 - Check **Current GNL season** on `/config`.
 - Check the **Signup channel ID**.
 
@@ -254,7 +308,7 @@ Nightbot command configured on `/config`. Each night's public page is its event 
 ### Fantasy teams cannot register
 
 - Check **Fantasy team creation enabled** and **Current GNL season**.
-- Check the season has not commenced, and that all six tiers are assigned.
+- Check the season has not commenced, and that its tiers are applied.
 
 ### Discord roles do not follow the app
 

@@ -2,6 +2,8 @@
 
 ## 2026-10-01
 
+* **Update**: the KOTH page says the board reads go without a token for a non-admin only; an admin's read, the run page's included, carries the bearer and is never edge cached.
+* **Update**: the member page's availability section no longer sends the reader to the player page alone: Home's My Season panel and the owner's round cards take the round answer and take a round back.
 * **Update**: the players and stats page no longer says the round check-in lives only there: Home's My Season panel and the owner's round cards take the round answer through the same write, `PUT /player-availability`, as the member concept states.
 * **Add**: the backend contract's read cost section lists the requests each surface makes on load, with its cache or its polling: Home, the round draft board, a KOTH night page and run page, the veto page, the schedule dialog, the series head to head, the team page roster strip and the upcoming series on the season report.
 * **Add**: the overview draws the system in one picture: the browser, Clerk, the Vercel edge cache, the backend API, Supabase Postgres, W3Champions and the Discord bot, with the two request paths out of the browser.

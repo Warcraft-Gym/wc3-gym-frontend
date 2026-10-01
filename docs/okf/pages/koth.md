@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list, the run page an admin drives one night from, and the public night page that draws a night's brackets for members and for the stream.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T18:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-01T09:49:44Z }
 sources:
   - id: nights
     resource: ../../../next/src/app/(app)/koth/KothView.tsx
@@ -51,7 +51,7 @@ A KOTH night is one event of the KOTH league. Its brackets are its divisions. An
 
 # Reads
 
-Both board reads carry no token, so the edge caches them for fifteen seconds and every reader shares one answer; the one read right after the reader's own write adds a query the cache misses, so he sees his own row at once. The run page and the night page read the board once on load, and a reload shows new results, except the clean stream view (`?mode=clean`), which reads it again every thirty seconds while the tab is visible and the night is not closed. The run page also reads the event row once on load, for the Night card. The night page reads the event row once on load, for its header and the signup rules the signup dialog needs. After a signup the dialog reads the night's board once, through the same store action and the same edge cache, for the end state it prints. Four writes of the run page answer their own row instead of the board: a replay upload, the placement of an unplaced player, an added player and the Night card's save. Each of the four reads the board back once. "Change the winner" reads nothing: the played row names the side the winner played, so the click writes the other side. A played row that names no `winner_side` costs one `GET /series/{id}` on that click. No page makes another repeated read.
+For a non-admin both board reads carry no token, so the edge caches them for fifteen seconds and every reader shares one answer; the one read right after the reader's own write adds a query the cache misses, so he sees his own row at once. An admin's board read, the run page's included, carries the bearer, so the edge never caches it and it answers fresh. The run page and the night page read the board once on load, and a reload shows new results, except the clean stream view (`?mode=clean`), which reads it again every thirty seconds while the tab is visible and the night is not closed. The run page also reads the event row once on load, for the Night card. The night page reads the event row once on load, for its header and the signup rules the signup dialog needs. After a signup the dialog reads the night's board once, through the same store action and the same edge cache, for the end state it prints. Four writes of the run page answer their own row instead of the board: a replay upload, the placement of an unplaced player, an added player and the Night card's save. Each of the four reads the board back once. "Change the winner" reads nothing: the played row names the side the winner played, so the click writes the other side. A played row that names no `winner_side` costs one `GET /series/{id}` on that click. No page makes another repeated read.
 
 # Writes
 

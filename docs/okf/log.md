@@ -14,6 +14,7 @@
 
 ## 2026-09-30
 
+* **Update**: the fixture page's two tabs are "Series" and "Plan round". The round planner replaces the draft board, the suggestion and the admin's roster panel with four steps: who plays, where a captain's switch writes a player's round answer and the other team's switch only shapes the captain's own list; the MMR range with presets and the players it leaves without an opponent; the matchups, each side's record against this opponent's race and races faced beside its name, sorted on several criteria at once, with top picks, the hours both are free when both entered availability, a warning from 8 h apart, and an opened row that reads the pair's free time into `AvailabilityCalendar`; and the draft, where either captain marks the fantasy series and publishes. The Ready mark leaves the page. `PlayerName` takes `w3c` for a W3Champions link, and `DESIGN.md` gains the two `side-*` tokens. The fixtures page, the shared components, the data pieces and the player-name decision state it.
 * **Update**: only an admin's close completes a GNL season. The seasons list's row menu closes a season, with a confirm that names the count of series with no result, and reopens a complete one; a season with every series scored stays commenced and one past its end date reads overdue; the run page reopens a closed event. The GNL season page, the event management page and the backend contract state it.
 
 ## 2026-09-28

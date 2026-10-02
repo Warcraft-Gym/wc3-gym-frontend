@@ -11,13 +11,15 @@ type Row = Record<string, any>;
 
 const pairLine = (row: Row) => (
   <span className="flex flex-wrap items-center gap-2">
+    {row.is_fantasy_match ? <Icon name="mdi-star" size={16} className="text-primary-text" title="Fantasy series" aria-label="Fantasy series" /> : null}
     <PlayerName player={row.player1} race={row.player1_race} plain />
     <span className="text-muted-foreground">vs</span>
     <PlayerName player={row.player2} race={row.player2_race} plain />
   </span>
 );
 
-/** The one ask before an admin publishes a draft, which names the series a replacement removes. */
+/** The one ask before a captain or an admin publishes a draft: it names the fantasy series, and the
+ *  series a replacement removes. */
 export function PublishDraftDialog({
   drafts,
   replaced,
@@ -87,6 +89,22 @@ export function PublishDraftDialog({
                 The {rows.length * 2} players then see their series and can schedule it, veto maps and report the result. The pairings leave the draft.
               </p>
               <div className="mt-2 flex flex-col gap-1 border-t pt-2">{rows.map((row) => <span key={row.id}>{pairLine(row)}</span>)}</div>
+              {/* the fantasy mark goes out with the series; publishing without one is allowed */}
+              {rows.some((row) => row.is_fantasy_match) ? (
+                <p className="mt-3 text-sm">
+                  Fantasy series:{" "}
+                  {rows
+                    .filter((row) => row.is_fantasy_match)
+                    .map((row) => `${row.player1?.name} vs ${row.player2?.name}`)
+                    .join(", ")}
+                  .
+                </p>
+              ) : (
+                <p className="mt-3 flex items-center gap-2 text-sm text-warning">
+                  <Icon name="mdi-alert" size={16} />
+                  No fantasy series marked. You can still publish.
+                </p>
+              )}
             </>
           )}
         </div>

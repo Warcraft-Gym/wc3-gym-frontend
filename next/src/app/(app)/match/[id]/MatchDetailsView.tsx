@@ -21,7 +21,6 @@ import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
 import { checkInStatus } from "@/helpers/check-in.mjs";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
 import { placeTakers } from "@/helpers/draft-suggest.mjs";
-import { isOver } from "@/helpers/season-phase.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { pickedInstant, pickerParts, storedUtc, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { useAuth, useAvailabilityStore, useEventStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
@@ -29,12 +28,10 @@ import { CreateSeriesDialog, type SideTeam } from "./CreateSeriesDialog";
 import { EditSeriesDialog } from "./EditSeriesDialog";
 import { MatchBanner } from "./MatchBanner";
 import { MatchRoundNav, type RoundMatches } from "./MatchRoundNav";
-import { ProposeSeriesDialog } from "./ProposeSeriesDialog";
 import { PublishDraftDialog } from "./PublishDraftDialog";
-import { RoundDraftBoard } from "./RoundDraftBoard";
-import { DraftSeries, PublishedSeries } from "./SeriesTables";
-import { TeamRostersPanel } from "./TeamRostersPanel";
-import { mmrOf, type Row } from "./match-cells";
+import { PublishedSeries } from "./SeriesTables";
+import { RoundPlanner } from "./plan/RoundPlanner";
+import type { Row } from "./match-cells";
 
 const rostersOf = fixtureRosters as unknown as (series: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;
 
@@ -50,8 +47,8 @@ const playersOf = (teams: Row[]) => {
 };
 
 // Who cannot play this round, said or derived from the blocked times; no answer counts as available
-const isOutOn = (rows: Row[], playerId: number, playday?: number) =>
-  checkInStatus(rows.find((row) => row.user_id === playerId && row.playday === playday)).short === "Out";
+const isOutOn = (rows: Row[] | null, playerId: number, playday?: number) =>
+  checkInStatus((rows || []).find((row) => row.user_id === playerId && row.playday === playday)).short === "Out";
 
 // For every series, host_player_id === player1.id means team1 is hosting
 const countTeamHosts = (seriesList: Row[]) => {
@@ -71,8 +68,8 @@ const getAutoHostPlayerId = (player1: Row, player2: Row, team1HostCount: number,
 // A blank score field is no score at all, which Number() would read as a zero
 const editedScore = (value: any) => (value === null || value === undefined || value === "" ? NaN : Number(value));
 
-/** One match of a GNL season: its score, the series played under it, and the drafting tools
- *  a captain and an admin use to fill it. */
+/** One match of a GNL season: the series published under it, and for its captains and the admins the
+ *  round planner that fills it. */
 export function MatchDetailsView({ id }: { id: string }) {
   const router = useRouter();
   const auth = useAuth();
@@ -81,7 +78,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   const teamStore = useTeamStore();
   const availabilityStore = useAvailabilityStore();
   const eventStore = useEventStore();
-  const { current_season: season, fetchSeason, fetchSeasonLadderPlayers } = useSeason();
+  const { current_season: season, fetchSeason } = useSeason();
 
   const smAndDown = useBreakpoint(SM_AND_DOWN);
   const matchId = Number(id);
@@ -93,16 +90,15 @@ export function MatchDetailsView({ id }: { id: string }) {
   const [draftSeries, setDraftSeries] = useState<Row[]>([]);
   const [replays, setReplays] = useState<Row[]>([]);
   const [matchesByRound, setMatchesByRound] = useState<RoundMatches[]>([]);
-  // The season ladder record of every signup, by user id, for the record against each race
-  const [ladderById, setLadderById] = useState<Map<number, Row>>(new Map());
   const [extraPlayersById, setExtraPlayersById] = useState<Record<number, Row>>({});
   const [draftBoard, setDraftBoard] = useState<Row | null>(null);
   const [draftState, setDraftState] = useState<Row | null>(null);
   // The stamp of the last visit: undefined until the state read answers, null when this team never opened the draft
   const [seenAt, setSeenAt] = useState<string | null | undefined>(undefined);
   const [seenSent, setSeenSent] = useState(false);
-  const [availability1, setAvailability1] = useState<Row[]>([]);
-  const [availability2, setAvailability2] = useState<Row[]>([]);
+  // The round answers of a team the viewer captains, or of both for an admin; null where they are not read
+  const [availability1, setAvailability1] = useState<Row[] | null>(null);
+  const [availability2, setAvailability2] = useState<Row[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   // Every write that has no dialog of its own reports its failure here
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -118,7 +114,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [updateSeriesError, setUpdateSeriesError] = useState("");
 
-  const [seriesViewTab, setSeriesViewTab] = useState("published");
+  // The tab the viewer picked; until then a captain opens on the plan while the round has room
+  const [tab, setTab] = useState<string | null>(null);
 
   // The published series a captain replaces a player in, and the publish confirm over one or more drafts
   const [replacing, setReplacing] = useState<{ series: Row; dropId: number } | null>(null);
@@ -128,17 +125,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   const [publishLost, setPublishLost] = useState<Row | null>(null);
   const [publishError, setPublishError] = useState<string | null>(null);
 
-  const [showProposeSeriesModal, setShowProposeSeriesModal] = useState(false);
-  const [proposePlayersTeam1, setProposePlayersTeam1] = useState<number[]>([]);
-  const [proposePlayersTeam2, setProposePlayersTeam2] = useState<number[]>([]);
-  const [proposeSeriesMMRDiff, setProposeSeriesMMRDiff] = useState("");
-  const [proposedSeries, setProposedSeries] = useState<Row[]>([]);
-  const [proposePairs, setProposePairs] = useState(0); // selected pairs on the last proposal
-  const [proposeExisting, setProposeExisting] = useState(0); // of those, pairs that already had a series
-  const [selectedProposedSeries, setSelectedProposedSeries] = useState<string[]>([]);
-
   const [searchQueryTeam, setSearchQueryTeam] = useState(["", ""]);
-  const [searchQuerySeries, setSearchQuerySeries] = useState("");
 
   const [syncDialog, setSyncDialog] = useState(false);
   const [syncEntries, setSyncEntries] = useState<SyncEntry[]>([]);
@@ -151,10 +138,10 @@ export function MatchDetailsView({ id }: { id: string }) {
   // The season's round gives the header its dates; the match carries only the reduced season
   const roundOf = (playday?: number) => season?.rounds?.find((r: Row) => r.playday === playday) || { playday };
 
-  // a captain writes the draft of the matches their own team plays; an admin any
+  // a captain plans the matches their own team plays; an admin any
   const canDraft = auth.isAdmin || [match.team1_id, match.team2_id].some((teamId) => teamId != null && auth.isCaptainOf(teamId, match.season_id));
 
-  // The team the viewer captains in this fixture; only that team may write a seen or a ready mark,
+  // The team the viewer captains in this fixture; only that team may write a seen mark,
   // and an admin passes isCaptainOf but holds no seat
   const seatTeamOf = (row: Row) => {
     const seats = (auth.me?.seats ?? []) as Row[];
@@ -167,23 +154,16 @@ export function MatchDetailsView({ id }: { id: string }) {
 
   const roster1: Row[] = team1?.player_by_season?.[match.season_id] || [];
   const roster2: Row[] = team2?.player_by_season?.[match.season_id] || [];
-  // The tables hold ids, so a roster reload never leaves a selection pointing at a stale row
-  const playersById = (roster: Row[], ids: number[]) => roster.filter((p) => ids.includes(p.id));
 
-  // The board names a team, so one test reads the availability of the right side
-  const isOutOnTeam = (playerId: number, teamId: number) =>
-    isOutOn(Number(teamId) === Number(match.team1_id) ? availability1 : availability2, playerId, match.playday);
   const outTeam1 = (player: Row) => isOutOn(availability1, player.id, match.playday);
   const outTeam2 = (player: Row) => isOutOn(availability2, player.id, match.playday);
-  // Already in a series on this match, published or draft; a second one is allowed by hand
-  const hasSeries = (playerId: number) => [...series, ...draftSeries].some((s) => s.player1_id === playerId || s.player2_id === playerId);
 
   const sideTeams: SideTeam[] = [
     { team: team1, roster: roster1, isOut: outTeam1 },
     { team: team2, roster: roster2, isOut: outTeam2 },
   ];
 
-  // Full players for the series tables: rosters first, fetched extras second
+  // Full players for the series lists: rosters first, fetched extras second
   const seriesPlayerById = { ...playersOf([team1, team2]), ...extraPlayersById };
   const withFullPlayers = (row: Row): Row => ({
     ...row,
@@ -194,16 +174,14 @@ export function MatchDetailsView({ id }: { id: string }) {
   const enrichedDraftSeries = draftSeries.map(withFullPlayers);
   // A draft that replaces a published series is published on its own, with the confirm that names what is lost
   const plainDrafts = enrichedDraftSeries.filter((row) => !row.replaces_series_id);
-  // The places of the round the published series leave open; the board read carries both counts
-  const openPlaces = Math.max(0, (draftBoard?.series_per_round || 0) - (draftBoard?.published_series || 0) - placeTakers(draftSeries).length);
-  // The working largest difference of this match, which the board and the draft table both read
+  // The places of the round the published series leave open; the board read carries the round size
+  const openPlaces = Math.max(0, (draftBoard?.series_per_round || 0) - series.length - placeTakers(draftSeries).length);
+  // The working largest difference of this match
   const maxDifference = draftState?.max_mmr_difference ?? draftBoard?.max_mmr_difference ?? 0;
+  const activeTab = tab ?? (canDraft && draftBoard && (openPlaces > 0 || draftSeries.length > 0) ? "plan" : "series");
 
-  const newSeriesPlayer1 = playersById(roster1, newSeriesPlayers[0])[0];
-  const newSeriesPlayer2 = playersById(roster2, newSeriesPlayers[1])[0];
-  const selectedProposed = proposedSeries.filter((ps) => selectedProposedSeries.includes(ps.key));
-  const proposedKey = (p1: Row, p2: Row) => `${p1.id}-${p2.id}`;
-  const isProposeValid = proposeSeriesMMRDiff !== "";
+  const newSeriesPlayer1 = roster1.find((p) => newSeriesPlayers[0].includes(p.id));
+  const newSeriesPlayer2 = roster2.find((p) => newSeriesPlayers[1].includes(p.id));
 
   // the admin's own zone, offset taken at the picked time
   const adminZone = zoneLabel(viewerZone(), viewerZone(), selectedDate && selectedTime ? pickedInstant(selectedDate, selectedTime) : null);
@@ -272,20 +250,19 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  // A captain reads their own team only, so the team they cannot read stays empty
+  // A captain reads their own team only, so the team they cannot read stays null
   const fetchAvailability = async (row: Row) => {
-    const read = (teamId?: number) =>
-      teamId && auth.isCaptainOf(teamId, row.season_id) ? availabilityStore.fetchTeamAvailability(teamId, row.season_id).catch(() => []) : Promise.resolve([]);
+    const read = (teamId?: number): Promise<Row[] | null> =>
+      teamId && auth.isCaptainOf(teamId, row.season_id) ? availabilityStore.fetchTeamAvailability(teamId, row.season_id).catch(() => null) : Promise.resolve(null);
     const [a1, a2] = await Promise.all([read(row.team1_id), read(row.team2_id)]);
     setAvailability1(a1);
     setAvailability2(a2);
-    return [a1, a2] as Row[][];
   };
 
   const mayDraft = (row: Row) =>
     !!row?.id && (auth.isAdmin || [row.team1_id, row.team2_id].some((teamId) => teamId != null && auth.isCaptainOf(teamId, row.season_id)));
 
-  // The state alone: the working difference, the Ready marks and the last visit
+  // The state alone: the working difference and the last visit
   const fetchDraftState = async (row: Row, fresh = false) => {
     if (!mayDraft(row)) return;
     const stateRow = await seriesStore.getDraftState(row.id, fresh).catch(() => null);
@@ -300,7 +277,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     setDraftBoard(boardRow);
   };
 
-  // The visit is stamped when the Draft tab first opens, so reading the published table alone
+  // The visit is stamped when the plan first opens, so reading the published list alone
   // never clears the marks; only the viewer's own team may write it
   const markDraftSeen = () => {
     if (seenSent || !ownTeamId || !match.id) return;
@@ -323,15 +300,6 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  const fetchLadderPlayers = async (row: Row) => {
-    try {
-      const rows: Row[] = await fetchSeasonLadderPlayers(row.season_id);
-      setLadderById(new Map(rows.map((p) => [p.id, p])));
-    } catch (error) {
-      console.error("Failed to fetch ladder players:", error);
-    }
-  };
-
   // The ordered series this fixture holds, when the event runs it through the events module
   const loadFixtureSeries = async (row: Row, teams: Row[]) => {
     const eventId = row?.season_id;
@@ -343,12 +311,6 @@ export function MatchDetailsView({ id }: { id: string }) {
     setFixtureRosterMap(rostersOf(answer.series, teams, eventId));
   };
 
-  // The default selection: everyone who did not say they cannot play this round
-  const availableIds = (team: Row, rows: Row[], row: Row) =>
-    ((team?.player_by_season?.[row.season_id] || []) as Row[]).filter((p) => !isOutOn(rows, p.id, row.playday)).map((p) => p.id);
-  const selectAvailableTeam1 = () => setProposePlayersTeam1(roster1.filter((p) => !outTeam1(p)).map((p) => p.id));
-  const selectAvailableTeam2 = () => setProposePlayersTeam2(roster2.filter((p) => !outTeam2(p)).map((p) => p.id));
-
   const fetchMatchDetails = async () => {
     setIsLoading(true);
     setErrorMessage(null);
@@ -356,17 +318,14 @@ export function MatchDetailsView({ id }: { id: string }) {
       const row: Row = await matchStore.fetchMatchDetails(matchId);
       setMatch(row);
       // The rosters, the series rows and the season navigation do not depend on each other
-      const [teams, , rowsAndDrafts, , availability] = await Promise.all([
+      const [teams, , rowsAndDrafts] = await Promise.all([
         row.team1_id && row.team2_id ? fetchTeamDetails(row) : Promise.resolve([{}, {}] as Row[]),
         fetchSeason(row.season_id).catch(() => null),
         fetchSeriesRows(row.season_id),
         fetchSeasonMatches(row),
         fetchAvailability(row),
-        fetchLadderPlayers(row),
         fetchDraftBoard(row),
       ]);
-      setProposePlayersTeam1(availableIds(teams[0], availability[0], row));
-      setProposePlayersTeam2(availableIds(teams[1], availability[1], row));
       await loadMissingSeriesPlayers(rowsAndDrafts.rows, rowsAndDrafts.drafts, playersOf(teams));
       return { row, teams };
     } catch (error) {
@@ -395,11 +354,18 @@ export function MatchDetailsView({ id }: { id: string }) {
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
       setReplacing(null); // another fixture holds none of the series this replacement names
+      setTab(null);
       const loaded = await fetchMatchDetails();
       if (loaded) await loadFixtureSeries(loaded.row, loaded.teams);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
+
+  // Opening the plan stamps the visit, whichever way it opens
+  useEffect(() => {
+    if (activeTab === "plan") queueMicrotask(markDraftSeen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, ownTeamId, match.id]);
 
   const syncEntry = (title: string, settled: PromiseSettledResult<any>): SyncEntry =>
     settled.status === "fulfilled" ? { title, result: settled.value } : { title, error: settled.reason };
@@ -428,18 +394,10 @@ export function MatchDetailsView({ id }: { id: string }) {
     setCreationSeriesError(null);
   };
 
-  const openCreateNewDraftSeries = () => {
-    setCreateNewSeriesDialogOpen(true);
-    setNewSeriesPlayers([[], []]);
-    setNewSeriesIsDraft(true); // Force draft mode
-    setCreationSeriesError(null);
-  };
-
   const cancelCreateSeries = () => setCreateNewSeriesDialogOpen(false);
 
   const editSeries = (seriesItem: Row) => {
-    // Mark if this is a draft for proper update routing
-    const copy: Row = { ...seriesItem, isDraft: seriesViewTab === "draft" };
+    const copy: Row = { ...seriesItem, isDraft: false };
     setUpdateSeriesError("");
     setSelectedSeries(copy);
     const { date, time } = copy.date_time ? pickerParts(copy.date_time) : { date: null, time: null };
@@ -457,9 +415,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     try {
       // A date with no time is still a scheduled series: it takes midnight in the admin's zone
       const row: Row = { ...selectedSeries, date_time: selectedDate ? storedUtc(selectedDate, selectedTime || "00:00") : null };
-      // Update either draft or published series depending on type
-      if (row.isDraft) await seriesStore.updateDraftSeries(row);
-      else await seriesStore.updateSeries(row);
+      await seriesStore.updateSeries(row);
       await fetchMatchSeries();
       cancelEditSeries();
     } catch (error: any) {
@@ -471,6 +427,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   };
 
   const createSeries = async () => {
+    if (!newSeriesPlayer1 || !newSeriesPlayer2) return;
     // Auto-assign host to keep counts balanced between teams
     const { team1Hosts, team2Hosts } = countTeamHosts([...series, ...draftSeries]);
     const newSeries = {
@@ -534,50 +491,21 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  const removeAllDraftSeries = async () => {
-    setIsLoading(true);
-    try {
-      await seriesStore.deleteAllDraftSeriesForMatch(matchId);
-      await fetchMatchSeries();
-    } catch (error: any) {
-      console.error("Failed to remove draft series:", error);
-      setErrorMessage(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const publishDraftSeries = async (draftSeriesItem: Row) => {
-    setIsLoading(true);
-    try {
-      // Re-evaluate host against current published series before promoting
-      const { team1Hosts, team2Hosts } = countTeamHosts(series);
-      const autoHostId = getAutoHostPlayerId(draftSeriesItem.player1, draftSeriesItem.player2, team1Hosts, team2Hosts);
-      if (autoHostId !== draftSeriesItem.host_player_id) await seriesStore.updateDraftSeries({ ...draftSeriesItem, host_player_id: autoHostId });
-      await seriesStore.promoteDraftSeries(draftSeriesItem.id);
-      await fetchMatchSeries();
-    } catch (error: any) {
-      console.error("Failed to publish draft series:", error);
-      setErrorMessage(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const publishAllDraftSeries = async () => {
     if (!plainDrafts.length) return;
     setIsLoading(true);
     try {
       // Start host counts from currently published series, then balance as each draft is promoted
-      let { team1Hosts, team2Hosts } = countTeamHosts(series);
+      let { team1Hosts, team2Hosts } = countTeamHosts(enrichedSeries);
       for (const draft of plainDrafts) {
         const autoHostId = getAutoHostPlayerId(draft.player1, draft.player2, team1Hosts, team2Hosts);
-        if (autoHostId !== draft.host_player_id) await seriesStore.updateDraftSeries({ ...draft, host_player_id: autoHostId });
+        if (autoHostId !== draft.host_player_id) await seriesStore.updateDraftSeries({ ...draft, player1: undefined, player2: undefined, host_player_id: autoHostId });
         await seriesStore.promoteDraftSeries(draft.id);
         if (autoHostId === draft.player1.id) team1Hosts++;
         else team2Hosts++;
       }
       await fetchMatchSeries();
+      setTab("series"); // the published series are what the captain checks next
     } catch (error: any) {
       console.error("Failed to publish all draft series:", error);
       await fetchMatchSeries(); // the drafts promoted before the failure must leave the list
@@ -647,11 +575,11 @@ export function MatchDetailsView({ id }: { id: string }) {
   const mayReplace = (side: 1 | 2) => auth.isAdmin || (ownTeamId != null && Number(ownTeamId) === Number(teamOfSide(side)));
   const openReplace = (item: Row, side: 1 | 2) => {
     setReplacing({ series: item, dropId: item[`player${side}_id`] });
-    setSeriesViewTab("draft");
-    markDraftSeen();
+    setTab("plan");
   };
   // The pairing a replacement draft removes, named from the published series the page already holds
   const replacedLabel = (item: Row) => {
+    if (!item.replaces_series_id) return null;
     const row = series.find((one) => Number(one.id) === Number(item.replaces_series_id));
     if (!row) return null;
     return `${seriesPlayerById[row.player1_id]?.name || row.player1?.name} vs ${seriesPlayerById[row.player2_id]?.name || row.player2?.name}`;
@@ -673,9 +601,9 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  // A whole suggested set writes in one go: the hosts count as it goes, and one read follows
+  // A whole set writes in one go: the hosts count as it goes, and one read follows
   const addPairings = (pairs: { player1_id: number; player2_id: number; replaces_series_id?: number }[]) => {
-    let { team1Hosts, team2Hosts } = countTeamHosts([...series, ...draftSeries]);
+    let { team1Hosts, team2Hosts } = countTeamHosts([...enrichedSeries, ...enrichedDraftSeries]);
     return runDraftWrite(async () => {
       for (const pair of pairs) {
         const hostId = team1Hosts > team2Hosts ? pair.player2_id : pair.player1_id;
@@ -683,7 +611,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         if (hostId === pair.player1_id) team1Hosts++;
         else team2Hosts++;
       }
-    });
+    }).then(() => setReplacing(null));
   };
 
   // The pairing keeps its row, so the note says it changed and who changed it
@@ -696,103 +624,18 @@ export function MatchDetailsView({ id }: { id: string }) {
 
   const setMaxMmrDifference = (value: number | null) =>
     runDraftWrite(() => seriesStore.setDraftMaxMmrDifference(matchId, value), () => fetchDraftState(match, true));
-  const setTeamReady = (teamId: number, ready: boolean) =>
-    runDraftWrite(() => seriesStore.setDraftReady(matchId, teamId, ready), () => fetchDraftState(match, true));
-  const checkInFor = (teamId: number, playerId: number) =>
+  // A captain answers the round for a player of their own team: out, back to no answer, or in
+  const setAnswer = (teamId: number, playerId: number, available: boolean | null) =>
     runDraftWrite(
-      () => availabilityStore.setTeamAvailability(teamId, match.season_id, { user_id: playerId, playday: match.playday, available: true }),
+      () => availabilityStore.setTeamAvailability(teamId, match.season_id, { user_id: playerId, playday: match.playday, available }),
       () => fetchAvailability(match),
     );
   const meetingsOf = (userA: number, userB: number) => seriesStore.playerMeetings(userA, userB);
+  const pairFreeTime = (player1Id: number, player2Id: number) => availabilityStore.pairFreeTime(match.season_id, match.playday, player1Id, player2Id);
 
-  const toggleDraftFantasyMatch = async (draftSeriesItem: Row) => {
-    setIsLoading(true);
-    try {
-      await seriesStore.updateDraftSeries({ ...draftSeriesItem, is_fantasy_match: !draftSeriesItem.is_fantasy_match });
-      await fetchMatchSeries();
-    } catch (error: any) {
-      console.error("Failed to toggle fantasy match:", error);
-      setErrorMessage(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const proposeSeries = () => {
-    const kept = selectedProposed;
-    const t1Players = playersById(roster1, proposePlayersTeam1);
-    const t2Players = playersById(roster2, proposePlayersTeam2);
-    const maxDiff = Number(proposeSeriesMMRDiff);
-    const rows: Row[] = [];
-    let existing = 0;
-
-    for (const p1 of t1Players) {
-      const p1Mmr = mmrOf(p1, p1.signup_race) || 0;
-      for (const p2 of t2Players) {
-        // A published or draft series for this pair already exists
-        if ([...series, ...draftSeries].some((s) => p1.id === s.player1_id && p2.id === s.player2_id)) {
-          existing++;
-          continue;
-        }
-        const keptSeries = kept.find((ps) => ps.key === proposedKey(p1, p2));
-        if (keptSeries) {
-          rows.push(keptSeries);
-          continue;
-        }
-        const p2Mmr = mmrOf(p2, p2.signup_race) || 0;
-        if (Math.abs(p1Mmr - p2Mmr) <= maxDiff) {
-          rows.push({
-            key: proposedKey(p1, p2),
-            match_id: match.id,
-            season_id: match.season_id,
-            host_player_id: p1.id,
-            player1_id: p1.id,
-            player1: p1,
-            player1_race: p1.signup_race,
-            player2_id: p2.id,
-            player2: p2,
-            player2_race: p2.signup_race,
-          });
-        }
-      }
-    }
-    setProposePairs(t1Players.length * t2Players.length);
-    setProposeExisting(existing);
-    setProposedSeries(rows);
-    setSelectedProposedSeries((was) => was.filter((key) => rows.some((ps) => ps.key === key)));
-  };
-
-  const openProposeSeries = () => {
-    proposeSeries();
-    setShowProposeSeriesModal(true);
-  };
-  const cancelProposeSeries = () => setShowProposeSeriesModal(false);
-  const removeProposedSeries = (key?: number | string) => setProposedSeries((was) => was.filter((row) => row.key !== key));
-
-  const createSelectedProposedSeries = async (isDraft = false) => {
-    setIsLoading(true);
-    try {
-      // Start host counts from series already on this match
-      const baseSeries = isDraft ? [...series, ...draftSeries] : [...series];
-      let { team1Hosts, team2Hosts } = countTeamHosts(baseSeries);
-      for (const ps of selectedProposed) {
-        const hostId = getAutoHostPlayerId(ps.player1, ps.player2, team1Hosts, team2Hosts);
-        const seriesWithHost = { ...ps, host_player_id: hostId };
-        if (isDraft) await seriesStore.createDraftSeries(seriesWithHost);
-        else await seriesStore.createSeries(seriesWithHost);
-        // Track new host for subsequent iterations
-        if (hostId === ps.player1.id) team1Hosts++;
-        else team2Hosts++;
-      }
-      await fetchMatchSeries();
-      cancelProposeSeries();
-    } catch (error: any) {
-      console.error("Failed to create series:", error);
-      setErrorMessage(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // The fantasy series is chosen on the draft, and publishing carries the mark onto the series
+  const toggleDraftFantasyMatch = (draft: Row) =>
+    runDraftWrite(() => seriesStore.updateDraftSeries({ ...draft, player1: undefined, player2: undefined, is_fantasy_match: !draft.is_fantasy_match }));
 
   // A captain of that side, or an admin, drafts a new player into a published series
   const replaceActions = (item: Row): RowAction[] => {
@@ -815,21 +658,10 @@ export function MatchDetailsView({ id }: { id: string }) {
     { icon: "mdi-delete", label: "Delete series", color: "error", onClick: () => openDeleteDialog(item.id, removeSeries) },
   ];
 
-  const draftActions = (item: Row): RowAction[] => [
-    { icon: "mdi-pencil", label: "Edit draft", public: canDraft, onClick: () => editSeries(item) },
-    {
-      icon: item.is_fantasy_match ? "mdi-star-off" : "mdi-star",
-      label: item.is_fantasy_match ? "Remove from fantasy" : "Mark as fantasy match",
-      color: item.is_fantasy_match ? "warning" : "primary",
-      onClick: () => toggleDraftFantasyMatch(item),
-    },
-    item.replaces_series_id
-      ? { icon: "mdi-publish", label: "Publish and replace", color: "primary", onClick: () => openPublishReplace(item) }
-      : { icon: "mdi-publish", label: "Publish series", color: "primary", onClick: () => publishDraftSeries(item) },
-    { icon: "mdi-delete", label: "Delete draft", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeDraftSeries) },
-  ];
-
   const seasonHref = `/seasons/${match.season ? seasonSlug(match.season) : match.season_id}`;
+  const answers: Record<number, Row[]> = {};
+  if (availability1 && match.team1_id != null) answers[match.team1_id] = availability1;
+  if (availability2 && match.team2_id != null) answers[match.team2_id] = availability2;
 
   return (
     <PanelLinksContext.Provider value={true}>
@@ -845,7 +677,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} />
 
         {/* A fixture of the events module holds ordered series, each with its own mode and
-            pick rule; a GNL fixture answers none and reads the tables below instead. */}
+            pick rule; a GNL fixture answers none and reads the lists below instead. */}
         {fixtureRows.length ? <FixtureSeries className="mb-4" series={fixtureRows} rosters={fixtureRosterMap} /> : null}
 
         <MatchRoundNav
@@ -861,43 +693,41 @@ export function MatchDetailsView({ id }: { id: string }) {
         <Card className="card mb-4 gap-0 py-0">
           <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-trophy-variant" />
-            Series Management
+            Round {match.playday ?? ""} Series
             <span className="flex-1" />
-            <Badge variant="outline" className="border-on-banner/40 text-on-banner">
+            <Badge variant="outline" className="border-on-banner/40 text-on-banner tnum">
               {series.length} published
             </Badge>
-            {auth.isCaptain ? (
-              <Badge variant="outline" className="border-on-banner/40 text-on-banner">
-                {draftSeries.length} drafts
+            {canDraft ? (
+              <Badge variant="outline" className="border-on-banner/40 text-on-banner tnum">
+                {draftSeries.length} in draft
               </Badge>
             ) : null}
             <Button variant="ghost" size="icon-sm" className="text-on-banner" aria-label="Refresh series data" onClick={fetchMatchSeries} disabled={isLoading}>
               <Icon name={isLoading ? "mdi-loading mdi-spin" : "mdi-refresh"} />
             </Button>
           </CardTitle>
-
           <Tabs
-            value={seriesViewTab}
+            value={activeTab}
             onValueChange={(value) => {
-              setSeriesViewTab(value as string);
-              if (value === "draft") markDraftSeen();
-              else setReplacing(null); // the replacement picker lives on the draft tab
+              setTab(value as string);
+              if (value !== "plan") setReplacing(null); // the replacement is picked on the plan
             }}
           >
             <TabsList variant="line" className="w-full justify-center bg-surface-light">
-              <TabsTrigger value="published" className="flex-none px-3">
+              <TabsTrigger value="series" className="flex-none px-3">
                 <Icon name="mdi-check-circle" />
-                Published series
+                Series
               </TabsTrigger>
-              {auth.isCaptain ? (
-                <TabsTrigger value="draft" className="flex-none px-3">
-                  <Icon name="mdi-pencil-circle" />
-                  Draft series
+              {canDraft ? (
+                <TabsTrigger value="plan" className="flex-none px-3">
+                  <Icon name="mdi-account-multiple-plus" />
+                  Plan round
                 </TabsTrigger>
               ) : null}
             </TabsList>
 
-            <TabsContent value="published">
+            <TabsContent value="series">
               <PublishedSeries
                 series={enrichedSeries}
                 smAndDown={smAndDown}
@@ -907,88 +737,47 @@ export function MatchDetailsView({ id }: { id: string }) {
                 formateDate={formateDate}
                 seriesActions={seriesActions}
                 onAddSeries={openCreateNewSeries}
-                onDraftSeries={() => {
-                  setSeriesViewTab("draft");
-                  markDraftSeen();
-                }}
+                onDraftSeries={() => setTab("plan")}
                 onDeleteAll={() => openDeleteDialog(null, removeAllSeries)}
               />
             </TabsContent>
 
-            {auth.isCaptain ? (
-              <TabsContent value="draft">
-                <RoundDraftBoard
+            {canDraft ? (
+              <TabsContent value="plan">
+                <RoundPlanner
+                  match={match}
+                  team1={team1}
+                  team2={team2}
                   board={draftBoard}
                   state={draftState}
                   maxDifference={maxDifference}
-                  drafted={draftSeries}
-                  published={series}
-                  team1={team1}
-                  team2={team2}
-                  playerById={seriesPlayerById}
+                  drafts={enrichedDraftSeries}
+                  published={enrichedSeries}
+                  rosters={[roster1, roster2]}
+                  answers={answers}
                   ownTeamId={ownTeamId}
-                  playday={match.playday}
+                  viewerId={auth.me?.user?.id ?? null}
                   narrow={smAndDown}
-                  isOut={isOutOnTeam}
                   busy={isLoading}
+                  seenAt={seenAt}
                   replacing={replacing}
                   onCancelReplace={() => setReplacing(null)}
+                  replacedLabel={replacedLabel}
+                  onAnswer={setAnswer}
                   onAddPairings={addPairings}
                   onChangeOpponent={changeOpponent}
                   onSetMaxDifference={setMaxMmrDifference}
-                  onSetReady={setTeamReady}
-                  onCheckIn={checkInFor}
-                  onMeetings={meetingsOf}
-                />
-                <DraftSeries
-                  draftSeries={enrichedDraftSeries}
-                  smAndDown={smAndDown}
-                  ladderById={ladderById}
-                  isAdmin={auth.isAdmin}
-                  canDraft={canDraft}
-                  board={draftBoard}
-                  maxDifference={maxDifference}
-                  seenAt={seenAt}
-                  viewerId={auth.me?.user?.id ?? null}
-                  replacedLabel={replacedLabel}
-                  publishCount={plainDrafts.length}
-                  onMeetings={meetingsOf}
-                  draftActions={draftActions}
-                  onAddDraftSeries={openCreateNewDraftSeries}
+                  onToggleFantasy={toggleDraftFantasyMatch}
+                  onRemoveDraft={(draft) => openDeleteDialog(draft.id, removeDraftSeries)}
                   onPublishAll={openPublishAll}
-                  onDeleteAll={() => openDeleteDialog(null, removeAllDraftSeries)}
-                  over={isOver(season)}
+                  onPublishReplace={openPublishReplace}
+                  onMeetings={meetingsOf}
+                  loadFreeTime={pairFreeTime}
                 />
               </TabsContent>
             ) : null}
           </Tabs>
         </Card>
-
-        {/* Team rosters and the proposal tools; proposing series is an admin write */}
-        {auth.isAdmin ? (
-          <TeamRostersPanel
-            team1={team1}
-            team2={team2}
-            roster1={roster1}
-            roster2={roster2}
-            selected1={proposePlayersTeam1}
-            onSelected1Change={setProposePlayersTeam1}
-            selected2={proposePlayersTeam2}
-            onSelected2Change={setProposePlayersTeam2}
-            search={searchQueryTeam}
-            onSearchChange={(side, value) => setSearchQueryTeam((was) => was.map((one, i) => (i === side ? value : one)))}
-            outTeam1={outTeam1}
-            outTeam2={outTeam2}
-            hasSeries={hasSeries}
-            onSelectAvailableTeam1={selectAvailableTeam1}
-            onSelectAvailableTeam2={selectAvailableTeam2}
-            mmrDiff={proposeSeriesMMRDiff}
-            onMmrDiffChange={setProposeSeriesMMRDiff}
-            canPropose={isProposeValid}
-            onPropose={openProposeSeries}
-            over={isOver(season)}
-          />
-        ) : null}
       </div>
 
       <CreateSeriesDialog
@@ -1024,28 +813,6 @@ export function MatchDetailsView({ id }: { id: string }) {
         onSave={updateSeries}
         onCancel={cancelEditSeries}
       />
-
-      {showProposeSeriesModal ? (
-        <ProposeSeriesDialog
-          open={showProposeSeriesModal}
-          team1={team1}
-          team2={team2}
-          proposed={proposedSeries}
-          selected={selectedProposedSeries}
-          onSelectedChange={setSelectedProposedSeries}
-          search={searchQuerySeries}
-          onSearchChange={setSearchQuerySeries}
-          pairs={proposePairs}
-          existing={proposeExisting}
-          ladderById={ladderById}
-          hasSeries={hasSeries}
-          errorMessage={errorMessage}
-          onErrorClose={() => setErrorMessage(null)}
-          onRemove={(key) => openDeleteDialog(key, removeProposedSeries)}
-          onCreate={createSelectedProposedSeries}
-          onCancel={cancelProposeSeries}
-        />
-      ) : null}
 
       <PublishDraftDialog
         drafts={publishDrafts}

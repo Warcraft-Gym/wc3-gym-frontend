@@ -4,7 +4,7 @@ title: Data pieces
 description: Every shared piece that shows league data, by group, with where it lives, when to use it and which piece to use instead.
 resource: ../../../DESIGN.md
 tags: [design, components]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-20T17:30:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-09-30T21:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -33,8 +33,7 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | Signed game difference | `next/src/components/StageView.tsx` | A standings table ranks on game difference. | A free for all lobby stage; a lobby counts no games and the column is dropped. |
 | Win rate percent | `next/src/helpers/ladder-days.mjs` | The page already prints the record and wants one share. | `record` can carry the percent itself. |
 | Stat tile | `next/src/app/(app)/report/SeasonReportView.tsx` | One number answers the page's question. | The reader needs to compare many values; then a table or a chart. |
-| `SharedHours` | `next/src/app/(app)/match/[id]/RoundDraftBoard.tsx` | The reader pairs two players who must find a time. | The series is already booked. |
-| Draft-series MMR badges | `next/src/app/(app)/match/[id]/SeriesTables.tsx` | A draft table compares ratings. | A plain right-aligned number will do; `SeasonTeamAssignView` prints the same figure as text. |
+| Matchup time cell: the hours both are free and the clock gap | `next/src/app/(app)/match/[id]/plan/MatchupTable.tsx` | The reader pairs two players who must find a time. The hours print only when both players entered availability, and the gap warns from 8 h. | The series is already booked; then the schedule dialog. |
 | Ladder stat tiles | `next/src/components/ladder/PlayerLadderTab.tsx` | The reader opens one player's ladder season. | The surface compares two players; then `MatchupCompare`. |
 | `CareerStatsDialog` | `next/src/components/CareerStatsDialog.tsx` | The reader asks what a player has done overall. | The figure belongs to one event. |
 
@@ -81,7 +80,6 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | Season report games-per-day bars | `next/src/app/(app)/report/SeasonReportView.tsx` | The reader asks how much was played over the season. | The window is a player's own; then `LadderPlots`. |
 | `BadgeRarity` share bar | `next/src/components/ladder/BadgeRarity.tsx` | The reader asks which badges are rare. | The reader asks what one player earned; then `AchievementChip`. |
 | Bracket feeder lines | `next/src/components/StageView.tsx` | A single or double elimination stage is drawn on a wide screen. | The screen is narrow; the stage then stacks into one list per round. |
-| Round draft board MMR scale | `next/src/app/(app)/match/[id]/RoundDraftBoard.tsx` | A captain pairs two rosters by MMR. | The bands are divisions; then `DivisionBracketing`. |
 | `PlayerLadderPanel` per-race bar pair | `next/src/components/ladder/PlayerLadderPanel.tsx` | A row expands into one player's ladder detail. | The page is the player's own; then `PlayerLadderTab`. |
 | `LadderLeaderboards` | `next/src/components/ladder/LadderLeaderboards.tsx` | The reader asks who leads. | The reader needs every player; then the ladder table. |
 
@@ -98,7 +96,8 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | `SeriesCard` | `next/src/components/SeriesCard.tsx` | A table of series would clip on a phone. | The surface is a stage drawing; then `SeriesBox`. |
 | `FixtureSeries` | `next/src/components/FixtureSeries.tsx` | The reader is inside one fixture. | A GNL season draws its own fixture pages. |
 | `MatchRoundNav` | `next/src/app/(app)/match/[id]/MatchRoundNav.tsx` | A page must move between rounds. | The event is not a GNL season. |
-| `TeamRostersPanel` roster table | `next/src/app/(app)/match/[id]/TeamRostersPanel.tsx` | A captain proposes a series. | The roster is the team page's own; then `TeamRoster`. |
+| Round planner matchup table | `next/src/app/(app)/match/[id]/plan/MatchupTable.tsx` | A captain weighs the possible pairings of a round, sorted on several criteria at once. | The list is one team's roster; then `TeamRoster`. |
+| `PlayerBlock` | `next/src/app/(app)/match/[id]/plan/PlayerBlock.tsx` | One side of a possible pairing needs its ladder record against this opponent's race and the races it faced this season beside the name. | The row is not a pairing; then `PlayerName` alone. |
 | Draft-players table | `next/src/app/(app)/seasons/[id]/assign/SeasonTeamAssignView.tsx` | An admin drafts a season. | The list is public. |
 | Team rounds table | `next/src/app/(app)/team/[id]/TeamView.tsx` | The reader asks how a team's season went. | The reader asks about one round's series; then the rounds page. |
 | W3C ladder team table | `next/src/app/(app)/team/[id]/season/[season_id]/SeasonTeamDetailsView.tsx` | The reader compares a team's ladder work. | The figure is a series record; this table counts ladder games. |
@@ -172,6 +171,7 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | `StageView` | `next/src/components/StageView.tsx` | An event page draws a draw. | The event is a GNL season, which draws its fixtures on its own pages. |
 | `VetoBoard` | `next/src/components/VetoBoard.tsx` | The series plays a veto. | The series rules draw no map from the board; the step is then left out. |
 | `ScheduleDialog` half-hour grid | `next/src/components/player/ScheduleDialog.tsx` | The reader asks when two players can meet. | The surface only needs the booked time; then `formatDateTime`. |
+| `AvailabilityCalendar` | `next/src/components/AvailabilityCalendar.tsx` | A captain weighs whether two players can meet before a series exists: a time column per clock, each player's blocked hours in their own half and colour. | A time is booked; then the `ScheduleDialog` grid. |
 | `SeriesActionBar` | `next/src/components/SeriesActionBar.tsx` | The reader may act on a series. | The reader may not act; the bar then draws the facts alone. |
 | `EventHeader` | `next/src/components/EventHeader.tsx` | The page is about one event. | The page is about one team in one event; that page keeps a plain `h1` with the label under it. |
 | `PlayerHeader` | `next/src/components/player/PlayerHeader.tsx` | The page is about one player. | The player is one row among many. |

@@ -22,6 +22,11 @@ const store = {
   async setTeamAvailabilityAll(team_id: number, season_id: number, answer: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${season_id}/teams/${team_id}/availability/all`, answer);
   },
+  // Two players' free and blocked time across one round, before a series pairs them; a captain's read
+  async pairFreeTime(season_id: number, playday: number, player1_id: number, player2_id: number) {
+    const query = new URLSearchParams({ player1_id: String(player1_id), player2_id: String(player2_id) });
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/rounds/${playday}/free-time?${query}`);
+  },
 };
 
 export const useAvailabilityStore = () => store;

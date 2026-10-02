@@ -3,7 +3,17 @@
 ## Progress
 
 - **Step 1, the general layout: done.** Frontend `feature/ui-rework-layout`, backend `feature/admin-me-seats`.
-- **Step 2, simpler nav and the player Home: in progress** on `feature/ui-rework-player-home` (from `feature/ui-rework-layout`). See section 4 below.
+- **Step 2, simpler nav and the player Home: done** (merged with the layout).
+- **Captain hub stories 1, 2, 4 and 5, the round planner in the match view: in review.** Frontend `feature/captain-round-planner`; backend `feature/captain-publish` (either captain publishes) and `feature/planner-availability` (each player's availability and blocked hours before pairing). Stories 3 and 6 to 9 stay open.
+
+### Decisions from the round planner (2026-09-30)
+
+- The match view has two tabs, "Series" and "Plan round". The plan is four steps: who plays, the MMR range, pick matchups, and the draft.
+- A captain's switch writes a player's round answer for their own team. For the other team it only shapes the captain's own list.
+- No score: the captain decides. The facts sit with each player's name (the ladder record against the opponent's race, and the races faced this season with the opponent's race ringed), and chips sort the list on several criteria at once: fewest games played, then MMR difference, then time overlap. The race history is shown, not sorted.
+- The time a pair shares is printed only when both players entered availability. A pair 8 h or more apart warns. An opened row shows a week calendar with a time column per clock and each player's blocked hours in their own colour. Captains see each player's blocked hours before any pairing.
+- Either captain marks the fantasy series on the draft and publishes; the Ready mark leaves the captain UI.
+- The matchup builder is Full on a phone.
 
 ### Decisions from step 2 (they override the layout described in step 1)
 

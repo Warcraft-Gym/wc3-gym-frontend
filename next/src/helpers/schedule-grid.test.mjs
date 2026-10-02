@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import test from 'node:test';
 import { DateTime } from 'luxon';
-import { blockedSpans, dayCells, insideBlocked, sideSpans, windowDays, zoneRow } from './schedule-grid.mjs';
+import { blockedSpans, clockCell, dayCells, insideBlocked, sideSpans, windowDays, zoneColumns, zoneRow } from './schedule-grid.mjs';
 
 const BERLIN = 'Europe/Berlin';
 const SEOUL = 'Asia/Seoul';
@@ -110,4 +110,28 @@ test('each row reads the same point on its own clock, with the date when it diff
   assert.deepEqual([his.time, his.date, his.gmt, his.differs], ['20:00', 'Sat 3 Oct', 'GMT−4', true]);
   // the same point from Berlin keeps both rows on one date
   assert.equal(zoneRow(DateTime.fromISO('2026-10-04T18:00:00Z'), NY, BERLIN).differs, false);
+});
+
+test('the time columns put the viewer first and merge a clock several people share', () => {
+  const columns = zoneColumns('Europe/Stockholm', [
+    { name: 'Olof', zone: 'Europe/Stockholm' },
+    { name: 'Minho', zone: SEOUL },
+    { name: 'Emma', zone: null },
+  ], '2026-01-05T00:00:00Z');
+  assert.deepEqual(
+    columns.map((one) => [one.label, one.gmt]),
+    [['You · Olof', 'GMT+1'], ['Minho', 'GMT+9']],
+  );
+});
+
+test('two zones on one offset share a column, whatever their names', () => {
+  const columns = zoneColumns(BERLIN, [{ name: 'Anna', zone: 'Europe/Paris' }], '2026-01-05T00:00:00Z');
+  assert.deepEqual(columns.map((one) => one.label), ['You · Anna']);
+});
+
+test('a row on another clock names its time and the day it falls on', () => {
+  const point = DateTime.fromISO('2026-01-05T20:00:00Z');
+  assert.deepEqual(clockCell(point, SEOUL, 'Europe/Stockholm'), { time: '05:00', shift: '+1d' });
+  assert.deepEqual(clockCell(DateTime.fromISO('2026-01-05T02:00:00Z'), NY, BERLIN), { time: '21:00', shift: '−1d' });
+  assert.deepEqual(clockCell(point, BERLIN, 'Europe/Stockholm'), { time: '21:00', shift: '' });
 });

@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-27T18:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T15:15:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -36,6 +36,9 @@ sources:
   - id: desktop-only-notice
     resource: ../../../next/src/components/DesktopOnlyNotice.tsx
     title: DesktopOnlyNotice
+  - id: availability-calendar
+    resource: ../../../next/src/components/AvailabilityCalendar.tsx
+    title: AvailabilityCalendar
   - id: pick-grid
     resource: ../../../next/src/components/admin/PickGrid.tsx
     title: PickGrid
@@ -51,19 +54,20 @@ sources:
 A player is drawn as `{flag} {name} {race} {mmr}` everywhere, the Discord cards included, and the name links to the player page. That is the one standard; no page draws a name its own way. See [the decision](../decisions/player-name-standard.md).
 
 - One 6 px gap sits between every part, and the MMR reads at every width. A captain shows his race and his MMR only when he plays in the event.
-- The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats. Two props feed it. `games` turns the mark on, and the line works the rule out itself with `gamesWarning` in `next/src/helpers/games-rule.mjs`: twenty ladder games on that race over the current and the previous w3champions season, the `games` of the race's window entry in `race_mmrs`, the threshold a parameter of the helper; a stale entry counts as no stats. The players page and the season team assign page pass it. `warning` is the colour and the text of a mark a read already worked out against the event's own games rule, and the round draft board passes it off the board read. A line that meets the rule keeps an empty slot of the mark's width, so the flags stay in one column, and the mark carries its text for a screen reader.
+- The plain line is the default on every surface. One variation puts the games icon before the flag, a warning triangle with the count of ladder games in its tooltip and the same mark in `error` when W3C holds no stats. Two props feed it. `games` turns the mark on, and the line works the rule out itself with `gamesWarning` in `next/src/helpers/games-rule.mjs`: twenty ladder games on that race over the current and the previous w3champions season, the `games` of the race's window entry in `race_mmrs`, the threshold a parameter of the helper; a stale entry counts as no stats. The players page and the season team assign page pass it. `warning` is the colour and the text of a mark a read already worked out against the event's own games rule, and the round planner passes it off the draft board read. A line that meets the rule keeps an empty slot of the mark's width, so the flags stay in one column, and the mark carries its text for a screen reader.
 - The line reads the MMR itself, with `getW3CMMR` over the `race_mmrs` the payload carries, on the race the player signed up on. It asks for nothing of its own, so a payload without `race_mmrs` shows no number. `mmr={false}` leaves it out where a column of its own sorts by MMR; a number fills it where the surface already holds one, as the KOTH night page does with the MMR its entries store; `mmr={null}` names no number and lets the line read its own.
 - A series row names the rating beside the race it plays: `player1_mmr` and `player2_mmr` hold the live window rating on that race on a running event, and the MMR of the time on a finished one. Six reads fill the two fields: `GET /events/{id}/stages/{sid}/series`, `GET /events/{id}/series`, `POST /events/{id}/series/search`, `POST /events/{id}/rounds/{playday}/series/search`, `POST /series/search` and the `series` of `GET /player-series`; every other series payload carries them as null. The row's player carries an empty `race_mmrs`, so the number the row names is the only one the line can read.
 - The surfaces that pass the row's rating in: `SeriesBox` on a stage row, `SeriesCard` on a phone, the series schedule, the unscored list of the season page, the published series of the fixture page, the round cards and the series by round of a player page, and the round strip tooltip, which reads `opponentMmr` from `next/src/helpers/round-strip.mjs` before it falls back to the opponent's own stats.
 - By default `PlayerName` is a `Link` to the player page.
-- On a drafting page, where the page holds unsaved work, the page wraps its body in `PanelLinksContext.Provider` with the value `true` (`next/src/hooks/player-panel.ts`). Under it the name opens the side panel instead and shows a dock icon in the primary colour with the title "Opens in a side panel". The providers today: the season team assign page, the match page's series draft, and the panel itself. No other page opens the panel. See [the decision](../decisions/player-panel-drafting-only.md).
+- `w3c` adds a link to the player's W3Champions profile after the line, the W3Champions mark with the player's name as its label, opened in a new tab. It stands beside the line, never inside it, because the line is itself a link or a button, and a player with no battle tag draws none. The surfaces that weigh players pass it: the round planner and the published series of the fixture page.
+- On a drafting page, where the page holds unsaved work, the page wraps its body in `PanelLinksContext.Provider` with the value `true` (`next/src/hooks/player-panel.ts`). Under it the name opens the side panel instead and shows a dock icon in the primary colour with the title "Opens in a side panel". The providers today: the season team assign page, the match page with its round planner, and the panel itself. No other page opens the panel. See [the decision](../decisions/player-panel-drafting-only.md).
 - Inside a form dialog on any other page, pass `plain`, because a link would drop the typed input: the veto board in report mode, the fantasy bet dialog, the add-players dialog.
 
 # TeamName
 
 A team is drawn as `{logo} {name}` everywhere, and it links to the team page. The name is the team's long name, and its short tag when it carries no long name.
 
-- A few surfaces draw the team themselves: a card or row that already links as a whole (the teams table, the season match cards and the team cards), the `TeamChip` badge in the propose dialog, the role group button, and the `h1` of a team's own page.
+- A few surfaces draw the team themselves: a card or row that already links as a whole (the teams table, the season match cards and the team cards), the role group button, and the `h1` of a team's own page.
 - The logo is the `icon_url` the payload names, at one fixed size on every surface, so names in a column line up. The component asks the backend for no image: a team whose payload names no `icon_url` reads a muted shield outline of that same size. The payloads that name a team name its logo: the ladder read answers `teams[].icon_url`, the ladder players read `rows[].team_icon_url`, the veto board `player1/player2.team_icon_url`, a player's history `events[].team_icon_url`, and the fantasy breakdown `team_breakdown.team_icon_url`; `grind_breakdown` is the one exception and names none.
 - The name truncates inside a narrow cell and carries the full name in its `title`, so a long name cannot widen a bracket box or a phone column.
 - `seasonKey` picks the season team page, the path the team cards and the ladder already use; without one the link is the plain team page.
@@ -86,7 +90,7 @@ A race icon asserts a fact about a row. Show one only when the row has a race: t
 
 # DataTable
 
-`next/src/components/ui/DataTable.tsx` is the one flat table: sort, page and column visibility over one column list. With `rowCount` it runs in server mode, where the page holds the page index and the sort and sends them to the backend. A text column sorts without regard to case. `mobileStack` turns each row into a block of label and value lines below the phone breakpoint; the head row is hidden there, so a "Sort by" select above the table takes its place and each cell carries its column label as an element. `expand` draws a chevron column with one detail row under the row it opens. A column whose header is a component names itself through `meta.label`.
+`next/src/components/ui/DataTable.tsx` is the one flat table: sort, page and column visibility over one column list. With `rowCount` it runs in server mode, where the page holds the page index and the sort and sends them to the backend. A text column sorts without regard to case. `mobileStack` turns each row into a block of label and value lines below the phone breakpoint; the head row is hidden there, so a "Sort by" select above the table takes its place and each cell carries its column label as an element. `expand` draws a chevron column with one detail row under the row it opens. `rowClassName` puts a class on one data row, such as a tint that marks it; the row's own text still says why. `onRowClick` makes a row with no detail clickable, and a control inside a cell stops its own click. A column whose header is a component names itself through `meta.label`.
 
 # GroupedTable
 
@@ -114,9 +118,19 @@ One player's event reads as one 12 px square per round: `win` for a round he won
 
 The head to head of two players is one cell: the record in the order of the pairing, the event they last met in, and a "Meetings" button that opens the meetings under it.
 
-- The caller hands the meetings over, so the cell makes no read of its own. A surface that already holds them opens the list with no request; the draft board reads them the first time a reader opens one pairing.
+- The caller hands the meetings over, so the cell makes no read of its own. A surface that already holds them opens the list with no request; the round planner reads them the first time a reader opens one pairing.
 - A pairing that never met reads "no series". The record wears the app's form, `{wins} – {losses}`, with the percent from ten up.
-- It is drawn on the round draft board, on the draft table of a fixture and under the title of a series of two players.
+- It is drawn in an opened row of the round planner and under the title of a series of two players.
+
+# AvailabilityCalendar
+
+When two players can meet across a round, read only, from one free-time answer: the shared free ranges and each player's blocked ranges.
+
+- One column a day and one row a half hour, seven days a page and three under the XS breakpoint, with a pager over the dates it shows. The cells come from `windowDays`, `dayCells`, `blockedSpans` and `sideSpans` in `next/src/helpers/schedule-grid.mjs`, the helpers the schedule dialog draws with.
+- A time column for each clock the viewer and the two players live on, the viewer's first; a clock several people share is one column naming them all. `zoneColumns` merges them by UTC offset at the round start, and `clockCell` names each full hour on a column's clock with "+1d" or "−1d" where that clock is on another day.
+- An hour free for both is tinted green. Player 1's blocked hours fill the left half of a cell in `side-1` and player 2's the right half in `side-2`, so position and colour both tell them apart; an hour outside the round wears the hatch. Each cell names every clock and whose hour it is in its title, and the legend names the two players.
+- A player who entered no availability draws no blocks, and a line above the grid says only the other player's blocked hours show.
+- The round planner draws it in an opened matchup row. The schedule dialog keeps its own grid, whose cells are buttons that book a time.
 
 # TeamRoster
 

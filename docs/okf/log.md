@@ -1,5 +1,14 @@
 # Bundle history
 
+## 2026-10-02
+
+* **Update**: a published series that holds no result offers "Find a replacement", which opens the plan on a search: who is replaced, one player or both, the MMR range, and the matchups that fit, filtered on the player who stays until the captain takes the filter away. Each pick becomes a draft that proposes a replacement, several per series if the captains want to weigh them; publishing one removes the series and the other proposals with it. The fixtures page states it.
+* **Update**: in the round planner the column titles of the matchups sort the list, a click on one adding it, turning it round or taking it out, with an arrow and a number on each sorting title; the list starts unsorted, in roster order, and the sort chips are gone. "Show" is a search that adds players as chips, and the list holds every opponent of each. Each step keeps its help behind an info button beside its title. The fixtures page states it.
+* **Update**: the GNL season and series flows name the Plan round tab, the captains who publish up to the round's series, and no ready mark. The backend contract's read cost names the round planner and the reads it makes on demand.
+* **Update**: in the round planner a click on a matchup row selects it, and the row opens no detail. The time overlap opens from a calendar button in a dialog. A name opens a stats panel in place of the player profile: W3Champions by race, the signup race this season so far with the highest MMR (one edge-cached `GET /users/{id}/ladder?season_id=` per player opened), GNL this season, and this matchup with the head to head. The list sorts by each team's player MMR. `DataTable` takes `onRowClick`. The fixtures page and the shared components state it.
+* **Update**: the round planner's matchups go into the viewer's own selection, kept per match in the browser, and "Move N to draft" writes them in one run. The list keeps every player who plays and drops only the pairs the draft or a published series hold; a row whose player already holds a match is tinted and names it. The draft takes any number of pairings, and "Publish N series" publishes the ticked ones up to the series the round has left; "Select all" ticks every pairing or none, and "Remove N" deletes the ticked ones after one confirm. `DataTable` takes `rowClassName`. The fixtures page and the shared components state it.
+* **Update**: the round planner is a wizard, one tab per step with Back and Next, and "Who plays" gains a search by name or battle tag. The fixtures page states it.
+
 ## 2026-10-01
 
 * **Creation**: the runbook that captures the screens, with the scripts under `next/scripts/shots/`; the admin guide follows the Admin area and the season wizard.
@@ -14,6 +23,7 @@
 
 ## 2026-09-30
 
+* **Update**: the fixture page's two tabs are "Series" and "Plan round". The round planner replaces the draft board, the suggestion and the admin's roster panel with four steps: who plays, where a captain's switch writes a player's round answer and the other team's switch only shapes the captain's own list; the MMR range with presets and the players it leaves without an opponent; the matchups, each side's record against this opponent's race and races faced beside its name, sorted on several criteria at once, with top picks, the hours both are free when both entered availability, a warning from 8 h apart, and an opened row that reads the pair's free time into `AvailabilityCalendar`; and the draft, where either captain marks the fantasy series and publishes. The Ready mark leaves the page. `PlayerName` takes `w3c` for a W3Champions link, and `DESIGN.md` gains the two `side-*` tokens. The fixtures page, the shared components, the data pieces and the player-name decision state it.
 * **Update**: only an admin's close completes a GNL season. The seasons list's row menu closes a season, with a confirm that names the count of series with no result, and reopens a complete one; a season with every series scored stays commenced and one past its end date reads overdue; the run page reopens a closed event. The GNL season page, the event management page and the backend contract state it.
 
 ## 2026-09-28

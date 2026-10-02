@@ -5,11 +5,12 @@ import { Icon } from "@/components/ui/Icon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { FlagIcon } from "@/components/FlagIcon";
 import { RaceIcon } from "@/components/RaceIcon";
+import { W3CIcon } from "@/components/W3CIcon";
 import { openPlayer, usePanelLinks } from "@/hooks/player-panel";
 import { gamesWarning } from "@/helpers/games-rule.mjs";
 import { playerPath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
-import { getW3CMMR } from "@/helpers/w3c-stats.js";
+import { getW3CMMR, w3cPlayerUrl } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -26,6 +27,7 @@ export function PlayerName({
   mmr,
   games,
   warning,
+  w3c,
   onClick,
   children,
 }: {
@@ -37,6 +39,7 @@ export function PlayerName({
   mmr?: number | false | null; // false where a column of its own sorts by MMR; a number the caller already holds, null where its payload names none
   games?: boolean; // draws the games-rule mark on a draft surface
   warning?: { colour: "error" | "warning"; text: string } | null; // the same mark from a read that already applies the event's rule
+  w3c?: boolean; // a link to the player's W3Champions profile after the line, where a surface weighs players
   onClick?: () => void;
   children?: React.ReactNode;
 }) {
@@ -82,20 +85,37 @@ export function PlayerName({
     </>
   );
 
-  if (to) return <Link href={to} className={className}>{body}</Link>;
-  if (opensPanel)
-    return (
-      <button type="button" className={className} title="Opens in a side panel" onClick={() => openPlayer(player)}>
-        {body}
-      </button>
-    );
-  if (onClick)
-    return (
-      <button type="button" className={className} onClick={onClick}>
-        {body}
-      </button>
-    );
-  return <span className={className}>{body}</span>;
+  const line = to ? (
+    <Link href={to} className={className}>{body}</Link>
+  ) : opensPanel ? (
+    <button type="button" className={className} title="Opens in a side panel" onClick={() => openPlayer(player)}>
+      {body}
+    </button>
+  ) : onClick ? (
+    <button type="button" className={className} onClick={onClick}>
+      {body}
+    </button>
+  ) : (
+    <span className={className}>{body}</span>
+  );
+  if (!w3c || !player.battleTag) return line;
+  // the profile link stands beside the line, because the line is itself a link or a button
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {line}
+      <a
+        href={w3cPlayerUrl(player.battleTag)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${player.name} on W3Champions`}
+        title={`${player.name} on W3Champions`}
+        className="inline-flex rounded-sm hover:opacity-80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <W3CIcon size={16} />
+      </a>
+    </span>
+  );
 }
 
 export default PlayerName;

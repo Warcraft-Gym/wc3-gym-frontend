@@ -70,6 +70,34 @@ export const dayCells = ({ day, first, last }, blocked = [], sides = []) => {
 export const insideBlocked = (pick, blocked = []) =>
   !!pick && blocked.some((span) => pick >= span.start && pick < span.end);
 
+/** The time columns of a calendar: the viewer's clock first, then each person's, one column per
+ *  distinct UTC offset at `instant`, naming everyone on it. A person with no zone gets no column. */
+export const zoneColumns = (viewer, people = [], instant = null) => {
+  const when = instant ? at(instant) : DateTime.utc();
+  const columns = [];
+  const add = (zone, name) => {
+    const there = when.setZone(zone);
+    if (!there.isValid) return;
+    const found = columns.find((one) => one.offset === there.offset);
+    if (found) found.names.push(name);
+    else columns.push({ zone, offset: there.offset, names: [name] });
+  };
+  add(viewer, 'You');
+  for (const person of people) if (person.zone) add(person.zone, person.name);
+  return columns.map((one) => ({ ...one, label: one.names.join(' · '), gmt: gmt(one.offset) }));
+};
+
+/** One calendar row on a column's clock: its time, and "+1d" or "−1d" where that clock is on
+ *  another day than the viewer's. */
+export const clockCell = (point, zone, viewer) => {
+  const there = point.setZone(zone);
+  const here = point.setZone(viewer);
+  const days = Math.round(
+    DateTime.fromISO(there.toISODate(), { zone: 'UTC' }).diff(DateTime.fromISO(here.toISODate(), { zone: 'UTC' }), 'days').days,
+  );
+  return { time: there.toFormat('HH:mm'), shift: days > 0 ? `+${days}d` : days < 0 ? `−${-days}d` : '' };
+};
+
 /** One row of the bottom section: the picked point on one player's clock. */
 export const zoneRow = (pick, zone, viewer) => {
   const there = pick.setZone(zone);

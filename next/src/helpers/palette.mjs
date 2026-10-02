@@ -63,6 +63,9 @@ export const themes = {
             'heat-3': '#B68B16',
             'heat-4': '#8E6800',
             'heat-5': '#664700',
+            // The two players of a pair on the availability calendar; each also keeps its own half of a cell
+            'side-1': '#2E68A8',
+            'side-2': '#BD6A1E',
         },
         variables: {
             'border-color': '#1A241E',
@@ -123,6 +126,8 @@ export const themes = {
             'heat-3': '#AA7E00',
             'heat-4': '#D3A329',
             'heat-5': '#F5CB70',
+            'side-1': '#4A86C8',
+            'side-2': '#C97A2C',
             // Vuetify picks white on these mid-tone fills, which is under 3.4:1; ink is 4.75:1 or more
             'on-error': '#1A241E',
             'on-info': '#1A241E',

@@ -72,6 +72,8 @@
   --color-heat-3: rgb(var(--v-theme-heat-3));
   --color-heat-4: rgb(var(--v-theme-heat-4));
   --color-heat-5: rgb(var(--v-theme-heat-5));
+  --color-side-1: rgb(var(--v-theme-side-1));
+  --color-side-2: rgb(var(--v-theme-side-2));
   --color-on-error: rgb(var(--v-theme-on-error));
   --color-on-info: rgb(var(--v-theme-on-info));
   --color-on-success: rgb(var(--v-theme-on-success));

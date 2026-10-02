@@ -117,11 +117,10 @@ export function MatchDetailsView({ id }: { id: string }) {
   // The tab the viewer picked; until then a captain opens on the plan while the round has room
   const [tab, setTab] = useState<string | null>(null);
 
-  // The player who stays in a published series whose other player a captain replaces; the planner opens
-  // on their matchups. The key opens the planner afresh for every replacement asked.
-  const [replaceEntry, setReplaceEntry] = useState<{ playerId: number; key: number } | null>(null);
   // The publish confirm over one or more drafts
   const [publishDrafts, setPublishDrafts] = useState<Row[] | null>(null);
+  // The published series a captain looks for a replacement for, on the plan tab
+  const [replacing, setReplacing] = useState<Row | null>(null);
   // Only the answer of the open confirm is kept, so a slow replaces read of an earlier one is dropped
   const replaceAsk = useRef(0);
   const [publishLost, setPublishLost] = useState<Row | null>(null);
@@ -136,6 +135,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   const [fixtureRosterMap, setFixtureRosterMap] = useState<Record<string, Row[]>>({});
 
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
+  // The confirm of a removal of several drafts names them; every other delete keeps the plain question
+  const [deleteNote, setDeleteNote] = useState<string | null>(null);
 
   // The season's round gives the header its dates; the match carries only the reduced season
   const roundOf = (playday?: number) => season?.rounds?.find((r: Row) => r.playday === playday) || { playday };
@@ -353,8 +354,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   useEffect(() => {
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
-      setReplaceEntry(null); // another fixture holds none of the series this replacement names
       setTab(null);
+      setReplacing(null); // another fixture holds none of this one's series
       const loaded = await fetchMatchDetails();
       if (loaded) await loadFixtureSeries(loaded.row, loaded.teams);
     });
@@ -478,6 +479,17 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
+  // The ticked drafts leave in one run, after one confirm; a run that failed part-way still reads what it removed
+  const removeDrafts = (rows: Row[]) => {
+    const names = rows.map((row) => `${row.player1?.name} vs ${row.player2?.name}`).join(", ");
+    setDeleteNote(`Remove ${rows.length} pairings from the draft: ${names}? This cannot be undone.`);
+    openDeleteDialog(null, () =>
+      runDraftWrite(async () => {
+        for (const row of rows) await seriesStore.deleteDraftSeries(Number(row.id));
+      }),
+    );
+  };
+
   const removeAllSeries = async () => {
     setIsLoading(true);
     try {
@@ -573,13 +585,6 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  // Replacing a player keeps the other side of the published series and drafts the new pairing
-  const teamOfSide = (side: 1 | 2) => (side === 1 ? match.team1_id : match.team2_id);
-  const mayReplace = (side: 1 | 2) => auth.isAdmin || (ownTeamId != null && Number(ownTeamId) === Number(teamOfSide(side)));
-  const openReplace = (item: Row, side: 1 | 2) => {
-    setReplaceEntry({ playerId: item[`player${side === 1 ? 2 : 1}_id`], key: Date.now() });
-    setTab("plan");
-  };
   // The pairing a replacement draft removes, named from the published series the page already holds
   const replacedLabel = (item: Row) => {
     if (!item.replaces_series_id) return null;
@@ -645,22 +650,30 @@ export function MatchDetailsView({ id }: { id: string }) {
   const toggleDraftFantasyMatch = (draft: Row) =>
     runDraftWrite(() => seriesStore.updateDraftSeries({ ...draft, player1: undefined, player2: undefined, is_fantasy_match: !draft.is_fantasy_match }));
 
-  // A captain of that side, or an admin, drafts a new player into a published series
-  const replaceActions = (item: Row): RowAction[] => {
-    if (item.player1_score != null || item.player2_score != null) return []; // a series that holds a result stays
-    const sides = ([1, 2] as const).filter((side) => mayReplace(side));
-    return sides.map((side) => ({
-      icon: "mdi-swap-horizontal",
-      label: sides.length === 1 ? "Replace a player" : `Replace ${item[`player${side}`]?.name || `player ${side}`}`,
-      public: true,
-      onClick: () => openReplace(item, side),
-    }));
-  };
+  // Each proposed replacement is a draft that names the series it replaces; publishing one removes the
+  // series, and the other proposals go with it
+  const setReplacement = (item: Row, pairs: { player1_id: number; player2_id: number }[]) =>
+    addPairings(pairs.map((pair) => ({ ...pair, replaces_series_id: item.id })));
+  // A captain of either team, or an admin, looks for a replacement of a series that holds no result
+  const replaceAction = (item: Row): RowAction[] =>
+    canDraft && item.player1_score == null && item.player2_score == null
+      ? [
+          {
+            icon: "mdi-swap-horizontal",
+            label: "Find a replacement",
+            public: true,
+            onClick: () => {
+              setReplacing(item);
+              setTab("plan");
+            },
+          },
+        ]
+      : [];
 
   const seriesActions = (item: Row): RowAction[] => [
     ...replays.filter((r) => r.series_id === item.id).map((r) => ({ icon: "mdi-download", label: `Replay game ${r.game_no}`, href: r.url, public: true })),
     { icon: "mdi-open-in-new", label: "Open series", public: true, onClick: () => router.push(`/series/${item.id}`) },
-    ...replaceActions(item),
+    ...replaceAction(item),
     { icon: "mdi-pencil", label: "Edit series", onClick: () => editSeries(item) },
     { icon: "mdi-map-outline", label: "Map veto", onClick: () => router.push(`/player-series/${item.id}/veto`) },
     { icon: "mdi-delete", label: "Delete series", color: "error", onClick: () => openDeleteDialog(item.id, removeSeries) },
@@ -719,7 +732,7 @@ export function MatchDetailsView({ id }: { id: string }) {
             value={activeTab}
             onValueChange={(value) => {
               setTab(value as string);
-              if (value !== "plan") setReplaceEntry(null); // the replacement is picked on the plan
+              if (value !== "plan") setReplacing(null); // the replacement is looked for on the plan
             }}
           >
             <TabsList variant="line" className="w-full justify-center bg-surface-light">
@@ -753,7 +766,6 @@ export function MatchDetailsView({ id }: { id: string }) {
             {canDraft ? (
               <TabsContent value="plan">
                 <RoundPlanner
-                  key={replaceEntry?.key ?? "plan"}
                   match={match}
                   team1={team1}
                   team2={team2}
@@ -769,7 +781,6 @@ export function MatchDetailsView({ id }: { id: string }) {
                   narrow={smAndDown}
                   busy={isLoading}
                   seenAt={seenAt}
-                  entry={replaceEntry}
                   replacedLabel={replacedLabel}
                   onAnswer={setAnswer}
                   onAddPairings={addPairings}
@@ -777,8 +788,12 @@ export function MatchDetailsView({ id }: { id: string }) {
                   onSetMaxDifference={setMaxMmrDifference}
                   onToggleFantasy={toggleDraftFantasyMatch}
                   onRemoveDraft={(draft) => openDeleteDialog(draft.id, removeDraftSeries)}
+                  onRemoveDrafts={removeDrafts}
                   onPublish={openPublishAll}
                   onPublishReplace={openPublishReplace}
+                  replacing={replacing ? enrichedSeries.find((one) => Number(one.id) === Number(replacing.id)) ?? null : null}
+                  onReplace={setReplacement}
+                  onCancelReplace={() => setReplacing(null)}
                   onMeetings={meetingsOf}
                   loadFreeTime={pairFreeTime}
                   loadLadder={playerLadder}
@@ -827,6 +842,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         drafts={publishDrafts}
         replaced={publishOne ? enrichedSeries.find((one) => Number(one.id) === Number(publishOne.replaces_series_id)) : null}
         lost={publishLost}
+        others={publishOne?.replaces_series_id ? draftSeries.filter((row) => Number(row.replaces_series_id) === Number(publishOne.replaces_series_id)).length - 1 : 0}
         busy={isLoading}
         error={publishError}
         onErrorClose={() => setPublishError(null)}
@@ -838,10 +854,20 @@ export function MatchDetailsView({ id }: { id: string }) {
 
       <ConfirmDeleteDialog
         modelValue={showDeleteDialog}
-        message="Are you sure you want to delete this item? This action cannot be undone."
-        onUpdateModelValue={(open) => (open ? undefined : cancelDeleteDialog())}
-        onConfirm={confirmDelete}
-        onCancel={cancelDeleteDialog}
+        message={deleteNote ?? "Are you sure you want to delete this item? This action cannot be undone."}
+        onUpdateModelValue={(open) => {
+          if (open) return;
+          setDeleteNote(null);
+          cancelDeleteDialog();
+        }}
+        onConfirm={() => {
+          confirmDelete();
+          setDeleteNote(null);
+        }}
+        onCancel={() => {
+          setDeleteNote(null);
+          cancelDeleteDialog();
+        }}
       />
     </PanelLinksContext.Provider>
   );

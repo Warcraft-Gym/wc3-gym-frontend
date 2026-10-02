@@ -24,6 +24,7 @@ export function PublishDraftDialog({
   drafts,
   replaced,
   lost,
+  others = 0,
   busy,
   error,
   onErrorClose,
@@ -33,6 +34,7 @@ export function PublishDraftDialog({
   drafts: Row[] | null; // null while the dialog is closed
   replaced?: Row | null; // the published series the one draft replaces, for its two names
   lost?: Row | null; // the replaces read: date_time, has_veto, has_result, has_replay
+  others?: number; // the other drafts that propose a replacement of the same series
   busy: boolean;
   error?: string | null;
   onErrorClose: () => void;
@@ -57,6 +59,11 @@ export function PublishDraftDialog({
             <>
               <p>It replaces this series, which is removed:</p>
               <div className="mt-2 border-t pt-2">{replaced ? pairLine(replaced) : <span className="text-muted-foreground">The series it replaces</span>}</div>
+              {others ? (
+                <p className="mt-2 text-sm">
+                  The other {others === 1 ? "proposal" : `${others} proposals`} for this series leave{others === 1 ? "s" : ""} the draft.
+                </p>
+              ) : null}
               <p className="mt-4">Removed with it:</p>
               {lost ? (
                 <div className="mt-2 flex flex-col gap-1 border-t pt-2">

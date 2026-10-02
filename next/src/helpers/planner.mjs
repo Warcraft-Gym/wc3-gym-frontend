@@ -105,15 +105,19 @@ export const pairKey = (a, b) => (Number(a) < Number(b) ? `${a}~${b}` : `${b}~${
  *  @param {any[]} published @param {any[]} drafts */
 export const takenPairs = (published = [], drafts = []) => new Set([...published, ...drafts].map((row) => pairKey(row.player1_id, row.player2_id)));
 
-/** The pairings to weigh: every pair of the players who play, inside the range, or, with a focus,
- *  every opponent of that one player whatever the range. A pair the draft or the published series
- *  already hold is left out; a player who holds another match stays.
+/** The pairings to weigh: every pair of the players who play, inside the range, or, with a focus of
+ *  one or more players, every opponent of each of them whatever the range, each pair once. A pair the
+ *  draft or the published series already hold is left out; a player who holds another match stays.
  *  @param {{ side1: any[], side2: any[], team1Id: number, range: number, focus?: any, pairOf?: (player1Id: number, player2Id: number) => any, at?: string | null, taken?: Set<string> }} args */
 export function matchupRows({ side1, side2, team1Id, range, focus = null, pairOf, at = null, taken = new Set() }) {
   const row = (a, b) => matchupRow(a, b, { range, pairOf, at });
   const open = (one) => !taken.has(pairKey(one.a.user_id, one.b.user_id));
-  if (focus) return (focus.team_id === team1Id ? side2.map((b) => row(focus, b)) : side1.map((a) => row(a, focus))).filter(open);
-  return side1.flatMap((a) => side2.map((b) => row(a, b))).filter((one) => !one.outside && open(one));
+  const focused = Array.isArray(focus) ? focus : focus ? [focus] : [];
+  if (!focused.length) return side1.flatMap((a) => side2.map((b) => row(a, b))).filter((one) => !one.outside && open(one));
+  const seen = new Set();
+  return focused
+    .flatMap((one) => (one.team_id === team1Id ? side2.map((b) => row(one, b)) : side1.map((a) => row(a, one))))
+    .filter((one) => open(one) && !seen.has(one.key) && seen.add(one.key));
 }
 
 /** Every match a player holds this round, by player: a published series (`played` once it holds a
@@ -137,35 +141,25 @@ export function matchesOf({ published = [], drafts = [], selection = [] }) {
 }
 
 /** The selection still worth moving to the draft: an item leaves once the draft or the published
- *  series hold its pair, once a player is off the board, or once the series it replaces is gone,
- *  holds a result, or has another draft replacing it. An item that changes a replacement draft
- *  leaves with that draft.
+ *  series hold its pair, or once a player is off the board.
  *  @param {any[]} selection
  *  @param {{ published?: any[], drafts?: any[], known: (id: number) => boolean }} args */
 export function pruneSelection(selection, { published = [], drafts = [], known }) {
   const taken = takenPairs(published, drafts);
-  return selection.filter((item) => {
-    if (taken.has(pairKey(item.player1_id, item.player2_id)) || !known(item.player1_id) || !known(item.player2_id)) return false;
-    if (item.draft_id != null) return drafts.some((row) => row.id === item.draft_id);
-    if (item.replaces_series_id == null) return true;
-    const series = published.find((row) => Number(row.id) === Number(item.replaces_series_id));
-    if (!series || series.player1_score != null || series.player2_score != null) return false;
-    return !drafts.some((row) => Number(row.replaces_series_id) === Number(item.replaces_series_id));
-  });
+  return selection.filter((item) => !taken.has(pairKey(item.player1_id, item.player2_id)) && known(item.player1_id) && known(item.player2_id));
 }
 
-/** The selection with one item switched: off when it is there, on otherwise. `onePerPlayer` names a
- *  player who takes one selected match, so switching another of theirs on drops the earlier one.
- *  @param {any[]} selection @param {any} item @param {{ onePerPlayer?: number | null }} [options] */
-export function selectItem(selection, item, { onePerPlayer = null } = {}) {
+/** The selection with one item switched: off when it is there, on otherwise.
+ *  @param {any[]} selection @param {any} item */
+export function selectItem(selection, item) {
   const key = pairKey(item.player1_id, item.player2_id);
   if (selection.some((one) => pairKey(one.player1_id, one.player2_id) === key)) return selection.filter((one) => pairKey(one.player1_id, one.player2_id) !== key);
-  const kept = onePerPlayer == null ? selection : selection.filter((one) => one.player1_id !== onePerPlayer && one.player2_id !== onePerPlayer);
-  return [...kept, item];
+  return [...selection, item];
 }
 
 export const SORT_KEYS = ['games', 'mmr', 'time', 'mmr1', 'mmr2'];
-export const DEFAULT_ORDER = ['games', 'mmr', 'time'].map((key) => ({ key, dir: 1 }));
+/** No sort until the viewer clicks a column title; the rows keep the order they come in. */
+export const DEFAULT_ORDER = [];
 /** Each criterion in its first direction and turned round; a team's MMR is named by `sortLabel`. */
 export const SORT_LABELS = {
   games: ['Fewest games played', 'Most games played'],
@@ -180,15 +174,22 @@ export const sortLabel = (key, dir, { team1 = 'Team 1', team2 = 'Team 2' } = {})
   return SORT_LABELS[key][dir === 1 ? 0 : 1];
 };
 
-/** The order with one criterion moved one place earlier; the first stays where it is.
+/** A click on a column title: a criterion not in the sort joins it last in its first direction, a
+ *  second click turns it round, and a third takes it out.
  *  @param {{ key: string, dir: 1 | -1 }[]} order @param {string} key */
-export const moveEarlier = (order, key) => {
-  const index = order.findIndex((one) => one.key === key);
-  if (index <= 0) return order;
-  const next = [...order];
-  [next[index - 1], next[index]] = [next[index], next[index - 1]];
-  return next;
+export const cycleSort = (order, key) => {
+  const one = order.find((item) => item.key === key);
+  if (!one) return [...order, { key, dir: 1 }];
+  if (one.dir === 1) return order.map((item) => (item.key === key ? { key, dir: -1 } : item));
+  return order.filter((item) => item.key !== key);
 };
+
+// The criteria whose first direction runs from the smallest figure up: fewest games, smallest difference
+const FIRST_ASCENDING = { games: true, mmr: true, time: false, mmr1: false, mmr2: false };
+
+/** Whether a criterion in one direction puts the smallest figure first, for the arrow beside it.
+ *  @param {string} key @param {1 | -1} dir */
+export const sortsUp = (key, dir) => (dir === 1 ? !!FIRST_ASCENDING[key] : !FIRST_ASCENDING[key]);
 
 // A missing figure sorts last in the first direction
 const byNumber = (x, y) => {
@@ -218,14 +219,15 @@ const COMPARE = {
   mmr2: (x, y) => byNumberDown(x.b.mmr, y.b.mmr),
 };
 
-/** The rows in the order the chips name, each key with its direction; ties keep a fixed order. */
+/** The rows in the order the column titles name, each key with its direction; ties keep the order the
+ *  rows came in, so an unsorted list stays in roster order. */
 export const sortMatchups = (rows, order = DEFAULT_ORDER) =>
   [...rows].sort((x, y) => {
     for (const { key, dir } of order) {
       const c = COMPARE[key](x, y) * dir;
       if (c) return c;
     }
-    return x.key < y.key ? -1 : x.key > y.key ? 1 : 0;
+    return 0;
   });
 
 /** The first sorted rows inside the range that share no player, up to `count`, skipping the players
@@ -254,48 +256,6 @@ export const searchPlayers = (players, query) => {
   if (!needle) return players;
   return players.filter((/** @type {any} */ player) => [player.name, player.battleTag].some((value) => String(value ?? '').toLowerCase().includes(needle)));
 };
-
-/** What a new match for one player would be. A published series of theirs that holds no result is
- *  replaced: the opponent leaves it, and `replacedBy` is the draft that already replaces it and keeps
- *  this player. Any other player gets a new pairing, beside the played series or the drafted pairing
- *  they may hold; `leaving` is their open series a draft replaces without them.
- *  @param {number} playerId
- *  @param {any[]} published
- *  @param {any[]} drafts
- *  @returns {{ kind: 'replace', series: any, dropId: number, replacedBy: any } | { kind: 'new', played: any, drafted: any, leaving: any }} */
-export function newMatchFor(playerId, published = [], drafts = []) {
-  const holds = (row) => row.player1_id === playerId || row.player2_id === playerId;
-  const open = published.find((row) => holds(row) && row.player1_score == null && row.player2_score == null);
-  const replacedBy = open ? drafts.find((row) => Number(row.replaces_series_id) === Number(open.id)) ?? null : null;
-  if (open && (!replacedBy || holds(replacedBy))) {
-    return { kind: 'replace', series: open, dropId: open.player1_id === playerId ? open.player2_id : open.player1_id, replacedBy };
-  }
-  return {
-    kind: 'new',
-    played: published.find((row) => holds(row) && row !== open) ?? null,
-    drafted: drafts.find((row) => holds(row) && !row.replaces_series_id) ?? null,
-    leaving: open ?? null,
-  };
-}
-
-/** The matchups of a replacement: every selected player of one team against every candidate of the
- *  other, whatever the range, team 1 always as `a`. The opponent who leaves a replaced series is no
- *  candidate for it, nor is the one its replacement draft already names; `second` marks a candidate who
- *  already holds a series or a drafted pairing.
- *  @param {{ selected: any[], candidates: any[], team1Id: number, range: number, published?: any[], drafts?: any[], pairOf?: (player1Id: number, player2Id: number) => any, at?: string | null }} args */
-export function replacementRows({ selected, candidates, team1Id, range, published = [], drafts = [], pairOf, at = null }) {
-  const paired = new Set([...published, ...drafts].flatMap((row) => [row.player1_id, row.player2_id]));
-  return selected.flatMap((stay) => {
-    const need = newMatchFor(stay.user_id, published, drafts);
-    const skip = new Set(need.kind === 'replace' ? [need.dropId, need.replacedBy?.player1_id, need.replacedBy?.player2_id] : []);
-    return candidates
-      .filter((other) => !skip.has(other.user_id))
-      .map((other) => {
-        const [a, b] = stay.team_id === team1Id ? [stay, other] : [other, stay];
-        return { ...matchupRow(a, b, { range, pairOf, at }), stay, other, need, second: paired.has(other.user_id) };
-      });
-  });
-}
 
 /** The rated players with no opponent inside the range, each with the nearest one and how far away. */
 export function rangeHints(side1, side2, range) {

@@ -4,7 +4,7 @@ title: The life of one series
 description: The states a series passes through, from a GNL draft pairing to a reported result, who moves it out of each state, and what only an admin may do.
 resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
 tags: [pages, series, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T16:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T19:00:00Z }
 sources:
   - id: fixtures
     resource: ../pages/fixtures-and-series.md
@@ -67,5 +67,5 @@ sequenceDiagram
 - An admin books a time on the same player route as a side, so every schedule write refreshes the bot's post of the series: [the series action bar](../concepts/shared-components.md), [fixtures and series](../pages/fixtures-and-series.md).
 - No state is a gate. A series whose rules play no veto skips that step, and a series whose booked time has passed asks for the result next: [the series action bar](../concepts/shared-components.md).
 - The veto is entered inside Report Result. A missing veto, a missing replay or a replay on another map warns, asks once, and still saves: [the veto decision](../decisions/veto-in-report-result.md), [fixtures and series](../pages/fixtures-and-series.md).
-- A published series with no result and no replay can be replaced: a draft names it, and "Publish and replace" names the booked time and the veto the replaced series loses: [fixtures and series](../pages/fixtures-and-series.md).
+- A published series with no result and no replay can be replaced, with a new player or whole: "Find a replacement" on the series drafts the pick that names it, and "Publish and replace" names the booked time and the veto the replaced series loses: [fixtures and series](../pages/fixtures-and-series.md).
 - A reopen the engine refuses, because a later series already carries a result, asks once more before it forces: [event management](../pages/event-management.md).

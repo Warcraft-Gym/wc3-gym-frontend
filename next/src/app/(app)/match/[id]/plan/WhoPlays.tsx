@@ -10,7 +10,7 @@ import { TeamName } from "@/components/TeamName";
 import { checkInStatus, setByText } from "@/helpers/check-in.mjs";
 import { searchPlayers } from "@/helpers/planner.mjs";
 import { cn } from "@/lib/utils";
-import { gamesMark } from "./PlayerBlock";
+import { MatchChip, gamesMark } from "./PlayerBlock";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -58,7 +58,6 @@ function TeamList({
   onSwitch: (player: Row, on: boolean) => void;
   onPlayer: (player: Row) => void;
 }) {
-  const writes = players.some((player) => player.answersRead);
   const count = players.filter(included).length;
   return (
     <div className="min-w-0">
@@ -88,7 +87,7 @@ function TeamList({
               <span className={cn("min-w-0", !on && "opacity-60")}>
                 <PlayerName player={player} race={player.race} mmr={player.mmr ?? null} warning={gamesMark(player)} w3c onClick={() => onPlayer(player)} />
               </span>
-              {paired ? <span className="text-xs font-medium text-info">{paired}</span> : null}
+              {paired ? <MatchChip>{paired}</MatchChip> : null}
               <span className="ml-auto tnum text-sm text-muted-foreground">
                 {player.played} series played
               </span>
@@ -100,11 +99,6 @@ function TeamList({
           );
         })}
       </ul>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {writes
-          ? "Switch off = not available this round. It is saved at once, and the player sees it on their Home page."
-          : "Their captain sets their answers. Switching here only leaves a player out of your list."}
-      </p>
     </div>
   );
 }

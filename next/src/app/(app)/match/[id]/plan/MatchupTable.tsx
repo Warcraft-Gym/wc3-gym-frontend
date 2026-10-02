@@ -6,29 +6,65 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { TeamName } from "@/components/TeamName";
+import { sortLabel, sortsUp } from "@/helpers/planner.mjs";
 import { cn } from "@/lib/utils";
 import { PairTimeDialog, type Loaded } from "./PairTimeDialog";
 import { PlayerBlock } from "./PlayerBlock";
-import type { SortOrder } from "./SortChips";
+
+export type SortKey = "games" | "mmr" | "time" | "mmr1" | "mmr2";
+export type SortOrder = { key: SortKey; dir: 1 | -1 }[];
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-/** A column title with the priority the sort chips give it. */
-function Head({ label, sortKey, order }: { label: React.ReactNode; sortKey: string; order: SortOrder }) {
+/** A column title that sorts the list: a click joins the sort, a second turns it round, a third takes
+ *  it out. While it sorts, an arrow says which way and the number its place in the sort. */
+function SortHead({
+  label,
+  name,
+  sortKey,
+  order,
+  teams,
+  onSort,
+}: {
+  label: React.ReactNode;
+  name: string;
+  sortKey: SortKey;
+  order: SortOrder;
+  teams: { team1: string; team2: string };
+  onSort: (key: SortKey) => void;
+}) {
   const index = order.findIndex((one) => one.key === sortKey);
+  const one = order[index];
+  const state = one ? `sort ${index + 1}, ${sortLabel(sortKey, one.dir, teams)}` : "not sorted";
+  const action = !one ? "sort by it" : one.dir === 1 ? "turn the sort round" : "stop sorting by it";
   return (
-    <span className={cn("inline-flex items-center gap-1.5", index >= 0 && "text-primary-text")}>
+    <button
+      type="button"
+      className={cn("inline-flex items-center gap-1 rounded font-medium hover:text-primary-text", one && "text-primary-text")}
+      aria-label={`${name}: ${state}. Click to ${action}`}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSort(sortKey);
+      }}
+    >
       {label}
-      {index >= 0 ? <span className="inline-grid size-4 place-items-center rounded-full bg-primary text-[10px] text-on-primary tnum">{index + 1}</span> : null}
-    </span>
+      {one ? (
+        <span className="inline-flex items-center" aria-hidden="true">
+          <Icon name={sortsUp(sortKey, one.dir) ? "mdi-arrow-up" : "mdi-arrow-down"} size={14} />
+          <span className="text-[10px] tnum">{index + 1}</span>
+        </span>
+      ) : (
+        <Icon name="mdi-swap-vertical" size={14} className="opacity-30" />
+      )}
+    </button>
   );
 }
 
 // a control inside a row keeps its click to itself, so the row under it is not selected
 const stop = (event: React.SyntheticEvent) => event.stopPropagation();
 
-/** The possible matchups in the order of the sort chips: each player's block, the series each has
+/** The possible matchups in the order the column titles set: each player's block, the series each has
  *  played this season, the MMR difference and the time the two share. A click on a row selects it.
  *  A row whose player already holds a match this round wears a tint, and the player's note names the
  *  match. The calendar button opens when the two can play; a name opens the player's stats. */
@@ -36,6 +72,7 @@ export function MatchupTable({
   rows,
   picks,
   order,
+  onSort,
   team1,
   team2,
   maxPlayed,
@@ -54,6 +91,7 @@ export function MatchupTable({
   rows: Row[];
   picks: Set<string>;
   order: SortOrder;
+  onSort: (key: SortKey) => void;
   team1: Row;
   team2: Row;
   maxPlayed: [number, number];
@@ -90,16 +128,44 @@ export function MatchupTable({
     load(row);
   };
   const changing = !!changeLabel;
+  const teams = { team1: team1?.name ?? "Team 1", team2: team2?.name ?? "Team 2" };
+  const head = (key: SortKey, name: string, label: React.ReactNode = name) => (
+    <SortHead label={label} name={name} sortKey={key} order={order} teams={teams} onSort={onSort} />
+  );
+  // the phone hides the column titles, so the same sort sits in a row above the cards
+  const columnsToSort: { key: SortKey; name: string }[] = [
+    { key: "mmr1", name: `${teams.team1} MMR` },
+    { key: "mmr2", name: `${teams.team2} MMR` },
+    { key: "games", name: "Series played" },
+    { key: "mmr", name: "MMR difference" },
+    { key: "time", name: "Time" },
+  ];
 
   return (
     <>
+      {narrow ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 pb-2 text-sm" role="group" aria-label="Sort the matchups">
+          <span className="text-muted-foreground">Sort</span>
+          {columnsToSort.map((one) => (
+            <span key={one.key}>{head(one.key, one.name)}</span>
+          ))}
+        </div>
+      ) : null}
       <DataTable
         data={rows}
         rowId={(row: Row) => row.key}
         mobileStack={narrow}
         empty={empty}
         onRowClick={changing ? undefined : onToggle}
-        rowClassName={(row: Row) => (!changing && selected(row) ? "bg-primary/10" : marked?.(row) ? "bg-info/8" : undefined)}
+        // a bar on the left edge and a tint mark the row: primary when selected, info when a player already holds a match;
+        // a stacked row is a block, so the bar runs down the whole card there
+        rowClassName={(row: Row) =>
+          !changing && selected(row)
+            ? "bg-primary/12 [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-primary)] [.table-stack_&]:shadow-[inset_4px_0_0_var(--color-primary)] [&>td]:py-1.5"
+            : marked?.(row)
+              ? "bg-info/15 [&>td:first-child]:shadow-[inset_4px_0_0_var(--color-info)] [.table-stack_&]:shadow-[inset_4px_0_0_var(--color-info)] [&>td]:py-1.5"
+              : "[&>td]:py-1.5"
+        }
         columns={[
           ...(changing
             ? []
@@ -143,7 +209,7 @@ export function MatchupTable({
             : []),
           {
             id: "team1",
-            header: () => <Head label={<TeamName team={team1} plain />} sortKey="mmr1" order={order} />,
+            header: () => head("mmr1", `${teams.team1} MMR`, <TeamName team={team1} plain />),
             meta: { label: team1?.name ?? "Team 1" },
             enableSorting: false,
             cell: ({ row }: { row: { original: Row } }) => (
@@ -158,7 +224,7 @@ export function MatchupTable({
           },
           {
             id: "team2",
-            header: () => <Head label={<TeamName team={team2} plain />} sortKey="mmr2" order={order} />,
+            header: () => head("mmr2", `${teams.team2} MMR`, <TeamName team={team2} plain />),
             meta: { label: team2?.name ?? "Team 2" },
             enableSorting: false,
             cell: ({ row }: { row: { original: Row } }) => (
@@ -173,7 +239,7 @@ export function MatchupTable({
           },
           {
             id: "games",
-            header: () => <Head label="Series played" sortKey="games" order={order} />,
+            header: () => head("games", "Series played"),
             meta: { label: "Series played" },
             enableSorting: false,
             cell: ({ row }: { row: { original: Row } }) => {
@@ -188,19 +254,26 @@ export function MatchupTable({
           },
           {
             id: "mmr",
-            header: () => <Head label="MMR difference" sortKey="mmr" order={order} />,
+            header: () => head("mmr", "MMR difference"),
             meta: { label: "MMR difference" },
             enableSorting: false,
             cell: ({ row }: { row: { original: Row } }) => (
-              <span className="flex flex-col items-end tnum">
+              <span className="flex items-center justify-end gap-1.5 tnum">
+                {row.original.outside ? (
+                  <TapTooltip content="Outside the MMR range">
+                    <span className="inline-flex items-center gap-0.5 text-xs text-warning">
+                      <Icon name="mdi-alert" size={13} />
+                      outside
+                    </span>
+                  </TapTooltip>
+                ) : null}
                 {Number.isFinite(row.original.difference) ? row.original.difference : "—"}
-                {row.original.outside ? <span className="text-xs text-warning">outside the range</span> : null}
               </span>
             ),
           },
           {
             id: "time",
-            header: () => <Head label="Time" sortKey="time" order={order} />,
+            header: () => head("time", "Time"),
             meta: { label: "Time" },
             enableSorting: false,
             cell: ({ row }: { row: { original: Row } }) => {
@@ -217,7 +290,7 @@ export function MatchupTable({
                   >
                     <Icon name={one.neitherEntered ? "mdi-calendar-remove" : "mdi-calendar-clock"} />
                   </Button>
-                  <span className="flex flex-col items-start gap-0.5">
+                  <span className="flex items-center gap-2">
                     {one.hoursKnown ? (
                       <span className="tnum" title="Hours both are free in this round">
                         {Math.round(one.hours)} h

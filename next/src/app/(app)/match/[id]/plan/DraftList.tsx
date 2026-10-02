@@ -28,6 +28,7 @@ export function DraftList({
   onToggleFantasy,
   onChange,
   onRemove,
+  onRemoveMany,
   onPlayer,
   onPublish,
   onPublishReplace,
@@ -46,6 +47,7 @@ export function DraftList({
   onToggleFantasy: (draft: Row) => void;
   onChange: (draft: Row) => void;
   onRemove: (draft: Row) => void;
+  onRemoveMany: (drafts: Row[]) => void;
   onPlayer: (id: number) => void;
   onPublish: (chosen: Row[]) => void;
   onPublishReplace: (draft: Row) => void;
@@ -57,10 +59,32 @@ export function DraftList({
   const chosen = plain.filter((draft) => chosenIds.includes(draft.id));
   const over = chosen.length - publishLeft;
   const tick = (draft: Row, on: boolean) => setTicks(on ? [...chosenIds.filter((id) => id !== draft.id), draft.id] : chosenIds.filter((id) => id !== draft.id));
+  const allTicked = plain.length > 0 && chosen.length === plain.length;
+  // the drafts that propose a replacement of the same series; the one published drops the others
+  const proposalsOf = (draft: Row) => drafts.filter((row) => row.replaces_series_id && Number(row.replaces_series_id) === Number(draft.replaces_series_id)).length;
   const fantasy = fantasyPublished || chosen.some((draft) => draft.is_fantasy_match);
   if (!drafts.length) return <p className="text-sm text-muted-foreground">No pairing in the draft yet. Select matchups and move them here.</p>;
   return (
     <div className="flex flex-col gap-3">
+      {canPublish && plain.length > 1 ? (
+        // one box ticks every pairing to publish, or none; the publish button still stops at the round's series
+        <div className="flex items-center gap-3 border-b pb-2 text-sm">
+          <label className="inline-flex cursor-pointer items-center gap-2 font-medium">
+            <Checkbox checked={allTicked} disabled={busy} onCheckedChange={(next) => setTicks(next ? plain.map((draft) => draft.id) : [])} />
+            Select all
+          </label>
+          <span className="tnum text-muted-foreground">
+            {chosen.length} of {plain.length} ticked
+          </span>
+          {chosen.length ? (
+            // the ticked pairings leave in one go, so the draft is cleaned up once the round is published
+            <Button variant="ghost" size="sm" className="ml-auto text-error" disabled={busy} onClick={() => onRemoveMany(chosen)}>
+              <Icon name="mdi-delete" />
+              Remove {chosen.length}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       <ul className="divide-y">
         {drafts.map((draft) => {
           const facts = factsOf(draft);
@@ -92,6 +116,9 @@ export function DraftList({
                   ) : null}
                 </div>
                 <PairingNote item={draft} fresh={isFresh(draft)} replaces={replaces} />
+                {replaces && proposalsOf(draft) > 1 ? (
+                  <span className="text-xs text-muted-foreground">One of {proposalsOf(draft)} proposals for this series; publishing it drops the others.</span>
+                ) : null}
                 {outNames(draft).map((name) => (
                   <span key={name} className="inline-flex items-center gap-1 text-sm text-warning">
                     <Icon name="mdi-alert" size={14} />
@@ -144,7 +171,7 @@ export function DraftList({
               : over > 0
                 ? `${publishedCount} of ${perRound} series are published. Tick at most ${publishLeft}.`
                 : chosen.length
-                  ? "Either captain can publish. The players see their series right after."
+                  ? null
                   : `Tick up to ${publishLeft} pairing${publishLeft === 1 ? "" : "s"} to publish.`}
           </span>
           <Button disabled={busy || !chosen.length || over > 0} onClick={() => onPublish(chosen)}>

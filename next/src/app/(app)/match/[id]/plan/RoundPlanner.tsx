@@ -3,70 +3,71 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toneClass } from "@/components/ui/tone";
 import { placeTakers, pairIndex } from "@/helpers/draft-suggest.mjs";
 import {
   DEFAULT_ORDER,
   SORT_KEYS,
+  cycleSort,
   matchesOf,
   matchupRow,
   matchupRows,
-  newMatchFor,
   pairKey,
   plannerPlayers,
   pruneSelection,
   rangeHints,
-  replacementRows,
   selectItem,
   sortMatchups,
   switchAnswer,
   takenPairs,
   topPicks,
 } from "@/helpers/planner.mjs";
-import { teamLabel } from "@/helpers/teams.mjs";
 import { cn } from "@/lib/utils";
 import { DraftList } from "./DraftList";
-import { MatchupTable } from "./MatchupTable";
+import { InfoTip, Notice } from "./InfoTip";
+import { MatchupTable, type SortKey, type SortOrder } from "./MatchupTable";
 import { MmrRange } from "./MmrRange";
 import type { Loaded } from "./PairTimeDialog";
 import { PlayerStatsPanel, type PanelTarget } from "./PlayerStatsPanel";
+import { ReplaceSeries } from "./ReplaceSeries";
+import { PlayerFocus } from "./PlayerFocus";
 import { SelectionTray, type SelectionEntry } from "./SelectionTray";
-import { SortChips, type SortOrder } from "./SortChips";
-import { WhoNeedsMatch } from "./WhoNeedsMatch";
 import { WhoPlays } from "./WhoPlays";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 type Pair = { player1_id: number; player2_id: number; replaces_series_id?: number };
-/** A matchup the viewer selected: team 1's player first, the series it replaces or the replacement draft it changes. */
-type Pick = { player1_id: number; player2_id: number; replaces_series_id?: number; draft_id?: number };
-type Mode = "plan" | "replace";
-type StepId = "who" | "range" | "matchups" | "draft" | "need";
+/** A matchup the viewer selected, team 1's player first. */
+type Pick = { player1_id: number; player2_id: number };
+type StepId = "who" | "range" | "matchups" | "draft";
 
 const ORDER_KEY = "round-planner-sort";
 const selectionKey = (matchId: number) => `round-planner-selection:${matchId}`;
 
-// The steps of each mode, with the short label a phone shows
-const STEPS: Record<Mode, { id: StepId; label: string; short: string }[]> = {
-  plan: [
-    { id: "who", label: "Who plays", short: "Who plays" },
-    { id: "range", label: "MMR range", short: "Range" },
-    { id: "matchups", label: "Pick matchups", short: "Matchups" },
-    { id: "draft", label: "Draft", short: "Draft" },
-  ],
-  replace: [
-    { id: "need", label: "Who needs a match", short: "Who needs" },
-    { id: "matchups", label: "Pick matchups", short: "Matchups" },
-    { id: "draft", label: "Draft", short: "Draft" },
-  ],
+// The steps, with the short label a phone shows
+const STEPS: { id: StepId; label: string; short: string }[] = [
+  { id: "who", label: "Who plays", short: "Who plays" },
+  { id: "range", label: "MMR range", short: "Range" },
+  { id: "matchups", label: "Pick matchups", short: "Matchups" },
+  { id: "draft", label: "Draft", short: "Draft" },
+];
+
+// What each step does, behind the info button beside its title; the people who plan know it by heart
+const HELP: Record<StepId, string> = {
+  who:
+    "Switch off whoever cannot play this round. For your own team the switch saves the player's round answer at once, and the player sees it on Home. For the other team it only leaves the player out of your own list; their captain sets their answers.",
+  range: "The largest MMR difference a matchup may have. Both captains of this match share it. Reset goes back to the value of the stage.",
+  matchups:
+    "Click a row, or its box, to select the matchup. The selection stays in this browser, seen only by you, until you move it into the draft. A tinted row has a player who already holds a match this round. The calendar shows when the two can play, and a name opens the player's stats. Click a column title to sort by it, again to turn the sort round, and a third time to stop; the number is its place in the sort. Show lists every opponent of the players you add, also outside the range. The list starts unsorted, in roster order by MMR. Once it is sorted, the top picks are the first rows of your sort whose players hold no match yet, one per series the round has not planned.",
+  draft:
+    "Shared with the other captain of this match. Tick the pairings to publish: either captain publishes, up to the series of the round, and an unticked pairing stays in the draft.",
 };
 
-// What a player's note says of each match they hold this round
+// What a player's chip says of each match they hold this round, short enough for one line
 const MATCH_TEXT: Record<string, string> = {
-  published: "Has a series vs",
+  published: "Series vs",
   played: "Played vs",
-  draft: "In the draft vs",
+  draft: "Draft vs",
   selected: "Selected vs",
 };
 
@@ -85,38 +86,31 @@ const readOrder = (): SortOrder => {
 const readSelection = (matchId: number): Pick[] => {
   try {
     const saved = JSON.parse(window.localStorage.getItem(selectionKey(matchId)) || "null");
-    if (Array.isArray(saved)) return saved.filter((one) => Number.isInteger(one?.player1_id) && Number.isInteger(one?.player2_id));
+    if (Array.isArray(saved)) {
+      return saved
+        .filter((one) => Number.isInteger(one?.player1_id) && Number.isInteger(one?.player2_id))
+        .map((one) => ({ player1_id: one.player1_id, player2_id: one.player2_id }));
+    }
   } catch {
     // a private window or blocked site data starts empty
   }
   return [];
 };
 
-/** The title of one step, what it asks, and what it shows beside the title. */
-function StepHead({ title, hint, children }: { title: string; hint?: string; children?: React.ReactNode }) {
+/** The title of one step, its info button, and what it shows beside the title. */
+function StepHead({ id, title, children }: { id: StepId; title: string; children?: React.ReactNode }) {
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
       <h3 className="text-base font-medium">{title}</h3>
-      {children}
-      {hint ? <p className="basis-full text-sm text-muted-foreground">{hint}</p> : null}
-    </div>
-  );
-}
-
-function Notice({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={cn("flex flex-wrap items-center gap-2 rounded px-3 py-2", toneClass("info"))}>
-      <Icon name="mdi-information" />
+      <InfoTip label={title}>{HELP[id]}</InfoTip>
       {children}
     </div>
   );
 }
 
-/** The captain's plan for one round of one fixture, a step at a time. "Plan the round" walks who plays,
- *  the MMR range, the matchups to pick from and the draft. "Find a replacement" picks the players of
- *  one team who need a new match and weighs every player of the other team who plays. Picked matchups
- *  wait in the viewer's own selection until they move into the draft both captains share, and either
- *  captain publishes up to the round's series. */
+/** The captain's plan for one round of one fixture, a step at a time: who plays, the MMR range, the
+ *  matchups to pick from and the draft. Picked matchups wait in the viewer's own selection until they
+ *  move into the draft both captains share, and either captain publishes up to the round's series. */
 export function RoundPlanner({
   match,
   team1,
@@ -133,7 +127,7 @@ export function RoundPlanner({
   narrow,
   busy,
   seenAt,
-  entry,
+  replacing,
   replacedLabel,
   onAnswer,
   onAddPairings,
@@ -141,8 +135,11 @@ export function RoundPlanner({
   onSetMaxDifference,
   onToggleFantasy,
   onRemoveDraft,
+  onRemoveDrafts,
   onPublish,
   onPublishReplace,
+  onReplace,
+  onCancelReplace,
   onMeetings,
   loadFreeTime,
   loadLadder,
@@ -162,8 +159,8 @@ export function RoundPlanner({
   narrow: boolean;
   busy: boolean;
   seenAt?: string | null;
-  /** The player of a published series who stays when the other one is replaced; the planner opens on their matchups. */
-  entry: { playerId: number } | null;
+  /** The published series a captain looks for a replacement for; the plan shows that search instead of its steps. */
+  replacing: Row | null;
   replacedLabel: (draft: Row) => string | null;
   onAnswer: (teamId: number, playerId: number, available: boolean | null) => Promise<unknown>;
   onAddPairings: (pairs: Pair[]) => Promise<boolean>;
@@ -171,22 +168,22 @@ export function RoundPlanner({
   onSetMaxDifference: (value: number | null) => Promise<unknown>;
   onToggleFantasy: (draft: Row) => void;
   onRemoveDraft: (draft: Row) => void;
+  onRemoveDrafts: (drafts: Row[]) => void;
   onPublish: (chosen: Row[]) => void;
   onPublishReplace: (draft: Row) => void;
+  onReplace: (series: Row, pairs: Pair[]) => Promise<boolean>;
+  onCancelReplace: () => void;
   onMeetings: (userA: number, userB: number) => Promise<Row[]>;
   loadFreeTime: (player1Id: number, player2Id: number) => Promise<Row>;
   /** One player's ladder record over the event window, for the stats panel. */
   loadLadder: (userId: number) => Promise<Row>;
 }) {
   const [order, setOrder] = useState<SortOrder>(DEFAULT_ORDER as SortOrder);
-  const [mode, setMode] = useState<Mode>(entry ? "replace" : "plan");
   // The step the viewer picked; until then the planner opens where the round stands
-  const [step, setStep] = useState<StepId | null>(entry ? "matchups" : null);
-  const [focusId, setFocusId] = useState<number | null>(null);
+  const [step, setStep] = useState<StepId | null>(null);
+  // The players whose every opponent the list shows; none shows every pair inside the range
+  const [focusIds, setFocusIds] = useState<number[]>([]);
   const [changing, setChanging] = useState<Row | null>(null);
-  // The players who need a new match, and their team; a tick never writes a round answer
-  const [ticked, setTicked] = useState<number[]>(entry ? [entry.playerId] : []);
-  const [needTeamId, setNeedTeamId] = useState<number | null>(null);
   // The matchups the viewer selected and has not moved into the draft
   const [stored, setStored] = useState<Pick[]>([]);
   // A player of a team whose answers the viewer does not read, switched in or out of the viewer's own list
@@ -259,8 +256,14 @@ export function RoundPlanner({
   const selectedKeys = new Set(selection.map((one) => pairKey(one.player1_id, one.player2_id)));
   const isSelected = (row: Row) => selectedKeys.has(pairKey(row.a.user_id, row.b.user_id));
 
-  // Every match a player holds this round: published, in the draft, or in the viewer's selection
-  const matches = matchesOf({ published, drafts, selection });
+  // Every match a player holds this round: published, in the draft, or in the viewer's selection. While a
+  // series is replaced, it and the draft that replaces it are no match its players hold
+  const replacedId = replacing ? Number(replacing.id) : null;
+  const matches = matchesOf({
+    published: replacedId == null ? published : published.filter((row) => Number(row.id) !== replacedId),
+    drafts: replacedId == null ? drafts : drafts.filter((row) => Number(row.replaces_series_id) !== replacedId),
+    selection,
+  });
   const busyIds = new Set<number>(matches.keys());
   const taken = takenPairs(published, drafts);
   const pairedAs = (id: number) => {
@@ -277,7 +280,9 @@ export function RoundPlanner({
   };
 
   const included = (player: Row) => (player.answersRead ? player.plays : overrides[player.user_id] ?? player.plays);
-  const playing = (teamId: number) => players.filter((player: Row) => player.team_id === teamId && included(player));
+  // the players who play, highest MMR first, so an unsorted list runs in roster order
+  const playing = (teamId: number) =>
+    players.filter((player: Row) => player.team_id === teamId && included(player)).sort((x: Row, y: Row) => (y.mmr ?? -1) - (x.mmr ?? -1));
   const side1 = playing(team1Id);
   const side2 = playing(team2Id);
   const free1 = side1.filter((player: Row) => !busyIds.has(player.user_id));
@@ -285,112 +290,54 @@ export function RoundPlanner({
   const perRound = board?.series_per_round || 0;
   // The round publishes up to its series; the draft holds any number of pairings
   const publishLeft = Math.max(0, perRound - published.length);
-  const unplanned = Math.max(0, publishLeft - placeTakers(drafts).length - selection.filter((one) => one.replaces_series_id == null && one.draft_id == null).length);
+  const unplanned = Math.max(0, publishLeft - placeTakers(drafts).length - selection.length);
   const maxPlayed: [number, number] = [team1Id, team2Id].map((teamId) =>
     Math.max(0, ...players.filter((player: Row) => player.team_id === teamId).map((player: Row) => player.played)),
   ) as [number, number];
 
-  // Plan the round. The focus: the own player of a pairing whose opponent changes, or the player the viewer picked
+  // The focus: the own player of a pairing whose opponent changes, or the players the viewer added who play
   const changeFocus = changing
     ? byId.get(ownTeamId != null && Number(changing.player2?.team_id ?? byId.get(changing.player2_id)?.team_id) === Number(ownTeamId) ? changing.player2_id : changing.player1_id) ?? null
     : null;
-  const focus = changeFocus ?? (focusId != null ? byId.get(focusId) ?? null : null);
-  const planRows = sortMatchups(matchupRows({ side1, side2, team1Id, range: maxDifference, focus, pairOf, at, taken }), order);
-  const planPicks = focus ? new Set<string>() : topPicks(planRows, unplanned, busyIds);
+  const playingIds = new Set([...side1, ...side2].map((player: Row) => player.user_id));
+  const chosen = focusIds.filter((id) => playingIds.has(id));
+  const focus: Row[] = changeFocus ? [changeFocus] : chosen.map((id) => byId.get(id)!).filter(Boolean);
+  const rows = sortMatchups(matchupRows({ side1, side2, team1Id, range: maxDifference, focus, pairOf, at, taken }), order);
+  // the top picks follow the viewer's sort, so an unsorted list offers none
+  const picks = focus.length || !order.length ? new Set<string>() : topPicks(rows, unplanned, busyIds);
   const inRange = matchupRows({ side1, side2, team1Id, range: maxDifference, pairOf, at, taken }).length;
   const hints = rangeHints(free1, free2, maxDifference);
-
-  // Find a replacement: the ticked players of one team against everyone of the other team who plays
-  const needTeam = needTeamId ?? byId.get(ticked[0])?.team_id ?? ownTeamId ?? team1Id;
-  const otherTeamId = Number(needTeam) === Number(team1Id) ? team2Id : team1Id;
-  const stays = ticked.map((id) => byId.get(id)).filter((player): player is Row => !!player && Number(player.team_id) === Number(needTeam));
-  const candidates = players.filter((player: Row) => Number(player.team_id) === Number(otherTeamId) && included(player));
-  const replaceRows = sortMatchups(replacementRows({ selected: stays, candidates, team1Id, range: maxDifference, published, drafts, pairOf, at }), order);
-  const busyCandidates = new Set([...busyIds].filter((id) => !ticked.includes(id)));
-  const replacePicks = topPicks(replaceRows, stays.length, busyCandidates);
-
-  const replacing = mode === "replace";
-  const rows = replacing ? replaceRows : planRows;
-  const picks = replacing ? replacePicks : planPicks;
-  const steps = STEPS[mode];
-  const current: StepId = step && steps.some((one) => one.id === step) ? step : replacing ? "need" : drafts.length ? "draft" : "who";
+  const current: StepId = step ?? (drafts.length ? "draft" : "who");
 
   const go = (next: StepId) => {
     setStep(next);
     document.getElementById("round-planner")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const switchMode = (next: Mode) => {
-    setMode(next);
-    setStep(next === "replace" ? "need" : "who");
-    setFocusId(null);
-    setChanging(null);
-  };
-  const clearFocus = () => {
-    setFocusId(null);
-    setChanging(null);
-  };
+  const clearFocus = () => setChanging(null);
 
-  const other = (row: Row) => (focus && row.a.user_id === focus.user_id ? row.b : row.a);
-  const planToggle = (row: Row) => changeSelection(selectItem(selection, { player1_id: row.a.user_id, player2_id: row.b.user_id }));
+  // while a draft pairing changes its opponent, the row's other player is the new one
+  const other = (row: Row) => (changeFocus && row.a.user_id === changeFocus.user_id ? row.b : row.a);
+  const toggle = (row: Row) => changeSelection(selectItem(selection, { player1_id: row.a.user_id, player2_id: row.b.user_id }));
   const changeTo = async (row: Row) => {
     if (changing && (await onChangeOpponent(changing, other(row).team_id === team1Id ? 1 : 2, other(row).user_id))) clearFocus();
   };
   const selectPicks = () =>
     changeSelection([
       ...selection,
-      ...planRows.filter((row: Row) => planPicks.has(row.key) && !isSelected(row)).map((row: Row) => ({ player1_id: row.a.user_id, player2_id: row.b.user_id })),
+      ...rows.filter((row: Row) => picks.has(row.key) && !isSelected(row)).map((row: Row) => ({ player1_id: row.a.user_id, player2_id: row.b.user_id })),
     ]);
 
-  // A replacement keeps the ticked player: it replaces their open series, changes the draft that
-  // already does, or is a new pairing. One selected match per ticked player.
-  const replaceAction = (row: Row) => {
-    const need = row.need;
-    const pick: Pick = { player1_id: row.a.user_id, player2_id: row.b.user_id };
-    if (need.kind === "replace" && need.replacedBy) pick.draft_id = need.replacedBy.id;
-    else if (need.kind === "replace") pick.replaces_series_id = need.series.id;
-    changeSelection(selectItem(selection, pick, { onePerPlayer: row.stay.user_id }));
-  };
-  const needNote = (stay: Row) => {
-    const need = newMatchFor(stay.user_id, published, drafts);
-    if (need.kind === "replace") {
-      const drop = nameOf(need.dropId);
-      return need.replacedBy
-        ? `${stay.name}: a draft already replaces ${stay.name} vs ${drop}. A pick changes its opponent.`
-        : `${stay.name}: the new match replaces ${stay.name} vs ${drop} when it is published.`;
-    }
-    return publishLeft ? `${stay.name}: a new pairing in the draft.` : `${stay.name}: a new pairing waits in the draft, since every series of the round is published.`;
-  };
-
-  // The selection moves in one run: new pairings and replacements are written, a change edits its draft
+  // The selection moves in one run; a run that failed part-way keeps the rest, and the reads drop what was written
   const moveToDraft = async () => {
-    const moving = selection;
-    const writes: Pair[] = moving
-      .filter((one) => one.draft_id == null)
-      .map((one) => ({ player1_id: one.player1_id, player2_id: one.player2_id, ...(one.replaces_series_id != null ? { replaces_series_id: one.replaces_series_id } : {}) }));
-    let done = writes.length ? await onAddPairings(writes) : true;
-    for (const one of moving.filter((pick) => pick.draft_id != null)) {
-      if (!done) break;
-      const draft = drafts.find((row) => row.id === one.draft_id);
-      if (!draft) continue;
-      const side: 1 | 2 = draft.player1_id !== one.player1_id ? 1 : 2;
-      done = await onChangeOpponent(draft, side, side === 1 ? one.player1_id : one.player2_id);
-    }
-    // a run that failed part-way keeps the rest: the reads drop what was written
-    if (!done) return;
+    if (!(await onAddPairings(selection.map((one) => ({ player1_id: one.player1_id, player2_id: one.player2_id }))))) return;
     changeSelection([]);
-    setTicked((was) => was.filter((id) => !moving.some((one) => one.player1_id === id || one.player2_id === id)));
     go("draft");
   };
   const entries: SelectionEntry[] = selection.flatMap((one) => {
     const a = byId.get(one.player1_id);
     const b = byId.get(one.player2_id);
     if (!a || !b) return [];
-    let note: string | null = null;
-    if (one.replaces_series_id != null) {
-      const series = published.find((row) => Number(row.id) === Number(one.replaces_series_id));
-      note = series ? `Replaces ${nameOf(series.player1_id)} vs ${nameOf(series.player2_id)}` : null;
-    } else if (one.draft_id != null) note = "Changes the replacement in the draft";
-    return [{ key: pairKey(one.player1_id, one.player2_id), a, b, difference: matchupRow(a, b, { range: maxDifference }).difference, note }];
+    return [{ key: pairKey(one.player1_id, one.player2_id), a, b, difference: matchupRow(a, b, { range: maxDifference }).difference }];
   });
   const removeEntry = (key: string) => changeSelection(selection.filter((one) => pairKey(one.player1_id, one.player2_id) !== key));
 
@@ -415,13 +362,14 @@ export function RoundPlanner({
 
   const fantasyCount = drafts.filter((draft) => draft.is_fantasy_match).length;
   const fantasyPublished = published.some((row) => row.is_fantasy_match);
-  const plays = (teamId: number) => playing(teamId).length;
-  const focusChips = [...side1, ...side2];
+  const focusTeams = [
+    { name: team1?.name ?? "Team 1", players: side1 },
+    { name: team2?.name ?? "Team 2", players: side2 },
+  ];
   const teams = [
     { team: team1, teamId: team1Id },
     { team: team2, teamId: team2Id },
   ];
-  const otherTeam = Number(otherTeamId) === Number(team1Id) ? team1 : team2;
 
   if (!board) {
     return (
@@ -433,7 +381,7 @@ export function RoundPlanner({
   }
 
   const counts: Record<StepId, React.ReactNode> = {
-    who: `${plays(team1Id)}·${plays(team2Id)}`,
+    who: `${side1.length}·${side2.length}`,
     range: maxDifference,
     matchups: (
       <>
@@ -452,12 +400,11 @@ export function RoundPlanner({
         {fantasyCount ? <Icon name="mdi-star" size={12} className="ml-0.5 text-primary-text" /> : null}
       </>
     ),
-    need: ticked.length || null,
   };
 
-  const index = steps.findIndex((one) => one.id === current);
-  const back = steps[index - 1];
-  const next = steps[index + 1];
+  const index = STEPS.findIndex((one) => one.id === current);
+  const back = STEPS[index - 1];
+  const next = STEPS[index + 1];
   const nav = (
     <div className={cn("mt-4 gap-2 border-t pt-3", narrow ? "grid grid-cols-2" : "flex justify-between")}>
       {back ? (
@@ -469,7 +416,7 @@ export function RoundPlanner({
         <span />
       )}
       {next ? (
-        <Button disabled={current === "need" && !stays.length} onClick={() => go(next.id)}>
+        <Button onClick={() => go(next.id)}>
           {narrow ? "Next" : `Next: ${next.label}`}
           <Icon name="mdi-chevron-right" />
         </Button>
@@ -477,39 +424,81 @@ export function RoundPlanner({
     </div>
   );
 
-  let modeText: string | null = null;
-  if (changing) modeText = `Pick a new opponent for ${focus?.name}. Now: ${focus?.user_id === changing.player1_id ? changing.player2?.name : changing.player1?.name}.`;
-  else if (focus) modeText = `Every opponent of ${focus.name} who plays, also outside the range.`;
+  const panelView = (
+    <PlayerStatsPanel
+      target={panel}
+      team={panel ? (Number(panel.player.team_id) === Number(team1Id) ? team1 : team2) : null}
+      ladder={panel ? ladders[panel.player.user_id] : undefined}
+      onClose={() => setPanel(null)}
+      onRetry={() => (panel ? readLadder(panel.player.user_id) : undefined)}
+      onMeetings={onMeetings}
+    />
+  );
+  const noteOf = (player: Row, row: Row) => matchNote(player, player.user_id === row.a.user_id ? row.b.user_id : row.a.user_id);
+  const marked = (row: Row) => otherMatches(row.a, row.b.user_id).length > 0 || otherMatches(row.b, row.a.user_id).length > 0;
+
+  // A replacement is its own search, started from the published series; the steps wait behind it
+  if (replacing) {
+    return (
+      <div id="round-planner" className="flex scroll-mt-16 flex-col gap-3 p-4">
+        <ReplaceSeries
+          series={replacing}
+          proposals={drafts.filter((draft) => Number(draft.replaces_series_id) === Number(replacing.id))}
+          team1={team1}
+          team2={team2}
+          team1Id={team1Id}
+          side1={side1}
+          side2={side2}
+          byId={byId}
+          nameOf={nameOf}
+          startRange={maxDifference}
+          order={order}
+          onSort={(key: SortKey) => changeOrder(cycleSort(order, key) as SortOrder)}
+          taken={taken}
+          pairOf={pairOf}
+          at={at}
+          maxPlayed={maxPlayed}
+          narrow={narrow}
+          busy={busy}
+          noteOf={noteOf}
+          marked={marked}
+          onPlayer={(player, opponent, row) => openPlayer(player, opponent, row)}
+          loadFreeTime={(row) => loadFreeTime(row.a.user_id, row.b.user_id)}
+          onSubmit={async (pairs) => {
+            const done = await onReplace(replacing, pairs);
+            if (done) setStep("draft");
+            return done;
+          }}
+          onCancel={onCancelReplace}
+        />
+        {panelView}
+      </div>
+    );
+  }
 
   return (
     <div id="round-planner" className={cn("flex scroll-mt-16 flex-col gap-3 p-4", narrow && current !== "draft" && "pb-20")}>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <ToggleGroup variant="outline" spacing={0} aria-label="What to plan" value={[mode]} onValueChange={(value) => (value[0] ? switchMode(value[0] as Mode) : undefined)}>
-          <ToggleGroupItem value="plan">Plan the round</ToggleGroupItem>
-          <ToggleGroupItem value="replace">Find a replacement</ToggleGroupItem>
-        </ToggleGroup>
-        <span className="tnum text-sm text-muted-foreground">
-          Round {playday} · {published.length} of {perRound} published · {drafts.length} in draft{selection.length ? ` · ${selection.length} selected` : ""}
-        </span>
-      </div>
+      <span className="tnum text-sm text-muted-foreground">
+        Round {playday} · {published.length} of {perRound} published · {drafts.length} in draft{selection.length ? ` · ${selection.length} selected` : ""}
+      </span>
 
       <Tabs value={current} onValueChange={(value) => setStep(value as StepId)}>
         <div className="-mx-4 overflow-x-auto border-b px-4 pb-1.5">
           <TabsList variant="line" aria-label="Steps" className="min-w-full justify-start">
-            {steps.map((one, n) => (
+            {STEPS.map((one, n) => (
               <TabsTrigger key={one.id} value={one.id} className="flex-none gap-2 px-3">
                 <span className={cn("inline-grid size-5 place-items-center rounded-full text-[11px] tnum", one.id === current ? "bg-primary text-on-primary" : "bg-muted text-foreground")}>
                   {n + 1}
                 </span>
                 {narrow ? one.short : one.label}
-                {counts[one.id] != null ? <span className="inline-flex items-center text-xs font-normal text-muted-foreground tnum">{counts[one.id]}</span> : null}
+                <span className="inline-flex items-center text-xs font-normal text-muted-foreground tnum">{counts[one.id]}</span>
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
 
         <TabsContent value="who" className="pt-2">
-          <StepHead title="Who plays this round" hint="Switch off whoever cannot play. On your own team the switch is saved as the player's round answer." />
+          <StepHead id="who" title="Who plays this round" />
           <WhoPlays
             teams={teams}
             ownTeamId={ownTeamId}
@@ -525,7 +514,7 @@ export function RoundPlanner({
         </TabsContent>
 
         <TabsContent value="range" className="pt-2">
-          <StepHead title="MMR range" hint="The largest MMR difference a matchup may have. Both captains of this match share it." />
+          <StepHead id="range" title="MMR range" />
           <MmrRange
             value={maxDifference}
             stageValue={state?.stage_max_mmr_difference ?? null}
@@ -538,131 +527,56 @@ export function RoundPlanner({
           {nav}
         </TabsContent>
 
-        <TabsContent value="need" className="pt-2">
-          <StepHead title="Who needs a new match" hint="Tick the players of one team who need a new opponent. Every player of the other team who plays is a candidate." />
-          <WhoNeedsMatch
-            teams={teams}
-            teamId={needTeam}
-            players={players}
-            selected={ticked}
-            published={published}
-            drafts={drafts}
-            candidates={candidates.length}
-            nameOf={nameOf}
-            onPlayer={(player) => openPlayer(player)}
-            onTeam={(teamId) => {
-              setNeedTeamId(teamId);
-              setTicked([]);
-            }}
-            onToggle={(playerId, on) => setTicked((was) => (on ? [...was.filter((id) => id !== playerId), playerId] : was.filter((id) => id !== playerId)))}
-          />
-          {nav}
-        </TabsContent>
-
         <TabsContent value="matchups" className="pt-2">
-          <StepHead
-            title="Pick matchups"
-            hint={
-              replacing
-                ? "Every candidate for each player who needs a match, also outside the range. Select one for each player."
-                : "Sort on what matters to you and click the matchups that make sense. The calendar shows when the two can play, and a name opens the player's stats."
-            }
-          />
+          <StepHead id="matchups" title="Pick matchups" />
           <div className="flex flex-col gap-3">
             <SelectionTray entries={entries} busy={busy} onRemove={removeEntry} onClear={() => changeSelection([])} onMove={moveToDraft} onPlayer={openPlayerId} />
-            {replacing ? (
-              stays.length ? (
-                <Notice>
-                  <ul className="grow">
-                    {stays.map((stay) => (
-                      <li key={stay.user_id}>{needNote(stay)}</li>
-                    ))}
-                  </ul>
-                </Notice>
-              ) : null
-            ) : (
-              <>
-                {modeText ? (
-                  <Notice>
-                    <span className="grow">{modeText}</span>
-                    <Button variant="outline" size="sm" onClick={clearFocus}>
-                      {changing ? "Cancel" : "Show all players"}
-                    </Button>
-                  </Notice>
-                ) : null}
-                {focusChips.length ? (
-                  <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Show one player's opponents">
-                    <span className="text-sm font-medium">Show one player</span>
-                    {focusChips.map((player: Row) => (
-                      <Button
-                        key={player.user_id}
-                        variant={focus?.user_id === player.user_id ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full"
-                        aria-pressed={focus?.user_id === player.user_id}
-                        disabled={!!changing}
-                        onClick={() => setFocusId(focusId === player.user_id ? null : player.user_id)}
-                      >
-                        {player.name}
-                      </Button>
-                    ))}
-                  </div>
-                ) : null}
-              </>
-            )}
-            <SortChips order={order} teams={{ team1: team1?.name ?? "Team 1", team2: team2?.name ?? "Team 2" }} onChange={changeOrder} />
-            {replacing && picks.size ? (
-              <span className="text-sm text-muted-foreground">
-                The first row of your sort for each player is marked <Icon name="mdi-star" size={14} className="text-primary-text" />.
-              </span>
+            {changing ? (
+              <Notice>
+                <span className="grow">
+                  Pick a new opponent for {changeFocus?.name}. Now: {changeFocus?.user_id === changing.player1_id ? changing.player2?.name : changing.player1?.name}.
+                </span>
+                <Button variant="outline" size="sm" onClick={clearFocus}>
+                  Cancel
+                </Button>
+              </Notice>
             ) : null}
-            {!replacing && picks.size ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button variant="outline" disabled={busy} onClick={selectPicks}>
+            {!publishLeft && !changing ? <Notice>Every series of the round is published. Pairings you move wait in the draft.</Notice> : null}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <PlayerFocus teams={focusTeams} selected={chosen} disabled={!!changing} onChange={setFocusIds} />
+              {picks.size ? (
+                <Button variant="outline" size="sm" className="ml-auto" disabled={busy} onClick={selectPicks}>
                   <Icon name="mdi-star" />
                   Select the {picks.size} top pick{picks.size === 1 ? "" : "s"}
                 </Button>
-                <span className="text-sm text-muted-foreground">
-                  The first rows of your sort whose players hold no match yet, one per series still unplanned, marked{" "}
-                  <Icon name="mdi-star" size={14} className="text-primary-text" />.
-                </span>
-              </div>
-            ) : null}
-            {!replacing && !publishLeft && !changing ? (
-              <Notice>Every series of the round is published. Pairings you move wait in the draft; only a replacement publishes now.</Notice>
-            ) : null}
+              ) : null}
+            </div>
           </div>
           <div className="-mx-4 mt-3">
             <MatchupTable
               rows={rows}
               picks={picks}
               order={order}
+              onSort={(key: SortKey) => changeOrder(cycleSort(order, key) as SortOrder)}
               team1={team1}
               team2={team2}
               maxPlayed={maxPlayed}
               narrow={narrow}
               busy={busy}
               selected={isSelected}
-              onToggle={replacing ? replaceAction : planToggle}
-              changeLabel={changing && !replacing ? (row) => `Change to ${other(row).name}` : null}
+              onToggle={toggle}
+              changeLabel={changing ? (row) => `Change to ${other(row).name}` : null}
               onChange={changeTo}
               onPlayer={(player, opponent, row) => openPlayer(player, opponent, row)}
-              // a replacement names the candidates' matches; the ticked player's own series is what it replaces
-              noteOf={(player, row) => (replacing && player.user_id === row.stay.user_id ? null : matchNote(player, player.user_id === row.a.user_id ? row.b.user_id : row.a.user_id))}
-              marked={(row) =>
-                replacing ? otherMatches(row.other, row.stay.user_id).length > 0 : otherMatches(row.a, row.b.user_id).length > 0 || otherMatches(row.b, row.a.user_id).length > 0
-              }
+              noteOf={noteOf}
+              marked={marked}
               loadFreeTime={(row) => loadFreeTime(row.a.user_id, row.b.user_id)}
               empty={
-                replacing
-                  ? !stays.length
-                    ? "Tick who needs a new match in step 1."
-                    : `Nobody of ${teamLabel(otherTeam) || "the other team"} plays this round.`
-                  : focus
-                    ? `${focus.name} has no opponent left to pair.`
-                    : !side1.length || !side2.length
-                      ? "Nobody plays on one side."
-                      : `No matchup within ${maxDifference} MMR. Raise the range in step 2.`
+                focus.length
+                  ? `${focus.map((player) => player.name).join(", ")} ${focus.length === 1 ? "has" : "have"} no opponent left to pair.`
+                  : !side1.length || !side2.length
+                    ? "Nobody plays on one side."
+                    : `No matchup within ${maxDifference} MMR. Raise the range in step 2.`
               }
             />
           </div>
@@ -670,7 +584,7 @@ export function RoundPlanner({
         </TabsContent>
 
         <TabsContent value="draft" className="pt-2">
-          <StepHead title="Draft" hint="Shared with the other captain of this match. Either captain publishes, up to the series of the round.">
+          <StepHead id="draft" title="Draft">
             <span className="rounded-full border px-2.5 py-0.5 text-xs tnum">
               {published.length} of {perRound} published
             </span>
@@ -693,12 +607,11 @@ export function RoundPlanner({
             canPublish
             onToggleFantasy={onToggleFantasy}
             onChange={(draft) => {
-              setMode("plan");
-              setFocusId(null);
               setChanging(draft);
               go("matchups");
             }}
             onRemove={onRemoveDraft}
+            onRemoveMany={onRemoveDrafts}
             onPlayer={openPlayerId}
             onPublish={onPublish}
             onPublishReplace={onPublishReplace}
@@ -728,14 +641,7 @@ export function RoundPlanner({
         </div>
       ) : null}
 
-      <PlayerStatsPanel
-        target={panel}
-        team={panel ? (Number(panel.player.team_id) === Number(team1Id) ? team1 : team2) : null}
-        ladder={panel ? ladders[panel.player.user_id] : undefined}
-        onClose={() => setPanel(null)}
-        onRetry={() => (panel ? readLadder(panel.player.user_id) : undefined)}
-        onMeetings={onMeetings}
-      />
+      {panelView}
     </div>
   );
 }

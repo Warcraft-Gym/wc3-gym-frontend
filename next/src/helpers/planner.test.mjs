@@ -5,18 +5,17 @@ import {
   matchupRow,
   matchesOf,
   matchupRows,
-  moveEarlier,
-  newMatchFor,
+  cycleSort,
   pairKey,
   plannerPlayers,
   playsRound,
   pruneSelection,
   rangeHints,
-  replacementRows,
   searchPlayers,
   selectItem,
   sortLabel,
   sortMatchups,
+  sortsUp,
   switchAnswer,
   takenPairs,
   topPicks,
@@ -129,13 +128,15 @@ test('the list holds the pairs inside the range, or every opponent of a focus', 
   assert.deepEqual(focused.map((row) => [row.key, row.outside]), [['1-4', true], ['2-4', true]]);
 });
 
-test('the default order is fewest games, then MMR difference, then time overlap', () => {
+test('nothing sorts by default, and a sort keeps the incoming order on ties', () => {
   const rows = [
     matchupRow(player(1, 10, 1500, { played: 2 }), player(3, 20, 1510), { range: 200 }),
     matchupRow(player(2, 10, 1500), player(3, 20, 1600), { range: 200 }),
     matchupRow(player(2, 10, 1500), player(4, 20, 1520), { range: 200 }),
   ];
-  assert.deepEqual(sortMatchups(rows).map((row) => row.key), ['2-4', '2-3', '1-3']);
+  assert.deepEqual(DEFAULT_ORDER, []);
+  assert.deepEqual(sortMatchups(rows).map((row) => row.key), ['1-3', '2-3', '2-4']);
+  assert.deepEqual(sortMatchups(rows, [{ key: 'games', dir: 1 }]).map((row) => row.key), ['2-3', '2-4', '1-3']);
   assert.deepEqual(sortMatchups(rows, [{ key: 'mmr', dir: 1 }]).map((row) => row.key), ['1-3', '2-4', '2-3']);
   assert.deepEqual(sortMatchups(rows, [{ key: 'mmr', dir: -1 }]).map((row) => row.key), ['2-3', '2-4', '1-3']);
 });
@@ -150,7 +151,6 @@ test('time overlap puts known hours first, then the rest by the smaller time-zon
     matchupRow(player(2, 10, 1500, { availability_entered: false }), player(3, 20, 1500, { timezone: 'Asia/Seoul' }), { range: 100, pairOf, at }),
   ];
   assert.deepEqual(sortMatchups(rows, [{ key: 'time', dir: 1 }]).map((row) => row.key), ['1-4', '1-3', '2-3']);
-  assert.deepEqual(DEFAULT_ORDER.map((one) => one.key), ['games', 'mmr', 'time']);
 });
 
 test('the top picks walk the sorted rows and take no player twice', () => {
@@ -177,12 +177,27 @@ test('a team MMR sort puts the highest player of that team first and a missing M
   assert.deepEqual(sortMatchups(rows, [{ key: 'mmr1', dir: -1 }]).map((row) => row.key).slice(1), ['1-3', '2-4']);
 });
 
-test('a criterion moves one place earlier, and the first stays', () => {
-  const order = [{ key: 'games', dir: 1 }, { key: 'mmr', dir: 1 }, { key: 'mmr1', dir: -1 }];
-  assert.deepEqual(moveEarlier(order, 'mmr1').map((one) => one.key), ['games', 'mmr1', 'mmr']);
-  assert.deepEqual(moveEarlier(order, 'mmr').map((one) => one.key), ['mmr', 'games', 'mmr1']);
-  assert.equal(moveEarlier(order, 'games'), order);
-  assert.equal(moveEarlier(order, 'time'), order);
+test('a column click joins the sort last, turns it round, then takes it out', () => {
+  const order = [{ key: 'games', dir: 1 }];
+  const joined = cycleSort(order, 'mmr1');
+  assert.deepEqual(joined, [{ key: 'games', dir: 1 }, { key: 'mmr1', dir: 1 }]);
+  const turned = cycleSort(joined, 'mmr1');
+  assert.deepEqual(turned, [{ key: 'games', dir: 1 }, { key: 'mmr1', dir: -1 }]);
+  assert.deepEqual(cycleSort(turned, 'mmr1'), [{ key: 'games', dir: 1 }]);
+});
+
+test('the arrow points up where the smallest figure comes first', () => {
+  assert.equal(sortsUp('games', 1), true); // fewest games first
+  assert.equal(sortsUp('games', -1), false);
+  assert.equal(sortsUp('mmr1', 1), false); // highest MMR first
+  assert.equal(sortsUp('time', 1), false); // most hours first
+});
+
+test('a focus of several players lists every opponent of each, each pair once', () => {
+  const side1 = [player(1, 10, 1500), player(2, 10, 1510)];
+  const side2 = [player(3, 20, 1520), player(4, 20, 1990)];
+  const rows = matchupRows({ side1, side2, team1Id: 10, range: 100, focus: [side1[0], side2[0]] });
+  assert.deepEqual(rows.map((row) => row.key), ['1-3', '1-4', '2-3']);
 });
 
 test('a team MMR criterion is named by its team', () => {
@@ -231,30 +246,20 @@ test('the selection drops what the draft or the series now hold and what can no 
     { player1_id: 13, player2_id: 3 }, // the draft holds it now
     { player1_id: 4, player2_id: 99 }, // a player off the board
     { player1_id: 4, player2_id: 14 }, // stays
-    { player1_id: 5, player2_id: 11, replaces_series_id: 1 }, // stays
-    { player1_id: 6, player2_id: 12, replaces_series_id: 2 }, // that series holds a result
-    { player1_id: 7, player2_id: 13, draft_id: 8 }, // the draft it changes is gone
+    { player1_id: 11, player2_id: 1 }, // a published series holds it
+    { player1_id: 5, player2_id: 12 }, // stays: the player of a played series may take another
   ];
   assert.deepEqual(
     pruneSelection(selection, { published, drafts, known }).map((one) => `${one.player1_id}-${one.player2_id}`),
-    ['4-14', '5-11'],
-  );
-  // another draft replaces series 1 now
-  const replaced = [...drafts, { id: 10, player1_id: 8, player2_id: 11, replaces_series_id: 1 }];
-  assert.deepEqual(
-    pruneSelection([{ player1_id: 5, player2_id: 11, replaces_series_id: 1 }], { published, drafts: replaced, known }),
-    [],
+    ['4-14', '5-12'],
   );
 });
 
-test('selecting switches an item, and one player can be held to one selected match', () => {
+test('selecting switches an item on and off, whichever player comes first', () => {
   const first = selectItem([], { player1_id: 1, player2_id: 11 });
   assert.equal(first.length, 1);
   assert.equal(selectItem(first, { player1_id: 11, player2_id: 1 }).length, 0);
-  const two = selectItem(first, { player1_id: 2, player2_id: 11 });
-  assert.equal(two.length, 2);
-  const swapped = selectItem(first, { player1_id: 2, player2_id: 11 }, { onePerPlayer: 11 });
-  assert.deepEqual(swapped, [{ player1_id: 2, player2_id: 11 }]);
+  assert.equal(selectItem(first, { player1_id: 2, player2_id: 11 }).length, 2);
 });
 
 test('a player with no opponent inside the range names the nearest', () => {
@@ -280,55 +285,3 @@ test('the search matches the name or the battle tag, whatever the case', () => {
   assert.deepEqual(searchPlayers(players, 'nobody'), []);
 });
 
-const published = [
-  { id: 1, player1_id: 1, player2_id: 11, player1_score: null, player2_score: null },
-  { id: 2, player1_id: 2, player2_id: 12, player1_score: 2, player2_score: 1 },
-];
-
-test('a new match replaces an open published series, with the opponent who leaves it', () => {
-  const need = newMatchFor(11, published, []);
-  assert.equal(need.kind, 'replace');
-  if (need.kind !== 'replace') return;
-  assert.equal(need.series.id, 1);
-  assert.equal(need.dropId, 1);
-  assert.equal(need.replacedBy, null);
-  const again = newMatchFor(11, published, [{ id: 9, player1_id: 3, player2_id: 11, replaces_series_id: 1 }]);
-  assert.equal(again.kind === 'replace' && again.replacedBy.id, 9);
-});
-
-test('a played series, a drafted pairing or none gives a new pairing', () => {
-  const played = newMatchFor(2, published, []);
-  assert.equal(played.kind === 'new' && played.played.id, 2);
-  const drafted = newMatchFor(4, published, [{ id: 5, player1_id: 4, player2_id: 14 }]);
-  assert.equal(drafted.kind === 'new' && drafted.drafted.id, 5);
-  assert.deepEqual(newMatchFor(6, published, []), { kind: 'new', played: null, drafted: null, leaving: null });
-});
-
-test('a player whose series a draft replaces without them gets a new pairing', () => {
-  // the draft keeps 1 and drops 11 from series 1
-  const need = newMatchFor(11, published, [{ id: 9, player1_id: 1, player2_id: 13, replaces_series_id: 1 }]);
-  assert.equal(need.kind, 'new');
-  assert.equal(need.kind === 'new' && need.leaving.id, 1);
-});
-
-test('a replacement draft already made leaves its own players out of the candidates', () => {
-  const drafts = [{ id: 9, player1_id: 3, player2_id: 11, replaces_series_id: 1 }];
-  const rows = replacementRows({ selected: [player(11, 20, 1700)], candidates: [player(1, 10, 1690), player(2, 10, 1650), player(3, 10, 1600)], team1Id: 10, range: 100, published, drafts });
-  assert.deepEqual(rows.map((one) => one.key), ['2-11']);
-});
-
-test('a replacement pairs each selected player with every candidate but the one who leaves', () => {
-  // team 20 needs new matches for 11 (an open series against 1) and 13 (no series)
-  const selected = [player(11, 20, 1700), player(13, 20, 1500)];
-  const candidates = [player(1, 10, 1690), player(2, 10, 2100), player(3, 10, 1520)];
-  const rows = replacementRows({ selected, candidates, team1Id: 10, range: 100, published, drafts: [] });
-  assert.deepEqual(rows.map((one) => one.key), ['2-11', '3-11', '1-13', '2-13', '3-13']);
-  // team 1 stays player a, whichever team needs the match
-  assert.ok(rows.every((one) => one.a.team_id === 10 && one.b.team_id === 20));
-  // the range only marks, it hides nothing
-  assert.equal(rows.find((one) => one.key === '2-11')?.outside, true);
-  // a candidate who holds a series is a second pairing
-  assert.deepEqual(rows.filter((one) => one.second).map((one) => one.key), ['2-11', '1-13', '2-13']);
-  assert.equal(rows.find((one) => one.key === '3-11')?.need.kind, 'replace');
-  assert.equal(rows.find((one) => one.key === '3-13')?.need.kind, 'new');
-});

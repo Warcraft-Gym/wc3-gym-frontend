@@ -4,7 +4,7 @@ title: The life of one series
 description: The states a series passes through, from a GNL draft pairing to a reported result, who moves it out of each state, and what only an admin may do.
 resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
 tags: [pages, series, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-01T09:45:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T16:00:00Z }
 sources:
   - id: fixtures
     resource: ../pages/fixtures-and-series.md
@@ -20,14 +20,14 @@ sources:
     title: The series action bar
 ---
 
-This flow follows one series through its states: draft pairing, published, scheduled, veto done and reported. A draft pairing exists on a GNL fixture alone; a cup series starts at published, because the stage engine generates it. The sides move the series forward. An admin may also act for either side, and only an admin publishes, awards a walkover or a forfeit, and reopens a result.
+This flow follows one series through its states: draft pairing, published, scheduled, veto done and reported. A draft pairing exists on a GNL fixture alone; a cup series starts at published, because the stage engine generates it. The sides move the series forward. An admin may also act for either side, and only an admin awards a walkover or a forfeit and reopens a result. A GNL pairing is published by a captain of either team of the fixture or by an admin.
 
 # Steps
 
 | Step | Who | Where | Writes | Owner |
 |---|---|---|---|---|
-| 1. Draft a pairing (GNL only) | captain of either team, or an admin | `/match/:id`, Draft tab | `POST /draft-series` | [Fixtures and series](../pages/fixtures-and-series.md) |
-| 2. Publish the pairing | admin | `/match/:id`, Draft tab | `POST /draft-series/{id}/promote` | [Fixtures and series](../pages/fixtures-and-series.md) |
+| 1. Draft a pairing (GNL only) | captain of either team, or an admin | `/match/:id`, Plan round tab | `POST /draft-series` | [Fixtures and series](../pages/fixtures-and-series.md) |
+| 2. Publish the pairing, up to the round's series | captain of either team, or an admin | `/match/:id`, Plan round tab, Draft step | `POST /draft-series/{id}/promote` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 2a. Or, for a cup, generate the stage | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/generate` | [Event management](../pages/event-management.md) |
 | 3. Book a time | the player a side names, a captain of the team that fields it, or an admin | the schedule dialog, from the action bar on `/`, the player page or `/series/:id` | `PUT /player-series/{id}` with `date_time` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 4. Take the veto turns | both sides, in turn; an admin edits either side | `/player-series/:id/veto`, or inside Report Result | `PUT /player-series/{id}/veto` | [Fixtures and series](../pages/fixtures-and-series.md) |
@@ -45,7 +45,7 @@ sequenceDiagram
     participant Backend
     Captain->>Backend: draft a pairing on /match/:id, POST /draft-series
     Note over Backend: draft pairing, GNL only
-    Admin->>Backend: publish, POST /draft-series/:id/promote
+    Captain->>Backend: publish up to the round's series, POST /draft-series/:id/promote
     Note over Backend: published, where a cup series starts
     Sides->>Backend: book a time, PUT /player-series/:id
     Backend-->>Backend: refresh the bot's post of the series

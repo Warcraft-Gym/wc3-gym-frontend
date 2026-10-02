@@ -61,7 +61,7 @@ export function MmrRange({
   sidesLeft: boolean; // both teams still hold a free player
   hints: { player: Row; nearest: Row; difference: number }[];
   busy: boolean;
-  onChange: (next: number | null) => Promise<void>;
+  onChange: (next: number | null) => Promise<unknown>;
 }) {
   return (
     <div className="flex flex-col gap-3">

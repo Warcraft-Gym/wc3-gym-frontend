@@ -1,17 +1,17 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
-import { DEFAULT_ORDER, SORT_KEYS, SORT_LABELS } from "@/helpers/planner.mjs";
+import { DEFAULT_ORDER, SORT_KEYS, moveEarlier, sortLabel } from "@/helpers/planner.mjs";
 import { cn } from "@/lib/utils";
 
-export type SortKey = "games" | "mmr" | "time";
+export type SortKey = "games" | "mmr" | "time" | "mmr1" | "mmr2";
 export type SortOrder = { key: SortKey; dir: 1 | -1 }[];
 
-const labelOf = (key: SortKey, dir: 1 | -1) => SORT_LABELS[key][dir === 1 ? 0 : 1];
-
 /** The order of the matchup list on several criteria at once: a click on a criterion adds it to the
- *  sort, a second click turns it round, and × takes it out. The number is its priority. */
-export function SortChips({ order, onChange }: { order: SortOrder; onChange: (next: SortOrder) => void }) {
+ *  sort, a second click turns it round, ◀ moves it one place earlier and × takes it out. The number is
+ *  its priority. A team's MMR is named by that team. */
+export function SortChips({ order, teams, onChange }: { order: SortOrder; teams: { team1: string; team2: string }; onChange: (next: SortOrder) => void }) {
+  const labelOf = (key: SortKey, dir: 1 | -1) => sortLabel(key, dir, teams);
   const unused = (SORT_KEYS as SortKey[]).filter((key) => !order.some((one) => one.key === key));
   const changed = JSON.stringify(order) !== JSON.stringify(DEFAULT_ORDER);
   return (
@@ -19,9 +19,19 @@ export function SortChips({ order, onChange }: { order: SortOrder; onChange: (ne
       <span className="text-sm font-medium">Sort by</span>
       {order.map(({ key, dir }, index) => (
         <span key={key} className="inline-flex items-center overflow-hidden rounded-full bg-primary text-on-primary">
+          {index > 0 ? (
+            <button
+              type="button"
+              className="inline-grid h-8 w-7 place-items-center border-r border-on-primary/25"
+              aria-label={`Move ${labelOf(key, dir)} to place ${index}`}
+              onClick={() => onChange(moveEarlier(order, key) as SortOrder)}
+            >
+              <Icon name="mdi-chevron-left" size={16} />
+            </button>
+          ) : null}
           <button
             type="button"
-            className="inline-flex h-8 items-center gap-1.5 pr-2 pl-1.5 text-sm font-medium"
+            className={cn("inline-flex h-8 items-center gap-1.5 pr-2 text-sm font-medium", index > 0 ? "pl-1" : "pl-1.5")}
             aria-label={`Sort ${index + 1}: ${labelOf(key, dir)}. Turn it round`}
             onClick={() => onChange(order.map((one) => (one.key === key ? { key, dir: dir === 1 ? -1 : 1 } : one)))}
           >
@@ -39,7 +49,7 @@ export function SortChips({ order, onChange }: { order: SortOrder; onChange: (ne
         </span>
       ))}
       {unused.map((key) => (
-        <Button key={key} variant="outline" size="sm" className={cn("rounded-full")} onClick={() => onChange([...order, { key, dir: 1 }])}>
+        <Button key={key} variant="outline" size="sm" className="rounded-full" onClick={() => onChange([...order, { key, dir: 1 }])}>
           <Icon name="mdi-plus" size={14} />
           {labelOf(key, 1)}
         </Button>

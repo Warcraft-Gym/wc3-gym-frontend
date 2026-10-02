@@ -42,17 +42,31 @@ export function AvailabilityMark({ player }: { player: Row }) {
 
 /** One side of a possible matchup: the player line with the W3Champions link and the availability
  *  mark, the ladder record against this opponent's race, and the races faced this season in order,
- *  a ring on each one that is this opponent's race. */
-export function PlayerBlock({ player, opponent, faced }: { player: Row; opponent: Row; faced: { key: number; race: string | null; same: boolean }[] }) {
+ *  a ring on each one that is this opponent's race. A note says what the player already holds. The
+ *  name opens the player's stats; a click anywhere else falls through to the row. */
+export function PlayerBlock({
+  player,
+  opponent,
+  faced,
+  note,
+  onPlayer,
+}: {
+  player: Row;
+  opponent: Row;
+  faced: { key: number; race: string | null; same: boolean }[];
+  note?: string | null;
+  onPlayer?: () => void;
+}) {
   const pair = player.vs_race?.[opponent.race] ?? null;
   const ladder = record(pair?.[0], pair?.[1]);
   return (
-    // a click on the block opens the player, never the row under it
-    <div className="flex min-w-0 flex-col gap-1" onClick={(event) => event.stopPropagation()}>
-      <span className="inline-flex flex-wrap items-center gap-1.5">
-        <PlayerName player={player} race={player.race} mmr={player.mmr ?? null} warning={gamesMark(player)} w3c />
+    <div className="flex min-w-0 flex-col gap-1">
+      {/* the name line keeps its clicks: the name, the W3Champions link and the marks */}
+      <span className="inline-flex flex-wrap items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
+        <PlayerName player={player} race={player.race} mmr={player.mmr ?? null} warning={gamesMark(player)} w3c onClick={onPlayer} />
         <AvailabilityMark player={player} />
       </span>
+      {note ? <span className="text-xs font-medium text-info">{note}</span> : null}
       <span className="inline-flex items-center gap-1.5 text-xs" title={`${player.name}'s W3C ladder games against ${raceName(opponent.race)}, in the event window`}>
         <W3CIcon size={14} />
         <span className="text-muted-foreground">vs</span>

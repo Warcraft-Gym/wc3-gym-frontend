@@ -1,10 +1,14 @@
 "use client";
+import { useState } from "react";
 import { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/Icon";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
 import { checkInStatus, setByText } from "@/helpers/check-in.mjs";
+import { searchPlayers } from "@/helpers/planner.mjs";
 import { cn } from "@/lib/utils";
 import { gamesMark } from "./PlayerBlock";
 
@@ -35,20 +39,24 @@ function TeamList({
   team,
   own,
   players,
+  shown,
   included,
   pairedAs,
   viewerId,
   busy,
   onSwitch,
+  onPlayer,
 }: {
   team: Row;
   own: boolean;
   players: Row[];
+  shown: Row[];
   included: (player: Row) => boolean;
   pairedAs: (playerId: number) => string | null;
   viewerId: number | null;
   busy: boolean;
   onSwitch: (player: Row, on: boolean) => void;
+  onPlayer: (player: Row) => void;
 }) {
   const writes = players.some((player) => player.answersRead);
   const count = players.filter(included).length;
@@ -62,8 +70,9 @@ function TeamList({
           {count} of {players.length} play
         </span>
       </div>
+      {!shown.length ? <p className="py-3 text-sm text-muted-foreground">No player matches</p> : null}
       <ul className="divide-y">
-        {players.map((player) => {
+        {shown.map((player) => {
           const on = included(player);
           const note = answerNote(player, on, viewerId);
           const avail = availabilityLine(player);
@@ -77,7 +86,7 @@ function TeamList({
                 onCheckedChange={(next) => onSwitch(player, next)}
               />
               <span className={cn("min-w-0", !on && "opacity-60")}>
-                <PlayerName player={player} race={player.race} mmr={player.mmr ?? null} warning={gamesMark(player)} w3c />
+                <PlayerName player={player} race={player.race} mmr={player.mmr ?? null} warning={gamesMark(player)} w3c onClick={() => onPlayer(player)} />
               </span>
               {paired ? <span className="text-xs font-medium text-info">{paired}</span> : null}
               <span className="ml-auto tnum text-sm text-muted-foreground">
@@ -100,7 +109,17 @@ function TeamList({
   );
 }
 
-/** Step 1: who plays this round, one list per team, the viewer's own team first. */
+/** A search field over one or two player lists: name or battle tag. */
+export function PlayerSearch({ id, value, onChange }: { id: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="relative w-full max-w-sm">
+      <Icon name="mdi-magnify" className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground" />
+      <Input id={id} type="search" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Name or battle tag" aria-label="Find a player" className="pl-8" />
+    </div>
+  );
+}
+
+/** Step 1: who plays this round, one list per team, the viewer's own team first, with a search over both. */
 export function WhoPlays({
   teams,
   ownTeamId,
@@ -110,6 +129,7 @@ export function WhoPlays({
   viewerId,
   busy,
   onSwitch,
+  onPlayer,
 }: {
   teams: { team: Row; teamId: number }[];
   ownTeamId: number | null;
@@ -119,23 +139,33 @@ export function WhoPlays({
   viewerId: number | null;
   busy: boolean;
   onSwitch: (player: Row, on: boolean) => void;
+  onPlayer: (player: Row) => void;
 }) {
+  const [search, setSearch] = useState("");
   const ordered = [...teams].sort((a, b) => Number(b.teamId === ownTeamId) - Number(a.teamId === ownTeamId));
   return (
-    <div className="grid gap-6 min-[960px]:grid-cols-2">
-      {ordered.map(({ team, teamId }) => (
-        <TeamList
-          key={teamId}
-          team={team}
-          own={teamId === ownTeamId}
-          players={players.filter((player) => player.team_id === teamId).sort((a, b) => (b.mmr ?? -1) - (a.mmr ?? -1))}
-          included={included}
-          pairedAs={pairedAs}
-          viewerId={viewerId}
-          busy={busy}
-          onSwitch={onSwitch}
-        />
-      ))}
+    <div className="flex flex-col gap-4">
+      <PlayerSearch id="who-plays-search" value={search} onChange={setSearch} />
+      <div className="grid gap-6 min-[960px]:grid-cols-2">
+        {ordered.map(({ team, teamId }) => {
+          const list = players.filter((player) => player.team_id === teamId).sort((a, b) => (b.mmr ?? -1) - (a.mmr ?? -1));
+          return (
+            <TeamList
+              key={teamId}
+              team={team}
+              own={teamId === ownTeamId}
+              players={list}
+              shown={searchPlayers(list, search)}
+              included={included}
+              pairedAs={pairedAs}
+              viewerId={viewerId}
+              busy={busy}
+              onSwitch={onSwitch}
+              onPlayer={onPlayer}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }

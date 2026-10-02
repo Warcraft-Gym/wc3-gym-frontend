@@ -20,10 +20,9 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
 import { checkInStatus } from "@/helpers/check-in.mjs";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
-import { placeTakers } from "@/helpers/draft-suggest.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { pickedInstant, pickerParts, storedUtc, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
-import { useAuth, useAvailabilityStore, useEventStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
+import { useAuth, useAvailabilityStore, useEventStore, useLadderStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
 import { CreateSeriesDialog, type SideTeam } from "./CreateSeriesDialog";
 import { EditSeriesDialog } from "./EditSeriesDialog";
 import { MatchBanner } from "./MatchBanner";
@@ -78,6 +77,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   const teamStore = useTeamStore();
   const availabilityStore = useAvailabilityStore();
   const eventStore = useEventStore();
+  const ladderStore = useLadderStore();
   const { current_season: season, fetchSeason } = useSeason();
 
   const smAndDown = useBreakpoint(SM_AND_DOWN);
@@ -117,8 +117,10 @@ export function MatchDetailsView({ id }: { id: string }) {
   // The tab the viewer picked; until then a captain opens on the plan while the round has room
   const [tab, setTab] = useState<string | null>(null);
 
-  // The published series a captain replaces a player in, and the publish confirm over one or more drafts
-  const [replacing, setReplacing] = useState<{ series: Row; dropId: number } | null>(null);
+  // The player who stays in a published series whose other player a captain replaces; the planner opens
+  // on their matchups. The key opens the planner afresh for every replacement asked.
+  const [replaceEntry, setReplaceEntry] = useState<{ playerId: number; key: number } | null>(null);
+  // The publish confirm over one or more drafts
   const [publishDrafts, setPublishDrafts] = useState<Row[] | null>(null);
   // Only the answer of the open confirm is kept, so a slow replaces read of an earlier one is dropped
   const replaceAsk = useRef(0);
@@ -172,10 +174,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   });
   const enrichedSeries = series.map(withFullPlayers);
   const enrichedDraftSeries = draftSeries.map(withFullPlayers);
-  // A draft that replaces a published series is published on its own, with the confirm that names what is lost
-  const plainDrafts = enrichedDraftSeries.filter((row) => !row.replaces_series_id);
   // The places of the round the published series leave open; the board read carries the round size
-  const openPlaces = Math.max(0, (draftBoard?.series_per_round || 0) - series.length - placeTakers(draftSeries).length);
+  const openPlaces = Math.max(0, (draftBoard?.series_per_round || 0) - series.length);
   // The working largest difference of this match
   const maxDifference = draftState?.max_mmr_difference ?? draftBoard?.max_mmr_difference ?? 0;
   const activeTab = tab ?? (canDraft && draftBoard && (openPlaces > 0 || draftSeries.length > 0) ? "plan" : "series");
@@ -353,7 +353,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   useEffect(() => {
     // the loaders set state, so they run just outside the effect body (react-hooks/set-state-in-effect)
     queueMicrotask(async () => {
-      setReplacing(null); // another fixture holds none of the series this replacement names
+      setReplaceEntry(null); // another fixture holds none of the series this replacement names
       setTab(null);
       const loaded = await fetchMatchDetails();
       if (loaded) await loadFixtureSeries(loaded.row, loaded.teams);
@@ -491,7 +491,10 @@ export function MatchDetailsView({ id }: { id: string }) {
     }
   };
 
-  const publishAllDraftSeries = async () => {
+  // The drafts the captain ticked; a draft that replaces a published series is published on its own,
+  // with the confirm that names what is lost
+  const publishAllDraftSeries = async (chosen: Row[]) => {
+    const plainDrafts = chosen.filter((row) => !row.replaces_series_id);
     if (!plainDrafts.length) return;
     setIsLoading(true);
     try {
@@ -519,11 +522,11 @@ export function MatchDetailsView({ id }: { id: string }) {
   const publishOne = publishDrafts && publishDrafts.length === 1 ? publishDrafts[0] : null;
 
   // The publish confirm. The replaces read fires only here, once, for the one draft it asks about.
-  const openPublishAll = () => {
+  const openPublishAll = (chosen: Row[]) => {
     replaceAsk.current++;
     setPublishError(null);
     setPublishLost(null);
-    setPublishDrafts(plainDrafts);
+    setPublishDrafts(chosen.filter((row) => !row.replaces_series_id));
   };
 
   const openPublishReplace = async (item: Row) => {
@@ -553,7 +556,7 @@ export function MatchDetailsView({ id }: { id: string }) {
     setPublishError(null);
     if (!rows.length) return closePublish();
     if (!rows[0].replaces_series_id) {
-      await publishAllDraftSeries();
+      await publishAllDraftSeries(rows);
       return closePublish();
     }
     setIsLoading(true);
@@ -574,7 +577,7 @@ export function MatchDetailsView({ id }: { id: string }) {
   const teamOfSide = (side: 1 | 2) => (side === 1 ? match.team1_id : match.team2_id);
   const mayReplace = (side: 1 | 2) => auth.isAdmin || (ownTeamId != null && Number(ownTeamId) === Number(teamOfSide(side)));
   const openReplace = (item: Row, side: 1 | 2) => {
-    setReplacing({ series: item, dropId: item[`player${side}_id`] });
+    setReplaceEntry({ playerId: item[`player${side === 1 ? 2 : 1}_id`], key: Date.now() });
     setTab("plan");
   };
   // The pairing a replacement draft removes, named from the published series the page already holds
@@ -585,17 +588,20 @@ export function MatchDetailsView({ id }: { id: string }) {
     return `${seriesPlayerById[row.player1_id]?.name || row.player1?.name} vs ${seriesPlayerById[row.player2_id]?.name || row.player2?.name}`;
   };
 
-  // A write that moves a pairing reads the whole series list; another write names the lighter read it needs
+  // A write that moves a pairing reads the whole series list; another write names the lighter read it needs.
+  // It answers whether the write went through.
   const runDraftWrite = async (write: () => Promise<unknown>, read: () => Promise<unknown> = fetchMatchSeries) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
       await write();
       await read();
+      return true;
     } catch (error: any) {
       console.error("Failed to write the draft:", error);
       await read().catch(() => {}); // a set that failed part-way still wrote rows, so the board reads them
       setErrorMessage(error?.error || error?.message || String(error));
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -611,7 +617,7 @@ export function MatchDetailsView({ id }: { id: string }) {
         if (hostId === pair.player1_id) team1Hosts++;
         else team2Hosts++;
       }
-    }).then(() => setReplacing(null));
+    });
   };
 
   // The pairing keeps its row, so the note says it changed and who changed it
@@ -632,6 +638,8 @@ export function MatchDetailsView({ id }: { id: string }) {
     );
   const meetingsOf = (userA: number, userB: number) => seriesStore.playerMeetings(userA, userB);
   const pairFreeTime = (player1Id: number, player2Id: number) => availabilityStore.pairFreeTime(match.season_id, match.playday, player1Id, player2Id);
+  // A player's ladder record over the event window, for the planner's stats panel; the edge caches it
+  const playerLadder = (userId: number) => ladderStore.userLadder(userId, { seasonId: match.season_id });
 
   // The fantasy series is chosen on the draft, and publishing carries the mark onto the series
   const toggleDraftFantasyMatch = (draft: Row) =>
@@ -711,7 +719,7 @@ export function MatchDetailsView({ id }: { id: string }) {
             value={activeTab}
             onValueChange={(value) => {
               setTab(value as string);
-              if (value !== "plan") setReplacing(null); // the replacement is picked on the plan
+              if (value !== "plan") setReplaceEntry(null); // the replacement is picked on the plan
             }}
           >
             <TabsList variant="line" className="w-full justify-center bg-surface-light">
@@ -745,6 +753,7 @@ export function MatchDetailsView({ id }: { id: string }) {
             {canDraft ? (
               <TabsContent value="plan">
                 <RoundPlanner
+                  key={replaceEntry?.key ?? "plan"}
                   match={match}
                   team1={team1}
                   team2={team2}
@@ -760,8 +769,7 @@ export function MatchDetailsView({ id }: { id: string }) {
                   narrow={smAndDown}
                   busy={isLoading}
                   seenAt={seenAt}
-                  replacing={replacing}
-                  onCancelReplace={() => setReplacing(null)}
+                  entry={replaceEntry}
                   replacedLabel={replacedLabel}
                   onAnswer={setAnswer}
                   onAddPairings={addPairings}
@@ -769,10 +777,11 @@ export function MatchDetailsView({ id }: { id: string }) {
                   onSetMaxDifference={setMaxMmrDifference}
                   onToggleFantasy={toggleDraftFantasyMatch}
                   onRemoveDraft={(draft) => openDeleteDialog(draft.id, removeDraftSeries)}
-                  onPublishAll={openPublishAll}
+                  onPublish={openPublishAll}
                   onPublishReplace={openPublishReplace}
                   onMeetings={meetingsOf}
                   loadFreeTime={pairFreeTime}
+                  loadLadder={playerLadder}
                 />
               </TabsContent>
             ) : null}

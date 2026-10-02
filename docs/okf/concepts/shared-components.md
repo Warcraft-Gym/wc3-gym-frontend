@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-30T21:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T15:15:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -90,7 +90,7 @@ A race icon asserts a fact about a row. Show one only when the row has a race: t
 
 # DataTable
 
-`next/src/components/ui/DataTable.tsx` is the one flat table: sort, page and column visibility over one column list. With `rowCount` it runs in server mode, where the page holds the page index and the sort and sends them to the backend. A text column sorts without regard to case. `mobileStack` turns each row into a block of label and value lines below the phone breakpoint; the head row is hidden there, so a "Sort by" select above the table takes its place and each cell carries its column label as an element. `expand` draws a chevron column with one detail row under the row it opens. A column whose header is a component names itself through `meta.label`.
+`next/src/components/ui/DataTable.tsx` is the one flat table: sort, page and column visibility over one column list. With `rowCount` it runs in server mode, where the page holds the page index and the sort and sends them to the backend. A text column sorts without regard to case. `mobileStack` turns each row into a block of label and value lines below the phone breakpoint; the head row is hidden there, so a "Sort by" select above the table takes its place and each cell carries its column label as an element. `expand` draws a chevron column with one detail row under the row it opens. `rowClassName` puts a class on one data row, such as a tint that marks it; the row's own text still says why. `onRowClick` makes a row with no detail clickable, and a control inside a cell stops its own click. A column whose header is a component names itself through `meta.label`.
 
 # GroupedTable
 

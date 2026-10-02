@@ -1,24 +1,22 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { TapTooltip } from "@/components/ui/TapTooltip";
-import { AvailabilityCalendar } from "@/components/AvailabilityCalendar";
-import { HeadToHeadCell } from "@/components/HeadToHeadCell";
 import { TeamName } from "@/components/TeamName";
-import { record } from "@/helpers/figures.mjs";
 import { cn } from "@/lib/utils";
+import { PairTimeDialog, type Loaded } from "./PairTimeDialog";
 import { PlayerBlock } from "./PlayerBlock";
 import type { SortOrder } from "./SortChips";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
-type Loaded = { state: "loading" } | { state: "ok"; data: Row } | { state: "error"; message: string };
 
 /** A column title with the priority the sort chips give it. */
-function Head({ label, sortKey, order }: { label: string; sortKey?: string; order: SortOrder }) {
-  const index = sortKey ? order.findIndex((one) => one.key === sortKey) : -1;
+function Head({ label, sortKey, order }: { label: React.ReactNode; sortKey: string; order: SortOrder }) {
+  const index = order.findIndex((one) => one.key === sortKey);
   return (
     <span className={cn("inline-flex items-center gap-1.5", index >= 0 && "text-primary-text")}>
       {label}
@@ -27,27 +25,13 @@ function Head({ label, sortKey, order }: { label: string; sortKey?: string; orde
   );
 }
 
-/** The last ten counted ladder games, newest first, as marks with their record beside them. */
-function Form({ player }: { player: Row }) {
-  const games = String(player.form || "").split("").filter((one) => one === "W" || one === "L");
-  if (!games.length) return <span className="text-muted-foreground">No ladder games in the event window</span>;
-  const wins = games.filter((one) => one === "W").length;
-  return (
-    <span className="inline-flex items-center gap-2" aria-label={`${player.name}: last ${games.length} ladder games, newest first, ${wins} won and ${games.length - wins} lost`}>
-      <span className="w-20 truncate">{player.name}</span>
-      <span className="inline-flex gap-0.5" aria-hidden="true">
-        {games.map((one, index) => (
-          <span key={index} className={cn("size-3 rounded-sm", one === "W" ? "bg-win" : "bg-loss")} />
-        ))}
-      </span>
-      <span className="tnum text-muted-foreground">{record(wins, games.length - wins)}</span>
-    </span>
-  );
-}
+// a control inside a row keeps its click to itself, so the row under it is not selected
+const stop = (event: React.SyntheticEvent) => event.stopPropagation();
 
 /** The possible matchups in the order of the sort chips: each player's block, the series each has
- *  played this season, the MMR difference and the time the two share. A row opens when the two can
- *  play, with each player's blocked hours, their recent form and their head to head. */
+ *  played this season, the MMR difference and the time the two share. A click on a row selects it.
+ *  A row whose player already holds a match this round wears a tint, and the player's note names the
+ *  match. The calendar button opens when the two can play; a name opens the player's stats. */
 export function MatchupTable({
   rows,
   picks,
@@ -57,11 +41,14 @@ export function MatchupTable({
   maxPlayed,
   narrow,
   busy,
-  addLabel,
-  addDisabled,
-  onAdd,
+  selected,
+  onToggle,
+  changeLabel,
+  onChange,
+  noteOf,
+  marked,
+  onPlayer,
   loadFreeTime,
-  onMeetings,
   empty,
 }: {
   rows: Row[];
@@ -72,18 +59,24 @@ export function MatchupTable({
   maxPlayed: [number, number];
   narrow: boolean;
   busy: boolean;
-  addLabel: (row: Row) => string;
-  addDisabled: boolean;
-  onAdd: (row: Row) => void;
+  selected: (row: Row) => boolean;
+  onToggle: (row: Row) => void;
+  /** The label of the direct write while a draft pairing changes its opponent; null otherwise. */
+  changeLabel: ((row: Row) => string) | null;
+  onChange: (row: Row) => void;
+  noteOf?: (player: Row, row: Row) => string | null;
+  marked?: (row: Row) => boolean;
+  onPlayer: (player: Row, opponent: Row, row: Row) => void;
   loadFreeTime: (row: Row) => Promise<Row>;
-  onMeetings: (userA: number, userB: number) => Promise<Row[]>;
   empty: string;
 }) {
   const [loaded, setLoaded] = useState<Record<string, Loaded>>({});
+  const [timeRow, setTimeRow] = useState<Row | null>(null);
 
   // One read per pair while the page is open; a pair where nobody entered anything reads nothing
-  const load = async (row: Row) => {
-    if (row.neitherEntered || loaded[row.key]?.state === "ok" || loaded[row.key]?.state === "loading") return;
+  const load = async (row: Row, again = false) => {
+    if (row.neitherEntered) return;
+    if (!again && (loaded[row.key]?.state === "ok" || loaded[row.key]?.state === "loading")) return;
     setLoaded((was) => ({ ...was, [row.key]: { state: "loading" } }));
     try {
       const data = await loadFreeTime(row);
@@ -92,178 +85,184 @@ export function MatchupTable({
       setLoaded((was) => ({ ...was, [row.key]: { state: "error", message: error?.error || error?.message || String(error) } }));
     }
   };
-
-  const detail = (row: Row) => {
-    const free = loaded[row.key];
-    return (
-      <div className="grid gap-4 py-2 min-[1280px]:grid-cols-[minmax(0,1fr)_18rem]">
-        <section className="flex min-w-0 flex-col gap-2">
-          <h4 className="text-sm font-medium">
-            When can {row.a.name} and {row.b.name} play?
-            {row.hoursKnown ? <span className="ml-2 font-normal text-muted-foreground tnum">{Math.round(row.hours)} h free for both in this round</span> : null}
-          </h4>
-          {row.neitherEntered ? (
-            <p className="text-sm text-muted-foreground">Neither player entered availability, so every hour counts as free.</p>
-          ) : !free || free.state === "loading" ? (
-            <p role="status" className="text-sm text-muted-foreground">Loading the blocked hours</p>
-          ) : free.state === "error" ? (
-            <p className="text-sm text-error">
-              The blocked hours did not load: {free.message}{" "}
-              <Button variant="link" size="sm" onClick={() => { setLoaded((was) => { const next = { ...was }; delete next[row.key]; return next; }); load(row); }}>
-                Try again
-              </Button>
-            </p>
-          ) : (
-            <AvailabilityCalendar
-              freeTime={free.data}
-              players={[
-                { name: row.a.name, zone: row.a.timezone, entered: !!row.a.availability_entered },
-                { name: row.b.name, zone: row.b.timezone, entered: !!row.b.availability_entered },
-              ]}
-            />
-          )}
-        </section>
-        <section className="flex flex-col gap-3 text-sm">
-          <div className="flex flex-col gap-1">
-            <span className="text-muted-foreground">Last 10 ladder games, newest first</span>
-            <Form player={row.a} />
-            <Form player={row.b} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-muted-foreground">Head to head in series</span>
-            <HeadToHeadCell pair={row.pair ?? undefined} onMeetings={() => onMeetings(row.a.user_id, row.b.user_id)} />
-          </div>
-        </section>
-      </div>
-    );
+  const openTime = (row: Row) => {
+    setTimeRow(row);
+    load(row);
   };
+  const changing = !!changeLabel;
 
   return (
-    <DataTable
-      data={rows}
-      rowId={(row: Row) => row.key}
-      mobileStack={narrow}
-      empty={empty}
-      expand={detail}
-      expandLabel="Show when they can play, their form and their head to head"
-      onExpand={load}
-      columns={[
-        // the star column stands only while the sort names top picks
-        ...(picks.size
-          ? [
-              {
-                id: "top",
-                header: () => <span className="sr-only">Top pick</span>,
-                meta: { label: "Top pick" },
-                enableSorting: false,
-                cell: ({ row }: { row: { original: Row } }) =>
-                  picks.has(row.original.key) ? (
-                    <TapTooltip content="A top pick of your sort">
-                      <Icon name="mdi-star" className="text-primary-text" />
-                      <span className="sr-only">Top pick</span>
-                    </TapTooltip>
-                  ) : null,
-              },
-            ]
-          : []),
-        {
-          id: "team1",
-          header: () => <TeamName team={team1} plain />,
-          meta: { label: team1?.name ?? "Team 1" },
-          enableSorting: false,
-          cell: ({ row }: { row: { original: Row } }) => <PlayerBlock player={row.original.a} opponent={row.original.b} faced={row.original.facedA} />,
-        },
-        {
-          id: "team2",
-          header: () => <TeamName team={team2} plain />,
-          meta: { label: team2?.name ?? "Team 2" },
-          enableSorting: false,
-          cell: ({ row }: { row: { original: Row } }) => <PlayerBlock player={row.original.b} opponent={row.original.a} faced={row.original.facedB} />,
-        },
-        {
-          id: "games",
-          header: () => <Head label="Series played" sortKey="games" order={order} />,
-          meta: { label: "Series played" },
-          enableSorting: false,
-          cell: ({ row }: { row: { original: Row } }) => {
-            const { a, b } = row.original;
-            const low = (player: Row, most: number) => (player.played < most ? "font-medium text-primary-text" : "");
-            return (
-              <span className="block text-right tnum" title={`Series this season: ${a.name} ${a.played}, ${b.name} ${b.played}`}>
-                <span className={low(a, maxPlayed[0])}>{a.played}</span> · <span className={low(b, maxPlayed[1])}>{b.played}</span>
-              </span>
-            );
-          },
-        },
-        {
-          id: "mmr",
-          header: () => <Head label="MMR difference" sortKey="mmr" order={order} />,
-          meta: { label: "MMR difference" },
-          enableSorting: false,
-          cell: ({ row }: { row: { original: Row } }) => (
-            <span className="flex flex-col items-end tnum">
-              {Number.isFinite(row.original.difference) ? row.original.difference : "—"}
-              {row.original.outside ? <span className="text-xs text-warning">outside the range</span> : null}
-            </span>
-          ),
-        },
-        {
-          id: "time",
-          header: () => <Head label="Time" sortKey="time" order={order} />,
-          meta: { label: "Time" },
-          enableSorting: false,
-          cell: ({ row }: { row: { original: Row } }) => {
-            const one = row.original;
-            return (
-              <span className="flex flex-col items-start gap-0.5">
-                {one.hoursKnown ? (
-                  <span className="tnum" title="Hours both are free in this round">
-                    {Math.round(one.hours)} h
-                  </span>
-                ) : null}
-                {one.tzWarn ? (
-                  <TapTooltip content="Players 8 h or more apart rarely find a time to play">
-                    <span className="inline-flex items-center gap-1 text-xs text-warning tnum">
-                      <Icon name="mdi-alert" size={14} />
-                      {one.tzGap} h apart
+    <>
+      <DataTable
+        data={rows}
+        rowId={(row: Row) => row.key}
+        mobileStack={narrow}
+        empty={empty}
+        onRowClick={changing ? undefined : onToggle}
+        rowClassName={(row: Row) => (!changing && selected(row) ? "bg-primary/10" : marked?.(row) ? "bg-info/8" : undefined)}
+        columns={[
+          ...(changing
+            ? []
+            : [
+                {
+                  id: "select",
+                  header: () => <span className="sr-only">Select</span>,
+                  meta: { label: "Selected" },
+                  enableSorting: false,
+                  cell: ({ row }: { row: { original: Row } }) => (
+                    <span className="inline-flex" onClick={stop}>
+                      <Checkbox
+                        checked={selected(row.original)}
+                        disabled={busy}
+                        aria-label={`Select ${row.original.a.name} vs ${row.original.b.name}`}
+                        onCheckedChange={() => onToggle(row.original)}
+                      />
                     </span>
-                  </TapTooltip>
-                ) : null}
-                {one.neitherEntered ? (
-                  <TapTooltip content="Neither player entered availability">
-                    <Icon name="mdi-calendar-remove" size={16} className="text-muted-foreground" />
-                    <span className="sr-only">Neither player entered availability</span>
-                  </TapTooltip>
-                ) : null}
-              </span>
-            );
+                  ),
+                },
+              ]),
+          // the star column stands only while the sort names top picks
+          ...(picks.size
+            ? [
+                {
+                  id: "top",
+                  header: () => <span className="sr-only">Top pick</span>,
+                  meta: { label: "Top pick" },
+                  enableSorting: false,
+                  cell: ({ row }: { row: { original: Row } }) =>
+                    picks.has(row.original.key) ? (
+                      <span className="inline-flex" onClick={stop}>
+                        <TapTooltip content="A top pick of your sort">
+                          <Icon name="mdi-star" className="text-primary-text" />
+                          <span className="sr-only">Top pick</span>
+                        </TapTooltip>
+                      </span>
+                    ) : null,
+                },
+              ]
+            : []),
+          {
+            id: "team1",
+            header: () => <Head label={<TeamName team={team1} plain />} sortKey="mmr1" order={order} />,
+            meta: { label: team1?.name ?? "Team 1" },
+            enableSorting: false,
+            cell: ({ row }: { row: { original: Row } }) => (
+              <PlayerBlock
+                player={row.original.a}
+                opponent={row.original.b}
+                faced={row.original.facedA}
+                note={noteOf?.(row.original.a, row.original)}
+                onPlayer={() => onPlayer(row.original.a, row.original.b, row.original)}
+              />
+            ),
           },
-        },
-        {
-          id: "add",
-          header: () => <span className="sr-only">Add</span>,
-          meta: { label: "" },
-          enableSorting: false,
-          cell: ({ row }: { row: { original: Row } }) => (
-            <span className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-primary-text"
-                disabled={busy || addDisabled}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onAdd(row.original);
-                }}
-              >
-                <Icon name="mdi-plus" />
-                {addLabel(row.original)}
-              </Button>
-            </span>
-          ),
-        },
-      ]}
-    />
+          {
+            id: "team2",
+            header: () => <Head label={<TeamName team={team2} plain />} sortKey="mmr2" order={order} />,
+            meta: { label: team2?.name ?? "Team 2" },
+            enableSorting: false,
+            cell: ({ row }: { row: { original: Row } }) => (
+              <PlayerBlock
+                player={row.original.b}
+                opponent={row.original.a}
+                faced={row.original.facedB}
+                note={noteOf?.(row.original.b, row.original)}
+                onPlayer={() => onPlayer(row.original.b, row.original.a, row.original)}
+              />
+            ),
+          },
+          {
+            id: "games",
+            header: () => <Head label="Series played" sortKey="games" order={order} />,
+            meta: { label: "Series played" },
+            enableSorting: false,
+            cell: ({ row }: { row: { original: Row } }) => {
+              const { a, b } = row.original;
+              const low = (player: Row, most: number) => (player.played < most ? "font-medium text-primary-text" : "");
+              return (
+                <span className="block text-right tnum" title={`Series this season: ${a.name} ${a.played}, ${b.name} ${b.played}`}>
+                  <span className={low(a, maxPlayed[0])}>{a.played}</span> · <span className={low(b, maxPlayed[1])}>{b.played}</span>
+                </span>
+              );
+            },
+          },
+          {
+            id: "mmr",
+            header: () => <Head label="MMR difference" sortKey="mmr" order={order} />,
+            meta: { label: "MMR difference" },
+            enableSorting: false,
+            cell: ({ row }: { row: { original: Row } }) => (
+              <span className="flex flex-col items-end tnum">
+                {Number.isFinite(row.original.difference) ? row.original.difference : "—"}
+                {row.original.outside ? <span className="text-xs text-warning">outside the range</span> : null}
+              </span>
+            ),
+          },
+          {
+            id: "time",
+            header: () => <Head label="Time" sortKey="time" order={order} />,
+            meta: { label: "Time" },
+            enableSorting: false,
+            cell: ({ row }: { row: { original: Row } }) => {
+              const one = row.original;
+              return (
+                <span className="flex items-center gap-2" onClick={stop}>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className={one.neitherEntered ? "text-muted-foreground" : "text-primary-text"}
+                    aria-label={`When can ${one.a.name} and ${one.b.name} play?`}
+                    title="When can they play?"
+                    onClick={() => openTime(one)}
+                  >
+                    <Icon name={one.neitherEntered ? "mdi-calendar-remove" : "mdi-calendar-clock"} />
+                  </Button>
+                  <span className="flex flex-col items-start gap-0.5">
+                    {one.hoursKnown ? (
+                      <span className="tnum" title="Hours both are free in this round">
+                        {Math.round(one.hours)} h
+                      </span>
+                    ) : null}
+                    {one.tzWarn ? (
+                      <TapTooltip content="Players 8 h or more apart rarely find a time to play">
+                        <span className="inline-flex items-center gap-1 text-xs text-warning tnum">
+                          <Icon name="mdi-alert" size={14} />
+                          {one.tzGap} h apart
+                        </span>
+                      </TapTooltip>
+                    ) : null}
+                  </span>
+                </span>
+              );
+            },
+          },
+          ...(changing
+            ? [
+                {
+                  id: "change",
+                  header: () => <span className="sr-only">Change</span>,
+                  meta: { label: "" },
+                  enableSorting: false,
+                  cell: ({ row }: { row: { original: Row } }) => (
+                    <span className="flex justify-end" onClick={stop}>
+                      <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={() => onChange(row.original)}>
+                        <Icon name="mdi-swap-horizontal" />
+                        {changeLabel!(row.original)}
+                      </Button>
+                    </span>
+                  ),
+                },
+              ]
+            : []),
+        ]}
+      />
+      <PairTimeDialog
+        row={timeRow}
+        free={timeRow ? loaded[timeRow.key] : undefined}
+        onClose={() => setTimeRow(null)}
+        onRetry={() => (timeRow ? load(timeRow, true) : undefined)}
+      />
+    </>
   );
 }
 

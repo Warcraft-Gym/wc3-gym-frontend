@@ -67,6 +67,8 @@ export function DataTable<T extends RowData>({
   expand,
   expandLabel = "Show detail",
   onExpand,
+  onRowClick,
+  rowClassName,
   className,
 }: {
   columns: ColumnDef<typeof features, T>[];
@@ -87,6 +89,8 @@ export function DataTable<T extends RowData>({
   expand?: (row: T) => React.ReactNode;
   expandLabel?: string; // what the chevron opens, for the screen reader
   onExpand?: (row: T) => void; // the row just opened, so the caller can fetch its detail
+  onRowClick?: (row: T) => void; // a click on a row with no detail to open; a control inside a cell stops its own click
+  rowClassName?: (row: T) => string | undefined; // a class on one data row, such as a tint that marks it
   className?: string;
 }) {
   const [ownSorting, setOwnSorting] = useState<SortingState>([]);
@@ -229,8 +233,8 @@ export function DataTable<T extends RowData>({
                   <Fragment key={row.id}>
                     <TableRow
                       // The whole row opens the detail.
-                      className={cn(expand && "cursor-pointer")}
-                      onClick={expand ? () => toggle(row.id, row.original) : undefined}
+                      className={cn((expand || onRowClick) && "cursor-pointer", rowClassName?.(row.original))}
+                      onClick={expand ? () => toggle(row.id, row.original) : onRowClick ? () => onRowClick(row.original) : undefined}
                     >
                       {expand ? (
                         <TableCell>

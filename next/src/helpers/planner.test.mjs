@@ -3,12 +3,22 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_ORDER,
   matchupRow,
+  matchesOf,
   matchupRows,
+  moveEarlier,
+  newMatchFor,
+  pairKey,
   plannerPlayers,
   playsRound,
+  pruneSelection,
   rangeHints,
+  replacementRows,
+  searchPlayers,
+  selectItem,
+  sortLabel,
   sortMatchups,
   switchAnswer,
+  takenPairs,
   topPicks,
   tzGap,
 } from './planner.mjs';
@@ -152,6 +162,99 @@ test('the top picks walk the sorted rows and take no player twice', () => {
   ];
   assert.deepEqual([...topPicks(rows, 2)], ['1-3', '2-4']);
   assert.deepEqual([...topPicks(rows, 1)], ['1-3']);
+  // a player who already holds a match is no top pick
+  assert.deepEqual([...topPicks(rows, 2, new Set([1]))], ['2-3']);
+});
+
+test('a team MMR sort puts the highest player of that team first and a missing MMR last', () => {
+  const rows = [
+    matchupRow(player(1, 10, 1500), player(3, 20, 1700), { range: 500 }),
+    matchupRow(player(2, 10, 1900), player(4, 20, null), { range: 500 }),
+    matchupRow(player(5, 10, null), player(6, 20, 1600), { range: 500 }),
+  ];
+  assert.deepEqual(sortMatchups(rows, [{ key: 'mmr1', dir: 1 }]).map((row) => row.key), ['2-4', '1-3', '5-6']);
+  assert.deepEqual(sortMatchups(rows, [{ key: 'mmr2', dir: 1 }]).map((row) => row.key), ['1-3', '5-6', '2-4']);
+  assert.deepEqual(sortMatchups(rows, [{ key: 'mmr1', dir: -1 }]).map((row) => row.key).slice(1), ['1-3', '2-4']);
+});
+
+test('a criterion moves one place earlier, and the first stays', () => {
+  const order = [{ key: 'games', dir: 1 }, { key: 'mmr', dir: 1 }, { key: 'mmr1', dir: -1 }];
+  assert.deepEqual(moveEarlier(order, 'mmr1').map((one) => one.key), ['games', 'mmr1', 'mmr']);
+  assert.deepEqual(moveEarlier(order, 'mmr').map((one) => one.key), ['mmr', 'games', 'mmr1']);
+  assert.equal(moveEarlier(order, 'games'), order);
+  assert.equal(moveEarlier(order, 'time'), order);
+});
+
+test('a team MMR criterion is named by its team', () => {
+  assert.equal(sortLabel('mmr1', 1, { team1: 'CRIT', team2: 'MJM' }), 'CRIT MMR: highest first');
+  assert.equal(sortLabel('mmr2', -1, { team1: 'CRIT', team2: 'MJM' }), 'MJM MMR: lowest first');
+  assert.equal(sortLabel('games', -1), 'Most games played');
+});
+
+test('a pair key is the same whichever player comes first', () => {
+  assert.equal(pairKey(7, 3), pairKey(3, 7));
+  assert.notEqual(pairKey(3, 7), pairKey(3, 8));
+});
+
+test('the list keeps a player who holds a match and drops only the pair already taken', () => {
+  const side1 = [player(1, 10, 1500), player(2, 10, 1510)];
+  const side2 = [player(3, 20, 1520), player(4, 20, 1490)];
+  const taken = takenPairs([{ player1_id: 1, player2_id: 3 }], [{ player1_id: 4, player2_id: 2 }]);
+  assert.deepEqual(matchupRows({ side1, side2, team1Id: 10, range: 100, taken }).map((row) => row.key), ['1-4', '2-3']);
+  const focused = matchupRows({ side1, side2, team1Id: 10, range: 100, taken, focus: side1[0] });
+  assert.deepEqual(focused.map((row) => row.key), ['1-4']);
+});
+
+test('each player lists every match they hold this round', () => {
+  const matches = matchesOf({
+    published: [
+      { player1_id: 1, player2_id: 3, player1_score: null, player2_score: null },
+      { player1_id: 2, player2_id: 4, player1_score: 2, player2_score: 0 },
+    ],
+    drafts: [{ player1_id: 1, player2_id: 4 }],
+    selection: [{ player1_id: 5, player2_id: 3 }],
+  });
+  assert.deepEqual(matches.get(1), [{ kind: 'published', opponent: 3 }, { kind: 'draft', opponent: 4 }]);
+  assert.deepEqual(matches.get(4), [{ kind: 'played', opponent: 2 }, { kind: 'draft', opponent: 1 }]);
+  assert.deepEqual(matches.get(3), [{ kind: 'published', opponent: 1 }, { kind: 'selected', opponent: 5 }]);
+  assert.equal(matches.get(6), undefined);
+});
+
+test('the selection drops what the draft or the series now hold and what can no longer be moved', () => {
+  const published = [
+    { id: 1, player1_id: 1, player2_id: 11, player1_score: null, player2_score: null },
+    { id: 2, player1_id: 2, player2_id: 12, player1_score: 2, player2_score: 1 },
+  ];
+  const drafts = [{ id: 9, player1_id: 3, player2_id: 13 }];
+  const known = (id) => id !== 99;
+  const selection = [
+    { player1_id: 13, player2_id: 3 }, // the draft holds it now
+    { player1_id: 4, player2_id: 99 }, // a player off the board
+    { player1_id: 4, player2_id: 14 }, // stays
+    { player1_id: 5, player2_id: 11, replaces_series_id: 1 }, // stays
+    { player1_id: 6, player2_id: 12, replaces_series_id: 2 }, // that series holds a result
+    { player1_id: 7, player2_id: 13, draft_id: 8 }, // the draft it changes is gone
+  ];
+  assert.deepEqual(
+    pruneSelection(selection, { published, drafts, known }).map((one) => `${one.player1_id}-${one.player2_id}`),
+    ['4-14', '5-11'],
+  );
+  // another draft replaces series 1 now
+  const replaced = [...drafts, { id: 10, player1_id: 8, player2_id: 11, replaces_series_id: 1 }];
+  assert.deepEqual(
+    pruneSelection([{ player1_id: 5, player2_id: 11, replaces_series_id: 1 }], { published, drafts: replaced, known }),
+    [],
+  );
+});
+
+test('selecting switches an item, and one player can be held to one selected match', () => {
+  const first = selectItem([], { player1_id: 1, player2_id: 11 });
+  assert.equal(first.length, 1);
+  assert.equal(selectItem(first, { player1_id: 11, player2_id: 1 }).length, 0);
+  const two = selectItem(first, { player1_id: 2, player2_id: 11 });
+  assert.equal(two.length, 2);
+  const swapped = selectItem(first, { player1_id: 2, player2_id: 11 }, { onePerPlayer: 11 });
+  assert.deepEqual(swapped, [{ player1_id: 2, player2_id: 11 }]);
 });
 
 test('a player with no opponent inside the range names the nearest', () => {
@@ -162,4 +265,70 @@ test('a player with no opponent inside the range names the nearest', () => {
   assert.equal(hints[0].player.user_id, 1);
   assert.equal(hints[0].nearest.user_id, 4);
   assert.equal(hints[0].difference, 210);
+});
+
+test('the search matches the name or the battle tag, whatever the case', () => {
+  const players = [
+    { name: 'Lukas', battleTag: 'Wolf#2211' },
+    { name: 'Anna', battleTag: 'Lukewarm#1200' },
+    { name: 'Sven', battleTag: null },
+  ];
+  assert.deepEqual(searchPlayers(players, '  luk ').map((one) => one.name), ['Lukas', 'Anna']);
+  assert.deepEqual(searchPlayers(players, 'WOLF').map((one) => one.name), ['Lukas']);
+  assert.equal(searchPlayers(players, '').length, 3);
+  assert.equal(searchPlayers(players, null).length, 3);
+  assert.deepEqual(searchPlayers(players, 'nobody'), []);
+});
+
+const published = [
+  { id: 1, player1_id: 1, player2_id: 11, player1_score: null, player2_score: null },
+  { id: 2, player1_id: 2, player2_id: 12, player1_score: 2, player2_score: 1 },
+];
+
+test('a new match replaces an open published series, with the opponent who leaves it', () => {
+  const need = newMatchFor(11, published, []);
+  assert.equal(need.kind, 'replace');
+  if (need.kind !== 'replace') return;
+  assert.equal(need.series.id, 1);
+  assert.equal(need.dropId, 1);
+  assert.equal(need.replacedBy, null);
+  const again = newMatchFor(11, published, [{ id: 9, player1_id: 3, player2_id: 11, replaces_series_id: 1 }]);
+  assert.equal(again.kind === 'replace' && again.replacedBy.id, 9);
+});
+
+test('a played series, a drafted pairing or none gives a new pairing', () => {
+  const played = newMatchFor(2, published, []);
+  assert.equal(played.kind === 'new' && played.played.id, 2);
+  const drafted = newMatchFor(4, published, [{ id: 5, player1_id: 4, player2_id: 14 }]);
+  assert.equal(drafted.kind === 'new' && drafted.drafted.id, 5);
+  assert.deepEqual(newMatchFor(6, published, []), { kind: 'new', played: null, drafted: null, leaving: null });
+});
+
+test('a player whose series a draft replaces without them gets a new pairing', () => {
+  // the draft keeps 1 and drops 11 from series 1
+  const need = newMatchFor(11, published, [{ id: 9, player1_id: 1, player2_id: 13, replaces_series_id: 1 }]);
+  assert.equal(need.kind, 'new');
+  assert.equal(need.kind === 'new' && need.leaving.id, 1);
+});
+
+test('a replacement draft already made leaves its own players out of the candidates', () => {
+  const drafts = [{ id: 9, player1_id: 3, player2_id: 11, replaces_series_id: 1 }];
+  const rows = replacementRows({ selected: [player(11, 20, 1700)], candidates: [player(1, 10, 1690), player(2, 10, 1650), player(3, 10, 1600)], team1Id: 10, range: 100, published, drafts });
+  assert.deepEqual(rows.map((one) => one.key), ['2-11']);
+});
+
+test('a replacement pairs each selected player with every candidate but the one who leaves', () => {
+  // team 20 needs new matches for 11 (an open series against 1) and 13 (no series)
+  const selected = [player(11, 20, 1700), player(13, 20, 1500)];
+  const candidates = [player(1, 10, 1690), player(2, 10, 2100), player(3, 10, 1520)];
+  const rows = replacementRows({ selected, candidates, team1Id: 10, range: 100, published, drafts: [] });
+  assert.deepEqual(rows.map((one) => one.key), ['2-11', '3-11', '1-13', '2-13', '3-13']);
+  // team 1 stays player a, whichever team needs the match
+  assert.ok(rows.every((one) => one.a.team_id === 10 && one.b.team_id === 20));
+  // the range only marks, it hides nothing
+  assert.equal(rows.find((one) => one.key === '2-11')?.outside, true);
+  // a candidate who holds a series is a second pairing
+  assert.deepEqual(rows.filter((one) => one.second).map((one) => one.key), ['2-11', '1-13', '2-13']);
+  assert.equal(rows.find((one) => one.key === '3-11')?.need.kind, 'replace');
+  assert.equal(rows.find((one) => one.key === '3-13')?.need.kind, 'new');
 });

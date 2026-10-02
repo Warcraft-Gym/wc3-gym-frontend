@@ -35,7 +35,7 @@ export function PublishedSeries({
   smAndDown: boolean;
   isAdmin: boolean;
   canDraft?: boolean;
-  openPlaces?: number; // the places of the round the published series and the drafts leave open
+  openPlaces?: number; // the series the round may still publish
   formateDate: (value?: string | null) => string | null | undefined;
   seriesActions: (item: Row) => RowAction[];
   onAddSeries: () => void;
@@ -151,7 +151,7 @@ export function PublishedSeries({
 
       {room ? (
         <p className="tnum px-4 py-2 text-sm text-muted-foreground">
-          {openPlaces} place{openPlaces === 1 ? "" : "s"} open. Plan the round to pair them.
+          {openPlaces} series of the round still to publish. Plan the round to pair them.
         </p>
       ) : null}
 

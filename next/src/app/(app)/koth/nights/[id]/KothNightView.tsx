@@ -74,7 +74,8 @@ export function KothNightView({ id }: { id: string }) {
   const fixToken = useRef(0); // the newest preview asked for, so a slow answer never overwrites a later pick
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
-  const [clearing, setClearing] = useState(false); // the confirm before every series of the night goes
+  const [clearing, setClearing] = useState(false);
+  const [crownAsk, setCrownAsk] = useState<{ bracket: Row; seat: Row } | null>(null); // a seat dropped on an empty throne // the confirm before every series of the night goes
   const [boundsOpen, setBoundsOpen] = useState(false); // the bracket bounds live behind Settings, so the brackets lead the page
   const [refreshing, setRefreshing] = useState(false);
   const queueWrite = useRef(0); // the newest queue write, so only its answer replaces the order drawn at once
@@ -339,6 +340,7 @@ export function KothNightView({ id }: { id: string }) {
     onWin: (bracket, side) => run(() => store.setKothWinner(nightId, bracket.open_series.series_id, side)),
     onCancelSeries: (bracket) => run(() => store.cancelKothSeries(nightId, bracket.open_series.series_id)),
     onCrown: (bracket, entrantId) => run(() => store.setKothCrown(nightId, bracket.division_id, entrantId)),
+    onAskCrown: (bracket, seat) => setCrownAsk({ bracket, seat }),
     onStepDown: (bracket) => {
       setPassTo(null);
       setStepDown(bracket);
@@ -840,6 +842,34 @@ export function KothNightView({ id }: { id: string }) {
             <Button variant="destructive" disabled={busy} onClick={deleteNight}>
               <Icon name="mdi-delete-outline" />
               Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* A drag can overshoot the queue's first place, so a seat dropped on an empty throne asks first */}
+      <Dialog open={!!crownAsk} onOpenChange={(open) => !open && setCrownAsk(null)}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">{`Make ${crownAsk?.seat.name ?? ""} the king?`}</DialogTitle>
+          {crownAsk ? (
+            <p className="m-0 p-4 text-sm">
+              {`${crownAsk.seat.name} takes the empty throne of ${bracketLabel(brackets, crownAsk.bracket).name} and leaves the queue, so everyone behind moves up one place.`}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setCrownAsk(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={busy}
+              onClick={() => {
+                const ask = crownAsk;
+                const row = ask ? seatRow(ask.seat, picks) : null;
+                if (ask && row) run(() => store.setKothCrown(nightId, ask.bracket.division_id, row.entrant_id), () => setCrownAsk(null));
+              }}
+            >
+              <Icon name="mdi-crown" />
+              Make king
             </Button>
           </div>
         </DialogContent>

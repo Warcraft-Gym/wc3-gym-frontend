@@ -133,6 +133,10 @@ const store = {
   async startKothSeries(night_id: number, entrant1_id: number, entrant2_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/series`, { entrant1_id, entrant2_id });
   },
+  // Every series of the night goes, played or on the table, and every throne empties; signups and the line stay
+  async clearKothSeries(night_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series`);
+  },
   // Take a series off the table or remove a played one; a preview answers the board it would give and saves nothing
   async cancelKothSeries(night_id: number, series_id: number, preview = false) {
     return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series/${series_id}${preview ? "?preview=true" : ""}`);

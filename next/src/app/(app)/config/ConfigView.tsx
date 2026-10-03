@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
+import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,6 +61,12 @@ const SECTION_KEYS: Record<string, string[]> = {
   discord: DISCORD_FIELDS.map((field) => field.key),
 };
 
+// The backend route Nightbot calls for a KOTH signup from chat
+const KOTH_SIGNUP_URL = "https://backend.warcraft-gym.com/koth/signup";
+
+// The message of the !kothsignup command in Nightbot; each $(...) is a Nightbot variable
+const nightbotMessage = (token: string) => `$(urlfetch ${KOTH_SIGNUP_URL}?token=${token}&twitch=$(user)&q=$(querystring))`;
+
 /** The configuration the backend keeps in the database, plus the Nightbot token KOTH signups carry. */
 export function ConfigView() {
   const configStore = useConfigStore();
@@ -75,6 +82,8 @@ export function ConfigView() {
   const [kothNightbotToken, setKothNightbotToken] = useState("");
   const [kothTokenVisible, setKothTokenVisible] = useState(false);
   const [isGeneratingKothToken, setIsGeneratingKothToken] = useState(false);
+  const [messageCopied, setMessageCopied] = useState(false);
+  const [manualMessage, setManualMessage] = useState<string | null>(null);
 
   const [settingsMap, setSettingsMap] = useState<SettingsMap>(EMPTY_SETTINGS);
   // What the last successful load held, and null while no load has succeeded
@@ -133,7 +142,7 @@ export function ConfigView() {
         setKothNightbotToken(response.token || "");
       } catch (error: any) {
         setKothNightbotToken("");
-        // A 404 means no token was generated yet, which the blank field already shows
+        // A 404 means no token was generated yet, which the section already says
         if (error?.status === 404) return;
         console.error("Failed to fetch KOTH token:", error);
         addError("Could not read the current token.");
@@ -212,11 +221,18 @@ export function ConfigView() {
     }
   };
 
-  // The one-line command an admin pastes into Nightbot, with the live token in it
-  const nightbotCommand =
-    "!addcom !kothsignup $(urlfetch $(eval const token='" +
-    kothNightbotToken +
-    "'; const twitch='$(user)'; const race='$(query)'; `https://backend.warcraft-gym.com/koth/signup?token=${token}&twitch=${twitch}&battletag=$(query)${race ? '&race='+race : ''}`; ))";
+  // Copy the Nightbot message with the real token; a refused copy shows it selected to copy by hand
+  const copyMessage = async () => {
+    const message = nightbotMessage(kothNightbotToken);
+    try {
+      await navigator.clipboard.writeText(message);
+      setManualMessage(null);
+      setMessageCopied(true);
+      setTimeout(() => setMessageCopied(false), 2000);
+    } catch {
+      setManualMessage(message);
+    }
+  };
 
   return (
     <div className="p-4">
@@ -427,41 +443,75 @@ export function ConfigView() {
                         <Icon name="mdi-robot" className="text-primary-text" />
                         <span className="font-medium">Nightbot signup token</span>
                       </div>
-                      <p className="mb-4 text-sm text-muted-foreground">Generate a new token if this one leaks.</p>
+                      <p className="mb-4 text-sm text-muted-foreground">
+                        {kothNightbotToken ? "Generate a new token if this one leaks." : "No token yet. Generate one to turn on chat signups."}
+                      </p>
                     </div>
 
                     <div className="grid items-end gap-4 md:grid-cols-12">
-                      <Field className="md:col-span-8" label="Current token" hint="Click the eye icon to show/hide the token" htmlFor="koth-token">
-                        <InputGroup>
-                          <InputGroupAddon>
-                            <Icon name="mdi-key" />
-                          </InputGroupAddon>
-                          <InputGroupInput id="koth-token" readOnly type={kothTokenVisible ? "text" : "password"} value={kothNightbotToken} />
-                          <InputGroupAddon align="inline-end">
-                            <Button variant="ghost" size="icon-sm" aria-label={kothTokenVisible ? "Hide the token" : "Show the token"} onClick={() => setKothTokenVisible(!kothTokenVisible)}>
-                              <Icon name={kothTokenVisible ? "mdi-eye-off" : "mdi-eye"} />
-                            </Button>
-                            <Button variant="ghost" size="icon-sm" aria-label="Copy the token" disabled={!kothNightbotToken} onClick={copyKothToken}>
-                              <Icon name="mdi-content-copy" />
-                            </Button>
-                          </InputGroupAddon>
-                        </InputGroup>
-                      </Field>
+                      {/* The server makes the token, so the value is text, not a field */}
+                      {kothNightbotToken ? (
+                        <Field className="min-w-0 md:col-span-8" label="Current token" hint="Click the eye icon to show/hide the token">
+                          <InputGroup>
+                            <InputGroupAddon>
+                              <Icon name="mdi-key" />
+                            </InputGroupAddon>
+                            <span id="koth-token" className="min-w-0 flex-1 truncate px-2.5 text-base md:text-sm">
+                              {kothTokenVisible ? kothNightbotToken : "•".repeat(kothNightbotToken.length)}
+                            </span>
+                            <InputGroupAddon align="inline-end">
+                              <Button variant="ghost" size="icon-sm" aria-label={kothTokenVisible ? "Hide the token" : "Show the token"} onClick={() => setKothTokenVisible(!kothTokenVisible)}>
+                                <Icon name={kothTokenVisible ? "mdi-eye-off" : "mdi-eye"} />
+                              </Button>
+                              <Button variant="ghost" size="icon-sm" aria-label="Copy the token" onClick={copyKothToken}>
+                                <Icon name="mdi-content-copy" />
+                              </Button>
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </Field>
+                      ) : null}
 
                       <div className="md:col-span-4">
                         <Button className="w-full" onClick={generateKothToken} disabled={isGeneratingKothToken}>
                           <Icon name={isGeneratingKothToken ? "mdi-loading mdi-spin" : "mdi-refresh"} />
-                          Generate new token
+                          {kothNightbotToken ? "Generate new token" : "Generate token"}
                         </Button>
                       </div>
 
                       {kothNightbotToken ? (
-                        <div className="md:col-span-12">
-                          <div className="alert rounded-md border border-current/20 p-3 text-sm text-info">
-                            <strong>Nightbot command example:</strong>
-                            <br />
-                            <code className="mt-1 inline-block break-all">{nightbotCommand}</code>
+                        <div className="flex min-w-0 flex-col gap-3 border-t pt-4 text-sm md:col-span-12">
+                          <div className="flex items-center gap-2">
+                            <Icon name="mdi-message-text-outline" className="text-primary-text" />
+                            <span className="text-base font-medium">Chat command</span>
                           </div>
+                          <p>
+                            Players sign up in Twitch chat with <code>!kothsignup BattleTag#1234</code>, or add a race: <code>!kothsignup BattleTag#1234 orc</code>.
+                          </p>
+                          <ol className="list-decimal space-y-1 pl-5">
+                            <li>Copy the message.</li>
+                            <li>
+                              In the{" "}
+                              <a href="https://nightbot.tv/commands/custom" target="_blank" rel="noreferrer">
+                                Nightbot dashboard
+                              </a>
+                              , open Commands, then Custom, and add a command named <code>!kothsignup</code> with this message.
+                            </li>
+                            <li>After a new token, paste the new message into the same command.</li>
+                          </ol>
+                          <p>Do not paste it into chat: the message holds the token.</p>
+                          {/* The token stays masked here unless the eye on the field shows it */}
+                          <code className="block rounded-md bg-muted p-3 text-xs break-all">{nightbotMessage(kothTokenVisible ? kothNightbotToken : "••••••••")}</code>
+                          <Button size="sm" variant="outline" className="w-fit text-primary-text" onClick={copyMessage}>
+                            <Icon name={messageCopied ? "mdi-check" : "mdi-content-copy"} />
+                            {messageCopied ? "Copied" : "Copy message"}
+                          </Button>
+                          {manualMessage ? <Input readOnly value={manualMessage} aria-label="Nightbot message" className="h-8 w-full" autoFocus onFocus={(e) => e.currentTarget.select()} /> : null}
+                          <details>
+                            <summary className="cursor-pointer">How it works</summary>
+                            <p className="mt-2 text-muted-foreground">
+                              Nightbot calls GET {KOTH_SIGNUP_URL} with the token, the chatter&apos;s name (twitch) and the chat text (q): a battle tag, then an optional race (orc, human, undead, nightelf, random). The answer is one line of text that Nightbot posts in chat. A new token stops the installed command until it is replaced.
+                            </p>
+                          </details>
                         </div>
                       ) : null}
                     </div>

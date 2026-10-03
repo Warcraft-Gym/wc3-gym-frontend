@@ -276,6 +276,7 @@ The nav is built from the hats a session wears (`next/src/helpers/nav-model.mjs`
 - A cell the reader cannot use wears a 45° hatch, the `.hatched` utility in `globals.css`, so it reads apart from a plain fill in both themes.
 - The Settings page `/config` is one card of six sections, each an `Accordion` header that opens and closes, all closed on load so the page reads as a list of headers. A failed save opens the sections that hold unsaved edits. The Save settings and Reset buttons sit outside the sections and always show, and the About settings card folds the same way.
 - A control draws no default before its data arrives. Until the data lands the control is inert: a skeleton, or a disabled control with `aria-busy`, so a tap cannot write a value the reader never picked.
+- A value the reader cannot edit is drawn as a disabled field or as plain text, never as a focusable read-only input. The one exception is the text a refused copy shows selected, so the reader copies it by hand.
 
 ## Data display
 

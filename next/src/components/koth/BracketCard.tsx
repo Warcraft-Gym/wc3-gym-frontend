@@ -81,10 +81,11 @@ export function BoardPlayer({ row, race, plain, slot, warn }: { row: Row; race?:
   const shown = race === undefined ? row.race : race;
   const marked = warn === undefined ? row.mmr == null : warn;
   const warning = marked ? noStatsWarning(shown) : null;
-  // only a line in a column of player lines keeps the empty mark slot, so its flags read as one column
+  // only a line in a column of player lines keeps the empty mark slot, so its flags read as one column;
+  // the board names a battle tag only where two players share a name, and then the tag is the name
   return (
     <PlayerName
-      player={{ id: row.user_id ?? null, name: row.name, country: row.country }}
+      player={{ id: row.user_id ?? null, name: row.battle_tag || row.name, country: row.country, battleTag: row.battle_tag }}
       race={shown || undefined}
       mmr={row.mmr ?? false}
       warning={warning ?? (slot ? null : undefined)}

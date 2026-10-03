@@ -85,18 +85,20 @@ export function PlayerName({
     </>
   );
 
+  // a hover names the full battle tag, so two players of one name read apart
+  const tag = player.battleTag || undefined;
   const line = to ? (
-    <Link href={to} className={className}>{body}</Link>
+    <Link href={to} className={className} title={tag}>{body}</Link>
   ) : opensPanel ? (
     <button type="button" className={className} title="Opens in a side panel" onClick={() => openPlayer(player)}>
       {body}
     </button>
   ) : onClick ? (
-    <button type="button" className={className} onClick={onClick}>
+    <button type="button" className={className} title={tag} onClick={onClick}>
       {body}
     </button>
   ) : (
-    <span className={className}>{body}</span>
+    <span className={className} title={tag}>{body}</span>
   );
   if (!w3c || !player.battleTag) return line;
   // the profile link stands beside the line, because the line is itself a link or a button

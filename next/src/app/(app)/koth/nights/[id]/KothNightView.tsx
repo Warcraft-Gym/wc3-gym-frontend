@@ -23,7 +23,7 @@ import { BoardPlayer, BracketCard, raceName, seatMark, type BracketAdmin } from 
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
-import { boundsOf, bracketLabel, cutsOf, fixChanges, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, wearsTheCrown } from "@/helpers/koth-board.mjs";
+import { boundsOf, bracketLabel, cutsOf, fixChanges, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, shouldReread, wearsTheCrown } from "@/helpers/koth-board.mjs";
 import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
@@ -74,6 +74,7 @@ export function KothNightView({ id }: { id: string }) {
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
   const [boundsOpen, setBoundsOpen] = useState(false); // the bracket bounds live behind Settings, so the brackets lead the page
+  const [refreshing, setRefreshing] = useState(false);
   const queueWrite = useRef(0); // the newest queue write, so only its answer replaces the order drawn at once
   const [deleting, setDeleting] = useState(false);
   const [event, setEvent] = useState<Row | null>(null); // read once, for the details dialog and the signups badge
@@ -238,6 +239,28 @@ export function KothNightView({ id }: { id: string }) {
       : null;
   const fixVerb = fixPick === "remove" ? "Remove series" : fixPick === "turn" ? `Make ${fix?.loser?.name} the winner` : "Save";
 
+  // Signups and a second admin change the night while this tab stays open: Refresh reads the board
+  // fresh, and so does a return to the tab once the last read is 15 s old; a write that runs comes first
+  const refresh = async () => {
+    setRefreshing(true);
+    try {
+      takeBoard(await store.fetchBoard(nightId, true));
+      setError(null);
+    } catch (e) {
+      setError(`The night did not load: ${(e as Error).message}`);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!board || board.closed) return;
+    const onShow = () => document.visibilityState === "visible" && !busy && shouldReread(readAt, Date.now()) && refresh();
+    document.addEventListener("visibilitychange", onShow);
+    return () => document.removeEventListener("visibilitychange", onShow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readAt, busy, board?.closed]);
+
   // A queue move draws the new order at once and saves behind it, with nothing locked: only the answer to
   // the newest write replaces the board, so a quick second move is never undone by the first answer
   const moveInQueue = (bracket: Row, from: number, to: number) => {
@@ -361,6 +384,12 @@ export function KothNightView({ id }: { id: string }) {
           <Icon name="mdi-account-multiple" />
           {board?.entrant_count ?? 0} signed up
         </Badge>
+        {board && !board.closed ? (
+          <Button size="sm" variant="outline" disabled={refreshing || busy} onClick={refresh}>
+            <Icon name={refreshing ? "mdi-loading mdi-spin" : "mdi-refresh"} />
+            Refresh
+          </Button>
+        ) : null}
         {event && !board?.closed ? (
           <Badge className={toneClass(event.signups_open ? "success" : null)}>
             <Icon name={event.signups_open ? "mdi-lock-open-variant-outline" : "mdi-lock-outline"} />

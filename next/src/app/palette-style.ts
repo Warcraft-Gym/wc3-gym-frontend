@@ -38,5 +38,6 @@ export function paletteStyle() {
   ].join("");
 }
 
-/** Runs before first paint, so a hard load never flashes the other ground. Key: `theme`. */
-export const THEME_SCRIPT = `try{var m=localStorage.getItem('theme')||'system';if(m!=='system')document.documentElement.dataset.theme=m;}catch(e){}`;
+/** Runs before first paint, so a hard load never flashes the other ground. Key: `theme`. A
+ *  `?theme=dark` or `?theme=light` wins and is never stored: a stream source cannot click the switch. */
+export const THEME_SCRIPT = `try{var q=new URLSearchParams(location.search).get('theme');var m=q==='dark'||q==='light'?q:localStorage.getItem('theme')||'system';if(m!=='system')document.documentElement.dataset.theme=m;}catch(e){}`;

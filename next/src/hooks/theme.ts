@@ -14,9 +14,12 @@ const subscribe = (l: () => void) => {
   };
 };
 
-// light, dark, or system. system follows the operating system setting. The key stays `theme`.
+// light, dark, or system. system follows the operating system setting. The key stays `theme`, and a
+// `?theme=` in the address wins, as the inline script in <head> reads it
 const readMode = (): ThemeMode => {
   if (typeof window === "undefined") return "system";
+  const forced = new URLSearchParams(window.location.search).get("theme");
+  if (forced === "dark" || forced === "light") return forced;
   return (localStorage.getItem("theme") as ThemeMode) || "system";
 };
 

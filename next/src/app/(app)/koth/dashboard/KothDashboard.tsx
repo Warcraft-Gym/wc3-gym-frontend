@@ -9,19 +9,20 @@ import { useEventStore } from "@/stores";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-/** Tonight's KOTH night lives on its event page, so this link lands there and keeps
- *  `?mode=clean`, which is what a stream's saved link carries. */
+/** Tonight's KOTH night lives on its event page, so this link lands there and keeps its query,
+ *  `?mode=clean` and `?theme=`, which is what a stream's saved link carries. */
 export function KothDashboard() {
   const router = useRouter();
   const store = useEventStore();
-  const clean = useSearchParams().get("mode") === "clean";
+  // the stream's saved link carries ?mode=clean and maybe ?theme=, and both ride on to the night
+  const query = useSearchParams().toString();
   const [empty, setEmpty] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     store
       .fetchBoard(null)
-      .then((board: Row) => router.replace(`/events/${board.night_id}${clean ? "?mode=clean" : ""}`))
+      .then((board: Row) => router.replace(`/events/${board.night_id}${query ? `?${query}` : ""}`))
       .catch((e: Row) => {
         // the read answers 400 or 404 while no night is open; that is the empty page, not an error
         if (e.status === 400 || e.status === 404) setEmpty(true);

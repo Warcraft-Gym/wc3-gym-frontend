@@ -511,10 +511,16 @@ function EraseButton({ name, rows, label, brackets, admin, size }: { name: strin
  *  deletes his signup when none of them played a series tonight. */
 export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets: Row[]; admin?: BracketAdmin }) {
   const seats: Row[] = leftSeats(bracket);
+  const [folded, fold] = useFolded(`${bracketLabel(brackets, bracket).name}:left`);
+  const rowsId = useId();
   if (!seats.length) return null;
   return (
-    <div className="px-4 pb-2">
-      <div className="py-1 text-sm font-medium text-foreground">Players who left</div>
+    <div className={cn("flex min-h-0 flex-col px-4", folded ? "pb-1" : "pb-2")}>
+      <FoldHeading folded={folded} onFold={fold} controls={rowsId} className="py-1">
+        <span className="text-sm font-medium text-foreground">Players who left</span>
+        <span className="tnum text-xs text-muted-foreground">{seats.length}</span>
+      </FoldHeading>
+      <div id={rowsId} hidden={folded} className="min-h-0 overflow-y-auto">
       {/* the name fades, the mark keeps its strength: a player who left is still a player with no stats */}
       {seats.map((seat: Row) => (
         <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 [&_.name]:opacity-(--v-medium-emphasis-opacity)">
@@ -538,6 +544,7 @@ export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets:
           {admin ? <EraseButton name={seat.name} rows={seat.rows} label={seat.name} brackets={brackets} admin={admin} size="icon-sm" /> : null}
         </div>
       ))}
+      </div>
     </div>
   );
 }
@@ -723,11 +730,11 @@ export function BracketCard({
   const PLAYED_SHOWN = 3;
   const playedShown = allPlayed ? played : played.slice(0, PLAYED_SHOWN);
   // a stream reads from further away, so every small label of the card grows one step too; a stream
-  // is one fixed screen, so three cards side by side stop at its foot and the queue scrolls inside,
-  // never the results. ponytail: 10.5rem is the shell bar and the title over the cards; a title that
+  // is one fixed screen, so three cards side by side fill it to its foot whatever is folded, and the
+  // queue and the players who left scroll inside, never the results. ponytail: 10.5rem is the shell bar and the title over the cards; a title that
   // wraps pushes the foot one line off screen, measure the card top if that happens
   return (
-    <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm min-[960px]:max-h-[calc(100dvh-10.5rem)]")}>
+    <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm min-[960px]:h-[calc(100dvh-10.5rem)]")}>
       <CardHeader className={cn("flex shrink-0 items-center gap-2 banner bg-banner p-3", clean && "p-4")}>
         <CardTitle className={cn("flex-1 text-primary", clean && "text-[1.375rem]")}>{name}</CardTitle>
         <span className="tnum text-xs text-on-banner/80">{band}</span>
@@ -787,8 +794,8 @@ export function BracketCard({
       )}
 
       {/* who left the line can still be put back, so the rows stay with the queue, above the rule */}
-      <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
       </div>
+      <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
 
       {/* a gold rule ends the work and opens the record: tonight's results in a sunken band; an admin
           sees it with no result yet, so a night's history can be entered from the start */}

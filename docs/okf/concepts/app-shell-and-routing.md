@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T20:20:00Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -49,7 +49,7 @@ A season in a path is its slug, `gnl-s18`, made from its name; a bare id still r
 
 The bar opens with the app title, "WC3 Gym Dashboard", which links to `/` from every page and is the way home. The same words are the default title of the browser tab, and a page title reads `<page> · WC3 Gym Dashboard`.
 
-`AppShell.tsx` draws the account from `/me`: the name and avatar, the role, and the theme menu (light, dark, system, stored in `localStorage`). `?mode=clean` on `/events/:id` or `/koth/dashboard` cuts the bar down to the app title and the theme menu and drops the tabs, the account and the footer, for a KOTH night on a stream. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
+`AppShell.tsx` draws the account from `/me`: the name and avatar, the role, and the theme menu (light, dark, system, stored in `localStorage`). `?theme=dark` or `?theme=light` in the address wins over the stored choice and is never stored. `?mode=clean` on `/events/:id` or `/koth/dashboard` cuts the bar down to the app title and the theme menu and drops the tabs, the account and the footer, for a KOTH night on a stream. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
 
 # The nav
 

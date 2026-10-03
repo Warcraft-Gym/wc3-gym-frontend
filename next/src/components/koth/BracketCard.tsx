@@ -530,11 +530,11 @@ export function PlayedTable({ played, total, admin, clean }: { played: Row[]; to
     <>
       <table className="w-full table-fixed border-collapse text-sm">
         <colgroup>
-          <col className="w-7" />
+          <col className="w-6" />
           <col />
           <col />
-          <col className="w-7" />
-          {admin ? <col className="w-8" /> : null}
+          <col className="w-6" />
+          {admin ? <col className="w-7" /> : null}
         </colgroup>
         <thead>
           <tr className="text-left text-xs text-muted-foreground">
@@ -559,15 +559,21 @@ export function PlayedTable({ played, total, admin, clean }: { played: Row[]; to
                 <td className="tnum py-1.5 pr-1 text-right text-xs text-muted-foreground">{total - index}</td>
                 <td className="py-1.5 pl-2">
                   <span className={cell}>
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-win" aria-hidden="true" />
-                    <BoardPlayer row={{ ...row.winner, mmr: null }} warn={false} />
+                    <span className="h-2 w-2 shrink-0 rounded-[2px] bg-win" aria-hidden="true" />
+                    {/* the queue shows each race; a result names the player, so the name keeps the cell */}
+                    <BoardPlayer row={{ ...row.winner, mmr: null }} race={null} warn={false} />
                   </span>
                 </td>
                 <td className="py-1.5 pl-2">
                   <span className={cn(cell, "[&_.name]:opacity-(--v-medium-emphasis-opacity)")}>
-                    <BoardPlayer row={{ ...row.loser, mmr: null }} warn={false} />
+                    <BoardPlayer row={{ ...row.loser, mmr: null }} race={null} warn={false} />
                     {/* the loser left the night, so no game was played */}
-                    {row.forfeit ? <span className="shrink-0 text-xs text-muted-foreground">forfeit</span> : null}
+                    {row.forfeit ? (
+                      <TapTooltip content="Forfeit: left the night" className="shrink-0">
+                        <Icon name="mdi-flag-outline" size={14} className="text-muted-foreground" />
+                        <span className="sr-only">Forfeit</span>
+                      </TapTooltip>
+                    ) : null}
                     {row.replay && !clean ? (
                       <Link href={`/series/${row.series_id}`} className="shrink-0 text-primary-text" aria-label={`Replay of series ${total - index}`}>
                         <Icon name="mdi-filmstrip" size={16} />
@@ -704,7 +710,7 @@ export function BracketCard({
 
       {/* a gold rule ends the work and opens the record: tonight's results in a sunken band */}
       {played.length ? (
-        <div className="border-t-2 border-primary bg-background/70 px-4 pb-3 pt-2.5">
+        <div className="border-t-2 border-primary-text bg-background/70 px-4 pb-3 pt-2.5">
           <div className="flex items-baseline gap-2 pb-1.5">
             <h3 className="m-0 font-heading text-base font-bold text-primary-text">Played tonight</h3>
             <span className="tnum text-xs text-muted-foreground">{played.length} series</span>

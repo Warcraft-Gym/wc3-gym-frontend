@@ -23,7 +23,6 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
 import { boundsOf, bracketLabel, cutsOf, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, wearsTheCrown } from "@/helpers/koth-board.mjs";
-import { uploadReplay } from "@/helpers/replay-upload";
 import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
@@ -79,8 +78,6 @@ export function KothNightView({ id }: { id: string }) {
   const [dropUnplaced, setDropUnplaced] = useState<Row | null>(null); // the unplaced signup the confirm names
   const [erase, setErase] = useState<{ name: string; rows: Row[] } | null>(null); // the rows that left, which the delete confirm names
 
-  const replayFor = useRef<number | null>(null);
-  const replayInput = useRef<HTMLInputElement>(null);
   const storedCuts = useRef(""); // the bounds the last board answered, so a drag survives a write
 
   const brackets: Row[] = orderedBrackets(board);
@@ -223,10 +220,6 @@ export function KothNightView({ id }: { id: string }) {
     onRestore: (entrantIds) => runEach(entrantIds, (entrantId) => store.restoreKothEntrant(nightId, entrantId)),
     onErase: (name, rows) => setErase({ name, rows }),
     onChangeWinner: (played) => run(() => changeWinner(played)),
-    onAddReplay: (played) => {
-      replayFor.current = played.series_id;
-      replayInput.current?.click();
-    },
   };
 
   const openAddPlayer = () => {
@@ -234,18 +227,6 @@ export function KothNightView({ id }: { id: string }) {
     setAddRace(null);
     setAddError(null);
     setAddTo(true);
-  };
-
-  const takeReplay = async (file: File | null) => {
-    const seriesId = replayFor.current;
-    if (!file || !seriesId) return;
-    await run(async () => {
-      await uploadReplay(seriesId, 1, file);
-      // a KOTH series already carries its result, so the replay is attached on its own
-      await fetchWrapper.put(`${backendUrl}/player-series/${seriesId}/replays/1`);
-      return null;
-    });
-    replayFor.current = null;
   };
 
   const addPlayer = async () => {
@@ -440,18 +421,6 @@ export function KothNightView({ id }: { id: string }) {
           ))}
         </div>
       )}
-
-      {/* One file per played series; a KOTH series is a best of one, so it is always game 1 */}
-      <input
-        ref={replayInput}
-        type="file"
-        accept=".w3g"
-        className="hidden"
-        onChange={(event) => {
-          takeReplay(event.target.files?.[0] ?? null);
-          event.target.value = "";
-        }}
-      />
 
       {/* The king leaves the throne empty for the next series, or hands the crown to one player */}
       <Dialog open={!!stepDown} onOpenChange={(open) => !open && setStepDown(null)}>

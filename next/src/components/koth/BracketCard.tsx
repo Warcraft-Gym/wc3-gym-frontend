@@ -38,7 +38,6 @@ export type BracketAdmin = {
   onRestore: (entrantIds: number[]) => void; // one race row, or every race the player left on
   onErase: (name: string, rows: Row[]) => void; // takes rows that left off the record of the night, after a confirm
   onChangeWinner: (played: Row) => void;
-  onAddReplay: (played: Row) => void;
 };
 
 export const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
@@ -502,13 +501,6 @@ export function PlayedRow({ played, admin, clean }: { played: Row; admin?: Brack
         ) : null}
         {admin ? (
           <>
-            {played.replay ? null : (
-              <TapTooltip content="Add replay">
-                <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Add replay" onClick={() => admin.onAddReplay(played)}>
-                  <Icon name="mdi-upload" />
-                </Button>
-              </TapTooltip>
-            )}
             <TapTooltip content="Change the winner">
               <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Change the winner" onClick={() => admin.onChangeWinner(played)}>
                 <Icon name="mdi-swap-horizontal" />

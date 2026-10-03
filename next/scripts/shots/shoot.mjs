@@ -146,8 +146,7 @@ const save = (rec) => {
 
 async function go(page, route) {
   await page.goto(BASE + route, { waitUntil: 'networkidle', timeout: 60000 }).catch((e) => page.__errors.push('goto: ' + e.message.slice(0, 100)));
-  // the season report draws its sections after several reads, so it gets longer
-  await page.waitForTimeout(route.startsWith('/report') ? 10000 : 3000);
+  await page.waitForTimeout(3000);
 }
 
 async function open(route) {

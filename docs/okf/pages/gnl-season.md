@@ -1,10 +1,10 @@
 ---
 type: Page
 title: The GNL season
-description: The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
+description: The seasons list, one season with its rounds and matches, the draft, the season maps and the achievement rules.
 resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-30T14:29:12Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
 sources:
   - id: seasons
     resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
@@ -24,9 +24,6 @@ sources:
   - id: achievements
     resource: ../../../next/src/app/(app)/seasons/[id]/achievements/SeasonAchievementsView.tsx
     title: The achievement rules
-  - id: report
-    resource: ../../../next/src/app/(app)/report/SeasonReportView.tsx
-    title: The season report
   - id: store
     resource: ../../../next/src/stores/season.ts
     title: Every season write
@@ -44,8 +41,6 @@ sources:
 | `/seasons/:id/assign` | captain (every write is admin) | `SeasonTeamAssignView` |
 | `/seasons/:id/maps` | admin | `SeasonMapsView` |
 | `/seasons/:id/achievements` | admin | `SeasonAchievementsView` |
-| `/report` | public | `SeasonReportView` |
-| `/report/:id` | public | `SeasonReportView` |
 
 `:id` is the season slug; a bare id still resolves.
 
@@ -66,7 +61,7 @@ A GNL season is the GNL-kind event of the GNL league. It keeps these pages of it
 
 An edit reads the season with `GET /events/{id}` for its stages, its rounds and its pool, the season's teams with their rosters and captains (`GET /events/{id}/teams`), and its signups, because the list read carries none of them. The save writes, in this order: the season (`POST /events` or `PUT /events/{id}`), then `PUT /events/{id}/stages` when a largest MMR difference was typed, the teams added, then per ticked team whose crew changed its captains (`PUT /events/{id}/teams/{team}/captains`, the whole list) and the players added and removed, then the teams removed, each drawn matchup in round order (`POST /matches`), the maps added, each round whose map changed, and last the maps removed, because a round map must be in the pool. The stage write replaces every field of every stage, so each stage goes back as it was read. A write that fails stops the save and says which step failed; what was written stays, and the next press writes only what is still missing, so a new season is never created twice.
 
-**One season (`/seasons/:id`).** The event header with the round and team counts. One tab per round; the page opens on the current round. Each match of the round is a card with the two teams, the scores and the round dates, and the fixed map of the round when the season's rules use one; a round with no fixed map warns until the match is played. A member reads the matches and the teams of the season. An admin gets the links to the season maps and the achievements, "Add match" (two teams in the selected round), and the edit and delete of a match. The teams panel shows each team's points; an admin adds teams to the season, and a captain or an admin opens the draft. Opened with `?unscored=1`, the page leads with the series that carry no result, grouped by round.
+**One season (`/seasons/:id`).** The event header with the round and team counts, and a season pick that lists every GNL season, newest first, and opens the one picked, so a captain reaches the older seasons from the current one. One tab per round; the page opens on the current round. Each match of the round is a card with the two teams, the scores and the round dates, and the fixed map of the round when the season's rules use one; a round with no fixed map warns until the match is played. A member reads the matches and the teams of the season. An admin gets the links to the season maps and the achievements, "Add match" (two teams in the selected round), and the edit and delete of a match. The teams panel shows each team's points; an admin adds teams to the season, and a captain or an admin opens the draft. Opened with `?unscored=1`, the page leads with the series that carry no result, grouped by round.
 
 **The draft (`/seasons/:id/assign`).** The signups no team holds yet, in pick order: MMR of the signup race ascending, ties by name, and no excluded player. One pick set is one player for each team, and the one table pages by set: it opens on the first page, the next pick set, and the pager steps through the later sets. The name, race and MMR filters narrow the whole table, so while one is set the pages are no longer the sets. The table goes back to the first page after an assign and when a filter changes. An admin's "Sync W3C" and "Add signup" sit at the end of the search row, with the sync progress bar beside them while a sync runs. A row shows the name with a warning when W3Champions holds no stats or under twenty games for the signup race, the MMR and when it was read, and the race as an icon. A captain reads it. An admin gives a player a draft MMR, which the order reads in place of the live MMR, so the player moves to an earlier or a later set; the row shows the live MMR struck through beside it, with a reset. A draft MMR lives in the admin's page only and a reload drops it. The race is changed in the edit dialog. An admin also takes a player out of the pick list and back, edits the player, removes the signup, adds a signup, and syncs every signup from W3Champions. Each row picks its team with one chip per team, the logo and the short name; a second click takes the pick back, and a chip counts the other pending picks its team holds in the next set. "Assign n players to teams" writes the picks. Taking a player out of the pick list, removing their signup, or setting or resetting their draft MMR clears the team ticked for them. Each team card lists its players, and its head gives the player count and the average live MMR of their signup races, a player with no MMR left out, so the gaps between teams show while the admins balance them. An admin removes a player from a card, or moves them to another team by dragging them onto that team's card; a dragged player rings the card under the pointer, and their own card takes no drop. A move removes the player from the old team and then adds them to the new one, so a failed add never leaves them on two teams: the page puts them back on the old team and names the failure, and a player it cannot put back waits in the available list. After an assign or a remove the rosters change on the page at once, and the page then reads the teams again with `?t=`, so no cached copy answers. A player name on this page opens the side panel, so the picks are not lost.
 
@@ -74,7 +69,7 @@ An edit reads the season with `GET /events/{id}` for its stages, its rounds and 
 
 **Achievements (`/seasons/:id/achievements`).** The player rules and the team rules of the season, each with its points and its parameters. Rules come from the catalogue, or the whole list is imported from the catalogue defaults or from another season, then edited. The list saves as a whole.
 
-**The season report (`/report`, `/report/:id`).** Public. A season picker, a print button, and the report: the hero with the season's headline numbers, then the season's standings and statistics sections, each one collapsible. It is the page the public site embeds.
+**Standings.** The app has no standings page. The public website shows the standings of every season, and a player reads them there.
 
 # Writes
 

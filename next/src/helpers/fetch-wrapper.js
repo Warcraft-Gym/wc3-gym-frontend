@@ -100,8 +100,8 @@ function request(method) {
 
 // no bearer on a non-admin GET: the edge caches these open reads by class (live, running, settled), never a request with one
 // entrants keeps the bearer, so a member who signs up sees their own name at once
-// bare series and series?match_id= keep the bearer: report and match pages re-read them right after a write
-const EDGE_CACHED = /(\/events\/\d+\/ladder(\/players)?|\/events\/\d+\/series\?(player_id=\d+|is_fantasy_match=true)|\/events\/\d+\/achievements|\/events\/\d+\/stages\/\d+\/(series|standings)|\/home\/series|\/koth\/(nights\/\d+\/)?board|\/leagues|\/maps|\/config\/w3c|\/config\/settings\/\w+|\/users\/\d+\/ladder(\?season_id=\d+)?|\/users\/\d+\/history|\/(events|leagues)\/\d+\/teams(\/basic|\/\d+)?)$/;
+// bare series and series?match_id= keep the bearer: the match page and the season views re-read them right after a write
+const EDGE_CACHED = /(\/events\/\d+\/ladder(\/players)?|\/events\/\d+\/series\?(player_id=\d+|is_fantasy_match=true)|\/events\/\d+\/achievements|\/events\/\d+\/stages\/\d+\/(series|standings)|\/home\/series(\/upcoming)?|\/koth\/(nights\/\d+\/)?board|\/leagues|\/maps|\/config\/w3c|\/config\/settings\/\w+|\/users\/\d+\/ladder(\?season_id=\d+)?|\/users\/\d+\/history|\/(events|leagues)\/\d+\/teams(\/basic|\/\d+)?)$/;
 // Career pages use query parameters for paging and sorting; a cache-busting query stays authenticated.
 const CAREER_EDGE_CACHED = /\/stats\/career(?:\/\d+)?(?:\?(?:limit|offset|search|sort|order)=[^&]*(?:&(?:limit|offset|search|sort|order)=[^&]*)*)?$/;
 // The events list takes league_id, kind, limit and offset; a cache-busting `t` or an admin-only `published` filter stays authenticated.

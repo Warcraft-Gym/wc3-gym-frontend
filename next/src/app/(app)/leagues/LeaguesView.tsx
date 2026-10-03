@@ -20,8 +20,8 @@ type Row = Record<string, any>;
 type Item = { value: string; title: string };
 
 const phoneCell = "hidden min-[960px]:table-cell";
-// GNL and KOTH open the home page of their own menu; other leagues open the league page
-const HOME: Record<string, string> = { gnl: "/report", koth: "/koth/dashboard" };
+// KOTH opens its dashboard; every other league opens the league page
+const HOME: Record<string, string> = { koth: "/koth/dashboard" };
 const leagueHref = (league: Row) => HOME[league.kind] ?? `/leagues/${league.id}`;
 const blank = () => ({ name: "", short_name: "", kind: "custom", entrant_kind: "solo", page_url: "" });
 

@@ -71,7 +71,7 @@ test('the season the captain plays reads the round in play and carries every lin
   assert.equal(card.status, 'Round 5 of 8 · 5 to 11 Oct');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Running', 'Signed up', 'Captain · GNLB']);
   assert.deepEqual(card.primary, { title: 'Your series', to: '/player/thanks%2311187', variant: 'elevated' });
-  assert.deepEqual(card.links.map((link) => link.title), ['GNLB', 'Season report', 'Upcoming series', 'Ladder', 'Players', 'My fantasy team', 'Availability']);
+  assert.deepEqual(card.links.map((link) => link.title), ['GNLB', 'Upcoming series', 'Ladder', 'Players', 'My fantasy team', 'Availability']);
 });
 
 test('a season the player is not in asks to join and shows the two open reads', () => {
@@ -79,7 +79,7 @@ test('a season the player is not in asks to join and shows the two open reads', 
   assert.equal(card.status, '2 Nov 2026');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Seeded']);
   assert.deepEqual(card.primary, { title: 'Ask to join', to: '/signup?season=gnl-review-season-2', variant: 'outlined' });
-  assert.deepEqual(card.links.map((link) => link.title), ['Season report', 'Players']);
+  assert.deepEqual(card.links.map((link) => link.title), ['Players']);
 });
 
 test('a season with signups open links to the GNL signup form, and the popup takes that row', () => {
@@ -158,7 +158,7 @@ test('an admin without a player row gets cards without the sign-up ask', () => {
   assert.deepEqual(cards[0].chips.map((chip) => chip.title), ['Signups open']);
   assert.ok(!cards[0].primary);
   assert.match(cards[0].note, /cannot sign up/);
-  assert.deepEqual(cards[0].links.map((link) => link.title), ['Season report', 'Players']);
+  assert.deepEqual(cards[0].links.map((link) => link.title), ['Players']);
   assert.deepEqual(joinableEvents(cards), []);  // the popup button reads primary, so such a row stays out
 });
 

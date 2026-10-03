@@ -9,10 +9,11 @@ import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { TeamName } from "@/components/TeamName";
 import { HomePanel, Quiet, ROW, SkeletonRows } from "@/components/home/HomePanel";
 import { seasonAction } from "@/helpers/events.mjs";
-import { captainRow, homeRounds, ownScore, seasonState } from "@/helpers/home-hub.mjs";
+import { homeRounds, ownScore, seasonState, teamMatch } from "@/helpers/home-hub.mjs";
 import { cardStatus, checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { local } from "@/helpers/schedule.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
+import { teamLabel } from "@/helpers/teams.mjs";
 import { viewerZone } from "@/helpers/timezone.mjs";
 import { cn } from "@/lib/utils";
 
@@ -81,16 +82,34 @@ function Availability({ card, saving, onAnswer }: { card: Row; saving: boolean; 
   );
 }
 
-/** The captain's draft of one fixture: how much of it is drafted and the page that drafts it. */
-function DraftPairings({ fixture }: { fixture: Row }) {
-  const row = captainRow(fixture);
+/** The captain's line on a round: how far the fixture's series are, and the one way into the
+ *  match, whatever the round's state. The button names the team the fixture meets. */
+function TeamMatch({ fixture, teamId }: { fixture: Row; teamId: number | null }) {
+  const row = teamMatch(fixture, teamId);
   if (!row) return null;
+  const name = teamLabel(row.opponent);
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 font-normal">
-      <span className="text-sm text-muted-foreground">{row.drafted}</span>
-      <Button size="sm" className="ml-auto" nativeButton={false} render={<Link href={row.to} />}>
-        <Icon name="mdi-account-multiple" />
-        Draft pairings
+    <div className="mt-2 flex items-center gap-2 font-normal">
+      <span className="min-w-0 flex-1 text-sm text-muted-foreground">{row.status}</span>
+      <Button
+        size="sm"
+        variant="outline"
+        className="min-w-0 max-w-[60%] shrink"
+        nativeButton={false}
+        aria-label={name ? `Open the match vs ${name}` : "Open the match"}
+        render={<Link href={row.to} />}
+      >
+        {row.opponent ? (
+          <>
+            <span>vs</span>
+            <TeamName team={row.opponent} plain />
+          </>
+        ) : (
+          <>
+            <Icon name="mdi-sword-cross" />
+            Open match
+          </>
+        )}
       </Button>
     </div>
   );
@@ -98,7 +117,7 @@ function DraftPairings({ fixture }: { fixture: Row }) {
 
 /** The current season on Home, every round of it: when each round runs, and either his series in it
  *  (the opponent and the next step, or the result) or, with none, his answer for it while it takes
- *  one. A captain drafts his team's next fixture on its round. */
+ *  one. A captain reads his team's match on every round, with the way into it, and the season. */
 export function MySeason({
   season,
   entry,
@@ -107,7 +126,7 @@ export function MySeason({
   viewer,
   loading,
   savingRound,
-  fixture,
+  fixtures,
   order,
   onAnswer,
   onSchedule,
@@ -120,7 +139,7 @@ export function MySeason({
   viewer: Viewer;
   loading: boolean;
   savingRound: number | null;
-  fixture: Row | null; // the captain_fixture of the current season: the fixture his team still has to draft
+  fixtures: Row[]; // the captain_matches of the current season: every fixture of the team he captains
   order: number;
   onAnswer: (playday: number, want: boolean) => void;
   onSchedule: (series: Row) => void;
@@ -129,6 +148,9 @@ export function MySeason({
   const state = seasonState(entry);
   const asks = season?.scheduling_enabled !== false;
   const zone: string | null = season?.round_end_zone ?? null;
+  // The seat he holds in this season names the team he captains; each fixture names both teams
+  const seat = viewer.seats?.find((row) => Number(row.season_id) === Number(season?.id)) ?? null;
+  const teamId: number | null = seat ? Number(seat.team_id) : null;
   const cards: Row[] = data
     ? roundCards({
         rounds: data.rounds ?? [],
@@ -140,15 +162,18 @@ export function MySeason({
       } as any)
     : [];
   const { ahead, played } = homeRounds(cards);
-  // The side of the fixture his seat names; the fixture names both teams
-  const seat = viewer.seats?.find((row) => Number(row.season_id) === Number(season?.id));
-  const captainTeam: Row | null = fixture && seat ? ([fixture.team1, fixture.team2].find((team: Row) => team?.id === seat.team_id) ?? null) : null;
-  const standings = season ? <Link href={`/report/${seasonSlug(season)}`} className="text-on-banner underline">Standings</Link> : null;
+  const captainTeam: Row | null = fixtures.flatMap((row) => [row.team1, row.team2]).find((team: Row) => Number(team?.id) === teamId) ?? null;
+  const fixtureOf = (playday: number) => fixtures.find((row) => Number(row.playday) === Number(playday)) ?? null;
+  // a captain reads every match of the season there, and the older seasons through its picker
+  const links = season && seat ? <Link href={`/seasons/${seasonSlug(season)}`} className="text-on-banner underline">Season</Link> : null;
 
   const roundRow = (card: Row) => {
     const series: Row | null = card.series;
     const score = series ? ownScore(series, playerId) : null;
-    const when = card.over ? null : checkinOpensLine(card) || roundEndLine(card.endsAt, zone, viewerZone());
+    // a captain who plays on no roster checks into nothing, so his row reads only when the round ends
+    const opens = state === "not_in" ? "" : checkinOpensLine(card);
+    const when = card.over ? null : opens || roundEndLine(card.endsAt, zone, viewerZone());
+    const fixture = fixtureOf(card.playday);
     const status = cardStatus(card);
     return (
       <div key={card.playday} className={cn(ROW, card.current && "font-medium")}>
@@ -196,13 +221,31 @@ export function MySeason({
         ) : null}
         {/* a round with no series of his stays as its bare line, so he sees he had no game there */}
 
-        {fixture && fixture.playday === card.playday ? <DraftPairings fixture={fixture} /> : null}
+        {fixture ? <TeamMatch fixture={fixture} teamId={teamId} /> : null}
       </div>
     );
   };
 
+  // The rounds still to play, then the rounds that are over; a season whose rounds were not read
+  // still lists its captain's fixtures, one bare row per round
+  const roundList = cards.length ? (
+    <>
+      {ahead.length ? <span className={LABEL}>Rounds to play</span> : null}
+      {ahead.map(roundRow)}
+      {played.length ? <span className={LABEL}>Past rounds</span> : null}
+      {played.map(roundRow)}
+    </>
+  ) : (
+    fixtures.map((row) => (
+      <div key={row.match_id} className={ROW}>
+        <span>Round {row.playday}</span>
+        <TeamMatch fixture={row} teamId={teamId} />
+      </div>
+    ))
+  );
+
   return (
-    <HomePanel icon="mdi-sword-cross" title={season?.name ? `My Season · ${season.name}` : "My Season"} order={order} action={loading ? null : standings}>
+    <HomePanel icon="mdi-sword-cross" title={season?.name ? `My Season · ${season.name}` : "My Season"} order={order} action={loading ? null : links}>
       {loading ? (
         <SkeletonRows rows={3} />
       ) : !season ? (
@@ -218,26 +261,22 @@ export function MySeason({
               ? `You are not signed up for ${season.name} yet. Sign up in the Open signups panel.`
               : `You are not signed up for ${season.name}.`}
           </p>
-          {/* a captain who plays on no roster still drafts his team's fixture here */}
-          {fixture ? (
-            <div className={cn(ROW, "mt-3")}>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {/* a captain who plays on no roster still reads his team's match on every round */}
+          {fixtures.length ? (
+            <>
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                 <span>You captain</span>
-                <TeamName team={captainTeam ?? fixture.team1} seasonKey={season.id} />
-                <span className="text-sm text-muted-foreground">· {captainRow(fixture)?.when}</span>
-              </div>
-              <DraftPairings fixture={fixture} />
-            </div>
+                {captainTeam ? <TeamName team={captainTeam} seasonKey={season.id} /> : <span>your team</span>}
+              </p>
+              {roundList}
+            </>
           ) : null}
         </>
       ) : (
         <>
           {state === "waiting" ? <p className="text-sm">You are signed up. The draft places you in a team before round 1.</p> : null}
-          {ahead.length ? <span className={LABEL}>Rounds to play</span> : null}
-          {ahead.map(roundRow)}
-          {played.length ? <span className={LABEL}>Past rounds</span> : null}
-          {played.map(roundRow)}
-          {!cards.length && state === "playing" ? <p className="text-sm">The rounds of {season.name} are not set yet.</p> : null}
+          {roundList}
+          {!cards.length && !fixtures.length && state === "playing" ? <p className="text-sm">The rounds of {season.name} are not set yet.</p> : null}
           {asks ? (
             <Quiet>
               Busy on certain days every week? Set your <Link href="/availability">blocked times</Link>.

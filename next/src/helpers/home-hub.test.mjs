@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { PANEL_ORDER, captainRow, homeRounds, openSignups, ownScore, ownSeries, rowContext, seasonFixtures, seasonState, seriesWhen } from './home-hub.mjs';
+import { PANEL_ORDER, captainRow, homeRounds, openSignups, ownScore, ownSeries, rowContext, seasonFixtures, seasonState, seriesWhen, teamMatch } from './home-hub.mjs';
 
 test('an open signup comes first, then the games, the upcoming series, the upcoming events, fantasy and the stats', () => {
   assert.deepEqual(PANEL_ORDER, { signup: 1, games: 2, next: 3, upcoming: 4, fantasy: 5, stats: 6 });
@@ -95,15 +95,37 @@ test('the rounds to play come first in order, the rounds played after, the most 
   assert.deepEqual(played.map((card) => card.playday), [2, 1]);
 });
 
-test("the current season's draft goes to My Season and every other event's to Upcoming Series", () => {
+test("the current season's fixtures go to My Season and every other event's draft to Upcoming Series", () => {
+  const matches = [{ match_id: 7, playday: 1 }, { match_id: 1, playday: 2 }];
   const events = [
-    { id: 19, name: 'Season 19', captain_fixture: { match_id: 1, playday: 2 } },
-    { id: 40, name: 'Cup', captain_fixture: { match_id: 2, playday: 1 } },
-    { id: 41, name: 'Open', captain_fixture: null },
+    { id: 19, name: 'Season 19', captain_fixture: { match_id: 1, playday: 2 }, captain_matches: matches },
+    { id: 40, name: 'Cup', captain_fixture: { match_id: 2, playday: 1 }, captain_matches: [] },
+    { id: 41, name: 'Open', captain_fixture: null, captain_matches: [] },
   ];
-  assert.deepEqual(seasonFixtures(events, 19), { own: { match_id: 1, playday: 2 }, others: [{ match_id: 2, playday: 1, event: 'Cup' }] });
+  assert.deepEqual(seasonFixtures(events, 19), { matches, others: [{ match_id: 2, playday: 1, event: 'Cup' }] });
   // a season id read as text still finds its row
-  assert.equal(seasonFixtures(events, '19').own.match_id, 1);
+  assert.deepEqual(seasonFixtures(events, '19').matches, matches);
   assert.deepEqual(seasonFixtures(events, null).others.map((row) => row.event), ['Season 19', 'Cup']);
-  assert.deepEqual(seasonFixtures(undefined, 19), { own: null, others: [] });
+  assert.deepEqual(seasonFixtures(undefined, 19), { matches: [], others: [] });
+});
+
+test('a fully published season round keeps its fixture on Home', () => {
+  // the round is published, so the draft row has walked on; the list still holds it
+  const events = [{ id: 19, captain_fixture: null, captain_matches: [{ match_id: 7, playday: 1, published: 4 }] }];
+  assert.deepEqual(seasonFixtures(events, 19).matches.map((row) => row.match_id), [7]);
+  // a row from before the list falls back to the one fixture still to draft
+  assert.deepEqual(seasonFixtures([{ id: 19, captain_fixture: { match_id: 8 } }], 19).matches, [{ match_id: 8 }]);
+  assert.deepEqual(seasonFixtures([{ id: 19, captain_fixture: null }], 19).matches, []);
+});
+
+test("a team match names the other team, how far its series are, and the match page", () => {
+  const fixture = { match_id: 31, team1: { id: 4 }, team2: { id: 9 }, series_per_round: 4, published: 0, drafted: 0, played: 0 };
+  assert.deepEqual(teamMatch(fixture, 4), { opponent: { id: 9 }, status: 'No series published yet', to: '/match/31' });
+  assert.equal(teamMatch(fixture, 9).opponent.id, 4);
+  assert.equal(teamMatch(fixture, null).opponent, null);
+  assert.equal(teamMatch({ ...fixture, drafted: 3 }, 4).status, 'No series published yet · 3 in draft');
+  assert.equal(teamMatch({ ...fixture, published: 2, drafted: 1 }, 4).status, '2 of 4 published · 1 in draft · 0 played');
+  assert.equal(teamMatch({ ...fixture, published: 4, played: 1 }, 4).status, '4 of 4 published · 1 played');
+  assert.equal(teamMatch({ ...fixture, published: 4, played: 4 }, 4).status, '4 of 4 published · all played');
+  assert.equal(teamMatch(null, 4), null);
 });

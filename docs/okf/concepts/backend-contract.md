@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T16:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -84,7 +84,7 @@ Requests on load, by surface. The first column links the page concept of each su
 | [The schedule dialog](../pages/fixtures-and-series.md) | 1: the pair's free hours, `GET /player-series/{id}/free-time` | read once, when the dialog opens |
 | [The series head to head](../pages/fixtures-and-series.md) | 1: the meetings of the pair, for a series of two players and a signed-in reader | the meetings open under it with no second read |
 | [The team page roster strip](../pages/teams.md) | 0 extra | reuses the event's series read that the rounds table already made |
-| [Upcoming series on the season report](../pages/fixtures-and-series.md) | 0 extra | reuses the season's series read |
+| [The upcoming list](../pages/fixtures-and-series.md) | 1: `GET /home/series/upcoming` | open and edge cached for two minutes, so it goes without a bearer; a claim shows on its row at once and in the list after the cache turns |
 
 # What the app never does
 

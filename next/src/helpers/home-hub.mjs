@@ -70,14 +70,32 @@ export const ownScore = (series, playerId = null) => {
   return { text, won: my > theirs, lost: my < theirs, label: `${word} ${text}` };
 };
 
-/** The fixtures a captain still has to draft, split by where Home offers them: the current season's
- *  on its round in My Season, every other event's in Upcoming Series. Each other one names its event.
+/** A captain's fixtures, split by where Home offers them: every fixture of his team in the current
+ *  season goes on its round in My Season, and the next fixture to draft of every other event goes
+ *  in Upcoming Series, naming its event. A backend that answers no list yet gives the one fixture.
  *  @param {any[]} [events] the GET /me/events rows @param {number|null} [seasonId] the current season */
 export const seasonFixtures = (events = [], seasonId = null) => {
-  const own = events.find((row) => row.captain_fixture && seasonId != null && Number(row.id) === Number(seasonId));
+  const own = seasonId == null ? null : (events.find((row) => Number(row.id) === Number(seasonId)) ?? null);
   return {
-    own: own?.captain_fixture ?? null,
+    matches: own?.captain_matches ?? (own?.captain_fixture ? [own.captain_fixture] : []),
     others: events.filter((row) => row.captain_fixture && row !== own).map((row) => ({ ...row.captain_fixture, event: row.name })),
+  };
+};
+
+/** One round's fixture of the captain's team as My Season shows it: the team it meets, how far its
+ *  series are, and the match page, which opens on the plan while the round has places left.
+ *  @param {any} fixture a captain_matches row @param {number|null} [teamId] the team his seat names */
+export const teamMatch = (fixture, teamId = null) => {
+  if (!fixture) return null;
+  const { published = 0, drafted = 0, played = 0, series_per_round: places } = fixture;
+  const parts = [published ? `${published} of ${places} published` : 'No series published yet'];
+  if (drafted) parts.push(`${drafted} in draft`);
+  if (published) parts.push(played >= published ? 'all played' : `${played} played`);
+  const side = (team) => teamId != null && Number(team?.id) === Number(teamId);
+  return {
+    opponent: side(fixture.team1) ? fixture.team2 : side(fixture.team2) ? fixture.team1 : null,
+    status: parts.join(' · '),
+    to: `/match/${fixture.match_id}`,
   };
 };
 

@@ -9,4 +9,4 @@
 * [Players and stats](players-and-stats.md) - The players list with the admin's tag controls, one player's page with his tags and the owner's actions, the season ladder and the Random stats helper.
 * [Site admin](site-admin.md) - The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
 * [Teams](teams.md) - The teams list, one team across its events, the team in one season with its roster and captains, and the captain's check-in.
-* [The GNL season](gnl-season.md) - The seasons list, one season with its rounds and matches, the draft, the season maps, the achievement rules and the public season report.
+* [The GNL season](gnl-season.md) - The seasons list, one season with its rounds and matches, the draft, the season maps and the achievement rules.

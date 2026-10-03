@@ -10,7 +10,7 @@ const careerEdgeCached = new RegExp(source.match(/^const CAREER_EDGE_CACHED = \/
 const eventsListEdgeCached = new RegExp(source.match(/^const EVENTS_LIST_EDGE_CACHED = \/(.+)\/;$/m)[1]);
 
 test('the open reads the edge caches send no bearer', () => {
-  for (const url of ['/api/events/12/ladder', '/api/home/series', '/api/koth/board', '/api/koth/nights/10/board']) {
+  for (const url of ['/api/events/12/ladder', '/api/home/series', '/api/home/series/upcoming', '/api/koth/board', '/api/koth/nights/10/board']) {
     assert.equal(edgeCached.test(url), true, url);
   }
 });

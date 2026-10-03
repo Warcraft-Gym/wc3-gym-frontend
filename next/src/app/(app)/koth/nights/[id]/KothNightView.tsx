@@ -433,9 +433,9 @@ export function KothNightView({ id }: { id: string }) {
           {board?.entrant_count ?? 0} signed up
         </Badge>
         {board && !board.closed ? (
-          <Button size="sm" variant="outline" disabled={refreshing || busy} onClick={refresh}>
-            <Icon name={refreshing ? "mdi-loading mdi-spin" : "mdi-refresh"} />
-            Refresh
+          // the arrow says what it does, so the control is a gold icon, as on the public page
+          <Button size="icon-sm" variant="ghost" className="text-primary-text" title="Refresh" aria-label="Refresh" disabled={refreshing || busy} onClick={refresh}>
+            <Icon name={refreshing ? "mdi-loading mdi-spin" : "mdi-refresh"} size={20} />
           </Button>
         ) : null}
         {event && !board?.closed ? (

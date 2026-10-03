@@ -136,9 +136,9 @@ export function KothNightBoard({
             <Icon name="mdi-account-multiple" />
             {board.entrant_count} signed up
           </Badge>
-          <Button size="sm" variant="outline" disabled={refreshing} onClick={refresh}>
-            <Icon name={refreshing ? "mdi-loading mdi-spin" : "mdi-refresh"} />
-            Refresh
+          {/* the arrow says what it does, so the control is a gold icon, not a labelled button */}
+          <Button size="icon-sm" variant="ghost" className="text-primary-text" title="Refresh" aria-label="Refresh" disabled={refreshing} onClick={refresh}>
+            <Icon name={refreshing ? "mdi-loading mdi-spin" : "mdi-refresh"} size={20} />
           </Button>
           {children}
         </div>

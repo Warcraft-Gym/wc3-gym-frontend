@@ -158,6 +158,10 @@ const store = {
   async restoreKothEntrant(night_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/restore`);
   },
+  // One race row to another bracket by hand; it stands last there
+  async moveKothEntrant(night_id: number, entrant_id: number, division_id: number) {
+    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/bracket`, { division_id });
+  },
   // Moves the top entrants of a finished stage into the next stage
   async advanceStage(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/advance`);

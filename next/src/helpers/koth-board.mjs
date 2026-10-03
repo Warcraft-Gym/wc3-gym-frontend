@@ -70,16 +70,25 @@ export const seatRow = (seat, picks = {}) => {
   return rows.find((row) => row.entrant_id === wanted) ?? rows[0] ?? null;
 };
 
+// The players who hold a place on the card: the king and every seat of the line
+const seatedUsers = (bracket) => new Set([bracket?.king, ...(bracket?.queue ?? [])].filter(Boolean).map((seat) => seat.user_id));
+
+// The races a seated player left tonight in this bracket; his seat shows them
+export const seatLeft = (bracket, seat) => (seat?.user_id == null ? [] : (bracket?.left ?? []).filter((row) => row.user_id === seat.user_id));
+
 /**
- * The players who left, one seat each: a player who left on two races reads once, holding both
- * rows. A row the board names no user for stands on its own, because nothing folds it.
+ * The players who left and hold no place on the card, one seat each: a player who left on two
+ * races reads once, holding both rows. A row the board names no user for stands on its own,
+ * because nothing folds it. A player still seated here shows his left races in his seat.
  *
  * @param {Object} bracket - One bracket of the board
  * @returns {Array} - One seat per player, each with the race rows he left on
  */
 export function leftSeats(bracket) {
+  const seated = seatedUsers(bracket);
   const seats = new Map();
   for (const row of bracket?.left ?? []) {
+    if (row.user_id != null && seated.has(row.user_id)) continue;
     const key = row.user_id == null ? `row:${row.entrant_id}` : `user:${row.user_id}`;
     const seat = seats.get(key);
     // a player on two races is one player, so the folded seat names neither race nor rating

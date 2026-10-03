@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
-  orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatRow, skippedSeat, startButton,
+  orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, skippedSeat, startButton,
   throneWord,
 } from './koth-board.mjs';
 
@@ -195,6 +195,33 @@ test('a player who left on two races reads one row, holding both of them', () =>
   assert.equal(seats[1].race, 'HU');
   assert.deepEqual(seats[2].rows.map((row) => row.entrant_id), [24]);
   assert.deepEqual(leftSeats(null), []);
+});
+
+test('a race that left while the player still stands here shows in his seat, not in the list', () => {
+  const bracket = {
+    king: seat(1, 'Duskrell', [row(10, 'HU')]),
+    queue: [seat(3, 'Kaldris', [row(21, 'OC')]), seat(4, 'Sablefen', [row(23, 'HU')])],
+    left: [
+      { entrant_id: 22, user_id: 3, name: 'Kaldris', race: 'UD', mmr: 1188 },
+      { entrant_id: 11, user_id: 1, name: 'Duskrell', race: 'NE', mmr: 1300 },
+      { entrant_id: 25, user_id: 5, name: 'Fennow', race: 'OC', mmr: 1250 },
+      { entrant_id: 26, user_id: 5, name: 'Fennow', race: 'HU', mmr: 1240 },
+    ],
+  };
+  assert.deepEqual(leftSeats(bracket).map((one) => one.name), ['Fennow']);
+  assert.deepEqual(leftSeats(bracket)[0].rows.map((one) => one.race), ['OC', 'HU']);
+  assert.deepEqual(seatLeft(bracket, bracket.queue[0]).map((one) => one.entrant_id), [22]);
+  assert.deepEqual(seatLeft(bracket, bracket.king).map((one) => one.entrant_id), [11]);
+  assert.deepEqual(seatLeft(bracket, bracket.queue[1]), []);
+  assert.deepEqual(seatLeft(bracket, null), []);
+});
+
+test('a player seated in one bracket still reads in the list of another bracket he left', () => {
+  const one = { queue: [seat(3, 'Kaldris', [row(21, 'OC')])], left: [] };
+  const two = { queue: [], left: [{ entrant_id: 22, user_id: 3, name: 'Kaldris', race: 'UD', mmr: 1188 }] };
+  assert.deepEqual(leftSeats(one), []);
+  assert.deepEqual(leftSeats(two).map((one) => one.rows.map((r) => r.entrant_id)), [[22]]);
+  assert.deepEqual(seatLeft(one, one.queue[0]), []);
 });
 
 

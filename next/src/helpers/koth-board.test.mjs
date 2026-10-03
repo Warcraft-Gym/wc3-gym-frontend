@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, fixChanges, heirOf, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -93,8 +93,8 @@ test('a reader reads his own place in the line, and nothing in a bracket he is n
 });
 
 test('a played row says what the throne did', () => {
-  assert.equal(throneWord({ throne: 'moved' }), 'The throne moved');
-  assert.equal(throneWord({ throne: 'held' }), 'The throne was held');
+  assert.equal(throneWord({ throne: 'moved' }), 'Took the crown');
+  assert.equal(throneWord({ throne: 'held' }), 'Defended the crown');
   assert.equal(throneWord({ throne: 'none' }), null);
 });
 
@@ -368,4 +368,27 @@ test("heirOf offers the newest winner an empty throne, while he stands in line",
   assert.equal(heirOf({ ...bracket, king: { user_id: 1 } }), null);
   assert.equal(heirOf({ ...bracket, queue: [{ rows: [{ entrant_id: 40 }] }] }), null);
   assert.equal(heirOf({ ...bracket, played: [] }), null);
+});
+
+test("resultSides lists every race row of the king and the line once, marking a player on two races", () => {
+  const bracket = {
+    king: { user_id: 1, name: "EAShibby", rows: [{ entrant_id: 10, race: "OC" }, { entrant_id: 11, race: "RDM" }] },
+    queue: [{ user_id: 2, name: "thanks", rows: [{ entrant_id: 20, race: "NE" }] }],
+  };
+  assert.deepEqual(resultSides(bracket).map((row) => [row.entrant_id, row.name, row.several]), [
+    [10, "EAShibby", true],
+    [11, "EAShibby", true],
+    [20, "thanks", false],
+  ]);
+  assert.deepEqual(resultSides(null), []);
+});
+
+test("fixChanges names the place a deposed king takes back in the queue", () => {
+  const king = fixSeat(1, "ThePeasant"), happy = fixSeat(2, "Happy"), moon = fixSeat(3, "Moon"), elder = fixSeat(4, "Elder");
+  const before = fixBoard(king, [happy, moon, elder], []);
+  const after = fixBoard(happy, [moon, king, elder], [result(9, "Happy", "ThePeasant", "moved")]);
+  assert.deepEqual(fixChanges(before, after, 7, -1).map((line) => line.text), [
+    "The throne passes from ThePeasant to Happy.",
+    "ThePeasant goes back in the queue at place 2.",
+  ]);
 });

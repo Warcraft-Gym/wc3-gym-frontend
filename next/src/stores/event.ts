@@ -137,6 +137,10 @@ const store = {
   async clearKothSeries(night_id: number) {
     return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series`);
   },
+  // A series already played, winner beat loser, as the newest result; nobody moves in the line
+  async addKothResult(night_id: number, winner_id: number, loser_id: number, preview = false) {
+    return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/results${preview ? "?preview=true" : ""}`, { winner_id, loser_id });
+  },
   // Take a series off the table or remove a played one; a preview answers the board it would give and saves nothing
   async cancelKothSeries(night_id: number, series_id: number, preview = false) {
     return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series/${series_id}${preview ? "?preview=true" : ""}`);

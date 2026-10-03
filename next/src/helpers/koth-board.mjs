@@ -160,7 +160,7 @@ export function placeInQueue(bracket, userId) {
 
 // What a played row says about the crown. The bracket's king is the truth; this is the hint.
 export const throneWord = (played) =>
-  played?.throne === 'moved' ? 'The throne moved' : played?.throne === 'held' ? 'The throne was held' : null;
+  played?.throne === 'moved' ? 'Took the crown' : played?.throne === 'held' ? 'Defended the crown' : null;
 
 // The whole line as the queue write names it: every race row of every seat, in seat order
 export const queueIds = (queue = []) => queue.flatMap((seat) => (seat.rows ?? []).map((row) => row.entrant_id));
@@ -284,11 +284,17 @@ export function fixChanges(before, after, divisionId, seriesId) {
       now: CROWN_VERB[row.throne],
     });
   }
+  // A king who loses the throne goes back in line where his seat stood, and a beaten player to the end
   const queue = (bracket) => (bracket.queue ?? []).map((seat) => seat.user_id);
-  const last = queue(now).at(-1);
-  if (last != null && queue(was).at(-1) !== last) {
-    lines.push({ text: `${now.queue.at(-1).name} goes to the end of the queue.` });
-  }
+  const [lineWas, lineNow] = [queue(was), queue(now)];
+  (now.queue ?? []).forEach((seat, index) => {
+    const last = index === lineNow.length - 1;
+    if (!lineWas.includes(seat.user_id)) {
+      lines.push({ text: last ? `${seat.name} goes to the end of the queue.` : `${seat.name} goes back in the queue at place ${index + 1}.` });
+    } else if (last && lineWas.at(-1) !== seat.user_id) {
+      lines.push({ text: `${seat.name} goes to the end of the queue.` });
+    }
+  });
   const [king, crowned] = [was.king, now.king];
   if (king?.user_id !== crowned?.user_id) {
     const text = !crowned ? `The throne is left empty.` : king ? `The throne passes from ${king.name} to ${crowned.name}.` : `${crowned.name} takes the empty throne.`;
@@ -306,4 +312,13 @@ export function heirOf(bracket) {
   const winner = latest?.winner;
   const standing = (bracket?.queue ?? []).some((seat) => (seat.rows ?? []).some((row) => row.entrant_id === winner?.entrant_id));
   return standing ? winner : null;
+}
+
+// Every race row a bracket holds tonight, for "Add result": the king, the line and the rows that left,
+// since a player who left played before he went. `several` marks a player on more than one race here.
+export function resultSides(bracket) {
+  const seats = [bracket?.king, ...(bracket?.queue ?? []), ...leftSeats(bracket ?? {})].filter(Boolean);
+  const rows = seats.flatMap((seat) => (seat.rows ?? []).map((row) => ({ entrant_id: row.entrant_id, user_id: seat.user_id, name: seat.name, race: row.race })));
+  const unique = [...new Map(rows.map((row) => [row.entrant_id, row])).values()];
+  return unique.map((row) => ({ ...row, several: unique.filter((one) => one.user_id === row.user_id).length > 1 }));
 }

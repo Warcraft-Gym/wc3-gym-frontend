@@ -297,6 +297,7 @@ export function KothNightView({ id }: { id: string }) {
       ),
     onWin: (bracket, side) => run(() => store.setKothWinner(nightId, bracket.open_series.series_id, side)),
     onCancelSeries: (bracket) => run(() => store.cancelKothSeries(nightId, bracket.open_series.series_id)),
+    onCrown: (bracket, entrantId) => run(() => store.setKothCrown(nightId, bracket.division_id, entrantId)),
     onStepDown: (bracket) => {
       setPassTo(null);
       setStepDown(bracket);

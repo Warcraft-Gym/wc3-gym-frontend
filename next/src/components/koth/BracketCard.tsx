@@ -12,7 +12,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { noStatsWarning } from "@/helpers/games-rule.mjs";
-import { bracketLabel, hasSeries, leftSeats, movedQueue, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
+import { bracketLabel, hasSeries, heirOf, leftSeats, movedQueue, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,7 @@ export type BracketAdmin = {
   onWin: (bracket: Row, side: 1 | 2) => void;
   onCancelSeries: (bracket: Row) => void;
   onStepDown: (bracket: Row) => void;
+  onCrown: (bracket: Row, entrantId: number) => void; // an empty throne goes to one race row
   onMove: (bracket: Row, from: number, to: number) => void;
   onMoveBracket: (bracket: Row, seat: Row, entrantId: number, divisionId: number) => void; // one race row to another bracket
   onRemove: (entrantIds: number[]) => void; // one race row, or every race the player holds here
@@ -201,12 +202,21 @@ export function KingBlock({ bracket, brackets, admin }: { bracket: Row; brackets
   const king: Row | null = bracket.king;
   const defender: Row | null = bracket.defender;
   const row = king ? seatRow(king, admin?.picks ?? {}) : null;
+  // an empty throne after a fix or a step down goes back to the newest winner in one tap
+  const heir: Row | null = admin ? heirOf(bracket) : null;
+  const crownHeir = heir ? (
+    <Button variant="outline" size="sm" className="mt-2 text-primary-text" disabled={admin!.busy} onClick={() => admin!.onCrown(bracket, heir.entrant_id)}>
+      <Icon name="mdi-crown" />
+      Crown {heir.name}
+    </Button>
+  ) : null;
   return (
     <div className="min-h-[64px] p-4">
       <div className="flex items-start gap-3">
         <Icon name={king ? "mdi-crown" : "mdi-crown-outline"} size={26} className={king ? "text-primary-text" : "text-muted-foreground"} />
         {king ? (
-          <div className="min-w-0 flex-1">
+          // a long name truncates, so it never runs under Step down or past the card
+          <div className="min-w-0 flex-1 overflow-hidden [&_.name]:truncate [&_.player-name]:max-w-full">
             <BoardPlayer
               row={{ user_id: king.user_id, name: king.name, country: king.country, mmr: row?.mmr ?? null }}
               race={row?.race ?? null}
@@ -215,12 +225,21 @@ export function KingBlock({ bracket, brackets, admin }: { bracket: Row; brackets
             <div className="text-xs text-muted-foreground">Holds the throne</div>
           </div>
         ) : defender ? (
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-hidden [&_.name]:truncate [&_.player-name]:max-w-full">
             <BoardPlayer row={defender} />
             <div className="text-xs text-muted-foreground">King from last event, defending</div>
+            {crownHeir}
           </div>
         ) : (
-          <div className="flex-1 text-muted-foreground">No king yet</div>
+          <div className="flex-1">
+            <div className="text-muted-foreground">No king yet</div>
+            {crownHeir ? (
+              <>
+                {crownHeir}
+                <div className="mt-1 text-xs text-muted-foreground">Won the newest series tonight</div>
+              </>
+            ) : null}
+          </div>
         )}
         {admin && king ? (
           <div className="flex shrink-0 flex-col items-end gap-1">
@@ -301,7 +320,8 @@ export function OpenSeries({ bracket, admin, you }: { bracket: Row; admin?: Brac
   if (!start) return null;
   return (
     <div className="mx-4 mb-3">
-      <Button className="w-full" disabled={admin.busy} onClick={() => admin.onStart(bracket, start.pair)}>
+      {/* two long names wrap to a second line instead of running out of the button */}
+      <Button className="h-auto min-h-9 w-full whitespace-normal py-1.5 text-center" disabled={admin.busy} onClick={() => admin.onStart(bracket, start.pair)}>
         <Icon name="mdi-play" />
         {start.label}
       </Button>
@@ -389,7 +409,8 @@ export function QueueRow({
                 player={{ id: seat.user_id, name: seat.name, country: seat.country }}
                 race={single ? row?.race || undefined : undefined}
                 mmr={single ? (row?.mmr ?? false) : false}
-                warning={mark}
+                // a row with no mark keeps no empty slot for one, so a narrow card leaves the name its room
+                warning={mark ?? undefined}
                 plain={live}
                 onClick={live ? undefined : () => admin.onPickSeat(seat)}
               >
@@ -411,10 +432,10 @@ export function QueueRow({
             {single ? <MoveTo bracket={bracket} brackets={brackets} seat={seat} row={row} admin={admin} who={seat.name} compact /> : null}
             {/* up and down stack in one narrow column, the way a phone or a keyboard moves a row */}
             <span className="flex flex-col">
-              <Button variant="ghost" size="icon-xs" className="h-3.5" disabled={at === 0} aria-label={`Move ${seat.name} up`} onClick={() => admin.onMove(bracket, at, at - 1)}>
+              <Button variant="ghost" size="icon-xs" className="h-3.5 pointer-coarse:h-6" disabled={at === 0} aria-label={`Move ${seat.name} up`} onClick={() => admin.onMove(bracket, at, at - 1)}>
                 <Icon name="mdi-chevron-up" />
               </Button>
-              <Button variant="ghost" size="icon-xs" className="h-3.5" disabled={at === queue.length - 1} aria-label={`Move ${seat.name} down`} onClick={() => admin.onMove(bracket, at, at + 1)}>
+              <Button variant="ghost" size="icon-xs" className="h-3.5 pointer-coarse:h-6" disabled={at === queue.length - 1} aria-label={`Move ${seat.name} down`} onClick={() => admin.onMove(bracket, at, at + 1)}>
                 <Icon name="mdi-chevron-down" />
               </Button>
             </span>

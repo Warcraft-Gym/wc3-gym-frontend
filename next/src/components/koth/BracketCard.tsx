@@ -12,7 +12,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { noStatsWarning } from "@/helpers/games-rule.mjs";
-import { bracketLabel, leftSeats, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
+import { bracketLabel, hasSeries, leftSeats, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { cn } from "@/lib/utils";
 
@@ -36,11 +36,12 @@ export type BracketAdmin = {
   onMoveBracket: (bracket: Row, seat: Row, entrantId: number, divisionId: number) => void; // one race row to another bracket
   onRemove: (entrantIds: number[]) => void; // one race row, or every race the player holds here
   onRestore: (entrantIds: number[]) => void; // one race row, or every race the player left on
+  onErase: (name: string, rows: Row[]) => void; // takes rows that left off the record of the night, after a confirm
   onChangeWinner: (played: Row) => void;
   onAddReplay: (played: Row) => void;
 };
 
-const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
+export const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
 
 /** "Move to": the other brackets of the night, by name, for one race row. */
 function MoveTo({ bracket, brackets, seat, row, admin, who }: { bracket: Row; brackets: Row[]; seat: Row; row: Row | null; admin: BracketAdmin; who: string }) {
@@ -177,6 +178,7 @@ function RaceRows({ seat, bracket, brackets, admin, removable }: { seat: Row; br
               Put back
             </Button>
           ) : null}
+          {admin ? <EraseButton name={seat.name} rows={[row]} label={`${seat.name}'s ${raceName(row.race)}`} brackets={brackets} admin={admin} size="icon-xs" /> : null}
         </div>
       ))}
     </div>
@@ -422,9 +424,24 @@ export function QueueRow({
   );
 }
 
+/** The quiet second step after a leave: deletes the signup of rows that left, after a confirm.
+ *  A row that is a side of a series tonight stays on the record, so it draws an empty slot that
+ *  keeps every "Put back" of the list in one column. */
+function EraseButton({ name, rows, label, brackets, admin, size }: { name: string; rows: Row[]; label: string; brackets: Row[]; admin: BracketAdmin; size: "icon-xs" | "icon-sm" }) {
+  if (rows.some((row: Row) => hasSeries({ brackets }, row.entrant_id))) return <span aria-hidden="true" className={cn("shrink-0", size === "icon-xs" ? "size-6" : "size-7")} />;
+  return (
+    <TapTooltip content="Delete signup">
+      <Button variant="ghost" size={size} className="shrink-0 text-muted-foreground hover:text-error" disabled={admin.busy} aria-label={`Delete signup, ${label}`} onClick={() => admin.onErase(name, rows)}>
+        <Icon name="mdi-delete-outline" />
+      </Button>
+    </TapTooltip>
+  );
+}
+
 /** The players who left tonight and hold no place on the card, one row per player with the
- *  races he left on. An admin puts one back at the end of the line, on every one of them. */
-export function LeftRows({ bracket, admin }: { bracket: Row; admin?: BracketAdmin }) {
+ *  races he left on. An admin puts one back at the end of the line, on every one of them, or
+ *  deletes his signup when none of them played a series tonight. */
+export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets: Row[]; admin?: BracketAdmin }) {
   const seats: Row[] = leftSeats(bracket);
   if (!seats.length) return null;
   return (
@@ -450,6 +467,7 @@ export function LeftRows({ bracket, admin }: { bracket: Row; admin?: BracketAdmi
               Put back
             </Button>
           ) : null}
+          {admin ? <EraseButton name={seat.name} rows={seat.rows} label={seat.name} brackets={brackets} admin={admin} size="icon-sm" /> : null}
         </div>
       ))}
     </div>
@@ -562,7 +580,7 @@ export function BracketCard({
         <p className="mb-2 px-4 text-sm text-muted-foreground">Nobody signed up yet</p>
       )}
 
-      <LeftRows bracket={bracket} admin={admin} />
+      <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
 
       {played.length ? (
         <div className="px-4 pb-3">

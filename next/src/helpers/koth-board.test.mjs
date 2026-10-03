@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -206,6 +206,26 @@ test('the close names each open series it deletes', () => {
   assert.deepEqual(openSeriesRows(board), [
     { division_id: 8, name: 'Bracket 2', side1: { name: 'Kestrin' }, side2: { name: 'Sablefen' } },
   ]);
+});
+
+test('a row that is a side of a series tonight, open or played, in any bracket, stays on the record', () => {
+  const side = (entrant_id, user_id, name) => ({ entrant_id, user_id, name, race: 'HU', mmr: 1200 });
+  const board = {
+    brackets: [
+      {
+        division_id: 9, lower_bound: 0, queue: [], open_series: null,
+        played: [{ series_id: 1, winner: side(10, 1, 'Ann'), loser: side(20, 2, 'Bob'), winner_side: 1, throne: 'moved' }],
+        left: [side(20, 2, 'Bob'), side(40, 4, 'Dan')],
+      },
+      { division_id: 8, lower_bound: 1450, queue: [], played: [], open_series: { series_id: 2, side1: side(30, 3, 'Cid'), side2: side(50, 5, 'Eve') } },
+    ],
+  };
+  assert.equal(hasSeries(board, 20), true); // the loser of a played series, now under Left tonight
+  assert.equal(hasSeries(board, 10), true); // the winner of a played series
+  assert.equal(hasSeries(board, 50), true); // a side of the open series in another bracket
+  assert.equal(hasSeries(board, 40), false); // left before any series
+  assert.equal(hasSeries({ brackets: [] }, 20), false);
+  assert.equal(hasSeries(null, 20), false);
 });
 
 test('the strip cuts are the bounds of every bracket but the weakest, ascending', () => {

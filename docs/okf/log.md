@@ -2,6 +2,7 @@
 
 ## 2026-10-03
 
+* **Update**: the KOTH run page deletes the signup of a row that left and is a side of no series tonight, from a muted bin icon after "Put back" that asks first, and the X of an unplaced signup deletes its signup.
 * **Update**: the KOTH run page asks before a move only for the race that wears the crown, and a "Save the bounds" line says what a save moves; the night page asks the king's forfeit only when the withdraw takes his crowned race and leaves him no other race in that bracket, and the reader's queue chip wraps under a long name. The entrants page of a KOTH night offers no "Remove".
 * **Update**: the KOTH night page reads the board again on "Refresh" and on a return to its tab at most every 15 seconds, counts a race the reader plays at the table as his with a "You are playing now" chip and its own forfeit confirm, and a signup reads the board once, fresh.
 

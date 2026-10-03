@@ -158,6 +158,10 @@ const store = {
   async restoreKothEntrant(night_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/restore`);
   },
+  // Takes the row off the record of the night; a row that is a side of a series stays
+  async eraseKothEntrant(night_id: number, entrant_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/erase`);
+  },
   // One race row to another bracket by hand; it stands last there
   async moveKothEntrant(night_id: number, entrant_id: number, division_id: number) {
     return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/bracket`, { division_id });

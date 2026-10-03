@@ -60,7 +60,7 @@ export function KothView() {
         setTotal(count ?? items.length);
         if (page === 0) setLatestId(items[0]?.id ?? null);
       } catch (e) {
-        setError(`The nights did not load: ${(e as Error).message}`);
+        setError(`The events did not load: ${(e as Error).message}`);
       } finally {
         setLoading(false);
       }
@@ -107,17 +107,17 @@ export function KothView() {
         title={
           <span className="inline-flex items-center gap-2">
             <Icon name="mdi-crown" />
-            KOTH Nights
+            KOTH Events
           </span>
         }
       >
         <Button nativeButton={false} variant="outline" className="text-primary-text" render={<Link href="/koth/dashboard" />}>
           <Icon name="mdi-crown-outline" />
-          Tonight
+          Current event
         </Button>
         <Button disabled={loading} onClick={openDialog}>
           <Icon name="mdi-plus" />
-          Open tonight
+          New event
         </Button>
       </PageHeader>
 
@@ -133,11 +133,11 @@ export function KothView() {
           onPageChange={setPage}
           pageSize={PAGE_SIZE}
           columnVisibility={{ date: mdAndUp }}
-          empty={loading ? null : <div className="py-6 text-center">No night has run yet.</div>}
+          empty={loading ? null : <div className="py-6 text-center">No KOTH event has run yet.</div>}
           columns={[
             {
               id: "name",
-              header: "Night",
+              header: "Event",
               enableSorting: false,
               cell: ({ row }) => (
                 <div className="py-1">
@@ -170,7 +170,7 @@ export function KothView() {
       {/* Tonight's night: when it starts, and where its three brackets cut */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent showCloseButton={false} className="max-w-[520px] gap-0 p-0 sm:max-w-[520px]">
-          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Open tonight</DialogTitle>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">New KOTH Event</DialogTitle>
           <div className="flex flex-col gap-3 p-4">
             <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
             <Field label="Starts at" htmlFor="night-starts-at">
@@ -196,7 +196,7 @@ export function KothView() {
             </Button>
             <Button disabled={!form.starts_at || saving} onClick={openNight}>
               {saving ? <Icon name="mdi-loading mdi-spin" /> : null}
-              Open tonight
+              Open the event
             </Button>
           </div>
         </DialogContent>

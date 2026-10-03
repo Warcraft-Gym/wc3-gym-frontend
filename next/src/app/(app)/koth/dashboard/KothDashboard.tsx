@@ -25,7 +25,7 @@ export function KothDashboard() {
       .catch((e: Row) => {
         // the read answers 400 or 404 while no night is open; that is the empty page, not an error
         if (e.status === 400 || e.status === 404) setEmpty(true);
-        else setError(`The night did not load: ${e.message}`);
+        else setError(`The event did not load: ${e.message}`);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -36,7 +36,7 @@ export function KothDashboard() {
       {empty ? (
         <div className="py-12 text-center text-muted-foreground">
           <Icon name="mdi-crown-outline" size={64} className="opacity-40" />
-          <p className="mt-3 mb-0 text-xl font-medium">No KOTH night is open</p>
+          <p className="mt-3 mb-0 text-xl font-medium">No KOTH event is open</p>
         </div>
       ) : error ? null : (
         <Progress value={null} />

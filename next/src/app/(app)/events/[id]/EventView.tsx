@@ -171,7 +171,7 @@ export function EventView({ id }: { id: string }) {
         const night =
           loaded.kind === "koth"
             ? await store.fetchBoard(loaded.id).catch((e: Error) => {
-                setError(`The night did not load: ${e.message}`);
+                setError(`The event did not load: ${e.message}`);
                 return null;
               })
             : null;
@@ -202,7 +202,7 @@ export function EventView({ id }: { id: string }) {
     const runLink = auth.isAdmin ? (
       <Button nativeButton={false} size="sm" variant="outline" className="text-primary-text" render={<Link href={`/koth/nights/${event.id}`} />}>
         <Icon name="mdi-play-circle-outline" />
-        Run the night
+        Run the event
       </Button>
     ) : null;
     // an admin puts the night on a stream without typing the clean link

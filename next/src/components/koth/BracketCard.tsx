@@ -38,8 +38,8 @@ export type BracketAdmin = {
   onRemove: (entrantIds: number[]) => void; // one race row, or every race the player holds here
   onRestore: (entrantIds: number[]) => void; // one race row, or every race the player left on
   onErase: (name: string, rows: Row[]) => void; // takes rows that left off the record of the night, after a confirm
-  onFix: (played: Row) => void;
-  onAddResult: (bracket: Row) => void; // a series already played, entered as winner beat loser // opens the dialog that turns a result around or removes the series
+  onFix: (played: Row) => void; // opens the dialog that turns a result around or removes the series
+  onAddResult: (bracket: Row) => void; // a series already played, entered as winner beat loser
 };
 
 export const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");

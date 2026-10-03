@@ -382,3 +382,13 @@ test("resultSides lists every race row of the king and the line once, marking a 
   ]);
   assert.deepEqual(resultSides(null), []);
 });
+
+test("fixChanges names the place a deposed king takes back in the queue", () => {
+  const king = fixSeat(1, "ThePeasant"), happy = fixSeat(2, "Happy"), moon = fixSeat(3, "Moon"), elder = fixSeat(4, "Elder");
+  const before = fixBoard(king, [happy, moon, elder], []);
+  const after = fixBoard(happy, [moon, king, elder], [result(9, "Happy", "ThePeasant", "moved")]);
+  assert.deepEqual(fixChanges(before, after, 7, -1).map((line) => line.text), [
+    "The throne passes from ThePeasant to Happy.",
+    "ThePeasant goes back in the queue at place 2.",
+  ]);
+});

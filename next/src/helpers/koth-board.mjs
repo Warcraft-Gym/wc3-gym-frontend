@@ -284,11 +284,17 @@ export function fixChanges(before, after, divisionId, seriesId) {
       now: CROWN_VERB[row.throne],
     });
   }
+  // A king who loses the throne goes back in line where his seat stood, and a beaten player to the end
   const queue = (bracket) => (bracket.queue ?? []).map((seat) => seat.user_id);
-  const last = queue(now).at(-1);
-  if (last != null && queue(was).at(-1) !== last) {
-    lines.push({ text: `${now.queue.at(-1).name} goes to the end of the queue.` });
-  }
+  const [lineWas, lineNow] = [queue(was), queue(now)];
+  (now.queue ?? []).forEach((seat, index) => {
+    const last = index === lineNow.length - 1;
+    if (!lineWas.includes(seat.user_id)) {
+      lines.push({ text: last ? `${seat.name} goes to the end of the queue.` : `${seat.name} goes back in the queue at place ${index + 1}.` });
+    } else if (last && lineWas.at(-1) !== seat.user_id) {
+      lines.push({ text: `${seat.name} goes to the end of the queue.` });
+    }
+  });
   const [king, crowned] = [was.king, now.king];
   if (king?.user_id !== crowned?.user_id) {
     const text = !crowned ? `The throne is left empty.` : king ? `The throne passes from ${king.name} to ${crowned.name}.` : `${crowned.name} takes the empty throne.`;

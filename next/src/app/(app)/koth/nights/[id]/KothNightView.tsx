@@ -654,7 +654,7 @@ export function KothNightView({ id }: { id: string }) {
           {resultFor ? (
             <>
               <p className="mb-0 px-4 pt-3 text-sm text-muted-foreground">
-                {bracketLabel(brackets, resultFor).name}. The result goes in as the newest series, and nobody moves in the queue.
+                {bracketLabel(brackets, resultFor).name}. The result goes in as the newest series, and nobody is sent to the end of the queue.
               </p>
               <div className="grid gap-3 p-4 sm:grid-cols-2">
                 {(["winner", "loser"] as const).map((which) => (

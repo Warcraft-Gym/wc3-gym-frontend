@@ -61,7 +61,7 @@ export function KothNightBoard({
       onError(null);
       return next;
     } catch (e) {
-      onError(`The night did not load: ${(e as Error).message}`);
+      onError(`The event did not load: ${(e as Error).message}`);
       return null;
     }
   };
@@ -105,8 +105,8 @@ export function KothNightBoard({
       : withdrawForfeitsCrown(board, myId, race)
         ? "Withdrawing forfeits your next match."
         : race
-          ? `Withdraw ${raceName(race)} from tonight?`
-          : "Withdraw from tonight?";
+          ? `Withdraw ${raceName(race)} from this event?`
+          : "Withdraw from this event?";
     if (!window.confirm(question)) return;
     setWithdrawing(race ?? true);
     try {

@@ -82,7 +82,7 @@ export function KothNightView({ id }: { id: string }) {
   const [deleting, setDeleting] = useState(false);
   const [event, setEvent] = useState<Row | null>(null); // read once, for the details dialog and the signups badge
   const [form, setForm] = useState<NightForm | null>(null);
-  const [details, setDetails] = useState(false); // the Night Details dialog
+  const [details, setDetails] = useState(false); // the Event Details dialog
   const [readAt, setReadAt] = useState(0); // when the board last answered, which the status reads against the start
   const [cuts, setCuts] = useState<number[]>([]); // the strip's cuts, ascending
   const [addTo, setAddTo] = useState(false); // W3Champions picks the bracket, so the dialog is one form
@@ -125,7 +125,7 @@ export function KothNightView({ id }: { id: string }) {
         }
       } catch (e) {
         // a night nobody published answers 404, which the page says on its own
-        if (alive && (e as Row).status !== 404) setError(`The night did not load: ${(e as Error).message}`);
+        if (alive && (e as Row).status !== 404) setError(`The event did not load: ${(e as Error).message}`);
       }
     };
     read().then(() => alive && setLoading(false));
@@ -136,7 +136,7 @@ export function KothNightView({ id }: { id: string }) {
         setEvent(row);
         setForm(nightForm(row));
       })
-      .catch((e: Error) => alive && setError(`The night's settings did not load: ${e.message}`));
+      .catch((e: Error) => alive && setError(`The event's settings did not load: ${e.message}`));
     return () => {
       alive = false;
     };
@@ -289,7 +289,7 @@ export function KothNightView({ id }: { id: string }) {
       takeBoard(await store.fetchBoard(nightId, true));
       setError(null);
     } catch (e) {
-      setError(`The night did not load: ${(e as Error).message}`);
+      setError(`The event did not load: ${(e as Error).message}`);
     } finally {
       setRefreshing(false);
     }
@@ -423,7 +423,7 @@ export function KothNightView({ id }: { id: string }) {
 
   return (
     <>
-      <PageHeader title={board?.name || "KOTH Night"} lead={board ? dateRange(board) : undefined}>
+      <PageHeader title={board?.name || "KOTH Event"} lead={board ? dateRange(board) : undefined}>
         <Badge className={toneClass(status.tone)}>
           <Icon name={status.icon} />
           {status.label}
@@ -494,7 +494,7 @@ export function KothNightView({ id }: { id: string }) {
           {board && !board.closed ? (
             <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={() => setClosing(true)}>
               <Icon name="mdi-exit-to-app" />
-              Close the night
+              Close the event
             </Button>
           ) : null}
         </span>
@@ -555,7 +555,7 @@ export function KothNightView({ id }: { id: string }) {
       </Dialog>
 
       {/* the board read answers 404 for a night nobody published; a failed read says so in the alert above */}
-      {!loading && !board && !error ? <p className="py-12 text-center text-muted-foreground">This night is not published</p> : null}
+      {!loading && !board && !error ? <p className="py-12 text-center text-muted-foreground">This event is not published</p> : null}
 
       {/* The signups W3Champions gave no rating for wait over the brackets until one is picked */}
       {unplaced.length ? (
@@ -777,7 +777,7 @@ export function KothNightView({ id }: { id: string }) {
       {/* The night's name, start, links and switches; the delete of the whole night sits here, away from the routine actions */}
       <Dialog open={details} onOpenChange={(open) => !open && closeDetails()}>
         <DialogContent showCloseButton={false} className="gap-0 p-0 md:max-w-[640px]">
-          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Night Details</DialogTitle>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Event Details</DialogTitle>
           {form ? (
             <div className="flex flex-col gap-4 p-4">
               <StatusAlert modelValue={error} onClose={() => setError(null)} className="mb-0" />
@@ -821,7 +821,7 @@ export function KothNightView({ id }: { id: string }) {
               }}
             >
               <Icon name="mdi-delete-outline" />
-              Delete night
+              Delete event
             </Button>
             <Button variant="ghost" onClick={closeDetails}>
               Cancel
@@ -836,8 +836,8 @@ export function KothNightView({ id }: { id: string }) {
 
       <Dialog open={deleting} onOpenChange={setDeleting}>
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
-          <DialogTitle className="bg-error px-4 py-3 text-on-error">Delete {board?.name || "night"}</DialogTitle>
-          <p className="m-0 p-4 text-sm">Deletes the night with its signups, series and crowns. This cannot be undone.</p>
+          <DialogTitle className="bg-error px-4 py-3 text-on-error">Delete {board?.name || "event"}</DialogTitle>
+          <p className="m-0 p-4 text-sm">Deletes the event with its signups, series and crowns. This cannot be undone.</p>
           <div className="flex justify-end gap-2 p-4 pt-0">
             <Button variant="ghost" onClick={() => setDeleting(false)}>
               Cancel
@@ -883,7 +883,7 @@ export function KothNightView({ id }: { id: string }) {
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
           <DialogTitle className="bg-error px-4 py-3 text-on-error">Clear all results?</DialogTitle>
           <p className="m-0 p-4 text-sm">
-            {`All ${board?.series_count ?? 0} series of tonight go, in every bracket, and every throne is left empty. Signups and the queue stay. This cannot be undone.`}
+            {`All ${board?.series_count ?? 0} series of this event go, in every bracket, and every throne is left empty. Signups and the queue stay. This cannot be undone.`}
           </p>
           <div className="flex justify-end gap-2 p-4 pt-0">
             <Button variant="ghost" onClick={() => setClearing(false)}>
@@ -900,7 +900,7 @@ export function KothNightView({ id }: { id: string }) {
       {/* The close deletes every series nobody scored, and each standing king defends next time */}
       <Dialog open={closing} onOpenChange={setClosing}>
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
-          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Close the night</DialogTitle>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Close the event</DialogTitle>
           <div className="p-4">
             <ul className="mb-0 flex flex-col gap-1">
               {brackets.map((bracket: Row) => (
@@ -939,7 +939,7 @@ export function KothNightView({ id }: { id: string }) {
             </Button>
             <Button disabled={busy} onClick={() => run(() => store.closeNight(nightId), () => setClosing(false))}>
               <Icon name="mdi-exit-to-app" />
-              Close the night
+              Close the event
             </Button>
           </div>
         </DialogContent>
@@ -951,7 +951,7 @@ export function KothNightView({ id }: { id: string }) {
           <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Move the king</DialogTitle>
           {moveKing ? (
             <p className="m-0 p-4 text-sm">
-              {moveKing.seat.name} is king of {moveFrom}. Moving him leaves the throne empty. If no series follows, {moveFrom} has no champion tonight and no king from last event next time.
+              {moveKing.seat.name} is king of {moveFrom}. Moving him leaves the throne empty. If no series follows, {moveFrom} has no champion this event and no king from last event next time.
             </p>
           ) : null}
           <div className="flex justify-end gap-2 p-4 pt-0">
@@ -1004,7 +1004,7 @@ export function KothNightView({ id }: { id: string }) {
         <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
           <DialogTitle className="bg-error px-4 py-3 text-on-error">{`Delete ${erase?.name}'s signup?`}</DialogTitle>
           <p className="m-0 p-4 text-sm">
-            {eraseWho} {eraseRaces.length > 1 ? "leave" : "leaves"} the record of this night. This cannot be undone.
+            {eraseWho} {eraseRaces.length > 1 ? "leave" : "leaves"} the record of this event. This cannot be undone.
           </p>
           <div className="flex justify-end gap-2 p-4 pt-0">
             <Button variant="ghost" onClick={() => setErase(null)}>

@@ -177,7 +177,7 @@ function RaceRows({ seat, bracket, brackets, admin, removable }: { seat: Row; br
           <span aria-hidden="true" className="flex opacity-(--v-medium-emphasis-opacity)">
             <RaceIcon raceIdentifier={row.race} />
           </span>
-          <span className="min-w-0 flex-1 truncate">{raceName(row.race)} · left tonight</span>
+          <span className="min-w-0 flex-1 truncate">{raceName(row.race)} · left</span>
           {admin ? (
             <Button
               variant="ghost"
@@ -262,7 +262,7 @@ export function KingBlock({
             {crownHeir ? (
               <>
                 {crownHeir}
-                <div className="mt-1 text-xs text-muted-foreground">Won the newest series tonight</div>
+                <div className="mt-1 text-xs text-muted-foreground">Won the newest series</div>
               </>
             ) : null}
           </div>
@@ -514,7 +514,7 @@ export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets:
   if (!seats.length) return null;
   return (
     <div className="px-4 pb-2">
-      <div className="py-1 text-sm font-medium text-foreground">Left tonight</div>
+      <div className="py-1 text-sm font-medium text-foreground">Players who left</div>
       {/* the name fades, the mark keeps its strength: a player who left is still a player with no stats */}
       {seats.map((seat: Row) => (
         <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 [&_.name]:opacity-(--v-medium-emphasis-opacity)">
@@ -595,7 +595,7 @@ export function PlayedTable({ played, total, admin, clean }: { played: Row[]; to
                     <BoardPlayer row={{ ...row.loser, mmr: null }} race={null} warn={false} />
                     {/* the loser left the night, so no game was played */}
                     {row.forfeit ? (
-                      <TapTooltip content="Forfeit: left the night" className="shrink-0">
+                      <TapTooltip content="Forfeit: left the event" className="shrink-0">
                         <Icon name="mdi-flag-outline" size={14} className="text-muted-foreground" />
                         <span className="sr-only">Forfeit</span>
                       </TapTooltip>
@@ -750,7 +750,7 @@ export function BracketCard({
       {played.length || admin ? (
         <div className="border-t-2 border-primary-text bg-background/70 px-4 pb-3 pt-2.5">
           <div className="flex items-center gap-2 pb-1.5">
-            <h3 className="m-0 font-heading text-base font-bold text-primary-text">Played tonight</h3>
+            <h3 className="m-0 font-heading text-base font-bold text-primary-text">Results</h3>
             <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
             {admin ? (
               <Button variant="ghost" size="xs" className="ml-auto text-primary-text" disabled={admin.busy} onClick={() => admin.onAddResult(bracket)}>

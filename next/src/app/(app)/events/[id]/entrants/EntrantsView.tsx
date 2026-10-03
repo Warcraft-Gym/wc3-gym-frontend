@@ -433,7 +433,7 @@ export function EntrantsView({ id }: { id: string }) {
               {isKoth ? (
                 <p className="text-xs text-muted-foreground">
                   <Link className="text-primary-text underline" href={`/koth/nights/${eventId}`}>
-                    Set the brackets on the night&apos;s run page.
+                    Set the brackets on the event&apos;s run page.
                   </Link>
                 </p>
               ) : (

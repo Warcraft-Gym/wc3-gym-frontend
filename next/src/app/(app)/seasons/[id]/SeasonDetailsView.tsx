@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Pick } from "@/components/ui/Pick";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toneClass } from "@/components/ui/tone";
@@ -24,6 +25,9 @@ import { RowActions } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
 import { useDeleteDialog } from "@/hooks/delete-dialog";
 import { formatDateTime } from "@/helpers/datetime";
+import { eventLabel } from "@/helpers/event-labels.mjs";
+import { byNewest } from "@/helpers/season-order.mjs";
+import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
 import { matchProblem } from "@/helpers/match.mjs";
 import { currentRound, roundLabel } from "@/helpers/rounds.mjs";
@@ -59,13 +63,16 @@ const roundFromHash = () => {
 
 export function SeasonDetailsView({ id }: { id: string }) {
   const auth = useAuth();
-  const { current_season: season, seasonIdOf, fetchSeason, addTeamsToSeason } = useSeason();
+  const router = useRouter();
+  const { seasons, current_season: season, seasonIdOf, fetchSeason, addTeamsToSeason } = useSeason();
   const matchStore = useMatchStore();
   const teamStore = useTeamStore();
   const mapStore = useMapStore();
   const seriesStore = useSeriesStore();
 
   const seasonId = seasonIdOf(id);
+  // Newest season first, by start date, as every season pick lists them
+  const seasonItems: Row[] = [...seasons].sort(byNewest);
 
   const [isLoading, setIsLoading] = useState(true);
   const [matches, setMatches] = useState<Row[]>([]);
@@ -297,7 +304,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
 
       {/* The season is one event of the GNL league, so it wears the shared event header */}
       <EventHeader event={season} />
-      <div className="mt-3 mb-4 flex flex-wrap gap-2">
+      <div className="mt-3 mb-4 flex flex-wrap items-center gap-2">
         <Badge className={toneClass()}>
           <Icon name="mdi-calendar-range" />
           {season.round_count} rounds
@@ -306,6 +313,28 @@ export function SeasonDetailsView({ id }: { id: string }) {
           <Icon name="mdi-account-group" />
           {teams.length} teams
         </Badge>
+        {/* every season of the league is one pick away, so a captain reads the older ones as well */}
+        {seasonItems.length > 1 ? (
+          <Select
+            items={seasonItems.map((row) => ({ value: row.id, label: eventLabel(row) }))}
+            value={seasonId}
+            onValueChange={(value) => {
+              const picked = seasonItems.find((row) => row.id === value);
+              if (picked && picked.id !== seasonId) router.push(`/seasons/${seasonSlug(picked)}`);
+            }}
+          >
+            <SelectTrigger aria-label="Season" className="w-full min-[600px]:ml-auto min-[600px]:w-64">
+              <SelectValue placeholder="Season" />
+            </SelectTrigger>
+            <SelectContent>
+              {seasonItems.map((row) => (
+                <SelectItem key={row.id} value={row.id}>
+                  {eventLabel(row)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
       </div>
 
       {/* Series with no result, reached from the unscored count on the Seasons page */}

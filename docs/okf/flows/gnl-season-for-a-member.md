@@ -4,7 +4,7 @@ title: A member's GNL season
 description: One GNL season from the admin's wizard to the public standings, with who acts on each step, on which page, in which order, and the route each step writes.
 resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events, series, teams]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T16:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
 sources:
   - id: gnl-season
     resource: ../pages/gnl-season.md
@@ -43,7 +43,7 @@ This flow follows one GNL season from the season wizard to the public standings.
 | 9. Book a time in the schedule dialog | either side | the action bar on `/`, the player page or `/series/:id` | `PUT /player-series/{id}` with `date_time` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 10. Veto the maps | both sides, in turn | `/player-series/:id/veto`, or inside Report Result | `PUT /player-series/{id}/veto` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 11. Report the result, one replay per game | either side | Report Result, from the action bar | `POST /player-series/{id}/replays/{game}/upload-url`, `PUT /player-series/{id}` | [Fixtures and series](../pages/fixtures-and-series.md) |
-| 12. Read the standings | anyone | `/report` | read only | [The GNL season](../pages/gnl-season.md) |
+| 12. Read the standings | anyone | the public website, outside this app | read only | [The GNL season](../pages/gnl-season.md) |
 
 Steps 6 to 11 repeat every round. A round that holds the member's series shows the series in place of the answer, so the answer comes before the pairing.
 
@@ -69,12 +69,13 @@ sequenceDiagram
         Member->>Backend: veto turns on /player-series/:id/veto
         Member->>Backend: report with replays, PUT /player-series/:id
     end
-    Backend-->>Member: standings on /report
+    Backend-->>Member: standings on the public website
 ```
 
 # Rules
 
 - One write takes the round answer, `PUT /player-availability`, from Home's My Season and from the owner's round cards: [member self-service](../pages/member.md), [players and stats](../pages/players-and-stats.md). A captain answers for a member of his own team on the team rounds page: [teams](../pages/teams.md).
+- A captain opens his team's fixture of any round from Home's My Season with the button that names the team it meets, drafted or not, running or over, and every match of the season, and of the older seasons, from "Season": [member self-service](../pages/member.md), [the GNL season](../pages/gnl-season.md).
 - The draft takes any number of pairings. Either captain of the fixture, or an admin, publishes up to the round's `series_per_round`, and the backend refuses one more: [fixtures and series](../pages/fixtures-and-series.md).
 - A side is acted on by the player it names, by a captain of the team that fields it, or by an admin, on the same routes: [shared components](../concepts/shared-components.md).
 - The veto is entered inside Report Result, and a missing veto or replay warns and never blocks the report: [the veto decision](../decisions/veto-in-report-result.md).

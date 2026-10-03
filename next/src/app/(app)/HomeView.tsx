@@ -97,8 +97,8 @@ export function HomeView() {
   const signupRows = signupIds.map((id: number) => cards.find((card) => card.id === id)).filter(Boolean) as Row[];
   const upcomingRows = cards.filter((card) => !signupIds.includes(card.id));
 
-  // The fixtures a captain has still to draft: the current season's sits on its round in My Season,
-  // which only a member with a player row sees; every other one stays in Upcoming Series
+  // A captain's fixtures: every one of the current season sits on its round in My Season, which only
+  // a member with a player row sees; the next one to draft of every other event stays in Upcoming Series
   const drafts = seasonFixtures(myEvents, playerId ? currentId : null);
 
   const loadGames = async (seasonId: number | null) => {
@@ -249,7 +249,7 @@ export function HomeView() {
               viewer={viewer}
               loading={loading}
               savingRound={savingRound}
-              fixture={drafts.own}
+              fixtures={drafts.matches}
               order={PANEL_ORDER.games}
               onAnswer={answerRound}
               onSchedule={(series) => scheduleDialog.current?.open(series)}

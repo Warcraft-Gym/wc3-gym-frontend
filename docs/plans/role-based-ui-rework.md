@@ -4,7 +4,8 @@
 
 - **Step 1, the general layout: done.** Frontend `feature/ui-rework-layout`, backend `feature/admin-me-seats`.
 - **Step 2, simpler nav and the player Home: done** (merged with the layout).
-- **Captain hub stories 1, 2, 4, 5 and 7, the round planner in the match view: in review.** Frontend and backend `feature/pairing-improvements`. The backend branch covers three changes: either captain publishes, captains see each player's availability and blocked hours before pairing, and the draft takes any number of pairings while publishing stops at the round's series. Story 7 is "Find a replacement" on a published series, without the announce, which waits for story 6. Stories 3, 6, 8 and 9 stay open.
+- **Captain navigation: in review.** Frontend and backend `feature/captain-match-nav`. Home's My Season shows a captain his team's fixture on every round: how far its series are, and one button named after the team it meets ("vs <team>") whatever the round's state (the backend adds `captain_matches` to `GET /me/events`). The panel's title bar adds "Season", and the season page picks any GNL season, so a captain reads every match of the current and older seasons without the admin area.
+- **Captain hub stories 1, 2, 4, 5 and 7, the round planner in the match view: done** (merged as `feature/pairing-improvements`). The backend branch covers three changes: either captain publishes, captains see each player's availability and blocked hours before pairing, and the draft takes any number of pairings while publishing stops at the round's series. Story 7 is "Find a replacement" on a published series, without the announce, which waits for story 6. Stories 3, 6, 8 and 9 stay open.
 
 ### Decisions from the round planner (2026-09-30, 2026-10-02)
 

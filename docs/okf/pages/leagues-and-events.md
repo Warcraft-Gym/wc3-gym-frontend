@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-26T14:55:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -45,7 +45,7 @@ A league is what repeats. An event is one run of it: a GNL season, a KOTH night,
 
 Outside its own page an event is named by its league and its name, "GNL · Season 18". A wide screen reads the long league name, "Gym Newbie League · Season 18"; a phone keeps the short one. An event whose name already opens with the short name, "GNL S18", is named alone.
 
-**Leagues (`/leagues`).** One row per league: name, linked to the home page of its menu for GNL (`/report`) and KOTH (`/koth/dashboard`, which lands on tonight's night page) and to `/leagues/:id` for any other kind, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
+**Leagues (`/leagues`).** One row per league: name, linked to `/koth/dashboard` for KOTH (which lands on tonight's night page) and to `/leagues/:id` for every other kind, GNL included, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
 
 **One league (`/leagues/:id`).** The league's events, newest first, with kind, dates and state. A member reads the published events; an admin also reads the drafts. An admin sees "New event", which opens the wizard with this league preset.
 

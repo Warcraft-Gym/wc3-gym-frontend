@@ -18,7 +18,7 @@ type Row = Record<string, any>;
 const MAX_NEXT = 5;
 
 /** The two sides of a home series row: the players, the teams that field them, or "To be decided". */
-function Versus({ row }: { row: Row }) {
+export function Versus({ row }: { row: Row }) {
   const side = (index: 1 | 2) => {
     const player = row[`player${index}`];
     const team = row[`team${index}`];
@@ -49,14 +49,14 @@ const CastChip = ({ cast }: { cast: Row }) => (
 );
 
 /** The next series of the whole app, and, for a captain, the fixtures of other events he still has
- *  to draft; the current season's draft sits on its round in My Season. */
+ *  to draft; the current season's fixtures sit on their rounds in My Season. */
 export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: Row[]; fixtures: Row[]; loading: boolean; failed?: boolean; order: number }) {
   return (
     <HomePanel
       icon="mdi-clock-outline"
       title="Upcoming Series"
       order={order}
-      action={loading ? null : <Link href="/report#upcoming" className="text-on-banner underline">All upcoming</Link>}
+      action={loading ? null : <Link href="/upcoming" className="text-on-banner underline">All upcoming</Link>}
     >
       {loading ? (
         <SkeletonRows rows={3} />
@@ -69,9 +69,9 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
               <div key={fixture.match_id} className={ROW}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="tnum font-bold">{row.when}</span>
-                  <Button size="sm" className="ml-auto" nativeButton={false} render={<Link href={row.to} />}>
-                    <Icon name="mdi-account-multiple" />
-                    Draft pairings
+                  <Button size="sm" variant="outline" className="ml-auto" nativeButton={false} render={<Link href={row.to} />}>
+                    <Icon name="mdi-sword-cross" />
+                    Open match
                   </Button>
                 </div>
                 {fixture.event ? <div className="text-sm text-muted-foreground">{fixture.event}</div> : null}

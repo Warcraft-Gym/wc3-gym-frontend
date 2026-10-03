@@ -25,6 +25,10 @@ const store = {
   async homeSeries() {
     return await fetchWrapper.get(`${backendUrl}/home/series`);
   },
+  // every booked series still to play, each with its claims; open and edge cached like the hub
+  async upcomingSeries() {
+    return await fetchWrapper.get(`${backendUrl}/home/series/upcoming`);
+  },
   async lastCastChannel() {
     return (await fetchWrapper.get(`${backendUrl}/casts/last`)).channel_url;
   },

@@ -1,5 +1,11 @@
 # Bundle history
 
+## 2026-10-03
+
+* **Remove**: the season report (`/report`, `/report/:id`) and its schedule component; the public website shows the standings. My Season links no standings, a GNL league row opens its league page, and the report-only pieces leave the data pieces. The GNL season page, the member page, the leagues page, the routing, the read costs, the embed note and the member's season flow state it.
+* **Add**: the upcoming list (`/upcoming`), which Home's "All upcoming" opens: every booked series of every event by day, from `GET /home/series/upcoming`, with the cast claims. The fixtures page and the read costs state it.
+* **Update**: Home's My Season shows a captain a line on his team's fixture on every round, from `captain_matches` of `GET /me/events`: how far its series are, and one button that names the team it meets ("vs <team>") and opens the match, whatever the round's state; the "Draft pairings" buttons are gone, and the panel's title bar adds "Season" for a captain. The season page gains a pick of every GNL season. The member page, the GNL season page and the member's season flow state it.
+
 ## 2026-10-02
 
 * **Update**: a published series that holds no result offers "Find a replacement", which opens the plan on a search: who is replaced, one player or both, the MMR range, and the matchups that fit, filtered on the player who stays until the captain takes the filter away. Each pick becomes a draft that proposes a replacement, several per series if the captains want to weigh them; publishing one removes the series and the other proposals with it. The fixtures page states it.

@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T05:13:41Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -29,15 +29,15 @@ sources:
 
 | Role | Routes |
 |---|---|
-| public | `/login`, `/sso-callback`, `/admin-login`, `/series/:id`, `/leagues`, `/leagues/:id`, `/events`, `/events/:id`, `/report`, `/report/:id`, `/koth/dashboard`, `/random-stats`, `/credits`, `/no-access` |
+| public | `/login`, `/sso-callback`, `/admin-login`, `/series/:id`, `/leagues`, `/leagues/:id`, `/events`, `/events/:id`, `/koth/dashboard`, `/random-stats`, `/credits`, `/no-access` |
 | guest | `/profile` only; it shows the join-the-Discord card |
-| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/seasons/:id`, `/match/:id`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/fantasy`, `/fantasy-registration`, `/ladder` |
+| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/seasons/:id`, `/match/:id`, `/upcoming`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/fantasy`, `/fantasy-registration`, `/ladder` |
 | captain | `/seasons/:id/assign`, `/team/:id/season/:season_id/rounds` (reads; the view gates writes to admins) |
 | admin | `/admin`, `/seasons`, `/seasons/:id/maps`, `/seasons/:id/achievements`, `/maps`, `/config`, `/config/discord-roles`, `/config/access`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/events/new`, `/events/:id/admin`, `/user-guide` |
 
 `/player-dashboard` redirects to the member's own player page and `/player-stats` to `/players`. What each page does is in the [pages](../pages/index.md) directory.
 
-The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A signed-in session on `/login` or `/admin-login` is sent on the same way, except the admin token's session on `/admin-login` while `NEXT_PUBLIC_DEV_LOGIN=1`, which stays to pick between the super admin and a player. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/report` and `/player/:id` do, is not drawn again.
+The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A signed-in session on `/login` or `/admin-login` is sent on the same way, except the admin token's session on `/admin-login` while `NEXT_PUBLIC_DEV_LOGIN=1`, which stays to pick between the super admin and a player. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/player/:id` does, is not drawn again.
 
 Routes are plain paths since 2026-09-04; there is no bridge for old `/#/x` links. See [the decision](../decisions/history-routing.md).
 

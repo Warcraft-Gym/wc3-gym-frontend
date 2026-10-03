@@ -41,5 +41,3 @@ const fmtDay = timeFormat('%-d %b');
 export const dayTip = (d) =>
   `${fmtDay(new Date(`${d.d}T00:00:00`))} · ${record(d.w, d.l) ?? '0 – 0'}${d.mmr != null ? ` · ${d.mmr} MMR` : ''}`;
 
-// A games-per-day bar as a percentage of the tallest day; a day with no games draws nothing
-export const gamesBarHeight = (games, max) => (games ? `${Math.max(2, Math.round((100 * games) / max))}%` : '0%');

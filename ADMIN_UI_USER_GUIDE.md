@@ -216,9 +216,9 @@ replay of each game. A missing replay or an incomplete veto warns and never bloc
 
 ### Upcoming series
 
-The season report (`/report#upcoming`) opens with "Upcoming series" while the current season
-is selected: the scheduled series with their times in the reader's own timezone, and who has
-claimed the cast. **All upcoming** on Home links there.
+The upcoming list (`/upcoming`) shows every booked series still to play, by day, with the
+times in the reader's own timezone and who has claimed the cast. A caster claims a series there
+with **Cast this**. **All upcoming** on Home links there.
 
 ---
 
@@ -287,7 +287,7 @@ The run page carries **Open stream view**, which opens the night page in its str
 3. Mark the series that count for fantasy.
 4. Bettors place their bets before each series has a result.
 5. Players report the result; an admin corrects it on the match page.
-6. Check the leaderboard (`/fantasy`) and the season report (`/report`).
+6. Check the leaderboard (`/fantasy`). The standings are on the public website.
 
 ### Set up the fantasy league
 

@@ -4,7 +4,7 @@ title: Data pieces
 description: Every shared piece that shows league data, by group, with where it lives, when to use it and which piece to use instead.
 resource: ../../../DESIGN.md
 tags: [design, components]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-09-30T21:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -32,7 +32,7 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | MMR season label of a stale race, and synced time | `next/src/components/RaceMmrChips.tsx`, `next/src/helpers/w3c-stats.js` | The figure is W3Champions data. | The figure comes from the app's own series. |
 | Signed game difference | `next/src/components/StageView.tsx` | A standings table ranks on game difference. | A free for all lobby stage; a lobby counts no games and the column is dropped. |
 | Win rate percent | `next/src/helpers/ladder-days.mjs` | The page already prints the record and wants one share. | `record` can carry the percent itself. |
-| Stat tile | `next/src/app/(app)/report/SeasonReportView.tsx` | One number answers the page's question. | The reader needs to compare many values; then a table or a chart. |
+| Stat tile | `next/src/components/home/StatsPanel.tsx` | One number answers the page's question. | The reader needs to compare many values; then a table or a chart. |
 | Matchup time cell: the hours both are free and the clock gap | `next/src/app/(app)/match/[id]/plan/MatchupTable.tsx` | The reader pairs two players who must find a time. The hours print only when both players entered availability, and the gap warns from 8 h. | The series is already booked; then the schedule dialog. |
 | Ladder stat tiles | `next/src/components/ladder/PlayerLadderTab.tsx` | The reader opens one player's ladder season. | The surface compares two players; then `MatchupCompare`. |
 | `CareerStatsDialog` | `next/src/components/CareerStatsDialog.tsx` | The reader asks what a player has done overall. | The figure belongs to one event. |
@@ -60,11 +60,9 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | Stage legend | `next/src/components/StageView.tsx` | A mark carries no hover of its own. | Every mark already names itself on hover; the design rules say such a mark needs no legend row. |
 | Round card score badge | `next/src/components/player/RoundCards.tsx` | The reader is one side of the series. | The surface is neutral between the two sides; then `SeriesBox`. |
 | Head to head record bar | `next/src/components/player/HeadToHead.tsx` | The reader compares many opponents down one column of the head to head table. | Anywhere new. A win rate gets no bar, and the record carries the percent. |
-| `RateBar` | `next/src/app/(app)/report/SeasonReportView.tsx` | An amount stands against a maximum, such as points against the top race. | The figure is a win rate. The record carries the percent, and a win rate gets no bar. |
 | Achievement badge row | `next/src/components/AchievementChip.tsx` | A row lists what a player earned. | The page compares how rare each badge is; then `BadgeRarity`. |
 | `TrophyIcon` and `PlayerTrophies` | `next/src/components/player/TrophyIcon.tsx` | A player page shows career wins. | The surface names a place in one event; then the place chip from `awards.mjs`. |
 | Place chip and medal | `next/src/helpers/awards.mjs` | An event is finished. | The event is still running; then the state chip. |
-| Report rank medal | `next/src/app/(app)/report/SeasonReportView.tsx` | A printed table ranks teams or players. | The table is not a final ranking. |
 | Match banner score | `next/src/app/(app)/match/[id]/MatchBanner.tsx` | The page is about one fixture. | The surface lists many fixtures; then the match score card of `/seasons/[id]`. |
 | `scoreBadge` | `next/src/app/(app)/match/[id]/SeriesTables.tsx` | A table lists many series. | The surface shows one side at a time, as `SeriesCard` does on a phone; the comparison then vanishes. |
 | Season match score card | `next/src/app/(app)/seasons/[id]/SeasonDetailsView.tsx` | The reader scans a round of fixtures. | The page is about one fixture; then the match banner. |
@@ -76,8 +74,6 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | `LadderPlots` | `next/src/components/ladder/LadderPlots.tsx` | The reader asks how a rating moves. | The row has room for one small bar strip only; then `LadderDayBars`. |
 | `LadderDayBars` | `next/src/components/ladder/LadderDayBars.tsx` | The reader compares day-by-day volume across rows of a table. | The row is the page's subject; then `LadderPlots`. |
 | `DivisionBracketing` | `next/src/components/DivisionBracketing.tsx` | The reader asks who fits against whom by MMR. | The bands are categories, not amounts; the `heat-*` ramp says amount. |
-| Season report heat map | `next/src/app/(app)/report/SeasonReportView.tsx` | The reader asks when games are played. | The question is how many were played over time; then the day bars. |
-| Season report games-per-day bars | `next/src/app/(app)/report/SeasonReportView.tsx` | The reader asks how much was played over the season. | The window is a player's own; then `LadderPlots`. |
 | `BadgeRarity` share bar | `next/src/components/ladder/BadgeRarity.tsx` | The reader asks which badges are rare. | The reader asks what one player earned; then `AchievementChip`. |
 | Bracket feeder lines | `next/src/components/StageView.tsx` | A single or double elimination stage is drawn on a wide screen. | The screen is narrow; the stage then stacks into one list per round. |
 | `PlayerLadderPanel` per-race bar pair | `next/src/components/ladder/PlayerLadderPanel.tsx` | A row expands into one player's ladder detail. | The page is the player's own; then `PlayerLadderTab`. |
@@ -161,7 +157,7 @@ A row names the piece, the file that holds it, the reader question it answers, a
 |---|---|---|---|
 | `Progress value={null}` | `next/src/components/ui/progress.tsx` | A whole surface is on its way. | The shape of the answer is known; then a skeleton. |
 | `Skeleton` | `next/src/components/ui/skeleton.tsx` | The page knows how many cards it will show. | The count is unknown. |
-| Full-screen spinner | `next/src/app/(app)/report/SeasonReportView.tsx` | Nothing on the page can be drawn yet. | Part of the page is already readable. |
+| Full-screen spinner | `next/src/app/(app)/seasons/[id]/SeasonDetailsView.tsx` | Nothing on the page can be drawn yet. | Part of the page is already readable. |
 | Empty states | Inline in the views | The read succeeded and answered nothing. | The read failed; then `StatusAlert`. |
 
 # Domain drawings

@@ -11,15 +11,13 @@ export function seasonAction(season) {
   return action === 'signup' && season.signups_open === false ? 'request' : action;
 }
 
-// The links under a season card; a season the player is not in carries the two open reads only
+// The links under a season card; a season the player is not in carries the open read only
 function seasonLinks(season, slug) {
-  const report = { title: 'Season report', icon: 'mdi-trophy-outline', to: `/report/${slug}` };
   const players = { title: 'Players', icon: 'mdi-account-multiple', to: `/players?season=${slug}` };
-  if (!season.signed_up) return [report, players];
+  if (!season.signed_up) return [players];
   return [
     season.team && { title: season.team.name, icon: 'mdi-shield-account', to: `/team/${season.team.id}` },
-    report,
-    { title: 'Upcoming series', icon: 'mdi-calendar-clock', to: '/report#upcoming' },
+    { title: 'Upcoming series', icon: 'mdi-calendar-clock', to: '/upcoming' },
     { title: 'Ladder', icon: 'mdi-chart-line', to: `/ladder?season=${slug}` },
     players,
     { title: 'My fantasy team', icon: 'mdi-cards-playing-outline', to: `/fantasy-registration?season=${slug}` },

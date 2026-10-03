@@ -66,8 +66,15 @@ role or channel and choose Copy ID.
 ### KOTH Nightbot integration
 
 **Current token** authenticates the Nightbot signup command. **Generate new token** replaces
-it at once and every Nightbot command using the old one stops working, so copy the new
-command into Nightbot straight after.
+it at once and every Nightbot command using the old one stops working. Until a token exists,
+the section shows no token and offers **Generate token** instead.
+
+**Chat command** is how players sign up from Twitch chat: they type `!kothsignup BattleTag#1234`,
+or add a race, as in `!kothsignup BattleTag#1234 orc`. To install it, click **Copy message**, then
+in the Nightbot dashboard open Commands, then Custom, and add a command named `!kothsignup`
+with that message. After a new token, paste the new message into the same command. Never paste
+the message into chat: it holds the token. The message box hides the token until you click the
+eye icon on the token.
 
 ---
 

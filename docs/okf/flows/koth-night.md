@@ -4,7 +4,7 @@ title: A KOTH night
 description: One KOTH night from "Open tonight" to the close, with the three doors a player signs up through and the one board that the run page, the night page and the stream view read.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T07:45:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T10:28:10Z }
 sources:
   - id: koth
     resource: ../pages/koth.md
@@ -30,7 +30,7 @@ This flow runs one KOTH night. The admin opens the night, places the players in 
 | 2. Sign up from the night page | a visitor by battle tag, or a signed-in reader, who can also withdraw | `/events/:id` | `POST /events/{id}/entrants` | [KOTH](../pages/koth.md) |
 | 3. Sign up from the stream chat | a player in the chat, through Nightbot | the Nightbot command; its token is set on `/config` | the backend route the command calls | [Site admin](../pages/site-admin.md) |
 | 4. Add a late arrival, place a signup with no rating, move one race to another bracket | admin | `/koth/nights/:id` | `POST /events/{id}/entrants/admin`, `PUT /events/{id}/entrants/{entrant_id}`, `PUT /koth/nights/{id}/entrants/{entrant_id}/bracket` | [KOTH](../pages/koth.md) |
-| 5. Save the bracket bounds | admin | `/koth/nights/:id`, Brackets card | `PUT /koth/nights/{id}/bounds` | [KOTH](../pages/koth.md) |
+| 5. Save the bracket bounds | admin | `/koth/nights/:id`, Bracket Bounds card | `PUT /koth/nights/{id}/bounds` | [KOTH](../pages/koth.md) |
 | 6. Start a series: the king against the first in line | admin | `/koth/nights/:id` | `POST /koth/nights/{id}/series` | [KOTH](../pages/koth.md) |
 | 7. Set the winner | admin | `/koth/nights/:id` | `PUT /koth/nights/{id}/series/{series_id}/result` | [KOTH](../pages/koth.md) |
 | 8. Close the night | admin | `/koth/nights/:id` | `POST /koth/nights/{id}/close` | [KOTH](../pages/koth.md) |

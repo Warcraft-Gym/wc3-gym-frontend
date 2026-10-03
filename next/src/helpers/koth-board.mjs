@@ -238,6 +238,20 @@ export const hasSeries = (board, entrantId) =>
     [bracket.open_series?.side1, bracket.open_series?.side2, ...(bracket.played ?? []).flatMap((played) => [played.winner, played.loser])]
       .some((side) => side?.entrant_id === entrantId));
 
+/**
+ * The status the run page's header reads: closed once the admin closed the night, not started
+ * while no series exists and the start lies ahead, else running.
+ *
+ * @param {Object|null} board - The board read
+ * @param {number} now - Milliseconds since the epoch
+ * @returns {'closed'|'not_started'|'running'}
+ */
+export function nightStatus(board, now) {
+  if (board?.closed) return 'closed';
+  const start = board?.starts_at ? Date.parse(board.starts_at) : NaN;
+  return !board?.series_count && start > now ? 'not_started' : 'running';
+}
+
 // Every open series the close deletes, named by its bracket and its two sides
 export const openSeriesRows = (board) =>
   orderedBrackets(board)

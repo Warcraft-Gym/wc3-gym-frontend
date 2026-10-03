@@ -22,7 +22,7 @@ import { BoardPlayer, BracketCard, raceName, seatMark, type BracketAdmin } from 
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
-import { boundsOf, bracketLabel, cutsOf, movedQueue, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, wearsTheCrown } from "@/helpers/koth-board.mjs";
+import { boundsOf, bracketLabel, cutsOf, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, wearsTheCrown } from "@/helpers/koth-board.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
@@ -35,8 +35,15 @@ type Row = Record<string, any>;
 // One bronze step per bracket, light to dark, as the entrants page colours its divisions
 const RAMP = ["heat-1", "heat-2", "heat-3", "heat-4", "heat-5"];
 
-// The night fields the Night card writes, as the form holds them
+// The night fields the details dialog writes, as the form holds them
 type NightForm = { name: string; start_date: string; start_time: string; stream_url: string; page_url: string; signups_open: boolean; published: boolean };
+
+// The header's status badge, by what nightStatus answers
+const STATUS: Record<string, { label: string; tone: string | null; icon: string }> = {
+  closed: { label: "Closed", tone: "draw", icon: "mdi-check" },
+  not_started: { label: "Not started", tone: null, icon: "mdi-clock-outline" },
+  running: { label: "Running", tone: "primary", icon: "mdi-play" },
+};
 
 /** The run page of one KOTH night: the admin starts every series by hand, enters its winner,
  *  edits the line while people come and go, places the signups W3Champions gave no rating
@@ -59,9 +66,10 @@ export function KothNightView({ id }: { id: string }) {
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [event, setEvent] = useState<Row | null>(null); // read once, for the Night card
+  const [event, setEvent] = useState<Row | null>(null); // read once, for the details dialog and the signups badge
   const [form, setForm] = useState<NightForm | null>(null);
-  const [nightOpen, setNightOpen] = useState<boolean | null>(null); // null follows the night: folded while it runs
+  const [details, setDetails] = useState(false); // the Night Details dialog
+  const [readAt, setReadAt] = useState(0); // when the board last answered, which the status reads against the start
   const [cuts, setCuts] = useState<number[]>([]); // the strip's cuts, ascending
   const [addTo, setAddTo] = useState(false); // W3Champions picks the bracket, so the dialog is one form
   const [addTag, setAddTag] = useState("");
@@ -81,6 +89,7 @@ export function KothNightView({ id }: { id: string }) {
   // A bracket that plays a series takes no pair, so a pick left on its line clears with the answer
   const takeBoard = (answer: Row) => {
     setBoard(answer);
+    setReadAt(Date.now());
     // the strip follows the board only when its bounds moved, so a cut being dragged survives a write
     const stored = JSON.stringify(cutsOf(answer));
     if (stored !== storedCuts.current) {
@@ -275,30 +284,50 @@ export function KothNightView({ id }: { id: string }) {
   const stripDomain: number[] = domainOf([...rated.map((row) => row.mmr), ...savedCuts.flatMap((cut) => [cut - 150, cut + 150])]);
   const boundsMoved = JSON.stringify(cuts) !== JSON.stringify(savedCuts);
 
-  // The night runs while a series plays or signups stand open, so its settings fold away
-  const running = !!board && !board.closed && (openRows.length > 0 || !!event?.signups_open);
-  const nightShown = nightOpen ?? (!!board && !running);
+  const status = STATUS[nightStatus(board, readAt)];
 
   const setField = (patch: Partial<NightForm>) => setForm((was) => (was ? { ...was, ...patch } : was));
+  // the dialog shows only its own error, and a close discards the edits
+  const openDetails = () => {
+    setError(null);
+    setDetails(true);
+  };
+  const closeDetails = () => {
+    setDetails(false);
+    if (event) setForm(nightForm(event));
+  };
   const saveNight = () =>
     run(async () => {
       const saved = await store.updateEvent(nightId, nightBody(form as NightForm));
       setEvent(saved);
       setForm(nightForm(saved));
+      setDetails(false);
       return null;
     });
 
   return (
     <>
       <PageHeader title={board?.name || "KOTH Night"} lead={board ? dateRange(board) : undefined}>
-        <Badge className={toneClass(board?.closed ? "draw" : "info")}>
-          <Icon name={board?.closed ? "mdi-check" : "mdi-play"} />
-          {board?.closed ? "Closed" : "Running"}
+        <Badge className={toneClass(status.tone)}>
+          <Icon name={status.icon} />
+          {status.label}
         </Badge>
         <Badge className={toneClass(null)}>
           <Icon name="mdi-account-multiple" />
           {board?.entrant_count ?? 0} signed up
         </Badge>
+        {event && !board?.closed ? (
+          <Badge className={toneClass(event.signups_open ? "success" : null)}>
+            <Icon name={event.signups_open ? "mdi-lock-open-variant-outline" : "mdi-lock-outline"} />
+            {event.signups_open ? "Signups open" : "Signups closed"}
+          </Badge>
+        ) : null}
+        {event && !event.published ? (
+          <Badge className={toneClass(null)}>
+            <Icon name="mdi-eye-off-outline" />
+            Not published
+          </Badge>
+        ) : null}
         <span className="ml-auto flex flex-wrap gap-2">
           {board && !board.historical ? <StreamLinks eventId={board.night_id} /> : null}
           {board && !board.closed ? (
@@ -307,16 +336,16 @@ export function KothNightView({ id }: { id: string }) {
               Add player
             </Button>
           ) : null}
+          {form ? (
+            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={openDetails}>
+              <Icon name="mdi-pencil" />
+              Edit details
+            </Button>
+          ) : null}
           {board && !board.closed ? (
             <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setClosing(true)}>
               <Icon name="mdi-exit-to-app" />
               Close the night
-            </Button>
-          ) : null}
-          {board ? (
-            <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setDeleting(true)}>
-              <Icon name="mdi-delete-outline" />
-              Delete
             </Button>
           ) : null}
         </span>
@@ -325,12 +354,10 @@ export function KothNightView({ id }: { id: string }) {
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
 
-      {form ? <NightCard form={form} open={nightShown} busy={busy} onOpen={() => setNightOpen(true)} onChange={setField} onSave={saveNight} /> : null}
-
       {board ? (
         <Card className="card mb-4">
           <CardHeader>
-            <CardTitle>Brackets</CardTitle>
+            <CardTitle>{board.historical ? "Brackets" : "Bracket Bounds"}</CardTitle>
           </CardHeader>
           <CardContent>
             {/* an archived night keeps the words its source wrote for each bracket */}
@@ -483,6 +510,66 @@ export function KothNightView({ id }: { id: string }) {
               </div>
             </>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* The night's name, start, links and switches; the delete of the whole night sits here, away from the routine actions */}
+      <Dialog open={details} onOpenChange={(open) => !open && closeDetails()}>
+        <DialogContent showCloseButton={false} className="gap-0 p-0 md:max-w-[640px]">
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Night Details</DialogTitle>
+          {form ? (
+            <div className="flex flex-col gap-4 p-4">
+              <StatusAlert modelValue={error} onClose={() => setError(null)} className="mb-0" />
+              <div className="grid gap-3 min-[600px]:grid-cols-2">
+                <Field label="Name" htmlFor="koth-night-name">
+                  <Input id="koth-night-name" value={form.name} onChange={(e) => setField({ name: e.target.value })} />
+                </Field>
+                <Field label="Date" htmlFor="koth-night-date">
+                  <Input id="koth-night-date" type="date" value={form.start_date} onChange={(e) => setField({ start_date: e.target.value })} />
+                </Field>
+                <Field label="Start time" htmlFor="koth-night-time">
+                  <Input id="koth-night-time" type="time" value={form.start_time} onChange={(e) => setField({ start_time: e.target.value })} />
+                </Field>
+                <Field label="Stream link" htmlFor="koth-night-stream">
+                  <Input id="koth-night-stream" type="url" value={form.stream_url} onChange={(e) => setField({ stream_url: e.target.value })} />
+                </Field>
+                <Field label="Page link" htmlFor="koth-night-page">
+                  <Input id="koth-night-page" type="url" value={form.page_url} onChange={(e) => setField({ page_url: e.target.value })} />
+                </Field>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Label className="flex items-center gap-2">
+                  <Switch checked={form.signups_open} onCheckedChange={(signups_open) => setField({ signups_open })} />
+                  Signups open
+                </Label>
+                <Label className="flex items-center gap-2">
+                  <Switch checked={form.published} onCheckedChange={(published) => setField({ published })} />
+                  Published
+                </Label>
+              </div>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-center justify-end gap-2 p-4 pt-0">
+            <Button
+              variant="ghost"
+              className="mr-auto text-error"
+              disabled={busy}
+              onClick={() => {
+                closeDetails();
+                setDeleting(true);
+              }}
+            >
+              <Icon name="mdi-delete-outline" />
+              Delete night
+            </Button>
+            <Button variant="ghost" onClick={closeDetails}>
+              Cancel
+            </Button>
+            <Button disabled={busy || !form?.name.trim()} onClick={saveNight}>
+              <Icon name="mdi-content-save" />
+              Save
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -656,74 +743,6 @@ export function KothNightView({ id }: { id: string }) {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-/** The night's own settings: its name, when it starts, its links and its two switches. It
- *  folds to one "Edit night" button while the night runs. */
-function NightCard({
-  form,
-  open,
-  busy,
-  onOpen,
-  onChange,
-  onSave,
-}: {
-  form: NightForm;
-  open: boolean;
-  busy: boolean;
-  onOpen: () => void;
-  onChange: (patch: Partial<NightForm>) => void;
-  onSave: () => void;
-}) {
-  return (
-    <Card className="card mb-4">
-      <CardHeader className="flex flex-wrap items-center gap-2">
-        <CardTitle className="flex-1">Night</CardTitle>
-        {!open ? (
-          <Button variant="outline" size="sm" className="text-primary-text" aria-expanded={false} aria-controls="koth-night-form" onClick={onOpen}>
-            <Icon name="mdi-pencil" />
-            Edit night
-          </Button>
-        ) : null}
-      </CardHeader>
-      {open ? (
-        <CardContent id="koth-night-form" className="flex flex-col gap-4">
-          <div className="grid gap-3 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3">
-            <Field label="Name" htmlFor="koth-night-name">
-              <Input id="koth-night-name" value={form.name} onChange={(e) => onChange({ name: e.target.value })} />
-            </Field>
-            <Field label="Date" htmlFor="koth-night-date">
-              <Input id="koth-night-date" type="date" value={form.start_date} onChange={(e) => onChange({ start_date: e.target.value })} />
-            </Field>
-            <Field label="Start time" htmlFor="koth-night-time">
-              <Input id="koth-night-time" type="time" value={form.start_time} onChange={(e) => onChange({ start_time: e.target.value })} />
-            </Field>
-            <Field label="Stream link" htmlFor="koth-night-stream">
-              <Input id="koth-night-stream" type="url" value={form.stream_url} onChange={(e) => onChange({ stream_url: e.target.value })} />
-            </Field>
-            <Field label="Page link" htmlFor="koth-night-page">
-              <Input id="koth-night-page" type="url" value={form.page_url} onChange={(e) => onChange({ page_url: e.target.value })} />
-            </Field>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Label className="flex items-center gap-2">
-              <Switch checked={form.signups_open} onCheckedChange={(signups_open) => onChange({ signups_open })} />
-              Signups open
-            </Label>
-            <Label className="flex items-center gap-2">
-              <Switch checked={form.published} onCheckedChange={(published) => onChange({ published })} />
-              Published
-            </Label>
-            <span className="flex-1" />
-            <Button disabled={busy || !form.name.trim()} onClick={onSave}>
-              <Icon name="mdi-content-save" />
-              Save
-            </Button>
-          </div>
-        </CardContent>
-      ) : null}
-    </Card>
   );
 }
 

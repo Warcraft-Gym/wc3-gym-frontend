@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -226,6 +226,17 @@ test('a row that is a side of a series tonight, open or played, in any bracket, 
   assert.equal(hasSeries(board, 40), false); // left before any series
   assert.equal(hasSeries({ brackets: [] }, 20), false);
   assert.equal(hasSeries(null, 20), false);
+});
+
+test('a night reads closed once closed, not started while no series exists before its start, else running', () => {
+  const now = Date.parse('2026-10-03T12:00:00Z');
+  const night = (extra) => ({ closed: false, starts_at: '2026-10-04T00:00:00Z', series_count: 0, ...extra });
+  assert.equal(nightStatus(night({ closed: true }), now), 'closed');
+  assert.equal(nightStatus(night(), now), 'not_started');
+  assert.equal(nightStatus(night({ series_count: 1 }), now), 'running'); // a series before the start
+  assert.equal(nightStatus(night({ starts_at: '2026-10-03T08:00:00Z' }), now), 'running'); // the start has passed
+  assert.equal(nightStatus(night({ starts_at: null }), now), 'running');
+  assert.equal(nightStatus(null, now), 'running');
 });
 
 test('the strip cuts are the bounds of every bracket but the weakest, ascending', () => {

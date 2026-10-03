@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DateTime } from "luxon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +24,7 @@ import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
 import { boundsOf, bracketLabel, cutsOf, movedQueue, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow } from "@/helpers/koth-board.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
+import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -37,25 +37,6 @@ const RAMP = ["heat-1", "heat-2", "heat-3", "heat-4", "heat-5"];
 
 // The night fields the Night card writes, as the form holds them
 type NightForm = { name: string; start_date: string; start_time: string; stream_url: string; page_url: string; signups_open: boolean; published: boolean };
-const formOf = (event: Row): NightForm => ({
-  name: event.name ?? "",
-  start_date: event.start_date ?? "",
-  start_time: event.starts_at ? DateTime.fromISO(event.starts_at, { zone: "utc" }).toLocal().toFormat("HH:mm") : "",
-  stream_url: event.stream_url ?? "",
-  page_url: event.page_url ?? "",
-  signups_open: !!event.signups_open,
-  published: !!event.published,
-});
-// The start time is typed in the admin's own zone and stored in UTC
-const nightBody = (form: NightForm) => ({
-  name: form.name.trim(),
-  start_date: form.start_date || null,
-  starts_at: form.start_date && form.start_time ? DateTime.fromISO(`${form.start_date}T${form.start_time}`).toUTC().toISO() : null,
-  stream_url: form.stream_url.trim() || null,
-  page_url: form.page_url.trim() || null,
-  signups_open: form.signups_open,
-  published: form.published,
-});
 
 /** The run page of one KOTH night: the admin starts every series by hand, enters its winner,
  *  edits the line while people come and go, places the signups W3Champions gave no rating
@@ -129,7 +110,7 @@ export function KothNightView({ id }: { id: string }) {
       .then((row: Row) => {
         if (!alive) return;
         setEvent(row);
-        setForm(formOf(row));
+        setForm(nightForm(row));
       })
       .catch((e: Error) => alive && setError(`The night's settings did not load: ${e.message}`));
     return () => {
@@ -283,7 +264,7 @@ export function KothNightView({ id }: { id: string }) {
     run(async () => {
       const saved = await store.updateEvent(nightId, nightBody(form as NightForm));
       setEvent(saved);
-      setForm(formOf(saved));
+      setForm(nightForm(saved));
       return null;
     });
 

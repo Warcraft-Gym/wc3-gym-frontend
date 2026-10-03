@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, fixChanges, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -327,4 +327,36 @@ test('a player seated in one bracket still reads in the list of another bracket 
 test('historical brackets preserve source order and categorical labels', () => {
   const brackets = [{ name: 'Platinum to 1700 MMR', lower_bound: null }, { name: '1500 to ~1700 MMR', lower_bound: 1500 }, { name: 'Gold and below', lower_bound: null }];
   assert.deepEqual(orderedBrackets({ historical: true, brackets }), brackets);
+});
+
+const fixSeat = (user_id, name) => ({ user_id, name, rows: [] });
+const result = (series_id, winner, loser, throne) => ({ series_id, winner: { name: winner }, loser: { name: loser }, throne });
+const fixBoard = (king, queue, played) => ({ brackets: [{ division_id: 7, king, queue, played }] });
+
+test("fixChanges names a throne that passes and the loser sent to the end", () => {
+  const shibby = fixSeat(1, "EAShibby"), thanks = fixSeat(2, "thanks"), third = fixSeat(3, "Degrand");
+  const before = fixBoard(shibby, [thanks, third], [result(12, "EAShibby", "thanks", "moved"), result(11, "thanks", "EAShibby", "moved")]);
+  const after = fixBoard(thanks, [third, shibby], [result(12, "thanks", "EAShibby", "held"), result(11, "thanks", "EAShibby", "moved")]);
+  assert.deepEqual(fixChanges(before, after, 7, 12).map((line) => line.text), [
+    "The throne passes from EAShibby to thanks.",
+    "EAShibby goes to the end of the queue.",
+  ]);
+});
+
+test("fixChanges lists the crown marks a removal turns and keeps a throne that stays", () => {
+  const shibby = fixSeat(1, "EAShibby"), thanks = fixSeat(2, "thanks");
+  const before = fixBoard(shibby, [thanks], [result(13, "EAShibby", "thanks", "moved"), result(12, "thanks", "EAShibby", "held"), result(11, "thanks", "EAShibby", "moved"), result(10, "EAShibby", "thanks", "moved")]);
+  const after = fixBoard(shibby, [thanks], [result(13, "EAShibby", "thanks", "moved"), result(12, "thanks", "EAShibby", "moved"), result(10, "EAShibby", "thanks", "moved")]);
+  assert.deepEqual(fixChanges(before, after, 7, 11), [
+    { text: "The throne stays with EAShibby." },
+    { text: "Series 3, thanks beat EAShibby", was: "holds the crown", now: "takes the crown" },
+  ]);
+});
+
+test("fixChanges answers nothing when the fix moves nothing else", () => {
+  const shibby = fixSeat(1, "EAShibby"), thanks = fixSeat(2, "thanks");
+  const before = fixBoard(shibby, [thanks], [result(11, "thanks", "EAShibby", "moved"), result(10, "EAShibby", "thanks", "moved")]);
+  const after = fixBoard(shibby, [thanks], [result(11, "thanks", "EAShibby", "moved")]);
+  assert.deepEqual(fixChanges(before, after, 7, 10), []);
+  assert.deepEqual(fixChanges(before, after, 99, 10), []);
 });

@@ -133,12 +133,13 @@ const store = {
   async startKothSeries(night_id: number, entrant1_id: number, entrant2_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/series`, { entrant1_id, entrant2_id });
   },
-  async cancelKothSeries(night_id: number, series_id: number) {
-    return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series/${series_id}`);
+  // Take a series off the table or remove a played one; a preview answers the board it would give and saves nothing
+  async cancelKothSeries(night_id: number, series_id: number, preview = false) {
+    return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series/${series_id}${preview ? "?preview=true" : ""}`);
   },
-  // Enter or change the winner; the crown and the line follow it
-  async setKothWinner(night_id: number, series_id: number, winner: 1 | 2) {
-    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/series/${series_id}/result`, { winner });
+  // Enter or change the winner; the crown and the line follow it, and a preview saves nothing
+  async setKothWinner(night_id: number, series_id: number, winner: 1 | 2, preview = false) {
+    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/series/${series_id}/result${preview ? "?preview=true" : ""}`, { winner });
   },
   // Moves the MMR band of each bracket and each placed player by the rating he was placed with; a series or a hand placement keeps him
   async setKothBounds(night_id: number, bounds: { division_id: number; lower_bound: number }[]) {

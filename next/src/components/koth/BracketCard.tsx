@@ -488,7 +488,7 @@ export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets:
   if (!seats.length) return null;
   return (
     <div className="px-4 pb-2">
-      <div className="py-1 text-xs font-medium text-muted-foreground">Left tonight</div>
+      <div className="py-1 text-sm font-medium text-foreground">Left tonight</div>
       {/* the name fades, the mark keeps its strength: a player who left is still a player with no stats */}
       {seats.map((seat: Row) => (
         <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 [&_.name]:opacity-(--v-medium-emphasis-opacity)">
@@ -516,40 +516,98 @@ export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets:
   );
 }
 
-/** One series the bracket played tonight: the winner beat the loser, and the crown says what
- *  the throne did. A best of one carries no score worth printing. */
-export function PlayedRow({ played, admin, clean }: { played: Row; admin?: BracketAdmin; clean?: boolean }) {
-  const throne = throneWord(played);
+// The mark of what a result did to the crown; a game between two others leaves no mark
+const CROWN_ICON: Record<string, string> = { moved: "mdi-crown", held: "mdi-shield-crown-outline" };
+
+/** Tonight's results as a table, newest first: the series number in play order, the winner with the
+ *  win mark, the loser, and what the result did to the crown, with a key under it. The run page adds
+ *  a Fix column; a stream drops the replay link, because nobody clicks on a stream. */
+export function PlayedTable({ played, total, admin, clean }: { played: Row[]; total: number; admin?: BracketAdmin; clean?: boolean }) {
+  // a name truncates inside its cell, so a long one never pushes the crown or Fix out of the card
+  const cell = "flex min-w-0 items-center gap-1.5 overflow-hidden [&_.name]:truncate [&_.player-name]:min-w-0 [&_.player-name]:max-w-full";
+  const keys = (["moved", "held"] as const).filter((throne) => played.some((row) => row.throne === throne));
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t py-1">
-      <span className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-win" aria-hidden="true" />
-      <BoardPlayer row={played.winner} />
-      <span className="text-xs text-muted-foreground">beat</span>
-      <BoardPlayer row={played.loser} />
-      {/* the loser left the night, so no game was played */}
-      {played.forfeit ? <span className="text-xs text-muted-foreground">Forfeit</span> : null}
-      <span className="ml-auto flex shrink-0 items-center gap-1">
-        {throne ? (
-          <TapTooltip content={throne}>
-            <Icon name="mdi-crown" size={16} className="text-primary-text" />
-            <span className="sr-only">{throne}</span>
-          </TapTooltip>
-        ) : null}
-        {/* nobody clicks a link on a stream, so the clean view drops the chip */}
-        {played.replay && !clean ? (
-          <Badge variant="outline" render={<Link href={`/series/${played.series_id}`} />}>
-            <Icon name="mdi-filmstrip" />
-            Replay
-          </Badge>
-        ) : null}
-        {admin ? (
-          <Button variant="outline" size="xs" disabled={admin.busy} aria-label={`Fix ${played.winner?.name} beat ${played.loser?.name}`} onClick={() => admin.onFix(played)}>
-            <Icon name="mdi-pencil" />
-            Fix
-          </Button>
-        ) : null}
-      </span>
-    </div>
+    <>
+      <table className="w-full table-fixed border-collapse text-sm">
+        <colgroup>
+          <col className="w-7" />
+          <col />
+          <col />
+          <col className="w-7" />
+          {admin ? <col className="w-8" /> : null}
+        </colgroup>
+        <thead>
+          <tr className="text-left text-xs text-muted-foreground">
+            <th scope="col" className="pb-1 pr-1 text-right font-normal">#</th>
+            <th scope="col" className="pb-1 pl-2 font-normal">Winner</th>
+            <th scope="col" className="pb-1 pl-2 font-normal">Loser</th>
+            <th scope="col" className="pb-1 font-normal">
+              <span className="sr-only">Crown</span>
+            </th>
+            {admin ? (
+              <th scope="col" className="pb-1 font-normal">
+                <span className="sr-only">Fix</span>
+              </th>
+            ) : null}
+          </tr>
+        </thead>
+        <tbody>
+          {played.map((row: Row, index: number) => {
+            const throne = throneWord(row);
+            return (
+              <tr key={row.series_id} className="border-t border-border/70">
+                <td className="tnum py-1.5 pr-1 text-right text-xs text-muted-foreground">{total - index}</td>
+                <td className="py-1.5 pl-2">
+                  <span className={cell}>
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-win" aria-hidden="true" />
+                    <BoardPlayer row={{ ...row.winner, mmr: null }} warn={false} />
+                  </span>
+                </td>
+                <td className="py-1.5 pl-2">
+                  <span className={cn(cell, "[&_.name]:opacity-(--v-medium-emphasis-opacity)")}>
+                    <BoardPlayer row={{ ...row.loser, mmr: null }} warn={false} />
+                    {/* the loser left the night, so no game was played */}
+                    {row.forfeit ? <span className="shrink-0 text-xs text-muted-foreground">forfeit</span> : null}
+                    {row.replay && !clean ? (
+                      <Link href={`/series/${row.series_id}`} className="shrink-0 text-primary-text" aria-label={`Replay of series ${total - index}`}>
+                        <Icon name="mdi-filmstrip" size={16} />
+                      </Link>
+                    ) : null}
+                  </span>
+                </td>
+                <td className="py-1.5 text-center">
+                  {throne ? (
+                    <TapTooltip content={throne}>
+                      <Icon name={CROWN_ICON[row.throne]} size={16} className="text-primary-text" />
+                      <span className="sr-only">{throne}</span>
+                    </TapTooltip>
+                  ) : null}
+                </td>
+                {admin ? (
+                  <td className="py-1.5 text-right">
+                    <TapTooltip content="Fix this result">
+                      <Button variant="ghost" size="icon-xs" className="text-primary-text" disabled={admin.busy} aria-label={`Fix ${row.winner?.name} beat ${row.loser?.name}`} onClick={() => admin.onFix(row)}>
+                        <Icon name="mdi-pencil" />
+                      </Button>
+                    </TapTooltip>
+                  </td>
+                ) : null}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {keys.length ? (
+        <p className="mb-0 mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {keys.map((throne) => (
+            <span key={throne} className="inline-flex items-center gap-1">
+              <Icon name={CROWN_ICON[throne]} size={14} className="text-primary-text" />
+              {throneWord({ throne })}
+            </span>
+          ))}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -607,7 +665,7 @@ export function BracketCard({
       <div className="pt-3">
         <OpenSeries bracket={bracket} admin={admin} you={you} />
         <div className="flex items-baseline gap-2 px-4 pb-1">
-          <span className="text-xs font-medium text-muted-foreground">Queue</span>
+          <span className="text-sm font-medium text-foreground">Queue</span>
           <span className="tnum text-xs text-muted-foreground">{queue.length} waiting</span>
         </div>
       </div>
@@ -641,26 +699,22 @@ export function BracketCard({
         <p className="mb-3 px-4 text-sm text-muted-foreground">Nobody signed up yet</p>
       )}
 
-      {/* what already happened tonight sits in a sunken band under the work, so the eye stays on the queue */}
-      {leftSeats(bracket).length || played.length ? (
-        <div className="border-t bg-background/70 pt-2">
-          <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
-          {played.length ? (
-            <div className="px-4 pb-3">
-              <div className="flex items-baseline gap-2 pb-1">
-                <span className="text-xs font-medium text-muted-foreground">Played tonight</span>
-                <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
-              </div>
-              {playedShown.map((row: Row) => (
-                <PlayedRow key={row.series_id} played={row} admin={admin} clean={clean} />
-              ))}
-              {played.length > PLAYED_SHOWN && !clean ? (
-                <Button variant="ghost" size="xs" className="mt-1 text-primary-text" aria-expanded={allPlayed} onClick={() => setAllPlayed(!allPlayed)}>
-                  <Icon name={allPlayed ? "mdi-chevron-up" : "mdi-chevron-down"} />
-                  {allPlayed ? "Show fewer" : `Show all ${played.length} series`}
-                </Button>
-              ) : null}
-            </div>
+      {/* who left the line can still be put back, so the rows stay with the queue, above the rule */}
+      <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
+
+      {/* a gold rule ends the work and opens the record: tonight's results in a sunken band */}
+      {played.length ? (
+        <div className="border-t-2 border-primary bg-background/70 px-4 pb-3 pt-2.5">
+          <div className="flex items-baseline gap-2 pb-1.5">
+            <h3 className="m-0 font-heading text-base font-bold text-primary-text">Played tonight</h3>
+            <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
+          </div>
+          <PlayedTable played={playedShown} total={played.length} admin={admin} clean={clean} />
+          {played.length > PLAYED_SHOWN && !clean ? (
+            <Button variant="ghost" size="xs" className="mt-1 text-primary-text" aria-expanded={allPlayed} onClick={() => setAllPlayed(!allPlayed)}>
+              <Icon name={allPlayed ? "mdi-chevron-up" : "mdi-chevron-down"} />
+              {allPlayed ? "Show fewer" : `Show all ${played.length} series`}
+            </Button>
           ) : null}
         </div>
       ) : null}

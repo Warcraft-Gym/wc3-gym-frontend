@@ -93,8 +93,8 @@ test('a reader reads his own place in the line, and nothing in a bracket he is n
 });
 
 test('a played row says what the throne did', () => {
-  assert.equal(throneWord({ throne: 'moved' }), 'The throne moved');
-  assert.equal(throneWord({ throne: 'held' }), 'The throne was held');
+  assert.equal(throneWord({ throne: 'moved' }), 'Took the crown');
+  assert.equal(throneWord({ throne: 'held' }), 'Defended the crown');
   assert.equal(throneWord({ throne: 'none' }), null);
 });
 

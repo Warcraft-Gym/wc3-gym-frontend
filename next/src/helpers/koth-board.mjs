@@ -160,7 +160,7 @@ export function placeInQueue(bracket, userId) {
 
 // What a played row says about the crown. The bracket's king is the truth; this is the hint.
 export const throneWord = (played) =>
-  played?.throne === 'moved' ? 'The throne moved' : played?.throne === 'held' ? 'The throne was held' : null;
+  played?.throne === 'moved' ? 'Took the crown' : played?.throne === 'held' ? 'Defended the crown' : null;
 
 // The whole line as the queue write names it: every race row of every seat, in seat order
 export const queueIds = (queue = []) => queue.flatMap((seat) => (seat.rows ?? []).map((row) => row.entrant_id));

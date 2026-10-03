@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatRow, skippedSeat, startButton,
   throneWord,
 } from './koth-board.mjs';
@@ -113,6 +113,19 @@ test('the reader reads back every race he entered on, placed or not', () => {
   };
   assert.deepEqual(myRacesOnBoard(board, 5), ['HU', 'OC', 'NE']);
   assert.deepEqual(myRacesOnBoard(board, null), []);
+});
+
+test('a visitor signs up only while signups stand open on a night open to anyone', () => {
+  const visitor = { signedIn: false, signupsOpen: true, policy: 'anyone', signedUp: false, multiEntry: true, heldCount: 0, raceCount: 5 };
+  assert.equal(canSignUp(visitor), true);
+  assert.equal(canSignUp({ ...visitor, signupsOpen: false }), false);
+  assert.equal(canSignUp({ ...visitor, policy: 'members' }), false);
+});
+
+test('a signed-in player signs up while a race is left to enter', () => {
+  const player = { signedIn: true, signupsOpen: true, policy: 'anyone', signedUp: true, multiEntry: true, heldCount: 5, raceCount: 5 };
+  assert.equal(canSignUp(player), false);
+  assert.equal(canSignUp({ ...player, heldCount: 1 }), true);
 });
 
 test('the close names each open series it deletes', () => {

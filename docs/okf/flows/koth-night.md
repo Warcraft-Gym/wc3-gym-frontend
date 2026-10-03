@@ -4,7 +4,7 @@ title: A KOTH night
 description: One KOTH night from "Open tonight" to the close, with the three doors a player signs up through and the one board that the run page, the night page and the stream view read.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-01T09:45:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T06:46:00Z }
 sources:
   - id: koth
     resource: ../pages/koth.md
@@ -27,7 +27,7 @@ This flow runs one KOTH night. The admin opens the night, places the players in 
 | Step | Who | Where | Writes | Owner |
 |---|---|---|---|---|
 | 1. Open tonight's night | admin | `/koth` | `POST /koth/nights` | [KOTH](../pages/koth.md) |
-| 2. Sign up from the night page | member | `/events/:id` | `POST /events/{id}/entrants` | [KOTH](../pages/koth.md) |
+| 2. Sign up from the night page | a visitor by battle tag, or a signed-in reader, who can also withdraw | `/events/:id` | `POST /events/{id}/entrants` | [KOTH](../pages/koth.md) |
 | 3. Sign up from the stream chat | a player in the chat, through Nightbot | the Nightbot command; its token is set on `/config` | the backend route the command calls | [Site admin](../pages/site-admin.md) |
 | 4. Add a late arrival, place a signup with no rating | admin | `/koth/nights/:id` | `POST /events/{id}/entrants/admin`, `PUT /events/{id}/entrants/{entrant_id}` | [KOTH](../pages/koth.md) |
 | 5. Save the bracket bounds | admin | `/koth/nights/:id`, Brackets card | `PUT /koth/nights/{id}/bounds` | [KOTH](../pages/koth.md) |
@@ -43,13 +43,13 @@ Steps 6 and 7 repeat in every bracket until the night closes.
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant Member
+    participant Player
     participant Chat as Stream chat via Nightbot
     participant Backend
     participant Board as Night page and stream view
     Admin->>Backend: open tonight on /koth, POST /koth/nights
     par three doors
-        Member->>Backend: sign up on /events/:id
+        Player->>Backend: sign up on /events/:id, by battle tag or signed in
     and
         Chat->>Backend: the Nightbot command
     and

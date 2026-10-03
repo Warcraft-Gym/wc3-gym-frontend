@@ -329,7 +329,8 @@ export function EntrantsView({ id }: { id: string }) {
         onClick: () => run("pin", async () => swap(await store.placeEntrant(eventId, row.id, { division_id: row.division_id, manual_placement: !row.manual_placement }))),
       },
       withBan && banAction(row),
-      {
+      // A KOTH night removes a player on its run page, where its forfeit rules apply
+      !isKoth && {
         icon: "mdi-close",
         label: "Remove",
         color: "error",

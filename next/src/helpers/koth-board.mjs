@@ -187,6 +187,35 @@ export function myRacesOnBoard(board, userId) {
 const tableSides = (board) =>
   orderedBrackets(board).flatMap((bracket) => [bracket.open_series?.side1, bracket.open_series?.side2]).filter(Boolean);
 
+// Whether a race row of the king wears the crown: the crowned row, or every row of his when the board names none of them
+export function wearsTheCrown(bracket, entrantId) {
+  const rows = bracket?.king?.rows ?? [];
+  const crowned = rows.find((row) => row.entrant_id === bracket.king_entrant_id);
+  return rows.some((row) => row.entrant_id === entrantId) && (!crowned || crowned.entrant_id === entrantId);
+}
+
+/**
+ * Whether a withdraw costs the king his next match: it takes the crowned row and leaves him no
+ * other row in that bracket, which would take the crown with no forfeit. No race named takes
+ * every row. A board that names none of his rows counts any race of a king.
+ *
+ * @param {Object|null} board - The board read
+ * @param {number|null} userId - The reader
+ * @param {string|null} [race] - The race withdrawn, or null for all of them
+ * @returns {boolean}
+ */
+export function withdrawForfeitsCrown(board, userId, race = null) {
+  if (userId == null) return false;
+  return orderedBrackets(board).some((bracket) => {
+    if (bracket.king?.user_id !== userId) return false;
+    const rows = bracket.king.rows ?? [];
+    if (race === null) return true;
+    const crowned = rows.find((row) => row.entrant_id === bracket.king_entrant_id);
+    if (!crowned) return rows.some((row) => row.race === race);
+    return crowned.race === race && rows.every((row) => row.race === race);
+  });
+}
+
 // Whether a withdraw forfeits a series on the table: the race named, or with no race named any race of his, is a side of one
 /** @type {(board: Object|null, userId: number|null, race?: string|null) => boolean} */
 export const withdrawForfeitsSeries = (board, userId, race = null) =>

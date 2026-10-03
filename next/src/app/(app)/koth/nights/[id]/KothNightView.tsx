@@ -67,6 +67,8 @@ export function KothNightView({ id }: { id: string }) {
   const [addTag, setAddTag] = useState("");
   const [addRace, setAddRace] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [moveKing, setMoveKing] = useState<{ bracket: Row; seat: Row; entrantId: number; divisionId: number } | null>(null);
+  const [dropUnplaced, setDropUnplaced] = useState<Row | null>(null); // the unplaced signup the confirm names
 
   const replayFor = useRef<number | null>(null);
   const replayInput = useRef<HTMLInputElement>(null);
@@ -148,6 +150,29 @@ export function KothNightView({ id }: { id: string }) {
     }
   };
 
+  // One write per race row; several read the board fresh at the end, even after a failed one
+  const runEach = (entrantIds: number[], write: (entrantId: number) => Promise<any>) =>
+    entrantIds.length === 1
+      ? run(() => write(entrantIds[0]))
+      : run(async () => {
+          let failure: unknown = null;
+          try {
+            for (const entrantId of entrantIds) await write(entrantId);
+          } catch (e) {
+            failure = e;
+          }
+          const fresh = await store.fetchBoard(nightId, true);
+          if (!failure) return fresh;
+          takeBoard(fresh);
+          throw failure;
+        });
+
+  // A king's move empties the throne, so it asks first; the board names no crowned race, so every race of his asks
+  const moveBracket = (bracket: Row, seat: Row, entrantId: number, divisionId: number) => {
+    if (bracket.king && seatKey(bracket.king) === seatKey(seat)) setMoveKing({ bracket, seat, entrantId, divisionId });
+    else run(() => store.moveKothEntrant(nightId, entrantId, divisionId));
+  };
+
   // The played row names the side the winner played, so the flip writes the other side
   const changeWinner = async (played: Row) => {
     if (played.winner_side === 1 || played.winner_side === 2) {
@@ -183,31 +208,21 @@ export function KothNightView({ id }: { id: string }) {
     },
     onMove: (bracket, from, to) =>
       run(() => store.setKothQueue(nightId, bracket.division_id, queueIds(movedQueue(bracket.queue ?? [], from, to)))),
-    // one player holds one place in line, so removing him takes every race row he holds here
-    onRemove: (seat) =>
-      run(async () => {
-        let answer = null;
-        for (const row of seat.rows ?? []) answer = await store.removeKothEntrant(nightId, row.entrant_id);
-        return answer;
-      }),
-    // one player holds one row under "Left tonight", so putting him back takes every race row
-    onRestore: (entrantIds) =>
-      run(async () => {
-        let answer = null;
-        for (const entrantId of entrantIds) answer = await store.restoreKothEntrant(nightId, entrantId);
-        return answer;
-      }),
+    onMoveBracket: moveBracket,
+    onRemove: (entrantIds) => runEach(entrantIds, (entrantId) => store.removeKothEntrant(nightId, entrantId)),
+    onRestore: (entrantIds) => runEach(entrantIds, (entrantId) => store.restoreKothEntrant(nightId, entrantId)),
     onChangeWinner: (played) => run(() => changeWinner(played)),
     onAddReplay: (played) => {
       replayFor.current = played.series_id;
       replayInput.current?.click();
     },
-    onAddPlayer: () => {
-      setAddTag("");
-      setAddRace(null);
-      setAddError(null);
-      setAddTo(true);
-    },
+  };
+
+  const openAddPlayer = () => {
+    setAddTag("");
+    setAddRace(null);
+    setAddError(null);
+    setAddTo(true);
   };
 
   const takeReplay = async (file: File | null) => {
@@ -242,6 +257,7 @@ export function KothNightView({ id }: { id: string }) {
   const passOptions: Row[] = (stepDown?.queue ?? []).filter((seat: Row) => (seat.rows ?? []).length);
   const passName = passOptions.find((seat: Row) => seatKey(seat) === passTo)?.name;
   const openRows: Row[] = openSeriesRows(board);
+  const moveFrom = moveKing ? bracketLabel(brackets, moveKing.bracket).name : "";
 
   const saveBounds = () => run(() => store.setKothBounds(nightId, boundsOf(board, cuts)));
 
@@ -281,6 +297,12 @@ export function KothNightView({ id }: { id: string }) {
         </Badge>
         <span className="ml-auto flex flex-wrap gap-2">
           {board && !board.historical ? <StreamLinks eventId={board.night_id} /> : null}
+          {board && !board.closed ? (
+            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={openAddPlayer}>
+              <Icon name="mdi-account-plus" />
+              Add player
+            </Button>
+          ) : null}
           {board && !board.closed ? (
             <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setClosing(true)}>
               <Icon name="mdi-exit-to-app" />
@@ -366,7 +388,7 @@ export function KothNightView({ id }: { id: string }) {
                     {bracketLabel(brackets, bracket).name}
                   </Button>
                 ))}
-                <Button variant="ghost" size="icon-xs" className="text-error" disabled={busy || !!board?.closed} aria-label={`Remove ${row.name}`} onClick={() => run(() => store.removeKothEntrant(nightId, row.entrant_id))}>
+                <Button variant="ghost" size="icon-xs" className="text-error" disabled={busy || !!board?.closed} aria-label={`Remove ${row.name}`} onClick={() => setDropUnplaced(row)}>
                   <Icon name="mdi-close" />
                 </Button>
               </span>
@@ -514,6 +536,60 @@ export function KothNightView({ id }: { id: string }) {
             <Button disabled={busy} onClick={() => run(() => store.closeNight(nightId), () => setClosing(false))}>
               <Icon name="mdi-exit-to-app" />
               Close the night
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* A king who moves leaves the throne empty, so the move asks first */}
+      <Dialog open={!!moveKing} onOpenChange={(open) => !open && setMoveKing(null)}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Move the king</DialogTitle>
+          {moveKing ? (
+            <p className="m-0 p-4 text-sm">
+              {moveKing.seat.name} is king of {moveFrom}. Moving him leaves the throne empty. If no series follows, {moveFrom} has no champion tonight and no king from last event next time.
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setMoveKing(null)}>
+              Cancel
+            </Button>
+            {/* the dialog closes first, so a refusal reads in the alert on the page */}
+            <Button
+              disabled={busy}
+              onClick={() => {
+                const move = moveKing;
+                setMoveKing(null);
+                if (move) run(() => store.moveKothEntrant(nightId, move.entrantId, move.divisionId));
+              }}
+            >
+              <Icon name="mdi-swap-horizontal" />
+              Move
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* An unplaced signup holds no place to go back to, so its remove asks first */}
+      <Dialog open={!!dropUnplaced} onOpenChange={(open) => !open && setDropUnplaced(null)}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="bg-error px-4 py-3 text-on-error">Remove {dropUnplaced?.name}?</DialogTitle>
+          <p className="m-0 p-4 text-sm">An unplaced signup cannot be put back.</p>
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setDropUnplaced(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={busy}
+              onClick={() => {
+                const row = dropUnplaced;
+                setDropUnplaced(null);
+                if (row) run(() => store.removeKothEntrant(nightId, row.entrant_id));
+              }}
+            >
+              <Icon name="mdi-close" />
+              Remove
             </Button>
           </div>
         </DialogContent>

@@ -263,6 +263,23 @@ Every night has a public page, its event page `/events/<id>`. `/koth/dashboard` 
 tonight's night page, so one saved link follows each new night.
 The run page carries **Open stream view**, which opens the night page in its stream view
 (`?mode=clean`) in a new tab, and **Copy stream link**, which copies that link for the stream.
+**Add player** sits beside them and enters a late arrival by battle tag; W3Champions picks his
+bracket.
+
+On a bracket card:
+
+- **Move to** moves one race of a player to another bracket, where he stands last. A player on
+  one race has it under his name; a player on several races has it on each race row. Moving
+  the king asks first, because it leaves the throne empty.
+- A player on several races reads **Plays next as** over his races. Pick the race the next
+  series takes.
+- The X on a race row removes that one race. The X beside the name removes the player from this
+  bracket on every race.
+- A race the player left while another of his stays reads in his row as "Orc · left tonight",
+  with **Put back** for that race. **Left tonight** lists only the players who no longer stand
+  in the bracket; **Put back** there returns every race he left on.
+- A row is dragged only within its own bracket.
+- The X on an **Unplaced** signup asks first, because an unplaced signup cannot be put back.
 
 ---
 

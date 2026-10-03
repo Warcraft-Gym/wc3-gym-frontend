@@ -169,6 +169,8 @@ export function SignupDialog({
                 {entrant.user ? (
                   <PlayerName player={entrant.user} race={entrant.race} mmr={entrant.mmr ?? false} warning={placed ? undefined : noStats} plain noFlag />
                 ) : null}
+                {/* a session with no player cannot read its own row, so the line says how */}
+                {needsTag ? <p>Sign in with Discord to see your place and withdraw.</p> : null}
               </div>
             </div>
           ) : (

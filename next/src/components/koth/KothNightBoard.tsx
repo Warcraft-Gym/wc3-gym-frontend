@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { SignupDialog } from "@/components/SignupDialog";
 import { BoardPlayer, BracketCard } from "@/components/koth/BracketCard";
-import { myRacesOnBoard, orderedBrackets } from "@/helpers/koth-board.mjs";
+import { canSignUp, myRacesOnBoard, orderedBrackets } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { useAuth, useEventStore } from "@/stores";
 
@@ -19,8 +19,9 @@ const STREAM_POLL_MS = 30000;
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 
 /** A KOTH night that is not archived, on the one board read: a card per bracket with its king,
- *  the series it plays now, the line waiting and what it played tonight. A member signs up while
- *  signups stand open, withdraws until the night closes, and reads his own place in line. `clean` is the stream view: no control, and the
+ *  the series it plays now, the line waiting and what it played tonight. While signups stand open a
+ *  signed-in reader signs up, and a visitor signs up by battle tag on a night open to anyone. A
+ *  signed-in reader withdraws until the night closes and reads his own place in line. `clean` is the stream view: no control, and the
  *  board read again every 30 s while the tab is visible and the night is open. */
 export function KothNightBoard({
   event,
@@ -49,7 +50,8 @@ export function KothNightBoard({
   // a king who leaves loses a forfeit to the first in line, so his confirm says so
   const wearsCrown = (race: string | null) =>
     brackets.some((bracket) => bracket.king?.user_id === myId && (race === null || bracket.king.rows.some((row: Row) => row.race === race)));
-  const canEnter = !!auth.me && !!event.signups_open && (!signedUp || (!!event.multi_entry && held.length < raceWrapper.races.length));
+  const canEnter = canSignUp({ signedIn: !!auth.me, signupsOpen: !!event.signups_open, policy: event.signup_policy, signedUp,
+    multiEntry: !!event.multi_entry, heldCount: held.length, raceCount: raceWrapper.races.length });
 
   // fresh skips the edge cache after the reader's own write; a failure keeps the board on the screen
   const readBoard = async (fresh = false) => {

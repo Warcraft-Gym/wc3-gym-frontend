@@ -173,6 +173,13 @@ export function myRacesOnBoard(board, userId) {
   return [...mine, ...unplaced].map((row) => row.race).filter(Boolean);
 }
 
+// Whether the reader sees "Sign up": a visitor only on a night open to anyone, a signed-in reader while a race is left to enter
+export function canSignUp({ signedIn, signupsOpen, policy, signedUp, multiEntry, heldCount, raceCount }) {
+  if (!signupsOpen) return false;
+  if (!signedIn) return policy === 'anyone';
+  return !signedUp || (!!multiEntry && heldCount < raceCount);
+}
+
 // Every open series the close deletes, named by its bracket and its two sides
 export const openSeriesRows = (board) =>
   orderedBrackets(board)

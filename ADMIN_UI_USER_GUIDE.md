@@ -258,6 +258,7 @@ page. **Tonight** opens tonight's night page. A night's name opens its run page,
 **Published**. Only **Close the night** ends a night.
 
 Players sign up on the night page, or through the Nightbot command set up on `/config`.
+Anyone can sign up on the night page by battle tag, with or without a login.
 Every night has a public page, its event page `/events/<id>`. `/koth/dashboard` lands on
 tonight's night page, so one saved link follows each new night.
 The run page carries **Open stream view**, which opens the night page in its stream view

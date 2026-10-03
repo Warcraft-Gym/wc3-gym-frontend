@@ -262,3 +262,39 @@ export const openSeriesRows = (board) =>
       side1: bracket.open_series.side1,
       side2: bracket.open_series.side2,
     }));
+
+// What one result did to the crown, as the fix dialog says it
+const CROWN_VERB = { moved: "takes the crown", held: "holds the crown", none: "leaves the crown" };
+
+// What a fix changes beyond the series itself, read off the board before it and the board its preview
+// answers: the throne, the crown mark of every other series, and who goes to the end of the line.
+// Empty when nothing else moves.
+export function fixChanges(before, after, divisionId, seriesId) {
+  const was = before?.brackets?.find((row) => row.division_id === divisionId);
+  const now = after?.brackets?.find((row) => row.division_id === divisionId);
+  if (!was || !now) return [];
+  const lines = [];
+  const order = [...(was.played ?? [])].reverse().map((row) => row.series_id);
+  for (const row of now.played ?? []) {
+    const old = (was.played ?? []).find((item) => item.series_id === row.series_id);
+    if (row.series_id === seriesId || !old || old.throne === row.throne) continue;
+    lines.push({
+      text: `Series ${order.indexOf(row.series_id) + 1}, ${row.winner.name} beat ${row.loser.name}`,
+      was: CROWN_VERB[old.throne],
+      now: CROWN_VERB[row.throne],
+    });
+  }
+  const queue = (bracket) => (bracket.queue ?? []).map((seat) => seat.user_id);
+  const last = queue(now).at(-1);
+  if (last != null && queue(was).at(-1) !== last) {
+    lines.push({ text: `${now.queue.at(-1).name} goes to the end of the queue.` });
+  }
+  const [king, crowned] = [was.king, now.king];
+  if (king?.user_id !== crowned?.user_id) {
+    const text = !crowned ? `The throne is left empty.` : king ? `The throne passes from ${king.name} to ${crowned.name}.` : `${crowned.name} takes the empty throne.`;
+    lines.unshift({ text });
+  } else if (lines.length && king) {
+    lines.unshift({ text: `The throne stays with ${king.name}.` });
+  }
+  return lines;
+}

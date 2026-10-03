@@ -22,7 +22,7 @@ import { BoardPlayer, BracketCard, raceName, seatMark, type BracketAdmin } from 
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
-import { boundsOf, bracketLabel, cutsOf, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, wearsTheCrown } from "@/helpers/koth-board.mjs";
+import { boundsOf, bracketLabel, cutsOf, fixChanges, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, wearsTheCrown } from "@/helpers/koth-board.mjs";
 import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
@@ -48,6 +48,9 @@ const STATUS: Record<string, { label: string; tone: string | null; icon: string 
  *  edits the line while people come and go, places the signups W3Champions gave no rating
  *  for, sets the night's details and its bracket bounds, and closes the night. Every board
  *  write answers the whole board, so the page never reads itself again after one. */
+// The three answers of the fix dialog: the result as recorded, the other side won, or remove the series
+type FixPick = "keep" | "turn" | "remove";
+
 export function KothNightView({ id }: { id: string }) {
   const nightId = Number(id);
   const store = useEventStore();
@@ -62,6 +65,11 @@ export function KothNightView({ id }: { id: string }) {
   const [picked, setPicked] = useState<number[]>([]); // the seats clicked for the next pair
 
   const [stepDown, setStepDown] = useState<Row | null>(null);
+  // The played series being fixed, the answer picked for it, and what its preview says the fix changes
+  const [fix, setFix] = useState<Row | null>(null);
+  const [fixPick, setFixPick] = useState<FixPick>("keep");
+  const [fixPreview, setFixPreview] = useState<{ pick: FixPick; lines?: Row[]; error?: string } | null>(null);
+  const fixToken = useRef(0); // the newest preview asked for, so a slow answer never overwrites a later pick
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -180,16 +188,52 @@ export function KothNightView({ id }: { id: string }) {
     else run(() => store.moveKothEntrant(nightId, entrantId, divisionId));
   };
 
-  // The played row names the side the winner played, so the flip writes the other side
-  const changeWinner = async (played: Row) => {
-    if (played.winner_side === 1 || played.winner_side === 2) {
-      return await store.setKothWinner(nightId, played.series_id, played.winner_side === 1 ? 2 : 1);
-    }
+  // The played row names the side the winner played, so turning it around writes the other side
+  const loserSide = async (played: Row): Promise<1 | 2> => {
+    if (played.winner_side === 1 || played.winner_side === 2) return played.winner_side === 1 ? 2 : 1;
     // a board answered before the side landed in the read still needs the series row
     const series = await fetchWrapper.get(`${backendUrl}/series/${played.series_id}`);
-    const side = series.player1_id === played.loser.user_id ? 1 : 2;
-    return await store.setKothWinner(nightId, played.series_id, side);
+    return series.player1_id === played.loser.user_id ? 1 : 2;
   };
+
+  // One write per answer of the fix dialog; the preview runs the same write and saves nothing
+  const fixWrite = async (played: Row, pick: FixPick, preview = false) =>
+    pick === "remove" ? store.cancelKothSeries(nightId, played.series_id, preview) : store.setKothWinner(nightId, played.series_id, await loserSide(played), preview);
+
+  const openFix = (played: Row) => {
+    const bracket = brackets.find((row) => (row.played ?? []).some((item: Row) => item.series_id === played.series_id));
+    const rows: Row[] = bracket?.played ?? [];
+    fixToken.current++;
+    // the bracket lists its results newest first, and the dialog counts them in play order
+    setFix({ ...played, bracket, number: rows.length - rows.findIndex((item) => item.series_id === played.series_id), total: rows.length });
+    setFixPick("keep");
+    setFixPreview(null);
+  };
+
+  const closeFix = () => {
+    fixToken.current++;
+    setFix(null);
+  };
+
+  const pickFix = async (pick: FixPick) => {
+    setFixPick(pick);
+    setFixPreview(null);
+    const token = ++fixToken.current;
+    if (pick === "keep" || !fix) return;
+    try {
+      const answer = await fixWrite(fix, pick, true);
+      if (token === fixToken.current) setFixPreview({ pick, lines: fixChanges(board, answer, fix.bracket?.division_id, fix.series_id) });
+    } catch (e) {
+      if (token === fixToken.current) setFixPreview({ pick, error: (e as Error).message });
+    }
+  };
+
+  // The lines of What changes; a removed series takes its replay with it
+  const fixLines: Row[] | null =
+    fix && fixPreview?.pick === fixPick && fixPreview.lines
+      ? [...fixPreview.lines, ...(fixPick === "remove" && fix.replay ? [{ text: "Its replay is deleted with it." }] : [])]
+      : null;
+  const fixVerb = fixPick === "remove" ? "Remove series" : fixPick === "turn" ? `Make ${fix?.loser?.name} the winner` : "Save";
 
   const admin: BracketAdmin = {
     picks,
@@ -219,7 +263,7 @@ export function KothNightView({ id }: { id: string }) {
     onRemove: (entrantIds) => runEach(entrantIds, (entrantId) => store.removeKothEntrant(nightId, entrantId)),
     onRestore: (entrantIds) => runEach(entrantIds, (entrantId) => store.restoreKothEntrant(nightId, entrantId)),
     onErase: (name, rows) => setErase({ name, rows }),
-    onChangeWinner: (played) => run(() => changeWinner(played)),
+    onFix: openFix,
   };
 
   const openAddPlayer = () => {
@@ -421,6 +465,92 @@ export function KothNightView({ id }: { id: string }) {
           ))}
         </div>
       )}
+
+      {/* A played series is fixed on purpose: pick what happened, read what that changes, then save */}
+      <Dialog open={!!fix} onOpenChange={(open) => !open && closeFix()}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Fix this result</DialogTitle>
+          {fix ? (
+            <>
+              <p className="mb-0 px-4 pt-3 text-sm text-muted-foreground">
+                {fix.bracket ? `${bracketLabel(brackets, fix.bracket).name}, ` : ""}series {fix.number} of {fix.total}
+              </p>
+              <fieldset className="m-0 flex flex-col gap-2 border-0 p-4">
+                <legend className="mb-2 text-sm text-muted-foreground">What happened?</legend>
+                {(
+                  [
+                    { pick: "keep", body: <><BoardPlayer row={fix.winner} plain /> won</>, note: "Recorded now" },
+                    { pick: "turn", body: <><BoardPlayer row={fix.loser} plain /> won</> },
+                    { pick: "remove", body: "Remove this series", note: "For a series that wasn't played: a test, a duplicate, the wrong pair." },
+                  ] as { pick: FixPick; body: React.ReactNode; note?: string }[]
+                ).map((choice) => (
+                  <label
+                    key={choice.pick}
+                    className={cn(
+                      "flex cursor-pointer items-start gap-2 rounded-lg border p-3",
+                      fixPick === choice.pick && (choice.pick === "remove" ? "border-error" : "border-primary"),
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="fix-result"
+                      className={cn("mt-1 size-[18px]", choice.pick === "remove" ? "accent-[rgb(var(--v-theme-error))]" : "accent-[rgb(var(--v-theme-primary))]")}
+                      checked={fixPick === choice.pick}
+                      onChange={() => pickFix(choice.pick)}
+                    />
+                    <span>
+                      <span className="flex flex-wrap items-center gap-1">{choice.body}</span>
+                      {choice.note ? <span className="block text-xs text-muted-foreground">{choice.note}</span> : null}
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+              {fixPick === "keep" ? null : fixPreview?.error ? (
+                <p className="mx-4 mb-4 mt-0 text-sm text-error">What the fix changes could not be read: {fixPreview.error}</p>
+              ) : !fixLines ? (
+                <p className="mx-4 mb-4 mt-0 text-sm text-muted-foreground">Reading what changes…</p>
+              ) : (
+                <div className={cn("mx-4 mb-4 flex flex-col gap-1 rounded-r border-l-[3px] bg-surface-bright px-3 py-2 text-sm", fixLines.length ? "border-warning" : "border-info")}>
+                  <div className="font-bold">{fixLines.length ? "What changes" : "Nothing else changes"}</div>
+                  {fixLines.length ? (
+                    <ul className="m-0 flex list-disc flex-col gap-1 pl-5">
+                      {fixLines.map((line) => (
+                        <li key={line.text}>
+                          {line.text}
+                          {line.was ? (
+                            <>
+                              {": "}
+                              <span className="text-muted-foreground line-through">{line.was}</span> <span className="text-warning">{line.now}</span>
+                            </>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span>The throne and every other series stay as they are.</span>
+                  )}
+                </div>
+              )}
+              <div className="flex justify-end gap-2 p-4 pt-0">
+                <Button variant="ghost" onClick={closeFix}>
+                  Cancel
+                </Button>
+                <Button
+                  variant={fixPick === "remove" ? "destructive" : "default"}
+                  disabled={busy || fixPick === "keep" || !fixLines}
+                  onClick={() => {
+                    const [played, pick] = [fix, fixPick];
+                    run(() => fixWrite(played, pick), closeFix);
+                  }}
+                >
+                  <Icon name={fixPick === "remove" ? "mdi-delete-outline" : "mdi-check"} />
+                  {fixVerb}
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       {/* The king leaves the throne empty for the next series, or hands the crown to one player */}
       <Dialog open={!!stepDown} onOpenChange={(open) => !open && setStepDown(null)}>

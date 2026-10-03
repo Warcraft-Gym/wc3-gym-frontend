@@ -37,7 +37,7 @@ export type BracketAdmin = {
   onRemove: (entrantIds: number[]) => void; // one race row, or every race the player holds here
   onRestore: (entrantIds: number[]) => void; // one race row, or every race the player left on
   onErase: (name: string, rows: Row[]) => void; // takes rows that left off the record of the night, after a confirm
-  onChangeWinner: (played: Row) => void;
+  onFix: (played: Row) => void; // opens the dialog that turns a result around or removes the series
 };
 
 export const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
@@ -500,13 +500,10 @@ export function PlayedRow({ played, admin, clean }: { played: Row; admin?: Brack
           </Badge>
         ) : null}
         {admin ? (
-          <>
-            <TapTooltip content="Change the winner">
-              <Button variant="ghost" size="icon-xs" disabled={admin.busy} aria-label="Change the winner" onClick={() => admin.onChangeWinner(played)}>
-                <Icon name="mdi-swap-horizontal" />
-              </Button>
-            </TapTooltip>
-          </>
+          <Button variant="outline" size="xs" disabled={admin.busy} aria-label={`Fix ${played.winner?.name} beat ${played.loser?.name}`} onClick={() => admin.onFix(played)}>
+            <Icon name="mdi-pencil" />
+            Fix
+          </Button>
         ) : null}
       </span>
     </div>

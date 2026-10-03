@@ -18,7 +18,7 @@ import { StreamLinks } from "@/components/koth/StreamLinks";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
-import { BoardPlayer, BracketCard, seatMark, type BracketAdmin } from "@/components/koth/BracketCard";
+import { BoardPlayer, BracketCard, raceName, seatMark, type BracketAdmin } from "@/components/koth/BracketCard";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
@@ -69,6 +69,7 @@ export function KothNightView({ id }: { id: string }) {
   const [addError, setAddError] = useState<string | null>(null);
   const [moveKing, setMoveKing] = useState<{ bracket: Row; seat: Row; entrantId: number; divisionId: number } | null>(null);
   const [dropUnplaced, setDropUnplaced] = useState<Row | null>(null); // the unplaced signup the confirm names
+  const [erase, setErase] = useState<{ name: string; rows: Row[] } | null>(null); // the rows that left, which the delete confirm names
 
   const replayFor = useRef<number | null>(null);
   const replayInput = useRef<HTMLInputElement>(null);
@@ -211,6 +212,7 @@ export function KothNightView({ id }: { id: string }) {
     onMoveBracket: moveBracket,
     onRemove: (entrantIds) => runEach(entrantIds, (entrantId) => store.removeKothEntrant(nightId, entrantId)),
     onRestore: (entrantIds) => runEach(entrantIds, (entrantId) => store.restoreKothEntrant(nightId, entrantId)),
+    onErase: (name, rows) => setErase({ name, rows }),
     onChangeWinner: (played) => run(() => changeWinner(played)),
     onAddReplay: (played) => {
       replayFor.current = played.series_id;
@@ -258,6 +260,8 @@ export function KothNightView({ id }: { id: string }) {
   const passName = passOptions.find((seat: Row) => seatKey(seat) === passTo)?.name;
   const openRows: Row[] = openSeriesRows(board);
   const moveFrom = moveKing ? bracketLabel(brackets, moveKing.bracket).name : "";
+  const eraseRaces: string[] = (erase?.rows ?? []).map((row: Row) => raceName(row.race)).filter(Boolean);
+  const eraseWho = eraseRaces.length ? new Intl.ListFormat("en", { type: "conjunction" }).format(eraseRaces) : "The signup";
 
   const saveBounds = () => run(() => store.setKothBounds(nightId, boundsOf(board, cuts)));
 
@@ -590,11 +594,39 @@ export function KothNightView({ id }: { id: string }) {
               onClick={() => {
                 const row = dropUnplaced;
                 setDropUnplaced(null);
-                if (row) run(() => store.removeKothEntrant(nightId, row.entrant_id));
+                if (row) run(() => store.eraseKothEntrant(nightId, row.entrant_id));
               }}
             >
               <Icon name="mdi-close" />
               Remove
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* A signup that left and played no series goes off the record of the night, so the delete asks first */}
+      <Dialog open={!!erase} onOpenChange={(open) => !open && setErase(null)}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="bg-error px-4 py-3 text-on-error">{`Delete ${erase?.name}'s signup?`}</DialogTitle>
+          <p className="m-0 p-4 text-sm">
+            {eraseWho} {eraseRaces.length > 1 ? "leave" : "leaves"} the record of this night. This cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setErase(null)}>
+              Cancel
+            </Button>
+            {/* the dialog closes first, so a refusal reads in the alert on the page */}
+            <Button
+              variant="destructive"
+              disabled={busy}
+              onClick={() => {
+                const rows: Row[] = erase?.rows ?? [];
+                setErase(null);
+                if (rows.length) runEach(rows.map((row) => row.entrant_id), (entrantId) => store.eraseKothEntrant(nightId, entrantId));
+              }}
+            >
+              <Icon name="mdi-delete-outline" />
+              Delete signup
             </Button>
           </div>
         </DialogContent>

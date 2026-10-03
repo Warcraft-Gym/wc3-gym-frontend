@@ -232,6 +232,12 @@ export function canSignUp({ signedIn, signupsOpen, policy, signedUp, multiEntry,
   return !signedUp || (!!multiEntry && heldCount < raceCount);
 }
 
+// Whether a race row is a side of a series tonight, open or played, in any bracket; such a row stays on the record
+export const hasSeries = (board, entrantId) =>
+  orderedBrackets(board).some((bracket) =>
+    [bracket.open_series?.side1, bracket.open_series?.side2, ...(bracket.played ?? []).flatMap((played) => [played.winner, played.loser])]
+      .some((side) => side?.entrant_id === entrantId));
+
 // Every open series the close deletes, named by its bracket and its two sides
 export const openSeriesRows = (board) =>
   orderedBrackets(board)

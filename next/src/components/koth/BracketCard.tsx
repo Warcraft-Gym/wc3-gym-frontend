@@ -12,7 +12,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { noStatsWarning } from "@/helpers/games-rule.mjs";
-import { bracketLabel, hasSeries, leftSeats, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
+import { bracketLabel, hasSeries, leftSeats, movedQueue, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { cn } from "@/lib/utils";
 
@@ -321,6 +321,7 @@ export function QueueRow({
   you,
   dragged,
   onDragged,
+  onOver,
 }: {
   seat: Row;
   place: number;
@@ -330,6 +331,7 @@ export function QueueRow({
   you?: number | null;
   dragged?: number | null;
   onDragged?: (key: number | null) => void;
+  onOver?: () => void; // the dragged row passes over this one, so the line shows it here
 }) {
   const key = seatKey(seat) as number;
   // a bracket that plays a series draws no start button, so a pick on its line would do nothing
@@ -343,21 +345,27 @@ export function QueueRow({
   const mark = seatMark(seat, row);
   return (
     <li
-      className={cn("border-t", picked && "bg-primary/10", dragged === key && "opacity-40")}
-      draggable={!!admin && !admin.busy}
-      onDragStart={() => onDragged?.(key)}
-      // only a row of this card takes the drop, so a drag from another card shows no drop
-      onDragOver={(event) => admin && dragged != null && event.preventDefault()}
-      onDrop={(event) => {
+      // an admin's row is a raised tile with a grip, so it reads as a thing to pick up and move
+      className={cn(
+        admin ? "cursor-grab rounded-md border bg-surface-bright active:cursor-grabbing hover:border-primary/60" : "border-t",
+        picked && "bg-primary/10",
+        dragged === key && "border-dashed border-primary opacity-50",
+      )}
+      draggable={!!admin}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        onDragged?.(key);
+      }}
+      // only a row of this card takes the drag, so a drag from another card moves nothing here
+      onDragOver={(event) => {
+        if (!admin || dragged == null) return;
         event.preventDefault();
-        // a drop while a write runs would start a second one, so the row waits for the answer
-        if (admin && !admin.busy && dragged != null && dragged !== key) admin.onMove(bracket, queue.findIndex((one: Row) => seatKey(one) === dragged), at);
-        onDragged?.(null);
+        if (dragged !== key) onOver?.();
       }}
       onDragEnd={() => onDragged?.(null)}
     >
-      <div className="flex items-center gap-2 py-1 pl-1 pr-1">
-        {admin ? <Icon name="mdi-drag-horizontal-variant" size={16} className="shrink-0 cursor-grab text-muted-foreground" /> : null}
+      <div className="flex items-center gap-2 py-1.5 pl-1 pr-1">
+        {admin ? <Icon name="mdi-drag-vertical" size={18} className="shrink-0 text-muted-foreground" /> : null}
         <span className="tnum w-4 shrink-0 text-right text-xs text-muted-foreground">{place}</span>
         {/* the name and the reader's chip wrap as one, so a long name keeps its room and pushes the chip under it */}
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
@@ -386,7 +394,8 @@ export function QueueRow({
           ) : null}
         </span>
         {admin ? (
-          <span className="ml-auto flex shrink-0 items-center">
+          <span className="ml-auto flex shrink-0 items-center gap-0.5">
+            {single ? <MoveTo bracket={bracket} brackets={brackets} seat={seat} row={row} admin={admin} who={seat.name} /> : null}
             <Button variant="ghost" size="icon-xs" disabled={admin.busy || at === 0} aria-label={`Move ${seat.name} up`} onClick={() => admin.onMove(bracket, at, at - 1)}>
               <Icon name="mdi-chevron-up" />
             </Button>
@@ -406,16 +415,13 @@ export function QueueRow({
           </span>
         ) : null}
       </div>
-      {/* the chip and a one-race seat's Move to sit on a line of their own, so the name keeps its room */}
-      {seat.busy || (admin && single) ? (
+      {/* the chip sits on a line of its own, so the name keeps its room */}
+      {seat.busy ? (
         <div className="flex flex-wrap items-center gap-2 pb-1 pl-6">
-          {seat.busy ? (
-            <Badge variant="outline">
-              <Icon name="mdi-play" />
-              playing in another bracket
-            </Badge>
-          ) : null}
-          {admin && single ? <MoveTo bracket={bracket} brackets={brackets} seat={seat} row={row} admin={admin} who={seat.name} /> : null}
+          <Badge variant="outline">
+            <Icon name="mdi-play" />
+            playing in another bracket
+          </Badge>
         </div>
       ) : null}
       <RaceRows seat={seat} bracket={bracket} brackets={brackets} admin={admin} removable />
@@ -528,8 +534,20 @@ export function BracketCard({
   const { name, band } = bracketLabel(brackets, bracket);
   const queue: Row[] = bracket.queue ?? [];
   const played: Row[] = bracket.played ?? [];
-  // one card is dragged at a time, so the drag belongs to the card and not to the page
+  // one card is dragged at a time, so the drag belongs to the card and not to the page; `over` is
+  // where the dragged row would land, and the line shows it there before the drop
   const [dragged, setDragged] = useState<number | null>(null);
+  const [over, setOver] = useState<number | null>(null);
+  const [allPlayed, setAllPlayed] = useState(false);
+  const from = queue.findIndex((seat: Row) => seatKey(seat) === dragged);
+  const shown: Row[] = from >= 0 && over != null ? movedQueue(queue, from, over) : queue;
+  const drag = (key: number | null) => {
+    setDragged(key);
+    setOver(null);
+  };
+  // a stream shows the newest three, and the run page and the night page open the rest on a tap
+  const PLAYED_SHOWN = 3;
+  const playedShown = allPlayed ? played : played.slice(0, PLAYED_SHOWN);
   // a stream reads from further away, so every small label of the card grows one step too
   return (
     <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm")}>
@@ -550,8 +568,17 @@ export function BracketCard({
         </div>
       </div>
       {queue.length ? (
-        <ul className="mb-2 flex flex-col px-3">
-          {queue.map((seat: Row, index: number) => (
+        <ul
+          className={cn("mb-3 flex flex-col px-3", admin && "gap-1.5")}
+          // a drop anywhere on the line lands the row where it shows; the order is drawn before it saves
+          onDragOver={(event) => admin && dragged != null && event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            if (admin && from >= 0 && over != null && over !== from) admin.onMove(bracket, from, over);
+            drag(null);
+          }}
+        >
+          {shown.map((seat: Row, index: number) => (
             <QueueRow
               key={seatKey(seat)}
               seat={seat}
@@ -561,25 +588,36 @@ export function BracketCard({
               admin={admin}
               you={you}
               dragged={dragged}
-              onDragged={setDragged}
+              onDragged={drag}
+              onOver={() => setOver(index)}
             />
           ))}
         </ul>
       ) : (
-        <p className="mb-2 px-4 text-sm text-muted-foreground">Nobody signed up yet</p>
+        <p className="mb-3 px-4 text-sm text-muted-foreground">Nobody signed up yet</p>
       )}
 
-      <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
-
-      {played.length ? (
-        <div className="px-4 pb-3">
-          <div className="flex items-baseline gap-2 pb-1">
-            <span className="text-xs font-medium text-muted-foreground">Played tonight</span>
-            <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
-          </div>
-          {played.map((row: Row) => (
-            <PlayedRow key={row.series_id} played={row} admin={admin} clean={clean} />
-          ))}
+      {/* what already happened tonight sits in a sunken band under the work, so the eye stays on the queue */}
+      {leftSeats(bracket).length || played.length ? (
+        <div className="mt-auto border-t bg-background/70 pt-2">
+          <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
+          {played.length ? (
+            <div className="px-4 pb-3">
+              <div className="flex items-baseline gap-2 pb-1">
+                <span className="text-xs font-medium text-muted-foreground">Played tonight</span>
+                <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
+              </div>
+              {playedShown.map((row: Row) => (
+                <PlayedRow key={row.series_id} played={row} admin={admin} clean={clean} />
+              ))}
+              {played.length > PLAYED_SHOWN && !clean ? (
+                <Button variant="ghost" size="xs" className="mt-1 text-primary-text" aria-expanded={allPlayed} onClick={() => setAllPlayed(!allPlayed)}>
+                  <Icon name={allPlayed ? "mdi-chevron-up" : "mdi-chevron-down"} />
+                  {allPlayed ? "Show fewer" : `Show all ${played.length} series`}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </Card>

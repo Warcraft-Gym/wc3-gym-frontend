@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, dialogCompact, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,8 @@ export function KothNightView({ id }: { id: string }) {
   const fixToken = useRef(0); // the newest preview asked for, so a slow answer never overwrites a later pick
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
+  const [boundsOpen, setBoundsOpen] = useState(false); // the bracket bounds live behind Settings, so the brackets lead the page
+  const queueWrite = useRef(0); // the newest queue write, so only its answer replaces the order drawn at once
   const [deleting, setDeleting] = useState(false);
   const [event, setEvent] = useState<Row | null>(null); // read once, for the details dialog and the signups badge
   const [form, setForm] = useState<NightForm | null>(null);
@@ -235,6 +238,24 @@ export function KothNightView({ id }: { id: string }) {
       : null;
   const fixVerb = fixPick === "remove" ? "Remove series" : fixPick === "turn" ? `Make ${fix?.loser?.name} the winner` : "Save";
 
+  // A queue move draws the new order at once and saves behind it, with nothing locked: only the answer to
+  // the newest write replaces the board, so a quick second move is never undone by the first answer
+  const moveInQueue = (bracket: Row, from: number, to: number) => {
+    const queue = movedQueue(bracket.queue ?? [], from, to);
+    if (queue === bracket.queue) return;
+    setBoard((current) => current && { ...current, brackets: current.brackets.map((row: Row) => (row.division_id === bracket.division_id ? { ...row, queue } : row)) });
+    const token = ++queueWrite.current;
+    store
+      .setKothQueue(nightId, bracket.division_id, queueIds(queue))
+      .then((answer: Row) => {
+        if (token === queueWrite.current && answer?.brackets) takeBoard(answer);
+      })
+      .catch(async (e: Error) => {
+        setError(e.message);
+        takeBoard(await store.fetchBoard(nightId, true));
+      });
+  };
+
   const admin: BracketAdmin = {
     picks,
     picked,
@@ -257,8 +278,7 @@ export function KothNightView({ id }: { id: string }) {
       setPassTo(null);
       setStepDown(bracket);
     },
-    onMove: (bracket, from, to) =>
-      run(() => store.setKothQueue(nightId, bracket.division_id, queueIds(movedQueue(bracket.queue ?? [], from, to)))),
+    onMove: (bracket, from, to) => moveInQueue(bracket, from, to),
     onMoveBracket: moveBracket,
     onRemove: (entrantIds) => runEach(entrantIds, (entrantId) => store.removeKothEntrant(nightId, entrantId)),
     onRestore: (entrantIds) => runEach(entrantIds, (entrantId) => store.restoreKothEntrant(nightId, entrantId)),
@@ -297,7 +317,7 @@ export function KothNightView({ id }: { id: string }) {
   const eraseRaces: string[] = (erase?.rows ?? []).map((row: Row) => raceName(row.race)).filter(Boolean);
   const eraseWho = eraseRaces.length ? new Intl.ListFormat("en", { type: "conjunction" }).format(eraseRaces) : "The signup";
 
-  const saveBounds = () => run(() => store.setKothBounds(nightId, boundsOf(board, cuts)));
+  const saveBounds = () => run(() => store.setKothBounds(nightId, boundsOf(board, cuts)), () => setBoundsOpen(false));
 
   // The strip: every rated race row, one dot each, cut where the brackets open
   const rated: Row[] = ratedPlayers(board);
@@ -356,22 +376,42 @@ export function KothNightView({ id }: { id: string }) {
         <span className="ml-auto flex flex-wrap gap-2">
           {board && !board.historical ? <StreamLinks eventId={board.night_id} /> : null}
           {board && !board.closed ? (
-            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={openAddPlayer}>
+            <Button size="sm" disabled={busy} onClick={openAddPlayer}>
               <Icon name="mdi-account-plus" />
               Add player
             </Button>
           ) : null}
-          {form ? (
-            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={openDetails}>
-              <Icon name="mdi-pencil" />
-              Edit details
-            </Button>
-          ) : null}
-          {board && !board.closed ? (
-            <Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => setClosing(true)}>
-              <Icon name="mdi-exit-to-app" />
-              Close the night
-            </Button>
+          {/* what an admin sets once a night waits behind one menu, so the brackets lead the page */}
+          {board ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="outline" size="sm" disabled={busy} />}>
+                <Icon name="mdi-cog-outline" />
+                Settings
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {!board.historical ? (
+                  <DropdownMenuItem onClick={() => setBoundsOpen(true)}>
+                    <Icon name="mdi-arrow-split-vertical" />
+                    Bracket bounds
+                  </DropdownMenuItem>
+                ) : null}
+                {form ? (
+                  <DropdownMenuItem onClick={openDetails}>
+                    <Icon name="mdi-pencil" />
+                    Edit details
+                  </DropdownMenuItem>
+                ) : null}
+                {!board.closed ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-error" onClick={() => setClosing(true)}>
+                      <Icon name="mdi-exit-to-app" />
+                      Close the night
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
         </span>
       </PageHeader>
@@ -379,47 +419,56 @@ export function KothNightView({ id }: { id: string }) {
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
 
-      {board ? (
+      {/* an archived night keeps the words its source wrote for each bracket */}
+      {board?.historical ? (
         <Card className="card mb-4">
           <CardHeader>
-            <CardTitle>{board.historical ? "Brackets" : "Bracket Bounds"}</CardTitle>
+            <CardTitle>Brackets</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* an archived night keeps the words its source wrote for each bracket */}
-            {board.historical ? (
-              <ul className="mb-0 flex flex-col gap-1">
-                {brackets.map((bracket: Row) => (
-                  <li key={bracket.division_id}>{bracket.name}</li>
-                ))}
-              </ul>
-            ) : (
-              <>
-                <DivisionBracketing
-                  players={stripPlayers}
-                  cuts={cuts}
-                  names={stripNames}
-                  colors={stripColors}
-                  domain={stripDomain}
-                  stored={savedCuts}
-                  disabled={!!board.closed}
-                  onUpdateCuts={setCuts}
-                />
-                <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <Button disabled={busy || !!board.closed || !boundsMoved} onClick={saveBounds}>
-                    <Icon name="mdi-content-save" />
-                    Save the bounds
-                  </Button>
-                  {!board.closed ? (
-                    <p className="m-0 text-xs text-muted-foreground">
-                      A save moves players by the rating they were placed with. Players in a series or placed by hand stay.
-                    </p>
-                  ) : null}
-                </div>
-              </>
-            )}
+            <ul className="mb-0 flex flex-col gap-1">
+              {brackets.map((bracket: Row) => (
+                <li key={bracket.division_id}>{bracket.name}</li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
       ) : null}
+
+      {/* The MMR line between the brackets, set once a night from Settings */}
+      <Dialog open={boundsOpen && !!board && !board.historical} onOpenChange={setBoundsOpen}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[960px]", dialogCompact)}>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Bracket Bounds</DialogTitle>
+          {board ? (
+            <div className="p-4">
+              <DivisionBracketing
+                players={stripPlayers}
+                cuts={cuts}
+                names={stripNames}
+                colors={stripColors}
+                domain={stripDomain}
+                stored={savedCuts}
+                disabled={!!board.closed}
+                onUpdateCuts={setCuts}
+              />
+              {!board.closed ? (
+                <p className="mb-0 mt-3 text-xs text-muted-foreground">
+                  A save moves players by the rating they were placed with. Players in a series or placed by hand stay.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setBoundsOpen(false)}>
+              Close
+            </Button>
+            <Button disabled={busy || !!board?.closed || !boundsMoved} onClick={saveBounds}>
+              <Icon name="mdi-content-save" />
+              Save the bounds
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* the board read answers 404 for a night nobody published; a failed read says so in the alert above */}
       {!loading && !board && !error ? <p className="py-12 text-center text-muted-foreground">This night is not published</p> : null}

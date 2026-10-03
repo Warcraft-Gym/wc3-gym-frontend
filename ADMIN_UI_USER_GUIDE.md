@@ -71,8 +71,8 @@ the section shows no token and offers **Generate token** instead.
 
 **Chat command** is how players sign up from Twitch chat: they type `!kothsignup BattleTag#1234`,
 or add a race, as in `!kothsignup BattleTag#1234 orc`. To install it, click **Copy message**, then
-in the Nightbot dashboard open Commands, then Custom, and add a command named `!kothsignup`
-with that message. After a new token, paste the new message into the same command. Never paste
+in the Nightbot dashboard open Commands, then Custom. Add a command named `!kothsignup` with
+that message, or edit the one already there. After a new token, paste the new message into the same command. Never paste
 the message into chat: it holds the token. The message box hides the token until you click the
 eye icon on the token.
 

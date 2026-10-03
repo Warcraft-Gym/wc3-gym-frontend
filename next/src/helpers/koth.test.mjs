@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { foldNight, myNight, myRaces, nightState, openNight } from './koth.mjs';
+import { DateTime, Settings } from 'luxon';
+import { foldNight, myNight, myRaces, nightBody, nightForm, nightState, openNight } from './koth.mjs';
 
 test('the night is the newest published event that is not finished', () => {
   const events = [
@@ -87,4 +88,54 @@ test('a night reads finished only once the admin closed it', () => {
   assert.equal(nightState({ phase: 'signups_open', closed_at: null }), 'signups_open');
   assert.equal(nightState({ state: 'finished', closed_at: null }), 'running');
   assert.equal(nightState(null), null);
+});
+
+// The Night card's form, on clocks either side of UTC, so the date can differ from the UTC date
+const ZONES = ['America/New_York', 'Europe/Berlin', 'Pacific/Auckland', 'UTC'];
+const onClock = (zone, check) => {
+  const was = Settings.defaultZone;
+  Settings.defaultZone = zone;
+  try { check(); } finally { Settings.defaultZone = was; }
+};
+const instant = (iso) => DateTime.fromISO(iso, { zone: 'utc' }).toMillis();
+const NIGHT = { name: '4 October 2026', stream_url: '', page_url: '', signups_open: true, published: true };
+
+test('a night opened with a start time and no date saves the same start time', () => {
+  for (const zone of ZONES) onClock(zone, () => {
+    for (const starts_at of ['2026-10-04T23:30:00Z', '2026-10-04T23:30:00']) {
+      const form = nightForm({ ...NIGHT, start_date: null, starts_at });
+      assert.match(form.start_date, /^\d{4}-\d{2}-\d{2}$/, zone);
+      assert.equal(instant(nightBody(form).starts_at), instant(starts_at), zone);
+    }
+  });
+});
+
+test('a night with a date and a start time saves them unchanged', () => {
+  onClock('America/New_York', () => {
+    const event = { ...NIGHT, start_date: '2026-10-04', starts_at: '2026-10-04T23:30:00Z' };
+    const body = nightBody(nightForm(event));
+    assert.equal(body.start_date, '2026-10-04');
+    assert.equal(instant(body.starts_at), instant(event.starts_at));
+    assert.deepEqual({ ...body, start_date: null, starts_at: null }, { ...NIGHT, stream_url: null, page_url: null, start_date: null, starts_at: null });
+  });
+  for (const zone of ZONES) onClock(zone, () => {
+    const event = { ...NIGHT, start_date: '2026-10-04', starts_at: '2026-10-04T23:30:00Z' };
+    assert.equal(instant(nightBody(nightForm(event)).starts_at), instant(event.starts_at), zone);
+  });
+});
+
+test('a cleared date or time sends no start time', () => {
+  onClock('Europe/Berlin', () => {
+    const form = nightForm({ ...NIGHT, start_date: null, starts_at: '2026-10-04T23:30:00Z' });
+    assert.equal(nightBody({ ...form, start_date: '' }).starts_at, null);
+    assert.equal(nightBody({ ...form, start_date: '' }).start_date, null);
+    assert.equal(nightBody({ ...form, start_time: '' }).starts_at, null);
+  });
+});
+
+test('a night with no start time keeps its date and an empty time', () => {
+  const form = nightForm({ ...NIGHT, start_date: '2026-10-04', starts_at: null });
+  assert.equal(form.start_date, '2026-10-04');
+  assert.equal(form.start_time, '');
+  assert.equal(nightBody(form).starts_at, null);
 });

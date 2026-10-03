@@ -194,7 +194,7 @@ export function ConfigView() {
 
   // Generate new KOTH token
   const generateKothToken = async () => {
-    if (!confirm("Are you sure you want to generate a new token? The old token will stop working immediately.")) return;
+    if (kothNightbotToken && !confirm("Are you sure you want to generate a new token? The old token will stop working immediately.")) return;
 
     setIsGeneratingKothToken(true);
     setErrorMessage(null);
@@ -494,7 +494,7 @@ export function ConfigView() {
                               <a href="https://nightbot.tv/commands/custom" target="_blank" rel="noreferrer">
                                 Nightbot dashboard
                               </a>
-                              , open Commands, then Custom, and add a command named <code>!kothsignup</code> with this message.
+                              , open Commands, then Custom. Add a command named <code>!kothsignup</code> with this message, or edit the one already there.
                             </li>
                             <li>After a new token, paste the new message into the same command.</li>
                           </ol>

@@ -4,7 +4,7 @@ title: Site admin
 description: The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
 resource: ../../../next/src/app/(app)/config/ConfigView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T04:56:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T04:59:33Z }
 sources:
   - id: config
     resource: ../../../next/src/app/(app)/config/ConfigView.tsx
@@ -38,7 +38,7 @@ sources:
 
 # What it does
 
-**Settings (`/config`).** One form over the settings the backend stores, in groups: the W3Champions season and API URL; the current GNL season; whether fantasy team creation is enabled; the fantasy bet points (fixed or a minimum and a maximum); the Discord bot's invite URL, its two role ids and its channel ids (signup, player profile, fantasy dashboard, scheduling, results, content); and the KOTH Nightbot token, which the server makes: with no token the section says so and offers "Generate token"; with one it shows the token hidden as text, never as a field, copied with one button and replaced with another. Under it the chat command block says what players type, `!kothsignup` then a battle tag and an optional race, and how to install it: copy the message, add it as the custom command `!kothsignup` in the Nightbot dashboard, and paste the new message into that command after a new token, never into chat, because the message holds the token. The message box masks the token until the eye shows it, and "Copy message" copies it with the real token. Save writes the changed settings.
+**Settings (`/config`).** One form over the settings the backend stores, in groups: the W3Champions season and API URL; the current GNL season; whether fantasy team creation is enabled; the fantasy bet points (fixed or a minimum and a maximum); the Discord bot's invite URL, its two role ids and its channel ids (signup, player profile, fantasy dashboard, scheduling, results, content); and the KOTH Nightbot token, which the server makes: with no token the section says so and offers "Generate token"; with one it shows the token hidden as text, never as a field, copied with one button and replaced with another. Under it the chat command block says what players type, `!kothsignup` then a battle tag and an optional race, and how to install it: copy the message, add the custom command `!kothsignup` with it in the Nightbot dashboard or edit the one already there, and paste the new message into that command after a new token, never into chat, because the message holds the token. The message box masks the token until the eye shows it, and "Copy message" copies it with the real token. Save writes the changed settings.
 
 **Discord roles (`/config/discord-roles`).** One card per role of the Discord server, in three columns: managed, where the sync grants and removes the role; ignored, bound but applied by hand; and not bound. A card moves by drag, by double click or by its buttons, and a binding names the group it points at: a season's players, a team's roster, a captains group and so on, counted over the current season, one season or every season. A role that sits above the bot's own role is locked. Roles that do not matter are hidden under the last column. A table view lists the same roles in rows. "Sync all" applies every managed binding; the report under it lists the accounts whose Discord roles differ from the database, with a sync per account and per role.
 

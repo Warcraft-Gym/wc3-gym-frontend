@@ -358,29 +358,32 @@ export function QueueRow({
       <div className="flex items-center gap-2 py-1 pl-1 pr-1">
         {admin ? <Icon name="mdi-drag-horizontal-variant" size={16} className="shrink-0 cursor-grab text-muted-foreground" /> : null}
         <span className="tnum w-4 shrink-0 text-right text-xs text-muted-foreground">{place}</span>
-        {/* a long name truncates here, so the step buttons and Remove stay inside the card */}
-        <span className="min-w-0 flex-1 overflow-hidden [&_.name]:truncate [&_.player-name]:max-w-full">
-          {admin ? (
-            <PlayerName
-              player={{ id: seat.user_id, name: seat.name, country: seat.country }}
-              race={single ? row?.race || undefined : undefined}
-              mmr={single ? (row?.mmr ?? false) : false}
-              warning={mark}
-              plain={live}
-              onClick={live ? undefined : () => admin.onPickSeat(seat)}
-            >
-              {picked ? <><Icon name="mdi-check" size={16} className="text-primary-text" /><span className="sr-only">picked</span></> : null}
-            </PlayerName>
-          ) : (
-            <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} slot warn={!!mark} />
-          )}
+        {/* the name and the reader's chip wrap as one, so a long name keeps its room and pushes the chip under it */}
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+          {/* a long name truncates here, so the step buttons and Remove stay inside the card */}
+          <span className="min-w-0 max-w-full grow overflow-hidden [&_.name]:truncate [&_.player-name]:max-w-full">
+            {admin ? (
+              <PlayerName
+                player={{ id: seat.user_id, name: seat.name, country: seat.country }}
+                race={single ? row?.race || undefined : undefined}
+                mmr={single ? (row?.mmr ?? false) : false}
+                warning={mark}
+                plain={live}
+                onClick={live ? undefined : () => admin.onPickSeat(seat)}
+              >
+                {picked ? <><Icon name="mdi-check" size={16} className="text-primary-text" /><span className="sr-only">picked</span></> : null}
+              </PlayerName>
+            ) : (
+              <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} slot warn={!!mark} />
+            )}
+          </span>
+          {you != null && seat.user_id === you ? (
+            <Badge className={cn(toneClass("info"), "shrink-0")}>
+              <Icon name="mdi-account-multiple" />
+              {placeInQueue(bracket, you)}
+            </Badge>
+          ) : null}
         </span>
-        {you != null && seat.user_id === you ? (
-          <Badge className={cn(toneClass("info"), "shrink-0")}>
-            <Icon name="mdi-account-multiple" />
-            {placeInQueue(bracket, you)}
-          </Badge>
-        ) : null}
         {admin ? (
           <span className="ml-auto flex shrink-0 items-center">
             <Button variant="ghost" size="icon-xs" disabled={admin.busy || at === 0} aria-label={`Move ${seat.name} up`} onClick={() => admin.onMove(bracket, at, at - 1)}>

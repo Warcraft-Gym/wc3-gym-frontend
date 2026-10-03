@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { SignupDialog } from "@/components/SignupDialog";
 import { BoardPlayer, BracketCard } from "@/components/koth/BracketCard";
-import { canSignUp, myRacesOnBoard, orderedBrackets, shouldReread, withdrawForfeitsSeries } from "@/helpers/koth-board.mjs";
+import { canSignUp, myRacesOnBoard, orderedBrackets, shouldReread, withdrawForfeitsCrown, withdrawForfeitsSeries } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { useAuth, useEventStore } from "@/stores";
 
@@ -50,9 +50,6 @@ export function KothNightBoard({
   const held: string[] = myRacesOnBoard(board, myId);
   const signedUp = held.length > 0;
   const closed = !!board.closed;
-  // a king who leaves loses a forfeit to the first in line, so his confirm says so
-  const wearsCrown = (race: string | null) =>
-    brackets.some((bracket) => bracket.king?.user_id === myId && (race === null || bracket.king.rows.some((row: Row) => row.race === race)));
   const canEnter = canSignUp({ signedIn: !!auth.me, signupsOpen: !!event.signups_open, policy: event.signup_policy, signedUp,
     multiEntry: !!event.multi_entry, heldCount: held.length, raceCount: raceWrapper.races.length });
 
@@ -95,7 +92,7 @@ export function KothNightBoard({
     // a race at the table loses its series by forfeit, which outweighs the king's next match
     const question = withdrawForfeitsSeries(board, myId, race)
       ? "Withdrawing forfeits the match you are playing."
-      : wearsCrown(race)
+      : withdrawForfeitsCrown(board, myId, race)
         ? "Withdrawing forfeits your next match."
         : race
           ? `Withdraw ${raceName(race)} from tonight?`

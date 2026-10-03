@@ -22,7 +22,7 @@ import { BoardPlayer, BracketCard, seatMark, type BracketAdmin } from "@/compone
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
-import { boundsOf, bracketLabel, cutsOf, movedQueue, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow } from "@/helpers/koth-board.mjs";
+import { boundsOf, bracketLabel, cutsOf, movedQueue, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, wearsTheCrown } from "@/helpers/koth-board.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
@@ -167,9 +167,9 @@ export function KothNightView({ id }: { id: string }) {
           throw failure;
         });
 
-  // A king's move empties the throne, so it asks first; the board names no crowned race, so every race of his asks
+  // Moving the crowned race empties the throne, so it asks first; another race of the king moves like any row
   const moveBracket = (bracket: Row, seat: Row, entrantId: number, divisionId: number) => {
-    if (bracket.king && seatKey(bracket.king) === seatKey(seat)) setMoveKing({ bracket, seat, entrantId, divisionId });
+    if (wearsTheCrown(bracket, entrantId)) setMoveKing({ bracket, seat, entrantId, divisionId });
     else run(() => store.moveKothEntrant(nightId, entrantId, divisionId));
   };
 
@@ -353,6 +353,11 @@ export function KothNightView({ id }: { id: string }) {
                     <Icon name="mdi-content-save" />
                     Save the bounds
                   </Button>
+                  {!board.closed ? (
+                    <p className="m-0 text-xs text-muted-foreground">
+                      A save moves players by the rating they were placed with. Players in a series or placed by hand stay.
+                    </p>
+                  ) : null}
                 </div>
               </>
             )}

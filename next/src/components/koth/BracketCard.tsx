@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { noStatsWarning } from "@/helpers/games-rule.mjs";
-import { bracketLabel, hasSeries, heirOf, leftSeats, movedQueue, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, throneWord } from "@/helpers/koth-board.mjs";
+import { bracketLabel, foldedStored, hasSeries, heirOf, leftSeats, movedQueue, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, storeFolded, throneWord } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { cn } from "@/lib/utils";
 
@@ -229,7 +229,7 @@ export function KingBlock({
   ) : null;
   return (
     <div
-      className={cn("min-h-[64px] p-4", dropping && "bg-primary/10 outline-2 -outline-offset-4 outline-dashed outline-primary-text")}
+      className={cn("min-h-[64px] shrink-0 p-4", dropping && "bg-primary/10 outline-2 -outline-offset-4 outline-dashed outline-primary-text")}
       onDragEnter={() => dropping && onEnter?.()}
       onDragOver={(event) => dropping && event.preventDefault()}
       onDrop={(event) => {
@@ -511,10 +511,16 @@ function EraseButton({ name, rows, label, brackets, admin, size }: { name: strin
  *  deletes his signup when none of them played a series tonight. */
 export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets: Row[]; admin?: BracketAdmin }) {
   const seats: Row[] = leftSeats(bracket);
+  const [folded, fold] = useFolded(`${bracketLabel(brackets, bracket).name}:left`);
+  const rowsId = useId();
   if (!seats.length) return null;
   return (
-    <div className="px-4 pb-2">
-      <div className="py-1 text-sm font-medium text-foreground">Players who left</div>
+    <div className={cn("flex min-h-0 flex-col px-4", folded ? "pb-1" : "pb-2")}>
+      <FoldHeading folded={folded} onFold={fold} controls={rowsId} className="py-1">
+        <span className="text-sm font-medium text-foreground">Players who left</span>
+        <span className="tnum text-xs text-muted-foreground">{seats.length}</span>
+      </FoldHeading>
+      <div id={rowsId} hidden={folded} className="min-h-0 overflow-y-auto">
       {/* the name fades, the mark keeps its strength: a player who left is still a player with no stats */}
       {seats.map((seat: Row) => (
         <div key={seatKey(seat)} className="flex items-center gap-2 border-t py-1 [&_.name]:opacity-(--v-medium-emphasis-opacity)">
@@ -538,6 +544,7 @@ export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets:
           {admin ? <EraseButton name={seat.name} rows={seat.rows} label={seat.name} brackets={brackets} admin={admin} size="icon-sm" /> : null}
         </div>
       ))}
+      </div>
     </div>
   );
 }
@@ -643,6 +650,41 @@ export function PlayedTable({ played, total, admin, clean }: { played: Row[]; to
   );
 }
 
+const foldListeners = new Set<() => void>();
+const onFold = (listener: () => void) => {
+  foldListeners.add(listener);
+  return () => {
+    foldListeners.delete(listener);
+  };
+};
+
+/** Whether the viewer folded this part of a card away, and the writer for it. The server draws
+ *  every part open, so the first paint is the page a browser with storage blocked reads. */
+function useFolded(part: string) {
+  const folded = useSyncExternalStore(onFold, () => foldedStored(part), () => false);
+  const setFolded = (on: boolean) => {
+    storeFolded(part, on);
+    foldListeners.forEach((listener) => listener());
+  };
+  return [folded, setFolded] as const;
+}
+
+/** The heading of the queue or the results: a tap folds the part away, and opens it again. */
+function FoldHeading({ folded, onFold, controls, className, children }: { folded: boolean; onFold: (on: boolean) => void; controls: string; className?: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      className={cn("flex items-baseline gap-2 rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50", className)}
+      aria-expanded={!folded}
+      aria-controls={controls}
+      onClick={() => onFold(!folded)}
+    >
+      {children}
+      <Icon name={folded ? "mdi-chevron-right" : "mdi-chevron-down"} className="self-center text-muted-foreground" />
+    </button>
+  );
+}
+
 /** One bracket of the night, the same card on the run page and on the public page: the throne,
  *  the series it plays now, the line waiting and what it played tonight. */
 export function BracketCard({
@@ -666,6 +708,11 @@ export function BracketCard({
   const [dragged, setDragged] = useState<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
   const [allPlayed, setAllPlayed] = useState(false);
+  // a long line pushes the results off a stream, so either part folds away, per bracket
+  const [queueFolded, foldQueue] = useFolded(`${name}:queue`);
+  const [resultsFolded, foldResults] = useFolded(`${name}:results`);
+  const queueId = useId();
+  const resultsId = useId();
   const from = queue.findIndex((seat: Row) => seatKey(seat) === dragged);
   const shown: Row[] = from >= 0 && over != null ? movedQueue(queue, from, over) : queue;
   const drag = (key: number | null) => {
@@ -682,10 +729,13 @@ export function BracketCard({
   // a stream shows the newest three, and the run page and the night page open the rest on a tap
   const PLAYED_SHOWN = 3;
   const playedShown = allPlayed ? played : played.slice(0, PLAYED_SHOWN);
-  // a stream reads from further away, so every small label of the card grows one step too
+  // a stream reads from further away, so every small label of the card grows one step too; a stream
+  // is one fixed screen, so three cards side by side fill it to its foot whatever is folded, and the
+  // queue and the players who left scroll inside, never the results. ponytail: 10.5rem is the shell bar and the title over the cards; a title that
+  // wraps pushes the foot one line off screen, measure the card top if that happens
   return (
-    <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm")}>
-      <CardHeader className={cn("flex items-center gap-2 banner bg-banner p-3", clean && "p-4")}>
+    <Card className={cn("card h-full gap-0 py-0", clean && "text-[1.0625rem] [&_.text-xs]:text-sm min-[960px]:h-[calc(100dvh-10.5rem)]")}>
+      <CardHeader className={cn("flex shrink-0 items-center gap-2 banner bg-banner p-3", clean && "p-4")}>
         <CardTitle className={cn("flex-1 text-primary", clean && "text-[1.375rem]")}>{name}</CardTitle>
         <span className="tnum text-xs text-on-banner/80">{band}</span>
       </CardHeader>
@@ -702,16 +752,17 @@ export function BracketCard({
           drag(null);
         }}
       />
-      <Separator />
+      <Separator className="shrink-0" />
 
       {/* the throne keeps its air: whatever comes first under the line stands 12 px off it */}
-      <div className="pt-3">
+      <div className={cn("shrink-0 pt-3", queueFolded && "pb-2")}>
         <OpenSeries bracket={bracket} admin={admin} you={you} />
-        <div className="flex items-baseline gap-2 px-4 pb-1">
+        <FoldHeading folded={queueFolded} onFold={foldQueue} controls={queueId} className="mx-4 mb-1">
           <span className="text-sm font-medium text-foreground">Queue</span>
           <span className="tnum text-xs text-muted-foreground">{queue.length} waiting</span>
-        </div>
+        </FoldHeading>
       </div>
+      <div id={queueId} hidden={queueFolded} className="min-h-0 overflow-y-auto">
       {queue.length ? (
         <ul
           className={cn("mb-3 flex flex-col px-3", admin && "gap-1.5")}
@@ -743,15 +794,20 @@ export function BracketCard({
       )}
 
       {/* who left the line can still be put back, so the rows stay with the queue, above the rule */}
+      </div>
       <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
 
       {/* a gold rule ends the work and opens the record: tonight's results in a sunken band; an admin
           sees it with no result yet, so a night's history can be entered from the start */}
       {played.length || admin ? (
-        <div className="border-t-2 border-primary-text bg-background/70 px-4 pb-3 pt-2.5">
+        <div className="shrink-0 border-t-2 border-primary-text bg-background/70 px-4 pb-3 pt-2.5">
           <div className="flex items-center gap-2 pb-1.5">
-            <h3 className="m-0 font-heading text-base font-bold text-primary-text">Results</h3>
-            <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
+            <h3 className="m-0">
+              <FoldHeading folded={resultsFolded} onFold={foldResults} controls={resultsId}>
+                <span className="font-heading text-base font-bold text-primary-text">Results</span>
+                <span className="tnum font-sans text-xs font-normal text-muted-foreground">{played.length} series</span>
+              </FoldHeading>
+            </h3>
             {admin ? (
               <Button variant="ghost" size="xs" className="ml-auto text-primary-text" disabled={admin.busy} onClick={() => admin.onAddResult(bracket)}>
                 <Icon name="mdi-plus" />
@@ -759,13 +815,15 @@ export function BracketCard({
               </Button>
             ) : null}
           </div>
-          {played.length ? <PlayedTable played={playedShown} total={played.length} admin={admin} clean={clean} /> : <p className="m-0 text-sm text-muted-foreground">No results yet</p>}
-          {played.length > PLAYED_SHOWN && !clean ? (
-            <Button variant="ghost" size="xs" className="mt-1 text-primary-text" aria-expanded={allPlayed} onClick={() => setAllPlayed(!allPlayed)}>
-              <Icon name={allPlayed ? "mdi-chevron-up" : "mdi-chevron-down"} />
-              {allPlayed ? "Show fewer" : `Show all ${played.length} series`}
-            </Button>
-          ) : null}
+          <div id={resultsId} hidden={resultsFolded}>
+            {played.length ? <PlayedTable played={playedShown} total={played.length} admin={admin} clean={clean} /> : <p className="m-0 text-sm text-muted-foreground">No results yet</p>}
+            {played.length > PLAYED_SHOWN && !clean ? (
+              <Button variant="ghost" size="xs" className="mt-1 text-primary-text" aria-expanded={allPlayed} onClick={() => setAllPlayed(!allPlayed)}>
+                <Icon name={allPlayed ? "mdi-chevron-up" : "mdi-chevron-down"} />
+                {allPlayed ? "Show fewer" : `Show all ${played.length} series`}
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </Card>

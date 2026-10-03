@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, streamPollMs, crownedPicks, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, foldedStored, storeFolded, streamPollMs, crownedPicks, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -411,4 +411,19 @@ test("streamPollMs reads every 30 s in play, every 5 min before the first series
   assert.equal(streamPollMs({ ...night, closed: true, series_count: 4 }, start), null);
   assert.equal(streamPollMs({ ...night, starts_at: null, series_count: 1 }, start), 30000);
   assert.equal(streamPollMs(null, start), null);
+});
+
+test('a folded part holds alone, and a blocked storage shows every part', () => {
+  const kept = new Map();
+  const fake = { getItem: (k) => kept.get(k) ?? null, setItem: (k, v) => kept.set(k, v) };
+  storeFolded('Bracket 1:queue', true, fake);
+  storeFolded('Bracket 2:results', true, fake);
+  assert.equal(foldedStored('Bracket 1:queue', fake), true);
+  assert.equal(foldedStored('Bracket 1:results', fake), false);
+  storeFolded('Bracket 1:queue', false, fake);
+  assert.equal(foldedStored('Bracket 1:queue', fake), false);
+  assert.equal(foldedStored('Bracket 2:results', fake), true);
+  const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
+  assert.equal(foldedStored('Bracket 1:queue', blocked), false);
+  assert.doesNotThrow(() => storeFolded('Bracket 1:queue', true, blocked));
 });

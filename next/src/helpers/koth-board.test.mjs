@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
-  orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, skippedSeat, startButton,
-  throneWord,
+  orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
+  startButton, throneWord,
 } from './koth-board.mjs';
 
 const seat = (user_id, name, rows, extra = {}) => ({ user_id, name, country: null, rows, busy: false, ...extra });
@@ -113,6 +113,23 @@ test('the reader reads back every race he entered on, placed or not', () => {
   };
   assert.deepEqual(myRacesOnBoard(board, 5), ['HU', 'OC', 'NE']);
   assert.deepEqual(myRacesOnBoard(board, null), []);
+});
+
+test('a race the reader plays at the table stays his, on either side, once each', () => {
+  const side = (entrant_id, user_id, race) => ({ entrant_id, user_id, name: 'P', race, mmr: 1200 });
+  const board = {
+    brackets: [
+      { lower_bound: 0, king: seat(5, 'Me', [row(5, 'HU')]), queue: [], open_series: { side1: side(5, 5, 'HU'), side2: side(4, 4, 'UD') } },
+      { lower_bound: 1450, king: null, queue: [seat(5, 'Me', [row(8, 'NE')])], open_series: { side1: side(9, 9, 'OC'), side2: side(6, 5, 'OC') } },
+    ],
+  };
+  assert.deepEqual(myRacesOnBoard(board, 5), ['HU', 'NE', 'OC']);
+  assert.deepEqual(myRacesOnBoard(board, 4), ['UD']);
+});
+
+test('a return to the tab reads the board again only 15 seconds after the last read', () => {
+  assert.equal(shouldReread(1000, 1000 + 14000), false);
+  assert.equal(shouldReread(1000, 1000 + 16000), true);
 });
 
 test('a visitor signs up only while signups stand open on a night open to anyone', () => {

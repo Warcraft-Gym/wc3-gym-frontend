@@ -232,11 +232,19 @@ export function KingBlock({ bracket, brackets, admin }: { bracket: Row; brackets
 }
 
 /** The series the bracket plays right now, or the one filled button that starts the next one. */
-export function OpenSeries({ bracket, admin }: { bracket: Row; admin?: BracketAdmin }) {
+export function OpenSeries({ bracket, admin, you }: { bracket: Row; admin?: BracketAdmin; you?: number | null }) {
   const live: Row | null = bracket.open_series;
   if (live) {
     // both sides keep the mark slot while either wears the mark, so the flags line up where the second wraps
     const slot = live.side1.mmr == null || live.side2.mmr == null;
+    // the reader's own side reads the chip his queue row would
+    const playing = (side: Row) =>
+      you != null && side.user_id === you ? (
+        <Badge className={cn(toneClass("info"), "shrink-0")}>
+          <Icon name="mdi-play" />
+          You are playing now
+        </Badge>
+      ) : null;
     return (
       <div className="mx-4 mb-3 rounded-lg border p-3">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -245,8 +253,10 @@ export function OpenSeries({ bracket, admin }: { bracket: Row; admin?: BracketAd
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <BoardPlayer row={live.side1} slot={slot} />
+          {playing(live.side1)}
           <span className="text-xs text-muted-foreground">vs</span>
           <BoardPlayer row={live.side2} slot={slot} />
+          {playing(live.side2)}
         </div>
         {admin ? (
           <>
@@ -518,7 +528,7 @@ export function BracketCard({
 
       {/* the throne keeps its air: whatever comes first under the line stands 12 px off it */}
       <div className="pt-3">
-        <OpenSeries bracket={bracket} admin={admin} />
+        <OpenSeries bracket={bracket} admin={admin} you={you} />
         <div className="flex items-baseline gap-2 px-4 pb-1">
           <span className="text-xs font-medium text-muted-foreground">Queue</span>
           <span className="tnum text-xs text-muted-foreground">{queue.length} waiting</span>

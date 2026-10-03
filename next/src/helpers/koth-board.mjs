@@ -173,14 +173,21 @@ export function movedQueue(queue = [], from, to) {
   return rows;
 }
 
-// The races the reader entered the night on, from the board: his seats and his unplaced rows
+// The races the reader entered the night on, from the board: his seats, his sides at the table and his unplaced rows, once each
 export function myRacesOnBoard(board, userId) {
   if (userId == null) return [];
-  const seats = orderedBrackets(board).flatMap((bracket) => [bracket.king, ...(bracket.queue ?? [])]);
+  const brackets = orderedBrackets(board);
+  const seats = brackets.flatMap((bracket) => [bracket.king, ...(bracket.queue ?? [])]);
   const mine = seats.filter((seat) => seat?.user_id === userId).flatMap((seat) => seat.rows ?? []);
+  const sides = brackets.flatMap((bracket) => [bracket.open_series?.side1, bracket.open_series?.side2]);
+  const playing = sides.filter((side) => side?.user_id === userId);
   const unplaced = (board?.unplaced ?? []).filter((row) => row.user_id === userId);
-  return [...mine, ...unplaced].map((row) => row.race).filter(Boolean);
+  return [...new Set([...mine, ...playing, ...unplaced].map((row) => row.race).filter(Boolean))];
 }
+
+// A return to the tab reads the board again only once the edge copy can be newer than the last read
+const REREAD_MS = 15000;
+export const shouldReread = (lastReadMs, nowMs) => nowMs - lastReadMs >= REREAD_MS;
 
 // Whether the reader sees "Sign up": a visitor only on a night open to anyone, a signed-in reader while a race is left to enter
 export function canSignUp({ signedIn, signupsOpen, policy, signedUp, multiEntry, heldCount, raceCount }) {

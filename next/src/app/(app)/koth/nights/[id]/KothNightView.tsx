@@ -74,6 +74,7 @@ export function KothNightView({ id }: { id: string }) {
   const fixToken = useRef(0); // the newest preview asked for, so a slow answer never overwrites a later pick
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
+  const [clearing, setClearing] = useState(false); // the confirm before every series of the night goes
   const [boundsOpen, setBoundsOpen] = useState(false); // the bracket bounds live behind Settings, so the brackets lead the page
   const [refreshing, setRefreshing] = useState(false);
   const queueWrite = useRef(0); // the newest queue write, so only its answer replaces the order drawn at once
@@ -475,6 +476,12 @@ export function KothNightView({ id }: { id: string }) {
                 {!board.closed ? (
                   <>
                     <DropdownMenuSeparator />
+                    {board.series_count ? (
+                      <DropdownMenuItem className="text-error" onClick={() => setClearing(true)}>
+                        <Icon name="mdi-delete-sweep-outline" />
+                        Clear all results
+                      </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuItem className="text-error" onClick={() => setClosing(true)}>
                       <Icon name="mdi-exit-to-app" />
                       Close the night
@@ -832,6 +839,25 @@ export function KothNightView({ id }: { id: string }) {
             <Button variant="destructive" disabled={busy} onClick={deleteNight}>
               <Icon name="mdi-delete-outline" />
               Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* A test run is wiped in one write, after a confirm that counts what goes */}
+      <Dialog open={clearing} onOpenChange={setClearing}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="bg-error px-4 py-3 text-on-error">Clear all results?</DialogTitle>
+          <p className="m-0 p-4 text-sm">
+            {`All ${board?.series_count ?? 0} series of tonight go, in every bracket, and every throne is left empty. Signups and the queue stay. This cannot be undone.`}
+          </p>
+          <div className="flex justify-end gap-2 p-4 pt-0">
+            <Button variant="ghost" onClick={() => setClearing(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" disabled={busy} onClick={() => run(() => store.clearKothSeries(nightId), () => setClearing(false))}>
+              <Icon name="mdi-delete-sweep-outline" />
+              Clear results
             </Button>
           </div>
         </DialogContent>

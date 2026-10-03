@@ -133,6 +133,10 @@ const store = {
   async startKothSeries(night_id: number, entrant1_id: number, entrant2_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/series`, { entrant1_id, entrant2_id });
   },
+  // Every series of the night goes, played or on the table, and every throne empties; signups and the line stay
+  async clearKothSeries(night_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/koth/nights/${night_id}/series`);
+  },
   // A series already played, winner beat loser, as the newest result; nobody moves in the line
   async addKothResult(night_id: number, winner_id: number, loser_id: number, preview = false) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/results${preview ? "?preview=true" : ""}`, { winner_id, loser_id });

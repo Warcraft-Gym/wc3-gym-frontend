@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, dialogCompact, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +24,7 @@ import { BoardPlayer, BracketCard, raceName, seatMark, type BracketAdmin } from 
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
-import { boundsOf, bracketLabel, cutsOf, fixChanges, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, seatKey, seatRow, shouldReread, wearsTheCrown } from "@/helpers/koth-board.mjs";
+import { boundsOf, bracketLabel, cutsOf, fixChanges, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, resultSides, seatKey, seatRow, shouldReread, wearsTheCrown } from "@/helpers/koth-board.mjs";
 import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
@@ -232,6 +233,45 @@ export function KothNightView({ id }: { id: string }) {
     }
   };
 
+  // "Add result": the bracket, the two sides picked, and what the preview says the result changes
+  const [resultFor, setResultFor] = useState<Row | null>(null);
+  const [resultSide, setResultSide] = useState<{ winner: number | null; loser: number | null }>({ winner: null, loser: null });
+  const [resultPreview, setResultPreview] = useState<{ key: string; lines?: Row[]; error?: string } | null>(null);
+  const resultToken = useRef(0); // the newest preview asked for, so a slow answer never overwrites a later pick
+  const pairKey = (side: { winner: number | null; loser: number | null }) => `${side.winner}:${side.loser}`;
+
+  const openAddResult = (bracket: Row) => {
+    resultToken.current++;
+    setResultFor(bracket);
+    setResultSide({ winner: null, loser: null });
+    setResultPreview(null);
+  };
+
+  const closeAddResult = () => {
+    resultToken.current++;
+    setResultFor(null);
+  };
+
+  // Each pick reads the preview of the pair it makes, as soon as both sides name two rows
+  const pickSide = async (which: "winner" | "loser", entrantId: number | null) => {
+    const side = { ...resultSide, [which]: entrantId };
+    setResultSide(side);
+    setResultPreview(null);
+    const token = ++resultToken.current;
+    if (!resultFor || side.winner == null || side.loser == null || side.winner === side.loser) return;
+    try {
+      const answer = await store.addKothResult(nightId, side.winner, side.loser, true);
+      if (token === resultToken.current) setResultPreview({ key: pairKey(side), lines: fixChanges(board, answer, resultFor.division_id, -1) });
+    } catch (e) {
+      if (token === resultToken.current) setResultPreview({ key: pairKey(side), error: (e as Error).message });
+    }
+  };
+
+  const resultRows: Row[] = resultSides(resultFor);
+  const sideLabel = (row?: Row) => (!row ? "Pick a player" : row.several ? `${row.name} (${raceName(row.race)})` : row.name);
+  const resultReady = resultPreview?.key === pairKey(resultSide);
+  const resultLines: Row[] | null = resultReady ? (resultPreview?.lines ?? null) : null;
+
   // The lines of What changes; a removed series takes its replay with it
   const fixLines: Row[] | null =
     fix && fixPreview?.pick === fixPick && fixPreview.lines
@@ -308,6 +348,7 @@ export function KothNightView({ id }: { id: string }) {
     onRestore: (entrantIds) => runEach(entrantIds, (entrantId) => store.restoreKothEntrant(nightId, entrantId)),
     onErase: (name, rows) => setErase({ name, rows }),
     onFix: openFix,
+    onAddResult: (bracket) => openAddResult(bracket),
   };
 
   const openAddPlayer = () => {
@@ -584,32 +625,7 @@ export function KothNightView({ id }: { id: string }) {
                   </label>
                 ))}
               </fieldset>
-              {fixPick === "keep" ? null : fixPreview?.error ? (
-                <p className="mx-4 mb-4 mt-0 text-sm text-error">What the fix changes could not be read: {fixPreview.error}</p>
-              ) : !fixLines ? (
-                <p className="mx-4 mb-4 mt-0 text-sm text-muted-foreground">Reading what changes…</p>
-              ) : (
-                <div className={cn("mx-4 mb-4 flex flex-col gap-1 rounded-r border-l-[3px] bg-surface-bright px-3 py-2 text-sm", fixLines.length ? "border-warning" : "border-info")}>
-                  <div className="font-bold">{fixLines.length ? "What changes" : "Nothing else changes"}</div>
-                  {fixLines.length ? (
-                    <ul className="m-0 flex list-disc flex-col gap-1 pl-5">
-                      {fixLines.map((line) => (
-                        <li key={line.text}>
-                          {line.text}
-                          {line.was ? (
-                            <>
-                              {": "}
-                              <span className="text-muted-foreground line-through">{line.was}</span> <span className="text-warning">{line.now}</span>
-                            </>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span>The throne and every other series stay as they are.</span>
-                  )}
-                </div>
-              )}
+              {fixPick === "keep" ? null : <WhatChanges lines={fixLines} error={fixPreview?.error} />}
               <div className="flex justify-end gap-2 p-4 pt-0">
                 <Button variant="ghost" onClick={closeFix}>
                   Cancel
@@ -624,6 +640,60 @@ export function KothNightView({ id }: { id: string }) {
                 >
                   <Icon name={fixPick === "remove" ? "mdi-delete-outline" : "mdi-check"} />
                   {fixVerb}
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* A series already played goes in as winner beat loser, with nobody moved in the line */}
+      <Dialog open={!!resultFor} onOpenChange={(open) => !open && closeAddResult()}>
+        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[520px]", dialogCompact)}>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Add result</DialogTitle>
+          {resultFor ? (
+            <>
+              <p className="mb-0 px-4 pt-3 text-sm text-muted-foreground">
+                {bracketLabel(brackets, resultFor).name}. The result goes in as the newest series, and nobody moves in the queue.
+              </p>
+              <div className="grid gap-3 p-4 sm:grid-cols-2">
+                {(["winner", "loser"] as const).map((which) => (
+                  <Field key={which} label={which === "winner" ? "Who won?" : "Who lost?"} htmlFor={`result-${which}`}>
+                    <Select value={resultSide[which]} onValueChange={(value) => pickSide(which, value as number | null)}>
+                      <SelectTrigger id={`result-${which}`} className="w-full">
+                        <SelectValue>{(id: number | null) => sideLabel(resultRows.find((row) => row.entrant_id === id))}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {resultRows.map((row) => (
+                          <SelectItem key={row.entrant_id} value={row.entrant_id}>
+                            {sideLabel(row)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                ))}
+              </div>
+              {resultSide.winner != null && resultSide.loser != null ? (
+                resultSide.winner === resultSide.loser ? (
+                  <p className="mx-4 mb-4 mt-0 text-sm text-error">Pick two different players.</p>
+                ) : (
+                  <WhatChanges lines={resultLines} error={resultReady ? resultPreview?.error : undefined} />
+                )
+              ) : null}
+              <div className="flex justify-end gap-2 p-4 pt-0">
+                <Button variant="ghost" onClick={closeAddResult}>
+                  Cancel
+                </Button>
+                <Button
+                  disabled={busy || !resultLines}
+                  onClick={() => {
+                    const side = resultSide;
+                    run(() => store.addKothResult(nightId, side.winner!, side.loser!), closeAddResult);
+                  }}
+                >
+                  <Icon name="mdi-plus" />
+                  Add result
                 </Button>
               </div>
             </>
@@ -921,6 +991,35 @@ export function KothNightView({ id }: { id: string }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/** What a fix or an added result changes, read off its preview: the throne, the crown marks of other
+ *  series and who goes to the end of the line, or a quiet line when nothing else moves. */
+function WhatChanges({ lines, error }: { lines: Row[] | null; error?: string }) {
+  if (error) return <p className="mx-4 mb-4 mt-0 text-sm text-error">What this changes could not be read: {error}</p>;
+  if (!lines) return <p className="mx-4 mb-4 mt-0 text-sm text-muted-foreground">Reading what changes…</p>;
+  return (
+    <div className={cn("mx-4 mb-4 flex flex-col gap-1 rounded-r border-l-[3px] bg-surface-bright px-3 py-2 text-sm", lines.length ? "border-warning" : "border-info")}>
+      <div className="font-bold">{lines.length ? "What changes" : "Nothing else changes"}</div>
+      {lines.length ? (
+        <ul className="m-0 flex list-disc flex-col gap-1 pl-5">
+          {lines.map((line) => (
+            <li key={line.text}>
+              {line.text}
+              {line.was ? (
+                <>
+                  {": "}
+                  <span className="text-muted-foreground line-through">{line.was}</span> <span className="text-warning">{line.now}</span>
+                </>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <span>The throne and every other series stay as they are.</span>
+      )}
+    </div>
   );
 }
 

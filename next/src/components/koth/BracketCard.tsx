@@ -38,7 +38,8 @@ export type BracketAdmin = {
   onRemove: (entrantIds: number[]) => void; // one race row, or every race the player holds here
   onRestore: (entrantIds: number[]) => void; // one race row, or every race the player left on
   onErase: (name: string, rows: Row[]) => void; // takes rows that left off the record of the night, after a confirm
-  onFix: (played: Row) => void; // opens the dialog that turns a result around or removes the series
+  onFix: (played: Row) => void;
+  onAddResult: (bracket: Row) => void; // a series already played, entered as winner beat loser // opens the dialog that turns a result around or removes the series
 };
 
 export const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
@@ -708,14 +709,21 @@ export function BracketCard({
       {/* who left the line can still be put back, so the rows stay with the queue, above the rule */}
       <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
 
-      {/* a gold rule ends the work and opens the record: tonight's results in a sunken band */}
-      {played.length ? (
+      {/* a gold rule ends the work and opens the record: tonight's results in a sunken band; an admin
+          sees it with no result yet, so a night's history can be entered from the start */}
+      {played.length || admin ? (
         <div className="border-t-2 border-primary-text bg-background/70 px-4 pb-3 pt-2.5">
-          <div className="flex items-baseline gap-2 pb-1.5">
+          <div className="flex items-center gap-2 pb-1.5">
             <h3 className="m-0 font-heading text-base font-bold text-primary-text">Played tonight</h3>
             <span className="tnum text-xs text-muted-foreground">{played.length} series</span>
+            {admin ? (
+              <Button variant="ghost" size="xs" className="ml-auto text-primary-text" disabled={admin.busy} onClick={() => admin.onAddResult(bracket)}>
+                <Icon name="mdi-plus" />
+                Add result
+              </Button>
+            ) : null}
           </div>
-          <PlayedTable played={playedShown} total={played.length} admin={admin} clean={clean} />
+          {played.length ? <PlayedTable played={playedShown} total={played.length} admin={admin} clean={clean} /> : <p className="m-0 text-sm text-muted-foreground">No results yet</p>}
           {played.length > PLAYED_SHOWN && !clean ? (
             <Button variant="ghost" size="xs" className="mt-1 text-primary-text" aria-expanded={allPlayed} onClick={() => setAllPlayed(!allPlayed)}>
               <Icon name={allPlayed ? "mdi-chevron-up" : "mdi-chevron-down"} />

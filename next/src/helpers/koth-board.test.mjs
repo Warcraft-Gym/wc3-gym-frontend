@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, fixChanges, heirOf, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -368,4 +368,17 @@ test("heirOf offers the newest winner an empty throne, while he stands in line",
   assert.equal(heirOf({ ...bracket, king: { user_id: 1 } }), null);
   assert.equal(heirOf({ ...bracket, queue: [{ rows: [{ entrant_id: 40 }] }] }), null);
   assert.equal(heirOf({ ...bracket, played: [] }), null);
+});
+
+test("resultSides lists every race row of the king and the line once, marking a player on two races", () => {
+  const bracket = {
+    king: { user_id: 1, name: "EAShibby", rows: [{ entrant_id: 10, race: "OC" }, { entrant_id: 11, race: "RDM" }] },
+    queue: [{ user_id: 2, name: "thanks", rows: [{ entrant_id: 20, race: "NE" }] }],
+  };
+  assert.deepEqual(resultSides(bracket).map((row) => [row.entrant_id, row.name, row.several]), [
+    [10, "EAShibby", true],
+    [11, "EAShibby", true],
+    [20, "thanks", false],
+  ]);
+  assert.deepEqual(resultSides(null), []);
 });

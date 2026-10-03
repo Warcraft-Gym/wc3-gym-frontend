@@ -307,3 +307,12 @@ export function heirOf(bracket) {
   const standing = (bracket?.queue ?? []).some((seat) => (seat.rows ?? []).some((row) => row.entrant_id === winner?.entrant_id));
   return standing ? winner : null;
 }
+
+// Every race row a bracket holds tonight, for "Add result": the king, the line and the rows that left,
+// since a player who left played before he went. `several` marks a player on more than one race here.
+export function resultSides(bracket) {
+  const seats = [bracket?.king, ...(bracket?.queue ?? []), ...leftSeats(bracket ?? {})].filter(Boolean);
+  const rows = seats.flatMap((seat) => (seat.rows ?? []).map((row) => ({ entrant_id: row.entrant_id, user_id: seat.user_id, name: seat.name, race: row.race })));
+  const unique = [...new Map(rows.map((row) => [row.entrant_id, row])).values()];
+  return unique.map((row) => ({ ...row, several: unique.filter((one) => one.user_id === row.user_id).length > 1 }));
+}

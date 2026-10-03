@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
-  orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatRow, skippedSeat, startButton,
-  throneWord,
+  orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
+  startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
 
 const seat = (user_id, name, rows, extra = {}) => ({ user_id, name, country: null, rows, busy: false, ...extra });
@@ -115,6 +115,74 @@ test('the reader reads back every race he entered on, placed or not', () => {
   assert.deepEqual(myRacesOnBoard(board, null), []);
 });
 
+test('a race the reader plays at the table stays his, on either side, once each', () => {
+  const side = (entrant_id, user_id, race) => ({ entrant_id, user_id, name: 'P', race, mmr: 1200 });
+  const board = {
+    brackets: [
+      { lower_bound: 0, king: seat(5, 'Me', [row(5, 'HU')]), queue: [], open_series: { side1: side(5, 5, 'HU'), side2: side(4, 4, 'UD') } },
+      { lower_bound: 1450, king: null, queue: [seat(5, 'Me', [row(8, 'NE')])], open_series: { side1: side(9, 9, 'OC'), side2: side(6, 5, 'OC') } },
+    ],
+  };
+  assert.deepEqual(myRacesOnBoard(board, 5), ['HU', 'NE', 'OC']);
+  assert.deepEqual(myRacesOnBoard(board, 4), ['UD']);
+});
+
+test('a withdraw forfeits a series only for a race he plays at the table, or with no race named', () => {
+  const side = (entrant_id, user_id, race) => ({ entrant_id, user_id, name: 'P', race, mmr: 1200 });
+  const board = {
+    brackets: [
+      { lower_bound: 0, queue: [], open_series: { side1: side(5, 5, 'HU'), side2: side(4, 4, 'UD') } },
+      { lower_bound: 1450, queue: [seat(5, 'Me', [row(8, 'NE')]), seat(6, 'Other', [row(9, 'HU')])], open_series: { side1: side(7, 7, 'OC'), side2: side(10, 6, 'OC') } },
+    ],
+  };
+  assert.equal(withdrawForfeitsSeries(board, 5, 'HU'), true); // side1
+  assert.equal(withdrawForfeitsSeries(board, 6, 'OC'), true); // side2
+  assert.equal(withdrawForfeitsSeries(board, 5, 'NE'), false); // another race of his, in a queue
+  assert.equal(withdrawForfeitsSeries(board, 5), true); // no race named, one of his at the table
+  assert.equal(withdrawForfeitsSeries(board, 6, 'HU'), false);
+  assert.equal(withdrawForfeitsSeries({ brackets: [board.brackets[1]] }, 5), false); // no race named, none at the table
+  assert.equal(withdrawForfeitsSeries(board, null), false);
+});
+
+test('only the crowned race of the king asks before a move, and every race when the board names none', () => {
+  const bracket = { king: seat(5, 'Me', [row(51, 'HU'), row(52, 'OC')]), king_entrant_id: 51, queue: [seat(6, 'Other', [row(61, 'NE')])] };
+  assert.equal(wearsTheCrown(bracket, 51), true);
+  assert.equal(wearsTheCrown(bracket, 52), false);
+  assert.equal(wearsTheCrown(bracket, 61), false); // not the king
+  const older = { ...bracket, king_entrant_id: undefined };
+  assert.equal(wearsTheCrown(older, 51), true);
+  assert.equal(wearsTheCrown(older, 52), true);
+  assert.equal(wearsTheCrown({ ...bracket, king: null }, 51), false);
+});
+
+test('a withdraw costs the king his next match only when the crowned race leaves him no other race there', () => {
+  const night = (king, extra = {}) => ({
+    brackets: [
+      { lower_bound: 0, king, queue: [], ...extra },
+      { lower_bound: 1450, king: null, queue: [seat(5, 'Me', [row(58, 'NE')])] },
+    ],
+  });
+  const alone = night(seat(5, 'Me', [row(51, 'HU')]), { king_entrant_id: 51 });
+  assert.equal(withdrawForfeitsCrown(alone, 5, 'HU'), true); // the crowned race alone
+  assert.equal(withdrawForfeitsCrown(alone, 5, 'NE'), false); // a race in another bracket
+  assert.equal(withdrawForfeitsCrown(alone, 5), true); // no race named takes every row
+  const two = night(seat(5, 'Me', [row(51, 'HU'), row(52, 'OC')]), { king_entrant_id: 51 });
+  assert.equal(withdrawForfeitsCrown(two, 5, 'HU'), false); // the crown passes to his Orc row
+  assert.equal(withdrawForfeitsCrown(two, 5, 'OC'), false); // the other race
+  assert.equal(withdrawForfeitsCrown(two, 5), true);
+  const older = night(seat(5, 'Me', [row(51, 'HU'), row(52, 'OC')]));
+  assert.equal(withdrawForfeitsCrown(older, 5, 'HU'), true); // no crowned row named: any race of a king
+  assert.equal(withdrawForfeitsCrown(older, 5, 'OC'), true);
+  assert.equal(withdrawForfeitsCrown(older, 5, 'NE'), false);
+  assert.equal(withdrawForfeitsCrown(two, 6, 'HU'), false);
+  assert.equal(withdrawForfeitsCrown(two, null), false);
+});
+
+test('a return to the tab reads the board again only 15 seconds after the last read', () => {
+  assert.equal(shouldReread(1000, 1000 + 14000), false);
+  assert.equal(shouldReread(1000, 1000 + 16000), true);
+});
+
 test('a visitor signs up only while signups stand open on a night open to anyone', () => {
   const visitor = { signedIn: false, signupsOpen: true, policy: 'anyone', signedUp: false, multiEntry: true, heldCount: 0, raceCount: 5 };
   assert.equal(canSignUp(visitor), true);
@@ -195,6 +263,33 @@ test('a player who left on two races reads one row, holding both of them', () =>
   assert.equal(seats[1].race, 'HU');
   assert.deepEqual(seats[2].rows.map((row) => row.entrant_id), [24]);
   assert.deepEqual(leftSeats(null), []);
+});
+
+test('a race that left while the player still stands here shows in his seat, not in the list', () => {
+  const bracket = {
+    king: seat(1, 'Duskrell', [row(10, 'HU')]),
+    queue: [seat(3, 'Kaldris', [row(21, 'OC')]), seat(4, 'Sablefen', [row(23, 'HU')])],
+    left: [
+      { entrant_id: 22, user_id: 3, name: 'Kaldris', race: 'UD', mmr: 1188 },
+      { entrant_id: 11, user_id: 1, name: 'Duskrell', race: 'NE', mmr: 1300 },
+      { entrant_id: 25, user_id: 5, name: 'Fennow', race: 'OC', mmr: 1250 },
+      { entrant_id: 26, user_id: 5, name: 'Fennow', race: 'HU', mmr: 1240 },
+    ],
+  };
+  assert.deepEqual(leftSeats(bracket).map((one) => one.name), ['Fennow']);
+  assert.deepEqual(leftSeats(bracket)[0].rows.map((one) => one.race), ['OC', 'HU']);
+  assert.deepEqual(seatLeft(bracket, bracket.queue[0]).map((one) => one.entrant_id), [22]);
+  assert.deepEqual(seatLeft(bracket, bracket.king).map((one) => one.entrant_id), [11]);
+  assert.deepEqual(seatLeft(bracket, bracket.queue[1]), []);
+  assert.deepEqual(seatLeft(bracket, null), []);
+});
+
+test('a player seated in one bracket still reads in the list of another bracket he left', () => {
+  const one = { queue: [seat(3, 'Kaldris', [row(21, 'OC')])], left: [] };
+  const two = { queue: [], left: [{ entrant_id: 22, user_id: 3, name: 'Kaldris', race: 'UD', mmr: 1188 }] };
+  assert.deepEqual(leftSeats(one), []);
+  assert.deepEqual(leftSeats(two).map((one) => one.rows.map((r) => r.entrant_id)), [[22]]);
+  assert.deepEqual(seatLeft(one, one.queue[0]), []);
 });
 
 

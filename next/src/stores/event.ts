@@ -140,7 +140,7 @@ const store = {
   async setKothWinner(night_id: number, series_id: number, winner: 1 | 2) {
     return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/series/${series_id}/result`, { winner });
   },
-  // Moves the MMR band of each bracket in place and cuts the rated rows nobody placed by hand again
+  // Moves the MMR band of each bracket and each placed player by the rating he was placed with; a series or a hand placement keeps him
   async setKothBounds(night_id: number, bounds: { division_id: number; lower_bound: number }[]) {
     return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/bounds`, { bounds });
   },
@@ -157,6 +157,10 @@ const store = {
   // Back at the end of the line, without the crown
   async restoreKothEntrant(night_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/restore`);
+  },
+  // One race row to another bracket by hand; it stands last there
+  async moveKothEntrant(night_id: number, entrant_id: number, division_id: number) {
+    return await fetchWrapper.put(`${backendUrl}/koth/nights/${night_id}/entrants/${entrant_id}/bracket`, { division_id });
   },
   // Moves the top entrants of a finished stage into the next stage
   async advanceStage(event_id: number, stage_id: number) {

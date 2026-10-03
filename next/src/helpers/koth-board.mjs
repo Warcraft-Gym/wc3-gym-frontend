@@ -70,16 +70,25 @@ export const seatRow = (seat, picks = {}) => {
   return rows.find((row) => row.entrant_id === wanted) ?? rows[0] ?? null;
 };
 
+// The players who hold a place on the card: the king and every seat of the line
+const seatedUsers = (bracket) => new Set([bracket?.king, ...(bracket?.queue ?? [])].filter(Boolean).map((seat) => seat.user_id));
+
+// The races a seated player left tonight in this bracket; his seat shows them
+export const seatLeft = (bracket, seat) => (seat?.user_id == null ? [] : (bracket?.left ?? []).filter((row) => row.user_id === seat.user_id));
+
 /**
- * The players who left, one seat each: a player who left on two races reads once, holding both
- * rows. A row the board names no user for stands on its own, because nothing folds it.
+ * The players who left and hold no place on the card, one seat each: a player who left on two
+ * races reads once, holding both rows. A row the board names no user for stands on its own,
+ * because nothing folds it. A player still seated here shows his left races in his seat.
  *
  * @param {Object} bracket - One bracket of the board
  * @returns {Array} - One seat per player, each with the race rows he left on
  */
 export function leftSeats(bracket) {
+  const seated = seatedUsers(bracket);
   const seats = new Map();
   for (const row of bracket?.left ?? []) {
+    if (row.user_id != null && seated.has(row.user_id)) continue;
     const key = row.user_id == null ? `row:${row.entrant_id}` : `user:${row.user_id}`;
     const seat = seats.get(key);
     // a player on two races is one player, so the folded seat names neither race nor rating
@@ -164,14 +173,57 @@ export function movedQueue(queue = [], from, to) {
   return rows;
 }
 
-// The races the reader entered the night on, from the board: his seats and his unplaced rows
+// The races the reader entered the night on, from the board: his seats, his sides at the table and his unplaced rows, once each
 export function myRacesOnBoard(board, userId) {
   if (userId == null) return [];
   const seats = orderedBrackets(board).flatMap((bracket) => [bracket.king, ...(bracket.queue ?? [])]);
   const mine = seats.filter((seat) => seat?.user_id === userId).flatMap((seat) => seat.rows ?? []);
+  const playing = tableSides(board).filter((side) => side.user_id === userId);
   const unplaced = (board?.unplaced ?? []).filter((row) => row.user_id === userId);
-  return [...mine, ...unplaced].map((row) => row.race).filter(Boolean);
+  return [...new Set([...mine, ...playing, ...unplaced].map((row) => row.race).filter(Boolean))];
 }
+
+// Both sides of every series on the table
+const tableSides = (board) =>
+  orderedBrackets(board).flatMap((bracket) => [bracket.open_series?.side1, bracket.open_series?.side2]).filter(Boolean);
+
+// Whether a race row of the king wears the crown: the crowned row, or every row of his when the board names none of them
+export function wearsTheCrown(bracket, entrantId) {
+  const rows = bracket?.king?.rows ?? [];
+  const crowned = rows.find((row) => row.entrant_id === bracket.king_entrant_id);
+  return rows.some((row) => row.entrant_id === entrantId) && (!crowned || crowned.entrant_id === entrantId);
+}
+
+/**
+ * Whether a withdraw costs the king his next match: it takes the crowned row and leaves him no
+ * other row in that bracket, which would take the crown with no forfeit. No race named takes
+ * every row. A board that names none of his rows counts any race of a king.
+ *
+ * @param {Object|null} board - The board read
+ * @param {number|null} userId - The reader
+ * @param {string|null} [race] - The race withdrawn, or null for all of them
+ * @returns {boolean}
+ */
+export function withdrawForfeitsCrown(board, userId, race = null) {
+  if (userId == null) return false;
+  return orderedBrackets(board).some((bracket) => {
+    if (bracket.king?.user_id !== userId) return false;
+    const rows = bracket.king.rows ?? [];
+    if (race === null) return true;
+    const crowned = rows.find((row) => row.entrant_id === bracket.king_entrant_id);
+    if (!crowned) return rows.some((row) => row.race === race);
+    return crowned.race === race && rows.every((row) => row.race === race);
+  });
+}
+
+// Whether a withdraw forfeits a series on the table: the race named, or with no race named any race of his, is a side of one
+/** @type {(board: Object|null, userId: number|null, race?: string|null) => boolean} */
+export const withdrawForfeitsSeries = (board, userId, race = null) =>
+  userId != null && tableSides(board).some((side) => side.user_id === userId && (race === null || side.race === race));
+
+// A return to the tab reads the board again only once the edge copy can be newer than the last read
+const REREAD_MS = 15000;
+export const shouldReread = (lastReadMs, nowMs) => nowMs - lastReadMs >= REREAD_MS;
 
 // Whether the reader sees "Sign up": a visitor only on a night open to anyone, a signed-in reader while a race is left to enter
 export function canSignUp({ signedIn, signupsOpen, policy, signedUp, multiEntry, heldCount, raceCount }) {

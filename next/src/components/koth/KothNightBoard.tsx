@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { SignupDialog } from "@/components/SignupDialog";
 import { BoardPlayer, BracketCard } from "@/components/koth/BracketCard";
-import { canSignUp, myRacesOnBoard, orderedBrackets } from "@/helpers/koth-board.mjs";
+import { canSignUp, myRacesOnBoard, orderedBrackets, shouldReread, withdrawForfeitsCrown, withdrawForfeitsSeries } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { useAuth, useEventStore } from "@/stores";
 
@@ -21,7 +21,8 @@ const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race
 /** A KOTH night that is not archived, on the one board read: a card per bracket with its king,
  *  the series it plays now, the line waiting and what it played tonight. While signups stand open a
  *  signed-in reader signs up, and a visitor signs up by battle tag on a night open to anyone. A
- *  signed-in reader withdraws until the night closes and reads his own place in line. `clean` is the stream view: no control, and the
+ *  signed-in reader withdraws until the night closes and reads his own place in line. The board is
+ *  read again on "Refresh" and on a return to the tab. `clean` is the stream view: no control, and the
  *  board read again every 30 s while the tab is visible and the night is open. */
 export function KothNightBoard({
   event,
@@ -41,22 +42,22 @@ export function KothNightBoard({
   const [board, setBoard] = useState<Row>(loaded);
   const [withdrawing, setWithdrawing] = useState<string | boolean>(false); // true, or the race on its way out
   const [dialog, setDialog] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const lastRead = useRef(0); // when the page last read the board, in ms
 
   const brackets: Row[] = orderedBrackets(board);
   const myId = auth.me ? auth.me.user?.id : null;
   const held: string[] = myRacesOnBoard(board, myId);
   const signedUp = held.length > 0;
   const closed = !!board.closed;
-  // a king who leaves loses a forfeit to the first in line, so his confirm says so
-  const wearsCrown = (race: string | null) =>
-    brackets.some((bracket) => bracket.king?.user_id === myId && (race === null || bracket.king.rows.some((row: Row) => row.race === race)));
   const canEnter = canSignUp({ signedIn: !!auth.me, signupsOpen: !!event.signups_open, policy: event.signup_policy, signedUp,
     multiEntry: !!event.multi_entry, heldCount: held.length, raceCount: raceWrapper.races.length });
 
-  // fresh skips the edge cache after the reader's own write; a failure keeps the board on the screen
-  const readBoard = async (fresh = false) => {
+  // fresh skips the edge cache after the reader's own write; a board in hand skips the read; a failure keeps the board
+  const readBoard = async (fresh = false, answer: Row | null = null) => {
+    lastRead.current = Date.now();
     try {
-      setBoard(await store.fetchBoard(event.id, fresh));
+      setBoard(answer ?? (await store.fetchBoard(event.id, fresh)));
       onError(null);
     } catch (e) {
       onError(`The night did not load: ${(e as Error).message}`);
@@ -70,12 +71,32 @@ export function KothNightBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clean, closed]);
 
+  // A return to the tab reads the board again, at most once per 15 s edge copy; no timer runs
+  useEffect(() => {
+    if (clean || closed) return;
+    if (!lastRead.current) lastRead.current = Date.now(); // the page came with the board its load read
+    const onShow = () => document.visibilityState === "visible" && shouldReread(lastRead.current, Date.now()) && readBoard();
+    document.addEventListener("visibilitychange", onShow);
+    return () => document.removeEventListener("visibilitychange", onShow);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clean, closed]);
+
+  // The edge copy is enough for a click, so Refresh never reads fresh
+  const refresh = async () => {
+    setRefreshing(true);
+    await readBoard();
+    setRefreshing(false);
+  };
+
   const withdraw = async (race: string | null = null) => {
-    const question = wearsCrown(race)
-      ? "Withdrawing forfeits your next match."
-      : race
-        ? `Withdraw ${raceName(race)} from tonight?`
-        : "Withdraw from tonight?";
+    // a race at the table loses its series by forfeit, which outweighs the king's next match
+    const question = withdrawForfeitsSeries(board, myId, race)
+      ? "Withdrawing forfeits the match you are playing."
+      : withdrawForfeitsCrown(board, myId, race)
+        ? "Withdrawing forfeits your next match."
+        : race
+          ? `Withdraw ${raceName(race)} from tonight?`
+          : "Withdraw from tonight?";
     if (!window.confirm(question)) return;
     setWithdrawing(race ?? true);
     try {
@@ -115,6 +136,10 @@ export function KothNightBoard({
             <Icon name="mdi-account-multiple" />
             {board.entrant_count} signed up
           </Badge>
+          <Button size="sm" variant="outline" disabled={refreshing} onClick={refresh}>
+            <Icon name={refreshing ? "mdi-loading mdi-spin" : "mdi-refresh"} />
+            Refresh
+          </Button>
           {children}
         </div>
       ) : null}
@@ -138,7 +163,7 @@ export function KothNightBoard({
         ))}
       </div>
 
-      {dialog ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={() => readBoard(true)} /> : null}
+      {dialog ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={(_entrant, answer) => readBoard(true, answer)} /> : null}
     </>
   );
 }

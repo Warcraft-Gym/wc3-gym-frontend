@@ -43,7 +43,7 @@ export function SignupDialog({
   held?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSignedUp?: (entrant: Row) => void;
+  onSignedUp?: (entrant: Row, board: Row | null) => void; // board: the fresh KOTH board the dialog read, or null
 }) {
   const auth = useAuthStore();
   const store = useEventStore();
@@ -92,15 +92,19 @@ export function SignupDialog({
         note: note.trim() || null,
         battle_tag: needsTag ? battleTag.trim() : null,
       });
-      onSignedUp?.(row);
-      // One public read, edge cached: where the night put the new row in its bracket's line
+      // One fresh read past the edge cache: where the night put the new row in its bracket's line
+      let board: Row | null = null;
       if (koth && row?.division_id != null) {
         try {
-          setPlace(signupPlace(await store.fetchBoard(event.id), row.id));
+          const answer = await store.fetchBoard(event.id, true);
+          setPlace(signupPlace(answer, row.id));
+          board = answer;
         } catch {
           setPlace(null); // no board answered, so the event row names the bracket alone
         }
       }
+      // The caller takes the same board, so the signup costs one board read
+      onSignedUp?.(row, board);
       // Last, so the form holds its spinner until the place is known and the end state prints once
       setEntrant(row);
     } catch (e) {

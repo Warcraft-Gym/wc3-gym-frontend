@@ -166,13 +166,19 @@ export function EventView({ id }: { id: string }) {
     const load = async () => {
       try {
         const [loaded, leagueRows] = await Promise.all([store.fetchEvent(Number(id)), store.fetchLeagues()]);
+        // A night shows its board or nothing: the event and the board land in one render, so the
+        // stages-and-entrants page of other events never flashes ahead of the board, on a stream least of all
+        const night =
+          loaded.kind === "koth"
+            ? await store.fetchBoard(loaded.id).catch((e: Error) => {
+                setError(`The night did not load: ${e.message}`);
+                return null;
+              })
+            : null;
         setEvent(loaded);
         setLeagues(leagueRows);
-        setBoard(null);
-        if (loaded.kind === "koth") {
-          setBoard(await store.fetchBoard(loaded.id));
-          return;
-        }
+        setBoard(night);
+        if (night) return;
         await reload(loaded);
         const drawings = await Promise.all(
           [...(loaded.stages || [])].map(async (stage: Row) => {

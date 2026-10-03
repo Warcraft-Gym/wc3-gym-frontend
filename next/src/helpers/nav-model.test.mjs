@@ -132,3 +132,14 @@ test('the admin frame holds the admin home, the listed pages and the admin-only 
   assert.equal(activeAdminPath('/seasons/18/maps'), '/seasons');
   assert.equal(activeAdminPath('/report'), null);
 });
+
+test('showsJoinBanner: a visitor and a signed-in guest read it, a member and a loading session do not', async () => {
+  const { showsJoinBanner } = await import('./nav-model.mjs');
+  const base = { hydrated: true, clean: false, user: null, me: null };
+  assert.equal(showsJoinBanner(base), true);
+  assert.equal(showsJoinBanner({ ...base, user: { id: 1 }, me: { role: 'guest' } }), true);
+  for (const role of ['member', 'captain', 'admin']) assert.equal(showsJoinBanner({ ...base, user: { id: 1 }, me: { role } }), false);
+  assert.equal(showsJoinBanner({ ...base, user: { id: 1 } }), false);
+  assert.equal(showsJoinBanner({ ...base, clean: true }), false);
+  assert.equal(showsJoinBanner({ ...base, hydrated: false }), false);
+});

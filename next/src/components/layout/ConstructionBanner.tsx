@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { useConfigStore } from "@/stores";
 
-/** The dashboard is still being built, so every page but a stream carries one line that sends a reader,
- *  signed in or not, to the community: the main WC3 Gym Discord, at the invite Config names. */
+/** The dashboard is still being built, so a reader who is not a member yet reads one line that sends him
+ *  to the community: the main WC3 Gym Discord, at the invite Config names. AppShell decides who sees it. */
 export function ConstructionBanner() {
   const { fetchSettings } = useConfigStore();
   const [invite, setInvite] = useState<string | null>(null);

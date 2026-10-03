@@ -67,3 +67,7 @@ export function navTabs(nav) {
 
 /** Whether a link is the page on screen: the exact path, or a page under it (never under Home). */
 export const isActive = (to, path) => to === path || (to !== '/' && path.startsWith(`${to}/`));
+
+// The community link is for a reader who is not a member yet: a visitor with no session, or a signed-in
+// guest. A member never reads it, nor a session whose role is still loading, nor a stream.
+export const showsJoinBanner = ({ hydrated, clean, user, me }) => !!hydrated && !clean && ((!user && !me) || me?.role === 'guest');

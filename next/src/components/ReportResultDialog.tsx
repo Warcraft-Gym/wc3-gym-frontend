@@ -36,6 +36,7 @@ type Form = {
   races: { player1?: string | null; player2?: string | null };
   raceOpen?: boolean;
   reported?: number;
+  listsReplays?: boolean;
   replays: Record<number, File | null>;
   winners: (string | null)[];
   maps: Record<number, number | null>;
@@ -142,6 +143,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         raceOpen: !!(item.player1_off_race || item.player2_off_race),
         // games already reported: their stored replays stay unless a new file is picked
         reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score : 0,
+        // ponytail: only a fixture's page lists its replays, so a series without one takes no file until a page shows it
+        listsReplays: item.match_id !== null,
         replays: {},
         // the side that won each game, in play order, and the map named for a game
         winners: [],
@@ -224,7 +227,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
 
   const [p1, p2] = reportedScore;
   // The games played that carry no replay: the report still saves, but warns and asks once
-  const replaysMissing = Array.from({ length: replaysNeeded(p1, p2) }, (_, index) => index + 1).filter((game) => needsFile(game) && !hasReplay(game));
+  const replaysMissing = Array.from({ length: series.listsReplays ? replaysNeeded(p1, p2) : 0 }, (_, index) => index + 1).filter((game) => needsFile(game) && !hasReplay(game));
   const fileHint = (game: number) => (!needsFile(game) ? "Leave empty to keep the stored replay" : replaysMissing.includes(game) ? "Every game needs its replay" : undefined);
   const scoreProblem = isValidResult(p1, p2, seriesWins) ? null : "Tap the winner of each game played";
   const resultLine = `${name(1)} ${p1} – ${p2} ${name(2)}`;
@@ -263,7 +266,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
 
   // A replay moves inside the games the series played: the ones reported, and the ones tapped now
   const movesOver = Math.max(replaysNeeded(p1, p2), series.reported || 0);
-  const canMove = (game: number) => movesOver > 1 && (hasReplay(game) || !needsFile(game));
+  const canMove = (game: number) => !!series.listsReplays && movesOver > 1 && (hasReplay(game) || !needsFile(game));
 
   // Move one game's replay to another: a picked file swaps inside the form, a stored one moves through the API
   const moveReplay = async (from: number, to: number) => {
@@ -346,7 +349,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
           const errorData = await response.json();
           throw new Error(errorData.error || "Update failed");
         }
-        missing = (await response.json()).replays_missing || [];
+        missing = series.listsReplays ? (await response.json()).replays_missing || [] : [];
       }
 
       close();
@@ -484,6 +487,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
                   ) : null}
                 </div>
               </Field>
+              {series.listsReplays ? (
               <Field
                 label={`Game ${game} replay`}
                 htmlFor={`report-replay-${game}`}
@@ -499,6 +503,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
                   onChange={(event) => readGameReplay(game, event.target.files?.[0] ?? null)}
                 />
               </Field>
+              ) : null}
               {replayNote(game) ? <Note type="warning">{replayNote(game)}</Note> : null}
             </div>
           ))}

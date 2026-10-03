@@ -11,6 +11,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { AdminFrame } from "@/components/admin/AdminFrame";
 import { PlayerPanel } from "@/components/player/PlayerPanel";
 import { ViewAsDialog } from "@/components/layout/ViewAsDialog";
+import { ConstructionBanner } from "@/components/layout/ConstructionBanner";
 import { ClerkBridge } from "@/lib/clerk-bridge";
 import { Guard } from "@/lib/guard";
 import { useTheme } from "@/hooks/theme";
@@ -158,6 +159,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
+      {/* a stream shows the brackets alone, so the clean page carries no banner */}
+      {!clean ? <ConstructionBanner /> : null}
 
       <main id="main" className="flex-1">
         {/* w-auto, so the 8 px margin comes off the width and a phone page never scrolls sideways */}

@@ -43,14 +43,24 @@ export type BracketAdmin = {
 export const raceName = (race?: string | null) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
 
 /** "Move to": the other brackets of the night, by name, for one race row. */
-function MoveTo({ bracket, brackets, seat, row, admin, who }: { bracket: Row; brackets: Row[]; seat: Row; row: Row | null; admin: BracketAdmin; who: string }) {
+function MoveTo({ bracket, brackets, seat, row, admin, who, compact }: { bracket: Row; brackets: Row[]; seat: Row; row: Row | null; admin: BracketAdmin; who: string; compact?: boolean }) {
   const others = brackets.filter((one: Row) => one.division_id !== bracket.division_id);
   if (!row || !others.length) return null;
+  // a queue row is narrow, so its Move to is the icon alone and names itself in a tooltip
+  const trigger = compact ? (
+    <TapTooltip content="Move to another bracket">
+      <DropdownMenuTrigger render={<Button variant="outline" size="icon-xs" className="shrink-0" disabled={admin.busy} aria-label={`Move to, ${who}`} />}>
+        <Icon name="mdi-swap-horizontal" />
+      </DropdownMenuTrigger>
+    </TapTooltip>
+  ) : (
+    <DropdownMenuTrigger render={<Button variant="outline" size="xs" className="shrink-0" disabled={admin.busy} aria-label={`Move to, ${who}`} />}>
+      Move to
+    </DropdownMenuTrigger>
+  );
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="xs" className="shrink-0" disabled={admin.busy} aria-label={`Move to, ${who}`} />}>
-        Move to
-      </DropdownMenuTrigger>
+      {trigger}
       <DropdownMenuContent align="end">
         {others.map((one: Row) => (
           <DropdownMenuItem key={one.division_id} onClick={() => admin.onMoveBracket(bracket, seat, row.entrant_id, one.division_id)}>
@@ -331,7 +341,7 @@ export function QueueRow({
   you?: number | null;
   dragged?: number | null;
   onDragged?: (key: number | null) => void;
-  onOver?: () => void; // the dragged row passes over this one, so the line shows it here
+  onOver?: (before: boolean) => void; // the dragged row passes over this one, in its upper or lower half
 }) {
   const key = seatKey(seat) as number;
   // a bracket that plays a series draws no start button, so a pick on its line would do nothing
@@ -360,7 +370,9 @@ export function QueueRow({
       onDragOver={(event) => {
         if (!admin || dragged == null) return;
         event.preventDefault();
-        if (dragged !== key) onOver?.();
+        if (dragged === key) return;
+        const box = event.currentTarget.getBoundingClientRect();
+        onOver?.(event.clientY < box.top + box.height / 2);
       }}
       onDragEnd={() => onDragged?.(null)}
     >
@@ -395,13 +407,16 @@ export function QueueRow({
         </span>
         {admin ? (
           <span className="ml-auto flex shrink-0 items-center gap-0.5">
-            {single ? <MoveTo bracket={bracket} brackets={brackets} seat={seat} row={row} admin={admin} who={seat.name} /> : null}
-            <Button variant="ghost" size="icon-xs" disabled={admin.busy || at === 0} aria-label={`Move ${seat.name} up`} onClick={() => admin.onMove(bracket, at, at - 1)}>
-              <Icon name="mdi-chevron-up" />
-            </Button>
-            <Button variant="ghost" size="icon-xs" disabled={admin.busy || at === queue.length - 1} aria-label={`Move ${seat.name} down`} onClick={() => admin.onMove(bracket, at, at + 1)}>
-              <Icon name="mdi-chevron-down" />
-            </Button>
+            {single ? <MoveTo bracket={bracket} brackets={brackets} seat={seat} row={row} admin={admin} who={seat.name} compact /> : null}
+            {/* up and down stack in one narrow column, the way a phone or a keyboard moves a row */}
+            <span className="flex flex-col">
+              <Button variant="ghost" size="icon-xs" className="h-3.5" disabled={at === 0} aria-label={`Move ${seat.name} up`} onClick={() => admin.onMove(bracket, at, at - 1)}>
+                <Icon name="mdi-chevron-up" />
+              </Button>
+              <Button variant="ghost" size="icon-xs" className="h-3.5" disabled={at === queue.length - 1} aria-label={`Move ${seat.name} down`} onClick={() => admin.onMove(bracket, at, at + 1)}>
+                <Icon name="mdi-chevron-down" />
+              </Button>
+            </span>
             <Button
               variant="ghost"
               size="icon-xs"
@@ -545,6 +560,13 @@ export function BracketCard({
     setDragged(key);
     setOver(null);
   };
+  // The row lands before or after the row under the pointer, by the half the pointer is in. The rows
+  // around it keep their order, so a tall row sliding under the pointer never flips the place back.
+  const landAt = (index: number, before: boolean) => {
+    const at = shown.findIndex((seat: Row) => seatKey(seat) === dragged);
+    const others = index - (at >= 0 && at < index ? 1 : 0);
+    setOver(before ? others : others + 1);
+  };
   // a stream shows the newest three, and the run page and the night page open the rest on a tap
   const PLAYED_SHOWN = 3;
   const playedShown = allPlayed ? played : played.slice(0, PLAYED_SHOWN);
@@ -589,7 +611,7 @@ export function BracketCard({
               you={you}
               dragged={dragged}
               onDragged={drag}
-              onOver={() => setOver(index)}
+              onOver={(before) => landAt(index, before)}
             />
           ))}
         </ul>
@@ -599,7 +621,7 @@ export function BracketCard({
 
       {/* what already happened tonight sits in a sunken band under the work, so the eye stays on the queue */}
       {leftSeats(bracket).length || played.length ? (
-        <div className="mt-auto border-t bg-background/70 pt-2">
+        <div className="border-t bg-background/70 pt-2">
           <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
           {played.length ? (
             <div className="px-4 pb-3">

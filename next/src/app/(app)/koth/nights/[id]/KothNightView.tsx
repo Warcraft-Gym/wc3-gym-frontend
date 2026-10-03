@@ -417,7 +417,7 @@ export function KothNightView({ id }: { id: string }) {
                 <Icon name="mdi-cog-outline" />
                 Settings
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="min-w-48 [&_[role=menuitem]]:whitespace-nowrap">
                 {!board.historical ? (
                   <DropdownMenuItem onClick={() => setBoundsOpen(true)}>
                     <Icon name="mdi-arrow-split-vertical" />

@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { SignupDialog } from "@/components/SignupDialog";
 import { BoardPlayer, BracketCard } from "@/components/koth/BracketCard";
-import { canSignUp, myRacesOnBoard, orderedBrackets, shouldReread } from "@/helpers/koth-board.mjs";
+import { canSignUp, myRacesOnBoard, orderedBrackets, shouldReread, withdrawForfeitsSeries } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { useAuth, useEventStore } from "@/stores";
 
@@ -92,11 +92,14 @@ export function KothNightBoard({
   };
 
   const withdraw = async (race: string | null = null) => {
-    const question = wearsCrown(race)
-      ? "Withdrawing forfeits your next match."
-      : race
-        ? `Withdraw ${raceName(race)} from tonight?`
-        : "Withdraw from tonight?";
+    // a race at the table loses its series by forfeit, which outweighs the king's next match
+    const question = withdrawForfeitsSeries(board, myId, race)
+      ? "Withdrawing forfeits the match you are playing."
+      : wearsCrown(race)
+        ? "Withdrawing forfeits your next match."
+        : race
+          ? `Withdraw ${raceName(race)} from tonight?`
+          : "Withdraw from tonight?";
     if (!window.confirm(question)) return;
     setWithdrawing(race ?? true);
     try {

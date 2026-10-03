@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   boundsOf, bracketLabel, canSignUp, cutsOf, defaultPair, leftSeats, movedQueue, myRacesOnBoard, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
-  startButton, throneWord,
+  startButton, throneWord, withdrawForfeitsSeries,
 } from './koth-board.mjs';
 
 const seat = (user_id, name, rows, extra = {}) => ({ user_id, name, country: null, rows, busy: false, ...extra });
@@ -125,6 +125,23 @@ test('a race the reader plays at the table stays his, on either side, once each'
   };
   assert.deepEqual(myRacesOnBoard(board, 5), ['HU', 'NE', 'OC']);
   assert.deepEqual(myRacesOnBoard(board, 4), ['UD']);
+});
+
+test('a withdraw forfeits a series only for a race he plays at the table, or with no race named', () => {
+  const side = (entrant_id, user_id, race) => ({ entrant_id, user_id, name: 'P', race, mmr: 1200 });
+  const board = {
+    brackets: [
+      { lower_bound: 0, queue: [], open_series: { side1: side(5, 5, 'HU'), side2: side(4, 4, 'UD') } },
+      { lower_bound: 1450, queue: [seat(5, 'Me', [row(8, 'NE')]), seat(6, 'Other', [row(9, 'HU')])], open_series: { side1: side(7, 7, 'OC'), side2: side(10, 6, 'OC') } },
+    ],
+  };
+  assert.equal(withdrawForfeitsSeries(board, 5, 'HU'), true); // side1
+  assert.equal(withdrawForfeitsSeries(board, 6, 'OC'), true); // side2
+  assert.equal(withdrawForfeitsSeries(board, 5, 'NE'), false); // another race of his, in a queue
+  assert.equal(withdrawForfeitsSeries(board, 5), true); // no race named, one of his at the table
+  assert.equal(withdrawForfeitsSeries(board, 6, 'HU'), false);
+  assert.equal(withdrawForfeitsSeries({ brackets: [board.brackets[1]] }, 5), false); // no race named, none at the table
+  assert.equal(withdrawForfeitsSeries(board, null), false);
 });
 
 test('a return to the tab reads the board again only 15 seconds after the last read', () => {

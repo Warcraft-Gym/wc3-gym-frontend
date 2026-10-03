@@ -237,14 +237,21 @@ export function OpenSeries({ bracket, admin, you }: { bracket: Row; admin?: Brac
   if (live) {
     // both sides keep the mark slot while either wears the mark, so the flags line up where the second wraps
     const slot = live.side1.mmr == null || live.side2.mmr == null;
-    // the reader's own side reads the chip his queue row would
-    const playing = (side: Row) =>
-      you != null && side.user_id === you ? (
-        <Badge className={cn(toneClass("info"), "shrink-0")}>
-          <Icon name="mdi-play" />
-          You are playing now
-        </Badge>
-      ) : null;
+    // a side and its chip wrap as one, and a long name truncates; the reader's side takes its own line, so his chip never sits by "vs"
+    const side = (one: Row) => {
+      const mine = you != null && one.user_id === you;
+      return (
+        <span className={cn("flex min-w-0 max-w-full flex-wrap items-center gap-2 [&_.name]:truncate [&_.player-name]:max-w-full", mine && "basis-full")}>
+          <BoardPlayer row={one} slot={slot} />
+          {mine ? (
+            <Badge className={cn(toneClass("info"), "shrink-0")}>
+              <Icon name="mdi-play" />
+              You are playing now
+            </Badge>
+          ) : null}
+        </span>
+      );
+    };
     return (
       <div className="mx-4 mb-3 rounded-lg border p-3">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -252,11 +259,9 @@ export function OpenSeries({ bracket, admin, you }: { bracket: Row; admin?: Brac
           Now playing
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <BoardPlayer row={live.side1} slot={slot} />
-          {playing(live.side1)}
+          {side(live.side1)}
           <span className="text-xs text-muted-foreground">vs</span>
-          <BoardPlayer row={live.side2} slot={slot} />
-          {playing(live.side2)}
+          {side(live.side2)}
         </div>
         {admin ? (
           <>

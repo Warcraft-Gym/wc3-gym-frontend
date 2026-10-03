@@ -176,14 +176,21 @@ export function movedQueue(queue = [], from, to) {
 // The races the reader entered the night on, from the board: his seats, his sides at the table and his unplaced rows, once each
 export function myRacesOnBoard(board, userId) {
   if (userId == null) return [];
-  const brackets = orderedBrackets(board);
-  const seats = brackets.flatMap((bracket) => [bracket.king, ...(bracket.queue ?? [])]);
+  const seats = orderedBrackets(board).flatMap((bracket) => [bracket.king, ...(bracket.queue ?? [])]);
   const mine = seats.filter((seat) => seat?.user_id === userId).flatMap((seat) => seat.rows ?? []);
-  const sides = brackets.flatMap((bracket) => [bracket.open_series?.side1, bracket.open_series?.side2]);
-  const playing = sides.filter((side) => side?.user_id === userId);
+  const playing = tableSides(board).filter((side) => side.user_id === userId);
   const unplaced = (board?.unplaced ?? []).filter((row) => row.user_id === userId);
   return [...new Set([...mine, ...playing, ...unplaced].map((row) => row.race).filter(Boolean))];
 }
+
+// Both sides of every series on the table
+const tableSides = (board) =>
+  orderedBrackets(board).flatMap((bracket) => [bracket.open_series?.side1, bracket.open_series?.side2]).filter(Boolean);
+
+// Whether a withdraw forfeits a series on the table: the race named, or with no race named any race of his, is a side of one
+/** @type {(board: Object|null, userId: number|null, race?: string|null) => boolean} */
+export const withdrawForfeitsSeries = (board, userId, race = null) =>
+  userId != null && tableSides(board).some((side) => side.user_id === userId && (race === null || side.race === race));
 
 // A return to the tab reads the board again only once the edge copy can be newer than the last read
 const REREAD_MS = 15000;

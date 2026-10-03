@@ -264,7 +264,7 @@ export const openSeriesRows = (board) =>
     }));
 
 // What one result did to the crown, as the fix dialog says it
-const CROWN_VERB = { moved: "takes the crown", held: "holds the crown", none: "leaves the crown" };
+const CROWN_VERB = { moved: "takes the crown", held: "holds the crown", none: "doesn't touch the crown" };
 
 // What a fix changes beyond the series itself, read off the board before it and the board its preview
 // answers: the throne, the crown mark of every other series, and who goes to the end of the line.
@@ -275,7 +275,7 @@ export function fixChanges(before, after, divisionId, seriesId) {
   if (!was || !now) return [];
   const lines = [];
   const order = [...(was.played ?? [])].reverse().map((row) => row.series_id);
-  for (const row of now.played ?? []) {
+  for (const row of [...(now.played ?? [])].reverse()) {
     const old = (was.played ?? []).find((item) => item.series_id === row.series_id);
     if (row.series_id === seriesId || !old || old.throne === row.throne) continue;
     lines.push({

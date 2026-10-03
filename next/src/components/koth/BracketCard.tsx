@@ -219,7 +219,8 @@ export function KingBlock({
   const defender: Row | null = bracket.defender;
   const row = king ? seatRow(king, admin?.picks ?? {}) : null;
   // an empty throne after a fix or a step down goes back to the newest winner in one tap
-  const heir: Row | null = admin ? heirOf(bracket) : null;
+  // a drag in progress offers one thing to do, so the one-tap crown waits for it to end
+  const heir: Row | null = admin && !dropping ? heirOf(bracket) : null;
   const crownHeir = heir ? (
     <Button variant="outline" size="sm" className="mt-2 text-primary-text" disabled={admin!.busy} onClick={() => admin!.onCrown(bracket, heir.entrant_id)}>
       <Icon name="mdi-crown" />

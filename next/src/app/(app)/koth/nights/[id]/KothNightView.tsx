@@ -24,7 +24,7 @@ import { BoardPlayer, BracketCard, raceName, seatMark, type BracketAdmin } from 
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
-import { boundsOf, bracketLabel, cutsOf, fixChanges, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, resultSides, seatKey, seatRow, shouldReread, wearsTheCrown } from "@/helpers/koth-board.mjs";
+import { boundsOf, bracketLabel, crownedPicks, cutsOf, fixChanges, movedQueue, nightStatus, openSeriesRows, orderedBrackets, queueIds, ratedPlayers, resultSides, seatKey, seatRow, shouldReread, wearsTheCrown } from "@/helpers/koth-board.mjs";
 import { nightBody, nightForm } from "@/helpers/koth.mjs";
 import { battleTagError } from "@/helpers/signup.mjs";
 import { useEventStore } from "@/stores";
@@ -74,8 +74,8 @@ export function KothNightView({ id }: { id: string }) {
   const fixToken = useRef(0); // the newest preview asked for, so a slow answer never overwrites a later pick
   const [passTo, setPassTo] = useState<number | null>(null); // null leaves the throne empty
   const [closing, setClosing] = useState(false);
-  const [clearing, setClearing] = useState(false);
-  const [crownAsk, setCrownAsk] = useState<{ bracket: Row; seat: Row } | null>(null); // a seat dropped on an empty throne // the confirm before every series of the night goes
+  const [clearing, setClearing] = useState(false); // the confirm before every series of the night goes
+  const [crownAsk, setCrownAsk] = useState<{ bracket: Row; seat: Row } | null>(null); // a seat dropped on an empty throne
   const [boundsOpen, setBoundsOpen] = useState(false); // the bracket bounds live behind Settings, so the brackets lead the page
   const [refreshing, setRefreshing] = useState(false);
   const queueWrite = useRef(0); // the newest queue write, so only its answer replaces the order drawn at once
@@ -321,8 +321,11 @@ export function KothNightView({ id }: { id: string }) {
       });
   };
 
+  // the race row each seat plays next: an admin's pick, else the row that wears the crown, else the first
+  const playing: Record<number, number> = { ...crownedPicks(board), ...picks };
+
   const admin: BracketAdmin = {
-    picks,
+    picks: playing,
     picked,
     busy,
     // a third click starts a new pair, so the admin never has to clear one first
@@ -334,7 +337,7 @@ export function KothNightView({ id }: { id: string }) {
     onClearPick: () => setPicked([]),
     onStart: (bracket, pair) =>
       run(
-        () => store.startKothSeries(nightId, seatRow(pair[0], picks)?.entrant_id, seatRow(pair[1], picks)?.entrant_id),
+        () => store.startKothSeries(nightId, seatRow(pair[0], playing)?.entrant_id, seatRow(pair[1], playing)?.entrant_id),
         () => setPicked([]),
       ),
     onWin: (bracket, side) => run(() => store.setKothWinner(nightId, bracket.open_series.series_id, side)),
@@ -736,9 +739,9 @@ export function KothNightView({ id }: { id: string }) {
                         <label key={seatKey(seat)} className="flex cursor-pointer items-center gap-2">
                           <input type="radio" name="step-down" className="size-[18px] accent-[rgb(var(--v-theme-primary))]" checked={passTo === seatKey(seat)} onChange={() => setPassTo(seatKey(seat))} />
                           <BoardPlayer
-                            row={{ ...seat, mmr: seatRow(seat, picks)?.mmr ?? null }}
-                            race={seatRow(seat, picks)?.race ?? null}
-                            warn={!!seatMark(seat, seatRow(seat, picks))}
+                            row={{ ...seat, mmr: seatRow(seat, playing)?.mmr ?? null }}
+                            race={seatRow(seat, playing)?.race ?? null}
+                            warn={!!seatMark(seat, seatRow(seat, playing))}
                             plain
                             slot
                           />
@@ -864,7 +867,7 @@ export function KothNightView({ id }: { id: string }) {
               disabled={busy}
               onClick={() => {
                 const ask = crownAsk;
-                const row = ask ? seatRow(ask.seat, picks) : null;
+                const row = ask ? seatRow(ask.seat, playing) : null;
                 if (ask && row) run(() => store.setKothCrown(nightId, ask.bracket.division_id, row.entrant_id), () => setCrownAsk(null));
               }}
             >

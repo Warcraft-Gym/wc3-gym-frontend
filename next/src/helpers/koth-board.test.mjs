@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, fixChanges, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, fixChanges, heirOf, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -359,4 +359,13 @@ test("fixChanges answers nothing when the fix moves nothing else", () => {
   const after = fixBoard(shibby, [thanks], [result(11, "thanks", "EAShibby", "moved")]);
   assert.deepEqual(fixChanges(before, after, 7, 10), []);
   assert.deepEqual(fixChanges(before, after, 99, 10), []);
+});
+
+test("heirOf offers the newest winner an empty throne, while he stands in line", () => {
+  const winner = { entrant_id: 41, name: "EAShibby" };
+  const bracket = { king: null, played: [{ winner }, { winner: { entrant_id: 9, name: "thanks" } }], queue: [{ rows: [{ entrant_id: 40 }, { entrant_id: 41 }] }] };
+  assert.equal(heirOf(bracket), winner);
+  assert.equal(heirOf({ ...bracket, king: { user_id: 1 } }), null);
+  assert.equal(heirOf({ ...bracket, queue: [{ rows: [{ entrant_id: 40 }] }] }), null);
+  assert.equal(heirOf({ ...bracket, played: [] }), null);
 });

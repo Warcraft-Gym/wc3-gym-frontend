@@ -298,3 +298,12 @@ export function fixChanges(before, after, divisionId, seriesId) {
   }
   return lines;
 }
+
+// Who an empty throne can go to in one tap: the winner of the bracket's newest result, while one of his
+// race rows still stands in its line. A king on the throne, or no result tonight, offers nobody.
+export function heirOf(bracket) {
+  const latest = bracket?.king ? null : bracket?.played?.[0];
+  const winner = latest?.winner;
+  const standing = (bracket?.queue ?? []).some((seat) => (seat.rows ?? []).some((row) => row.entrant_id === winner?.entrant_id));
+  return standing ? winner : null;
+}

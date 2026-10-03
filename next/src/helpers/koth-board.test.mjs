@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, crownedPicks, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -391,4 +391,13 @@ test("fixChanges names the place a deposed king takes back in the queue", () => 
     "The throne passes from ThePeasant to Happy.",
     "ThePeasant goes back in the queue at place 2.",
   ]);
+});
+
+test("crownedPicks plays each king on the race row that wears the crown", () => {
+  const king = { user_id: 5, name: "Fortitude", rows: [{ entrant_id: 7, race: "HU" }, { entrant_id: 8, race: "UD" }] };
+  const board = { brackets: [{ king, king_entrant_id: 8 }, { king: null, king_entrant_id: null }] };
+  const picks = crownedPicks(board);
+  assert.equal(seatRow(king, picks).entrant_id, 8);
+  assert.equal(Object.keys(picks).length, 1);
+  assert.deepEqual(crownedPicks(null), {});
 });

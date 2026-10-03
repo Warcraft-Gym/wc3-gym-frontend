@@ -33,6 +33,7 @@ export type BracketAdmin = {
   onCancelSeries: (bracket: Row) => void;
   onStepDown: (bracket: Row) => void;
   onCrown: (bracket: Row, entrantId: number) => void; // an empty throne goes to one race row
+  onAskCrown: (bracket: Row, seat: Row) => void; // a seat dropped on an empty throne, which a confirm crowns
   onMove: (bracket: Row, from: number, to: number) => void;
   onMoveBracket: (bracket: Row, seat: Row, entrantId: number, divisionId: number) => void; // one race row to another bracket
   onRemove: (entrantIds: number[]) => void; // one race row, or every race the player holds here
@@ -199,12 +200,27 @@ function RaceRows({ seat, bracket, brackets, admin, removable }: { seat: Row; br
 
 /** The throne: the standing king, the king from the last event while nobody has won tonight,
  *  or nobody at all. */
-export function KingBlock({ bracket, brackets, admin }: { bracket: Row; brackets: Row[]; admin?: BracketAdmin }) {
+export function KingBlock({
+  bracket,
+  brackets,
+  admin,
+  dropping,
+  onDropKing,
+  onEnter,
+}: {
+  bracket: Row;
+  brackets: Row[];
+  admin?: BracketAdmin;
+  dropping?: Row | null; // the seat being dragged while the throne stands empty, so the throne takes the drop
+  onDropKing?: () => void;
+  onEnter?: () => void; // the drag left the line for the throne, so the line shows its own order again
+}) {
   const king: Row | null = bracket.king;
   const defender: Row | null = bracket.defender;
   const row = king ? seatRow(king, admin?.picks ?? {}) : null;
   // an empty throne after a fix or a step down goes back to the newest winner in one tap
-  const heir: Row | null = admin ? heirOf(bracket) : null;
+  // a drag in progress offers one thing to do, so the one-tap crown waits for it to end
+  const heir: Row | null = admin && !dropping ? heirOf(bracket) : null;
   const crownHeir = heir ? (
     <Button variant="outline" size="sm" className="mt-2 text-primary-text" disabled={admin!.busy} onClick={() => admin!.onCrown(bracket, heir.entrant_id)}>
       <Icon name="mdi-crown" />
@@ -212,7 +228,16 @@ export function KingBlock({ bracket, brackets, admin }: { bracket: Row; brackets
     </Button>
   ) : null;
   return (
-    <div className="min-h-[64px] p-4">
+    <div
+      className={cn("min-h-[64px] p-4", dropping && "bg-primary/10 outline-2 -outline-offset-4 outline-dashed outline-primary-text")}
+      onDragEnter={() => dropping && onEnter?.()}
+      onDragOver={(event) => dropping && event.preventDefault()}
+      onDrop={(event) => {
+        if (!dropping) return;
+        event.preventDefault();
+        onDropKing?.();
+      }}
+    >
       <div className="flex items-start gap-3">
         <Icon name={king ? "mdi-crown" : "mdi-crown-outline"} size={26} className={king ? "text-primary-text" : "text-muted-foreground"} />
         {king ? (
@@ -233,7 +258,7 @@ export function KingBlock({ bracket, brackets, admin }: { bracket: Row; brackets
           </div>
         ) : (
           <div className="flex-1">
-            <div className="text-muted-foreground">No king yet</div>
+            <div className={dropping ? "font-medium text-primary-text" : "text-muted-foreground"}>{dropping ? `Drop here to make ${dropping.name} the king` : "No king yet"}</div>
             {crownHeir ? (
               <>
                 {crownHeir}
@@ -665,7 +690,18 @@ export function BracketCard({
         <span className="tnum text-xs text-on-banner/80">{band}</span>
       </CardHeader>
 
-      <KingBlock bracket={bracket} brackets={brackets} admin={admin} />
+      {/* a seat dragged up past the Start button onto an empty throne asks before it crowns */}
+      <KingBlock
+        bracket={bracket}
+        brackets={brackets}
+        admin={admin}
+        dropping={admin && !bracket.king && from >= 0 ? queue[from] : null}
+        onEnter={() => setOver(null)}
+        onDropKing={() => {
+          if (admin && from >= 0) admin.onAskCrown(bracket, queue[from]);
+          drag(null);
+        }}
+      />
       <Separator />
 
       {/* the throne keeps its air: whatever comes first under the line stands 12 px off it */}

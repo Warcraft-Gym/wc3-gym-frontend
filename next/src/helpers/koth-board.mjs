@@ -322,3 +322,8 @@ export function resultSides(bracket) {
   const unique = [...new Map(rows.map((row) => [row.entrant_id, row])).values()];
   return unique.map((row) => ({ ...row, several: unique.filter((one) => one.user_id === row.user_id).length > 1 }));
 }
+
+// The race row each king plays next until an admin picks another: the row the board says wears the
+// crown, so a reload never shows a two-race king on his first race instead
+export const crownedPicks = (board) =>
+  Object.fromEntries((board?.brackets ?? []).filter((bracket) => bracket.king && bracket.king_entrant_id != null).map((bracket) => [seatKey(bracket.king), bracket.king_entrant_id]));

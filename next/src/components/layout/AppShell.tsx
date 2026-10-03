@@ -19,7 +19,7 @@ import type { ThemeMode } from "@/hooks/theme";
 import { canSeeRole, metaOf } from "@/lib/routes";
 import { useAuth } from "@/stores";
 import { myProfilePath } from "@/helpers/players.mjs";
-import { buildNav, isActive, navTabs } from "@/helpers/nav-model.mjs";
+import { buildNav, isActive, navTabs, showsJoinBanner } from "@/helpers/nav-model.mjs";
 import { adminFrame, inAdminFrame } from "@/helpers/admin-nav.mjs";
 import { cn } from "@/lib/utils";
 
@@ -159,8 +159,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      {/* a stream shows the brackets alone, so the clean page carries no banner */}
-      {!clean ? <ConstructionBanner /> : null}
+      {showsJoinBanner({ hydrated, clean, user, me }) ? <ConstructionBanner /> : null}
 
       <main id="main" className="flex-1">
         {/* w-auto, so the 8 px margin comes off the width and a phone page never scrolls sideways */}

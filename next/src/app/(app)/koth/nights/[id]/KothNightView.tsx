@@ -473,23 +473,24 @@ export function KothNightView({ id }: { id: string }) {
                     Edit details
                   </DropdownMenuItem>
                 ) : null}
-                {!board.closed ? (
+                {!board.closed && board.series_count ? (
                   <>
                     <DropdownMenuSeparator />
-                    {board.series_count ? (
-                      <DropdownMenuItem className="text-error" onClick={() => setClearing(true)}>
-                        <Icon name="mdi-delete-sweep-outline" />
-                        Clear all results
-                      </DropdownMenuItem>
-                    ) : null}
-                    <DropdownMenuItem className="text-error" onClick={() => setClosing(true)}>
-                      <Icon name="mdi-exit-to-app" />
-                      Close the night
+                    <DropdownMenuItem className="text-error" onClick={() => setClearing(true)}>
+                      <Icon name="mdi-delete-sweep-outline" />
+                      Clear all results
                     </DropdownMenuItem>
                   </>
                 ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
+          ) : null}
+          {/* the night's last step stands on its own, so it never sits beside Clear all results */}
+          {board && !board.closed ? (
+            <Button variant="outline" size="sm" className="text-primary-text" disabled={busy} onClick={() => setClosing(true)}>
+              <Icon name="mdi-exit-to-app" />
+              Close the night
+            </Button>
           ) : null}
         </span>
       </PageHeader>

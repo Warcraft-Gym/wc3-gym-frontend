@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  boundsOf, bracketLabel, canSignUp, crownedPicks, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
+  boundsOf, bracketLabel, canSignUp, streamPollMs, crownedPicks, fixChanges, heirOf, resultSides, cutsOf, defaultPair, hasSeries, leftSeats, movedQueue, myRacesOnBoard, nightStatus, openSeriesRows,
   orderedBrackets, placeInQueue, placeWord, queueIds, ratedPlayers, seatLeft, seatRow, shouldReread, skippedSeat,
   startButton, throneWord, wearsTheCrown, withdrawForfeitsCrown, withdrawForfeitsSeries,
 } from './koth-board.mjs';
@@ -400,4 +400,15 @@ test("crownedPicks plays each king on the race row that wears the crown", () => 
   assert.equal(seatRow(king, picks).entrant_id, 8);
   assert.equal(Object.keys(picks).length, 1);
   assert.deepEqual(crownedPicks(null), {});
+});
+
+test("streamPollMs reads every 30 s in play, every 5 min before the first series, and stops", () => {
+  const start = Date.parse("2026-10-04T02:00:00Z");
+  const night = { closed: false, starts_at: "2026-10-04T02:00:00Z", series_count: 0 };
+  assert.equal(streamPollMs(night, start - 3600000), 300000);
+  assert.equal(streamPollMs({ ...night, series_count: 4 }, start + 3600000), 30000);
+  assert.equal(streamPollMs({ ...night, series_count: 4 }, start + 25 * 3600000), null);
+  assert.equal(streamPollMs({ ...night, closed: true, series_count: 4 }, start), null);
+  assert.equal(streamPollMs({ ...night, starts_at: null, series_count: 1 }, start), 30000);
+  assert.equal(streamPollMs(null, start), null);
 });

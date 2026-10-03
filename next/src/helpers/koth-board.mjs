@@ -327,3 +327,16 @@ export function resultSides(bracket) {
 // crown, so a reload never shows a two-race king on his first race instead
 export const crownedPicks = (board) =>
   Object.fromEntries((board?.brackets ?? []).filter((bracket) => bracket.king && bracket.king_entrant_id != null).map((bracket) => [seatKey(bracket.king), bracket.king_entrant_id]));
+
+// How long the stream view waits before it reads the board again, or null once it stops: 30 s while the
+// night has a series, 5 min before the first one (enough to notice the start), and never once the night
+// is closed or a day past its start, so a forgotten tab stops costing reads
+const STREAM_PLAY_MS = 30000;
+const STREAM_WAIT_MS = 300000;
+const STREAM_DAY_MS = 24 * 3600 * 1000;
+export function streamPollMs(board, nowMs) {
+  if (!board || board.closed) return null;
+  const start = board.starts_at ? Date.parse(board.starts_at) : NaN;
+  if (Number.isFinite(start) && nowMs > start + STREAM_DAY_MS) return null;
+  return board.series_count > 0 ? STREAM_PLAY_MS : STREAM_WAIT_MS;
+}

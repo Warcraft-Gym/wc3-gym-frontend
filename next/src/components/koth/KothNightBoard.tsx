@@ -6,15 +6,13 @@ import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { SignupDialog } from "@/components/SignupDialog";
 import { BoardPlayer, BracketCard } from "@/components/koth/BracketCard";
-import { canSignUp, myRacesOnBoard, orderedBrackets, shouldReread, withdrawForfeitsCrown, withdrawForfeitsSeries } from "@/helpers/koth-board.mjs";
+import { canSignUp, myRacesOnBoard, orderedBrackets, shouldReread, streamPollMs, withdrawForfeitsCrown, withdrawForfeitsSeries } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { useAuth, useEventStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
-// The stream view never reloads, so it alone reads the board again every 30 s
-const STREAM_POLL_MS = 30000;
 
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 
@@ -53,23 +51,35 @@ export function KothNightBoard({
   const canEnter = canSignUp({ signedIn: !!auth.me, signupsOpen: !!event.signups_open, policy: event.signup_policy, signedUp,
     multiEntry: !!event.multi_entry, heldCount: held.length, raceCount: raceWrapper.races.length });
 
-  // fresh skips the edge cache after the reader's own write; a board in hand skips the read; a failure keeps the board
-  const readBoard = async (fresh = false, answer: Row | null = null) => {
+  // fresh skips the edge cache after the reader's own write; a board in hand skips the read; a failure keeps
+  // the board. It answers the board it now shows, so the stream's timer plans the next read from it.
+  const readBoard = async (fresh = false, answer: Row | null = null): Promise<Row | null> => {
     lastRead.current = Date.now();
     try {
-      setBoard(answer ?? (await store.fetchBoard(event.id, fresh)));
+      const next = answer ?? (await store.fetchBoard(event.id, fresh));
+      setBoard(next);
       onError(null);
+      return next;
     } catch (e) {
       onError(`The night did not load: ${(e as Error).message}`);
+      return null;
     }
   };
 
+  // The stream view never reloads, so it reads the board on a timer while the night can change: each read
+  // plans the next one from the board it got (streamPollMs), and a hidden tab skips the read
   useEffect(() => {
-    if (!clean || closed) return;
-    const timer = setInterval(() => !document.hidden && readBoard(), STREAM_POLL_MS);
-    return () => clearInterval(timer);
+    if (!clean) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const plan = (shown: Row) => {
+      const wait = streamPollMs(shown, Date.now());
+      if (wait == null) return;
+      timer = setTimeout(async () => plan((!document.hidden && (await readBoard())) || shown), wait);
+    };
+    plan(board);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clean, closed]);
+  }, [clean]);
 
   // A return to the tab reads the board again, at most once per 15 s edge copy; no timer runs
   useEffect(() => {

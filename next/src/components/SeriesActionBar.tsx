@@ -14,6 +14,7 @@ const ICON: Record<string, string> = { schedule: "mdi-calendar-edit", veto: "mdi
 type Step = { step: string; label: string; state: string };
 
 /** The steps of one series, in order, with the next one filled: all three where the series is the subject of the surface, the two active ones where a series is one item among many, and the steps already taken as quiet facts before them.
+ *  The "all" bar, Home's, keeps every step the series offers as a button, a step taken as its correction, so a mistake is fixed where the task was done.
  *  A viewer who may not act reads the facts alone, and the bar draws nothing until the series has loaded. */
 export function SeriesActionBar({
   series,
@@ -26,7 +27,7 @@ export function SeriesActionBar({
 }: {
   series: Row | null;
   viewer: { id?: number | null; isAdmin?: boolean; seats?: { team_id: number; season_id: number }[] };
-  variant?: "full" | "compact";
+  variant?: "full" | "compact" | "all";
   /** A surface that states the booked time in a line of its own passes false, and keeps the other facts */
   dateFact?: boolean;
   onSchedule?: () => void;
@@ -40,10 +41,14 @@ export function SeriesActionBar({
   const active = live.filter((step) => step.state === "next" || step.state === "later");
   // The compact bar has room for the two active steps alone, and a reported series, which has no active step, keeps its result button
   const compact = active.length ? active.slice(0, 2) : live.filter((step) => step.step === "report");
-  // The full bar shows every step while one is left to take; a reported series keeps its result button alone in both bars
-  const shown = !mayAct ? [] : variant === "full" && active.length ? live : compact;
-  // A step already taken states what it left behind; the score is drawn beside the series on every surface, so the report step states no fact
-  const factSteps = live.filter((step) => step.state === "done" && step.step !== "report" && (dateFact || step.step !== "schedule"));
+  // The full bar shows every step while one is left to take; a reported series keeps its result button alone in both bars.
+  // The all bar shows every live step: each needed one before the result, and every step taken once it stands.
+  const shown = !mayAct ? [] : variant === "all" || (variant === "full" && active.length) ? live : compact;
+  // A step already taken states what it left behind; the score is drawn beside the series on every surface, so the report step states no fact.
+  // The all bar's veto button says the veto is done, so only the booked time stays a fact there.
+  const factSteps = live.filter(
+    (step) => step.state === "done" && step.step !== "report" && (dateFact || step.step !== "schedule") && (variant !== "all" || step.step === "schedule"),
+  );
 
   const fact = (step: Step) => (step.step === "schedule" ? formatDateTime(series.date_time) : "Veto done");
 

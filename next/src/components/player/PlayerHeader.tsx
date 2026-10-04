@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import { PlayerTrophies } from "@/components/player/PlayerTrophies";
 import { RaceMmrChips } from "@/components/RaceMmrChips";
 import { W3CIcon } from "@/components/W3CIcon";
 import { W3CMmr } from "@/components/W3CMmr";
-import { useSeason, useSeasonStore, useTeamStore } from "@/stores";
+import { openBlockedTimes, useSeason, useSeasonStore, useTeamStore } from "@/stores";
 import { discordMark } from "@/assets/discordMark.js";
 import { syncedAgo, w3cPlayerUrl } from "@/helpers/w3c-stats.js";
 import { otherTags } from "@/helpers/tags.mjs";
@@ -133,9 +132,9 @@ export function PlayerHeader({
         {owner || editable ? (
           <div className="flex flex-wrap gap-2">
             {owner ? (
-              <Button variant="outline" size="sm" className="text-primary-text" nativeButton={false} render={<Link href="/availability" />}>
-                <Icon name="mdi-calendar-month" />
-                Availability
+              <Button variant="outline" size="sm" className="text-primary-text" onClick={openBlockedTimes}>
+                <Icon name="mdi-calendar-remove" />
+                Blocked times
               </Button>
             ) : null}
             {editable ? (

@@ -73,6 +73,8 @@ export const roundCards = (
       : null;
     const open = opens === null ? true : today >= opens && !over;
     const answer = answers?.find(a => a.playday === round.playday) ?? null;
+    // A round may hold more than one series of the player, so a list keeps every one
+    const seriesList = series.filter(s => s.match?.playday === round.playday);
     return {
       playday: round.playday,
       label: roundLabel(round),
@@ -85,7 +87,8 @@ export const roundCards = (
       // Early check-in takes an answer before the window opens; a round that is over takes none
       takes: !over && (open || earlyCheckin),
       endsAt: roundEnd(round, zone),
-      series: series.find(s => s.match?.playday === round.playday) ?? null,
+      series: seriesList[0] ?? null,
+      seriesList,
       // An unread answer is not "no answer": a pending card draws no state of its own
       pending: answers === null,
       answer: answer?.available ?? null,
@@ -102,6 +105,23 @@ export const roundCards = (
  *  or no answer when he pressed the state it already holds.
  *  @param {boolean|null} current @param {boolean} want */
 export const nextAnswer = (current, want) => (current === want ? null : want);
+
+/** The way back from "sit out all remaining rounds": each round the bulk write turned out, with
+ *  the answer it held before, and how many of them the ask named. A derived out on blocked times
+ *  holds no stored answer, so its way back is no answer; a round with a series, or one already out
+ *  on blocked times, was not in the ask, so it is not counted.
+ *  @param {any[]} [before] the answers before the write @param {any[]} [rows] the answers after it
+ *  @param {any[]} [cards] the round cards of the event */
+export const sitOutUndo = (before = [], rows = [], cards = []) => {
+  const rowOf = (playday) => before.find((item) => item.playday === playday);
+  const held = (playday) => (rowOf(playday)?.blocked_out ? null : rowOf(playday)?.available ?? null);
+  const paired = new Set(cards.filter((card) => card.series).map((card) => card.playday));
+  const rounds = rows
+    .filter((row) => row.available === false && held(row.playday) !== false)
+    .map((row) => ({ playday: row.playday, available: held(row.playday) }));
+  const count = rounds.filter((row) => !paired.has(row.playday) && !rowOf(row.playday)?.blocked_out).length;
+  return { rounds, count };
+};
 
 // The chip of a round card with no series: the answer given, the pairing state, or
 // the day the check-in opens, which is of use only to the player who checks in.

@@ -20,7 +20,7 @@ import { uploadReplay } from "@/helpers/replay-upload";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
 import { holdsResult } from "@/helpers/series-actions.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
-import { useMapStore, useMatchStore, useSeriesStore } from "@/stores";
+import { useAuth, useMapStore, useMatchStore, useSeriesStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -75,6 +75,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
   const mapStore = useMapStore();
   const matchStore = useMatchStore();
   const seriesStore = useSeriesStore();
+  // a player's or a captain's change to a reported result is posted in Discord; an admin's is not
+  const { isAdmin } = useAuth();
 
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -390,11 +392,12 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
       <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 md:max-w-[600px]">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-trophy" />
-          Report result
+          {series.scored ? "Edit result" : "Report result"}
         </DialogTitle>
         <div className="flex flex-col gap-3 p-4">
           <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
           <StatusAlert modelValue={moved} type="success" onClose={() => setMoved(null)} className="mb-0" />
+          {series.scored && !isAdmin ? <Note className="mb-0">A change to this result is posted in the league&apos;s Discord, with your name.</Note> : null}
           {replaysMissing.length ? (
             <div>
               <h3 className="flex items-center gap-2 text-warning">
@@ -592,6 +595,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
             </DialogTitle>
             <p className="p-4 text-sm">
               The score, the races played and the games go, and the series can be reported again. The replays stay.
+              {isAdmin ? null : " The bot posts in the league's Discord that you cleared it."}
             </p>
             <div className="flex justify-end gap-2 p-4 pt-0">
               <Button variant="ghost" onClick={() => setClearOpen(false)}>

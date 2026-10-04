@@ -4,7 +4,7 @@ title: A member's GNL season
 description: One GNL season from the admin's wizard to the public standings, with who acts on each step, on which page, in which order, and the route each step writes.
 resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events, series, teams]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
 sources:
   - id: gnl-season
     resource: ../pages/gnl-season.md
@@ -37,7 +37,7 @@ This flow follows one GNL season from the season wizard to the public standings.
 | 3. Sign up for the season | member | `/signup` | `POST /signup` | [Member self-service](../pages/member.md) |
 | 4. Draft the teams, one pick set at a time | admin; a captain reads | `/seasons/:id/assign` | `POST /events/{id}/teams/{team_id}/players` | [The GNL season](../pages/gnl-season.md) |
 | 5. Set the fixtures: the wizard's random draw or "Add match" | admin | `/seasons`, `/seasons/:id` | `POST /matches` | [The GNL season](../pages/gnl-season.md) |
-| 6. Answer the round, "Available" or "Out" | member | `/`, My Season | `PUT /player-availability` | [Member self-service](../pages/member.md) |
+| 6. Answer the round, "Available" or "Out", and set the blocked times once | member | `/`, My Season, and the blocked-times dialog | `PUT /player-availability`, `/player-blocks...` | [Member self-service](../pages/member.md) |
 | 7. Plan the round: who plays, the MMR range, and the selected matchups moved into the shared draft | captain of either team, or an admin | `/match/:id`, Plan round tab | `PUT /events/{event_id}/teams/{team_id}/availability` for an own player's answer, `POST /draft-series` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 8. Publish the ticked pairings, up to the round's series | captain of either team, or an admin | `/match/:id`, Plan round tab, Draft step | `POST /draft-series/{id}/promote` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 9. Book a time in the schedule dialog | either side | the action bar on `/`, the player page or `/series/:id` | `PUT /player-series/{id}` with `date_time` | [Fixtures and series](../pages/fixtures-and-series.md) |
@@ -75,6 +75,8 @@ sequenceDiagram
 # Rules
 
 - One write takes the round answer, `PUT /player-availability`, from Home's My Season and from the owner's round cards: [member self-service](../pages/member.md), [players and stats](../pages/players-and-stats.md). A captain answers for a member of his own team on the team rounds page: [teams](../pages/teams.md).
+- Home's My Season is the member's control panel: every step of his series stays open there while the season runs, so a booked time, a veto and a result are corrected where they were made ("Change time", "View veto", "Edit result"), and he never needs his player page for a season task: [member self-service](../pages/member.md), [shared components](../concepts/shared-components.md).
+- A change a player or a captain makes to a reported result, or a result they clear, is posted by the bot in the league's Discord beside the result card; the backend owns that rule, and Report Result says so before the save: [fixtures and series](../pages/fixtures-and-series.md).
 - A captain opens his team's fixture of any round from Home's My Season with the button that names the team it meets, drafted or not, running or over, and every match of the season, and of the older seasons, from "Season": [member self-service](../pages/member.md), [the GNL season](../pages/gnl-season.md).
 - The draft takes any number of pairings. Either captain of the fixture, or an admin, publishes up to the round's `series_per_round`, and the backend refuses one more: [fixtures and series](../pages/fixtures-and-series.md).
 - A side is acted on by the player it names, by a captain of the team that fields it, or by an admin, on the same routes: [shared components](../concepts/shared-components.md).

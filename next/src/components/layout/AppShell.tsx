@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AdminFrame } from "@/components/admin/AdminFrame";
 import { PlayerPanel } from "@/components/player/PlayerPanel";
+import { BlockedTimesDialog } from "@/components/BlockedTimesDialog";
 import { ViewAsDialog } from "@/components/layout/ViewAsDialog";
 import { ConstructionBanner } from "@/components/layout/ConstructionBanner";
 import { ClerkBridge } from "@/lib/clerk-bridge";
@@ -17,7 +18,7 @@ import { Guard } from "@/lib/guard";
 import { useTheme } from "@/hooks/theme";
 import type { ThemeMode } from "@/hooks/theme";
 import { canSeeRole, metaOf } from "@/lib/routes";
-import { useAuth } from "@/stores";
+import { openBlockedTimes, useAuth } from "@/stores";
 import { myProfilePath } from "@/helpers/players.mjs";
 import { buildNav, isActive, navTabs, showsJoinBanner } from "@/helpers/nav-model.mjs";
 import { adminFrame, inAdminFrame } from "@/helpers/admin-nav.mjs";
@@ -133,7 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href={profileTo} />}><Icon name="mdi-account" />Profile</DropdownMenuItem>
-              {me?.user ? <DropdownMenuItem render={<Link href="/availability" />}><Icon name="mdi-calendar-month" />Availability</DropdownMenuItem> : null}
+              {me?.user ? <DropdownMenuItem onClick={openBlockedTimes}><Icon name="mdi-calendar-remove" />Blocked times</DropdownMenuItem> : null}
               {canViewAs ? (
                 <>
                   <DropdownMenuSeparator />
@@ -183,6 +184,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         {/* A player name opens the panel over the page, so nothing typed is lost: the panel slot. */}
         <PlayerPanel />
+        {/* Blocked times open over any page from Home, the profile and the account menu, and close back onto it */}
+        {me?.user ? <BlockedTimesDialog /> : null}
       </main>
 
       {/* a stream shows the brackets alone, so the clean page carries no footer link either */}

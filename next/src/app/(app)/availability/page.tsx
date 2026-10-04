@@ -1,8 +1,14 @@
-import type { Metadata } from "next";
-import { AvailabilityView } from "./AvailabilityView";
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { openBlockedTimes } from "@/stores";
 
-export const metadata: Metadata = { title: "Availability" };
-
+/** The blocked times moved into a dialog over the page the player is on; an old link opens it over Home. */
 export default function AvailabilityPage() {
-  return <AvailabilityView />;
+  const router = useRouter();
+  useEffect(() => {
+    openBlockedTimes();
+    router.replace("/");
+  }, [router]);
+  return null;
 }

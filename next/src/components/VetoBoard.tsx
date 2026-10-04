@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,6 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { TeamName } from "@/components/TeamName";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { DEFAULT_RULES } from "@/helpers/best-of.mjs";
-import { myProfilePath } from "@/helpers/players.mjs";
 import { hideMissingImage } from "@/helpers/team-image";
 import { useAuth, useMapStore } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -298,15 +296,8 @@ export function VetoBoard({
         ) : null}
       </div>
 
+      {/* A board that never loaded leaves its message and Try again; the page holds the way Home */}
       <StatusAlert modelValue={errorMessage} retry={load} />
-      {/* A board that never loaded leaves the page with nothing but its message */}
-      {errorMessage && !board && !report ? (
-        <div className="mb-4">
-          <Button nativeButton={false} variant="ghost" render={<Link href={myProfilePath(auth.me)} />}>
-            Back to your profile
-          </Button>
-        </div>
-      ) : null}
 
       {!board && !errorMessage ? (
         <div className="flex justify-center p-8" role="status" aria-label="Loading">

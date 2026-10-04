@@ -5,6 +5,7 @@
 - **Step 1, the general layout: done.** Frontend `feature/ui-rework-layout`, backend `feature/admin-me-seats`.
 - **Step 2, simpler nav and the player Home: done** (merged with the layout).
 - **Captain navigation: in review.** Frontend and backend `feature/captain-match-nav`. Home's My Season shows a captain his team's fixture on every round: how far its series are, and one button named after the team it meets ("vs <team>") whatever the round's state (the backend adds `captain_matches` to `GET /me/events`). The panel's title bar adds "Season", and the season page picks any GNL season, so a captain reads every match of the current and older seasons without the admin area.
+- **Player control panel: in review.** Frontend and backend `feature/home-control-panel`. Home's My Season keeps every season task of a player open to correct while the season runs: every series of a round with "Change time", "View veto" and "Edit result", a blocked round's answer, and sitting out the rest. The blocked times move into one dialog opened from My Season, the player page and the account menu. The backend posts a player's or a captain's change to a reported result, and a cleared result, beside the result card in Discord; a captain's series edit and every admin write post nothing.
 - **Captain hub stories 1, 2, 4, 5 and 7, the round planner in the match view: done** (merged as `feature/pairing-improvements`). The backend branch covers three changes: either captain publishes, captains see each player's availability and blocked hours before pairing, and the draft takes any number of pairings while publishing stops at the round's series. Story 7 is "Find a replacement" on a published series, without the announce, which waits for story 6. Stories 3, 6, 8 and 9 stay open.
 
 ### Decisions from the round planner (2026-09-30, 2026-10-02)
@@ -230,7 +231,7 @@ Home is the player's one page for the week. A stack of panels, each shown only w
 | # | Panel | Shows |
 |---|---|---|
 | 1 | Sign Up | Only while a season or event is open for signup and the player has not joined, with one button per signup |
-| 2 | My Season | The current season (always the one the admins set) round by round: each round's Available / Out answer while its check-in is open, and once paired the opponent with the next step (Schedule → Veto maps → Report result) or the result. A link to the season standings and to the blocked times |
+| 2 | My Season | The current season (always the one the admins set) round by round: each round's Available / Out answer while its check-in is open, and once paired every series with all its steps (Schedule → Veto maps → Report result), each step taken open to correct, and the result. The blocked times button and, with early check-in, sit out the rest |
 | 3 | Upcoming Series | The next 5 series, with a link to the full upcoming list |
 | 4 | Fantasy | While team creation is open and the player has no team: create a team. With a team: the fantasy series still open for bets, with the player's bet or a "Place bet" button, and a link to the leaderboard |
 | 5 | My Stats | Part of N seasons · achievements this season and overall · top 3 achievements this season · season score (GNL points). Leads to the player dashboard |
@@ -240,10 +241,10 @@ The player stories it covers:
 | # | User story | Where |
 |---|---|---|
 | 1 | Sign up for an open season | Sign Up panel |
-| 2 | Set my availability for the season | My Season panel, per round; blocked times on `/availability` |
+| 2 | Set my availability for the season | My Season panel, per round, and sit out the rest; blocked times in the one dialog, from My Season, the player page or the account menu |
 | 3 | See which games I have been assigned, played and open | My Season panel (`/player-series`, `roundCards`) |
 | 4 | See information about my opponent | The player name opens `PlayerPanel` |
-| 5 | Agree a play time, do the map veto, report the result | The series actions in My Season (`ScheduleDialog`, `VetoBoard`, `ReportResultDialog`) |
+| 5 | Agree a play time, do the map veto, report the result, and correct each of them while the season runs | The series actions in My Season (`ScheduleDialog`, `VetoBoard`, `ReportResultDialog`); a change to a reported result is posted in Discord |
 | 6 | Create a fantasy team and bet on fantasy matches | Fantasy panel (`BetDialog`, shared with the fantasy page) |
 | 7 | See my stats and achievements | My Stats panel → player dashboard |
 

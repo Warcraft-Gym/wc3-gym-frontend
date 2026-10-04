@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T07:23:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -76,12 +76,13 @@ Requests on load, by surface. The first column links the page concept of each su
 
 | Surface | Requests on load | Cache or polling |
 |---|---|---|
-| [Home](../pages/member.md) | 5 first: `/me`, `GET /seasons`, `GET /me/events`, `GET /home/series` and one `GET /player-series?season_id=`; the fantasy and stats panels read after the panels have drawn | `/home/series`, the setting, the fantasy series, the history and the ladders are edge cached; the rest carry the bearer |
+| [Home](../pages/member.md) | 6 first: `/me`, the seasons (`GET /leagues`, read once a session, and `GET /events?league_id=<gnl>&kind=gnl`), `GET /me/events`, `GET /home/series` and one `GET /player-series?season_id=`; the fantasy and stats panels read after the panels have drawn | `/home/series`, the setting, the fantasy series, the history and the ladders are edge cached; the rest carry the bearer |
 | [The round planner](../pages/fixtures-and-series.md) | 2: the draft board and the draft state, beside the two roster reads the page already makes | a write that moves a pairing reads both again with no browser cache; nothing is read per row. On demand, once per pair or player while the page is open: the pair's free time behind the calendar button, sent private, and a player's ladder record behind the stats panel, edge cached |
 | [A KOTH night page](../pages/koth.md) | 2: the board and the event row | the board is edge cached for fifteen seconds; the clean stream view reads it again every thirty seconds while the tab is visible and the night is not closed |
 | [A KOTH run page](../pages/koth.md) | 2: the board and the event row | an admin read carries the bearer, so the board answers fresh; every admin write answers the whole board |
 | [The veto page](../pages/fixtures-and-series.md) | 2: the veto board and the map list | the map list is edge cached; the board is read again every five seconds while the other side is on turn and the tab is visible, until the veto is complete |
 | [The schedule dialog](../pages/fixtures-and-series.md) | 1: the pair's free hours, `GET /player-series/{id}/free-time` | read once, when the dialog opens |
+| [The blocked-times dialog](../pages/member.md) | 1: `GET /player-blocks` | read when the dialog opens; after a save, Home or the player page reads its `GET /player-series` again once the dialog closes |
 | [The series head to head](../pages/fixtures-and-series.md) | 1: the meetings of the pair, for a series of two players and a signed-in reader | the meetings open under it with no second read |
 | [The team page roster strip](../pages/teams.md) | 0 extra | reuses the event's series read that the rounds table already made |
 | [The upcoming list](../pages/fixtures-and-series.md) | 1: `GET /home/series/upcoming` | open and edge cached for two minutes, so it goes without a bearer; a claim shows on its row at once and in the list after the cache turns |

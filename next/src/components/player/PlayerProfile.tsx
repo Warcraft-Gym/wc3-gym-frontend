@@ -16,10 +16,10 @@ import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/
 import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { StatusAlert } from "@/components/StatusAlert";
 import { usePanelLinks } from "@/hooks/player-panel";
-import { useAuth, useAvailabilityStore, useEventStore, usePlayerStore, useSeason } from "@/stores";
+import { useAuth, useAvailabilityStore, useBlockedTimes, useEventStore, usePlayerStore, useSeason } from "@/stores";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { myNight, myRaces } from "@/helpers/koth.mjs";
-import { nextAnswer, roundCards, waitingLines } from "@/helpers/rounds.mjs";
+import { nextAnswer, roundCards, sitOutUndo, waitingLines } from "@/helpers/rounds.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -124,6 +124,20 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [owner]);
 
+  // A save in the blocked-times dialog changes the rounds the blocks cover, so the answers read again;
+  // a save before the page opened is in its first read already
+  const { changed: blocksChanged } = useBlockedTimes();
+  const blocksSeen = useRef(blocksChanged);
+  useEffect(() => {
+    if (blocksSeen.current === blocksChanged) return;
+    blocksSeen.current = blocksChanged;
+    if (!owner) return;
+    (async () => {
+      await loadSeasons();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocksChanged]);
+
   const seriesOf = (row: Row) => seasonData[row.season.id]?.series ?? row.series;
   // Null until the season read lands, so the check-in draws no answer it has not read
   const answersOf = (seasonId: number | string): Row[] | null =>
@@ -192,22 +206,10 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
     const seasonId = season.id;
     setErrorMessage(null);
     const before = answersOf(seasonId) ?? [];
-    // A derived row holds no stored answer, so the way back clears the round to derived again
-    const was = (playday: number) => {
-      const row = before.find((item) => item.playday === playday);
-      return row?.blocked_out ? null : row?.available ?? null;
-    };
-    // The ask names the rounds with no series, so the line back names the same set
-    const paired = new Set((seasonCards(season) ?? []).filter((card) => card.series).map((card) => card.playday));
-    // A round already out on the blocked times is not in the ask either, so it is not counted
-    const derived = (playday: number) => !!before.find((item) => item.playday === playday)?.blocked_out;
     try {
       const rows = await availabilityStore.setAllPlayerAvailability({ season_id: Number(seasonId), available: false });
       setSeasonData((older) => ({ ...older, [seasonId]: { ...older[seasonId], availability: rows } }));
-      const rounds = rows
-        .filter((row: Row) => row.available === false && was(row.playday) !== false)
-        .map((row: Row) => ({ playday: row.playday, available: was(row.playday) }));
-      setUndo({ seasonId, rounds, count: rounds.filter((row: Row) => !paired.has(row.playday) && !derived(row.playday)).length });
+      setUndo({ seasonId, ...sitOutUndo(before, rows, seasonCards(season) ?? []) });
     } catch (error) {
       setErrorMessage((error as Error).message || "Error saving availability.");
     }

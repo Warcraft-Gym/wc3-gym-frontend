@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 /** One panel of the home hub: its icon, its title, an optional chip or link beside the title,
  *  and its rows. The order places it on the phone stack and inside its desktop column. */
 export function HomePanel({
+  id,
   icon,
   title,
   chip,
@@ -13,6 +14,7 @@ export function HomePanel({
   order,
   children,
 }: {
+  id?: string; // the anchor a link on Home scrolls to, clear of the app bar
   icon: string;
   title: React.ReactNode;
   chip?: React.ReactNode;
@@ -21,7 +23,7 @@ export function HomePanel({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="card gap-0 py-0" style={{ order }}>
+    <Card id={id} className="card scroll-mt-20 gap-0 py-0" style={{ order }}>
       <CardTitle className="flex flex-wrap items-center gap-2 banner bg-banner p-4 text-primary">
         <Icon name={icon} />
         {/* The title is a heading, so a screen reader jumps from panel to panel */}

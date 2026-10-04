@@ -452,8 +452,11 @@ export function MatchDetailsView({ id }: { id: string }) {
   const askClearResult = (item: Row) => {
     cancelEditSeries();
     setClearAsk(true);
+    // a captain's clear is posted in Discord, as a player's is; an admin's is not
     setDeleteNote(
-      `Clear the result of ${item.player1?.name} vs ${item.player2?.name}? The score, the races played and the games go, and the series can be reported again. The replays stay.`,
+      `Clear the result of ${item.player1?.name} vs ${item.player2?.name}? The score, the races played and the games go, and the series can be reported again. The replays stay.${
+        auth.isAdmin ? "" : " The bot posts in the league's Discord that you cleared it."
+      }`,
     );
     openDeleteDialog(item.id, clearResult);
   };

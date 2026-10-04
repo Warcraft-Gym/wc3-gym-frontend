@@ -3,6 +3,7 @@ export type { Me, Seat, ViewAs } from "./auth";
 export { ladderBox, useLadder, useLadderStore } from "./ladder";
 export { seasonBox, useSeason, useSeasonStore, gnlLeague } from "./season";
 export { useAvailabilityStore } from "./availability";
+export { closeBlockedTimes, openBlockedTimes, useBlockedTimes } from "./blocked-times";
 export { useConfigStore } from "./config";
 export { useEventStore } from "./event";
 export { useFantasyStore } from "./fantasy";

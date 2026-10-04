@@ -7,15 +7,17 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { TeamName } from "@/components/TeamName";
-import { HomePanel, Quiet, ROW, SkeletonRows } from "@/components/home/HomePanel";
+import { HomePanel, ROW, SkeletonRows } from "@/components/home/HomePanel";
+import { SitOutRestDialog } from "@/components/player/SitOutRestDialog";
 import { seasonAction } from "@/helpers/events.mjs";
 import { homeRounds, ownScore, seasonState, teamMatch } from "@/helpers/home-hub.mjs";
-import { cardStatus, checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
+import { checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { local } from "@/helpers/schedule.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { teamLabel } from "@/helpers/teams.mjs";
-import { viewerZone } from "@/helpers/timezone.mjs";
+import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { cn } from "@/lib/utils";
+import { openBlockedTimes } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -43,6 +45,57 @@ function Opponent({ series, season, teamId, playerId }: { series: Row; season: R
           <TeamName team={opponentTeam} seasonKey={season.id} />
         </span>
       ) : null}
+    </div>
+  );
+}
+
+/** One series of the member on its round: who he meets, the score once it stands, and every step the
+ *  series offers, the next one filled and a step taken as its correction, so a mistake is fixed here. */
+function SeriesRow({
+  series,
+  season,
+  teamId,
+  playerId,
+  viewer,
+  className,
+  onSchedule,
+  onReport,
+}: {
+  series: Row;
+  season: Row;
+  teamId: number | null;
+  playerId: number | null;
+  viewer: Viewer;
+  className?: string;
+  onSchedule: (series: Row) => void;
+  onReport: (series: Row) => void;
+}) {
+  const score = ownScore(series, playerId);
+  const opponent: Row | null = series.player1_id === playerId ? series.player2 : series.player1;
+  // While the series is to play: who hosts, and the opponent's clock against his own at the booked time
+  const notes = score
+    ? []
+    : [series.host_player_id === playerId ? "You host and ban first" : null, zoneLabel(opponent?.timezone, viewerZone(), series.date_time)].filter(Boolean);
+  return (
+    <div className={cn("mt-1 font-normal", className)}>
+      <Opponent series={series} season={season} teamId={teamId} playerId={playerId} />
+      {notes.length ? <div className="mt-0.5 text-xs text-muted-foreground">{notes.join(" · ")}</div> : null}
+      {score ? (
+        <div className="mt-1 flex flex-wrap items-center gap-2.5">
+          {/* the order of the score says who won and the token says it again */}
+          <Link
+            href={`/series/${series.id}`}
+            title={score.label}
+            aria-label={score.label}
+            className={cn("tnum font-bold no-underline hover:underline", score.won ? "text-win" : score.lost ? "text-loss" : "text-foreground")}
+          >
+            {score.text}
+          </Link>
+          {series.date_time ? <span className="tnum text-sm text-muted-foreground">played {local(series.date_time).toFormat("d LLL")}</span> : null}
+        </div>
+      ) : null}
+      {/* the score line names the day it was played, so the bar states the booked time only before it */}
+      <SeriesActionBar className="mt-2" series={series} viewer={viewer} variant="all" dateFact={!score} onSchedule={() => onSchedule(series)} onReport={() => onReport(series)} />
     </div>
   );
 }
@@ -115,9 +168,11 @@ function TeamMatch({ fixture, teamId }: { fixture: Row; teamId: number | null })
   );
 }
 
-/** The current season on Home, every round of it: when each round runs, and either his series in it
- *  (the opponent and the next step, or the result) or, with none, his answer for it while it takes
- *  one. A captain reads his team's match on every round, with the way into it, and the season. */
+/** The current season on Home, the player's control panel for it: when each round runs, and either
+ *  his series in it (the opponent, the result once it stands, and every step it offers, a step taken
+ *  as its correction) or, with none, his answer for it while it takes one. Under the rounds sit his
+ *  blocked times and, with early check-in, sitting out the rest. A captain reads his team's match on
+ *  every round, with the way into it, and the season. */
 export function MySeason({
   season,
   entry,
@@ -128,7 +183,10 @@ export function MySeason({
   savingRound,
   fixtures,
   order,
+  undo,
   onAnswer,
+  onSitOut,
+  onUndo,
   onSchedule,
   onReport,
 }: {
@@ -141,7 +199,10 @@ export function MySeason({
   savingRound: number | null;
   fixtures: Row[]; // the captain_matches of the current season: every fixture of the team he captains
   order: number;
+  undo: { count: number } | null; // the rounds the last "sit out all" turned out, while it can be taken back
   onAnswer: (playday: number, want: boolean) => void;
+  onSitOut: (cards: Row[]) => Promise<void>;
+  onUndo: () => void;
   onSchedule: (series: Row) => void;
   onReport: (series: Row) => void;
 }) {
@@ -168,13 +229,11 @@ export function MySeason({
   const links = season && seat ? <Link href={`/seasons/${seasonSlug(season)}`} className="text-on-banner underline">Season</Link> : null;
 
   const roundRow = (card: Row) => {
-    const series: Row | null = card.series;
-    const score = series ? ownScore(series, playerId) : null;
+    const list: Row[] = card.seriesList ?? [];
     // a captain who plays on no roster checks into nothing, so his row reads only when the round ends
     const opens = state === "not_in" ? "" : checkinOpensLine(card);
     const when = card.over ? null : opens || roundEndLine(card.endsAt, zone, viewerZone());
     const fixture = fixtureOf(card.playday);
-    const status = cardStatus(card);
     return (
       <div key={card.playday} className={cn(ROW, card.current && "font-medium")}>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -185,41 +244,38 @@ export function MySeason({
         {when ? <div className="text-sm font-normal text-muted-foreground">{when}</div> : null}
 
         {/* the answer: two buttons while the round takes one, else the state it holds; a round that
-            holds his series shows the series instead */}
-        {asks && !card.over && state !== "not_in" && !series ? (
-          card.blocked && !card.pending ? (
-            <Link href="/availability" className="mt-2 inline-flex text-sm" title="Your blocked times cover this round">
-              <Badge className={toneClass(status.color)}>{status.icon ? <Icon name={status.icon} size={12} /> : null}{status.title}</Badge>
-            </Link>
-          ) : card.takes ? (
-            <Availability card={card} saving={savingRound === card.playday} onAnswer={(want) => onAnswer(card.playday, want)} />
-          ) : (
-            <div className="mt-2 text-sm font-normal text-muted-foreground">{roundStateChip(card, asks)}</div>
-          )
+            holds his series shows the series instead. Out on his blocked times holds Out, and
+            Available answers the round all the same, because a stored answer wins over the blocks. */}
+        {asks && !card.over && state !== "not_in" && !list.length ? (
+          <>
+            {card.takes ? (
+              <Availability card={card} saving={savingRound === card.playday} onAnswer={(want) => onAnswer(card.playday, want)} />
+            ) : (
+              <div className="mt-2 text-sm font-normal text-muted-foreground">{roundStateChip(card, asks)}</div>
+            )}
+            {card.blocked && !card.pending ? (
+              <button type="button" className="mt-1 cursor-pointer text-left text-sm font-normal text-primary-text underline" onClick={openBlockedTimes}>
+                Your blocked times cover this round
+              </button>
+            ) : null}
+          </>
         ) : null}
 
-        {series ? (
-          <div className="font-normal">
-            <Opponent series={series} season={season ?? {}} teamId={entry?.team?.id ?? null} playerId={playerId} />
-            {score ? (
-              <div className="mt-1 flex flex-wrap items-center gap-2.5">
-                {/* the order of the score says who won and the token says it again */}
-                <Link
-                  href={`/series/${series.id}`}
-                  title={score.label}
-                  aria-label={score.label}
-                  className={cn("tnum font-bold no-underline hover:underline", score.won ? "text-win" : score.lost ? "text-loss" : "text-foreground")}
-                >
-                  {score.text}
-                </Link>
-                {series.date_time ? <span className="tnum text-sm text-muted-foreground">played {local(series.date_time).toFormat("d LLL")}</span> : null}
-              </div>
-            ) : (
-              <SeriesActionBar className="mt-2" series={series} viewer={viewer} variant="compact" onSchedule={() => onSchedule(series)} onReport={() => onReport(series)} />
-            )}
-          </div>
-        ) : null}
-        {/* a round with no series of his stays as its bare line, so he sees he had no game there */}
+        {/* every series of his in the round; a round with none stays as its bare line, so he sees he had no game there */}
+        {list.map((series, index) => (
+          <SeriesRow
+            key={series.id}
+            series={series}
+            season={season ?? {}}
+            teamId={entry?.team?.id ?? null}
+            playerId={playerId}
+            viewer={viewer}
+            // a second series of the round stands apart from the buttons of the first
+            className={index ? "mt-4" : undefined}
+            onSchedule={onSchedule}
+            onReport={onReport}
+          />
+        ))}
 
         {fixture ? <TeamMatch fixture={fixture} teamId={teamId} /> : null}
       </div>
@@ -245,7 +301,7 @@ export function MySeason({
   );
 
   return (
-    <HomePanel icon="mdi-sword-cross" title={season?.name ? `My Season · ${season.name}` : "My Season"} order={order} action={loading ? null : links}>
+    <HomePanel id="my-season" icon="mdi-sword-cross" title={season?.name ? `My Season · ${season.name}` : "My Season"} order={order} action={loading ? null : links}>
       {loading ? (
         <SkeletonRows rows={3} />
       ) : !season ? (
@@ -278,9 +334,26 @@ export function MySeason({
           {roundList}
           {!cards.length && !fixtures.length && state === "playing" ? <p className="text-sm">The rounds of {season.name} are not set yet.</p> : null}
           {asks ? (
-            <Quiet>
-              Busy on certain days every week? Set your <Link href="/availability">blocked times</Link>.
-            </Quiet>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {/* the hours he cannot play, once for the whole season; they answer every round they cover */}
+              <Button variant="outline" size="sm" className="text-primary-text" onClick={openBlockedTimes}>
+                <Icon name="mdi-calendar-remove" />
+                Blocked times
+              </Button>
+              {/* the write covers rounds whose own window is still shut, so only early check-in offers it */}
+              {season.early_checkin ? <SitOutRestDialog className="" label={season.name} cards={cards} onConfirm={() => onSitOut(cards)} /> : null}
+            </div>
+          ) : null}
+          {/* the way back from the bulk write: every round it changed takes its old answer again */}
+          {undo ? (
+            <div role="status" className="mt-2 flex items-center gap-2 text-sm">
+              <span>
+                {undo.count} {undo.count === 1 ? "round" : "rounds"} set to Out
+              </span>
+              <Button variant="ghost" size="sm" onClick={onUndo}>
+                Undo
+              </Button>
+            </div>
           ) : null}
         </>
       )}

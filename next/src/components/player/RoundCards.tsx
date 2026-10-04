@@ -1,13 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { CastChips, type CastSeries } from "@/components/CastChips";
 import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
-import { useMatchStore } from "@/stores";
+import { openBlockedTimes, useMatchStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
 import { record } from "@/helpers/figures.mjs";
 import { cardStatus, checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
@@ -93,8 +92,9 @@ export function RoundCards({
         {text}
       </Badge>
     );
-    return card.blocked && !card.pending
-      ? <Link href="/availability" title="Blocked times cover this round">{badge}</Link>
+    // only the player's own page asks, and its blocked times open in the dialog over it
+    return card.blocked && !card.pending && asks
+      ? <button type="button" className="cursor-pointer" title="Blocked times cover this round" onClick={openBlockedTimes}>{badge}</button>
       : badge;
   };
 

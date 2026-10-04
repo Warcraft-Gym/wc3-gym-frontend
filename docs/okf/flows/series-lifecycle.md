@@ -4,7 +4,7 @@ title: The life of one series
 description: The states a series passes through, from a GNL draft pairing to a reported result, who moves it out of each state, and what only an admin may do.
 resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
 tags: [pages, series, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T07:23:09Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
 sources:
   - id: fixtures
     resource: ../pages/fixtures-and-series.md
@@ -67,6 +67,8 @@ sequenceDiagram
 
 - An admin books a time on the same player route as a side, so every schedule write refreshes the bot's post of the series: [the series action bar](../concepts/shared-components.md), [fixtures and series](../pages/fixtures-and-series.md).
 - No state is a gate. A series whose rules play no veto skips that step, and a series whose booked time has passed asks for the result next: [the series action bar](../concepts/shared-components.md).
+- No step locks once it is taken. A side corrects a booked time, the veto (the side that took a step takes it back) and the result from Home's My Season while the season runs, through the same routes as the first time: [the series action bar](../concepts/shared-components.md), [member self-service](../pages/member.md).
+- A player's or a captain's change to a reported result through Report Result, and any clear but an admin's, is posted by the bot in the league's Discord beside the result card; an edit on `/match/:id` and every admin write are not. The backend owns that rule: [fixtures and series](../pages/fixtures-and-series.md).
 - The veto is entered inside Report Result. A missing veto, a missing replay or a replay on another map warns, asks once, and still saves: [the veto decision](../decisions/veto-in-report-result.md), [fixtures and series](../pages/fixtures-and-series.md).
 - A published series with no result and no replay can be replaced, with a new player or whole: "Find a replacement" on the series drafts the pick that names it, and "Publish and replace" names the booked time and the veto the replaced series loses: [fixtures and series](../pages/fixtures-and-series.md).
 - A reopen the engine refuses, because a later series already carries a result, asks once more before it forces: [event management](../pages/event-management.md).

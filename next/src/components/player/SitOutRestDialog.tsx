@@ -10,10 +10,11 @@ type Row = Record<string, any>;
 /** One answer for every round of an event that is still to come. The event offers it
  *  only with early check-in on, because the write covers rounds whose window is shut.
  *  The ask names the rounds that change and the rounds that keep the series they have. */
-export function SitOutRestDialog({ label, cards, onConfirm }: {
+export function SitOutRestDialog({ label, cards, onConfirm, className = "mb-3" }: {
   label: string; // the event label
   cards: Row[]; // the round cards of that event
   onConfirm: () => Promise<void>;
+  className?: string; // the trigger's place: under its own line on the profile, in a row of buttons on Home
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,7 +47,7 @@ export function SitOutRestDialog({ label, cards, onConfirm }: {
 
   return (
     <>
-      <Button variant="outline" size="sm" className="mb-3" onClick={() => setOpen(true)}>
+      <Button variant="outline" size="sm" className={className} onClick={() => setOpen(true)}>
         <Icon name="mdi-calendar-remove" />
         Sit out all remaining rounds
       </Button>

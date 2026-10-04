@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundLine, roundOver, roundStateChip, waitingLines, nextAnswer } from './rounds.mjs';
+import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundLine, roundOver, roundStateChip, sitOutUndo, waitingLines, nextAnswer } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -46,6 +46,20 @@ test('a card carries the round, its series and the team faced', () => {
   assert.equal(cards[1].answer, false);
   assert.equal(cards[2].series, null);
   assert.equal(cards[2].opponentTeam, null);
+});
+
+test('a card lists every series of its round, the first one leading', () => {
+  const [first, second] = roundCards({
+    rounds: ROUNDS.slice(0, 2),
+    series: [
+      { id: 7, match: { playday: 1 } },
+      { id: 8, match: { playday: 2 } },
+      { id: 9, match: { playday: 1 } },
+    ],
+  }, TODAY);
+  assert.deepEqual(first.seriesList.map((s) => s.id), [7, 9]);
+  assert.equal(first.series.id, 7);
+  assert.deepEqual(second.seriesList.map((s) => s.id), [8]);
 });
 
 test('a season with no rounds falls back to the weeks of its unplayed series', () => {
@@ -239,4 +253,24 @@ test('pressing a round button sets that answer, and pressing the answer it holds
   assert.equal(nextAnswer(false, true), true);
   assert.equal(nextAnswer(true, true), null);
   assert.equal(nextAnswer(false, false), null);
+});
+
+test('the way back from sitting out restores each round it turned out, and counts the rounds the ask named', () => {
+  const before = [
+    { playday: 1, available: true },
+    { playday: 2, available: false, blocked_out: true },
+    { playday: 4, available: false },
+  ];
+  const after = [1, 2, 3, 4, 5].map((playday) => ({ playday, available: false }));
+  // round 5 holds a series, so the ask kept it; the write turned it out all the same
+  const cards = [{ playday: 5, series: { id: 1 } }];
+  const { rounds, count } = sitOutUndo(before, after, cards);
+  // round 4 was out already, and the derived out of round 2 goes back to no answer
+  assert.deepEqual(rounds, [
+    { playday: 1, available: true },
+    { playday: 2, available: null },
+    { playday: 3, available: null },
+    { playday: 5, available: null },
+  ]);
+  assert.equal(count, 2);
 });

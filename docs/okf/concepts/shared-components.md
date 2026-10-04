@@ -1,10 +1,10 @@
 ---
 type: Domain Concept
 title: Shared components
-description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
+description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, where the blocked-times dialog lives, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T15:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -39,6 +39,12 @@ sources:
   - id: availability-calendar
     resource: ../../../next/src/components/AvailabilityCalendar.tsx
     title: AvailabilityCalendar
+  - id: series-action-bar
+    resource: ../../../next/src/components/SeriesActionBar.tsx
+    title: SeriesActionBar
+  - id: blocked-times-dialog
+    resource: ../../../next/src/components/BlockedTimesDialog.tsx
+    title: BlockedTimesDialog
   - id: pick-grid
     resource: ../../../next/src/components/admin/PickGrid.tsx
     title: PickGrid
@@ -78,7 +84,11 @@ A team is drawn as `{logo} {name}` everywhere, and it links to the team page. Th
 
 # The series action bar
 
-One bar carries the steps of a series, with the words "Schedule", "Veto maps" and "Report result"; the report step reads "Edit result" once the series is scored. It is full, all three steps, where the series is the subject of the surface, and compact, two active steps, where a series is one item among many; in the compact bar the next step is filled and the one after it outlined. In both bars a button keeps the word of its step, and a step already taken reads as a quiet fact before the buttons: the booked time, and "Veto done"; a surface that states the booked time in a line of its own hides that one fact and keeps the other. The steps of one series, their state and who may act are answered in one place, `next/src/helpers/series-actions.mjs`, which mirrors the API gate: the player a side names, a captain of the team that fields a side, and a member of the roster of a side that names no player. The captain reads off the seats `/me` lists, one per team and event he captains. An admin acts for either side, on the same routes as everyone else, so every schedule write refreshes the bot's post of the series. Another reader sees the steps without buttons. A series whose rules draw no map from the veto board leaves that step out, a series whose booked time has passed asks for the result next, and a reported series keeps its result button alone. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
+One bar carries the steps of a series. A step not taken yet reads "Schedule", "Veto maps" or "Report result"; a step taken offers its correction, "Change time", "View veto" or "Edit result". "View veto" opens the board, where a step is taken back by the side that took it. The bar is full, all three steps, where the series is the subject of the surface; compact, two active steps, where a series is one item among many; and "all" on Home's My Season, the player's control panel. In the full and compact bars the next step is filled and the one after it outlined, and a step already taken reads as a quiet fact before the buttons: the booked time, and "Veto done"; a surface that states the booked time in a line of its own hides that one fact and keeps the other. The all bar keeps every step the series offers as a button, the next one filled: every needed step before the result, and once the result stands "Edit result" with the steps already taken, so a mistake is corrected where the task was done. Its one fact is the booked time. The steps of one series, their state and who may act are answered in one place, `next/src/helpers/series-actions.mjs`, which mirrors the API gate: the player a side names, a captain of the team that fields a side, and a member of the roster of a side that names no player. The captain reads off the seats `/me` lists, one per team and event he captains. An admin acts for either side, on the same routes as everyone else, so every schedule write refreshes the bot's post of the series. Another reader sees the steps without buttons. A series whose rules draw no map from the veto board leaves that step out, a series whose booked time has passed asks for the result next, and a reported series keeps its result button alone in the full and compact bars. Its context label reads "League - Event - Stage - Round - Opponent" and leaves out a part the series carries no value for.
+
+# BlockedTimesDialog
+
+The hours a player cannot play are set in one dialog, which the app shell holds once for every page. Home's My Season, the owner's player page and the account menu open it through `openBlockedTimes()` in `next/src/stores/blocked-times.ts`, and it closes back onto the page it opened over, so no page of its own needs a way back. It holds the timezone field and `BlockedTimesEditor`, which reads the blocks only while the dialog is open. A save moves a count in the same store when the dialog closes, and Home and the player page read their rounds again, so a derived "Out (blocked times)" follows the new blocks. On a phone the dialog fills the screen.
 
 # Loading
 

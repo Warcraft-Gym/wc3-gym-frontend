@@ -5,6 +5,8 @@ import { isUnscored } from './season-phase.mjs';
 
 const STEP_ORDER = ['schedule', 'veto', 'report'];
 const STEP_LABEL = { schedule: 'Schedule', veto: 'Veto maps', report: 'Report result' };
+// A step already taken offers its correction. The board of a finished veto takes a step back only for the side that took it, so that button opens it to look.
+const DONE_LABEL = { schedule: 'Change time', veto: 'View veto', report: 'Edit result' };
 
 // A game draws its map from the board under the veto and the loser rules, and a series with no rules plays the loser rule
 export const needsVeto = (series) => rulesOf(series?.rules?.map_rules).some((rule) => rule === 'veto' || rule === 'loser');
@@ -58,8 +60,8 @@ export const seriesSteps = (series, viewer = {}, now = DateTime.now()) => {
     : STEP_ORDER.find((step) => needed[step] && !done[step]) ?? null;
   const steps = STEP_ORDER.map((step) => ({
     step,
-    // Every step keeps its own word; the report step alone renames itself once the score stands
-    label: step === 'report' && done.report ? 'Edit result' : STEP_LABEL[step],
+    // A step names what it does next: its own word, then its correction once it is taken
+    label: done[step] ? DONE_LABEL[step] : STEP_LABEL[step],
     state: done[step] ? 'done' : !needed[step] || done.report ? 'not needed' : step === next ? 'next' : 'later',
   }));
   return { steps, next, mayAct: actsForSeries(series, viewer) };

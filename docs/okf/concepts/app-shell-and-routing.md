@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T20:20:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -61,6 +61,8 @@ One person can be a player, a captain and an admin at once. `buildNav` in `next/
 - Admin, when the session reaches `/admin`. A viewed lower role never does, so view-as hides it.
 
 A player therefore sees Home and My Stats alone. The shared pages (standings, upcoming series, teams, fantasy leaderboard, events) are reached through links in the Home panels and on the pages themselves; the nav names none of them. `navTabs` turns the nav into tabs: from 960 px they sit in the top bar, below it in a fixed bar at the bottom of the screen. My Team is a link for one team and opens a picker (a menu in the top bar, a sheet on a phone) for several. There is no drawer. The page ends above the tab bar, and a sheet or a dialog opens over it. A guest gets no tabs; their one page is `/profile`, in the account menu.
+
+The account menu on the avatar holds Profile, then for a member with a player row "Blocked times", then "View as…" for an admin who may view as a lower role, and Logout. "Blocked times" opens the [blocked-times dialog](shared-components.md), which the shell holds once for every page: it opens over the page and closes back onto it. `/availability`, where the blocked times had a page of their own, opens the dialog over Home.
 
 # The admin frame
 

@@ -70,8 +70,8 @@ test('the season the captain plays reads the round in play and carries every lin
   const card = homeCards({ events, me, seasons, now })[0];
   assert.equal(card.status, 'Round 5 of 8 · 5 to 11 Oct');
   assert.deepEqual(card.chips.map((chip) => chip.title), ['Running', 'Signed up', 'Captain · GNLB']);
-  assert.deepEqual(card.primary, { title: 'Your series', to: '/player/thanks%2311187', variant: 'elevated' });
-  assert.deepEqual(card.links.map((link) => link.title), ['GNLB', 'Upcoming series', 'Ladder', 'Players', 'My fantasy team', 'Availability']);
+  assert.deepEqual(card.primary, { title: 'Your series', to: '/#my-season', variant: 'elevated' });
+  assert.deepEqual(card.links.map((link) => link.title), ['GNLB', 'Upcoming series', 'Ladder', 'Players', 'My fantasy team']);
 });
 
 test('a season the player is not in asks to join and shows the two open reads', () => {

@@ -3,7 +3,6 @@ import { dateRange, eventLabel, STATE_COLOR, STATE_LABEL } from './event-labels.
 import { seasonSlug } from './season-slug.mjs';
 import { currentRound, roundLabel } from './rounds.mjs';
 import { myNight } from './koth.mjs';
-import { myProfilePath } from './players.mjs';
 
 // What a player can do with a season: sign up, ask an admin, or nothing; an absent signups_open reads as open
 export function seasonAction(season) {
@@ -21,7 +20,6 @@ function seasonLinks(season, slug) {
     { title: 'Ladder', icon: 'mdi-chart-line', to: `/ladder?season=${slug}` },
     players,
     { title: 'My fantasy team', icon: 'mdi-cards-playing-outline', to: `/fantasy-registration?season=${slug}` },
-    season.scheduling_enabled && { title: 'Availability', icon: 'mdi-calendar-month', to: '/availability' },
   ].filter(Boolean);
 }
 
@@ -43,7 +41,8 @@ export const SUPERADMIN_SIGNUP_NOTE = 'The admin token has no player account, so
 // acts on in place, and `view` opens the event page.
 function eventPrimary(row, me, slug) {
   if (row.kind === 'gnl') {
-    if (row.joined) return { title: 'Your series', to: myProfilePath(me), variant: 'elevated' };
+    // Home's My Season holds every task of the season, so the card points there
+    if (row.joined) return { title: 'Your series', to: '/#my-season', variant: 'elevated' };
     // the token admin holds no Discord account, so it cannot sign up
     if (me?.superadmin) return null;
     return row.action === 'sign_up'

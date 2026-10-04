@@ -29,8 +29,12 @@ test('a time that has passed asks for the result, veto or no veto', () => {
 test('both picks finish the veto step', () => {
   const vetoed = { ...OPEN, date_time: '2026-09-22T18:00:00Z', player1_pick_map: 'Echo Isles', player2_pick_map: 'Terenas' };
   assert.deepEqual(stateOf(vetoed), { schedule: 'done', veto: 'done', report: 'next' });
-  // a step it has taken keeps its own button word, so no button is named after a date or a state
-  assert.deepEqual(seriesSteps(vetoed, { id: ME }, NOW).steps.map((step) => step.label), ['Schedule', 'Veto maps', 'Report result']);
+  // a step it has taken offers its correction, so no button is named after a date or a state
+  assert.deepEqual(seriesSteps(vetoed, { id: ME }, NOW).steps.map((step) => step.label), ['Change time', 'View veto', 'Report result']);
+});
+
+test('a step not taken keeps its own word', () => {
+  assert.deepEqual(seriesSteps(OPEN, { id: ME }, NOW).steps.map((step) => step.label), ['Schedule', 'Veto maps', 'Report result']);
 });
 
 test('a reported series has no step left to take', () => {
@@ -38,9 +42,10 @@ test('a reported series has no step left to take', () => {
   assert.equal(seriesSteps(scored, { id: ME }, NOW).next, null);
   assert.equal(seriesSteps(scored, { id: ME }, NOW).steps.find((step) => step.step === 'report').label, 'Edit result');
   assert.deepEqual(stateOf(scored), { schedule: 'not needed', veto: 'not needed', report: 'done' });
-  // a step it did take keeps its state, so the bar still names the time it was played at
-  assert.deepEqual(stateOf({ ...scored, date_time: '2026-09-22T18:00:00Z' }),
-    { schedule: 'done', veto: 'not needed', report: 'done' });
+  // a step it did take keeps its state, so the bar still names the time it was played at and offers to change it
+  const booked = { ...scored, date_time: '2026-09-22T18:00:00Z' };
+  assert.deepEqual(stateOf(booked), { schedule: 'done', veto: 'not needed', report: 'done' });
+  assert.equal(seriesSteps(booked, { id: ME }, NOW).steps[0].label, 'Change time');
 });
 
 test('the veto step is needed whenever a game draws its map from the board', () => {

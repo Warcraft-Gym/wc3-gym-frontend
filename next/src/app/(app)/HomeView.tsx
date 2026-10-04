@@ -17,11 +17,11 @@ import { dateRange } from "@/helpers/event-labels.mjs";
 import { actOnEvent, homeCards } from "@/helpers/events.mjs";
 import { creationOpen, fantasyState, openBets } from "@/helpers/fantasy-panel.mjs";
 import { PANEL_ORDER, openSignups, seasonFixtures } from "@/helpers/home-hub.mjs";
-import { nextAnswer } from "@/helpers/rounds.mjs";
+import { nextAnswer, sitOutUndo } from "@/helpers/rounds.mjs";
 import { achievementSummary, gnlSeasons, seasonScore, seasonsPlayed } from "@/helpers/player-summary.mjs";
 import { myProfilePath } from "@/helpers/players.mjs";
 import { backendUrl, fetchWrapper } from "@/helpers";
-import { useAuth, useAvailabilityStore, useConfigStore, useEventStore, useFantasyStore, useLadderStore, usePlayerStore, useSeason, useSeriesStore } from "@/stores";
+import { useAuth, useAvailabilityStore, useBlockedTimes, useConfigStore, useEventStore, useFantasyStore, useLadderStore, usePlayerStore, useSeason, useSeriesStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -34,8 +34,9 @@ const currentOf = (seasons: Row[], currentId: number | null | undefined): Row | 
   seasons.find((season) => Number(season.id) === Number(currentId)) ?? seasons[seasons.length - 1] ?? null;
 
 /** The member's Home: every panel a player needs for the week, all on the current season. An open
- *  signup, his season round by round with his answer and his series, the upcoming series, his fantasy
- *  team and bets, and his own stats. A panel shows only when it has something to say. */
+ *  signup, his season round by round with his answer and his series, every season task done and
+ *  corrected there, the upcoming series, his fantasy team and bets, and his own stats. A panel shows
+ *  only when it has something to say. */
 export function HomeView() {
   const eventStore = useEventStore();
   const seriesStore = useSeriesStore();
@@ -58,6 +59,8 @@ export function HomeView() {
   const [games, setGames] = useState<Row | null>(null);
   // the round whose answer is being written, so only its buttons wait
   const [savingRound, setSavingRound] = useState<number | null>(null);
+  // the rounds the last "sit out all" turned out, each with the answer it held, and the count the ask named
+  const [undo, setUndo] = useState<{ rounds: Row[]; count: number } | null>(null);
   const [acting, setActing] = useState<string | null>(null);
   const [signupEvent, setSignupEvent] = useState<Row | null>(null);
 
@@ -111,6 +114,7 @@ export function HomeView() {
     if (!currentId) return;
     setSavingRound(playday);
     setErrorMessage(null);
+    setUndo(null); // a hand-written answer is newer than the bulk write, so the way back closes
     try {
       const held = (games?.availability ?? []).find((row: Row) => row.playday === playday)?.available ?? null;
       const rows = await availabilityStore.setPlayerAvailability({ season_id: Number(currentId), playday, available: nextAnswer(held, want) });
@@ -120,6 +124,59 @@ export function HomeView() {
     } finally {
       setSavingRound(null);
     }
+  };
+
+  // One answer, out, for every round of the season that has not ended
+  const sitOutRest = async (cards: Row[]) => {
+    if (!currentId) return;
+    setErrorMessage(null);
+    const before: Row[] = games?.availability ?? [];
+    try {
+      const rows = await availabilityStore.setAllPlayerAvailability({ season_id: Number(currentId), available: false });
+      setGames((was) => (was ? { ...was, availability: rows } : was));
+      const back = sitOutUndo(before, rows, cards);
+      setUndo(back.rounds.length ? back : null);
+    } catch (error) {
+      setErrorMessage((error as Error).message || "Your answers could not be saved.");
+    }
+  };
+
+  // Putting the answers back one round at a time, because the bulk write takes one answer for all
+  const undoSitOut = async () => {
+    if (!currentId || !undo) return;
+    const { rounds } = undo;
+    setUndo(null);
+    setErrorMessage(null);
+    let rows: Row[] = [];
+    try {
+      for (const round of rounds) {
+        rows = await availabilityStore.setPlayerAvailability({ season_id: Number(currentId), playday: round.playday, available: round.available });
+      }
+    } catch (error) {
+      setErrorMessage((error as Error).message || "Your answers could not be saved.");
+    } finally {
+      // a write that fails part way still leaves the rounds it did restore on the page
+      if (rows.length) setGames((was) => (was ? { ...was, availability: rows } : was));
+    }
+  };
+
+  // A save in the blocked-times dialog changes the rounds the blocks cover, so the answers read again;
+  // a save before the page opened is in its first read already
+  const { changed: blocksChanged } = useBlockedTimes();
+  const blocksSeen = useRef(blocksChanged);
+  useEffect(() => {
+    if (blocksSeen.current === blocksChanged) return;
+    blocksSeen.current = blocksChanged;
+    (async () => {
+      await loadGames(currentId);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocksChanged]);
+
+  // A dialog's save says what it did and reads the rounds again
+  const afterWrite = async (message: string) => {
+    setSuccessMessage(message);
+    await loadGames(currentId);
   };
 
   const reloadEvents = async () => {
@@ -251,7 +308,10 @@ export function HomeView() {
               savingRound={savingRound}
               fixtures={drafts.matches}
               order={PANEL_ORDER.games}
+              undo={undo}
               onAnswer={answerRound}
+              onSitOut={sitOutRest}
+              onUndo={undoSitOut}
               onSchedule={(series) => scheduleDialog.current?.open(series)}
               onReport={(series) => reportDialog.current?.open(series)}
             />
@@ -272,8 +332,8 @@ export function HomeView() {
 
       {playerId ? (
         <>
-          <ScheduleDialog ref={scheduleDialog} playerId={playerId} onSaved={() => loadGames(currentId)} />
-          <ReportResultDialog ref={reportDialog} onSaved={() => loadGames(currentId)} />
+          <ScheduleDialog ref={scheduleDialog} playerId={playerId} onSaved={afterWrite} />
+          <ReportResultDialog ref={reportDialog} onSaved={afterWrite} />
         </>
       ) : null}
 

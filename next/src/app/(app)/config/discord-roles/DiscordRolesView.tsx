@@ -884,7 +884,7 @@ export function DiscordRolesView() {
 
       {/* The group picker: which people in the database hold this role */}
       <Dialog open={pickerDialog} onOpenChange={setPickerDialog} disablePointerDismissal>
-        <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[640px]">
+        <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
           {picker ? (
             <>
               <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">

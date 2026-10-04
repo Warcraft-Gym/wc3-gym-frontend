@@ -557,34 +557,37 @@ export function SeasonDetailsView({ id }: { id: string }) {
 
       {/* Team Selection Dialog */}
       <Dialog open={isTeamDialogOpen} onOpenChange={(open) => (open ? setIsTeamDialogOpen(true) : closeTeamSelectionModal())}>
-        <DialogContent showCloseButton={false} className="max-w-[700px] gap-0 p-0 sm:max-w-[700px]">
+        <DialogContent showCloseButton={false} size="md" className="flex flex-col gap-0 overflow-hidden p-0">
           <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-shield-plus" />
             Add teams to the season
           </DialogTitle>
-          <DataTable
-            data={availableTeams}
-            empty="Every team is already in this season"
-            columns={[
-              {
-                id: "select",
-                header: "",
-                enableSorting: false,
-                cell: ({ row }) => (
-                  <Checkbox
-                    checked={selectedTeams.includes(row.original.id)}
-                    onCheckedChange={(checked) =>
-                      setSelectedTeams((was) => (checked ? [...was, row.original.id] : was.filter((teamId) => teamId !== row.original.id)))
-                    }
-                    aria-label={row.original.name}
-                  />
-                ),
-              },
-              { id: "name", accessorKey: "name", header: "Name" },
-              { id: "long_name", accessorKey: "long_name", header: "Long Name" },
-            ]}
-          />
-          <div className="flex justify-end gap-2 p-4">
+          {/* a long list of teams scrolls under the title, so the add button stays in view */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <DataTable
+              data={availableTeams}
+              empty="Every team is already in this season"
+              columns={[
+                {
+                  id: "select",
+                  header: "",
+                  enableSorting: false,
+                  cell: ({ row }) => (
+                    <Checkbox
+                      checked={selectedTeams.includes(row.original.id)}
+                      onCheckedChange={(checked) =>
+                        setSelectedTeams((was) => (checked ? [...was, row.original.id] : was.filter((teamId) => teamId !== row.original.id)))
+                      }
+                      aria-label={row.original.name}
+                    />
+                  ),
+                },
+                { id: "name", accessorKey: "name", header: "Name" },
+                { id: "long_name", accessorKey: "long_name", header: "Long Name" },
+              ]}
+            />
+          </div>
+          <div className="flex justify-end gap-2 border-t p-4">
             <Button variant="ghost" onClick={closeTeamSelectionModal}>
               Cancel
             </Button>
@@ -600,7 +603,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
       {/* Create Match Dialog */}
       {newMatch ? (
         <Dialog open={isModalOpen} onOpenChange={(open) => (open ? setIsModalOpen(true) : closeMatchCreationModal())}>
-          <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
+          <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
             <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
               <Icon name="mdi-calendar-plus" />
               Create a match in round {selectedWeek}
@@ -608,8 +611,9 @@ export function SeasonDetailsView({ id }: { id: string }) {
             <StatusAlert modelValue={matchError} className="mx-4 mt-4" onClose={() => setMatchError(null)} />
             <div className="flex flex-col gap-4 p-4">
               {usesFixedMap ? mapLine(selectedWeek) : null}
-              <div className="grid gap-4 min-[960px]:grid-cols-2">
+              <div className="grid gap-4 @xl/dialog:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] @xl/dialog:items-end">
                 <Pick label="Team 1" items={teamItems} value={newMatch.team1_id} onChange={(value) => setNewMatch({ ...newMatch, team1_id: value })} />
+                <span className="hidden pb-2 text-muted-foreground @xl/dialog:block">vs</span>
                 <Pick label="Team 2" items={teamItems} value={newMatch.team2_id} onChange={(value) => setNewMatch({ ...newMatch, team2_id: value })} />
               </div>
             </div>
@@ -626,7 +630,7 @@ export function SeasonDetailsView({ id }: { id: string }) {
       {/* Edit Match Dialog */}
       {selectedMatch ? (
         <Dialog open={editMatchDialogOpen} onOpenChange={(open) => (open ? setEditMatchDialogOpen(true) : cancelEdit())}>
-          <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
+          <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
             <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
               <Icon name="mdi-pencil" />
               Edit match
@@ -634,13 +638,14 @@ export function SeasonDetailsView({ id }: { id: string }) {
             <StatusAlert modelValue={matchError} className="mx-4 mt-4" onClose={() => setMatchError(null)} />
             <div className="flex flex-col gap-4 p-4">
               {usesFixedMap ? mapLine(selectedMatch.playday) : null}
-              <div className="grid gap-4 min-[960px]:grid-cols-2">
+              <div className="grid gap-4 @xl/dialog:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] @xl/dialog:items-end">
                 <Pick
                   label="Team 1"
                   items={teamItems}
                   value={selectedMatch.team1_id}
                   onChange={(value) => setSelectedMatch({ ...selectedMatch, team1_id: value })}
                 />
+                <span className="hidden pb-2 text-muted-foreground @xl/dialog:block">vs</span>
                 <Pick
                   label="Team 2"
                   items={teamItems}

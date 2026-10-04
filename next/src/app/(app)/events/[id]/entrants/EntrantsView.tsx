@@ -653,7 +653,7 @@ export function EntrantsView({ id }: { id: string }) {
       ) : null}
 
       <Dialog open={adding} onOpenChange={setAdding}>
-        <DialogContent showCloseButton={false} className="gap-0 p-0 md:max-w-[600px]">
+        <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
           <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-account-plus" />
             Add entrant
@@ -696,7 +696,7 @@ export function EntrantsView({ id }: { id: string }) {
       </Dialog>
 
       <Dialog open={banning} onOpenChange={setBanning}>
-        <DialogContent showCloseButton={false} className="gap-0 p-0 md:max-w-[420px]">
+        <DialogContent showCloseButton={false} size="confirm" className="gap-0 p-0">
           <DialogTitle className="flex items-center gap-2 bg-error px-4 py-3 text-on-error">
             <Icon name="mdi-gavel" />
             Ban this player

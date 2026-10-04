@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, type DialogSize } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Pick } from "@/components/ui/Pick";
@@ -45,8 +45,6 @@ const seatsOf = lobbySeats as (row: Row) => Row[];
 // The one refusal a force answers, as app/services/stage_engine.py on_reopened words it
 const NEEDS_FORCE = "A later series already carries a result";
 const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", "medal-bronze": "text-medal-bronze" };
-// Tailwind builds no class from a number held in data, so the three dialog widths are written out
-const WIDTH: Record<number, string> = { 480: "md:max-w-[480px]", 520: "md:max-w-[520px]", 560: "md:max-w-[560px]" };
 const WON = "flex-1 aria-pressed:bg-primary/15 aria-pressed:text-primary-text";
 
 /** One ask of the run page: the title bar, the body and the row of answers. */
@@ -55,7 +53,7 @@ function Ask({
   onOpenChange,
   title,
   tone = "primary",
-  width = 520,
+  size = "sm",
   actions,
   children,
 }: {
@@ -63,13 +61,13 @@ function Ask({
   onOpenChange: (open: boolean) => void;
   title: string;
   tone?: "primary" | "error";
-  width?: 480 | 520 | 560;
+  size?: DialogSize;
   actions: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className={cn("gap-0 p-0", WIDTH[width])}>
+      <DialogContent showCloseButton={false} size={size} className="gap-0 p-0">
         <DialogTitle className={cn("px-4 py-3", tone === "error" ? "bg-error text-on-error" : "banner bg-banner text-primary")}>{title}</DialogTitle>
         <div className="p-4">{children}</div>
         <div className="flex items-center justify-end gap-2 p-4 pt-0">{actions}</div>
@@ -537,7 +535,7 @@ export function EventAdminView({ id }: { id: string }) {
         open={lobbyOpen && !!picked}
         onOpenChange={setLobbyOpen}
         title="Enter the places"
-        width={560}
+        size="md"
         actions={
           <>
             <Button variant="ghost" disabled={saving} onClick={() => setLobbyOpen(false)}>Close</Button>
@@ -595,7 +593,7 @@ export function EventAdminView({ id }: { id: string }) {
         open={moveOpen}
         onOpenChange={setMoveOpen}
         title="Move to another lobby"
-        width={480}
+        size="sm"
         actions={
           <>
             <Button variant="ghost" disabled={saving} onClick={() => setMoveOpen(false)}>Cancel</Button>
@@ -613,7 +611,7 @@ export function EventAdminView({ id }: { id: string }) {
         open={resultOpen && !!picked}
         onOpenChange={setResultOpen}
         title="Enter a result"
-        width={560}
+        size="md"
         actions={
           <>
             {scored ? (
@@ -706,7 +704,7 @@ export function EventAdminView({ id }: { id: string }) {
         onOpenChange={setConfirmForce}
         title="Reopen past a played series"
         tone="error"
-        width={480}
+        size="confirm"
         actions={
           <>
             <Button variant="ghost" onClick={() => setConfirmForce(false)}>Cancel</Button>

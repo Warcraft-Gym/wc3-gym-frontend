@@ -28,7 +28,7 @@ export function ConfirmDeleteDialog({
 }) {
   return (
     <Dialog open={modelValue} onOpenChange={(open) => onUpdateModelValue?.(open)}>
-      <DialogContent showCloseButton={false} className="max-w-[400px] gap-0 p-0 sm:max-w-[400px]">
+      <DialogContent showCloseButton={false} size="confirm" className="gap-0 p-0">
         {/* DESIGN.md: a dialog that deletes something wears bg-error */}
         <DialogTitle className="flex items-center gap-2 bg-error px-4 py-3 text-on-error">
           <Icon name="mdi-alert" />

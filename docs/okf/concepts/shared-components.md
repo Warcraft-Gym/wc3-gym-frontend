@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, where the blocked-times dialog lives, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T18:01:55Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -174,4 +174,4 @@ Every view states its phone level in its page concept: Full, Read on phone or De
 
 # The rest
 
-The controls are the shadcn/ui kit in `next/src/components/ui/`; a page composes them and adds no control of its own. A `Combobox` or a `Select` under a `Field` takes its accessible name from the field label. `RowActions` folds three or more row buttons into a menu, and fewer when it is passed `menu`, so a row can keep its main task as its own button beside the menu; the menu takes the width of its own items, not the width of the icon button it hangs on, so an item never wraps. `ColumnNote` is a column title with a help note. `StatusAlert` shows a load or save message with a retry. `EventHeader` and `PlayerHeader` top the event and player pages. `FixtureSeries` draws the ordered series of a fixture. `StageView` and `SeriesBox` draw a stage of any format and one series. `VetoBoard` draws the veto and embeds in the Report Result dialog. `DivisionBracketing` draws the MMR bands of the divisions.
+The controls are the shadcn/ui kit in `next/src/components/ui/`; a page composes them and adds no control of its own. A dialog takes its width from the `size` of its `DialogContent`, `confirm`, `sm`, `md`, `lg` or `xl`, and lays its content out by its own width through `@container/dialog`; `DESIGN.md` holds the scale. A `Combobox` or a `Select` under a `Field` takes its accessible name from the field label. `RowActions` folds three or more row buttons into a menu, and fewer when it is passed `menu`, so a row can keep its main task as its own button beside the menu; the menu takes the width of its own items, not the width of the icon button it hangs on, so an item never wraps. `ColumnNote` is a column title with a help note. `StatusAlert` shows a load or save message with a retry. `EventHeader` and `PlayerHeader` top the event and player pages. `FixtureSeries` draws the ordered series of a fixture. `StageView` and `SeriesBox` draw a stage of any format and one series. `VetoBoard` draws the veto and embeds in the Report Result dialog. `DivisionBracketing` draws the MMR bands of the divisions.

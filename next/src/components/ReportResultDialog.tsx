@@ -1,7 +1,7 @@
 "use client";
 import { useImperativeHandle, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, dialogCompact, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Note } from "@/components/ui/Note";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { RaceIcon } from "@/components/RaceIcon";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { VetoBoard } from "@/components/VetoBoard";
@@ -20,6 +21,7 @@ import { uploadReplay } from "@/helpers/replay-upload";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
 import { holdsResult } from "@/helpers/series-actions.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
+import { cn } from "@/lib/utils";
 import { useAuth, useMapStore, useMatchStore, useSeriesStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -239,7 +241,10 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
   const replaysMissing = Array.from({ length: series.listsReplays ? replaysNeeded(p1, p2) : 0 }, (_, index) => index + 1).filter((game) => needsFile(game) && !hasReplay(game));
   const fileHint = (game: number) => (!needsFile(game) ? "Leave empty to keep the stored replay" : replaysMissing.includes(game) ? "Every game needs its replay" : undefined);
   const scoreProblem = isValidResult(p1, p2, seriesWins) ? null : "Tap the winner of each game played";
-  const resultLine = `${name(1)} ${p1} – ${p2} ${name(2)}`;
+  // The columns of a game row on a wide dialog: the game, the winner, the map and, where the page lists replays, the file
+  const gameCols = series.listsReplays
+    ? "@4xl/dialog:grid-cols-[9rem_minmax(0,1fr)_minmax(0,14rem)_minmax(0,14rem)]"
+    : "@4xl/dialog:grid-cols-[9rem_minmax(0,1fr)_minmax(0,16rem)]";
 
   // The map each game should play: the veto's, else the one the reporter named himself
   const offered = offeredMaps(series, scoreVeto);
@@ -389,7 +394,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : saving ? null : close())}>
       {/* One width in every state: the fold holds the board, so a missing veto never widens the dialog */}
-      <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[600px] gap-0 overflow-y-auto p-0 md:max-w-[600px]">
+      <DialogContent showCloseButton={false} size="lg" className="gap-0 p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-trophy" />
           {series.scored ? "Edit result" : "Report result"}
@@ -397,6 +402,43 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         <div className="flex flex-col gap-3 p-4">
           <StatusAlert modelValue={errorMessage} onClose={() => setErrorMessage(null)} className="mb-0" />
           <StatusAlert modelValue={moved} type="success" onClose={() => setMoved(null)} className="mb-0" />
+
+          {/* The two sides and the score the tapped winners add up to, kept in view over the games */}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 rounded border px-3 py-2">
+            <span className="flex min-w-0 items-center justify-end gap-2 text-right">
+              <span className="truncate font-name font-bold">{name(1)}</span>
+              {series.solo && series.races.player1 ? <RaceIcon raceIdentifier={series.races.player1} /> : null}
+            </span>
+            <span className="text-lg font-bold tnum" aria-live="polite">
+              {p1} – {p2}
+            </span>
+            <span className="flex min-w-0 items-center gap-2">
+              {series.solo && series.races.player2 ? <RaceIcon raceIdentifier={series.races.player2} /> : null}
+              <span className="truncate font-name font-bold">{name(2)}</span>
+            </span>
+          </div>
+
+          {series.solo && !series.raceOpen ? (
+            <div>
+              <Button variant="ghost" size="sm" onClick={() => setSeries((form) => ({ ...form, raceOpen: true }))}>
+                <Icon name="mdi-account-switch" />
+                Played a different race
+              </Button>
+            </div>
+          ) : series.solo ? (
+            // each side's race under its own name in the line above
+            <div className="grid grid-cols-2 gap-3">
+              {([1, 2] as const).map((side) => (
+                <RaceSelect
+                  key={side}
+                  label={name(side)}
+                  value={series.races[`player${side}`] ?? null}
+                  onChange={(race) => setSeries((form) => ({ ...form, races: { ...form.races, [`player${side}`]: race } }))}
+                />
+              ))}
+            </div>
+          ) : null}
+
           {series.scored && !isAdmin ? <Note className="mb-0">A change to this result is posted in the league&apos;s Discord, with your name.</Note> : null}
           {replaysMissing.length ? (
             <div>
@@ -432,113 +474,116 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
             </div>
           ) : null}
 
-          {series.solo && !series.raceOpen ? (
-            <div>
-              <Button variant="ghost" size="sm" onClick={() => setSeries((form) => ({ ...form, raceOpen: true }))}>
-                <Icon name="mdi-account-switch" />
-                Played a different race
-              </Button>
+          {/* A wide dialog reads the games as a table, one row a game under one header; a phone stacks a card a game */}
+          <div className="flex flex-col gap-3 @4xl/dialog:gap-0">
+            <div className={cn("hidden gap-x-4 pb-2 text-xs font-medium text-muted-foreground @4xl/dialog:grid", gameCols)} aria-hidden>
+              <span>Game</span>
+              <span>Winner</span>
+              <span>Map played</span>
+              {series.listsReplays ? <span>Replay</span> : null}
             </div>
-          ) : series.solo ? (
-            <div className="grid grid-cols-2 gap-3">
-              {([1, 2] as const).map((side) => (
-                <RaceSelect
-                  key={side}
-                  label={name(side)}
-                  value={series.races[`player${side}`] ?? null}
-                  onChange={(race) => setSeries((form) => ({ ...form, races: { ...form.races, [`player${side}`]: race } }))}
-                />
-              ))}
-            </div>
-          ) : null}
-
-          {gameRows.map((game) => (
-            <div key={game} className="flex flex-col gap-3 rounded border p-3">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 text-sm font-medium">
-                  Game {game}
-                  {titleMapOf(game) ? ` \u00b7 ${titleMapOf(game)}` : ""}
-                </div>
-                {canMove(game) ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={<Button variant="outline" size="sm" className="text-primary-text" aria-label={`Move to game: the replay of game ${game}`} aria-busy={moving === game} disabled={moving !== null} />}
-                    >
-                      <Icon name={moving === game ? "mdi-loading mdi-spin" : "mdi-file-move-outline"} />
-                      Move to game
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {moveTargets(movesOver, game).map((to: number) => (
-                        <DropdownMenuItem key={to} onClick={() => moveReplay(game, to)}>
-                          Move to game {to}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : null}
-              </div>
-              <ToggleGroup
-                variant="outline"
-                spacing={0}
-                className="w-full"
-                aria-label={`Winner of game ${game}`}
-                value={series.winners[game - 1] ? [series.winners[game - 1] as string] : []}
-                onValueChange={(value) => setWinner(game, (value[0] as string) ?? null)}
+            {gameRows.map((game) => (
+              <div
+                key={game}
+                className={cn(
+                  "grid gap-3 rounded border p-3 @4xl/dialog:items-start @4xl/dialog:gap-x-4 @4xl/dialog:rounded-none @4xl/dialog:border-x-0 @4xl/dialog:border-b-0 @4xl/dialog:px-0",
+                  gameCols,
+                )}
               >
-                <ToggleGroupItem value="A" className={SIDE_BUTTON}>
-                  {name(1)} won
-                </ToggleGroupItem>
-                <ToggleGroupItem value="B" className={SIDE_BUTTON}>
-                  {name(2)} won
-                </ToggleGroupItem>
-              </ToggleGroup>
-              <Field label="Map played" htmlFor={`report-map-${game}`} hint={mapHint(game)}>
-                <div className="flex gap-2">
-                  <Select value={mapOf(game)} onValueChange={(value) => setMap(game, value as number | null)}>
-                    <SelectTrigger id={`report-map-${game}`} className="w-full">
-                      <SelectValue>{(id: number | null) => maps.find((map) => map.id === id)?.name ?? ""}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {maps.map((map) => (
-                        <SelectItem key={map.id} value={map.id}>
-                          {map.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {mapOf(game) ? (
-                    <Button variant="ghost" size="icon" aria-label="Clear the map" onClick={() => setMap(game, null)}>
-                      <Icon name="mdi-close" />
-                    </Button>
+                <div className="flex items-center gap-2 @4xl/dialog:flex-col @4xl/dialog:items-start">
+                  <div className="min-w-0 flex-1 text-sm font-medium">
+                    Game {game}
+                    {titleMapOf(game) ? (
+                      <span className="@4xl/dialog:block @4xl/dialog:text-xs @4xl/dialog:font-normal @4xl/dialog:text-muted-foreground">
+                        <span className="@4xl/dialog:hidden"> {"\u00b7"} </span>
+                        {titleMapOf(game)}
+                      </span>
+                    ) : null}
+                  </div>
+                  {canMove(game) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={<Button variant="outline" size="sm" className="text-primary-text" aria-label={`Move to game: the replay of game ${game}`} aria-busy={moving === game} disabled={moving !== null} />}
+                      >
+                        <Icon name={moving === game ? "mdi-loading mdi-spin" : "mdi-file-move-outline"} />
+                        Move to game
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {moveTargets(movesOver, game).map((to: number) => (
+                          <DropdownMenuItem key={to} onClick={() => moveReplay(game, to)}>
+                            Move to game {to}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : null}
                 </div>
-              </Field>
-              {series.listsReplays ? (
-              <Field
-                label={`Game ${game} replay`}
-                htmlFor={`report-replay-${game}`}
-                hint={fileHint(game)}
-                error={isW3g(series.replays[game]) ? null : "Only .w3g replay files are allowed"}
-              >
-                <Input
-                  id={`report-replay-${game}`}
-                  key={series.replays[game]?.name ?? "none"}
-                  ref={showHeld(series.replays[game])}
-                  type="file"
-                  accept=".w3g"
-                  onChange={(event) => readGameReplay(game, event.target.files?.[0] ?? null)}
-                />
-              </Field>
-              ) : null}
-              {replayNote(game) ? <Note type="warning">{replayNote(game)}</Note> : null}
-            </div>
-          ))}
-
-          <div className="text-center">
-            {scoreProblem ? <span className="text-xs text-muted-foreground">{scoreProblem}</span> : <span className="text-base font-medium">{resultLine}</span>}
+                <ToggleGroup
+                  variant="outline"
+                  spacing={0}
+                  className="w-full"
+                  aria-label={`Winner of game ${game}`}
+                  value={series.winners[game - 1] ? [series.winners[game - 1] as string] : []}
+                  onValueChange={(value) => setWinner(game, (value[0] as string) ?? null)}
+                >
+                  <ToggleGroupItem value="A" className={SIDE_BUTTON}>
+                    {name(1)} won
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="B" className={SIDE_BUTTON}>
+                    {name(2)} won
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                <Field label="Map played" labelClassName="@4xl/dialog:sr-only" htmlFor={`report-map-${game}`} hint={mapHint(game)}>
+                  <div className="flex gap-2">
+                    <Select value={mapOf(game)} onValueChange={(value) => setMap(game, value as number | null)}>
+                      <SelectTrigger id={`report-map-${game}`} className="w-full">
+                        <SelectValue>{(id: number | null) => maps.find((map) => map.id === id)?.name ?? ""}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {maps.map((map) => (
+                          <SelectItem key={map.id} value={map.id}>
+                            {map.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {mapOf(game) ? (
+                      <Button variant="ghost" size="icon" aria-label="Clear the map" onClick={() => setMap(game, null)}>
+                        <Icon name="mdi-close" />
+                      </Button>
+                    ) : null}
+                  </div>
+                </Field>
+                {series.listsReplays ? (
+                <Field
+                  label={`Game ${game} replay`}
+                  labelClassName="@4xl/dialog:sr-only"
+                  htmlFor={`report-replay-${game}`}
+                  hint={fileHint(game)}
+                  error={isW3g(series.replays[game]) ? null : "Only .w3g replay files are allowed"}
+                >
+                  <Input
+                    id={`report-replay-${game}`}
+                    key={series.replays[game]?.name ?? "none"}
+                    ref={showHeld(series.replays[game])}
+                    type="file"
+                    accept=".w3g"
+                    onChange={(event) => readGameReplay(game, event.target.files?.[0] ?? null)}
+                  />
+                </Field>
+                ) : null}
+                {replayNote(game) ? (
+                  <Note type="warning" className="@4xl/dialog:col-span-full">
+                    {replayNote(game)}
+                  </Note>
+                ) : null}
+              </div>
+            ))}
           </div>
+
+          {scoreProblem ? <div className="text-center text-xs text-muted-foreground">{scoreProblem}</div> : null}
         </div>
-        <div className="flex justify-end gap-2 p-4 pt-0">
+        <div className="flex flex-wrap justify-end gap-2 p-4 pt-0">
           {series.scored ? (
             <Button variant="ghost" className="mr-auto text-error" disabled={saving} onClick={() => setClearOpen(true)}>
               <Icon name="mdi-eraser" />
@@ -560,7 +605,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         </div>
         {/* Neither a missing replay nor the veto blocks, so a report short of either asks once and then goes through */}
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[420px] gap-0 p-0 sm:max-w-[420px]`}>
+          <DialogContent showCloseButton={false} size="confirm" className="gap-0 p-0">
             <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Are you sure?</DialogTitle>
             <ul className="flex flex-col gap-3 p-4 text-sm">
               {confirmReasons.map((reason) => (
@@ -588,7 +633,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
           </DialogContent>
         </Dialog>
         <Dialog open={clearOpen} onOpenChange={setClearOpen}>
-          <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[420px] gap-0 p-0 sm:max-w-[420px]`}>
+          <DialogContent showCloseButton={false} size="confirm" className="gap-0 p-0">
             <DialogTitle className="flex items-center gap-2 bg-error px-4 py-3 text-on-error">
               <Icon name="mdi-alert" />
               Clear the result

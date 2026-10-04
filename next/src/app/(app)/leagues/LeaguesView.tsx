@@ -170,24 +170,24 @@ export function LeaguesView() {
       </Card>
 
       <Dialog open={dialog} onOpenChange={setDialog}>
-        <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
+        <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
           <DialogTitle className="px-4 pt-4 text-xl">New league</DialogTitle>
           <div className="p-4">
             <StatusAlert modelValue={formError} onClose={() => setFormError(null)} />
-            <div className="grid gap-3 min-[960px]:grid-cols-12">
-              <Field className="min-[960px]:col-span-8" label="Name" htmlFor="league-name">
+            <div className="grid gap-3 @xl/dialog:grid-cols-12">
+              <Field className="@xl/dialog:col-span-8" label="Name" htmlFor="league-name">
                 <Input id="league-name" autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </Field>
-              <Field className="min-[960px]:col-span-4" label="Short name" htmlFor="league-short-name">
+              <Field className="@xl/dialog:col-span-4" label="Short name" htmlFor="league-short-name">
                 <Input id="league-short-name" value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} />
               </Field>
-              <Field className="min-[960px]:col-span-6" label="Kind" htmlFor="league-kind">
+              <Field className="@xl/dialog:col-span-6" label="Kind" htmlFor="league-kind">
                 <KindSelect id="league-kind" items={LEAGUE_KINDS} value={form.kind} onChange={(kind) => setForm({ ...form, kind })} />
               </Field>
-              <Field className="min-[960px]:col-span-6" label="Entrants" htmlFor="league-entrant-kind">
+              <Field className="@xl/dialog:col-span-6" label="Entrants" htmlFor="league-entrant-kind">
                 <KindSelect id="league-entrant-kind" items={ENTRANT_KINDS} value={form.entrant_kind} onChange={(entrant_kind) => setForm({ ...form, entrant_kind })} />
               </Field>
-              <Field className="min-[960px]:col-span-12" label="Page link" htmlFor="league-page-url">
+              <Field className="@xl/dialog:col-span-12" label="Page link" htmlFor="league-page-url">
                 <Input id="league-page-url" placeholder="https://" value={form.page_url} onChange={(e) => setForm({ ...form, page_url: e.target.value })} />
               </Field>
             </div>

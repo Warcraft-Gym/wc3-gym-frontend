@@ -34,10 +34,11 @@ export function PlayerPanel() {
 
   return (
     <Sheet open={open} onOpenChange={(value) => { if (!value) panelPlayerKey.set(null); }}>
+      {/* the sheet sets its side's width under a data-[side] selector, so only the same selector overrides it */}
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="w-[560px] max-w-full gap-0 p-0 motion-reduce:transition-none sm:max-w-[560px]"
+        className="gap-0 p-0 motion-reduce:transition-none data-[side=right]:w-full data-[side=right]:sm:w-[560px] data-[side=right]:sm:max-w-[560px]"
       >
         <SheetTitle className="sr-only">Player Profile</SheetTitle>
         {open ? (

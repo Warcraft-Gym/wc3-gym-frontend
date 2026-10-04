@@ -12,7 +12,7 @@ export type Loaded = { state: "loading" } | { state: "ok"; data: Row } | { state
 export function PairTimeDialog({ row, free, onClose, onRetry }: { row: Row | null; free?: Loaded; onClose: () => void; onRetry: () => void }) {
   return (
     <Dialog open={!!row} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto md:max-w-4xl">
+      <DialogContent size="lg">
         {row ? (
           <>
             <DialogHeader>

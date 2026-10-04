@@ -60,9 +60,84 @@ export function CreateSeriesDialog({
 }) {
   const chosen = (side: number) => sideTeams[side]?.roster.find((player) => selected[side]?.includes(player.id));
 
+  // The pair the series will hold, each side as it is picked
+  const pick = (side: number) => {
+    const player = chosen(side);
+    const team = sideTeams[side]?.team;
+    if (player) return <PlayerName player={player} race={player.signup_race} plain />;
+    return <span className="text-muted-foreground">{team ? <>A player of <TeamName team={team} plain /></> : "A player"}</span>;
+  };
+
+  // One roster to pick from: the team, its search and its players
+  const roster = (i: number) => {
+    const side = sideTeams[i];
+    if (!side) return null;
+    return (
+      <div className="card flex min-w-0 flex-none flex-col overflow-hidden rounded @5xl/dialog:flex-1">
+        <div className="flex flex-wrap items-center gap-2 banner bg-banner px-3 py-2 text-on-banner">
+          {/* the dialog holds unsaved picks, so the team reads as plain text */}
+          <TeamName team={side.team} plain className="font-bold" />
+          {/* the search shrinks before it drops under the name, so both tables start on the same line */}
+          <Input
+            className="ms-auto w-auto min-w-32 max-w-[300px] flex-1 bg-surface text-foreground"
+            aria-label={`Search Team ${i + 1}`}
+            placeholder={`Search Team ${i + 1}`}
+            value={search[i] ?? ""}
+            onChange={(event) => onSearchChange(i, event.target.value)}
+          />
+        </div>
+        <DataTable
+          data={side.roster.filter((player) => matchesQuery(player, search[i] ?? ""))}
+          pageSize={10}
+          rowId={(row: Row) => String(row.id)}
+          empty="No player of this roster matches the search."
+          columns={[
+            {
+              id: "select",
+              header: "",
+              enableSorting: false,
+              cell: ({ row }) => (
+                // one player a side: a tick takes the place of the one already ticked
+                <Checkbox
+                  checked={!!selected[i]?.includes(row.original.id)}
+                  onCheckedChange={(checked) => onSelectedChange(i, checked ? [row.original.id] : [])}
+                  aria-label={row.original.name}
+                />
+              ),
+            },
+            {
+              id: "name",
+              accessorKey: "name",
+              header: "Name",
+              cell: ({ row }) => (
+                <PlayerName player={row.original} race={row.original.signup_race} mmr={false}>
+                  {side.isOut(row.original) ? <Badge variant="outline" className="text-secondary border-secondary">Out</Badge> : null}
+                </PlayerName>
+              ),
+            },
+            {
+              id: "w3c_mmr",
+              accessorFn: (row: Row) => mmrOf(row, row.signup_race) || 0,
+              header: () => <W3CMmr />,
+              // the synced time beside the rating, under it where two tables share the width, and left out on a phone
+              cell: ({ row }) => (
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="tnum">{mmrOf(row.original, row.original.signup_race) || "N/A"}</span>
+                  <span className="hidden @md/dialog:inline">
+                    <SyncedLine player={row.original} />
+                  </span>
+                </div>
+              ),
+            },
+          ]}
+        />
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onCancel())} disablePointerDismissal>
-      <DialogContent showCloseButton={false} className="flex max-h-[95vh] w-[95vw] max-w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[95vw]">
+      <DialogContent showCloseButton={false} size="xl" className="flex flex-col gap-0 overflow-hidden p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-plus-circle" />
           Add new series
@@ -70,90 +145,43 @@ export function CreateSeriesDialog({
 
         <StatusAlert modelValue={error} onClose={onErrorClose} className="mx-4 mt-4" />
 
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 min-[960px]:flex-row">
-          {sideTeams.map((side, i) => (
-            <div key={i} className="flex flex-1 flex-col gap-4 min-[960px]:flex-row">
-              <div className="card flex flex-1 flex-col overflow-hidden rounded">
-                <div className="flex flex-wrap items-center gap-2 banner bg-banner px-3 py-2 text-on-banner">
-                  {/* the dialog holds unsaved picks, so the team reads as plain text */}
-                  <TeamName team={side.team} plain className="font-bold" />
-                  <Input
-                    className="ms-auto max-w-[300px] bg-surface text-foreground"
-                    aria-label={`Search Team ${i + 1}`}
-                    placeholder={`Search Team ${i + 1}`}
-                    value={search[i] ?? ""}
-                    onChange={(event) => onSearchChange(i, event.target.value)}
-                  />
-                </div>
-                <DataTable
-                  data={side.roster.filter((player) => matchesQuery(player, search[i] ?? ""))}
-                  pageSize={10}
-                  rowId={(row: Row) => String(row.id)}
-                  empty="No player of this roster matches the search."
-                  columns={[
-                    {
-                      id: "select",
-                      header: "",
-                      enableSorting: false,
-                      cell: ({ row }) => (
-                        // one player a side: a tick takes the place of the one already ticked
-                        <Checkbox
-                          checked={!!selected[i]?.includes(row.original.id)}
-                          onCheckedChange={(checked) => onSelectedChange(i, checked ? [row.original.id] : [])}
-                          aria-label={row.original.name}
-                        />
-                      ),
-                    },
-                    {
-                      id: "name",
-                      accessorKey: "name",
-                      header: "Name",
-                      cell: ({ row }) => (
-                        <PlayerName player={row.original} race={row.original.signup_race} mmr={false}>
-                          {side.isOut(row.original) ? <Badge variant="outline" className="text-secondary border-secondary">Out</Badge> : null}
-                        </PlayerName>
-                      ),
-                    },
-                    {
-                      id: "w3c_mmr",
-                      accessorFn: (row: Row) => mmrOf(row, row.signup_race) || 0,
-                      header: () => <W3CMmr />,
-                      cell: ({ row }) => (
-                        <>
-                          <span className="tnum">{mmrOf(row.original, row.original.signup_race) || "N/A"}</span>
-                          <SyncedLine player={row.original} />
-                        </>
-                      ),
-                    },
-                  ]}
-                />
-              </div>
+        {/* the admin's sync sits over the rosters, so it takes no width from the tables */}
+        {isAdmin ? (
+          <div className="flex justify-end px-4 pt-4">
+            <TapTooltip content="MMR and ladder matches">
+              <Button onClick={onSyncW3C} disabled={isLoading}>
+                <W3CIcon size={18} />
+                Sync W3C
+              </Button>
+            </TapTooltip>
+          </div>
+        ) : null}
 
-              {i === 0 ? (
-                <div className="hidden flex-col items-center justify-center gap-4 min-[960px]:flex">
-                  <Icon name="mdi-sword-cross" size={80} className="text-primary-text" />
-                  {isAdmin ? (
-                    <TapTooltip content="MMR and ladder matches">
-                      <Button onClick={onSyncW3C} disabled={isLoading}>
-                        <W3CIcon size={18} />
-                        Sync W3C
-                      </Button>
-                    </TapTooltip>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          ))}
+        {/* The two rosters face each other across the swords, each table half the width, once both fit whole; under that they stack */}
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 @5xl/dialog:flex-row">
+          {roster(0)}
+          <span className="flex shrink-0 items-center justify-center" aria-hidden>
+            <Icon name="mdi-sword-cross" size={40} className="text-primary-text" />
+          </span>
+          {roster(1)}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t p-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t p-4">
           {/* the dialog opens for an admin and for a captain of the match, and both write drafts */}
           <Label className="flex items-center gap-2">
             <Checkbox checked={isDraft} onCheckedChange={(checked) => onIsDraftChange(!!checked)} />
             Create as Draft
           </Label>
-          <span className="flex-1" />
-          <Button variant="ghost" onClick={onCancel}>
+          {/* the pair takes a line of its own over the buttons until the footer holds both */}
+          <div
+            className="order-first flex w-full min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm @2xl/dialog:order-none @2xl/dialog:w-auto @2xl/dialog:flex-1"
+            aria-live="polite"
+          >
+            {pick(0)}
+            <span className="text-muted-foreground">vs</span>
+            {pick(1)}
+          </div>
+          <Button variant="ghost" className="ml-auto" onClick={onCancel}>
             Cancel
           </Button>
           <Button onClick={onCreate} disabled={!chosen(0) || !chosen(1)}>

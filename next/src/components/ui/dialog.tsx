@@ -39,17 +39,37 @@ function DialogOverlay({
   )
 }
 
+/**
+ * The width a dialog takes from 768 px up; under it every dialog is a full-height sheet.
+ * The width is set here and nowhere else, so a caller's `max-w-*` can never lose to a breakpoint of the base.
+ */
+const DIALOG_WIDTH = {
+  confirm: "md:w-[440px]",
+  sm: "md:w-[520px]",
+  md: "md:w-[720px]",
+  lg: "md:w-[960px]",
+  xl: "md:w-[1200px]",
+} as const
+
+type DialogSize = keyof typeof DIALOG_WIDTH
+
 /** A confirm is a small centred panel on a phone too, not the full-height sheet a form gets. */
-const dialogCompact =
-  "max-md:inset-auto max-md:top-1/2 max-md:left-1/2 max-md:h-auto max-md:max-w-[calc(100%-2rem)] max-md:-translate-x-1/2 max-md:-translate-y-1/2 max-md:rounded-xl"
+const COMPACT =
+  "max-md:inset-auto max-md:top-1/2 max-md:left-1/2 max-md:h-auto max-md:max-h-[calc(100dvh-2rem)] max-md:max-w-[calc(100%-2rem)] max-md:-translate-x-1/2 max-md:-translate-y-1/2 max-md:rounded-xl"
 
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  size = "sm",
+  compact = size === "confirm",
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  /** confirm 440, sm 520, md 720, lg 960, xl 1200 px, never wider than the screen less its gutter */
+  size?: DialogSize
+  /** a centred panel as tall as its content on a phone, instead of the full-height sheet; a confirm is compact */
+  compact?: boolean
 }) {
   return (
     <DialogPortal>
@@ -57,7 +77,11 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none max-md:inset-0 max-md:h-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:content-start max-md:rounded-none md:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          // @container/dialog: the content lays out by the dialog's width, never by the screen's;
+          // minmax(0,1fr): a wide child scrolls or wraps inside the dialog instead of widening its one column
+          "@container/dialog fixed top-1/2 left-1/2 z-50 grid w-full grid-cols-[minmax(0,1fr)] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none max-md:inset-0 max-md:h-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:content-start max-md:rounded-none md:max-h-[calc(100dvh-4rem)] data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          DIALOG_WIDTH[size],
+          compact && COMPACT,
           className
         )}
         {...props}
@@ -151,7 +175,7 @@ function DialogDescription({
 }
 
 export {
-  dialogCompact,
+  type DialogSize,
   Dialog,
   DialogClose,
   DialogContent,

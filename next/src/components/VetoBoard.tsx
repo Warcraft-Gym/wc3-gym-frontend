@@ -263,7 +263,8 @@ export function VetoBoard({
   const actionChip = (action: string) => <Badge className={toneClass(/^ban$/i.test(action) ? "error" : "success")}>{action}</Badge>;
 
   return (
-    <div className={className}>
+    // The board lays out by its own width, so it splits the same in the report dialog and on its page
+    <div className={cn("@container", className)}>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         {children}
         {/* A team side names a team and no player, so it reads as the team name */}
@@ -306,9 +307,9 @@ export function VetoBoard({
       ) : null}
 
       {board ? (
-        <div className="grid gap-6 min-[960px]:grid-cols-3">
+        <div className="grid gap-6 @2xl:grid-cols-3">
           {!collapsed ? (
-            <Card className="card gap-0 self-start py-0 min-[960px]:col-span-2">
+            <Card className="card gap-0 self-start py-0 @2xl:col-span-2">
               <CardHeader className="banner bg-banner p-4">
                 <CardTitle className="flex items-center gap-2 text-primary">
                   <Icon name="mdi-map" />
@@ -349,7 +350,7 @@ export function VetoBoard({
             </Card>
           ) : null}
 
-          <div className={cn("flex flex-col gap-6", collapsed && "min-[960px]:col-span-3")}>
+          <div className={cn("flex flex-col gap-6", collapsed && "@2xl:col-span-3")}>
             {!collapsed ? (
               <Card className="card gap-0 py-0">
                 <CardHeader className="banner bg-banner p-4">

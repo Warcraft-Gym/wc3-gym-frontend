@@ -95,7 +95,7 @@ export function EditPlayerDialog({
 
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : cancelEdit())}>
-      <DialogContent showCloseButton={false} className="max-w-[800px] gap-0 p-0 sm:max-w-[800px]">
+      <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
         {selectedPlayer ? (
           <>
             <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">

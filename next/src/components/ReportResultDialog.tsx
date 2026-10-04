@@ -18,8 +18,9 @@ import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helper
 import { mapMismatch, mapMismatches, reportWarning, swapMapFields } from "@/helpers/replay-maps.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
+import { holdsResult } from "@/helpers/series-actions.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
-import { useMapStore, useMatchStore } from "@/stores";
+import { useMapStore, useMatchStore, useSeriesStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -36,6 +37,7 @@ type Form = {
   races: { player1?: string | null; player2?: string | null };
   raceOpen?: boolean;
   reported?: number;
+  scored?: boolean; // the series holds a result, a 0-0 too, which the reporter may clear
   listsReplays?: boolean;
   replays: Record<number, File | null>;
   winners: (string | null)[];
@@ -72,11 +74,14 @@ const missingLine = (games: number[]) =>
 export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (message: string) => void; onMoved?: (replays: Row[]) => void; ref?: React.Ref<ReportResultDialogHandle> }) {
   const mapStore = useMapStore();
   const matchStore = useMatchStore();
+  const seriesStore = useSeriesStore();
 
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
   // the report asks once before it saves when the replays and the veto disagree
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // clearing the result asks once too, because the games reported go with it
+  const [clearOpen, setClearOpen] = useState(false);
   const [moving, setMoving] = useState<number | null>(null); // the game whose stored replay is on the move
   const [moved, setMoved] = useState<string | null>(null);
   // the veto sits under a disclosure row, folded away until the reporter opens it
@@ -127,6 +132,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
       setErrorMessage(null);
       setMoved(null);
       setConfirmOpen(false);
+      setClearOpen(false);
       openId.current = item.id;
       setSeries({
         id: item.id,
@@ -143,6 +149,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         raceOpen: !!(item.player1_off_race || item.player2_off_race),
         // games already reported: their stored replays stay unless a new file is picked
         reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score : 0,
+        scored: holdsResult(item),
         // ponytail: only a fixture's page lists its replays, so a series without one takes no file until a page shows it
         listsReplays: item.match_id !== null,
         replays: {},
@@ -361,6 +368,22 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
     }
   };
 
+  // The result goes back to none: the score, the races played and the games; the stored replays stay
+  const clearResult = async () => {
+    setClearOpen(false);
+    setSaving(true);
+    setErrorMessage(null);
+    try {
+      await seriesStore.clearSeriesResult(series.id!);
+      close();
+      onSaved?.("Result cleared. The series can be reported again.");
+    } catch (error) {
+      setErrorMessage((error as any)?.error || (error as Error).message || "Error clearing the result.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={show} onOpenChange={(open) => (open ? setShow(true) : saving ? null : close())}>
       {/* One width in every state: the fold holds the board, so a missing veto never widens the dialog */}
@@ -513,6 +536,12 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
           </div>
         </div>
         <div className="flex justify-end gap-2 p-4 pt-0">
+          {series.scored ? (
+            <Button variant="ghost" className="mr-auto text-error" disabled={saving} onClick={() => setClearOpen(true)}>
+              <Icon name="mdi-eraser" />
+              Clear result
+            </Button>
+          ) : null}
           <Button variant="ghost" disabled={saving} onClick={close}>
             Close
           </Button>
@@ -551,6 +580,26 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
                 }}
               >
                 Report anyway
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={clearOpen} onOpenChange={setClearOpen}>
+          <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[420px] gap-0 p-0 sm:max-w-[420px]`}>
+            <DialogTitle className="flex items-center gap-2 bg-error px-4 py-3 text-on-error">
+              <Icon name="mdi-alert" />
+              Clear the result
+            </DialogTitle>
+            <p className="p-4 text-sm">
+              The score, the races played and the games go, and the series can be reported again. The replays stay.
+            </p>
+            <div className="flex justify-end gap-2 p-4 pt-0">
+              <Button variant="ghost" onClick={() => setClearOpen(false)}>
+                Go back
+              </Button>
+              <Button variant="destructive" onClick={clearResult}>
+                <Icon name="mdi-eraser" />
+                Clear result
               </Button>
             </div>
           </DialogContent>

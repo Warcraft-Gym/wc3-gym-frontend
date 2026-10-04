@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T07:23:09Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -53,7 +53,7 @@ A user row carries `tags`: a list of `{id, tag, verified, active, source, first_
 | `player` | `/users`, `/users?no_discord=true`, `/users?tag_source=claim`, `/users/{id}`, `/users/me/tags`, `/users/me/tags/{tag_id}`, `/users/me/tags/{tag_id}/active`, `/users/{id}/tags/{tag_id}/move`, `/users/{id}/merge`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/player-series`, `/player-history` |
 | `team` | `/leagues/{league_id}/teams`, `/leagues/{league_id}/teams/basic`, `/leagues/{league_id}/teams/{id}`, `/events/{event_id}/teams`, `/events/{event_id}/teams/basic`, `/events/{event_id}/teams/{id}`, `/players`, `/captains`, `/availability`, `/ladder-sync`, `/image` |
 | `match` | `/matches`, `/matches/{id}`, `/matches/{id}/replays`, `/player-series/{id}/replays/{game}/move/{to_game}`, `/matches/search`, `/draft-series...`, `/draft-series/{id}/promote` |
-| `series` | `/series`, `/series/{id}`, `/series/{id}/result-kind`, `/series/{id}/places`, `/series/{id}/sides`, `/series/search`, `/events/{event_id}/series/search`, `/series/{id}/casts...`, `/casts/last`, `/series/{id}/games`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time`, `/home/series` |
+| `series` | `/series`, `/series/{id}`, `/series/{id}/result`, `/series/{id}/result-kind`, `/series/{id}/places`, `/series/{id}/sides`, `/series/search`, `/events/{event_id}/series/search`, `/series/{id}/casts...`, `/casts/last`, `/series/{id}/games`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time`, `/home/series` |
 | `availability` | `/player-availability`, `/player-blocks...`, `/events/{event_id}/teams/{team_id}/availability` |
 | `map` | `/maps`, `/maps/{id}`, `/maps/ladder-import`, `/maps/{id}/image` |
 | `config` | `/config/settings`, `/config/settings/{key}`, `/config/w3c`, `/config/admins`, `/config/discord-role-bindings...`, `/config/discord-hidden-roles`, `/config/discord-roles`, `/config/discord-roles/sync`, `/config/discord-guild-roles`, `/config/discord-role-groups`, `/config/koth/nightbot-token` |

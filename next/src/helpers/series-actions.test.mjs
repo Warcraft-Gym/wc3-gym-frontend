@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { actsForSeries, needsVeto, seriesContext, seriesMapLine, seriesSteps } from './series-actions.mjs';
+import { actsForSeries, holdsResult, needsVeto, seriesContext, seriesEditBody, seriesMapLine, seriesSteps } from './series-actions.mjs';
 
 const ME = 9;
 const OPEN = { id: 12, player1_id: ME, player2_id: 4, player1_score: null, player2_score: null };
@@ -106,4 +106,23 @@ test('the map line names the rule alone while the map is unknown, and nothing on
   assert.equal(seriesMapLine('veto,veto,veto', [{ map: null, winner: null }]), 'Game 1 map: the veto gives it');
   assert.equal(seriesMapLine('fixed,loser,loser', [{ map: 'Echo Isles', winner: 'A' }, { map: 'Last Refuge', winner: 'A' }]), null);
   assert.equal(seriesMapLine('fixed,loser', [{ map: 'Echo Isles', winner: 'A' }, { map: 'Last Refuge', winner: null }]), 'Game 2 on Last Refuge');
+});
+
+test('the series edit sends the fields the dialog holds and never the players or the fixture', () => {
+  const row = { ...OPEN, match_id: 3, host_player_id: 4, player1: { id: ME }, date_time: '2026-09-22T18:00:00Z', is_fantasy_match: null };
+  assert.deepEqual(seriesEditBody(row), {
+    date_time: '2026-09-22T18:00:00Z',
+    player1_score: null,
+    player2_score: null,
+    player1_off_race: null,
+    player2_off_race: null,
+    host_player_id: 4,
+    is_fantasy_match: false,
+  });
+});
+
+test('a 0-0 holds a result to clear, an unscored series none', () => {
+  assert.equal(holdsResult(OPEN), false);
+  assert.equal(holdsResult({ ...OPEN, player1_score: 0, player2_score: 0 }), true);
+  assert.equal(holdsResult({ ...OPEN, player1_score: 2, player2_score: 1 }), true);
 });

@@ -4,7 +4,7 @@ title: The life of one series
 description: The states a series passes through, from a GNL draft pairing to a reported result, who moves it out of each state, and what only an admin may do.
 resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
 tags: [pages, series, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-02T19:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T07:23:09Z }
 sources:
   - id: fixtures
     resource: ../pages/fixtures-and-series.md
@@ -27,13 +27,13 @@ This flow follows one series through its states: draft pairing, published, sched
 | Step | Who | Where | Writes | Owner |
 |---|---|---|---|---|
 | 1. Draft a pairing (GNL only) | captain of either team, or an admin | `/match/:id`, Plan round tab | `POST /draft-series` | [Fixtures and series](../pages/fixtures-and-series.md) |
-| 2. Publish the pairing, up to the round's series | captain of either team, or an admin | `/match/:id`, Plan round tab, Draft step | `POST /draft-series/{id}/promote` | [Fixtures and series](../pages/fixtures-and-series.md) |
+| 2. Publish the pairing, up to the round's series | captain of either team, or an admin | `/match/:id`, Plan round tab, Draft step; or "Add series" on the Series tab | `POST /draft-series/{id}/promote`, or `POST /series` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 2a. Or, for a cup, generate the stage | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/generate` | [Event management](../pages/event-management.md) |
 | 3. Book a time | the player a side names, a captain of the team that fields it, or an admin | the schedule dialog, from the action bar on `/`, the player page or `/series/:id` | `PUT /player-series/{id}` with `date_time` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 4. Take the veto turns | both sides, in turn; an admin edits either side | `/player-series/:id/veto`, or inside Report Result | `PUT /player-series/{id}/veto` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 5. Report the result with one replay per game | either side, or an admin | Report Result, from the action bar | `POST /player-series/{id}/replays/{game}/upload-url`, `PUT /player-series/{id}` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 6. Award a walkover or a forfeit | admin | `/series/:id`, or `/events/:id/admin` | `PUT /series/{id}/result-kind` | [Fixtures and series](../pages/fixtures-and-series.md) |
-| 7. Reopen a result | admin | `/events/:id/admin`, or the series edit on `/match/:id` | `PUT /series/{id}` with the scores cleared, and `?force=true` after a refusal | [Event management](../pages/event-management.md) |
+| 7. Clear a result | either side, a captain of either team, or an admin; a walkover or a forfeit, an admin alone | "Clear result" in Report Result, or in the series edit on `/match/:id`; an admin also reopens on `/events/:id/admin` | `DELETE /series/{id}/result`; the admin page writes `PUT /series/{id}` with the scores cleared, and `?force=true` after a refusal | [Fixtures and series](../pages/fixtures-and-series.md), [Event management](../pages/event-management.md) |
 
 # Diagram
 
@@ -58,7 +58,8 @@ sequenceDiagram
         Admin->>Backend: walkover or forfeit, PUT /series/:id/result-kind
     end
     opt a result to undo
-        Admin->>Backend: reopen, PUT /series/:id with the scores cleared
+        Sides->>Backend: clear the result, DELETE /series/:id/result
+        Backend-->>Backend: take the result card down
     end
 ```
 

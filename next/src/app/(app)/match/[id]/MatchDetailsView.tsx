@@ -21,6 +21,7 @@ import { gamesOf, resultProblem, winsFor } from "@/helpers/best-of.mjs";
 import { checkInStatus } from "@/helpers/check-in.mjs";
 import { fixtureRosters } from "@/helpers/fixture.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
+import { holdsResult, seriesEditBody } from "@/helpers/series-actions.mjs";
 import { pickedInstant, pickerParts, storedUtc, viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { useAuth, useAvailabilityStore, useEventStore, useLadderStore, useMatchStore, useSeason, useSeriesStore, useTeamStore } from "@/stores";
 import { CreateSeriesDialog, type SideTeam } from "./CreateSeriesDialog";
@@ -137,6 +138,8 @@ export function MatchDetailsView({ id }: { id: string }) {
   const { showDeleteDialog, openDeleteDialog, confirmDelete, cancelDeleteDialog } = useDeleteDialog();
   // The confirm of a removal of several drafts names them; every other delete keeps the plain question
   const [deleteNote, setDeleteNote] = useState<string | null>(null);
+  // The same confirm asks before a result is cleared, under its own title and button
+  const [clearAsk, setClearAsk] = useState(false);
 
   // The season's round gives the header its dates; the match carries only the reduced season
   const roundOf = (playday?: number) => season?.rounds?.find((r: Row) => r.playday === playday) || { playday };
@@ -184,9 +187,9 @@ export function MatchDetailsView({ id }: { id: string }) {
   const newSeriesPlayer1 = roster1.find((p) => newSeriesPlayers[0].includes(p.id));
   const newSeriesPlayer2 = roster2.find((p) => newSeriesPlayers[1].includes(p.id));
 
-  // the admin's own zone, offset taken at the picked time
-  const adminZone = zoneLabel(viewerZone(), viewerZone(), selectedDate && selectedTime ? pickedInstant(selectedDate, selectedTime) : null);
-  // An admin writes the same result the report form writes: the season's best-of
+  // the editor's own zone, offset taken at the picked time
+  const editorZone = zoneLabel(viewerZone(), viewerZone(), selectedDate && selectedTime ? pickedInstant(selectedDate, selectedTime) : null);
+  // The edit writes the same result the report form writes: the season's best-of
   const editWins = winsFor(gamesOf(season?.map_rules));
   const editScoreProblem = (() => {
     const p1 = editedScore(selectedSeries?.player1_score);
@@ -414,9 +417,10 @@ export function MatchDetailsView({ id }: { id: string }) {
     setIsLoading(true);
     setUpdateSeriesError("");
     try {
-      // A date with no time is still a scheduled series: it takes midnight in the admin's zone
-      const row: Row = { ...selectedSeries, date_time: selectedDate ? storedUtc(selectedDate, selectedTime || "00:00") : null };
-      await seriesStore.updateSeries(row);
+      // A date with no time is still a scheduled series: it takes midnight in the editor's zone
+      const edited: Row = { ...selectedSeries, date_time: selectedDate ? storedUtc(selectedDate, selectedTime || "00:00") : null };
+      // Only the fields the dialog edits, so a captain's save names no player and no fixture
+      await seriesStore.updateSeries({ id: selectedSeries.id, ...seriesEditBody(edited) });
       await fetchMatchSeries();
       cancelEditSeries();
     } catch (error: any) {
@@ -425,6 +429,33 @@ export function MatchDetailsView({ id }: { id: string }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // The stored row of the series in the edit, which says whether it holds a result to clear
+  const editedStored = selectedSeries ? enrichedSeries.find((one) => Number(one.id) === Number(selectedSeries.id)) : null;
+
+  const clearResult = async (seriesId?: number | string) => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      await seriesStore.clearSeriesResult(Number(seriesId));
+      await fetchMatchSeries();
+    } catch (error: any) {
+      console.error("Failed to clear the result:", error);
+      setErrorMessage(error?.error || error?.message || String(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // The edit closes and the confirm names the pairing; the replays stay for the next report
+  const askClearResult = (item: Row) => {
+    cancelEditSeries();
+    setClearAsk(true);
+    setDeleteNote(
+      `Clear the result of ${item.player1?.name} vs ${item.player2?.name}? The score, the races played and the games go, and the series can be reported again. The replays stay.`,
+    );
+    openDeleteDialog(item.id, clearResult);
   };
 
   const createSeries = async () => {
@@ -674,9 +705,10 @@ export function MatchDetailsView({ id }: { id: string }) {
     ...replays.filter((r) => r.series_id === item.id).map((r) => ({ icon: "mdi-download", label: `Replay game ${r.game_no}`, href: r.url, public: true })),
     { icon: "mdi-open-in-new", label: "Open series", public: true, onClick: () => router.push(`/series/${item.id}`) },
     ...replaceAction(item),
-    { icon: "mdi-pencil", label: "Edit series", onClick: () => editSeries(item) },
-    { icon: "mdi-map-outline", label: "Map veto", onClick: () => router.push(`/player-series/${item.id}/veto`) },
-    { icon: "mdi-delete", label: "Delete series", color: "error", onClick: () => openDeleteDialog(item.id, removeSeries) },
+    // a captain of either team edits, vetoes and deletes the series of the match, as an admin does
+    { icon: "mdi-pencil", label: "Edit series", public: canDraft, onClick: () => editSeries(item) },
+    { icon: "mdi-map-outline", label: "Map veto", public: canDraft, onClick: () => router.push(`/player-series/${item.id}/veto`) },
+    { icon: "mdi-delete", label: "Delete series", color: "error", public: canDraft, onClick: () => openDeleteDialog(item.id, removeSeries) },
   ];
 
   const seasonHref = `/seasons/${match.season ? seasonSlug(match.season) : match.season_id}`;
@@ -830,11 +862,12 @@ export function MatchDetailsView({ id }: { id: string }) {
         onDateChange={setSelectedDate}
         time={selectedTime}
         onTimeChange={setSelectedTime}
-        adminZone={adminZone}
+        zone={editorZone}
         editWins={editWins}
         scoreProblem={editScoreProblem}
         error={updateSeriesError}
         onSave={updateSeries}
+        onClearResult={editedStored && holdsResult(editedStored) ? () => askClearResult(editedStored) : undefined}
         onCancel={cancelEditSeries}
       />
 
@@ -855,17 +888,21 @@ export function MatchDetailsView({ id }: { id: string }) {
       <ConfirmDeleteDialog
         modelValue={showDeleteDialog}
         message={deleteNote ?? "Are you sure you want to delete this item? This action cannot be undone."}
+        {...(clearAsk ? { title: "Clear the result", confirmLabel: "Clear result", deleteIcon: "mdi-eraser" } : {})}
         onUpdateModelValue={(open) => {
           if (open) return;
           setDeleteNote(null);
+          setClearAsk(false);
           cancelDeleteDialog();
         }}
         onConfirm={() => {
           confirmDelete();
           setDeleteNote(null);
+          setClearAsk(false);
         }}
         onCancel={() => {
           setDeleteNote(null);
+          setClearAsk(false);
           cancelDeleteDialog();
         }}
       />

@@ -5,6 +5,10 @@ const store = {
   async updateSeries(series: any) {
     await fetchWrapper.put(`${backendUrl}/series/${series.id}`, series);
   },
+  // Takes a reported result back, for whoever may report it; the replays stay
+  async clearSeriesResult(seriesId: number) {
+    return await fetchWrapper.delete(`${backendUrl}/series/${seriesId}/result`);
+  },
   async createSeries(series: any) {
     await fetchWrapper.post(`${backendUrl}/series`, series);
   },

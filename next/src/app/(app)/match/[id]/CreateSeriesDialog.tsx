@@ -147,8 +147,9 @@ export function CreateSeriesDialog({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 border-t p-4">
+          {/* the dialog opens for an admin and for a captain of the match, and both write drafts */}
           <Label className="flex items-center gap-2">
-            <Checkbox checked={isDraft} disabled={!isAdmin} onCheckedChange={(checked) => onIsDraftChange(!!checked)} />
+            <Checkbox checked={isDraft} onCheckedChange={(checked) => onIsDraftChange(!!checked)} />
             Create as Draft
           </Label>
           <span className="flex-1" />

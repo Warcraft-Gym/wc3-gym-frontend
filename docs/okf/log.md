@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-04
+
+* **Update**: a captain of either team of a fixture adds, edits, vetoes and deletes the series of that match, as an admin does: the Series tab shows a captain "Add series" and "Delete all published", and a series row "Edit series", "Map veto" and "Delete series". A captain's add stops at the round's series. The edit sends only the fields it holds. "Clear result" in the series edit and in the Report Result dialog takes a result back through `DELETE /series/{id}/result`, after one red confirm. The fixtures page, the backend contract and the series flow state it.
+
 ## 2026-10-03
 
 * **Remove**: the season report (`/report`, `/report/:id`) and its schedule component; the public website shows the standings. My Season links no standings, a GNL league row opens its league page, and the report-only pieces leave the data pieces. The GNL season page, the member page, the leagues page, the routing, the read costs, the embed note and the member's season flow state it.

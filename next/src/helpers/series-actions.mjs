@@ -109,3 +109,17 @@ export const seriesContext = (series, { event = null, stage = null, round = null
     mine ? `vs ${opponentOf(series, playerId)?.name ?? 'your opponent'}` : null,
   ].filter(Boolean).join(' - ');
 };
+
+// The fields the edit of a published series writes. A captain of the fixture sends these and no other, so the players and the fixture stay an admin's.
+const EDIT_FIELDS = ['date_time', 'player1_score', 'player2_score', 'player1_off_race', 'player2_off_race', 'host_player_id'];
+
+/** The body of the series edit: the fields the dialog holds, a blank one as null, and the fantasy mark as a flag.
+ *  @param {any} row */
+export const seriesEditBody = (row) => ({
+  ...Object.fromEntries(EDIT_FIELDS.map((field) => [field, row?.[field] ?? null])),
+  is_fantasy_match: !!row?.is_fantasy_match,
+});
+
+/** Whether the series holds a result to clear: both scores, a 0-0 of a series never played included.
+ *  @param {any} series */
+export const holdsResult = (series) => series?.player1_score != null && series?.player2_score != null;

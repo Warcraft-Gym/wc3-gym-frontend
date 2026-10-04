@@ -207,9 +207,17 @@ wizard's Matchups step draws every match at once. Open the match to add the seri
 On the match page, the captains draft the pairings on the **Draft series** tab, and an admin
 publishes them with **Publish all**. **Add series** adds a published series directly.
 
-**Edit series** sets the scheduled date and time (in the admin's own timezone; the stored
+**Edit series** sets the scheduled date and time (in the editor's own timezone; the stored
 value is UTC), the score of each side or **Not played**, the race each player played, the
-host and **Is fantasy match**.
+host and **Is fantasy match**. While the series holds a result, **Clear result** takes the
+score, the races played and the games back after one confirm; the replays stay.
+
+A captain of either team of a match has the same **Add series**, **Edit series**, **Map veto**,
+**Delete series** and **Delete all published** on that match. A captain's **Add series** stops
+once the round holds its series, as publishing a draft does.
+
+Players clear a result they reported with **Clear result** in the report dialog. A walkover or a
+forfeit is cleared by an admin.
 
 Players report the result on the series page, `/series/<id>`: the winner, the map and the
 replay of each game. A missing replay or an incomplete veto warns and never blocks.

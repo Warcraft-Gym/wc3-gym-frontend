@@ -44,12 +44,14 @@ export function PublishedSeries({
 }) {
   // an admin fills an open place from the admin add, so the draft entry is the captain's
   const room = canDraft && !isAdmin && openPlaces > 0;
+  // a captain of either team adds and deletes the series of the match, as an admin does
+  const manages = isAdmin || !!canDraft;
   if (!series.length) {
     return (
       <div className="p-8 text-center">
         <Icon name="mdi-trophy-broken" size={64} className="text-muted-foreground" />
         <div className="mt-4 text-xl text-muted-foreground">No published series yet</div>
-        {isAdmin ? (
+        {manages ? (
           <Button variant="outline" className="mt-4 text-primary-text" onClick={onAddSeries}>
             <Icon name="mdi-plus" />
             Create Series
@@ -70,7 +72,7 @@ export function PublishedSeries({
 
   return (
     <>
-      {isAdmin || room ? (
+      {manages ? (
         <div className="flex flex-wrap justify-end gap-2 p-2">
           {room ? (
             <Button variant="outline" className="w-full text-primary-text min-[960px]:w-auto" onClick={onDraftSeries}>
@@ -78,7 +80,7 @@ export function PublishedSeries({
               Plan the round
             </Button>
           ) : null}
-          {isAdmin ? (
+          {manages ? (
             <Button className="w-full min-[960px]:w-auto" onClick={onAddSeries}>
               <Icon name="mdi-plus" />
               Add series
@@ -155,7 +157,7 @@ export function PublishedSeries({
         </p>
       ) : null}
 
-      {isAdmin ? (
+      {manages ? (
         <div className="flex justify-end p-2">
           <Button variant="ghost" className="text-error" onClick={onDeleteAll}>
             <Icon name="mdi-delete-sweep" />

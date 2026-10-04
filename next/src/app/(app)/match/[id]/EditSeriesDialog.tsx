@@ -27,11 +27,12 @@ export function EditSeriesDialog({
   onDateChange,
   time,
   onTimeChange,
-  adminZone,
+  zone,
   editWins,
   scoreProblem,
   error,
   onSave,
+  onClearResult,
   onCancel,
 }: {
   open: boolean;
@@ -41,11 +42,12 @@ export function EditSeriesDialog({
   onDateChange: (value: Date | null) => void;
   time: string | null;
   onTimeChange: (value: string) => void;
-  adminZone: string;
+  zone: string; // the editor's own zone, which the picked time is read in
   editWins: number;
   scoreProblem: string | null;
   error: string;
   onSave: () => void;
+  onClearResult?: () => void; // only while the stored series holds a result
   onCancel: () => void;
 }) {
   if (!series) return null;
@@ -66,7 +68,7 @@ export function EditSeriesDialog({
 
         <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2">
           <SimpleDatePicker modelValue={date} label="Scheduled Date" onUpdateModelValue={onDateChange} />
-          <SimpleTimePicker modelValue={time} label={`Scheduled Time (${adminZone})`} onUpdateModelValue={onTimeChange} />
+          <SimpleTimePicker modelValue={time} label={`Scheduled Time (${zone})`} onUpdateModelValue={onTimeChange} />
 
           <Field label={`${series.player1?.name} Score`} htmlFor="p1-score">
             <Input
@@ -113,7 +115,7 @@ export function EditSeriesDialog({
                 <div className="flex items-center gap-1">
                   <RaceSelect
                     id={`off-race-${n}`}
-                    // The stored off race, else the signup race; shown only, a save writes what the admin picks
+                    // The stored off race, else the signup race; shown only, a save writes what the editor picks
                     value={offRace ?? signupRace}
                     onChange={(value) => onPatch({ [`player${n}_off_race`]: value })}
                   />
@@ -162,6 +164,12 @@ export function EditSeriesDialog({
             <Icon name="mdi-close" />
             Cancel
           </Button>
+          {onClearResult ? (
+            <Button variant="ghost" className="ml-auto text-error" onClick={onClearResult}>
+              <Icon name="mdi-eraser" />
+              Clear result
+            </Button>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

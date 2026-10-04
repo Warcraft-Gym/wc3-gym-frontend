@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/Combobox";
-import { Dialog, dialogCompact, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -70,7 +70,7 @@ export function MoveTagDialog({ source, players, onClose, onDone }: { source: Ro
 
   return (
     <Dialog open={!!source} onOpenChange={(open) => (open ? undefined : onClose())}>
-      <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[520px] gap-0 p-0 sm:max-w-[520px]`}>
+      <DialogContent showCloseButton={false} size="sm" compact className="gap-0 p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-account-arrow-right" />
           {tag ? `Move tag: ${tag.tag}` : "Move tag"}
@@ -169,7 +169,7 @@ export function MergePlayerDialog({ source, players, onClose, onDone }: { source
 
   return (
     <Dialog open={!!source} onOpenChange={(open) => (open ? undefined : onClose())}>
-      <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[560px] gap-0 p-0 sm:max-w-[560px]`}>
+      <DialogContent showCloseButton={false} size="sm" compact className="gap-0 p-0">
         <DialogTitle className="flex items-center gap-2 bg-error px-4 py-3 text-on-error">
           <Icon name="mdi-call-merge" />
           {into ? `Merge ${source?.name} into ${into.name}` : `Merge ${source?.name ?? ""} into`}

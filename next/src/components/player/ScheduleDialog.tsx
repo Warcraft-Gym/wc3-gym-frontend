@@ -63,6 +63,8 @@ export function ScheduleDialog({
   // one read per opening: undefined in flight, null failed, the answer once in
   const [freeTime, setFreeTime] = useState<Row | null | undefined>(undefined);
   const [view, setView] = useState<"calendar" | "tracks">("calendar");
+  // the grid of the round window stays folded until asked for: most readers type a time they already agreed on
+  const [gridOpen, setGridOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [booked, setBooked] = useState<DateTime | null>(null);
   // the series the dialog holds now, so a late free-time answer for another one is dropped
@@ -87,6 +89,7 @@ export function ScheduleDialog({
       });
       setFreeTime(undefined);
       setBooked(null);
+      setGridOpen(false);
       setPage(0);
       // the calendar reads best on a desktop, one day track a row at 390 px
       setView(phone ? "tracks" : "calendar");
@@ -300,7 +303,8 @@ export function ScheduleDialog({
           </span>
         </div>
       ) : null}
-      <div className="max-h-[420px] min-w-0 overflow-y-auto">
+      {/* low enough that the pick and the clocks under it stay in view on a laptop screen */}
+      <div className="max-h-[min(420px,40vh)] min-w-0 overflow-y-auto">
         <div className="grid gap-px" style={{ gridTemplateColumns: `2.75rem repeat(${shown.length}, minmax(0, 1fr))` }} onKeyDown={moveFocus}>
           <span className="sticky top-0 z-10 bg-surface" />
           {shown.map(({ day }) => (
@@ -326,7 +330,7 @@ export function ScheduleDialog({
   const playerRow = ({ player, zone, you }: { player: Row; zone: string | null; you: boolean }) => {
     const clock = chosen && zone ? clockOf(chosen, zone, viewer) : null;
     return (
-      <div key={player?.id ?? (you ? "you" : "them")} className="grid items-center gap-x-3 gap-y-0.5 min-[600px]:grid-cols-[minmax(0,1fr)_14rem_11rem]">
+      <div key={player?.id ?? (you ? "you" : "them")} className="grid items-center gap-x-3 gap-y-0.5 @xl/dialog:grid-cols-[minmax(0,1fr)_14rem_11rem]">
         <PlayerName player={player} plain>
           {you ? <span className={CAPTION}>you</span> : null}
         </PlayerName>
@@ -377,10 +381,8 @@ export function ScheduleDialog({
 
   return (
     <Dialog open={show} onOpenChange={setShow}>
-      <DialogContent
-        showCloseButton={false}
-        className={cn("max-h-[90vh] gap-0 overflow-y-auto p-0", booked ? "max-w-[520px] md:max-w-[520px]" : "max-w-[1100px] md:max-w-[1100px]")}
-      >
+      {/* The open grid widens the dialog, the folded one keeps it to the date, the time and the clocks */}
+      <DialogContent showCloseButton={false} size={booked ? "sm" : gridOpen ? "xl" : "md"} className="gap-0 p-0">
         <DialogTitle className="flex items-start gap-3 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-calendar-edit" className="mt-0.5" />
           <div className="min-w-0">
@@ -426,20 +428,33 @@ export function ScheduleDialog({
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <span className="text-sm font-medium">{commonHours(freeTime.hours)}</span>
                     {endLine ? <span className={CAPTION}>{endLine}</span> : null}
-                    <ToggleGroup
-                      className="ml-auto"
-                      variant="outline"
-                      spacing={0}
-                      aria-label="Schedule view"
-                      value={[view]}
-                      onValueChange={(value) => setView((value[0] as "calendar" | "tracks") ?? view)}
-                    >
-                      <ToggleGroupItem value="calendar">Calendar</ToggleGroupItem>
-                      <ToggleGroupItem value="tracks">Day tracks</ToggleGroupItem>
-                    </ToggleGroup>
+                    {gridOpen ? (
+                      <ToggleGroup
+                        className="ml-auto"
+                        variant="outline"
+                        spacing={0}
+                        aria-label="Schedule view"
+                        value={[view]}
+                        onValueChange={(value) => setView((value[0] as "calendar" | "tracks") ?? view)}
+                      >
+                        <ToggleGroupItem value="calendar">Calendar</ToggleGroupItem>
+                        <ToggleGroupItem value="tracks">Day tracks</ToggleGroupItem>
+                      </ToggleGroup>
+                    ) : null}
                   </div>
-                  {grid.length ? (view === "calendar" ? calendar : tracks) : <div className={CAPTION}>The round window has passed.</div>}
-                  {legend}
+                  <Button variant="outline" aria-expanded={gridOpen} className="h-auto w-full justify-between px-3 py-2" onClick={() => setGridOpen(!gridOpen)}>
+                    <span className="flex items-center gap-2">
+                      <Icon name="mdi-calendar-search" />
+                      {players.some((one) => one.you) ? "Show when you are both free" : "Show when both players are free"}
+                    </span>
+                    <Icon name={gridOpen ? "mdi-chevron-up" : "mdi-chevron-down"} />
+                  </Button>
+                  {gridOpen ? (
+                    <>
+                      {grid.length ? (view === "calendar" ? calendar : tracks) : <div className={CAPTION}>The round window has passed.</div>}
+                      {legend}
+                    </>
+                  ) : null}
                 </>
               ) : (
                 <div className={CAPTION}>The open hours did not load. Enter a date and time below.</div>

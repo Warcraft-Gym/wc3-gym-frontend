@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle, dialogCompact } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,6 @@ import { PHASE_LABEL } from "@/helpers/season-phase.mjs";
 import { SERIES_PER_FIXTURE } from "@/helpers/event-labels.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { useAuth, useSeason } from "@/stores";
-import { cn } from "@/lib/utils";
 import { SeasonWizardDialog } from "./_wizard/SeasonWizardDialog";
 
 type Season = Record<string, any>;
@@ -340,7 +339,7 @@ export function SeasonsView() {
 
       {/* Closing ends the season for everyone, so it says what the close does and what it leaves */}
       <Dialog open={!!closing} onOpenChange={(open) => !open && setClosing(null)}>
-        <DialogContent showCloseButton={false} className={cn("gap-0 p-0 md:max-w-[480px]", dialogCompact)}>
+        <DialogContent showCloseButton={false} size="confirm" className="gap-0 p-0">
           <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Close {closing?.name}</DialogTitle>
           <div className="p-4">
             <p>The season reads complete: signups shut, the captains lose their seats and the leading team takes the championship.</p>

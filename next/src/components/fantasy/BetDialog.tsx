@@ -92,7 +92,7 @@ export function BetDialog({ series, seasonId, onClose, onSaved }: { series: Row;
 
   return (
     <Dialog open onOpenChange={(open) => (open ? null : onClose())} disablePointerDismissal>
-      <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[500px]">
+      <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">Place fantasy bet</DialogTitle>
 
         <div className="flex flex-col gap-4 p-4">

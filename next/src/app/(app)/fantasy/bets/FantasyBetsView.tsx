@@ -494,7 +494,7 @@ export function FantasyBetsView() {
 
       {/* Add Bet Dialog */}
       <Dialog open={addBetDialog} onOpenChange={(open) => (open ? setAddBetDialog(true) : closeAddBetDialog())} disablePointerDismissal>
-        <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[600px]">
+        <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
           <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-plus" />
             Add new fantasy bet
@@ -564,7 +564,7 @@ export function FantasyBetsView() {
 
       {/* Edit Bet Dialog */}
       <Dialog open={betDialog} onOpenChange={(open) => (open ? setBetDialog(true) : closeBetDialog())} disablePointerDismissal>
-        <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[500px]">
+        <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
           <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-pencil" />
             Edit fantasy bet
@@ -627,7 +627,7 @@ export function FantasyBetsView() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>
-        <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-[400px]">
+        <DialogContent showCloseButton={false} size="confirm" className="gap-0 p-0">
           {/* DESIGN.md: a dialog that deletes something wears bg-error */}
           <DialogTitle className="flex items-center gap-2 bg-error px-4 py-3 text-on-error">
             <Icon name="mdi-alert" />

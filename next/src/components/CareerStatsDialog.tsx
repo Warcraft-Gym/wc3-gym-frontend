@@ -57,7 +57,7 @@ export function CareerStatsDialog({ players, onChanged, ref }: { players: Record
   return (
     <>
       <Dialog open={show} onOpenChange={setShow}>
-        <DialogContent showCloseButton={false} className="max-w-[800px] gap-0 p-0 sm:max-w-[800px]">
+        <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
           {stat ? <>
             <DialogTitle className="px-4 py-3 text-xl">Career Stats: {stat.player_name}</DialogTitle>
             <div className="px-4"><StatusAlert modelValue={error} onClose={() => setError(null)} /></div>

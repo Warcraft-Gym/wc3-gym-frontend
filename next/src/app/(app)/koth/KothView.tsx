@@ -169,7 +169,7 @@ export function KothView() {
 
       {/* Tonight's night: when it starts, and where its three brackets cut */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent showCloseButton={false} className="max-w-[520px] gap-0 p-0 sm:max-w-[520px]">
+        <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
           <DialogTitle className="banner bg-banner px-4 py-3 text-primary">New KOTH Event</DialogTitle>
           <div className="flex flex-col gap-3 p-4">
             <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
@@ -177,7 +177,7 @@ export function KothView() {
               <Input id="night-starts-at" type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} />
             </Field>
             <div className="text-sm font-medium">The MMR each bracket opens at</div>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 @md/dialog:grid-cols-3">
               {form.lower_bounds.map((bound, index) => (
                 <Field key={index} label={`Bracket ${index + 1}`} htmlFor={`night-bound-${index}`}>
                   <Input

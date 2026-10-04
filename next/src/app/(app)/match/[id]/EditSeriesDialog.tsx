@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -8,6 +9,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlayerName } from "@/components/PlayerName";
 import { RaceSelect } from "@/components/RaceSelect";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
@@ -58,7 +60,7 @@ export function EditSeriesDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : onCancel())} disablePointerDismissal>
-      <DialogContent showCloseButton={false} className="flex max-h-[95vh] max-w-[65vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[65vw]">
+      <DialogContent showCloseButton={false} size="md" className="flex flex-col gap-0 overflow-hidden p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-pencil" />
           Edit series
@@ -66,88 +68,89 @@ export function EditSeriesDialog({
 
         <StatusAlert modelValue={error || null} className="mx-4 mt-4" />
 
-        <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2">
-          <SimpleDatePicker modelValue={date} label="Scheduled Date" onUpdateModelValue={onDateChange} />
-          <SimpleTimePicker modelValue={time} label={`Scheduled Time (${zone})`} onUpdateModelValue={onTimeChange} />
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+          {/* When the series is played and who hosts it */}
+          <div className="grid gap-4 @xl/dialog:grid-cols-3 @xl/dialog:items-end">
+            <SimpleDatePicker modelValue={date} label="Scheduled Date" onUpdateModelValue={onDateChange} />
+            <SimpleTimePicker modelValue={time} label={`Scheduled Time (${zone})`} onUpdateModelValue={onTimeChange} />
+            <Field label="Choose a Host" htmlFor="host-player">
+              <Select
+                items={hostPlayers.map((player) => ({ value: player.id, label: player.battleTag }))}
+                value={series.host_player_id ?? null}
+                onValueChange={(value) => onPatch({ host_player_id: value as number })}
+              >
+                <SelectTrigger id="host-player" aria-label="Choose a Host" className="w-full">
+                  <SelectValue placeholder="Choose a Host" />
+                </SelectTrigger>
+                <SelectContent>
+                  {hostPlayers.map((player) => (
+                    <SelectItem key={player.id} value={player.id}>
+                      {player.battleTag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
 
-          <Field label={`${series.player1?.name} Score`} htmlFor="p1-score">
-            <Input
-              id="p1-score"
-              type="number"
-              min={0}
-              max={editWins}
-              value={series.player1_score ?? ""}
-              onChange={(event) => onPatch({ player1_score: event.target.value === "" ? null : Number(event.target.value) })}
-            />
-          </Field>
-          <Field label={`${series.player2?.name} Score`} htmlFor="p2-score">
-            <Input
-              id="p2-score"
-              type="number"
-              min={0}
-              max={editWins}
-              value={series.player2_score ?? ""}
-              onChange={(event) => onPatch({ player2_score: event.target.value === "" ? null : Number(event.target.value) })}
-            />
-          </Field>
+          {/* The two players face each other: each one's score and the race he played, under his name */}
+          <div className="grid gap-4 @xl/dialog:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+            {([1, 2] as const).map((n) => {
+              const player: Row | null = series[`player${n}`] ?? null;
+              const offRace: string | null = series[`player${n}_off_race`] ?? null;
+              // The race that side signed the season up on, which the player of the payload carries
+              const signupRace: string | null = player?.signup_race ?? null;
+              return (
+                <Fragment key={n}>
+                  {n === 2 ? <span className="hidden self-center text-muted-foreground @xl/dialog:block">vs</span> : null}
+                  <section aria-label={player?.name} className="flex min-w-0 flex-col gap-3 rounded border p-3">
+                    <PlayerName player={player ?? {}} plain />
+                    <Field label="Score" htmlFor={`p${n}-score`}>
+                      <Input
+                        id={`p${n}-score`}
+                        type="number"
+                        min={0}
+                        max={editWins}
+                        aria-label={`${player?.name} score`}
+                        value={series[`player${n}_score`] ?? ""}
+                        onChange={(event) => onPatch({ [`player${n}_score`]: event.target.value === "" ? null : Number(event.target.value) })}
+                      />
+                    </Field>
+                    <Field
+                      label="Race played"
+                      htmlFor={`off-race-${n}`}
+                      hint={offRace ? "An off race: not the race he signed up on" : signupRace ? "The race he signed up on" : undefined}
+                    >
+                      <div className="flex items-center gap-1">
+                        <RaceSelect
+                          id={`off-race-${n}`}
+                          // The stored off race, else the signup race; shown only, a save writes what the editor picks
+                          value={offRace ?? signupRace}
+                          onChange={(value) => onPatch({ [`player${n}_off_race`]: value })}
+                        />
+                        {/* The picker itself offers no empty row, so the race played goes back to the signup race here */}
+                        {offRace ? (
+                          <Button variant="ghost" size="icon-sm" aria-label="Clear the race played" onClick={() => onPatch({ [`player${n}_off_race`]: null })}>
+                            <Icon name="mdi-close" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </Field>
+                  </section>
+                </Fragment>
+              );
+            })}
+          </div>
 
-          <div className="sm:col-span-2">
+          {scoreProblem ? <div className="text-xs text-error">{scoreProblem}</div> : null}
+
+          <div>
             <Label className="flex items-center gap-2">
               <Checkbox checked={notPlayed} onCheckedChange={(checked) => onPatch({ player1_score: checked ? 0 : null, player2_score: checked ? 0 : null })} />
               Not played
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">Stores 0-0 and pays neither team.</p>
           </div>
-
-          {scoreProblem ? <div className="text-xs text-error sm:col-span-2">{scoreProblem}</div> : null}
-
-          {([1, 2] as const).map((n) => {
-            const offRace: string | null = series[`player${n}_off_race`] ?? null;
-            // The race that side signed the season up on, which the player of the payload carries
-            const signupRace: string | null = series[`player${n}`]?.signup_race ?? null;
-            return (
-              <Field
-                key={n}
-                label={`${series[`player${n}`]?.name} played`}
-                htmlFor={`off-race-${n}`}
-                hint={offRace ? "An off race: not the race he signed up on" : signupRace ? "The race he signed up on" : undefined}
-              >
-                <div className="flex items-center gap-1">
-                  <RaceSelect
-                    id={`off-race-${n}`}
-                    // The stored off race, else the signup race; shown only, a save writes what the editor picks
-                    value={offRace ?? signupRace}
-                    onChange={(value) => onPatch({ [`player${n}_off_race`]: value })}
-                  />
-                  {/* The picker itself offers no empty row, so the race played goes back to the signup race here */}
-                  {offRace ? (
-                    <Button variant="ghost" size="icon-sm" aria-label="Clear the race played" onClick={() => onPatch({ [`player${n}_off_race`]: null })}>
-                      <Icon name="mdi-close" />
-                    </Button>
-                  ) : null}
-                </div>
-              </Field>
-            );
-          })}
-
-          <Field label="Choose a Host" htmlFor="host-player">
-            <Select
-              items={hostPlayers.map((player) => ({ value: player.id, label: player.battleTag }))}
-              value={series.host_player_id ?? null}
-              onValueChange={(value) => onPatch({ host_player_id: value as number })}
-            >
-              <SelectTrigger id="host-player" aria-label="Choose a Host" className="w-full">
-                <SelectValue placeholder="Choose a Host" />
-              </SelectTrigger>
-              <SelectContent>
-                {hostPlayers.map((player) => (
-                  <SelectItem key={player.id} value={player.id}>
-                    {player.battleTag}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
 
           <Label className="flex items-center gap-2">
             <Checkbox checked={!!series.is_fantasy_match} onCheckedChange={(checked) => onPatch({ is_fantasy_match: !!checked })} />

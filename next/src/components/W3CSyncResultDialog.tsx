@@ -33,7 +33,7 @@ export function W3CSyncResultDialog({
 }) {
   return (
     <Dialog open={modelValue} onOpenChange={(open) => onUpdateModelValue?.(open)}>
-      <DialogContent showCloseButton={false} className="max-w-[560px] gap-0 p-0 sm:max-w-[560px]">
+      <DialogContent showCloseButton={false} size="sm" compact className="gap-0 p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-sync" />
           W3C Sync Results

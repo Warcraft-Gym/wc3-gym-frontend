@@ -70,7 +70,7 @@ export function BlockedTimesDialog() {
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? null : close())}>
-      <DialogContent showCloseButton={false} className="gap-0 overflow-y-auto p-0 md:max-h-[90vh] md:max-w-[720px]">
+      <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-calendar-remove" />
           Blocked times

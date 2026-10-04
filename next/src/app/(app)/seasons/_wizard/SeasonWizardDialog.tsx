@@ -358,7 +358,8 @@ export function SeasonWizardDialog({
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : close())}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[90vh] max-w-[1100px] flex-col gap-0 overflow-hidden p-0 md:max-w-[1100px] md:h-[90vh] max-md:max-h-none"
+        size="xl"
+        className="flex flex-col gap-0 overflow-hidden p-0 md:h-[90vh]"
       >
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name={editing ? "mdi-pencil" : "mdi-plus-circle"} />

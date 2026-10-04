@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Button } from "@/components/ui/button";
-import { Dialog, dialogCompact, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -47,7 +47,7 @@ export function PublishDraftDialog({
   const title = replacement ? `Publish ${rows[0].player1?.name} vs ${rows[0].player2?.name}?` : `Publish ${noun}?`;
   return (
     <Dialog open={!!drafts} onOpenChange={(open) => (open ? undefined : onCancel())}>
-      <DialogContent showCloseButton={false} className={`${dialogCompact} max-w-[600px] gap-0 p-0 sm:max-w-[600px]`}>
+      <DialogContent showCloseButton={false} size="sm" compact className="gap-0 p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-publish" />
           {title}

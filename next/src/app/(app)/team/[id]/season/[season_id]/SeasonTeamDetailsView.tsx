@@ -474,7 +474,7 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
 
       {/* Add New Player Modal */}
       <Dialog open={showNewPlayerModal} onOpenChange={setShowNewPlayerModal} disablePointerDismissal>
-        <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-[900px] overflow-y-auto gap-0 p-0 sm:max-w-[900px]">
+        <DialogContent showCloseButton={false} size="lg" className="gap-0 p-0">
           <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
             <Icon name="mdi-account-multiple-plus" />
             Select players to add
@@ -521,12 +521,16 @@ export function SeasonTeamDetailsView({ id, seasonKey }: { id: string; seasonKey
               ]}
             />
           </div>
-          <div className="flex justify-end gap-2 p-4 pt-0">
+          <div className="flex items-center justify-end gap-2 p-4 pt-0">
+            {/* the ticks live across the table's pages, so the count says what the save adds */}
+            <span className="mr-auto text-sm text-muted-foreground" aria-live="polite">
+              {selectedPlayers.length} {selectedPlayers.length === 1 ? "player" : "players"} ticked
+            </span>
             <Button variant="ghost" onClick={() => setShowNewPlayerModal(false)}>
               Cancel
             </Button>
             {auth.isAdmin ? (
-              <Button onClick={saveSelectedPlayers}>
+              <Button disabled={!selectedPlayers.length} onClick={saveSelectedPlayers}>
                 <Icon name="mdi-content-save" />
                 Add selected players
               </Button>

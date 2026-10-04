@@ -246,7 +246,7 @@ export function MapsView() {
       {/* Add / Edit Map Dialog */}
       <Dialog open={mapDialogOpen} onOpenChange={(open) => open || closeMapDialog()}>
         {selectedMap ? (
-          <DialogContent showCloseButton={false} className="max-w-[600px] gap-0 p-0 sm:max-w-[600px]">
+          <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
             <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
               <Icon name={isEditing ? "mdi-pencil" : "mdi-map-plus"} />
               {isEditing ? `Edit map: ${selectedMap.name}` : "Add map"}

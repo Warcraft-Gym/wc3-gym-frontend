@@ -178,7 +178,7 @@ export function CastChips({ series }: { series: CastSeries }) {
       ) : null}
 
       <Dialog open={dialog} onOpenChange={setDialog}>
-        <DialogContent showCloseButton={false} className="max-w-[480px] gap-0 p-0 sm:max-w-[480px]">
+        <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
           <DialogTitle className="px-6 pt-5 pb-2">{copy.title}</DialogTitle>
           <div className="px-6 pt-2 pb-1">
             {/* A textarea, so a long link wraps and stays readable instead of scrolling out of the field */}

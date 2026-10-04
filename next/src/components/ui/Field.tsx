@@ -8,6 +8,7 @@ export function Field({
   error,
   htmlFor,
   className,
+  labelClassName,
   children,
 }: {
   label: string;
@@ -15,11 +16,14 @@ export function Field({
   error?: string | null;
   htmlFor?: string;
   className?: string;
+  labelClassName?: string; // e.g. sr-only where a header row already names the column
   children: React.ReactNode;
 }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <Label htmlFor={htmlFor} className={labelClassName}>
+        {label}
+      </Label>
       {children}
       {error ? <p className="text-xs text-error">{error}</p> : hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>

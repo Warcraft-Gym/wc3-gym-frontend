@@ -52,12 +52,13 @@ export function SitOutRestDialog({ label, cards, onConfirm, className = "mb-3" }
         Sit out all remaining rounds
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent showCloseButton={false} className="max-w-[520px] gap-0 p-0 sm:max-w-[520px]">
+        <DialogContent showCloseButton={false} size="md" className="gap-0 p-0">
           <DialogTitle className="flex flex-col gap-0.5 banner bg-banner px-4 py-3 text-primary">
             Sit out all remaining rounds
             <span className="text-sm font-normal">{label}</span>
           </DialogTitle>
-          <div className="flex flex-col gap-4 p-4">
+          {/* What changes beside what stays, once the dialog holds both lists */}
+          <div className="grid gap-4 p-4 @lg/dialog:grid-cols-2">
             <div>
               <div className="mb-1 text-sm text-muted-foreground">These rounds change to out</div>
               {list(changing, false)}

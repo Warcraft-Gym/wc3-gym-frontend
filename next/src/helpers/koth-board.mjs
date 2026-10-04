@@ -340,3 +340,23 @@ export function streamPollMs(board, nowMs) {
   if (Number.isFinite(start) && nowMs > start + STREAM_DAY_MS) return null;
   return board.series_count > 0 ? STREAM_PLAY_MS : STREAM_WAIT_MS;
 }
+
+// The queue and the results a viewer folds away, as "<bracket name>:<part>". The key holds past a
+// reload, a logout and the next event, so a stream set up once stays set up, and it stays out of
+// SESSION_KEYS: the choice is the viewer's
+const FOLDED_KEY = 'kothFolded';
+export function foldedStored(part, store = globalThis.localStorage) {
+  try {
+    return JSON.parse(store.getItem(FOLDED_KEY) || '[]').includes(part);
+  } catch {
+    return false; // a browser with storage blocked shows every part
+  }
+}
+export function storeFolded(part, on, store = globalThis.localStorage) {
+  try {
+    const kept = JSON.parse(store.getItem(FOLDED_KEY) || '[]').filter((one) => one !== part);
+    store.setItem(FOLDED_KEY, JSON.stringify(on ? [...kept, part] : kept));
+  } catch {
+    // a browser with storage blocked forgets the choice on the next load
+  }
+}

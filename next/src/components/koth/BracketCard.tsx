@@ -1,6 +1,5 @@
 "use client";
-import { useId, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,9 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { TapTooltip } from "@/components/ui/TapTooltip";
 import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
+import { BoardPlayer } from "@/components/koth/BoardPlayer";
+import { BracketResults, FoldHeading, useFolded } from "@/components/koth/BracketResults";
 import { RaceIcon } from "@/components/RaceIcon";
 import { noStatsWarning } from "@/helpers/games-rule.mjs";
-import { bracketLabel, foldedStored, hasSeries, heirOf, leftSeats, movedQueue, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton, storeFolded, throneWord } from "@/helpers/koth-board.mjs";
+import { bracketLabel, hasSeries, heirOf, leftSeats, movedQueue, placeInQueue, seatKey, seatLeft, seatRow, skippedSeat, startButton } from "@/helpers/koth-board.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { cn } from "@/lib/utils";
 
@@ -86,25 +87,6 @@ export const seatMark = (seat: Row, playing: Row | null) => {
   if (rows.length > 1) return rows.every((row: Row) => row.mmr == null) ? noStatsWarning() : null;
   return playing?.mmr == null ? noStatsWarning(playing?.race ?? null) : null;
 };
-
-/** One player of the board as the app draws a player line: flag, name, race, one MMR. A player
- *  W3Champions holds no rating for wears the games mark instead of a number. */
-export function BoardPlayer({ row, race, plain, slot, warn }: { row: Row; race?: string | null; plain?: boolean; slot?: boolean; warn?: boolean }) {
-  const shown = race === undefined ? row.race : race;
-  const marked = warn === undefined ? row.mmr == null : warn;
-  const warning = marked ? noStatsWarning(shown) : null;
-  // only a line in a column of player lines keeps the empty mark slot, so its flags read as one column;
-  // the board names a battle tag only where two players share a name, and then the tag is the name
-  return (
-    <PlayerName
-      player={{ id: row.user_id ?? null, name: row.battle_tag || row.name, country: row.country, battleTag: row.battle_tag }}
-      race={shown || undefined}
-      mmr={row.mmr ?? false}
-      warning={warning ?? (slot ? null : undefined)}
-      plain={plain}
-    />
-  );
-}
 
 /** The races one player holds in this bracket, under his name, and the races he left here
  *  tonight. An admin picks the race that plays next, moves or removes one race, and puts back
@@ -549,142 +531,6 @@ export function LeftRows({ bracket, brackets, admin }: { bracket: Row; brackets:
   );
 }
 
-// The mark of what a result did to the crown; a game between two others leaves no mark
-const CROWN_ICON: Record<string, string> = { moved: "mdi-crown", held: "mdi-shield-crown-outline" };
-
-/** Tonight's results as a table, newest first: the series number in play order, the winner with the
- *  win mark, the loser, and what the result did to the crown, with a key under it. The run page adds
- *  a Fix column; a stream drops the replay link, because nobody clicks on a stream. */
-export function PlayedTable({ played, total, admin, clean }: { played: Row[]; total: number; admin?: BracketAdmin; clean?: boolean }) {
-  // a name truncates inside its cell, so a long one never pushes the crown or Fix out of the card
-  const cell = "flex min-w-0 items-center gap-1.5 overflow-hidden [&_.name]:truncate [&_.player-name]:min-w-0 [&_.player-name]:max-w-full";
-  const keys = (["moved", "held"] as const).filter((throne) => played.some((row) => row.throne === throne));
-  return (
-    <>
-      <table className="w-full table-fixed border-collapse text-sm">
-        <colgroup>
-          <col className="w-6" />
-          <col />
-          <col />
-          <col className="w-6" />
-          {admin ? <col className="w-7" /> : null}
-        </colgroup>
-        <thead>
-          <tr className="text-left text-xs text-muted-foreground">
-            <th scope="col" className="pb-1 pr-1 text-right font-normal">#</th>
-            <th scope="col" className="pb-1 pl-2 font-normal">Winner</th>
-            <th scope="col" className="pb-1 pl-2 font-normal">Loser</th>
-            <th scope="col" className="pb-1 font-normal">
-              <span className="sr-only">Crown</span>
-            </th>
-            {admin ? (
-              <th scope="col" className="pb-1 font-normal">
-                <span className="sr-only">Fix</span>
-              </th>
-            ) : null}
-          </tr>
-        </thead>
-        <tbody>
-          {played.map((row: Row, index: number) => {
-            const throne = throneWord(row);
-            return (
-              <tr key={row.series_id} className="border-t border-border/70">
-                <td className="tnum py-1.5 pr-1 text-right text-xs text-muted-foreground">{total - index}</td>
-                <td className="py-1.5 pl-2">
-                  <span className={cell}>
-                    <span className="h-2 w-2 shrink-0 rounded-[2px] bg-win" aria-hidden="true" />
-                    {/* the queue shows each race; a result names the player, so the name keeps the cell */}
-                    <BoardPlayer row={{ ...row.winner, mmr: null }} race={null} warn={false} />
-                  </span>
-                </td>
-                <td className="py-1.5 pl-2">
-                  <span className={cn(cell, "[&_.name]:opacity-(--v-medium-emphasis-opacity)")}>
-                    <BoardPlayer row={{ ...row.loser, mmr: null }} race={null} warn={false} />
-                    {/* the loser left the night, so no game was played */}
-                    {row.forfeit ? (
-                      <TapTooltip content="Forfeit: left the event" className="shrink-0">
-                        <Icon name="mdi-flag-outline" size={14} className="text-muted-foreground" />
-                        <span className="sr-only">Forfeit</span>
-                      </TapTooltip>
-                    ) : null}
-                    {row.replay && !clean ? (
-                      <Link href={`/series/${row.series_id}`} className="shrink-0 text-primary-text" aria-label={`Replay of series ${total - index}`}>
-                        <Icon name="mdi-filmstrip" size={16} />
-                      </Link>
-                    ) : null}
-                  </span>
-                </td>
-                <td className="py-1.5 text-center">
-                  {throne ? (
-                    <TapTooltip content={throne}>
-                      <Icon name={CROWN_ICON[row.throne]} size={16} className="text-primary-text" />
-                      <span className="sr-only">{throne}</span>
-                    </TapTooltip>
-                  ) : null}
-                </td>
-                {admin ? (
-                  <td className="py-1.5 text-right">
-                    <TapTooltip content="Fix this result">
-                      <Button variant="ghost" size="icon-xs" className="text-primary-text" disabled={admin.busy} aria-label={`Fix ${row.winner?.name} beat ${row.loser?.name}`} onClick={() => admin.onFix(row)}>
-                        <Icon name="mdi-pencil" />
-                      </Button>
-                    </TapTooltip>
-                  </td>
-                ) : null}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {keys.length ? (
-        <p className="mb-0 mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {keys.map((throne) => (
-            <span key={throne} className="inline-flex items-center gap-1">
-              <Icon name={CROWN_ICON[throne]} size={14} className="text-primary-text" />
-              {throneWord({ throne })}
-            </span>
-          ))}
-        </p>
-      ) : null}
-    </>
-  );
-}
-
-const foldListeners = new Set<() => void>();
-const onFold = (listener: () => void) => {
-  foldListeners.add(listener);
-  return () => {
-    foldListeners.delete(listener);
-  };
-};
-
-/** Whether the viewer folded this part of a card away, and the writer for it. The server draws
- *  every part open, so the first paint is the page a browser with storage blocked reads. */
-function useFolded(part: string) {
-  const folded = useSyncExternalStore(onFold, () => foldedStored(part), () => false);
-  const setFolded = (on: boolean) => {
-    storeFolded(part, on);
-    foldListeners.forEach((listener) => listener());
-  };
-  return [folded, setFolded] as const;
-}
-
-/** The heading of the queue or the results: a tap folds the part away, and opens it again. */
-function FoldHeading({ folded, onFold, controls, className, children }: { folded: boolean; onFold: (on: boolean) => void; controls: string; className?: string; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      className={cn("flex items-baseline gap-2 rounded-sm text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50", className)}
-      aria-expanded={!folded}
-      aria-controls={controls}
-      onClick={() => onFold(!folded)}
-    >
-      {children}
-      <Icon name={folded ? "mdi-chevron-right" : "mdi-chevron-down"} className="self-center text-muted-foreground" />
-    </button>
-  );
-}
-
 /** One bracket of the night, the same card on the run page and on the public page: the throne,
  *  the series it plays now, the line waiting and what it played tonight. */
 export function BracketCard({
@@ -707,12 +553,9 @@ export function BracketCard({
   // where the dragged row would land, and the line shows it there before the drop
   const [dragged, setDragged] = useState<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
-  const [allPlayed, setAllPlayed] = useState(false);
-  // a long line pushes the results off a stream, so either part folds away, per bracket
+  // a long line pushes the results off a stream, so the queue folds away, per bracket
   const [queueFolded, foldQueue] = useFolded(`${name}:queue`);
-  const [resultsFolded, foldResults] = useFolded(`${name}:results`);
   const queueId = useId();
-  const resultsId = useId();
   const from = queue.findIndex((seat: Row) => seatKey(seat) === dragged);
   const shown: Row[] = from >= 0 && over != null ? movedQueue(queue, from, over) : queue;
   const drag = (key: number | null) => {
@@ -726,9 +569,6 @@ export function BracketCard({
     const others = index - (at >= 0 && at < index ? 1 : 0);
     setOver(before ? others : others + 1);
   };
-  // a stream shows the newest three, and the run page and the night page open the rest on a tap
-  const PLAYED_SHOWN = 3;
-  const playedShown = allPlayed ? played : played.slice(0, PLAYED_SHOWN);
   // a stream reads from further away, so every small label of the card grows one step too; a stream
   // is one fixed screen, so three cards side by side fill it to its foot whatever is folded, and the
   // queue and the players who left scroll inside, never the results. ponytail: 10.5rem is the shell bar and the title over the cards; a title that
@@ -797,35 +637,8 @@ export function BracketCard({
       </div>
       <LeftRows bracket={bracket} brackets={brackets} admin={admin} />
 
-      {/* a gold rule ends the work and opens the record: tonight's results in a sunken band; an admin
-          sees it with no result yet, so a night's history can be entered from the start */}
-      {played.length || admin ? (
-        <div className="shrink-0 border-t-2 border-primary-text bg-background/70 px-4 pb-3 pt-2.5">
-          <div className="flex items-center gap-2 pb-1.5">
-            <h3 className="m-0">
-              <FoldHeading folded={resultsFolded} onFold={foldResults} controls={resultsId}>
-                <span className="font-heading text-base font-bold text-primary-text">Results</span>
-                <span className="tnum font-sans text-xs font-normal text-muted-foreground">{played.length} series</span>
-              </FoldHeading>
-            </h3>
-            {admin ? (
-              <Button variant="ghost" size="xs" className="ml-auto text-primary-text" disabled={admin.busy} onClick={() => admin.onAddResult(bracket)}>
-                <Icon name="mdi-plus" />
-                Add result
-              </Button>
-            ) : null}
-          </div>
-          <div id={resultsId} hidden={resultsFolded}>
-            {played.length ? <PlayedTable played={playedShown} total={played.length} admin={admin} clean={clean} /> : <p className="m-0 text-sm text-muted-foreground">No results yet</p>}
-            {played.length > PLAYED_SHOWN && !clean ? (
-              <Button variant="ghost" size="xs" className="mt-1 text-primary-text" aria-expanded={allPlayed} onClick={() => setAllPlayed(!allPlayed)}>
-                <Icon name={allPlayed ? "mdi-chevron-up" : "mdi-chevron-down"} />
-                {allPlayed ? "Show fewer" : `Show all ${played.length} series`}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      {/* a gold rule ends the work and opens the record: tonight's results in a sunken band */}
+      <BracketResults bracket={bracket} name={name} played={played} admin={admin} clean={clean} />
     </Card>
   );
 }

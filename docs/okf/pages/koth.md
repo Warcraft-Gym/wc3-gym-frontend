@@ -4,7 +4,7 @@ title: KOTH
 description: The KOTH nights list, the run page an admin drives one night from, and the public night page that draws a night's brackets for members and for the stream.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-06T13:46:10Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-06T15:09:58Z }
 sources:
   - id: nights
     resource: ../../../next/src/app/(app)/koth/KothView.tsx
@@ -24,6 +24,12 @@ sources:
   - id: helper
     resource: ../../../next/src/helpers/koth-board.mjs
     title: What the board read means
+  - id: results
+    resource: ../../../next/src/components/koth/BracketResults.tsx
+    title: The Results band both boards draw
+  - id: archive
+    resource: ../../../next/src/helpers/koth-archive.mjs
+    title: An archived series as a Results row
 ---
 
 # Routes
@@ -91,6 +97,6 @@ A refused write shows the sentence of its error envelope in the page's `StatusAl
 
 # Historical nights
 
-The run page and the public event page draw an archived board through the shared historical results component. On the run page its Brackets card draws no strip and lists each bracket's literal name, because its bounds are the source's words. A historical board is closed and is read once. Its brackets retain source order and literal MMR or rank labels. Each BO1 is a played row in play order, in the form the live card uses: the winner beat the loser, with a win mark and no score. A winner inferred from the play order wears a grey crown whose tooltip says so; a recorded winner wears no mark. A series with no result reads as a pairing, with "Forfeit" where the order reads one, and a review reason is an info mark with the reason as its tooltip. Every mark carries its own hover, so there is no legend.
+The run page and the public event page draw an archived board with `HistoricalBoard`. The run page draws no Brackets card and no strip for an archived night, because each card's head carries the source's label. A historical board is closed and is read once. Its brackets read weakest first, as a live night's do: by `lower_bound` ascending, a bracket with no bound (a label such as "1450 and Below" or a rank label) before any number, and among brackets with the same or no bound the one the source page lists later first (`archivedBrackets`). Each card's head is titled "Bracket 1", "Bracket 2" and on from the weakest, and carries the source's MMR or rank label, exactly as written, where a live card puts the MMR band. Each bracket card has the head, the throne and the Results band of a closed night run in the app, and no Queue and no "Players who left", because the source holds neither; a bracket with no series draws the throne alone. The throne names the reported king, "Held the throne at the end", or reads "No king recorded". The Results band is the one the live card draws (`BracketResults`): the same columns, numbering, newest-first order, fold, crown marks and key. The winner is the side the source page wrote, else the side the order of play infers, and the crown mark comes from the row's `throne`; a row with no `throne` wears no mark. A winner inferred from the play order wears its crown mark in muted ink with the tooltip "Inferred from the play order", and the key holds no entry for it. A series with no result keeps both sides in source order with a draw square and "vs", and no crown mark; a review reason is an info mark with the reason as its tooltip. A row whose players neither play the next series carries `winner_left`. When the player who held the crown is one of its two sides, he is its winner and has withdrawn after it: the row draws as a decided one, with the muted word "Withdrew" right after the winner's name and the hover "Did not play the next series; read as leaving the throne". When neither side held the crown, the winner is not known: the row keeps the "a vs b" form, and the muted words "Winner withdrew" sit at the right in the crown column with the hover "Neither player played the next series, so the winner is not known". The key names neither form.
 
-Historical names have no profile link or race icon while identity and race are unconfirmed. Event video links name the recording without promising full-event coverage. Each side is the written name alone, with no rating warning.
+Historical names have no profile link or race icon while identity and race are unconfirmed. Event video links name the recording without promising full-event coverage. Each side is the written name alone, with no flag, rating warning or empty slot for one.

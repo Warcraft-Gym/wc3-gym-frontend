@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-06
+
+* **Update**: every concept was read against the code. The KOTH run page: results are a table with a fix dialog and Add result, the bounds sit in a dialog under Settings beside Clear all results, the page refreshes, and the labels say event. The stream view reads every 30 seconds only while a series exists. Git deploys only `main` and `staging`. The series store reads an event's series with `GET /events/{id}/series`; the routes that views and components call are listed apart. [KOTH](pages/koth.md), [the KOTH flow](flows/koth-night.md), [backend contract](concepts/backend-contract.md), [stores](concepts/stores.md), [shared components](concepts/shared-components.md), [theme](concepts/theme.md), [deploy to Vercel](runbooks/deploy-vercel.md), [git and pull requests](conventions/git-and-pull-requests.md).
+
 ## 2026-10-04
 
 * **Update**: a dialog takes its width from the `size` of its `DialogContent` (`confirm` 440, `sm` 520, `md` 720, `lg` 960, `xl` 1200 px) and lays its content out by its own width; a confirm is a centred panel on a phone too. The Report Result dialog holds the live score under its title and one row a game on a wide dialog; the schedule dialog opens on the date, the time and the clocks, with the free hours folded under "Show when you are both free"; the add series dialog sets the rosters side by side and names the pair picked, and the edit series dialog sets the two players side by side.

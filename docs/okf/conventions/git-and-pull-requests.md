@@ -4,7 +4,7 @@ title: Git and pull requests
 description: One branch and one pull request per change, squash merged, pushes batched because every push builds a preview, and the merged combination built before a second merge.
 resource: ../../../.github/workflows/staging-branch.yml
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T11:23:59Z }
 sources:
   - id: staging
     resource: ../../../.github/workflows/staging-branch.yml
@@ -22,13 +22,13 @@ sources:
 - Reference an issue as `Issue #37` or `Part of #37`, never with a closing keyword: the issue stays open until the change is reviewed on production.
 - Text an AI agent wrote in a pull request body starts with a note saying so; a co-written commit ends with a `Co-Authored-By` trailer. Never override the commit author.
 
-# Pushes cost a build
+# Which pushes build
 
-Every push to a branch creates a Vercel preview deployment, and the Hobby plan caps deployment creations per day across the account. Batch local commits and push once when the pull request is ready for review. Not a hard rule, but the default.
+A push to a branch creates no Vercel deployment: Git deploys only `main` and `staging`. A merge to `main` builds production, and the push of that commit to `staging` builds the one preview, so each merge creates two deployments against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
 
 # There is no CI on pull requests
 
-This repository runs no lint, test or build on a pull request. The only workflow force-pushes `staging` to the merged commit. Vercel builds after the merge. So:
+This repository runs no lint, test or build on a pull request. Two workflows run on a push to `main`: one force-pushes `staging` to the merged commit, and one publishes the graph of this bundle when `docs/` changed. Vercel builds after the merge. So:
 
 - run `pnpm lint`, `pnpm tsc --noEmit`, `pnpm test` and `pnpm build` from `next/` yourself before pushing;
 - before the second merge of a batch, build the combination: refresh the branch from `main` (or make a local merge) and run `pnpm build`, gated on the build's exit code, never on a grep of its output. Two green branches once broke `main` together when one removed a helper the other imported. See [the pitfall](../pitfalls/no-ci-build-the-merged-pair.md).
@@ -36,4 +36,4 @@ This repository runs no lint, test or build on a pull request. The only workflow
 
 # Backend and frontend together
 
-A change that needs both repositories ships the backend first when the frontend reads a new field, and the frontend first when the backend stops answering an old one. A preview of an unmerged frontend branch can point at an unmerged backend branch through a branch-scoped `VITE_BACKEND_URL` on the Vercel project; delete it after the merge.
+A change that needs both repositories ships the backend first when the frontend reads a new field, and the frontend first when the backend stops answering an old one. Git builds no preview of a branch. A preview someone starts by hand for an unmerged frontend branch can point at an unmerged backend branch through a branch-scoped `NEXT_PUBLIC_BACKEND_URL` on the Vercel project; delete it after the merge.

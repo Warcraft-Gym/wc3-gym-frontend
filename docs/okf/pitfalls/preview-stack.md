@@ -3,10 +3,10 @@ type: Pitfall
 title: A preview must never point at the production backend
 description: A preview signs in on the dev Clerk instance; the production backend verifies with the production key, so every /me answers 401 and the login spins.
 tags: [session, deploy]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-14T10:00:00Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: source
-    resource: ../../../next/src/components/layout/AppShell.tsx
+    resource: ../../../next/src/lib/clerk-bridge.tsx
     title: The session watch
 ---
 
@@ -16,4 +16,4 @@ Every preview signed in on the dev instance while `VITE_BACKEND_URL` on the prev
 
 # The rule
 
-Preview and development targets point at the staging backend, which verifies with the dev key. A failed `/me` now shows its message on the login page and signs out. A branch that needs an unmerged backend uses a branch-scoped `VITE_BACKEND_URL` override.
+Preview and development targets point at the staging backend, which verifies with the dev key. A failed `/me` now shows its message on the login page and signs out. Git builds no preview of a branch; a preview started by hand for a branch that needs an unmerged backend uses a branch-scoped `NEXT_PUBLIC_BACKEND_URL` override.

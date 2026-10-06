@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
@@ -503,22 +503,6 @@ export function KothNightView({ id }: { id: string }) {
 
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
-
-      {/* an archived night keeps the words its source wrote for each bracket */}
-      {board?.historical ? (
-        <Card className="card mb-4">
-          <CardHeader>
-            <CardTitle>Brackets</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="mb-0 flex flex-col gap-1">
-              {brackets.map((bracket: Row) => (
-                <li key={bracket.division_id}>{bracket.name}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
 
       {/* The MMR line between the brackets, set once a night from Settings */}
       <Dialog open={boundsOpen && !!board && !board.historical} onOpenChange={setBoundsOpen}>

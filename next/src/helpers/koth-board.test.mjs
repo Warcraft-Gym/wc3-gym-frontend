@@ -324,9 +324,9 @@ test('a player seated in one bracket still reads in the list of another bracket 
 });
 
 
-test('historical brackets preserve source order and categorical labels', () => {
+test('historical brackets read weakest first and keep their labels', () => {
   const brackets = [{ name: 'Platinum to 1700 MMR', lower_bound: null }, { name: '1500 to ~1700 MMR', lower_bound: 1500 }, { name: 'Gold and below', lower_bound: null }];
-  assert.deepEqual(orderedBrackets({ historical: true, brackets }), brackets);
+  assert.deepEqual(orderedBrackets({ historical: true, brackets }), [brackets[2], brackets[0], brackets[1]]);
 });
 
 const fixSeat = (user_id, name) => ({ user_id, name, rows: [] });

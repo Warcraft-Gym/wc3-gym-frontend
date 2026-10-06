@@ -28,3 +28,17 @@ export function archivedResults(history = []) {
       };
     });
 }
+
+/**
+ * The brackets of an archived night weakest first, as a live night orders them. A bracket with no
+ * `lower_bound` comes before any number; among brackets with the same or no bound, the one the
+ * source page lists later comes first.
+ *
+ * @param {Array} brackets - The board's `brackets`, in source page order
+ * @returns {Array} - The same brackets, weakest first
+ */
+export const archivedBrackets = (brackets = []) =>
+  (brackets ?? [])
+    .map((bracket, index) => ({ bracket, index, bound: bracket.lower_bound ?? -Infinity }))
+    .sort((a, b) => a.bound - b.bound || b.index - a.index)
+    .map(({ bracket }) => bracket);

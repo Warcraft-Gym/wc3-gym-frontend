@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { archivedResults } from './koth-archive.mjs';
+import { archivedBrackets, archivedResults } from './koth-archive.mjs';
 
 const side = (name) => ({ name });
 const series = (series_id, sequence, extra = {}) => ({
@@ -56,4 +56,29 @@ test('a row the read names no throne for wears no mark', () => {
 test('no history reads as no rows', () => {
   assert.deepEqual(archivedResults(undefined), []);
   assert.deepEqual(archivedResults(null), []);
+});
+
+const order = (...brackets) => archivedBrackets(brackets.map(([name, lower_bound]) => ({ name, lower_bound }))).map((bracket) => bracket.name);
+
+test('the standard three brackets read weakest first', () => {
+  assert.deepEqual(order(['1600 to the mooon', 1600], ['1450 to 1600', 1450], ['1450 and Below', null]), ['1450 and Below', '1450 to 1600', '1600 to the mooon']);
+});
+
+test('a night with two brackets puts the one with no bound first', () => {
+  assert.deepEqual(order(['1600 to the mooon', 1600], ['1450 and Below', null]), ['1450 and Below', '1600 to the mooon']);
+});
+
+test('rank labels with no bound read in reverse page order', () => {
+  assert.deepEqual(order(['Platinum to 1700 MMR', null], ['Gold and below', null]), ['Gold and below', 'Platinum to 1700 MMR']);
+});
+
+test('a 2000+ Games bracket listed last sorts by its bound', () => {
+  assert.deepEqual(
+    order(['1600 to the mooon', 1600], ['1450 to 1600', 1450], ['1450 and Below', null], ['2000+ Games', 2000]),
+    ['1450 and Below', '1450 to 1600', '1600 to the mooon', '2000+ Games'],
+  );
+});
+
+test('brackets with the same bound read in reverse page order', () => {
+  assert.deepEqual(order(['A', 1500], ['B', 1500]), ['B', 'A']);
 });

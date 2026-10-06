@@ -11,15 +11,17 @@ import { orderedBrackets } from "@/helpers/koth-board.mjs";
 type Row = Record<string, any>;
 
 /** One bracket of an archived night, drawn as the live card draws a closed one: the head, the
- *  throne and the Results band. The source holds no queue and no leave, so the card draws neither.
+ *  throne and the Results band. The head names the bracket by its place, weakest first, and the
+ *  source's label sits where a live card puts the MMR band. The source holds no queue and no leave, so the card draws neither.
  *  An archived name is the written name alone: no flag, race, rating mark or link. */
-function HistoricalBracket({ bracket }: { bracket: Row }) {
+function HistoricalBracket({ bracket, name }: { bracket: Row; name: string }) {
   const king: Row | null = bracket.historical_king;
   const played = archivedResults(bracket.history);
   return (
     <Card className="card h-full gap-0 py-0">
       <CardHeader className="flex shrink-0 items-center gap-2 banner bg-banner p-3">
-        <CardTitle className="flex-1 text-primary">{bracket.name}</CardTitle>
+        <CardTitle className="flex-1 text-primary">{name}</CardTitle>
+        <span className="tnum text-xs text-on-banner/80">{bracket.name}</span>
       </CardHeader>
       <div className="min-h-[64px] shrink-0 p-4">
         <div className="flex items-start gap-3">
@@ -34,7 +36,7 @@ function HistoricalBracket({ bracket }: { bracket: Row }) {
           )}
         </div>
       </div>
-      <BracketResults bracket={bracket} name={bracket.name} played={played} archived />
+      <BracketResults bracket={bracket} name={name} played={played} archived />
     </Card>
   );
 }
@@ -55,7 +57,7 @@ export function HistoricalBoard({ board }: { board: Row }) {
         </div>
       ) : null}
       <div className="grid gap-4 min-[960px]:grid-cols-3">
-        {brackets.map((bracket: Row) => <HistoricalBracket key={bracket.division_id} bracket={bracket} />)}
+        {brackets.map((bracket: Row, index: number) => <HistoricalBracket key={bracket.division_id} bracket={bracket} name={`Bracket ${index + 1}`} />)}
       </div>
     </section>
   );

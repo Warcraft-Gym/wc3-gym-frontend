@@ -51,7 +51,7 @@ sources:
 | `report` | `/series/<id>`, required | the Report result dialog |
 | `schedule` | `/series/<id>`, required | the schedule dialog |
 | `cast` | `/series/<id>`, required | the cast claim dialog |
-| `draft` | `/match/<id>`, required | the Draft series tab with a team 1 player picked |
+| `draft` | `/match/<id>`, required | the Plan round tab on Who plays, with the stats panel of a team 1 player open |
 | `kothcard` | `/koth/nights/<id>`, required | the first bracket card, clipped |
 | `signup` | `/signup` | the season signup form |
 | `wizard` | `/events/new` | each step of the event wizard, on the first league |
@@ -69,6 +69,6 @@ The `status` of a record reads `ok`, `ok, url became <path>`, `showed the login 
 # Traps
 
 - Opening the Plan round tab writes the team's seen mark, `PUT /draft-series/match/{match_id}/teams/{team_id}/seen`. The stub catches it, so `draft` leaves the marks as they were.
-- The flag in a player label of the draft board carries its own tooltip and keeps the click. Click the name, as `draft` does; a click on the flag opens no panel.
+- The flag in a player name of the round planner carries its own tooltip and keeps the click. Click the name, as `draft` does; a click on the flag opens no panel.
 - A page that redirects shows its target. `/profile` sends a member with a player row to his own player page, and `/koth/dashboard` lands on tonight's night page. The record reads `ok, url became <path>`; name the capture after what it shows.
 - Captures carry player names, avatars and battle tags, and `results.json` carries page text. They are never committed to this public repository. Keep `SHOTS_OUT` outside the clone.

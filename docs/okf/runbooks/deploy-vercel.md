@@ -4,7 +4,7 @@ title: Deploy to Vercel
 description: A merge to main deploys production, staging mirrors main as the one public preview on the dev Clerk instance, and the environment is set per target on the project.
 resource: ../../../next/vercel.json
 tags: [deploy]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T11:23:59Z }
 stale_after: 2027-04-06T00:00:00Z
 sources:
   - id: source
@@ -35,7 +35,7 @@ Preview access settings are managed on the Vercel project.
 
 # Limits
 
-The account is on the Hobby plan: a cap on deployment creations per day and a daily build quota across both projects. Batch pushes. A preview check that failed on the quota is not a code failure. Deployment retention is set in the dashboard, a day for everything but production.
+The app is built to stay inside the limits of Vercel's Hobby plan: a cap on deployment creations per day and a daily build quota across both projects. Batch pushes. A preview check that failed on the quota is not a code failure. Deployment retention is set in the dashboard, a day for everything but production.
 
 # Rewrites
 

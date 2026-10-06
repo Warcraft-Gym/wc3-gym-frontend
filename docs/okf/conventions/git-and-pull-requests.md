@@ -4,7 +4,7 @@ title: Git and pull requests
 description: One branch and one pull request per change, squash merged, pushes batched because every push builds a preview, and the merged combination built before a second merge.
 resource: ../../../.github/workflows/staging-branch.yml
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T11:23:59Z }
 sources:
   - id: staging
     resource: ../../../.github/workflows/staging-branch.yml
@@ -24,7 +24,7 @@ sources:
 
 # Which pushes build
 
-A push to a branch creates no Vercel deployment: Git deploys only `main` and `staging`. A merge to `main` builds production, and the push of that commit to `staging` builds the one preview.
+A push to a branch creates no Vercel deployment: Git deploys only `main` and `staging`. A merge to `main` builds production, and the push of that commit to `staging` builds the one preview, so each merge creates two deployments against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
 
 # There is no CI on pull requests
 

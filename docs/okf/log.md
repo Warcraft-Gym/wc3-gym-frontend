@@ -4,6 +4,8 @@
 
 * **Update**: the KOTH Events list marks an archived night with a neutral "Archived" chip beside its state, and an unpublished night reads "Draft"; the Events page names, under its table, that archived KOTH nights are on KOTH Events, for a reader who can open that page. The KOTH page and the leagues and events page state it.
 * **Update**: the Events page, the Leagues page, the one-league page and the event wizard read the events with `archived=false`, so archived KOTH nights show on the KOTH page alone; the events list stays edge cached with the `archived` key. The leagues and events page, event management and the session and auth concept state it.
+* **Update**: every concept was read against the code. The KOTH run page: results are a table with a fix dialog and Add result, the bounds sit in a dialog under Settings beside Clear all results, the page refreshes, and the labels say event. The stream view reads every 30 seconds only while a series exists. Git deploys only `main` and `staging`. The series store reads an event's series with `GET /events/{id}/series`; the routes that views and components call are listed apart. [KOTH](pages/koth.md), [the KOTH flow](flows/koth-night.md), [backend contract](concepts/backend-contract.md), [stores](concepts/stores.md), [shared components](concepts/shared-components.md), [theme](concepts/theme.md), [deploy to Vercel](runbooks/deploy-vercel.md), [git and pull requests](conventions/git-and-pull-requests.md).
+* **Update**: Vercel builds only `main`. No push builds a preview, so the staging alias does not follow a merge and each merge creates one deployment. [Overview](overview.md), [deploy to Vercel](runbooks/deploy-vercel.md), [git and pull requests](conventions/git-and-pull-requests.md).
 
 ## 2026-10-04
 

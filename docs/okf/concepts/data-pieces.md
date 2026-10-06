@@ -4,7 +4,7 @@ title: Data pieces
 description: Every shared piece that shows league data, by group, with where it lives, when to use it and which piece to use instead.
 resource: ../../../DESIGN.md
 tags: [design, components]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -49,7 +49,7 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | `W3CMmr` | `next/src/components/W3CMmr.tsx` | A column or a line names a ladder MMR. | The number is a series rating passed in by the row; the row already names its race. |
 | `RaceMmrChips` | `next/src/components/RaceMmrChips.tsx` | The reader asks which MMR a player holds. | The surface needs one number for one race; then the `PlayerName` line reads it. |
 | `TeamRoster` aligned player line | `next/src/components/TeamRoster.tsx` | The surface lists one team's roster for one event. | The player line stands free in a sentence or a cell; then `PlayerName`. |
-| `FacedRaces` and `SyncedLine` | `next/src/app/(app)/match/[id]/match-cells.tsx` | The reader picks an opponent. | The row has no season history. |
+| `SyncedLine`, and the faced races of `PlayerBlock` | `next/src/app/(app)/match/[id]/match-cells.tsx`, `next/src/app/(app)/match/[id]/plan/PlayerBlock.tsx` | The reader picks an opponent. | The row has no season history. |
 
 # Result marks
 
@@ -61,7 +61,7 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | Round card score badge | `next/src/components/player/RoundCards.tsx` | The reader is one side of the series. | The surface is neutral between the two sides; then `SeriesBox`. |
 | Head to head record bar | `next/src/components/player/HeadToHead.tsx` | The reader compares many opponents down one column of the head to head table. | Anywhere new. A win rate gets no bar, and the record carries the percent. |
 | Achievement badge row | `next/src/components/AchievementChip.tsx` | A row lists what a player earned. | The page compares how rare each badge is; then `BadgeRarity`. |
-| `TrophyIcon` and `PlayerTrophies` | `next/src/components/player/TrophyIcon.tsx` | A player page shows career wins. | The surface names a place in one event; then the place chip from `awards.mjs`. |
+| `TrophyIcon` and `PlayerTrophies` | `next/src/components/player/TrophyIcon.tsx`, `next/src/components/player/PlayerTrophies.tsx` | A player page shows career wins. | The surface names a place in one event; then the place chip from `awards.mjs`. |
 | Place chip and medal | `next/src/helpers/awards.mjs` | An event is finished. | The event is still running; then the state chip. |
 | Match banner score | `next/src/app/(app)/match/[id]/MatchBanner.tsx` | The page is about one fixture. | The surface lists many fixtures; then the match score card of `/seasons/[id]`. |
 | `scoreBadge` | `next/src/app/(app)/match/[id]/SeriesTables.tsx` | A table lists many series. | The surface shows one side at a time, as `SeriesCard` does on a phone; the comparison then vanishes. |

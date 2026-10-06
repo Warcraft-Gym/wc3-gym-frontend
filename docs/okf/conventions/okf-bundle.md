@@ -4,7 +4,7 @@ title: How this bundle is written
 description: The rules for every file under docs/okf, and the one rule for talking about the other repositories.
 resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
 tags: [tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-01T09:45:36Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: okf-spec
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md
@@ -68,7 +68,7 @@ Each bundle's `index.md` has one section, "Neighbouring bundles", that names the
 
 Where a concept must be understood on both sides, the consuming repository writes a short "as consumed here" concept that names the fields it relies on, and says in prose which repository owns the definition. It does not copy the definition.
 
-Tests keep the two sides in step, not prose. The backend pins the response shapes its consumers read in `tests/test_public_contract.py`, `tests/test_contract.py`, `tests/test_gnl_snapshot.py` and `tests/test_error_envelope.py`. A change to one of those tests is a change to a contract and needs a change in a consumer.
+Tests keep the two sides in step, not prose. The backend pins the response shapes its consumers read in `tests/test_public_contract.py`, `tests/test_contract.py` and `tests/test_error_envelope.py`. A change to one of those tests is a change to a contract and needs a change in a consumer.
 
 # Writing
 
@@ -82,5 +82,5 @@ The bundle is public. Never write a secret, a token, a database URL, an account 
 - A pull request that moves a step from one page to another also edits the flow that names it.
 - A concept that no longer holds gets `status: deprecated` and one line naming what replaced it. It is not deleted, so links keep working.
 - `log.md` gets one line per change, newest first.
-- GitHub Pages serves a graph viewer of this bundle, built from the bundle by the `pages.yml` workflow on every push to `main` with the viewer from the OKF reference repository. Nothing is committed for it: `just okf-graph` writes a local preview to `docs/okf/index.html`, which git ignores.
+- GitHub Pages serves a graph viewer of this bundle, built from the bundle by the `pages.yml` workflow on every push to `main` that changes `docs/`, the `justfile` or the workflow itself, with the viewer from the OKF reference repository. Nothing is committed for it: `just okf-graph` writes a local preview to `docs/okf/index.html`, which git ignores.
 - `pnpm test`, from `next/`, runs `docs/okf/okf.test.mjs`. It checks that every concept has a `type`, a `title`, a `description` and a `tags` list, that no value holds an unquoted `: `, that `index.md` files carry no frontmatter except the root one, that every concept is listed in its directory index with its own description, and that every relative link and every `resource` path resolves to a file, so a moved or deleted source fails the test until the concept names the new file. `just okf-validate` checks the bundle with a third-party validator as well. `just okf-drift` lists the concepts whose sources changed after they were written.

@@ -2,6 +2,7 @@
 
 ## 2026-10-06
 
+* **Update**: the KOTH Events list marks an archived night with a neutral "Archived" chip beside its state, and an unpublished night reads "Draft"; the Events page names, under its table, that archived KOTH nights are on KOTH Events, for a reader who can open that page. The KOTH page and the leagues and events page state it.
 * **Update**: the Events page, the Leagues page, the one-league page and the event wizard read the events with `archived=false`, so archived KOTH nights show on the KOTH page alone; the events list stays edge cached with the `archived` key. The leagues and events page, event management and the session and auth concept state it.
 
 ## 2026-10-04

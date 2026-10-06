@@ -12,7 +12,8 @@ import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
 import { dateRange, EVENT_KINDS, STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf } from "@/helpers/event-labels.mjs";
-import { useEventStore } from "@/stores";
+import { useAuth, useEventStore } from "@/stores";
+import { canSeeRole, metaOf } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 import { byNewest } from "@/helpers/season-order.mjs";
 
@@ -42,6 +43,7 @@ function FilterCombobox({ label, items, value, onChange }: { label: string; item
  *  so a draft reaches nobody here; the league page lists an admin's drafts. */
 export function EventsView() {
   const store = useEventStore();
+  const { me } = useAuth();
   const [leagues, setLeagues] = useState<Row[]>([]);
   const [events, setEvents] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,6 +140,13 @@ export function EventsView() {
           </Table>
         </div>
       </Card>
+
+      {/* The same test as the route guard of /koth */}
+      {me && canSeeRole(me.role, metaOf("/koth").role) ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Archived KOTH nights are on <Link href="/koth">KOTH Events</Link>.
+        </p>
+      ) : null}
     </>
   );
 }

@@ -9,9 +9,9 @@ const store = {
   async fetchLeagues() {
     return await fetchWrapper.get(`${backendUrl}/leagues`);
   },
-  // One league answers its own events, newest first
+  // One league answers its own events, newest first, archived KOTH nights left out
   async fetchLeague(league_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/leagues/${league_id}`);
+    return await fetchWrapper.get(`${backendUrl}/leagues/${league_id}?archived=false`);
   },
   async createLeague(league: any) {
     return await fetchWrapper.post(`${backendUrl}/leagues`, league);
@@ -19,10 +19,10 @@ const store = {
   async updateLeague(league_id: number, league: any) {
     return await fetchWrapper.put(`${backendUrl}/leagues/${league_id}`, league);
   },
+  // Archived KOTH nights are left out; the KOTH page pages through them with fetchEventsPage
   async fetchEvents(league_id: number | null = null, kind: string | null = null) {
-    const filters = [league_id && `league_id=${league_id}`, kind && `kind=${kind}`].filter(Boolean);
-    const query = filters.length ? `?${filters.join("&")}` : "";
-    return await fetchWrapper.get(`${backendUrl}/events${query}`);
+    const filters = ["archived=false", league_id && `league_id=${league_id}`, kind && `kind=${kind}`].filter(Boolean);
+    return await fetchWrapper.get(`${backendUrl}/events?${filters.join("&")}`);
   },
   // One page of one kind's events, newest first, with the count of all of them
   async fetchEventsPage(kind: string, limit: number, offset: number) {

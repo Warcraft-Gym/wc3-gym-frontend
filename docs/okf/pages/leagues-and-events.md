@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-06T10:03:01Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -45,11 +45,11 @@ A league is what repeats. An event is one run of it: a GNL season, a KOTH night,
 
 Outside its own page an event is named by its league and its name, "GNL · Season 18". A wide screen reads the long league name, "Gym Newbie League · Season 18"; a phone keeps the short one. An event whose name already opens with the short name, "GNL S18", is named alone.
 
-**Leagues (`/leagues`).** One row per league: name, linked to `/koth/dashboard` for KOTH (which lands on tonight's night page) and to `/leagues/:id` for every other kind, GNL included, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
+**Leagues (`/leagues`).** One row per league: name, linked to `/koth/dashboard` for KOTH (which lands on tonight's night page) and to `/leagues/:id` for every other kind, GNL included, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. The count leaves out archived KOTH nights. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
 
-**One league (`/leagues/:id`).** The league's events, newest first, with kind, dates and state. A member reads the published events; an admin also reads the drafts. An admin sees "New event", which opens the wizard with this league preset.
+**One league (`/leagues/:id`).** The league's events, newest first, with kind, dates and state. It leaves out archived KOTH nights, which [the KOTH page](koth.md) lists. A member reads the published events; an admin also reads the drafts. An admin sees "New event", which opens the wizard with this league preset.
 
-**Events (`/events`).** Every published event of every league, newest first, with league, kind, dates and state. Two filters: league, and state (draft, signups open, check-in, seeded, running, finished).
+**Events (`/events`).** Every published event of every league but the archived KOTH nights, newest first, with league, kind, dates and state. Two filters: league, and state (draft, signups open, check-in, seeded, running, finished).
 
 **One event (`/events/:id`).** The header, the description, the entrant count and, on a team event, the series per fixture. Then the one action the backend picked for the caller: sign up opens the signup dialog, withdraw asks once (a caller on more than one race gets one withdraw button per race and gives back that race alone), check in writes the caller's row, view scrolls to the draw, and a caller who is checked in reads a chip. A reader who is not logged in reads "Log in to sign up" while the signups stand open. When the caller's blocks cover the next round, the page shows the hint and the "Sit out" button. A logged-in reader gets a link to the entrants list, and on a GNL season a link to the season page. A table lists every stage with its format, best-of, series per entrant and scheduling. The entrants card lists each entrant with the signup race, the seed once a stage has locked its order, a tick when checked in, and "withdrawn" when withdrawn; on a finished event each row carries its place. A signup-only event plays no stage: the card is titled "Sign-ups", counts the entrants against the cap, lists them in signup order and prints each one's note. Under that, the draw: every stage that holds series, drawn read-only, with a "Hide results" switch the viewer keeps in their own browser. A series box opens the series page; its accessible name is its round, the two sides and the state.
 

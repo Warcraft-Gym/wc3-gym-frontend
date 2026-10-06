@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-06
+
+* **Update**: the Events page, the Leagues page, the one-league page and the event wizard read the events with `archived=false`, so archived KOTH nights show on the KOTH page alone; the events list stays edge cached with the `archived` key. The leagues and events page, event management and the session and auth concept state it.
+
 ## 2026-10-04
 
 * **Update**: a dialog takes its width from the `size` of its `DialogContent` (`confirm` 440, `sm` 520, `md` 720, `lg` 960, `xl` 1200 px) and lays its content out by its own width; a confirm is a centred panel on a phone too. The Report Result dialog holds the live score under its title and one row a game on a wide dialog; the schedule dialog opens on the date, the time and the clocks, with the free hours folded under "Show when you are both free"; the add series dialog sets the rosters side by side and names the pair picked, and the edit series dialog sets the two players side by side.

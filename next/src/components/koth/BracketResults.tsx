@@ -16,12 +16,15 @@ type Row = Record<string, any>;
 const CROWN_ICON: Record<string, string> = { moved: "mdi-crown", held: "mdi-shield-crown-outline" };
 
 const INFERRED = "Inferred from the play order";
+const WITHDREW = "Did not play the next series; read as leaving the throne";
+const UNKNOWN_WINNER = "Neither player played the next series, so the winner is not known";
 
 /** The results as a table, newest first: the series number in play order, the winner with the
  *  win mark, the loser, and what the result did to the crown, with a key under it. The run page adds
  *  a Fix column; a stream drops the replay link, because nobody clicks on a stream. An archived row
  *  names the player alone, wears its crown mark in muted ink when the order of play infers the
- *  winner, and reads "<a> vs <b>" with a draw square when no winner is known. */
+ *  winner, and reads "<a> vs <b>" with a draw square when no winner is known. A winner who played
+ *  no next series reads "Withdrew"; with no winner known, "Winner withdrew" takes the crown column. */
 export function PlayedTable({ played, total, admin, clean, archived }: { played: Row[]; total: number; admin?: BracketAdmin; clean?: boolean; archived?: boolean }) {
   // a name truncates inside its cell, so a long one never pushes the crown or Fix out of the card
   const cell = "flex min-w-0 items-center gap-1.5 overflow-hidden [&_.name]:truncate [&_.player-name]:min-w-0 [&_.player-name]:max-w-full";
@@ -54,50 +57,69 @@ export function PlayedTable({ played, total, admin, clean, archived }: { played:
         <tbody>
           {played.map((row: Row, index: number) => {
             const throne = throneWord(row);
+            // with no winner known, the words take the loser and the crown columns together
+            const unknownLeft = row.winner_left && row.undecided;
             return (
               <tr key={row.series_id} className="border-t border-border/70">
                 <td className="tnum py-1.5 pr-1 text-right text-xs text-muted-foreground">{total - index}</td>
                 <td className="py-1.5 pl-2">
                   <span className={cell}>
                     <span className={cn("h-2 w-2 shrink-0 rounded-[2px]", row.undecided ? "bg-draw" : "bg-win")} aria-hidden="true" />
-                    {/* the queue shows each race; a result names the player, so the name keeps the cell */}
-                    <BoardPlayer row={{ ...row.winner, mmr: null }} race={null} warn={false} noFlag={archived} />
+                    {/* a phone drops "Withdrew" under the name when both do not fit */}
+                    <span className="flex min-w-0 items-center gap-x-1.5 max-sm:flex-wrap">
+                      {/* the queue shows each race; a result names the player, so the name keeps the cell */}
+                      <BoardPlayer row={{ ...row.winner, mmr: null }} race={null} warn={false} noFlag={archived} />
+                      {row.winner_left && !row.undecided ? (
+                        <TapTooltip content={WITHDREW} className="shrink-0 text-xs text-muted-foreground">
+                          Withdrew
+                        </TapTooltip>
+                      ) : null}
+                    </span>
                   </span>
                 </td>
-                <td className="py-1.5 pl-2">
-                  <span className={cn(cell, !row.undecided && "[&_.name]:opacity-(--v-medium-emphasis-opacity)")}>
-                    {/* a series with no winner names its two sides, neither of them the loser */}
-                    {row.undecided ? <span className="shrink-0 text-xs text-muted-foreground">vs</span> : null}
-                    <BoardPlayer row={{ ...row.loser, mmr: null }} race={null} warn={false} noFlag={archived} />
-                    {/* with no winner the word says it; with one, the loser left the night, so no game was played */}
-                    {row.forfeit && row.undecided ? <span className="shrink-0 text-xs text-muted-foreground">Forfeit</span> : null}
-                    {row.forfeit && !row.undecided ? (
-                      <TapTooltip content="Forfeit: left the event" className="shrink-0">
-                        <Icon name="mdi-flag-outline" size={14} className="text-muted-foreground" />
-                        <span className="sr-only">Forfeit</span>
+                <td className="py-1.5 pl-2" colSpan={unknownLeft ? 2 : undefined}>
+                  {/* "Winner withdrew" drops under the second side when both do not fit */}
+                  <div className={cn(unknownLeft && "flex flex-wrap items-center gap-x-1.5")}>
+                    <span className={cn(cell, !row.undecided && "[&_.name]:opacity-(--v-medium-emphasis-opacity)")}>
+                      {/* a series with no winner names its two sides, neither of them the loser */}
+                      {row.undecided ? <span className="shrink-0 text-xs text-muted-foreground">vs</span> : null}
+                      <BoardPlayer row={{ ...row.loser, mmr: null }} race={null} warn={false} noFlag={archived} />
+                      {/* the loser left the night, so no game was played */}
+                      {row.forfeit && !row.undecided ? (
+                        <TapTooltip content="Forfeit: left the event" className="shrink-0">
+                          <Icon name="mdi-flag-outline" size={14} className="text-muted-foreground" />
+                          <span className="sr-only">Forfeit</span>
+                        </TapTooltip>
+                      ) : null}
+                      {row.review_note ? (
+                        <TapTooltip content={row.review_note} className="shrink-0">
+                          <Icon name="mdi-information-outline" size={14} className="text-muted-foreground" />
+                          <span className="sr-only">{row.review_note}</span>
+                        </TapTooltip>
+                      ) : null}
+                      {row.replay && !clean ? (
+                        <Link href={`/series/${row.series_id}`} className="shrink-0 text-primary-text" aria-label={`Replay of series ${total - index}`}>
+                          <Icon name="mdi-filmstrip" size={16} />
+                        </Link>
+                      ) : null}
+                    </span>
+                    {unknownLeft ? (
+                      <TapTooltip content={UNKNOWN_WINNER} className="ml-auto shrink-0 text-xs text-muted-foreground">
+                        Winner withdrew
                       </TapTooltip>
                     ) : null}
-                    {row.review_note ? (
-                      <TapTooltip content={row.review_note} className="shrink-0">
-                        <Icon name="mdi-information-outline" size={14} className="text-muted-foreground" />
-                        <span className="sr-only">{row.review_note}</span>
+                  </div>
+                </td>
+                {unknownLeft ? null : (
+                  <td className="py-1.5 text-center">
+                    {throne ? (
+                      <TapTooltip content={row.inferred ? INFERRED : throne}>
+                        <Icon name={CROWN_ICON[row.throne]} size={16} className={row.inferred ? "text-muted-foreground" : "text-primary-text"} />
+                        <span className="sr-only">{row.inferred ? `${throne}, ${INFERRED.toLowerCase()}` : throne}</span>
                       </TapTooltip>
                     ) : null}
-                    {row.replay && !clean ? (
-                      <Link href={`/series/${row.series_id}`} className="shrink-0 text-primary-text" aria-label={`Replay of series ${total - index}`}>
-                        <Icon name="mdi-filmstrip" size={16} />
-                      </Link>
-                    ) : null}
-                  </span>
-                </td>
-                <td className="py-1.5 text-center">
-                  {throne ? (
-                    <TapTooltip content={row.inferred ? INFERRED : throne}>
-                      <Icon name={CROWN_ICON[row.throne]} size={16} className={row.inferred ? "text-muted-foreground" : "text-primary-text"} />
-                      <span className="sr-only">{row.inferred ? `${throne}, ${INFERRED.toLowerCase()}` : throne}</span>
-                    </TapTooltip>
-                  ) : null}
-                </td>
+                  </td>
+                )}
                 {admin ? (
                   <td className="py-1.5 text-right">
                     <TapTooltip content="Fix this result">

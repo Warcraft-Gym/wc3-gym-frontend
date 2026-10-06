@@ -4,7 +4,7 @@ import { archivedBrackets, archivedResults } from './koth-archive.mjs';
 
 const side = (name) => ({ name });
 const series = (series_id, sequence, extra = {}) => ({
-  series_id, sequence, side1: side('Ada'), side2: side('Bo'), winner_side: null, inferred_winner_side: null, forfeit: false, review_note: null, result_unavailable: false, ...extra,
+  series_id, sequence, side1: side('Ada'), side2: side('Bo'), winner_side: null, inferred_winner_side: null, winner_left: false, review_note: null, result_unavailable: false, ...extra,
 });
 
 test('the rows read newest first, by play order', () => {
@@ -33,18 +33,42 @@ test('a winner read from the order of play is marked inferred', () => {
 });
 
 test('a series with no winner keeps both sides in source order and no crown mark', () => {
-  const [row] = archivedResults([series(1, 1, { forfeit: true, throne: 'moved' })]);
+  const [row] = archivedResults([series(1, 1, { throne: 'moved' })]);
   assert.deepEqual([row.winner.name, row.loser.name], ['Ada', 'Bo']);
   assert.equal(row.undecided, true);
   assert.equal(row.inferred, false);
   assert.equal(row.throne, null);
-  assert.equal(row.forfeit, true);
+  assert.equal(row.winner_left, false);
+});
+
+test('a winner who withdrew after the series is a decided row that left', () => {
+  const [row] = archivedResults([series(1, 1, { winner_left: true, inferred_winner_side: 2, throne: 'held' })]);
+  assert.deepEqual([row.winner.name, row.loser.name, row.throne], ['Bo', 'Ada', 'held']);
+  assert.equal(row.undecided, false);
+  assert.equal(row.inferred, true);
+  assert.equal(row.winner_left, true);
+});
+
+test('a winner who withdrew with no winner known keeps both sides and no crown mark', () => {
+  const [row] = archivedResults([series(1, 1, { winner_left: true, throne: 'none' })]);
+  assert.deepEqual([row.winner.name, row.loser.name], ['Ada', 'Bo']);
+  assert.equal(row.undecided, true);
+  assert.equal(row.throne, null);
+  assert.equal(row.winner_left, true);
+});
+
+test('an older row marked forfeit with no winner reads as a winner who withdrew', () => {
+  const [row] = archivedResults([series(1, 1, { forfeit: true, throne: 'moved' })]);
+  assert.equal(row.undecided, true);
+  assert.equal(row.throne, null);
+  assert.equal(row.winner_left, true);
+  assert.equal('forfeit' in row, false);
 });
 
 test('a review note rides on the row', () => {
   const [row] = archivedResults([series(1, 1, { review_note: 'Listed twice' })]);
   assert.equal(row.review_note, 'Listed twice');
-  assert.equal(row.forfeit, false);
+  assert.equal(row.winner_left, false);
 });
 
 test('a row the read names no throne for wears no mark', () => {

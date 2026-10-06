@@ -2,6 +2,7 @@
 
 ## 2026-10-06
 
+* **Update**: an archived KOTH row whose players neither play the next series carries `winner_left`: with a winner, the muted "Withdrew" follows the winner's name; with none, the row reads "a vs b" with the muted "Winner withdrew" in the crown column. The KOTH page states it.
 * **Update**: an archived KOTH night orders its brackets weakest first and titles each card "Bracket 1", "Bracket 2" and on, with the source's label where a live card puts the MMR band; the run page draws no Brackets card for it. The KOTH page states it.
 * **Update**: an archived KOTH night draws each bracket with the head, the throne and the Results band of a closed night run in the app, with no Queue and no "Players who left"; the Results table is one shared component, its winner the side the source page wrote, else the one the play order infers, an inferred winner's crown mark in muted ink, and a series with no result as "a vs b". The KOTH page states it.
 * **Update**: the KOTH Events list marks an archived night with a neutral "Archived" chip beside its state, and an unpublished night reads "Draft"; the Events page names, under its table, that archived KOTH nights are on KOTH Events, for a reader who can open that page. The KOTH page and the leagues and events page state it.

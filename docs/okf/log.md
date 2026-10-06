@@ -2,6 +2,7 @@
 
 ## 2026-10-06
 
+* **Update**: an archived KOTH night draws each bracket with the head, the throne and the Results band of a closed night run in the app, with no Queue and no "Players who left"; the Results table is one shared component, its winner the side the source page wrote, else the one the play order infers, an inferred winner's crown mark in muted ink, and a series with no result as "a vs b". The KOTH page states it.
 * **Update**: the KOTH Events list marks an archived night with a neutral "Archived" chip beside its state, and an unpublished night reads "Draft"; the Events page names, under its table, that archived KOTH nights are on KOTH Events, for a reader who can open that page. The KOTH page and the leagues and events page state it.
 * **Update**: the Events page, the Leagues page, the one-league page and the event wizard read the events with `archived=false`, so archived KOTH nights show on the KOTH page alone; the events list stays edge cached with the `archived` key. The leagues and events page, event management and the session and auth concept state it.
 

@@ -4,7 +4,7 @@ title: Testing
 description: Pure helpers have node tests beside them; a user-visible change is verified by rendering the real page, with known traps in worktrees.
 resource: ../../../next/package.json
 tags: [testing, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T13:00:52Z }
 sources:
   - id: package
     resource: ../../../next/package.json
@@ -24,7 +24,7 @@ A grep of the built bundle proves a string compiled in; it says nothing about wh
 
 Ways to get a page up, cheapest first:
 
-1. Read-only pages: `PROXY_TARGET=<staging backend url> pnpm dev`. The tracked `.env.example` value `/api` is proxied and the browser sees one origin.
+1. Read-only pages: `PROXY_TARGET=<staging backend url> pnpm dev`. The tracked `.env.example` value `/api` is proxied and the browser sees one origin. The staging backend is not rebuilt on a merge, so this fits only routes older than its last build.
 2. Admin writes: run the backend locally with a test admin token against the shared staging database, start with `PROXY_TARGET=http://localhost:5002 pnpm dev`, sign in at `/admin-login`.
 3. A branch with a backend migration: make the branch copy of the staging database from the backend worktree first; the backend project builds no branch previews.
 

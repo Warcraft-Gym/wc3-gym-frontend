@@ -16,4 +16,4 @@ Made 2026-09-13 and extended 2026-09-27. A page title is the name of a place in 
 
 # Consequences
 
-Put this line in every frontend brief: h1, navigation entries and titles that name a thing in Title Case; titles that read as a sentence or an action, and everything else, in sentence case. A label shows as written, with two exceptions that CSS draws in upper case: the group labels of the admin sidebar and the kicker of the page header.
+Put this line in every frontend brief: h1, navigation entries and titles that name a thing in Title Case; titles that read as a sentence or an action, and everything else, in sentence case. A label shows as written, with three exceptions that CSS draws in upper case: the group labels of the admin sidebar, the kicker of the page header and the group labels of the Discord roles lists.

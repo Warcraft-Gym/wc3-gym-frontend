@@ -22,9 +22,9 @@ sources:
 - Reference an issue as `Issue #37` or `Part of #37`, never with a closing keyword: the issue stays open until the change is reviewed on production.
 - Text an AI agent wrote in a pull request body starts with a note saying so; a co-written commit ends with a `Co-Authored-By` trailer. Never override the commit author.
 
-# Pushes cost a build
+# Which pushes build
 
-A push to a branch creates no Vercel deployment: Git deploys only `main` and `staging`.
+A push to a branch creates no Vercel deployment: Git deploys only `main` and `staging`. A merge to `main` builds production, and the push of that commit to `staging` builds the one preview.
 
 # There is no CI on pull requests
 
@@ -36,4 +36,4 @@ This repository runs no lint, test or build on a pull request. Two workflows run
 
 # Backend and frontend together
 
-A change that needs both repositories ships the backend first when the frontend reads a new field, and the frontend first when the backend stops answering an old one. A preview of an unmerged frontend branch can point at an unmerged backend branch through a branch-scoped `NEXT_PUBLIC_BACKEND_URL` on the Vercel project; delete it after the merge.
+A change that needs both repositories ships the backend first when the frontend reads a new field, and the frontend first when the backend stops answering an old one. Git builds no preview of a branch. A preview someone starts by hand for an unmerged frontend branch can point at an unmerged backend branch through a branch-scoped `NEXT_PUBLIC_BACKEND_URL` on the Vercel project; delete it after the merge.

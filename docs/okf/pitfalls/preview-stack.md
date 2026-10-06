@@ -16,4 +16,4 @@ Every preview signed in on the dev instance while `VITE_BACKEND_URL` on the prev
 
 # The rule
 
-Preview and development targets point at the staging backend, which verifies with the dev key. A failed `/me` now shows its message on the login page and signs out. A branch that needs an unmerged backend uses a branch-scoped `NEXT_PUBLIC_BACKEND_URL` override.
+Preview and development targets point at the staging backend, which verifies with the dev key. A failed `/me` now shows its message on the login page and signs out. Git builds no preview of a branch; a preview started by hand for a branch that needs an unmerged backend uses a branch-scoped `NEXT_PUBLIC_BACKEND_URL` override.

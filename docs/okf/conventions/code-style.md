@@ -4,7 +4,7 @@ title: Code style
 description: Next.js and React with shadcn/ui and Tailwind, pure helpers in .mjs files with node tests, theme tokens instead of colour values, Title Case page titles, and one-line comments.
 resource: ../../../next/package.json
 tags: [design, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:05:19Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: package
     resource: ../../../next/package.json
@@ -26,7 +26,7 @@ Next.js App Router with React and TypeScript, in `next/`. shadcn/ui on Base UI f
 - A route is a folder under `next/src/app/(app)/`. Its `page.tsx` stays small and renders a view (`*View.tsx`) in the same folder. The view is a client component: it draws the page and calls stores. A component (`next/src/components/*.tsx`) is a reusable piece; see [shared components](../concepts/shared-components.md).
 - A store (`next/src/stores/*.ts`) owns the fetches for one area. See [stores](../concepts/stores.md).
 - A pure rule goes in `next/src/helpers/<name>.mjs` with a `<name>.test.mjs` beside it, run by `pnpm test` on node's own test runner. No React import in an `.mjs` helper, so it runs in node. Examples: the season phase words, the best-of and map rules, the draft order, the bracket layout, the fantasy tiers, the event labels.
-- The two `.js` helpers (`fetch-wrapper.js`, `backend-url.js`) touch the browser or the stores. A rule that needs React is a hook in `next/src/hooks/`. The route table and the guard are in `next/src/lib/`.
+- Nine helpers are `.js` files; two of them, `fetch-wrapper.js` and `backend-url.js`, touch the browser or the stores. A rule that needs React is a hook in `next/src/hooks/`. The route table and the guard are in `next/src/lib/`.
 
 # Colour and type
 

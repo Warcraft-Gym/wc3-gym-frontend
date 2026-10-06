@@ -4,7 +4,7 @@ title: Testing
 description: Pure helpers have node tests beside them; a user-visible change is verified by rendering the real page, with known traps in worktrees.
 resource: ../../../next/package.json
 tags: [testing, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:07:56Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: package
     resource: ../../../next/package.json
@@ -16,7 +16,7 @@ sources:
 
 # Unit tests
 
-`pnpm test`, from `next/`, runs `node --test` over `src/**/*.test.mjs` and `../docs/**/*.test.mjs`. There are about forty. A helper that holds a rule gets a test file beside it, in node's own runner, with no framework. `palette.test.mjs` checks that every declared ink passes 4.5:1 on its fill, that form labels pass on the three surfaces, and that dark `error` stays apart from `loss`.
+`pnpm test`, from `next/`, runs `node --test` over `src/**/*.test.mjs` and `../docs/**/*.test.mjs`. There are about sixty. A helper that holds a rule gets a test file beside it, in node's own runner, with no framework. `palette.test.mjs` checks that every declared ink passes 4.5:1 on its fill, that form labels pass on the three surfaces, and that dark `error` stays apart from `loss`.
 
 # Rendering is the real test
 
@@ -25,7 +25,7 @@ A grep of the built bundle proves a string compiled in; it says nothing about wh
 Ways to get a page up, cheapest first:
 
 1. Read-only pages: `PROXY_TARGET=<staging backend url> pnpm dev`. The tracked `.env.example` value `/api` is proxied and the browser sees one origin.
-2. Admin writes: run the backend locally with a test admin token against the shared staging database, start with `PROXY_TARGET=http://localhost:8000 pnpm dev`, sign in at `/admin-login`.
+2. Admin writes: run the backend locally with a test admin token against the shared staging database, start with `PROXY_TARGET=http://localhost:5002 pnpm dev`, sign in at `/admin-login`.
 3. A branch with a backend migration: make the branch copy of the staging database from the backend worktree first; the backend project builds no branch previews.
 
 # Traps in a worktree

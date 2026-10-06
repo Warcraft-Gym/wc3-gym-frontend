@@ -4,8 +4,8 @@ title: Capture the screens
 description: Build the app at one commit, then screenshot a route list and the dialogs behind clicks, with every backend write answered in the browser.
 resource: ../../../next/scripts/shots/shoot.mjs
 tags: [testing, tooling]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-01T09:48:36Z }
-stale_after: 2027-04-01T00:00:00Z
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+stale_after: 2027-04-06T00:00:00Z
 sources:
   - id: shoot
     resource: ../../../next/scripts/shots/shoot.mjs
@@ -68,7 +68,7 @@ The `status` of a record reads `ok`, `ok, url became <path>`, `showed the login 
 
 # Traps
 
-- Opening the Draft series tab writes the team's seen mark, `PUT /draft-series/match/{match_id}/teams/{team_id}/seen`. The stub catches it, so `draft` leaves the marks as they were.
+- Opening the Plan round tab writes the team's seen mark, `PUT /draft-series/match/{match_id}/teams/{team_id}/seen`. The stub catches it, so `draft` leaves the marks as they were.
 - The flag in a player label of the draft board carries its own tooltip and keeps the click. Click the name, as `draft` does; a click on the flag opens no panel.
 - A page that redirects shows its target. `/profile` sends a member with a player row to his own player page, and `/koth/dashboard` lands on tonight's night page. The record reads `ok, url became <path>`; name the capture after what it shows.
 - Captures carry player names, avatars and battle tags, and `results.json` carries page text. They are never committed to this public repository. Keep `SHOTS_OUT` outside the clone.

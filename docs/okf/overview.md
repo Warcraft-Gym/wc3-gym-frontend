@@ -4,7 +4,7 @@ title: wc3-gym-frontend
 description: The Next.js web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
 resource: https://github.com/Warcraft-Gym/wc3-gym-frontend
 tags: [design, deploy]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-01T09:45:36Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -66,7 +66,7 @@ next/                the app; every command runs from here
   src/lib/           the route table, the guard, the Clerk bridge
   src/hooks/         theme, breakpoint, player panel, delete dialog
   src/helpers/       fetch wrapper, backend URL, and the pure .mjs rules with tests
-  src/assets/        race icons, achievement icons, media
+  src/assets/        race icons, media, the Discord mark
 DESIGN.md            every colour token, the type, the casing rules, the shared components, the events vocabulary, the known gaps
 ADMIN_UI_USER_GUIDE.md  the admin guide, also served at /user-guide
 ```

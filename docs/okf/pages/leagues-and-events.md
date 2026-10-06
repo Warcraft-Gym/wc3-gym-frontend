@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -79,4 +79,4 @@ The dialog ends on a state with a "Done" button. On a KOTH night the end state n
 
 # KOTH nights
 
-The public event page of a KOTH night reads the event row and the night's board, `GET /koth/nights/{id}/board`: it skips the entrant, stage and standings reads and draws the event header over the board. An archived night, one whose board answers `historical` true, draws the same historical component as the night's run page: every source bracket, its reported crown, ordered BO1s and event video links. Unknown results remain visible, and unconfirmed source names do not link to accounts. The backend owns the evidence and nullable identity contract. Any other night draws `KothNightBoard`: the bracket cards, and for a member the sign up and withdraw buttons, his place in line and the "Waiting for a bracket" strip; an admin also reads one "Run the night" link to the night's run page. See [KOTH](koth.md). The board route has a fifteen-second edge cache; the page reads it on load, on "Refresh" and on a return to its tab at most once every fifteen seconds, and `?mode=clean` reads it again every thirty seconds while the tab is visible and the night is not closed.
+The public event page of a KOTH night reads the event row and the night's board, `GET /koth/nights/{id}/board`: it skips the entrant, stage and standings reads and draws the event header over the board. An archived night, one whose board answers `historical` true, draws the same historical component as the night's run page: every source bracket, its reported crown, ordered BO1s and event video links. Unknown results remain visible, and unconfirmed source names do not link to accounts. The backend owns the evidence and nullable identity contract. Any other night draws `KothNightBoard`: the bracket cards, and for a member the sign up and withdraw buttons, his place in line and the "Waiting for a bracket" strip; an admin also reads a "Run the event" link to the night's run page and, on a night that is not archived, "Open stream view" and "Copy signup link". See [KOTH](koth.md). The board route has a fifteen-second edge cache; the page reads it on load, on "Refresh" and on a return to its tab at most once every fifteen seconds, and `?mode=clean` reads it again every thirty seconds while the night holds a series, every five minutes before the first one, and stops when the night closes or 24 hours after its start.

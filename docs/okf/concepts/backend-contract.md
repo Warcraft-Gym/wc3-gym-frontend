@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -49,11 +49,12 @@ A user row carries `tags`: a list of `{id, tag, verified, active, source, first_
 |---|---|
 | `auth` | `POST /login`, `GET /me` |
 | `season` | `/leagues`, `/events?league_id={id}`, `/events/{id}`, `/events/{id}/maps`, `/maps/order`, `/rounds`, `/signups`, `/signups/{user}`, `/teams`, `/achievements`, `/ladder`, `/ladder/players`, `/ladder-sync`, `/maps/ladder-import`, `/achievements`, `/finish`, `/reopen`, `/import`, `/export` |
-| `event` | `/leagues`, `/leagues/{id}`, `/events`, `/events/{id}`, `/me/events`, `/events/{id}/entrants...`, `/divisions`, `/divisions/assign`, `/stages`, `/stages/{id}/seeds`, `/seeds/lock`, `/generate`, `/rounds`, `/series`, `/standings`, `/advance`, `/finish`, `/reopen`, `/koth/nights`, `/koth/nights/{id}/close` |
-| `player` | `/users`, `/users?no_discord=true`, `/users?tag_source=claim`, `/users/{id}`, `/users/me/tags`, `/users/me/tags/{tag_id}`, `/users/me/tags/{tag_id}/active`, `/users/{id}/tags/{tag_id}/move`, `/users/{id}/merge`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/player-series`, `/player-history` |
+| `event` | `/leagues`, `/leagues/{id}`, `/events`, `/events/{id}`, `/me/events`, `/events/{id}/entrants...`, `/divisions`, `/divisions/assign`, `/stages`, `/stages/{id}/seeds`, `/seeds/lock`, `/generate`, `/rounds`, `/series`, `/standings`, `/advance`, `/finish`, `/reopen`, `/events/{id}/entrants/{entrant}/checkin`, `/koth/board`, `/koth/nights`, `/koth/nights/{id}/board`, `/close`, `/series...`, `/results`, `/bounds`, `/brackets/{division}/queue`, `/brackets/{division}/crown`, `/entrants/{entrant}...` |
+| `player` | `/users`, `/users?no_discord=true`, `/users?tag_source=claim`, `/users/{id}`, `/users/me/tags`, `/users/me/tags/{tag_id}`, `/users/me/tags/{tag_id}/active`, `/users/{id}/tags/{tag_id}/move`, `/users/{id}/merge`, `/users/{id}/ban`, `/users/{id}/history`, `/users/{id}/w3c-sync`, `/users/{id}/ladder`, `/users/search`, `/user-info`, `/signup`, `/users/me/bnet/start`, `/users/me/bnet/finish`, `/users/me/prompts`, `/users/me/prompts/{id}` |
 | `team` | `/leagues/{league_id}/teams`, `/leagues/{league_id}/teams/basic`, `/leagues/{league_id}/teams/{id}`, `/events/{event_id}/teams`, `/events/{event_id}/teams/basic`, `/events/{event_id}/teams/{id}`, `/players`, `/captains`, `/availability`, `/ladder-sync`, `/image` |
 | `match` | `/matches`, `/matches/{id}`, `/matches/{id}/replays`, `/player-series/{id}/replays/{game}/move/{to_game}`, `/matches/search`, `/draft-series...`, `/draft-series/{id}/promote` |
-| `series` | `/series`, `/series/{id}`, `/series/{id}/result`, `/series/{id}/result-kind`, `/series/{id}/places`, `/series/{id}/sides`, `/series/search`, `/events/{event_id}/series/search`, `/series/{id}/casts...`, `/casts/last`, `/series/{id}/games`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time`, `/home/series` |
+| `series` | `/series`, `/series/{id}`, `/series/{id}/result`, `/series/{id}/casts...`, `/casts/last`, `/events/{event_id}/series` (bare, or filtered by `match_id`, `player_id` or `is_fantasy_match`), `/home/series`, `/home/series/upcoming`, `/users/{a}/meetings/{b}`, `/draft-series...`, `/matches/{id}/draft-board` |
+| no store: called from a view or a component | `/series/{id}/result-kind`, `/series/{id}/places`, `/series/{id}/sides`, `/series/{id}/games`, `/player-series`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time` |
 | `availability` | `/player-availability`, `/player-blocks...`, `/events/{event_id}/teams/{team_id}/availability` |
 | `map` | `/maps`, `/maps/{id}`, `/maps/ladder-import`, `/maps/{id}/image` |
 | `config` | `/config/settings`, `/config/settings/{key}`, `/config/w3c`, `/config/admins`, `/config/discord-role-bindings...`, `/config/discord-hidden-roles`, `/config/discord-roles`, `/config/discord-roles/sync`, `/config/discord-guild-roles`, `/config/discord-role-groups`, `/config/koth/nightbot-token` |
@@ -78,7 +79,7 @@ Requests on load, by surface. The first column links the page concept of each su
 |---|---|---|
 | [Home](../pages/member.md) | 6 first: `/me`, the seasons (`GET /leagues`, read once a session, and `GET /events?league_id=<gnl>&kind=gnl`), `GET /me/events`, `GET /home/series` and one `GET /player-series?season_id=`; the fantasy and stats panels read after the panels have drawn | `/home/series`, the setting, the fantasy series, the history and the ladders are edge cached; the rest carry the bearer |
 | [The round planner](../pages/fixtures-and-series.md) | 2: the draft board and the draft state, beside the two roster reads the page already makes | a write that moves a pairing reads both again with no browser cache; nothing is read per row. On demand, once per pair or player while the page is open: the pair's free time behind the calendar button, sent private, and a player's ladder record behind the stats panel, edge cached |
-| [A KOTH night page](../pages/koth.md) | 2: the board and the event row | the board is edge cached for fifteen seconds; the clean stream view reads it again every thirty seconds while the tab is visible and the night is not closed |
+| [A KOTH night page](../pages/koth.md) | 2: the board and the event row | the board is edge cached for fifteen seconds; the clean stream view reads it again every thirty seconds while the night holds a series, every five minutes before the first one, and stops when the night closes or 24 hours after its start |
 | [A KOTH run page](../pages/koth.md) | 2: the board and the event row | an admin read carries the bearer, so the board answers fresh; every admin write answers the whole board |
 | [The veto page](../pages/fixtures-and-series.md) | 2: the veto board and the map list | the map list is edge cached; the board is read again every five seconds while the other side is on turn and the tab is visible, until the veto is complete |
 | [The schedule dialog](../pages/fixtures-and-series.md) | 1: the pair's free hours, `GET /player-series/{id}/free-time` | read once, when the dialog opens |

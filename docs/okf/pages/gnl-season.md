@@ -4,7 +4,7 @@ title: The GNL season
 description: The seasons list, one season with its rounds and matches, the draft, the season maps and the achievement rules.
 resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:30:31Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: seasons
     resource: ../../../next/src/app/(app)/seasons/SeasonsView.tsx
@@ -79,6 +79,9 @@ An edit reads the season with `GET /events/{id}` for its stages, its rounds and 
 | `season.updateSeason` | `PUT /events/{id}` |
 | `event.fetchEvent`, `event.setStages` | `GET /events/{id}`, `PUT /events/{id}/stages` |
 | `season.deleteSeason` | `DELETE /events/{id}` |
+| `season.closeSeason` | `POST /events/{id}/finish` |
+| `season.reopenSeason` | `POST /events/{id}/reopen` |
+| `team.setCaptains` | `PUT /events/{id}/teams/{team}/captains` |
 | `season.addMapsToSeason` | `POST /events/{id}/maps` |
 | `season.removeMapsFromSeason` | `DELETE /events/{id}/maps` |
 | `season.setSeasonMapOrder` | `PUT /events/{id}/maps/order` |

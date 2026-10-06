@@ -4,7 +4,7 @@ title: wc3-gym-frontend
 description: The Next.js web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
 resource: https://github.com/Warcraft-Gym/wc3-gym-frontend
 tags: [design, deploy]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T12:53:50Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -26,8 +26,8 @@ One app for everyone: the public event and series pages, a member's profile, sig
 | Target | What |
 |---|---|
 | production | Vercel project `wc3-gym-frontend`, built from `main`; Clerk production instance in proxy mode |
-| staging | the `staging` branch, force-pushed to the merged commit on every push to `main`; a public preview at a fixed alias, on the Clerk dev instance, pointed at the staging backend |
-| other branches | no git deployment: `next/vercel.json` enables `main` and `staging` only |
+| staging | the `staging` branch, force-pushed to the merged commit on every push to `main`; Vercel builds no preview from that push, so the staging alias does not follow `main` |
+| other branches | no deployment from a push; a preview exists when someone makes one by hand, on the Clerk dev instance and pointed at the staging backend |
 | local | `pnpm dev` in `next/` on port 3000, with `PROXY_TARGET` naming the backend that `/api` reaches |
 
 # The system in one picture

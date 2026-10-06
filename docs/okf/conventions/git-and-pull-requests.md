@@ -1,10 +1,10 @@
 ---
 type: Convention
 title: Git and pull requests
-description: One branch and one pull request per change, squash merged, pushes batched because every push builds a preview, and the merged combination built before a second merge.
+description: One branch and one pull request per change, squash merged, merges batched because each one builds production, and the merged combination built before a second merge.
 resource: ../../../.github/workflows/staging-branch.yml
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T11:23:59Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T13:00:52Z }
 sources:
   - id: staging
     resource: ../../../.github/workflows/staging-branch.yml
@@ -24,7 +24,7 @@ sources:
 
 # Which pushes build
 
-A push to a branch creates no Vercel deployment: Git deploys only `main` and `staging`. A merge to `main` builds production, and the push of that commit to `staging` builds the one preview, so each merge creates two deployments against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
+Among pushes, only a merge to `main` creates a Vercel deployment: the project builds production and makes no preview from a push, so a branch and `staging` build nothing. Each merge creates one deployment against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
 
 # There is no CI on pull requests
 
@@ -36,4 +36,4 @@ This repository runs no lint, test or build on a pull request. Two workflows run
 
 # Backend and frontend together
 
-A change that needs both repositories ships the backend first when the frontend reads a new field, and the frontend first when the backend stops answering an old one. Git builds no preview of a branch. A preview someone starts by hand for an unmerged frontend branch can point at an unmerged backend branch through a branch-scoped `NEXT_PUBLIC_BACKEND_URL` on the Vercel project; delete it after the merge.
+A change that needs both repositories ships the backend first when the frontend reads a new field, and the frontend first when the backend stops answering an old one. Git builds no preview of a branch. A preview someone starts by hand for an unmerged frontend branch can point at an unmerged backend branch through a branch-scoped `NEXT_PUBLIC_BACKEND_URL` on the Vercel project; delete it after the merge. The backend branch needs a preview made by hand as well.

@@ -9,6 +9,12 @@ const NOW = DateTime.fromISO('2026-09-20T10:00:00Z');
 const stateOf = (series, viewer = { id: ME }) =>
   Object.fromEntries(seriesSteps(series, viewer, NOW).steps.map((step) => [step.step, step.state]));
 
+test('a team side is acted for by a player of that team, where the page knows the teams', () => {
+  const row = { id: 5, entrant1_id: 10, entrant2_id: 11, team1: { id: 1 }, team2: { id: 2 }, player1_score: null, player2_score: null, rules: { map_rules: 'decider' } };
+  assert.equal(vetoOf(row, { id: 7, teamIds: [2] }), true);
+  assert.equal(vetoOf(row, { id: 7, teamIds: [3] }), false);
+});
+
 test('a side of an open cup series vetoes from the draw, nobody else does', () => {
   const row = { id: 9, player1_id: 1, player2_id: 2, player1_score: null, player2_score: null, rules: { map_rules: 'decider,loser,loser' } };
   assert.equal(vetoOf(row, { id: 1 }), true);

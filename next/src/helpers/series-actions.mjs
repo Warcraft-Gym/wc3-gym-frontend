@@ -30,12 +30,15 @@ const captainOfSide = (series, seats) => teamSides(series).some(([team, event]) 
 
 /** Who may act on a series, the rule the API gate `acts_for_side` applies: the player a side names, a captain of the team that fields a side, a member of the roster of a side that names no player, and an admin, who acts for either side on the same routes.
  *  @param {any} series
- *  @param {{ id?: number|null, isAdmin?: boolean, seats?: { team_id: number, season_id: number }[] }} [viewer] */
-export const actsForSeries = (series, { id = null, isAdmin = false, seats = [] } = {}) => {
+ *  @param {{ id?: number|null, isAdmin?: boolean, seats?: { team_id: number, season_id: number }[], teamIds?: number[] | null }} [viewer] */
+export const actsForSeries = (series, { id = null, isAdmin = false, seats = [], teamIds = null } = {}) => {
   if (isAdmin) return true;
   if (id == null || !series) return false;
   if (series.player1_id === id || series.player2_id === id) return true;
-  return captainOfSide(series, seats) || unnamedSide(series);
+  if (captainOfSide(series, seats)) return true;
+  if (!unnamedSide(series)) return false;
+  // a page that knows the viewer's teams asks for a side of one; else the API decides
+  return teamIds == null || teamSides(series).some(([team]) => team != null && teamIds.includes(Number(team)));
 };
 
 // A series is played once its booked time has passed; one with no time never is
@@ -137,7 +140,7 @@ export const holdsResult = (series) => series?.player1_score != null && series?.
  *  leaves. A GNL series vetoes on its own page.
  *  @param {any} series @param {{ id?: number | null, seats?: any[] }} viewer */
 export const vetoOf = (series, viewer = {}) =>
-  rulesOf(series?.rules?.map_rules).includes('decider') && reportOf(series, { id: viewer.id ?? null, seats: viewer.seats ?? [] }) === 'report';
+  rulesOf(series?.rules?.map_rules).includes('decider') && reportOf(series, { id: viewer.id ?? null, seats: viewer.seats ?? [], teamIds: viewer.teamIds ?? null }) === 'report';
 
 export const reportOf = (series, viewer = {}) => {
   if (!series || series.sides?.length) return null;

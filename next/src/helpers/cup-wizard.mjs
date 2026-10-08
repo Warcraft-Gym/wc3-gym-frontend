@@ -14,13 +14,20 @@ export const CUP_STEPS = [
   { key: 'review', title: 'Review' },
 ];
 
-// The games a cup is played as; only 1v1 is built, the rest name what comes later
+// The games a cup is played as: one against one, or real team games of a size; custom games
+// and FFA name what comes later
 export const CUP_GAMES = [
-  { value: '1v1', title: '1v1', ready: true },
-  { value: '2v2', title: '2v2', ready: false },
-  { value: 'custom', title: 'Custom game', ready: false },
-  { value: 'ffa', title: 'FFA', ready: false },
+  { value: '1v1', title: '1v1', ready: true, size: null },
+  { value: '2v2', title: '2v2', ready: true, size: 2 },
+  { value: '3v3', title: '3v3', ready: true, size: 3 },
+  { value: '4v4', title: '4v4', ready: true, size: 4 },
+  { value: 'custom', title: 'Custom game', ready: false, size: null },
+  { value: 'ffa', title: 'FFA', ready: false, size: null },
 ];
+
+/** How many players a team of this game fields, or null for 1v1.
+ *  @param {string} game */
+export const teamSizeOf = (game) => CUP_GAMES.find((item) => item.value === game)?.size ?? null;
 
 export const CUP_FORMATS = [
   { value: 'single_elimination', title: 'Single elimination', hint: 'Lose once and you are out. 16 players play 4 rounds.' },
@@ -72,7 +79,9 @@ const count = (value) => (value === '' || value === null || value === undefined 
 export const cupPayload = (form) => ({
   name: (form.name || '').trim(),
   kind: 'cup',
-  entrant_kind: 'solo',
+  // a team cup enters the teams its captains sign up, each of team_size players
+  entrant_kind: teamSizeOf(form.game) ? 'team' : 'solo',
+  team_size: teamSizeOf(form.game),
   description: text(form.description),
   start_date: form.start_date ? dayIso(form.start_date) : null,
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played

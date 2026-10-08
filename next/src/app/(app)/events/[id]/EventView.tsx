@@ -38,6 +38,8 @@ import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/
 import { reportOf } from "@/helpers/series-actions.mjs";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VetoBoard } from "@/components/VetoBoard";
+import { TeamCupPanel } from "@/components/TeamCupPanel";
+import { teamIdsOf } from "@/helpers/cup-teams.mjs";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { eligibilityLines } from "@/helpers/events-page.mjs";
 import { homeTab, tabOf, withTab } from "@/helpers/event-tabs.mjs";
@@ -80,6 +82,7 @@ export function EventView({ id }: { id: string }) {
   const [entrants, setEntrants] = useState<Row[]>([]);
   const [rosters, setRosters] = useState<Record<string, Row[]>>({}); // the players each team entrant fields, so a series box names them
   const [row, setRow] = useState<Row | null>(null); // the caller's own row of /me/events; null for a reader who is not logged in
+  const [teamInvites, setTeamInvites] = useState<Row[]>([]); // a team cup: the invitations the caller has not answered
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | boolean>(false); // true, or the race on its way out
   const [answering, setAnswering] = useState(false);
@@ -112,7 +115,8 @@ export function EventView({ id }: { id: string }) {
   // and a sign-up list keep their one page.
   const tabbed = !!event && keepsEntrants && !signupOnly;
   // The tabs open on the draw, so a tabbed page drops the "view" word that only pointed at it
-  const button = keepsEntrants && !(tabbed && row?.action === "view") ? eventActionButton(row?.action) : null;
+  // a team cup signs teams up through its own panel, so the one-player action stays off
+  const button = keepsEntrants && !event?.team_size && !(tabbed && row?.action === "view") ? eventActionButton(row?.action) : null;
   const hint = blocksHint(row);
   const held: string[] = myRaces(entrants, auth.me?.user?.id);
   // The chip counts players: a player on two races holds two rows and is one entrant
@@ -125,7 +129,8 @@ export function EventView({ id }: { id: string }) {
   };
 
   // A fixture pairs two team entrants, so a solo event reads no fixture chip
-  const fixtureSeries = seriesPerFixture(event);
+  // a team cup plays one team game a match, so it names no series per fixture
+  const fixtureSeries = event?.team_size ? null : seriesPerFixture(event);
 
   // A phone drops the format, the series count and the scheduling columns, so they ride under the name
   const phoneLine = (stage: Row) =>
@@ -138,7 +143,8 @@ export function EventView({ id }: { id: string }) {
 
   // Who reads the draw, as the report rule asks: the player row, the seats, and whether they run
   // the event; a reader who is not logged in reports nothing
-  const viewer = { id: auth.me?.user?.id ?? null, isAdmin: auth.isAdmin, runs: runner.runs, seats: auth.me?.seats ?? [] };
+  // a team cup's side is acted for by its own players, so the draw knows the caller's teams
+  const viewer = { id: auth.me?.user?.id ?? null, isAdmin: auth.isAdmin, runs: runner.runs, seats: auth.me?.seats ?? [], teamIds: event?.team_size ? (teamIdsOf(entrants, auth.me?.user?.id) as number[]) : null };
   // The caller's own next series to report, as a player or a captain: the prompt over the draw
   const mine = auth.me
     ? drawn
@@ -183,6 +189,8 @@ export function EventView({ id }: { id: string }) {
     const list = (loaded.stages || []).length ? bySeed(rows) : bySignup(rows);
     setEntrants(list);
     setRow(mine.find((one: Row) => one.id === loaded.id) ?? null);
+    // a team cup reads the invitations of the caller, for its panel
+    if (auth.me && loaded.team_size) setTeamInvites(await store.myTeamInvites().catch(() => []));
     // only a team event fields rosters, so nothing else pays for the read
     if (loaded.entrant_kind === "team") {
       const teams = await teamStore.fetchTeamsBySeason(loaded.id).catch(() => []);
@@ -381,6 +389,19 @@ export function EventView({ id }: { id: string }) {
                     ) : null}
                     {entrant.withdrawn_at ? <span className="text-xs">withdrawn</span> : null}
                   </div>
+                  {/* A cup team: its players, the captain first, and the players invited who have not answered */}
+                  {entrant.roster?.length || entrant.invited?.length ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-6 text-sm">
+                      {(entrant.roster as Row[]).map((one) => (
+                        <PlayerName key={one.user.id} player={one.user} />
+                      ))}
+                      {(entrant.invited as Row[]).map((one) => (
+                        <span key={one.id} className="text-muted-foreground">
+                          {one.name} (invited)
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                   {/* A player on more than one race: one line a race, with its seed and its division */}
                   {raceRows(entrant).map((race: Row) => (
                     <div key={race.id} className={cn("flex items-center gap-2 pl-6 text-sm", race.withdrawn_at && "text-muted-foreground")}>
@@ -496,7 +517,7 @@ export function EventView({ id }: { id: string }) {
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Badge className={toneClass(null)}>
               <Icon name="mdi-account-multiple" />
-              {`${entered} ${entered === 1 ? "entrant" : "entrants"}`}
+              {event.team_size ? `${entered} ${entered === 1 ? "team" : "teams"}` : `${entered} ${entered === 1 ? "entrant" : "entrants"}`}
             </Badge>
             {fixtureSeries ? (
               <Badge className={toneClass(null)}>
@@ -571,6 +592,10 @@ export function EventView({ id }: { id: string }) {
               </Button>
             ) : null}
           </div>
+
+          {event.team_size ? (
+            <TeamCupPanel event={event} entrants={entrants} userId={auth.me?.user?.id ?? null} invites={teamInvites} onChanged={() => reload()} onError={setError} />
+          ) : null}
 
           {tabbed ? (
             <Tabs value={tab} onValueChange={(value) => pickTab(value as string)} className="mt-6">

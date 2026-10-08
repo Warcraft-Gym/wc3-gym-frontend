@@ -52,7 +52,21 @@ export function EventResults({ event, stages, entrants = [], onOpenSeries }: { e
   const placed = (row: Row) => {
     const entrant = byEntrant.get(row.entrant_id);
     const user = entrant?.user ?? (row.user_id ? { id: row.user_id, name: row.name } : null);
-    return user ? <PlayerName player={user} race={entrant?.race || undefined} /> : <span>{entrant?.team?.name || row.name}</span>;
+    if (user) return <PlayerName player={user} race={entrant?.race || undefined} />;
+    // a cup team names its players under its name
+    const players: Row[] = entrant?.roster || [];
+    return (
+      <span className="inline-flex flex-col items-center">
+        <span>{entrant?.team?.name || row.name}</span>
+        {players.length ? (
+          <span className="flex flex-wrap justify-center gap-x-2 text-xs font-normal text-muted-foreground">
+            {players.map((one) => (
+              <PlayerName key={one.user.id} player={one.user} />
+            ))}
+          </span>
+        ) : null}
+      </span>
+    );
   };
 
   // The three steps; a step nobody stands on yet is drawn empty, so the podium waits for its players

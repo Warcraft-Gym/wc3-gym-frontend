@@ -9,6 +9,7 @@ import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import { bestOfLine, largestBestOf, parsePlan, planText, poolProblem } from "@/helpers/best-of-plan.mjs";
 import { readStagesPayload } from "@/helpers/event-wizard.mjs";
+import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { useEventStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -104,7 +105,7 @@ export function CupFormatCard({ event, stage, drawn, onEvent }: { event: Row; st
                 setPlan(nextPlan);
               }}
             />
-            <MapPoolPicker pool={pool} onChange={setPool} problem={problem} excludeEventId={event.id} />
+            <MapPoolPicker pool={pool} onChange={setPool} problem={problem} excludeEventId={event.id} ladderMode={ladderModeOf(event.team_size) as string | null} />
           </div>
           <div className="flex justify-end gap-2 p-4">
             <Button variant="ghost" disabled={saving} onClick={() => setOpen(false)}>

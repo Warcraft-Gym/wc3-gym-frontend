@@ -18,9 +18,16 @@ test('a cup writes one immediate elimination stage and the bounds it was given',
     { format: 'single_elimination', best_of: 3, best_of_by_round: null, scheduling_mode: 'immediate', third_place: false, grand_final_modifier: 'one' },
   ]);
   assert.equal(body.veto_by_best_of, true);
+  assert.equal(body.team_size, null);
   // a race counts from 20 lifetime games unless the organizer names another number
   assert.equal(body.race_games_min, 20);
   assert.deepEqual(body.map_ids, []);
+});
+
+test('a 2v2 cup enters teams of two', () => {
+  const body = cupPayload({ ...blankCup(), game: '2v2' });
+  assert.equal(body.team_size, 2);
+  assert.equal(body.entrant_kind, 'team');
 });
 
 test('a cup names the best-of of its bracket parts and the maps it vetoes from', () => {

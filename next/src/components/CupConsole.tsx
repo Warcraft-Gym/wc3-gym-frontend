@@ -19,6 +19,7 @@ import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { dayIso } from "@/helpers/date-input.mjs";
 import { eveningOf } from "@/helpers/events-page.mjs";
 import { playedEntrants } from "@/helpers/stage-view.mjs";
+import { missing, teamState } from "@/helpers/cup-teams.mjs";
 import { storedUtc } from "@/helpers/timezone.mjs";
 import type { EventOrganizer } from "@/hooks/event-runner";
 import { useEventStore, usePlayerStore } from "@/stores";
@@ -90,7 +91,12 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const editable = !drawn && !event.closed_at;
   const closed = !!event.closed_at;
   const [busy, setBusy] = useState<string | null>(null);
-  const [ask, setAsk] = useState<"noshows" | "cancel" | "move" | "remove" | "add" | null>(null);
+  const [ask, setAsk] = useState<"noshows" | "cancel" | "move" | "remove" | "add" | "team" | "incomplete" | null>(null);
+  // a team cup lists teams; its swap takes one player of a team out
+  const teams = !!event.team_size;
+  const [memberOut, setMemberOut] = useState<{ entrant: Row; user: Row } | null>(null);
+  const [teamName, setTeamName] = useState("");
+  const [teamPicks, setTeamPicks] = useState<string[]>([]);
   const [removing, setRemoving] = useState<Row | null>(null);
   // the player a swap takes out; the add dialog then picks who comes in
   const [swapping, setSwapping] = useState<Row | null>(null);
@@ -128,8 +134,9 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       onEntrants(entrants.filter((old) => old.id !== removing!.id));
       setRemoving(null);
     });
-  const openAdd = async (out: Row | null = null) => {
+  const openAdd = async (out: Row | null = null, member: { entrant: Row; user: Row } | null = null) => {
     setSwapping(out);
+    setMemberOut(member);
     setPickedId("");
     setPickedRace(null);
     setAsk("add");
@@ -143,16 +150,41 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   };
   const addOne = () =>
     work("add", async () => {
-      if (swapping) await store.replaceEntrant(event.id, swapping.id, { user_id: Number(pickedId), race: pickedRace });
+      if (memberOut) await store.replaceTeamMember(event.id, memberOut.entrant.team.id, memberOut.user.id, Number(pickedId));
+      else if (swapping) await store.replaceEntrant(event.id, swapping.id, { user_id: Number(pickedId), race: pickedRace });
       else await store.addEntrant(event.id, { user_id: Number(pickedId), race: pickedRace });
       onEntrants(await store.fetchEntrants(event.id, true));
       // a swap rewrites the bracket boxes of the player it takes out
-      if (swapping) await onSeries?.();
+      if (swapping || memberOut) await onSeries?.();
       setSwapping(null);
+      setMemberOut(null);
     });
-  const outName = swapping?.user?.name || "this player";
-  // every player not in yet, the name to read and the battle tag under it
-  const entered = new Set(players.map((row) => row.user?.id));
+  const outName = memberOut?.user?.name || swapping?.user?.name || "this player";
+  const openTeam = async () => {
+    setTeamName("");
+    setTeamPicks(Array(event.team_size || 0).fill(""));
+    await openAdd();
+    setAsk("team");
+  };
+  const addTeam = () =>
+    work("team", async () => {
+      const [captain, ...others] = teamPicks.map(Number);
+      await store.addTeam(event.id, teamName.trim(), captain, others);
+      onEntrants(await store.fetchEntrants(event.id, true));
+    });
+  // a team short of players cannot be drawn, so the evening takes it out first
+  const incomplete = teams ? players.filter((row) => missing(row, event.team_size) > 0) : [];
+  const removeIncomplete = () =>
+    work("incomplete", async () => {
+      for (const row of incomplete) await store.removeEntrant(event.id, row.id);
+      onEntrants(await store.fetchEntrants(event.id, true));
+    });
+  // every player not in yet, the name to read and the battle tag under it; a team cup counts
+  // its players and the players its teams invited
+  const entered = new Set([
+    ...players.map((row) => row.user?.id),
+    ...players.flatMap((row) => [...(row.roster || []).map((one: Row) => one.user?.id), ...(row.invited || []).map((one: Row) => one.id)]),
+  ]);
   const playerItems = roster
     .filter((player) => !entered.has(player.id))
     .map((player) => ({ value: String(player.id), title: player.name, tag: player.battleTag || "" }));
@@ -241,18 +273,19 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     <div className="flex flex-col gap-4">
       <Card className="card">
         <CardHeader>
-          <CardTitle>Players</CardTitle>
+          <CardTitle>{teams ? "Teams" : "Players"}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="flex-1 text-sm text-muted-foreground">
-                {evening.live} {evening.live === 1 ? "player" : "players"} in{event.checkin_enabled ? `, ${evening.checkedIn} checked in` : ""}
+                {evening.live} {teams ? (evening.live === 1 ? "team" : "teams") : evening.live === 1 ? "player" : "players"} in
+                {event.checkin_enabled ? `, ${evening.checkedIn} checked in` : ""}
               </span>
               {editable ? (
-                <Button variant="outline" size="sm" onClick={() => openAdd()}>
+                <Button variant="outline" size="sm" onClick={() => (teams ? openTeam() : openAdd())}>
                   <Icon name="mdi-account-plus" />
-                  Add player
+                  {teams ? "Add team" : "Add player"}
                 </Button>
               ) : null}
             </div>
@@ -263,6 +296,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                   <span className="min-w-0 flex-1">
                     {row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team?.name || "Entrant"}
                   </span>
+                  {teams ? <Badge variant="outline">{teamState(row, event.team_size)}</Badge> : null}
                   {event.checkin_enabled ? (
                     row.checked_in_at ? (
                       <Badge className={toneClass("success")}>
@@ -279,7 +313,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                     )
                   ) : null}
                   {/* after the draw a player who has not played can still be swapped for another */}
-                  {drawn && !closed && !played.has(row.id) ? (
+                  {!teams && drawn && !closed && !played.has(row.id) ? (
                     <Button size="sm" variant="outline" aria-label={`Swap ${row.user?.name || "this entrant"}`} onClick={() => openAdd(row)}>
                       <Icon name="mdi-swap-horizontal" />
                       Swap
@@ -300,6 +334,27 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                       Remove
                     </Button>
                   ) : null}
+                  {/* a team's players, each swapped for another until the team has played */}
+                  {teams ? (
+                    <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 pl-8 text-sm">
+                      {(row.roster || []).map((one: Row) => (
+                        <span key={one.user.id} className="inline-flex items-center gap-1">
+                          <PlayerName player={one.user} />
+                          {one.captain ? <span className="text-xs text-muted-foreground">captain</span> : null}
+                          {!closed && !played.has(row.id) ? (
+                            <Button size="sm" variant="ghost" aria-label={`Swap ${one.user.name}`} onClick={() => openAdd(null, { entrant: row, user: one.user })}>
+                              <Icon name="mdi-swap-horizontal" />
+                            </Button>
+                          ) : null}
+                        </span>
+                      ))}
+                      {(row.invited || []).map((one: Row) => (
+                        <span key={one.id} className="text-muted-foreground">
+                          {one.name} (invited)
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </li>
               ))}
               {!players.length ? <li className="border-t border-border py-2 text-sm text-muted-foreground">Nobody has signed up yet.</li> : null}
@@ -312,6 +367,12 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                 <Icon name="mdi-account-check" />
                 Seed players
               </Button>
+              {incomplete.length ? (
+                <Button variant="outline" disabled={!!busy} onClick={() => setAsk("incomplete")}>
+                  <Icon name="mdi-account-group-outline" />
+                  Remove {incomplete.length} incomplete {incomplete.length === 1 ? "team" : "teams"}
+                </Button>
+              ) : null}
               {evening.noShows.length ? (
                 <Button variant="outline" disabled={!!busy} onClick={() => setAsk("noshows")}>
                   <Icon name="mdi-account-remove" />
@@ -360,6 +421,30 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     <>
       {part === "evening" ? evenPart : peoplePart}
 
+      <Confirm open={ask === "incomplete"} onOpenChange={(open) => setAsk(open ? "incomplete" : null)} title="Remove the incomplete teams" busy={busy === "incomplete"} confirm="Remove them" onConfirm={removeIncomplete}>
+        <p>{incomplete.map((row) => row.team?.name).join(", ")} still miss players, so they leave the cup and the bracket is drawn without them.</p>
+      </Confirm>
+
+      <Confirm open={ask === "team"} onOpenChange={(open) => setAsk(open ? "team" : null)} title="Add a team" busy={busy === "team"} confirm="Add" onConfirm={() => teamName.trim() && teamPicks.every(Boolean) && addTeam()}>
+        <div className="flex flex-col gap-3">
+          <Field label="Team name" htmlFor="console-team-name">
+            <Input id="console-team-name" maxLength={50} value={teamName} onChange={(e) => setTeamName(e.target.value)} />
+          </Field>
+          {teamPicks.map((value, index) => (
+            <Field key={index} label={index ? `Player ${index + 1}` : "Captain"} htmlFor={`console-team-${index}`}>
+              <Combobox
+                id={`console-team-${index}`}
+                label="Pick a player"
+                items={playerItems.filter((item) => !teamPicks.some((id, at) => at !== index && id === item.value))}
+                value={value || null}
+                onChange={(next) => setTeamPicks(teamPicks.map((one, at) => (at === index ? next ?? "" : one)))}
+              />
+            </Field>
+          ))}
+          <p className="text-sm text-muted-foreground">Every player is in at once, and each is checked against the cup&apos;s rules.</p>
+        </div>
+      </Confirm>
+
       <Confirm open={ask === "noshows"} onOpenChange={(open) => setAsk(open ? "noshows" : null)} title="Remove the no-shows" busy={busy === "noshows"} confirm="Remove them" onConfirm={removeNoShows}>
         <p>
           {evening.noShows.map((row) => row.name || row.user?.name).filter(Boolean).join(", ") || "The players who did not check in"} will be taken out, so the bracket is drawn with the {evening.afterNoShows}{" "}
@@ -388,12 +473,15 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         open={ask === "add"}
         onOpenChange={(open) => {
           setAsk(open ? "add" : null);
-          if (!open) setSwapping(null);
+          if (!open) {
+            setSwapping(null);
+            setMemberOut(null);
+          }
         }}
-        title={swapping ? `Swap ${outName}` : "Add a player"}
+        title={swapping || memberOut ? `Swap ${outName}` : "Add a player"}
         busy={busy === "add"}
-        confirm={swapping ? "Swap" : "Add"}
-        onConfirm={() => pickedId && pickedRace && addOne()}
+        confirm={swapping || memberOut ? "Swap" : "Add"}
+        onConfirm={() => pickedId && (pickedRace || memberOut) && addOne()}
       >
         <div className="flex flex-col gap-3">
           <Field label="Player" hint="Players already in are left out" htmlFor="console-add-player">
@@ -415,9 +503,9 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
               )}
             />
           </Field>
-          <Pick label="Race" items={RACE_ITEMS} value={pickedRace} onChange={setPickedRace} />
+          {memberOut ? null : <Pick label="Race" items={RACE_ITEMS} value={pickedRace} onChange={setPickedRace} />}
           <p className="text-sm text-muted-foreground">
-            {swapping
+            {swapping || memberOut
               ? `Who comes in for ${outName}: they take ${outName}'s seed and matches, and a map veto ${outName} began starts over. ${outName} leaves the cup.`
               : "The player is entered whether sign-ups are open or not."}
           </p>

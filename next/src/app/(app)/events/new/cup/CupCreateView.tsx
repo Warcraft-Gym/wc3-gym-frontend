@@ -16,7 +16,8 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, SIGNUP_POLICIES } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, SIGNUP_POLICIES, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -161,7 +162,11 @@ export function CupCreateView() {
             </div>
             <div className="col-span-12">
               <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
-              <p className="mt-1 text-sm text-muted-foreground">2v2, custom game and FFA cups come later.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {teamSizeOf(form.game)
+                  ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game and FFA cups come later.`
+                  : "Custom game and FFA cups come later."}
+              </p>
             </div>
             <Field className="col-span-12" label="Description" htmlFor="cup-description">
               <Textarea id="cup-description" rows={3} value={form.description} placeholder="Maps, rules, how results are reported" onChange={(e) => set({ description: e.target.value })} />
@@ -202,7 +207,7 @@ export function CupCreateView() {
             <p className="text-sm text-muted-foreground">You seed the players on the evening: by MMR, at random or by hand.</p>
           </div>
         ) : key === "maps" ? (
-          <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} />
+          <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} ladderMode={ladderModeOf(teamSizeOf(form.game)) as string | null} />
         ) : key === "signups" ? (
           <div className="grid grid-cols-12 gap-3">
             <div className="col-span-12 flex flex-col gap-1 rounded-lg border border-border p-3">

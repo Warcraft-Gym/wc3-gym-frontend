@@ -86,6 +86,37 @@ const store = {
     return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`);
   },
   // The caller's own row, or any row for an admin
+  // A team cup: a captain signs a team up and invites the rest; each answers their invite
+  async signUpTeam(event_id: number, name: string, member_ids: number[]) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams`, { name, member_ids });
+  },
+  async addTeam(event_id: number, name: string, captain_id: number, member_ids: number[]) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/admin`, { name, captain_id, member_ids });
+  },
+  async acceptInvite(event_id: number, team_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/accept`);
+  },
+  async declineInvite(event_id: number, team_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/decline`);
+  },
+  async inviteToTeam(event_id: number, team_id: number, user_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/invites`, { user_id });
+  },
+  async takeBackInvite(event_id: number, team_id: number, user_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/invites/${user_id}`);
+  },
+  async leaveTeam(event_id: number, team_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/members/me`);
+  },
+  async withdrawTeam(event_id: number, team_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/cup-teams/${team_id}`);
+  },
+  async replaceTeamMember(event_id: number, team_id: number, user_id: number, new_user_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/members/${user_id}/replace`, { user_id: new_user_id });
+  },
+  async myTeamInvites() {
+    return await fetchWrapper.get(`${backendUrl}/me/team-invites`);
+  },
   async checkIn(event_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/checkin`);
   },

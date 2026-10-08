@@ -20,11 +20,14 @@ export function MapPoolPicker({
   onChange,
   problem,
   excludeEventId,
+  ladderMode = "1v1",
 }: {
   pool: PoolMap[];
   onChange: (pool: PoolMap[]) => void;
   problem?: string | null;
   excludeEventId?: number | null;
+  // the W3Champions ladder a cup of this size reads its pool from; none hides the button
+  ladderMode?: string | null;
 }) {
   const mapStore = useMapStore();
   const eventStore = useEventStore();
@@ -57,7 +60,7 @@ export function MapPoolPicker({
     setBusy("ladder");
     setNote(null);
     try {
-      const rows: Row[] = await mapStore.fetchLadderMapImport();
+      const rows: Row[] = await mapStore.fetchLadderMapImport(ladderMode || "1v1");
       const ladder = rows.filter((row) => row.status !== "off_ladder");
       const known = ladder.filter((row) => row.map_id != null);
       const byId = new Map(maps.map((row) => [row.id, row]));
@@ -96,10 +99,12 @@ export function MapPoolPicker({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-2">
-        <Button variant="outline" disabled={busy === "ladder"} onClick={useLadder}>
-          <Icon name={busy === "ladder" ? "mdi-loading mdi-spin" : "mdi-ladder"} />
-          Use the 1v1 ladder pool
-        </Button>
+        {ladderMode ? (
+          <Button variant="outline" disabled={busy === "ladder"} onClick={useLadder}>
+            <Icon name={busy === "ladder" ? "mdi-loading mdi-spin" : "mdi-ladder"} />
+            Use the {ladderMode} ladder pool
+          </Button>
+        ) : null}
         <div className="flex min-w-[260px] flex-[1_1_260px] items-end gap-2">
           <Pick
             className="flex-1"

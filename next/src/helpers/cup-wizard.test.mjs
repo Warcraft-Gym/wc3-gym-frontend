@@ -18,6 +18,8 @@ test('a cup writes one immediate elimination stage and the bounds it was given',
     { format: 'single_elimination', best_of: 3, best_of_by_round: null, scheduling_mode: 'immediate', third_place: false, grand_final_modifier: 'one' },
   ]);
   assert.equal(body.veto_by_best_of, true);
+  // a race counts from 20 lifetime games unless the organizer names another number
+  assert.equal(body.race_games_min, 20);
   assert.deepEqual(body.map_ids, []);
 });
 

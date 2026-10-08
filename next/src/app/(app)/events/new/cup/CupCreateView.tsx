@@ -111,6 +111,7 @@ export function CupCreateView() {
         form.eligibility_required ? (form.bnet_required ? "Battle.net-linked, rated players only" : "Rated players only") : "Warnings only",
         form.mmr_min || form.mmr_max ? `MMR ${form.mmr_min || "any"} to ${form.mmr_max || "any"}` : null,
         form.min_games ? `at least ${form.min_games} games` : null,
+        form.race_games_min ? `a race counts from ${form.race_games_min} games` : null,
       ]
         .filter(Boolean)
         .join(", "),
@@ -228,10 +229,20 @@ export function CupCreateView() {
               type="number"
               min="0"
               label="Games at least"
-              hint="On the race they sign up with, this W3C season and the one before"
+              hint="Over all races, this W3C season and the one before"
               placeholder="No minimum"
               value={form.min_games}
               onChange={(e) => set({ min_games: e.target.value })}
+            />
+            <TextField
+              className="col-span-12 min-[600px]:col-span-4"
+              type="number"
+              min="1"
+              label="A race counts from"
+              hint="Lifetime games on a race before its MMR counts; the best of those races is checked"
+              placeholder="20"
+              value={form.race_games_min}
+              onChange={(e) => set({ race_games_min: e.target.value })}
             />
             <div className="col-span-12">
               <Choice

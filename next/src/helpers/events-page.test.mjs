@@ -86,3 +86,12 @@ test('the eligibility reads one line per rule the event names', () => {
   assert.deepEqual(eligibilityLines({ mmr_max: 1600 }), ['MMR up to 1600 on that race']);
   assert.deepEqual(eligibilityLines({ mmr_min: 1200 }), ['MMR 1200 or more on that race']);
 });
+
+test('a cup that counts races by their games reads the best of the races played', () => {
+  assert.deepEqual(eligibilityLines({ race_games_min: 20, eligibility_required: true, mmr_max: 1000, min_games: 10 }), [
+    'A battle tag W3Champions rates',
+    'Highest MMR of the races with 20 games or more up to 1000',
+    'At least 10 games recently, over all races',
+  ]);
+  assert.deepEqual(eligibilityLines({ race_games_min: 20, eligibility_required: true }), ['A battle tag W3Champions rates', 'At least 20 games on one race']);
+});

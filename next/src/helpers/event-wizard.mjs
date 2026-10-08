@@ -59,6 +59,8 @@ export const blankForm = (league = null) => ({
   mmr_min: '',
   mmr_max: '',
   min_games: '',
+  // the lifetime games a race needs before its MMR counts
+  race_games_min: 20,
   // On: a signup outside the bounds, or without a battle tag W3Champions rates, is refused
   eligibility_required: true,
   // On beside it: that tag verified through Battle.net too
@@ -101,6 +103,7 @@ export const eventPayload = (form) => ({
   mmr_min: count(form.mmr_min),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
+  race_games_min: count(form.race_games_min),
   // How many of the newest W3C seasons the games floor counts over; nothing counts them all
   min_games_seasons: count(form.min_games_seasons),
   checkin_enabled: !!form.checkin_enabled,

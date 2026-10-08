@@ -56,6 +56,8 @@ export const blankCup = () => ({
   mmr_min: '',
   mmr_max: '',
   min_games: '',
+  // the lifetime games a race needs before its MMR counts, so a few games on another race never decide
+  race_games_min: 20,
   entrant_min: '',
   entrant_cap: '',
   checkin_enabled: true,
@@ -83,6 +85,7 @@ export const cupPayload = (form) => ({
   mmr_min: count(form.mmr_min),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
+  race_games_min: count(form.race_games_min),
   entrant_min: count(form.entrant_min),
   entrant_cap: count(form.entrant_cap),
   checkin_enabled: !!form.checkin_enabled,
@@ -122,6 +125,7 @@ export function cupProblem(form, step) {
     const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
     if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
     if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
+    if (count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
   }
   return null;
 }

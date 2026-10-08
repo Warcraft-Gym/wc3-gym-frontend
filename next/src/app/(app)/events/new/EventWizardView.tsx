@@ -136,6 +136,7 @@ export function EventWizardView() {
           { k: "MMR minimum", v: orNone(it.mmr_min) },
           { k: "MMR maximum", v: orNone(it.mmr_max) },
           { k: "Recent games at least", v: orNone(it.min_games) },
+          { k: "A race counts from", v: it.race_games_min ? `${it.race_games_min} lifetime games` : "Every race counts" },
           { k: "Count the games over", v: body.min_games_seasons ? `${body.min_games_seasons} W3C seasons` : "Every W3C season" },
           { k: "Check-in", v: it.checkin_enabled ? `${it.checkin_days} days before a round` : "Off" },
           ...(it.checkin_enabled ? [{ k: "Early check-in", v: body.early_checkin ? "On" : "Off" }] : []),
@@ -302,6 +303,7 @@ export function EventWizardView() {
             <TextField className={MD4} type="number" label="MMR minimum" placeholder="No minimum" value={form.mmr_min} onChange={(e) => set({ mmr_min: e.target.value })} />
             <TextField className={MD4} type="number" label="MMR maximum" placeholder="No maximum" value={form.mmr_max} onChange={(e) => set({ mmr_max: e.target.value })} />
             <TextField className={MD4} type="number" label="Recent games at least" placeholder="No floor" value={form.min_games} onChange={(e) => set({ min_games: e.target.value })} />
+            <TextField className={MD4} type="number" min="1" label="A race counts from" hint="Lifetime games on a race before its MMR counts" placeholder="Every race counts" value={form.race_games_min} onChange={(e) => set({ race_games_min: e.target.value })} />
             <TextField
               className={MD4}
               type="number"

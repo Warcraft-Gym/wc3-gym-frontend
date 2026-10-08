@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-08
+
+* **Update**: a cup checks the highest MMR of the races a player has really played. Create cup and the event wizard carry "A race counts from", 20 lifetime games by default, the games floor counts over all races, and the event page says so. Event management and the events pages state it.
+
 ## 2026-10-07
 
 * **Update**: the draw's boxes name no state. A box with a result reads as done by a success frame and tint, a check and its beaten side dimmed, and "Veto" and "Report" sit in one row. The design file and the shared components state it.

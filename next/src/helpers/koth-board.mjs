@@ -1,8 +1,9 @@
 // The parts of the KOTH board read that are only data; docs/okf/pages/koth.md states the shape
+import { archivedBrackets } from './koth-archive.mjs';
 
 // The brackets weakest first, the way the cards read. The board answers them strongest first.
 export const orderedBrackets = (board) =>
-  board?.historical ? [...(board.brackets ?? [])] : [...(board?.brackets ?? [])].sort((a, b) => (a.lower_bound ?? 0) - (b.lower_bound ?? 0));
+  board?.historical ? archivedBrackets(board.brackets) : [...(board?.brackets ?? [])].sort((a, b) => (a.lower_bound ?? 0) - (b.lower_bound ?? 0));
 
 /**
  * The name and the MMR band of one bracket. The band runs from the bracket's own bound to

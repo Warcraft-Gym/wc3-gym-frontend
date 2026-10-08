@@ -23,31 +23,37 @@ export function actions({ open, capture }) {
     async draft(route) {
       need('draft', route, '/match/<id>');
       const page = await open(route);
-      // opening the Draft tab stamps the team's visit; the stub answers that write
-      await page.getByRole('tab', { name: 'Draft series' }).click();
-      const labels = page.locator('button[title^="Opponents for "]');
-      await labels.first().waitFor({ timeout: 20000 }).catch(() => {});
-      await page.waitForTimeout(1500);
-      if (!(await labels.count())) {
-        await capture(page, 'dialog-draft-board', route, { note: 'Draft series tab; the board drew no player labels, so no pick was made' });
+      // only a viewer who may plan sees the Plan round tab
+      const planTab = page.getByRole('tab', { name: 'Plan round' });
+      await planTab.waitFor({ timeout: 20000 }).catch(() => {});
+      if (!(await planTab.count())) {
+        await capture(page, 'dialog-plan-round', route, { note: 'no Plan round tab: this viewer cannot plan the match' });
         return page.close();
       }
-      // team 1's labels sit left of the scale; a label not yet paired opens the fullest panel
-      const side1 = page.locator('button[title^="Opponents for "][class*="left-[36px]"]');
-      const pool = (await side1.count()) ? side1 : labels;
-      let target = pool.first();
-      for (let i = 0; i < (await pool.count()); i++) {
-        const cls = (await pool.nth(i).getAttribute('class')) || '';
-        if (!cls.includes('opacity-60')) { target = pool.nth(i); break; }
-      }
-      const title = await target.getAttribute('title');
-      // the flag inside the label carries its own tooltip and keeps the click, so press the name
-      const name = title.replace('Opponents for ', '');
-      await target.getByText(name, { exact: true }).first().click();
+      // opening the Plan round tab writes the team's seen mark; the stub answers that write
+      await planTab.click();
+      // the planner opens on Draft when drafts exist, so go to Who plays, which lists every player
+      const whoTab = page.getByRole('tab', { name: 'Who plays' });
+      await whoTab.waitFor({ timeout: 20000 }).catch(() => {});
+      if (await whoTab.count()) await whoTab.click();
       await page.waitForTimeout(1500);
-      const panel = (await page.getByText(/^(Opponents for|Change opponent for) /).count()) > 0;
+      // the banner names team 1 first; its Who plays list is the one under that name
+      const team1 = (await page.locator('h2 .team-name .name').first().innerText().catch(() => '')).trim();
+      const lists = page.locator('#round-planner div.min-w-0:has(> ul)');
+      const list1 = team1 ? lists.filter({ has: page.locator('.team-name').getByText(team1, { exact: true }) }) : lists;
+      const item = ((await list1.count()) ? list1 : lists).first().getByRole('listitem').first();
+      const toggle = item.getByRole('switch');
+      if (!(await toggle.count())) {
+        await capture(page, 'dialog-plan-round', route, { note: 'Plan round tab; Who plays drew no player rows, so no panel was opened' });
+        return page.close();
+      }
+      const name = ((await toggle.getAttribute('aria-label')) || '').replace(/ (plays round|is in your list)$/, '');
+      // the flag inside the name carries its own tooltip and keeps the click, so press the name text
+      await item.getByRole('button', { name }).getByText(name, { exact: true }).first().click();
+      await page.waitForTimeout(2500);
+      const panel = (await page.getByRole('dialog', { name: `${name}: stats` }).count()) > 0;
       console.log('draft: panel open:', panel);
-      await capture(page, 'dialog-draft-board', route, { note: `Draft series tab, clicked a team 1 label; panel open: ${panel}` });
+      await capture(page, 'dialog-plan-round', route, { note: `Plan round tab, Who plays, clicked team 1 player ${name}; stats panel open: ${panel}` });
       await page.close();
     },
 

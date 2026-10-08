@@ -4,7 +4,7 @@ title: Players and stats
 description: The players list with the admin's tag controls, one player's page with his tags and the owner's actions, the season ladder and the Random stats helper.
 resource: ../../../next/src/app/(app)/players/PlayersView.tsx
 tags: [pages, players]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
 sources:
   - id: players
     resource: ../../../next/src/app/(app)/players/PlayersView.tsx
@@ -23,7 +23,7 @@ sources:
     title: The profile the page and the panel render
   - id: accounts
     resource: ../../../next/src/components/player/MyAccounts.tsx
-    title: The owner's My accounts card
+    title: The owner's My Accounts card
   - id: bulk-bar
     resource: ../../../next/src/app/(app)/players/PlayerBulkBar.tsx
     title: The bar of actions on the ticked players
@@ -78,7 +78,7 @@ The list pages 25 rows at a time, and its country flags and race/MMR chips carry
 
 **One player (`/player/:id`).** The header with the flag, name, races, MMR and channels; the owner and an admin edit it, and the owner's "Blocked times" opens the [blocked-times dialog](member.md) over the page. The battle tag under the name is the active tag, linked to W3Champions, and the MMR is the active tag's. A person who holds more tags gets one "Also played as" line under it, each tag a W3Champions link.
 
-The owner reads a "My accounts" card under the header. Open prompts come first. "Is this you?" names an earlier player's tag (or name) and seasons: "That's me" joins that player to the owner, unverified; "Not me" closes it for good. A notice says another player verified one of the owner's tags, with "OK" to close it. Then their tags, the main one first. A tag Battle.net confirmed carries a tick and the word "Battle.net", with "Verified on Battle.net" in its tooltip; any other tag reads "Unverified". The main tag carries a "Main" badge; every other tag has a "Make main" button. Each tag links to W3Champions. An unverified tag that is not main has a remove button. Under the list, "Verify with Battle.net" leaves for Blizzard and "Add a tag" opens a field with Add and Cancel: the field shows "Checking W3Champions" while the request runs, and the card reads "Added TAG." when it lands, or "Verified TAG." after a Battle.net return. A 404 reads "Not found on W3Champions." under the field; a 409 prints the backend's sentence there. A tag an earlier player holds joins that player at once, unverified. Every write reads the profile and `/me` again, because the address and the header follow the main tag.
+The owner reads a "My Accounts" card under the header. Open prompts come first. "Is this you?" names an earlier player's tag (or name) and seasons: "That's me" joins that player to the owner, unverified; "Not me" closes it for good. A notice says another player verified one of the owner's tags, with "OK" to close it. Then their tags, the main one first. A tag Battle.net confirmed carries a tick and the word "Battle.net", with "Verified on Battle.net" in its tooltip; any other tag reads "Unverified". The main tag carries a "Main" badge; every other tag has a "Make main" button. Each tag links to W3Champions. An unverified tag that is not main has a remove button. Under the list, "Verify with Battle.net" leaves for Blizzard and "Add a tag" opens a field with Add and Cancel: the field shows "Checking W3Champions" while the request runs, and the card reads "Added TAG." when it lands, or "Verified TAG." after a Battle.net return. A 404 reads "Not found on W3Champions." under the field; a 409 prints the backend's sentence there. A tag an earlier player holds joins that player at once, unverified. Every write reads the profile and `/me` again, because the address and the header follow the main tag.
 
 The Events card names the tag a season was played as, "as TAG" under the season name, when the signup row's `played_as` differs from the person's tag today. The owner also reads "Waiting for you", one line per open job under its context label: a series to take the next step on, a round to check in for. The Events card lists every event the player took part in, newest first, with the result; the running GNL season opens on its round cards, which name the opponent with his race and the rating the row names on it, carry the compact series action bar, and answer each round with "Check in" or "Sit out". Tonight's KOTH night joins the owner's list. The head-to-head card closes the page. The same profile opens as a side panel over a drafting page, without the owner's actions.
 

@@ -33,7 +33,7 @@ sources:
 | guest | `/profile` only; it shows the join-the-Discord card |
 | member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/seasons/:id`, `/match/:id`, `/upcoming`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/events/:id/admin` (the page lets in the event's runners only), `/events/new` and `/events/new/cup` (organizers only), `/fantasy`, `/fantasy-registration`, `/ladder` |
 | captain | `/seasons/:id/assign`, `/team/:id/season/:season_id/rounds` (reads; the view gates writes to admins) |
-| admin | `/admin`, `/seasons`, `/seasons/:id/maps`, `/seasons/:id/achievements`, `/maps`, `/config`, `/config/discord-roles`, `/config/access`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/user-guide` |
+| admin | `/admin`, `/seasons`, `/seasons/:id/maps`, `/seasons/:id/achievements`, `/maps`, `/config`, `/config/discord-roles`, `/config/access`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/koth/nights/:id`, `/user-guide` |
 
 `/player-dashboard` redirects to the member's own player page and `/player-stats` to `/players`. What each page does is in the [pages](../pages/index.md) directory.
 
@@ -67,7 +67,7 @@ The account menu on the avatar holds Profile, then for a member with a player ro
 
 # The admin frame
 
-`/admin` lists every admin task, one card per section of `next/src/helpers/admin-nav.mjs`: GNL (Seasons, Teams, Maps, Players, Fantasy Tiers, Fantasy Bets), App Settings (Settings, Discord, Access, User Guide) and Other Events (KOTH Nights, Leagues, Events, New Event). The KOTH board, the leagues and the events are public pages, reached by link; the nav names none of them. A session with the admin hat has the pages the Admin tab leads to drawn in the admin frame: the admin area, every page under a section (a season, its draft, an event), a match or a series page, which an admin opens from a season and which marks Seasons, and a team page, overall or in a season, which marks Teams; an admin's own team page, which the My Team tab opens, is a team page like any other. From 960 px the sections stand there as a sidebar, with the section the page belongs to marked. Home, a player page and the account pages keep the plain layout. `adminFrame` in the same helper decides it; a player, a captain and an admin viewing as either have no hat and no frame. The admin slides the sidebar out to the left with "Hide admin menu" and back with the slim "Show admin menu" tab; the choice stays in this browser's storage, and the first paint is always open. On a phone there is no sidebar: `/admin`, every page the sections list and every admin-only route (the admin area, `inAdminFrame`) carry a link back to `/admin`, which is the menu there; the Admin tab is marked on those pages only, and they take the wider page width.
+`/admin` lists every admin task, one card per section of `next/src/helpers/admin-nav.mjs`: Gym Newbie League (Seasons, Teams, Maps, Players, Fantasy Tiers, Fantasy Bets), App Settings (Settings, Discord, Access, User Guide) and Other Events (KOTH Events, Leagues, Events, New Event). The KOTH board, the leagues and the events are public pages, reached by link; the nav names none of them. A session with the admin hat has the pages the Admin tab leads to drawn in the admin frame: the admin area, every page under a section (a season, its draft, an event), a match or a series page, which an admin opens from a season and which marks Seasons, and a team page, overall or in a season, which marks Teams; an admin's own team page, which the My Team tab opens, is a team page like any other. From 960 px the sections stand there as a sidebar, with the section the page belongs to marked. Home, a player page and the account pages keep the plain layout. `adminFrame` in the same helper decides it; a player, a captain and an admin viewing as either have no hat and no frame. The admin slides the sidebar out to the left with "Hide admin menu" and back with the slim "Show admin menu" tab; the choice stays in this browser's storage, and the first paint is always open. On a phone there is no sidebar: `/admin`, every page the sections list and every admin-only route (the admin area, `inAdminFrame`) carry a link back to `/admin`, which is the menu there; the Admin tab is marked on those pages only, and they take the wider page width.
 
 # The app icon
 
@@ -75,4 +75,4 @@ The account menu on the avatar holds Profile, then for a member with a player ro
 
 # No embed mode
 
-Every page draws the full shell. `?readonly=1` is ignored since 2026-09-16.
+Every page draws the full shell except the clean stream view. `?readonly=1` is ignored since 2026-09-16.

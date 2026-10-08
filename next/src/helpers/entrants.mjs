@@ -9,6 +9,7 @@ import { rosterOf } from './team-roster.mjs';
 export function warningLabel(code, event = {}) {
   if (code === 'under_min_games') return event.min_games ? `under ${event.min_games} games` : 'under the game count';
   if (code === 'over_mmr_max') return 'over the MMR cap';
+  if (code === 'under_mmr_min') return event.mmr_min ? `under ${event.mmr_min} MMR` : 'under the MMR floor';
   if (code === 'banned') return 'banned';
   return code;
 }
@@ -131,4 +132,9 @@ export function rostersByEntrant(entrants = [], teams = [], eventId = null) {
   return Object.fromEntries(entrants
     .filter((row) => byTeam.get(row.team?.id)?.length)
     .map((row) => [row.id, byTeam.get(row.team.id)]));
+}
+
+/** The seed of every seeded entrant, by entrant id, as a bracket names it beside the player. */
+export function seedsByEntrant(entrants = []) {
+  return Object.fromEntries(entrants.filter((row) => row.seed != null).map((row) => [row.id, row.seed]));
 }

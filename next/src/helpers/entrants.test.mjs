@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
+import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedPayload, seedsByEntrant, signupCount, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -175,4 +175,9 @@ test('a player whose every race withdrew reads withdrawn', () => {
   ]);
   assert.equal(gone.length, 1);
   assert.equal(gone[0].withdrawn_at, '2026-09-14T20:00:00Z');
+});
+
+test('the seeds read by entrant id, and an unseeded entrant names none', () => {
+  assert.deepEqual(seedsByEntrant([{ id: 4, seed: 1 }, { id: 9, seed: 2 }, { id: 3, seed: null }]), { 4: 1, 9: 2 });
+  assert.deepEqual(seedsByEntrant(), {});
 });

@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T20:00:00Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -25,19 +25,19 @@ sources:
 
 # Routes and roles
 
-`next/src/lib/routes.ts` lists every route with `meta.role`, the lowest session role that may open it, ranked `public < guest < member < captain < admin`. `meta.nav: false` hides a route from the navigation. `meta.season: true` says the path carries a season slug, so the guard loads the season list first. The pages themselves are folders under `next/src/app/(app)/`; a new route needs its folder and its line in the table, and a path the table does not name is public.
+`next/src/lib/routes.ts` lists every route with `meta.role`, the lowest session role that may open it, ranked `public < guest < member < captain < admin`. `meta.nav: false` hides a route from the navigation. `meta.organizer: true` also asks for an organizer, a capability `/me` answers beside the role as `organizer`; an admin always passes it. `meta.season: true` says the path carries a season slug, so the guard loads the season list first. The pages themselves are folders under `next/src/app/(app)/`; a new route needs its folder and its line in the table, and a path the table does not name is public.
 
 | Role | Routes |
 |---|---|
 | public | `/login`, `/sso-callback`, `/admin-login`, `/series/:id`, `/leagues`, `/leagues/:id`, `/events`, `/events/:id`, `/koth/dashboard`, `/random-stats`, `/credits`, `/no-access` |
 | guest | `/profile` only; it shows the join-the-Discord card |
-| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/seasons/:id`, `/match/:id`, `/upcoming`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/fantasy`, `/fantasy-registration`, `/ladder` |
+| member | `/`, `/signup`, `/availability`, `/players`, `/player/:id`, `/player-series/:id/veto`, `/seasons/:id`, `/match/:id`, `/upcoming`, `/teams`, `/team/:id`, `/team/:id/season/:season_id`, `/events/:id/entrants`, `/events/:id/admin` (the page lets in the event's runners only), `/events/new` and `/events/new/cup` (organizers only), `/fantasy`, `/fantasy-registration`, `/ladder` |
 | captain | `/seasons/:id/assign`, `/team/:id/season/:season_id/rounds` (reads; the view gates writes to admins) |
-| admin | `/admin`, `/seasons`, `/seasons/:id/maps`, `/seasons/:id/achievements`, `/maps`, `/config`, `/config/discord-roles`, `/config/access`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/events/new`, `/events/:id/admin`, `/user-guide` |
+| admin | `/admin`, `/seasons`, `/seasons/:id/maps`, `/seasons/:id/achievements`, `/maps`, `/config`, `/config/discord-roles`, `/config/access`, `/fantasy/bets`, `/fantasy/tiers`, `/koth`, `/user-guide` |
 
 `/player-dashboard` redirects to the member's own player page and `/player-stats` to `/players`. What each page does is in the [pages](../pages/index.md) directory.
 
-The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A signed-in session on `/login` or `/admin-login` is sent on the same way, except the admin token's session on `/admin-login` while `NEXT_PUBLIC_DEV_LOGIN=1`, which stays to pick between the super admin and a player. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/player/:id` does, is not drawn again.
+The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A signed-in session on `/login` or `/admin-login` is sent on the same way, except the admin token's session on `/admin-login` while `NEXT_PUBLIC_DEV_LOGIN=1`, which stays to pick between the super admin and a player. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else; a member who is no organizer goes to `/no-access?role=organizer`, which points at the Events page. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/player/:id` does, is not drawn again.
 
 Routes are plain paths since 2026-09-04; there is no bridge for old `/#/x` links. See [the decision](../decisions/history-routing.md).
 
@@ -58,9 +58,10 @@ One person can be a player, a captain and an admin at once. `buildNav` in `next/
 - Home, for a member or above.
 - My Stats, the member's own player page, when he has a player row.
 - My Team: one entry per team the person plays for (`seasons[].team`) or captains (`seats`) in a running season, newest season first. A seat and a roster row of the same team and season are one entry, marked as captained. Each entry links to the team's season page.
+- Events, for a member or above: the cups and the other events to join. An organizer creates and runs their cups from the same page.
 - Admin, when the session reaches `/admin`. A viewed lower role never does, so view-as hides it.
 
-A player therefore sees Home and My Stats alone. The shared pages (standings, upcoming series, teams, fantasy leaderboard, events) are reached through links in the Home panels and on the pages themselves; the nav names none of them. `navTabs` turns the nav into tabs: from 960 px they sit in the top bar, below it in a fixed bar at the bottom of the screen. My Team is a link for one team and opens a picker (a menu in the top bar, a sheet on a phone) for several. There is no drawer. The page ends above the tab bar, and a sheet or a dialog opens over it. A guest gets no tabs; their one page is `/profile`, in the account menu.
+A player therefore sees Home, My Stats and Events. The other shared pages (standings, upcoming series, teams, fantasy leaderboard) are reached through links in the Home panels and on the pages themselves; the nav names none of them. `navTabs` turns the nav into tabs: from 960 px they sit in the top bar, below it in a fixed bar at the bottom of the screen. My Team is a link for one team and opens a picker (a menu in the top bar, a sheet on a phone) for several. There is no drawer. The page ends above the tab bar, and a sheet or a dialog opens over it. A guest gets no tabs; their one page is `/profile`, in the account menu.
 
 The account menu on the avatar holds Profile, then for a member with a player row "Blocked times", then "View as…" for an admin who may view as a lower role, and Logout. "Blocked times" opens the [blocked-times dialog](shared-components.md), which the shell holds once for every page: it opens over the page and closes back onto it. `/availability`, where the blocked times had a page of their own, opens the dialog over Home.
 

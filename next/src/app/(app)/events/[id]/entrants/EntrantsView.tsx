@@ -26,6 +26,7 @@ import { eventLabel, timeText, titleOf, FORMATS } from "@/helpers/event-labels.m
 import { raceWrapper } from "@/helpers/races.js";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats";
 import { useAuth, useEventStore, usePlayerStore, useTeamStore } from "@/stores";
+import { useEventRunner } from "@/hooks/event-runner";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -92,11 +93,14 @@ function Warnings({ row, event }: { row: Row; event: Row }) {
   ));
 }
 
-/** Who is in one event: the list an admin runs the signups from, and the read a member
- *  gets without any of the controls. The MMR strip cuts the divisions, the table seeds
- *  them, and a phone reads the same rows as cards. */
+/** Who is in one event: the list its runners, an admin or one of its organizers, run the
+ *  signups from, and the read a member gets without any of the controls. The MMR strip cuts
+ *  the divisions, the table seeds them, and a phone reads the same rows as cards. */
 export function EntrantsView({ id }: { id: string }) {
-  const { isAdmin } = useAuth();
+  // every control below is the event's runners'; the name stays from when only an admin ran it
+  const isAdmin = useEventRunner(id).runs;
+  // a ban reaches every event, so it stays an admin's even where an organizer runs this one
+  const canBan = useAuth().isAdmin;
   const store = useEventStore();
   const playerStore = usePlayerStore();
   const teamStore = useTeamStore();
@@ -204,7 +208,7 @@ export function EntrantsView({ id }: { id: string }) {
     }
   };
 
-  const readEntrants = async () => setEntrants(await store.fetchEntrants(eventId));
+  const readEntrants = async () => setEntrants(await store.fetchEntrants(eventId, true));
   const swap = (updated: Row) => setEntrants((rows) => rows.map((old) => (old.id === updated.id ? updated : old)));
 
   const saveDivisions = () =>
@@ -308,7 +312,7 @@ export function EntrantsView({ id }: { id: string }) {
       "The player is banned. Every entrant row of the event warns.",
     );
 
-  const banAction = (row: Row): RowAction | false => row.user && { icon: "mdi-gavel", label: "Ban player", color: "error", onClick: () => askBan(row) };
+  const banAction = (row: Row): RowAction | false => canBan && row.user && { icon: "mdi-gavel", label: "Ban player", color: "error", onClick: () => askBan(row) };
   // A race row of a player offers no ban: his own row above carries the one ban
   const actionsFor = (row: Row, withBan = true): RowAction[] =>
     [

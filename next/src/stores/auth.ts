@@ -116,6 +116,8 @@ const members = ({ user, me, viewAs, loginError }: AuthState) => {
     viewAs,
     loginError,
     isAdmin: me?.role === "admin",
+    // an organizer creates cups; an admin may do anything an organizer may
+    isOrganizer: me?.role === "admin" || !!me?.organizer,
     isCaptain: me?.role === "captain" || me?.role === "admin",
     // a captain writes for the (team, season) pairs /me lists as seats; an admin for every pair
     isCaptainOf: (teamId: number, seasonId: number) =>

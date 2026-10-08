@@ -36,7 +36,8 @@ export function Guard({ children }: { children: React.ReactNode }) {
   // between the super admin and a player
   const choosing = path === "/admin-login" && devLoginEnabled && !!user && !user.dev && !!me?.superadmin;
   const signedInOnLogin = (path === "/login" || path === "/admin-login") && !!me && !choosing;
-  const allowed = !signedInOnLogin && (meta.role === "public" || (!!me && canSeeRole(me.role, meta.role)));
+  const organizerOk = !meta.organizer || me?.role === "admin" || !!me?.organizer;
+  const allowed = !signedInOnLogin && organizerOk && (meta.role === "public" || (!!me && canSeeRole(me.role, meta.role)));
 
   useEffect(() => {
     if (!hydrated || !seasonsReady || allowed) return;
@@ -46,7 +47,7 @@ export function Guard({ children }: { children: React.ReactNode }) {
       return router.replace("/login");
     }
     // a guest is not in the Discord server yet: the profile shows the join card, not a locked door
-    router.replace(me.role === "guest" ? "/profile" : `/no-access?role=${meta.role}`);
+    router.replace(me.role === "guest" ? "/profile" : `/no-access?role=${organizerOk ? meta.role : "organizer"}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, seasonsReady, allowed, signedInOnLogin, me, path]);
 

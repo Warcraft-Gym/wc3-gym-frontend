@@ -32,7 +32,7 @@ test('a start date and a typed time are stored as the UTC instant they name', ()
 });
 
 test('the new event fields ride along, and a blank number is nothing', () => {
-  const body = eventPayload({ ...blankForm({ id: 1 }), parent_id: 9, signup_policy: 'anyone', entrant_cap: '32' });
+  const body = eventPayload({ ...blankForm({ id: 1 }), parent_id: 9, signup_policy: 'anyone', eligibility_required: false, entrant_cap: '32' });
   assert.equal(body.parent_id, 9);
   assert.equal(body.signup_policy, 'anyone');
   assert.equal(body.entrant_cap, 32);
@@ -42,6 +42,13 @@ test('the new event fields ride along, and a blank number is nothing', () => {
   assert.equal(body.min_games_seasons, null);  // nothing counts every W3C season
   assert.equal(body.early_checkin, false);
   assert.equal(body.round_end_zone, null);
+});
+
+test('a new event checks who signs up, in its MMR range; asking for Battle.net takes members only', () => {
+  const body = eventPayload({ ...blankForm(), signup_policy: 'anyone', mmr_min: '1200', mmr_max: '1600' });
+  assert.deepEqual([body.eligibility_required, body.bnet_required, body.signup_policy, body.mmr_min, body.mmr_max], [true, false, 'anyone', 1200, 1600]);
+  const linked = eventPayload({ ...blankForm(), signup_policy: 'anyone', bnet_required: true });
+  assert.deepEqual([linked.bnet_required, linked.signup_policy], [true, 'members']);
 });
 
 test('one entry per race starts off and sends its switch', () => {

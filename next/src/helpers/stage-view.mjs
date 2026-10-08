@@ -67,8 +67,9 @@ export function columns(series, rounds = []) {
 }
 
 // Where every box sits. A box follows the middle of the feeders that fill it, and
-// drops far enough down the column to clear the box above it.
-export function layout(cols, { boxH = 88, gap = 12, colW = 244, boxW = 208 } = {}) {
+// drops far enough down the column to clear the box above it. `xs` places a column
+// elsewhere than its index says, and `top` moves the whole drawing down.
+export function layout(cols, { boxH = 88, gap = 12, colW = 244, boxW = 208, xs = null, top = 0 } = {}) {
   const unit = boxH + gap;
   const centre = new Map();
   const boxes = [];
@@ -82,18 +83,22 @@ export function layout(cols, { boxH = 88, gap = 12, colW = 244, boxW = 208 } = {
       const cy = Math.max(cursor === null ? unit / 2 : cursor + unit, ideal);
       cursor = cy;
       centre.set(row.id, cy);
-      boxes.push({ row, column: index, x: index * colW, cy, key: `s${row.id}` });
+      boxes.push({ row, column: index, x: xs?.[index] ?? index * colW, cy: cy + top, key: `s${row.id}` });
     }
   });
   const lines = [];
   for (const box of boxes) {
     for (const side of [1, 2]) {
-      const from = centre.get(feederOf(box.row, side));
-      if (from === undefined) continue;
+      const fromCy = centre.get(feederOf(box.row, side));
+      if (fromCy === undefined) continue;
+      const from = fromCy + top;
       const fed = boxes.find((other) => other.row.id === feederOf(box.row, side));
       const midX = fed.x + boxW + Math.round((box.x - fed.x - boxW) / 2);
       lines.push({
         key: `${box.key}-${side}`,
+        // the two series the line joins, so a lit path lights the line between them
+        from: fed.row.id,
+        to: box.row.id,
         d: `M${fed.x + boxW} ${from} H${midX} V${box.cy} H${box.x}`,
       });
     }
@@ -103,8 +108,8 @@ export function layout(cols, { boxH = 88, gap = 12, colW = 244, boxW = 208 } = {
     lines,
     boxW,
     boxH,
-    width: cols.length ? (cols.length - 1) * colW + boxW : 0,
-    height: boxes.reduce((tall, box) => Math.max(tall, box.cy + boxH / 2), 0),
+    width: cols.length ? (xs?.[cols.length - 1] ?? (cols.length - 1) * colW) + boxW : 0,
+    height: boxes.reduce((tall, box) => Math.max(tall, box.cy - top + boxH / 2), 0),
   };
 }
 
@@ -133,6 +138,49 @@ export function blocks(cols) {
     else made.push({ key: `${side}-${index}`, side, columns: [column] });
   });
   return made;
+}
+
+// A whole bracket as one drawing: each block a band under the one before, headed by its
+// round names. A double elimination draws its grand final, and the reset, at the end of the
+// upper band, past the last column of the longer ladder, and runs the line up to it from the
+// lower bracket final, so the winners of both ladders meet where the upper one ends.
+export function drawing(cols, { boxH = 88, gap = 12, colW = 244, boxW = 208, head = 28, between = 20 } = {}) {
+  const made = blocks(cols);
+  const joined = made.length > 2 && made[0].side === 'upper' && made[1].side === 'lower';
+  const upper = made[0]?.columns.length ?? 0;
+  const reach = joined ? Math.max(upper, made[1].columns.length) : 0;
+  const bands = joined
+    ? [{ ...made[0], columns: [...made[0].columns, ...made.slice(2).flatMap((block) => block.columns)] }, made[1]]
+    : made;
+  const heads = [];
+  const boxes = [];
+  const lines = [];
+  let top = 0;
+  let width = 0;
+  bands.forEach((band, index) => {
+    const xs = band.columns.map((_, at) => (joined && index === 0 && at >= upper ? reach + at - upper : at) * colW);
+    const drawn = layout(band.columns, { boxH, gap, colW, boxW, xs, top: top + head });
+    band.columns.forEach((column, at) => heads.push({ key: `${band.key}-${column.key}`, round: column.key, name: column.name, x: xs[at], y: top }));
+    boxes.push(...drawn.boxes.map((box) => ({ ...box, round: band.columns[box.column] })));
+    lines.push(...drawn.lines);
+    width = Math.max(width, drawn.width);
+    top += head + drawn.height + between;
+  });
+  if (joined) {
+    const byId = new Map(boxes.map((box) => [box.row.id, box]));
+    const lower = new Set(made[1].columns.flatMap((column) => column.series.map((row) => row.id)));
+    for (const box of boxes.filter((one) => !lower.has(one.row.id) && one.x >= reach * colW)) {
+      for (const side of [1, 2]) {
+        const fed = byId.get(feederOf(box.row, side));
+        if (!fed || !lower.has(fed.row.id)) continue;
+        const midX = fed.x + boxW + Math.round((box.x - fed.x - boxW) / 2);
+        lines.push({ key: `${box.key}-${side}`, from: fed.row.id, to: box.row.id, d: `M${fed.x + boxW} ${fed.cy} H${midX} V${box.cy} H${box.x}` });
+      }
+    }
+  }
+  // the box the champion stands beside: the last series of the last column
+  const lastId = cols.at(-1)?.series.at(-1)?.id;
+  return { heads, boxes, lines, boxW, boxH, width, height: Math.max(0, top - between), last: boxes.find((box) => box.row.id === lastId) ?? null };
 }
 
 // One group of standings per table the stage answers, in division order: a division, or
@@ -280,3 +328,66 @@ export function lobbySeats(row, hidden = false, fed = false) {
     }))
     .sort((a, b) => (a.place ?? Infinity) - (b.place ?? Infinity) || a.side_no - b.side_no);
 }
+
+// The series one entrant plays in, so a bracket lights up that entrant's way through it
+/** @param {any[]} series @param {number | null} entrant */
+export function pathOf(series = [], entrant = null) {
+  if (entrant == null) return new Set();
+  return new Set(series.filter((row) => standsOn(row, 1) === entrant || standsOn(row, 2) === entrant).map((row) => row.id));
+}
+
+// A double elimination's reset: both sides come from the grand final, its winner and its loser.
+// It is played only when the lower bracket's winner, on side 2, takes the grand final; else the
+// engine scores it a walkover of the same two players, which would draw the final twice. So the
+// draw leaves the reset out until the grand final calls for it; `keep` holds it in all the same,
+// for a page that hides results, where its coming would tell who won the final.
+/** @param {any[]} series @param {boolean} keep */
+export function withoutIdleReset(series = [], keep = false) {
+  if (keep) return series;
+  const byId = new Map(series.map((row) => [row.id, row]));
+  return series.filter((row) => {
+    const from = row.slot1_from_series_id;
+    const reset = from != null && from === row.slot2_from_series_id && !!row.slot1_takes_loser !== !!row.slot2_takes_loser;
+    return !reset || winnerSide(byId.get(from)) === 2;
+  });
+}
+
+// Who won the bracket: the winner of the last series of its last column, once it is scored.
+// A grand final reset sits in that column after the final, so it decides when it is played;
+// a reset the final settled is a walkover the engine scores, and decides the same way.
+export function championOf(cols = []) {
+  const last = cols.at(-1)?.series ?? [];
+  for (let at = last.length - 1; at >= 0; at -= 1) {
+    const row = last[at];
+    const side = winnerSide(row);
+    if (side) return { row, side, entrant: standsOn(row, side), name: sideName(row, side) };
+    if (seriesState(row) === 'open') return null;
+  }
+  return null;
+}
+
+/** The entrants who have played a match: both sides of every series with a result and two
+ *  named sides. A bye walks its player on without a match, so it counts for nobody.
+ *  @param {any[]} series @returns {Set<number>} */
+export function playedEntrants(series = []) {
+  const played = new Set();
+  for (const row of series) {
+    const [one, two] = [standsOn(row, 1), standsOn(row, 2)];
+    if (isScored(row) && one != null && two != null) {
+      played.add(one);
+      played.add(two);
+    }
+  }
+  return played;
+}
+
+/** How many matches of these carry a played result, as the undo of a draw counts them.
+ *  @param {any[]} series */
+export const playedCount = (series = []) => series.filter((row) => isScored(row) && standsOn(row, 1) != null && standsOn(row, 2) != null).length;
+
+// The round a phone opens on: the first column still holding a series to play, else the last
+export function currentColumn(cols = []) {
+  const open = cols.findIndex((column) => column.series.some((row) => !isScored(row)));
+  return open === -1 ? Math.max(0, cols.length - 1) : open;
+}
+

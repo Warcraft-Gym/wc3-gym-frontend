@@ -4,7 +4,7 @@ title: Event management
 description: The admin's path from an empty league to a finished event with awards; the wizard, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
 resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T09:24:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-07T22:00:00Z }
 sources:
   - id: wizard
     resource: ../../../next/src/app/(app)/events/new/EventWizardView.tsx
@@ -30,21 +30,24 @@ sources:
 
 | Path | Lowest role | View |
 |---|---|---|
-| `/events/new` | admin | `EventWizardView` |
-| `/events/:id/entrants` | member (every write is admin) | `EntrantsView` |
-| `/events/:id/admin` | admin | `EventAdminView` |
+| `/events/new` | member, organizers only | `EventWizardView` |
+| `/events/new/cup` | member, organizers only | `CupCreateView` |
+| `/events/:id/entrants` | member (every write is the event's runners') | `EntrantsView` |
+| `/events/:id/admin` | member; the page lets in the event's runners only | `EventAdminView` |
 | `/koth` | admin | `KothView` |
 
 # What it does
 
-The steps below take an admin from nothing to a finished event. Each step names the page, what the admin does there, and the route the store calls. The backend owns every rule the routes apply.
+A runner of an event is an admin, or an organizer the event names; the backend holds the list, and `useEventRunner` in `next/src/hooks/event-runner.ts` reads it for a page. Anyone else who opens a run page reads "You Don't Run This Event". The steps below take a runner from nothing to a finished event; making a league stays an admin's. Each step names the page, what the admin does there, and the route the store calls. The backend owns every rule the routes apply.
 
 **1. The league.** On `/leagues`, "New league" takes a name, a short name, the kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams) and a page link. It writes `POST /leagues`. A league that exists is reused: it is what repeats.
+
+**2a. A cup, the short way.** "Create cup" on `/events` opens `/events/new/cup`, five steps for an organizer's evening cup: Basics (the name, the day, the start time, the game, of which 1v1 is built, and a description), Format (single or double elimination, a match for third place or a grand final reset, and the best-of: "Early rounds" Bo1, Bo3 or Bo5, then each part of the bracket counted back from the end, "Quarterfinals", "Semifinals" and "Final" in a single elimination, "Upper semifinal", "Upper final", "Lower semifinal", "Lower final" and "Grand final" in a double one, each "Same" as the early rounds or a best-of of its own, `BestOfPlan`), Maps (the pool the players veto from, `MapPoolPicker`: "Use the 1v1 ladder pool" adds the ladder maps the app holds and names the ones it lacks, "Copy from a cup" takes the pool of a cup the reader runs or any other cup, "Add a map" searches the app's maps, and each map moves up or down or leaves on its own row; the step is left only once the pool holds the longest series, "A Bo5 needs at least 5 maps in the pool"), Sign-ups ("Only eligible players can sign up", on by default, with "The battle tag must be linked to Battle.net too" under it, off by default, the MMR from and to and the games at least on the signup race, who may sign up, which is members only while the Battle.net switch is on, the minimum and the maximum players, check-in, publish now, open sign-ups now) and a review. "Create cup" writes `POST /events` with the cup, `veto_by_best_of`, the pool as `map_ids` and its one elimination stage with `best_of_by_round`, played immediately, and no end date, so the cup ends on its finish or its last result and never at midnight; it lands on the run page. The run page reads the draw, the table and the entrants fresh after every write, past the edge and the browser cache. `next/src/helpers/cup-wizard.mjs` builds the body and `next/src/helpers/best-of-plan.mjs` the best-of plan, its line ("Bo1 early · upper final Bo3 · grand final Bo5") and the pool rule.
 
 **2. The event.** On the league page, "New event" opens `/events/new` with the league preset. The wizard makes a cup or a signup-only event; a GNL season and a KOTH night are made elsewhere. Its steps:
 
 - Basics: the league, the name, the kind, "Part of" (an event of the same league that this one feeds, for a qualifier), the region, the start and end date, the start time, the round end zone, the description, a page link and a stream link. The round end zone is an IANA name from the browser's own list, with UTC always offered; a round of an event that names none ends at midnight where the reader is.
-- Entrants: who may sign up (Discord members with an account, or anyone with a battle tag), what an entrant is (solo players or pre-made teams), the series per fixture on a team event, the entrant cap, the MMR maximum, the recent games floor with how many of the newest W3C seasons it counts over, and the check-in switch with the days before a round it opens and the early check-in switch, which lets a player check in for any round that has not ended.
+- Entrants: who may sign up (Discord members with an account, or anyone with a battle tag; members only while the Battle.net switch is on), "Only eligible players can sign up", on by default, which refuses a signup or a hand-add without a battle tag W3Champions rates inside the bounds, and under it "The battle tag must be linked to Battle.net too", off by default, what an entrant is (solo players or pre-made teams), the series per fixture on a team event, the entrant cap, the MMR minimum and maximum, the recent games floor with how many of the newest W3C seasons it counts over, and the check-in switch with the days before a round it opens and the early check-in switch, which lets a player check in for any round that has not ended.
 - Stages, one or more, each with a name, a format (round robin, single elimination, double elimination, Swiss, KOTH, free for all), a best-of (1, 3, 5, 7), a map rule (veto, loser picks, host picks, fixed map), the format's own fields (players per lobby and the points each place pays for a free for all; the round count for Swiss; the series each entrant plays per round, the group size and the entrants each group advances for a round robin), the scheduling mode (an admin sets the time, the two sides agree, played straight away), the count of entrants who advance, and whether they advance by themselves. A signup-only event skips this step.
 - Divisions: none, or two to six, each named. The MMR bounds are cut later on the entrants page.
 - Review, with an edit link back to each step.
@@ -57,13 +60,14 @@ A step with a problem cannot be left: no league or no name, an end before the st
 
 **5. The seeds.** On the same page, the admin picks the stage when the event has more than one, then "Seed by MMR", "Shuffle", or "Seed from the previous stage" on a stage that has one. Each writes `PUT /events/{id}/stages/{stage_id}/seeds` with a `source`. Dragging a row inside its division, or its move up and move down buttons, writes the same route with an order of entrant ids, which is the manual source. "Lock seeds" writes `POST /events/{id}/stages/{stage_id}/seeds/lock`; a locked stage takes no reorder, shows each seed's source, and the public page starts showing the seeds. A KOTH night takes no seed write either, because a seed orders the queue the night is running: it draws none of the seed controls and no drag handle, and the same line points at the run page.
 
-**6. The run.** `/events/:id/admin` draws one tab per stage with the same stage view the public page shows, and the buttons the stage takes:
+**6. The run.** `/events/:id/admin` reads, on every event but a GNL season, as the same three tabs as the event page, "Draw", "Participants" and "Results", with the tab in the address. "Draw" opens with a bar (`CupConsole` part `evening`): the players still in and how many checked in, against the minimum and the maximum, and "Cancel the cup"; on a cup, "Format and maps" (`CupFormatCard`), the best-of line and the pool, with "Edit" until the bracket is drawn, which writes the pool with `PUT /events/{id}/maps` and the stage with `PUT /events/{id}/stages`, the growing side first so the pool always holds the longest series; below the minimum, before the draw, a warning with "Move the start" (`PUT /events/{id}` with the new time) and "Cancel the cup" (`POST /events/{id}/cancel`, after one red confirm). Then the stage's buttons and its drawing; a bracket draws no table under it. "Participants" (part `people`) is the "Players" card: every player on a row of their own, in seed order once seeded, with "Check in" and "Remove" (after one confirm naming them) until the bracket is drawn, and "Add player", which picks any player who is not in and their race and writes `POST /events/{id}/entrants/admin`; after the draw, "Swap" on the row of a player who has played no match (`playedEntrants` in `next/src/helpers/stage-view.mjs`), which opens the same picker as "Swap <name>", says the new player takes the seed and the matches and a begun veto starts over, and writes `POST /events/{id}/entrants/{entrant_id}/replace`, then reads the entrants and the draw again; "Seed players" to the entrants page; "Remove n no-shows", which deletes the entrants that did not check in, so the draw holds the ones who did; then the "Organizers" card, where a runner adds a co-organizer by Discord id and name (`POST /events/{id}/organizers`) or removes one. "Results" is the event page's results tab, where a click on a match opens its result dialog. An event of more than one stage picks the stage over the draw and over the results. A GNL season keeps one page: one tab per stage with the same stage view the public page shows. The buttons a stage takes:
 
+- "Undo the draw", in the error colour, while the stage holds series and the event is not finished, asks once in a red confirm that names what goes, "The bracket and its 7 matches are deleted, with 1 result, their map vetoes and replays", and writes `DELETE /events/{id}/stages/{stage_id}/series`; the page then reads the event, the entrants and the stage again, so "Add player", "Remove", "Seed players" and "Generate" are back. `playedCount` counts the results the confirm names.
 - "Generate", while the stage holds no series, writes `POST /events/{id}/stages/{stage_id}/generate`; the confirm names the seed source and the field per division, with the byes. A Swiss stage has "Draw the next round" instead, `POST /events/{id}/stages/{stage_id}/rounds`, disabled while a series of the round before carries no result and once every round is drawn.
 - A series box opens the result dialog: the winner of each game, and the winners make the score. "Save result" writes `PUT /series/{id}` with the two scores. "Walkover" and "Forfeit" take the side that gets the series and write `PUT /series/{id}/result-kind`. "Reopen" writes the same route with cleared scores; when the engine refuses because a later series already carries a result, the page asks once more and retries with `?force=true`.
 - A free for all lobby opens the places dialog instead: the admin drags the seats or types the places, and "Save places" writes `PUT /series/{id}/places`. Before a lobby is played, "Move" sends one entrant to another lobby of the same round through `PUT /series/{id}/sides` on both lobbies.
 - On a team event, the players each side fields are named on the series page; see [fixtures and series](fixtures-and-series.md).
-- "Advance", once every series of the stage carries a result, writes `POST /events/{id}/stages/{stage_id}/advance`; the confirm lists the entrants who move on, the top of each division's table.
+- "Advance", once every series of the stage carries a result and only on a stage another stage follows, writes `POST /events/{id}/stages/{stage_id}/advance`; the confirm lists the entrants who move on, the top of each division's table. A cup plays one stage, so its run page never shows it; "Finish" ends it.
 
 **7. The awards.** On the last stage's tab, "Finish" writes `POST /events/{id}/finish`. The confirm lists every entrant the close awards and the place it takes (Champion, Runner-up, Third, Placed n), because the close freezes that stage's table into the award rows. Finishing again rewrites the places from the table as it stands. The close also stamps the event closed, so it reads finished whatever results are missing; on a closed event the tab carries "Reopen", which writes `POST /events/{id}/reopen` and takes the stamp and the places back. The event page then carries each place on the entrant's row, and a first place reaches the player page's trophy shelf.
 
@@ -93,6 +97,12 @@ A step with a problem cannot be left: no league or no name, an end before the st
 | `event.advanceStage` | `POST /events/{id}/stages/{stage_id}/advance` |
 | `event.finishEvent` | `POST /events/{id}/finish` |
 | `event.reopenEvent` | `POST /events/{id}/reopen` |
+| `event.cancelEvent` | `POST /events/{id}/cancel` |
+| `event.fetchEventOrganizers` | `GET /events/{id}/organizers` |
+| `event.addEventOrganizer` | `POST /events/{id}/organizers` |
+| `event.removeEventOrganizer` | `DELETE /events/{id}/organizers/{discord_id}` |
+| `event.myOrganizedEvents` | `GET /me/organized-events` |
+| `event.requestOrganizer` | `POST /organizers/requests` |
 | `event.openNight` | `POST /koth/nights` |
 | `event.closeNight` | `POST /koth/nights/{id}/close` |
 

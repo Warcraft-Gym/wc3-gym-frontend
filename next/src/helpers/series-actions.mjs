@@ -125,3 +125,25 @@ export const seriesEditBody = (row) => ({
 /** Whether the series holds a result to clear: both scores, a 0-0 of a series never played included.
  *  @param {any} series */
 export const holdsResult = (series) => series?.player1_score != null && series?.player2_score != null;
+
+/** What the draw offers on one series box: `report` while it waits for a result, `edit` once it
+ *  holds one, or null. Null too while a side is still to be decided, for a free for all lobby,
+ *  whose places its organizers enter, and for a walkover or a forfeit, which only they record.
+ *  `runs` is an organizer of the event, who acts for either side as an admin does.
+ *  @param {any} series
+ *  @param {{ id?: number|null, isAdmin?: boolean, runs?: boolean, seats?: { team_id: number, season_id: number }[] }} [viewer] */
+/** Whether the viewer vetoes this series from the draw: a side of it, never a runner who
+ *  plays neither, while it has no result, on a cup series, whose game 1 is the map the veto
+ *  leaves. A GNL series vetoes on its own page.
+ *  @param {any} series @param {{ id?: number | null, seats?: any[] }} viewer */
+export const vetoOf = (series, viewer = {}) =>
+  rulesOf(series?.rules?.map_rules).includes('decider') && reportOf(series, { id: viewer.id ?? null, seats: viewer.seats ?? [] }) === 'report';
+
+export const reportOf = (series, viewer = {}) => {
+  if (!series || series.sides?.length) return null;
+  const named = (side) => series[`player${side}_id`] ?? series[`entrant${side}_id`] ?? series[`team${side}`]?.id;
+  if (!named(1) || !named(2)) return null;
+  if (series.result_kind && !['played', null].includes(series.result_kind)) return null;
+  if (!actsForSeries(series, { ...viewer, isAdmin: !!(viewer.isAdmin || viewer.runs) })) return null;
+  return holdsResult(series) ? 'edit' : 'report';
+};

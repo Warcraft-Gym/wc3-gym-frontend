@@ -167,6 +167,10 @@ export function VetoBoard({
       if (rule === "fixed") {
         mapId = board?.week_map_id;
         source = "Fixed map";
+      } else if (rule === "decider") {
+        // game 1 of a cup plays the one map the veto leaves
+        mapId = leftOver.length === 1 ? leftOver[0] : null;
+        source = mapId ? "Left over" : "The map the veto leaves";
       } else if (rule === "loser") {
         source = index ? `Loser of game ${index} picks` : "Loser picks";
       } else if (rule === "veto") {
@@ -187,9 +191,10 @@ export function VetoBoard({
   })();
 
   const showPicks = rules.includes("loser") && order.some((entry) => /^pick/i.test(entry));
+  // a series of five games takes two picks a side: the first for the first game they lose
   const picks = ["A", "B"].map((side) => {
-    const step = taken.find((row) => row.action === "pick" && row.side === side);
-    return { side, who: sideName(side), mapId: step?.map_id, map: step ? mapName(step.map_id) : null };
+    const own = taken.filter((row) => row.action === "pick" && row.side === side);
+    return { side, who: sideName(side), mapId: own[0]?.map_id, map: own.length ? own.map((step) => mapName(step.map_id)).join(", then ") : null };
   });
 
   // a read that keeps failing stops the poll until Try again reads the board

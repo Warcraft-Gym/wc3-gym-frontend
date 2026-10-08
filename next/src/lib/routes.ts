@@ -1,6 +1,8 @@
-// meta.role: the lowest session role the route accepts; nav = false hides the nav links
+// meta.role: the lowest session role the route accepts; nav = false hides the nav links.
+// meta.organizer: the route also needs an organizer, a capability /me answers beside the role;
+// an admin always passes it.
 export type Role = "public" | "guest" | "member" | "captain" | "admin";
-export type RouteMeta = { role: Role; nav?: boolean; season?: boolean };
+export type RouteMeta = { role: Role; nav?: boolean; season?: boolean; organizer?: boolean };
 
 const RANK: Record<string, number> = { public: 0, guest: 1, member: 2, captain: 3, admin: 4 };
 
@@ -40,9 +42,10 @@ export const ROUTES: { path: string; meta: RouteMeta }[] = [
   { path: "/leagues", meta: { role: "public" } },
   { path: "/leagues/:id", meta: { role: "public" } },
   { path: "/events", meta: { role: "public" } },
-  { path: "/events/new", meta: { role: "admin" } },
+  { path: "/events/new", meta: { role: "member", organizer: true } },
+  { path: "/events/new/cup", meta: { role: "member", organizer: true } },
   { path: "/events/:id/entrants", meta: { role: "member" } },
-  { path: "/events/:id/admin", meta: { role: "admin" } },
+  { path: "/events/:id/admin", meta: { role: "member" } },
   { path: "/events/:id", meta: { role: "public" } },
   { path: "/teams", meta: { role: "member" } },
   { path: "/config", meta: { role: "admin" } },

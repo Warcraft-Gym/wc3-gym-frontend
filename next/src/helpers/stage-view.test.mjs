@@ -5,7 +5,7 @@ import {
   advancingRows, blocks, buchholz, columns, drawsByRound,
   generateFields, inDivision, isByeSide, isLobby, layout, lobbySeats, lobbyTargets,
   nextRound, ranking, seriesState, shownPlayer, shownTeam, sideName,
-  standingsGroups, standsOn, winnerSide,
+  standingsGroups, standsOn, winnerSide, pathOf, championOf, currentColumn, drawing, withoutIdleReset, playedEntrants, playedCount,
 } from './stage-view.mjs';
 
 // One planned series. A side is an entrant id, ['w', id] for a feeder's winner,
@@ -114,6 +114,38 @@ test('a double elimination draws the upper ladder, the lower ladder and the fina
   assert.ok(made.every((block) => layout(block.columns).width <= 1136));
   // a line is drawn inside a block only, so none of them crosses the column between
   assert.deepStrictEqual(made.map((block) => layout(block.columns).lines.length), [6, 5, 0]);
+});
+
+test('a double elimination draws its final at the end of the upper ladder, fed from both', () => {
+  const rows = [...DE8, S(15, 9, 1, ['w', 14], ['l', 14])];
+  const drawn = drawing(columns(rows, [...DE8_ROUNDS, { id: 9, number: 9, name: 'Grand final reset' }]));
+  const box = (id) => drawn.boxes.find((one) => one.row.id === id);
+  // past the last column of the longer ladder, the lower one, on the line of the upper final
+  assert.strictEqual(box(14).x, 4 * 244);
+  assert.strictEqual(box(14).cy, box(7).cy);
+  assert.strictEqual(box(15).x, 5 * 244);
+  assert.strictEqual(box(15).cy, box(14).cy);
+  // the lower ladder is a band under the upper one, and its final sits below the grand final
+  assert.ok(box(13).cy > box(14).cy);
+  assert.ok(box(8).cy - drawn.boxH / 2 > box(1).cy + drawn.boxH / 2);
+  // the round names head both bands, the finals on the upper one
+  assert.strictEqual(drawn.heads.find((one) => one.name === 'Grand final').y, 0);
+  assert.ok(drawn.heads.find((one) => one.name === 'Lower bracket round 1').y > 0);
+  // the upper ladder, the lower ladder, the upper final across, the lower final up, the reset
+  assert.strictEqual(drawn.lines.length, 6 + 5 + 1 + 1 + 2);
+  const up = drawn.lines.find((line) => line.from === 13 && line.to === 14);
+  assert.ok(up);
+  assert.strictEqual(drawn.last.row.id, 15);
+  assert.strictEqual(drawn.width, 5 * 244 + 208);
+});
+
+test('a single elimination is one drawing as the columns lay it out', () => {
+  const cols = columns(SE9, SE9_ROUNDS);
+  const drawn = drawing(cols);
+  const flat = layout(cols, { top: 28 });
+  assert.deepStrictEqual(drawn.boxes.map((box) => [box.x, box.cy]), flat.boxes.map((box) => [box.x, box.cy]));
+  assert.strictEqual(drawn.lines.length, flat.lines.length);
+  assert.strictEqual(drawn.last.row.id, 8);
 });
 
 test('a single elimination is one block, third place included', () => {
@@ -416,4 +448,58 @@ test('the move picker drops a lobby that is already played', () => {
   };
   const open = { id: 8, division_id: null, round_id: 1, sequence: 1, sides: [seat(1, 81), seat(2, 82)] };
   assert.deepEqual(lobbyTargets([open, played], open), []);
+});
+
+test('a path holds every series one entrant stands in', () => {
+  const rows = [S(1, 1, 1, 1, 2), S(2, 1, 2, 3, 4), S(3, 2, 1, ['w', 1], ['w', 2])];
+  rows[2].player1_id = 1;
+  assert.deepStrictEqual([...pathOf(rows, 1)].sort(), [1, 3]);
+  assert.deepStrictEqual([...pathOf(rows, 4)], [2]);
+  assert.strictEqual(pathOf(rows, null).size, 0);
+});
+
+test('the reset is drawn only once the lower winner takes the grand final', () => {
+  const final = S(14, 8, 1, ['w', 7], ['w', 13]);
+  const reset = S(15, 9, 1, ['w', 14], ['l', 14]);
+  const ids = (rows, keep) => withoutIdleReset([...DE8.slice(0, -1), ...rows], keep).map((row) => row.id).slice(-2);
+  // not played yet, and won by the upper winner: the bracket ends on the grand final
+  assert.deepStrictEqual(ids([final, reset]), [13, 14]);
+  assert.deepStrictEqual(ids([{ ...final, player1_score: 1, player2_score: 0 }, reset]), [13, 14]);
+  // won by the lower winner: the reset is played and drawn
+  assert.deepStrictEqual(ids([{ ...final, player1_score: 0, player2_score: 1 }, reset]), [14, 15]);
+  // a page that hides results keeps it, so its coming tells nothing
+  assert.deepStrictEqual(ids([final, reset], true), [14, 15]);
+  // a third-place series takes two losers of two series, never a reset
+  assert.strictEqual(withoutIdleReset([...SE9, S(9, 4, 2, ['l', 6], ['l', 7])]).length, 9);
+});
+
+test('a player has played once a series of theirs carries a result against somebody', () => {
+  const rows = [
+    { ...S(1, 1, 1, 1, 2), player1_score: 2, player2_score: 1 },
+    // a bye: scored through, but nobody stood on the other side
+    { ...S(2, 1, 2, 3, null), player1_score: 1, player2_score: 0 },
+    S(3, 2, 1, 4, 5),
+  ];
+  assert.deepStrictEqual([...playedEntrants(rows)].sort(), [1, 2]);
+  assert.strictEqual(playedCount(rows), 1);
+  assert.strictEqual(playedCount([]), 0);
+});
+
+test('the champion is the winner of the last series once it is scored', () => {
+  const rows = SE9.map((row) => ({ ...row }));
+  assert.strictEqual(championOf(columns(rows, SE9_ROUNDS)), null);
+  const final = rows.find((row) => row.id === 8);
+  Object.assign(final, { player1_id: 1, player1: { id: 1, name: 'P1' }, player2_id: 7, player2: { id: 7, name: 'P7' }, player1_score: 1, player2_score: 2 });
+  const champ = championOf(columns(rows, SE9_ROUNDS));
+  assert.deepStrictEqual([champ.entrant, champ.name, champ.side], [7, 'P7', 2]);
+});
+
+test('a phone opens on the first round with a series still to play', () => {
+  const rows = SE9.map((row) => ({ ...row }));
+  assert.strictEqual(currentColumn(columns(rows, SE9_ROUNDS)), 0);
+  rows.find((row) => row.id === 1).player1_score = 2;
+  rows.find((row) => row.id === 1).player2_score = 0;
+  assert.strictEqual(currentColumn(columns(rows, SE9_ROUNDS)), 1);
+  for (const row of rows) Object.assign(row, { player1_score: 2, player2_score: 1 });
+  assert.strictEqual(currentColumn(columns(rows, SE9_ROUNDS)), 3);
 });

@@ -15,7 +15,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { VetoBoard } from "@/components/VetoBoard";
 import { authHeader, backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, winsFor, isValidResult, moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
-import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helpers/map-order.mjs";
+import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported, vetoOffers } from "@/helpers/map-order.mjs";
 import { mapMismatch, mapMismatches, reportWarning, swapMapFields } from "@/helpers/replay-maps.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
@@ -62,7 +62,8 @@ const showHeld = (file?: File | null) => (input: HTMLInputElement | null) => {
 };
 
 // The map the season's rules offer for each game, given the veto and who won the games before
-const offeredMaps = (form: Form, veto: Row | null): (number | null)[] => mapsByGame(form.map_rules, veto?.week_map_id, picksOf(veto?.steps), form.winners || []);
+const offeredMaps = (form: Form, veto: Row | null): (number | null)[] =>
+  mapsByGame(form.map_rules, veto?.week_map_id, picksOf(veto?.steps), form.winners || [], vetoOffers(form.map_rules, veto));
 const mapOfIn = (form: Form, veto: Row | null, game: number) => form.maps?.[game] ?? offeredMaps(form, veto)[game - 1] ?? null;
 // Names the games saved without a replay, or null
 const missingLine = (games: number[]) =>

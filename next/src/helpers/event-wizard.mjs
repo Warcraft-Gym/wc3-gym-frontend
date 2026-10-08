@@ -56,8 +56,13 @@ export const blankForm = (league = null) => ({
   signup_policy: 'members',
   entrant_kind: league?.entrant_kind === 'team' ? 'team' : 'solo',
   entrant_cap: '',
+  mmr_min: '',
   mmr_max: '',
   min_games: '',
+  // On: a signup outside the bounds, or without a battle tag W3Champions rates, is refused
+  eligibility_required: true,
+  // On beside it: that tag verified through Battle.net too
+  bnet_required: false,
   min_games_seasons: '',
   checkin_enabled: false,
   checkin_days: 3,
@@ -87,9 +92,13 @@ export const eventPayload = (form) => ({
   starts_at: form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null,
   page_url: text(form.page_url),
   stream_url: text(form.stream_url),
-  signup_policy: form.signup_policy,
+  // a battle tag alone proves no Battle.net link, so an event that asks for one takes members only
+  signup_policy: form.eligibility_required && form.bnet_required ? 'members' : form.signup_policy,
   entrant_kind: form.entrant_kind,
   entrant_cap: count(form.entrant_cap),
+  eligibility_required: !!form.eligibility_required,
+  bnet_required: !!form.eligibility_required && !!form.bnet_required,
+  mmr_min: count(form.mmr_min),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
   // How many of the newest W3C seasons the games floor counts over; nothing counts them all
@@ -140,7 +149,7 @@ const STAGE_WRITE_FIELDS = [
   'name', 'format', 'best_of', 'series_per_entrant_per_round', 'swiss_rounds', 'points_by_place',
   'lobby_size', 'group_advance', 'map_rules', 'scheduling_mode', 'ranking_rule',
   'points_series_won', 'points_series_drawn', 'points_game_won', 'advance_count', 'group_size',
-  'auto_advance', 'third_place', 'grand_final_modifier',
+  'auto_advance', 'third_place', 'grand_final_modifier', 'best_of_by_round',
 ];
 
 // The write replaces every field of every stage, so each stage goes back as it was read

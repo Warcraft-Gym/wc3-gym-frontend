@@ -5,6 +5,10 @@ import { availabilityStore } from "./availability";
 
 // The leagues and their events. A league is what repeats, an event is one run of it,
 // and a GNL season is the gnl-kind event of the GNL league. Reads are open, writes admin.
+// A read that must not come from a cache: a query no cache holds, and no browser cache either
+const freshQuery = (fresh: boolean) => (fresh ? `?t=${Date.now()}` : "");
+const freshOptions = (fresh: boolean) => (fresh ? { cache: "no-store" as RequestCache } : undefined);
+
 const store = {
   async fetchLeagues() {
     return await fetchWrapper.get(`${backendUrl}/leagues`);
@@ -52,8 +56,9 @@ const store = {
   async assignDivisions(event_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/divisions/assign`);
   },
-  async fetchEntrants(event_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/entrants`);
+  // the browser keeps this read too, so a read right after a write asks fresh
+  async fetchEntrants(event_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/entrants${freshQuery(fresh)}`, undefined, freshOptions(fresh));
   },
   // Every published event with the caller's own entrant, check-in window and one action
   async myEvents() {
@@ -72,6 +77,10 @@ const store = {
   // An admin enters any player or team, whether the signups stand open or not
   async addEntrant(event_id: number, entrant: any) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/admin`, entrant);
+  },
+  // Another player takes the place, the seed and the series of one who has not played
+  async replaceEntrant(event_id: number, entrant_id: number, entrant: any) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/replace`, entrant);
   },
   async removeEntrant(event_id: number, entrant_id: number) {
     return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`);
@@ -101,14 +110,20 @@ const store = {
   async lockSeeds(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/lock`);
   },
-  // The rounds and the series of one stage, with the feeder graph the bracket draws
-  async fetchStage(event_id: number, stage_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`);
+  // The rounds and the series of one stage, with the feeder graph the bracket draws. These open
+  // reads are cached by the edge and by the browser, so a read right after a write asks fresh:
+  // the `t` misses both caches and keeps the bearer, which the edge never caches
+  async fetchStage(event_id: number, stage_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/series${freshQuery(fresh)}`, undefined, freshOptions(fresh));
   },
-  async fetchStandings(event_id: number, stage_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/standings`);
+  async fetchStandings(event_id: number, stage_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/standings${freshQuery(fresh)}`, undefined, freshOptions(fresh));
   },
   // Writes every series of the stage from its locked seeds, per division
+  // Takes the stage's draw back, results included, so the field may change and be drawn again
+  async undrawStage(event_id: number, stage_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`);
+  },
   async generateStage(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/generate`);
   },
@@ -218,6 +233,32 @@ const store = {
       if (rows.length) return { event, stage, series: rows };
     }
     return { event, series: [] };
+  },
+  // The maps an event's series veto from, in order; the whole pool is written at once
+  async setEventPool(event_id: number, map_ids: number[]) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/maps`, { map_ids });
+  },
+  // The events the caller runs, newest first, drafts included
+  async myOrganizedEvents() {
+    return await fetchWrapper.get(`${backendUrl}/me/organized-events`);
+  },
+  // A member asks to become an organizer; an admin answers on the access page
+  async requestOrganizer(note: string | null) {
+    return await fetchWrapper.post(`${backendUrl}/organizers/requests`, { note: note || null });
+  },
+  // Who runs one event; an open read, so the event page names its organizers
+  async fetchEventOrganizers(event_id: number) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/organizers`);
+  },
+  async addEventOrganizer(event_id: number, discord_id: string, name = "") {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/organizers`, { discord_id, name });
+  },
+  async removeEventOrganizer(event_id: number, discord_id: string) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/organizers/${discord_id}`);
+  },
+  // Calls the event off: it reads finished and pays no place; a reopen takes it back
+  async cancelEvent(event_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cancel`);
   },
   // A series no game was played for: a walkover or a forfeit, with the side that takes it
   async awardSeries(series_id: number, result_kind: string, winner: any) {

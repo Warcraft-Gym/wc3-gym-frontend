@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, where the blocked-times dialog lives, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T18:01:55Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-07T22:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -112,6 +112,11 @@ The one table for groups of rows: a tinted clickable header row per group, detai
 
 - The standings card is the first child of the stage in the DOM, so a screen reader and a keyboard user meet the table before the rounds. A bracket alone pushes it under the draw with CSS `order`, because a bracket is read first and ranked after. No other page reorders with CSS.
 - The third-place box names itself off the stage's `third_place` flag and the two loser slots its series carries, never off the column's name.
+- A wide bracket follows one entrant: a pointer over a side lights every box and feeder line of that entrant's way through it, and a line under the bracket names them. Its scale is 75, 100 or 125 per cent. A box names each entrant's seed when the page passes `seeds`. The last ladder ends on a "Champion" box, the winner of the last series once it is scored. A phone reads a bracket one round at a time behind round tabs, opening on the first round with a series still to play. A page that passes `viewer` and `onReport` gets a "Report" or "Edit result" button on every box that viewer may report, and a page that passes `onVeto` a "Veto" button beside it, in the same row, on a box of a cup series the viewer plays; `StageView` draws its boxes `stateless`: no state word, and a box with a result reads as done by a success frame and tint, a check and its beaten side dimmed; a box with no `onOpen` is no button and opens nothing; the box grows by a line to hold it, and the box's own label moves beside its state.
+- A double elimination is one drawing: the lower ladder is a band under the upper one, and the grand final and its reset close the upper band, past the last column of the longer ladder. The upper final's line runs across to the grand final and the lower final's line runs up to it, so both winners meet where the upper ladder ends. `drawing` in `next/src/helpers/stage-view.mjs` places the bands, the round names and the lines; a single elimination is one band.
+- The reset, the series both of whose sides come from the grand final, is drawn only once the lower winner has taken the grand final, because otherwise the engine scores it a walkover of the same two players. With "Hide results" on it is always drawn, so its coming tells nothing. `withoutIdleReset` holds the rule, on the wide drawing and on the phone's round tabs alike.
+- A column head whose round plays its own best-of adds it, "Upper bracket final · Bo3", off the round's `best_of`; the phone's round card does the same.
+- The draw names no MMR: `StageView` passes `rated={false}` to `SeriesBox`, which hands `mmr={false}` to `PlayerName` and ends a name longer than its side in an ellipsis. A box is 204 px in a 228 px column. The series page and a fixture's series list keep the MMR.
 
 # RoundStrip
 
@@ -161,6 +166,8 @@ The roster of one team in one event is one card: the captains, then the members,
 The tag one season row was played as: "as TAG" in small muted text, no icon and no link. It renders nothing when `played_as` is null or equals the person's `battleTag`. The team roster, the season team table and the player's Events card use it.
 
 # VetoBoard
+
+A cup series answers the rules `decider,loser,...`: its board lists game 1 as "The map the veto leaves" until the veto is done and then names that map, and a side with two picks reads them as "Map A, then Map B". `vetoOffers` in `next/src/helpers/map-order.mjs` hands the Report Result dialog the pick queue and the decider, so a side that loses twice is offered its second pick; a GNL series reads no queue.
 
 `VetoBoard` reads which side the viewer acts for from the board answer's `viewer_side`; it never works the side out from ids on the client. A side that is a team shows its team name when the answer sets `team_name`, and the player through `PlayerName` otherwise. See [the backend contract](backend-contract.md).
 

@@ -128,10 +128,12 @@ export function EventWizardView() {
         title: "Entrants",
         step: stepNumber("entrants"),
         rows: [
-          { k: "Who may sign up", v: titleOf(SIGNUP_POLICIES, it.signup_policy) },
+          { k: "Who may sign up", v: titleOf(SIGNUP_POLICIES, body.signup_policy) },
+          { k: "Eligibility", v: it.eligibility_required ? (it.bnet_required ? "Battle.net-linked, rated players inside the bounds only" : "Rated players inside the bounds only") : "Warnings only" },
           { k: "An entrant is", v: titleOf(WIZARD_ENTRANT_KINDS, it.entrant_kind) },
           ...(it.entrant_kind === "team" ? [{ k: SERIES_PER_FIXTURE, v: String(body.series_per_round) }] : []),
           { k: "Entrant cap", v: orNone(it.entrant_cap) },
+          { k: "MMR minimum", v: orNone(it.mmr_min) },
           { k: "MMR maximum", v: orNone(it.mmr_max) },
           { k: "Recent games at least", v: orNone(it.min_games) },
           { k: "Count the games over", v: body.min_games_seasons ? `${body.min_games_seasons} W3C seasons` : "Every W3C season" },
@@ -274,12 +276,30 @@ export function EventWizardView() {
           </div>
         ) : key === "entrants" ? (
           <div className="grid grid-cols-12 gap-3">
-            <Pick className={MD6} label="Who may sign up" items={SIGNUP_POLICIES} value={form.signup_policy} onChange={(signup_policy) => set({ signup_policy })} />
+            <Pick
+              className={MD6}
+              label="Who may sign up"
+              hint={form.eligibility_required && form.bnet_required ? "An event that asks for Battle.net takes members: a battle tag alone proves no link" : undefined}
+              items={form.eligibility_required && form.bnet_required ? SIGNUP_POLICIES.filter((item: { value: string }) => item.value === "members") : SIGNUP_POLICIES}
+              value={form.eligibility_required && form.bnet_required ? "members" : form.signup_policy}
+              onChange={(signup_policy) => set({ signup_policy })}
+            />
             <Pick className={MD6} label="An entrant is" items={WIZARD_ENTRANT_KINDS} value={form.entrant_kind} onChange={(entrant_kind) => set({ entrant_kind })} />
             {form.entrant_kind === "team" ? (
               <TextField className={MD4} type="number" min="1" label={SERIES_PER_FIXTURE} value={form.series_per_round} onChange={(e) => set({ series_per_round: e.target.value })} />
             ) : null}
             <TextField className={MD4} type="number" label="Entrant cap" placeholder="No cap" value={form.entrant_cap} onChange={(e) => set({ entrant_cap: e.target.value })} />
+            <Label className={cn(FULL, "flex items-center gap-2")}>
+              <Switch checked={!!form.eligibility_required} onCheckedChange={(eligibility_required) => set({ eligibility_required })} />
+              Only eligible players can sign up: a battle tag W3Champions rates, inside the MMR and games below
+            </Label>
+            {form.eligibility_required ? (
+              <Label className={cn(FULL, "flex items-center gap-2 pl-6")}>
+                <Switch checked={!!form.bnet_required} onCheckedChange={(bnet_required) => set({ bnet_required })} />
+                The battle tag must be linked to Battle.net too
+              </Label>
+            ) : null}
+            <TextField className={MD4} type="number" label="MMR minimum" placeholder="No minimum" value={form.mmr_min} onChange={(e) => set({ mmr_min: e.target.value })} />
             <TextField className={MD4} type="number" label="MMR maximum" placeholder="No maximum" value={form.mmr_max} onChange={(e) => set({ mmr_max: e.target.value })} />
             <TextField className={MD4} type="number" label="Recent games at least" placeholder="No floor" value={form.min_games} onChange={(e) => set({ min_games: e.target.value })} />
             <TextField

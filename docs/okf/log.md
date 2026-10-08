@@ -2,6 +2,7 @@
 
 ## 2026-10-08
 
+* **Fix**: "Use the ladder pool" adds the whole ladder pool: the ladder maps the app lacks are imported first, so an organizer no longer needs an admin to add them. Event management states it.
 * **Add**: team cups. Create cup offers 2v2, 3v3 and 4v4, and the Maps step reads the ladder pool of that size. The cup page signs a team up, shows the invitation with Accept and Decline, and the caller's team with what it waits for; `/events` lists the team invitations; the run page lists teams with their players, swaps a player, adds a team and removes the incomplete ones; a team box carries Veto and Report for its own players only. Event management, the events pages, the backend contract and the cup flow state it.
 * **Update**: a cup checks the highest MMR of the races a player has really played. Create cup and the event wizard carry "A race counts from", 20 lifetime games by default, the games floor counts over all races, and the event page says so. Event management and the events pages state it.
 

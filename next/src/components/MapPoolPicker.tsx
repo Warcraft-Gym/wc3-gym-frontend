@@ -56,17 +56,26 @@ export function MapPoolPicker({
   const inPool = new Set(pool.map((row) => row.id));
   const add = (rows: PoolMap[]) => onChange([...pool, ...rows.filter((row) => !inPool.has(row.id))]);
 
+  // The whole ladder pool: the ladder maps the app lacks are imported first, then every one joins
   const useLadder = async () => {
     setBusy("ladder");
     setNote(null);
     try {
-      const rows: Row[] = await mapStore.fetchLadderMapImport(ladderMode || "1v1");
+      const mode = ladderMode || "1v1";
+      let rows: Row[] = await mapStore.fetchLadderMapImport(mode);
+      const lacking = rows.filter((row) => row.status !== "off_ladder" && row.map_id == null).map((row) => row.w3c_name);
+      let all = maps;
+      if (lacking.length) {
+        await mapStore.importLadderMaps(lacking, mode);
+        [rows, all] = await Promise.all([mapStore.fetchLadderMapImport(mode), mapStore.fetchMaps(true)]);
+        setMaps(all);
+      }
       const ladder = rows.filter((row) => row.status !== "off_ladder");
       const known = ladder.filter((row) => row.map_id != null);
-      const byId = new Map(maps.map((row) => [row.id, row]));
+      const byId = new Map(all.map((row: Row) => [row.id, row]));
       add(known.map((row) => asPoolMap(byId.get(row.map_id) ?? { id: row.map_id, name: row.matched_name || row.w3c_name, shortname: row.shortname })));
       const missing = ladder.filter((row) => row.map_id == null).map((row) => row.w3c_name);
-      setNote(missing.length ? `Not in the app yet, ask an admin to add them: ${missing.join(", ")}.` : null);
+      setNote(missing.length ? `These ladder maps could not be added: ${missing.join(", ")}.` : `${known.length} ladder maps added.`);
     } catch (e) {
       setNote(`The ladder pool did not load: ${(e as Error).message}`);
     } finally {

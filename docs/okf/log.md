@@ -2,6 +2,7 @@
 
 ## 2026-10-09
 
+* **Update**: a merge to `main` builds staging, the preview of `main`; a GitHub Release moves the `release` branch, which Vercel builds as production. The `staging` branch and its workflow are gone. [Deploy to Vercel](runbooks/deploy-vercel.md), [overview](overview.md), [git and pull requests](conventions/git-and-pull-requests.md).
 * **Update**: the season wizard saves from every step, so a new season may be finished in the edit. The pick and ban order moves from General to Maps and is built with `PickBanBuilder`, a new season starting on the default order. The Maps step is empty or complete, and the save writes the order after the maps added. [The GNL season](pages/gnl-season.md), [shared components](concepts/shared-components.md).
 
 ## 2026-10-06

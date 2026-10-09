@@ -1,5 +1,9 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+# Release main to production: a GitHub Release tagged with today's date, or `just release v2026.10.09.2`.
+release tag=`date -u +v%Y.%m.%d`:
+    gh release create "{{ tag }}" --target main --generate-notes
+
 # Regenerate docs/okf/index.html, the graph viewer that GitHub Pages serves. Node colours per concept type.
 okf-graph:
     #!/usr/bin/env bash

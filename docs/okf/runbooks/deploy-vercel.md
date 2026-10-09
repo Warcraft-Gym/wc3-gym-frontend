@@ -1,22 +1,31 @@
 ---
 type: Runbook
 title: Deploy to Vercel
-description: A merge to main deploys production, the staging branch follows main and builds nothing, and the environment is set per target on the project.
+description: A merge to main builds staging, a GitHub Release builds production, and the environment is set per target on the project.
 resource: ../../../next/vercel.json
 tags: [deploy]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T13:00:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T10:40:00Z }
 stale_after: 2027-04-06T00:00:00Z
 sources:
   - id: source
     resource: ../../../next/vercel.json
     title: Rewrites and which branches deploy
+  - id: release
+    resource: ../../../.github/workflows/release.yml
+    title: The release workflow
 ---
 
-# The normal path
+# A merge: staging
 
-1. Merge to `main`. Vercel builds production from the commit. A pull request branch gets no git deployment, so the production build is the first Vercel build of a change. Run `pnpm build` yourself before the merge. A failed build keeps the previous deployment live.
-2. The workflow force-pushes `staging` to the same commit. Vercel builds no preview from that push, so the staging alias does not follow the merge.
-3. Confirm by opening the page, not by looking for a deployment row: a rate-limited day produces none and production keeps the previous build. A burst of merges cancels the superseded builds and marks their commits failed; only the last one matters.
+1. Merge to `main`. Vercel builds a preview of `main`, and that preview is staging. A pull request branch gets no git deployment, so the staging build is the first Vercel build of a change. Run `pnpm build` yourself before the merge. A failed build keeps the previous staging deployment live, and production does not change.
+2. Confirm by opening the page, not by looking for a deployment row: a rate-limited day produces none. A burst of merges cancels the superseded builds and marks their commits failed; only the last one matters.
+
+# A release: production
+
+1. Release the backend first: it stays compatible with the old frontend, and a new frontend may need the new backend.
+2. `just release` publishes a GitHub Release of `main`, tagged with the date (`v2026.10.09`; `just release v2026.10.09.2` for a second one that day). The notes list the pull requests since the last release.
+3. The `Release` workflow moves the `release` branch to the tagged commit. Release only a commit on `main`. `release` only moves forward, so roll back with Vercel, not with an older tag. A pre-release ships nothing.
+4. Vercel builds production from `release`. A failed build keeps the previous deployment live. A rollback is Vercel's Instant Rollback to the previous production deployment.
 
 # Targets and their environment
 

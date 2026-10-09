@@ -23,9 +23,9 @@ sources:
 # A release: production
 
 1. Release the backend first: it stays compatible with the old frontend, and a new frontend may need the new backend.
-2. `just release` publishes a GitHub Release of `main`, tagged with the date (`v2026.10.09`; `just release v2026.10.09.2` for a second one that day). The notes list the pull requests since the last release.
-3. The `Release` workflow moves the `release` branch to the tagged commit. Release only a commit on `main`. `release` only moves forward, so roll back with Vercel, not with an older tag. A pre-release ships nothing.
-4. Vercel builds production from `release`. A failed build keeps the previous deployment live. A rollback is Vercel's Instant Rollback to the previous production deployment.
+2. `just release` publishes a GitHub Release of `main`, tagged `vYYYY.MM.DD.N`: the UTC date and that day's release count from 1, for example `v2026.10.09.1`. The notes list the pull requests since the last release.
+3. The `Release` workflow asks Vercel to build the tagged commit as production and waits until it serves. Release only a commit on `main`; a pre-release ships nothing. The workflow reads `VERCEL_TOKEN` and `VERCEL_TEAM_ID` from the GitHub environment `release`; keep that environment open to `v*` tags only.
+4. A failed build keeps the previous deployment live, and the workflow fails. The project's production branch is `releases-only`, a name no branch uses, so no push builds production. Never create a branch with that name. A rollback is Vercel's Instant Rollback to the previous production deployment.
 
 # Targets and their environment
 
@@ -48,4 +48,4 @@ The app is built to stay inside the limits of Vercel's Hobby plan: a cap on depl
 
 # Rewrites
 
-The Vercel project's root directory is `next/`, its framework preset is Next.js, and it includes files outside the root directory in the build, because `/user-guide` reads `ADMIN_UI_USER_GUIDE.md` from the repository root when the page is prerendered. `next/vercel.json` names the branches that deploy and skips the build of a new commit that changed nothing under `next/` or that guide; a redeploy of the same commit always builds, and so does a commit git cannot compare, because the last build of its branch is older than the shallow history Vercel clones. `next/next.config.ts` rewrites `/__clerk/*` to the Clerk proxy route; no catch-all rewrite exists, because every route is a real page.
+The Vercel project's root directory is `next/`, its framework preset is Next.js, and it includes files outside the root directory in the build, because `/user-guide` reads `ADMIN_UI_USER_GUIDE.md` from the repository root when the page is prerendered. `next/vercel.json` names the branches that deploy and skips the build of a new commit that changed nothing under `next/` or that guide; a production build and a redeploy of the same commit always build, and so does a commit git cannot compare, because the last build of its branch is older than the shallow history Vercel clones. `next/next.config.ts` rewrites `/__clerk/*` to the Clerk proxy route; no catch-all rewrite exists, because every route is a real page.

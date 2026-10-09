@@ -24,11 +24,11 @@ sources:
 
 # Which pushes build
 
-A merge to `main` builds staging, the preview of `main`. A published GitHub Release moves the `release` branch to its commit, and Vercel builds production from `release`. A pull request branch builds nothing. Each merge and each release creates one deployment against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
+A merge to `main` builds staging, the preview of `main`. A published GitHub Release of a commit on `main` deploys that commit to production through the release workflow; no push builds production. A pull request branch builds nothing. Each merge and each release creates one deployment against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
 
 # There is no CI on pull requests
 
-This repository runs no lint, test or build on a pull request. One workflow runs on a push to `main`: it publishes the graph of this bundle when `docs/` changed. Another runs on a published release and moves `release`. Vercel builds staging after the merge. So:
+This repository runs no lint, test or build on a pull request. One workflow runs on a push to `main`: it publishes the graph of this bundle when `docs/` changed. Another runs on a published release and deploys it. Vercel builds staging after the merge. So:
 
 - run `pnpm lint`, `pnpm tsc --noEmit`, `pnpm test` and `pnpm build` from `next/` yourself before pushing;
 - before the second merge of a batch, build the combination: refresh the branch from `main` (or make a local merge) and run `pnpm build`, gated on the build's exit code, never on a grep of its output. Two green branches once broke `main` together when one removed a helper the other imported. See [the pitfall](../pitfalls/no-ci-build-the-merged-pair.md).

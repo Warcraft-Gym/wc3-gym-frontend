@@ -1,4 +1,5 @@
 import { DEFAULT_RULES } from './best-of.mjs';
+import { orderOf, orderProblem } from './pick-ban.mjs';
 
 // The season wizard's steps. A season with no map rules plays DEFAULT_RULES; the round maps
 // step is the fixed game-1 map of each round, so a season whose rules name no fixed game skips it.
@@ -32,6 +33,10 @@ export const stepProblem = (form, key) => {
     if (teams < 2) return 'Tick 2 teams or more to draw the matchups.';
     const needed = roundsNeeded(teams);
     if (!(Number(season.round_count) >= needed)) return `${teams} teams need ${needed} rounds to play each other once.`;
+  }
+  // The maps step is empty or complete: a pool once ticked needs an order it can play through
+  if (key === 'maps' && (form.mapIds || []).length) {
+    return orderProblem(orderOf(season.pick_ban), season.map_rules, form.mapIds.length);
   }
   if (key === 'rounds') {
     const pool = new Set(form.mapIds || []);

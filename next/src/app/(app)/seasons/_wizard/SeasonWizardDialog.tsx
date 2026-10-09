@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { StatusAlert } from "@/components/StatusAlert";
 import { readStagesPayload } from "@/helpers/event-wizard.mjs";
+import { DEFAULT_PICK_BAN } from "@/helpers/pick-ban.mjs";
 import { changedRounds, crewChanges, drawMatchups, dropUnpooled, fillRoundMaps, idDiff, matchupRows, stepProblem, wizardSteps } from "@/helpers/season-wizard.mjs";
 import { rosterOf } from "@/helpers/team-roster.mjs";
 import { cn } from "@/lib/utils";
@@ -27,9 +28,9 @@ type Linked = {
   rosters: Record<number, number[]>;
 };
 
-// A GNL season opens early check-in and asks for 20 games over the last 2 W3C seasons
+// A GNL season opens early check-in, asks for 20 games over the last 2 W3C seasons and plays the default veto
 const blankSeason = (): Row => ({
-  name: "", round_count: 0, pick_ban: "", series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null,
+  name: "", round_count: 0, pick_ban: DEFAULT_PICK_BAN, series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null,
   fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_enabled: true, checkin_days: 3, early_checkin: true,
   round_end_zone: null, min_games: 20, min_games_seasons: 2,
 });
@@ -50,11 +51,11 @@ const forTeams = (ids: number[], now: Record<number, number[]>, stored: Record<n
   Object.fromEntries(ids.filter((id) => now[id] ?? stored[id]).map((id) => [id, now[id] ?? stored[id]]));
 
 /** Creating or editing one GNL season in six steps: its settings, its teams, their captains and
- *  players, the matchups drawn at random, its map pool and the map each round starts on. Nothing of
- *  the season is written before the last button; a team or a map made inside a step is stored at
- *  once, since it outlives the season. The save diffs what the season stores against the steps, and
- *  after each write moves what it stores on, so a retry after a failure writes only what is still
- *  missing. */
+ *  players, the matchups drawn at random, its map pool with the pick and ban order, and the map each
+ *  round starts on. Nothing of the season is written before a save button, which every step has; a
+ *  team or a map made inside a step is stored at once, since it outlives the season. The save diffs
+ *  what the season stores against the steps, and after each write moves what it stores on, so a
+ *  retry after a failure writes only what is still missing. */
 export function SeasonWizardDialog({
   open,
   season: editing,
@@ -103,6 +104,8 @@ export function SeasonWizardDialog({
   const [error, setError] = useState<string | null>(null);
   // What the season stores now; a create that failed half way stores a season, so this moves with every write
   const linked = useRef<Linked>(NOTHING_LINKED);
+  // The pick and ban order the season stores; it is written with the pool, so it moves on its own
+  const storedPickBan = useRef("");
   const [seasonId, setSeasonId] = useState<number | null>(null);
   // The teams the season held as the wizard opened, to name the ones an untick takes out
   const [storedTeamIds, setStoredTeamIds] = useState<number[]>([]);
@@ -120,7 +123,6 @@ export function SeasonWizardDialog({
   const problemAt = (index: number) => stepProblem(form, steps[index]?.key);
   // A step is open once every step before it is answered
   const reachable = (index: number) => steps.slice(0, index).every((_, at) => !problemAt(at));
-  const allAnswered = steps.every((_, at) => !problemAt(at));
   const isEditing = seasonId != null;
   const roundCount = Math.max(Number(season.round_count) || 0, 0);
   const pool = mapIds.map((id) => allMaps.find((map) => map.id === id)).filter(Boolean) as Row[];
@@ -153,6 +155,7 @@ export function SeasonWizardDialog({
       setRosters({});
       setSignups([]);
       linked.current = NOTHING_LINKED;
+      storedPickBan.current = "";
       setLoading(true);
       try {
         const [teams, maps] = await Promise.all([teamStore.getTeamsBasic(), mapStore.fetchMaps()]);
@@ -185,7 +188,10 @@ export function SeasonWizardDialog({
           setCaptains(stored.captains);
           setRosters(stored.rosters);
           linked.current = stored;
-          setSeason({ ...editing, ...full });
+          storedPickBan.current = full.pick_ban || "";
+          // A season saved before its pool has neither maps nor an order, so it offers the default again
+          const read = { ...editing, ...full, pick_ban: stored.mapIds.length || full.pick_ban ? full.pick_ban || "" : DEFAULT_PICK_BAN };
+          setSeason(read);
           setStages(event?.id === id ? event.stages || [] : []);
           setRounds(full.rounds || []);
           setTeamIds(stored.teamIds);
@@ -193,7 +199,7 @@ export function SeasonWizardDialog({
           setMapIds(stored.mapIds);
           setRoundMaps(stored.roundMaps);
           setHasMatchups((matches || []).length > 0);
-          opened.current = JSON.stringify({ season: { ...editing, ...full }, maxMmr: {}, ...stored, matchups: null });
+          opened.current = JSON.stringify({ season: read, maxMmr: {}, ...stored, matchups: null });
         } else {
           opened.current = JSON.stringify({ season: blankSeason(), maxMmr: {}, ...NOTHING_LINKED, matchups: null });
         }
@@ -269,13 +275,15 @@ export function SeasonWizardDialog({
     let phase = "saving the season";
     try {
       let id = seasonId;
+      // The order is checked against the pool, so it is written once the maps are in
       const values = blanksAsNull(season);
+      delete values.pick_ban;
       if (id == null) {
         const created = await seasonStore.createSeason(values);
         id = created.id as number;
         // From here on a retry edits the season this write made
         setSeasonId(id);
-        setSeason((was) => ({ ...was, ...created }));
+        setSeason((was) => ({ ...was, ...created, pick_ban: was.pick_ban }));
       } else {
         await seasonStore.updateSeason({ ...values, id });
         // The stage write replaces every field of every stage, so it carries them back as read
@@ -334,6 +342,15 @@ export function SeasonWizardDialog({
           await seasonStore.setSeasonRound(id, round);
           linked.current = { ...linked.current, roundMaps: { ...linked.current.roundMaps, [round.playday]: round.map_id } };
         }
+      }
+
+      // The order goes with the pool: in between the maps added and the maps removed it is checked
+      // against every map the pool will hold, and an emptied pool clears it before its last map leaves
+      const order = mapIds.length ? season.pick_ban || "" : "";
+      if (order !== storedPickBan.current) {
+        phase = "setting the pick and ban order";
+        await seasonStore.updateSeason({ id, pick_ban: order || null });
+        storedPickBan.current = order;
       }
 
       phase = "removing the maps";
@@ -431,7 +448,15 @@ export function SeasonWizardDialog({
               onSetRounds={(count) => set({ round_count: count })}
             />
           ) : key === "maps" ? (
-            <MapsStep maps={allMaps} selected={mapIds} onChange={changeMaps} onMapsChanged={reloadMaps} />
+            <MapsStep
+              maps={allMaps}
+              selected={mapIds}
+              onChange={changeMaps}
+              onMapsChanged={reloadMaps}
+              pickBan={season.pick_ban}
+              mapRules={season.map_rules}
+              onPickBan={(pickBan) => set({ pick_ban: pickBan })}
+            />
           ) : key === "rounds" ? (
             <RoundMapsStep
               roundCount={roundCount}
@@ -460,13 +485,12 @@ export function SeasonWizardDialog({
               <Icon name="mdi-arrow-right" />
             </Button>
           ) : null}
-          {/* an edit saves from any step; a new season saves once every step is answered */}
-          {isEditing || step === steps.length ? (
-            <Button disabled={!allAnswered || loading || saving} onClick={save}>
-              <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-check"} />
-              {saveLabel}
-            </Button>
-          ) : null}
+          {/* every step saves, so an admin may stop half way and go on in the edit; a step that
+              still blocks is opened with its problem */}
+          <Button variant={isEditing || step === steps.length ? "default" : "outline"} disabled={loading || saving} onClick={save}>
+            <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-check"} />
+            {saveLabel}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

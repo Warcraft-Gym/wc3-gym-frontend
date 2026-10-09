@@ -29,6 +29,14 @@ test('a round map must be in the pool', () => {
   assert.equal(stepProblem({ season: {} }, 'teams'), null);
 });
 
+test('the maps step is empty or carries an order its pool can play', () => {
+  const order = 'Ban_A|Ban_B|Ban_B|Ban_A|Ban_A|Ban_B|Pick_A|Pick_B';
+  assert.equal(stepProblem({ season: { pick_ban: order }, mapIds: [] }, 'maps'), null);
+  assert.match(stepProblem({ season: { pick_ban: order }, mapIds: [1, 2, 3, 4] }, 'maps'), /allows 1 bans/);
+  assert.equal(stepProblem({ season: { pick_ban: order }, mapIds: [1, 2, 3, 4, 5, 6, 7, 8, 9] }, 'maps'), null);
+  assert.equal(stepProblem({ season: { pick_ban: 'Pick_A|Pick_B|Pick_A', map_rules: 'veto,veto,veto' }, mapIds: [1, 2, 3] }, 'maps'), null);
+});
+
 test('the diff names what to add and what to remove', () => {
   assert.deepEqual(idDiff([1, 2, 3], [2, 3, 4]), { add: [4], remove: [1] });
   assert.deepEqual(idDiff([], [5]), { add: [5], remove: [] });

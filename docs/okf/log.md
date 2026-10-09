@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-09
+
+* **Update**: the season wizard saves from every step, so a new season may be finished in the edit. The pick and ban order moves from General to Maps and is built with `PickBanBuilder`, a new season starting on the default order. The Maps step is empty or complete, and the save writes the order after the maps added. [The GNL season](pages/gnl-season.md), [shared components](concepts/shared-components.md).
+
 ## 2026-10-06
 
 * **Update**: an archived KOTH row whose players neither play the next series carries `winner_left`: with a winner, the muted "Withdrew" follows the winner's name; with none, the row reads "a vs b" with the muted "Winner withdrew" in the crown column. The KOTH page states it.

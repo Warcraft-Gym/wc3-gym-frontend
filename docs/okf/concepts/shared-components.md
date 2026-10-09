@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, where the blocked-times dialog lives, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T12:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -51,6 +51,9 @@ sources:
   - id: player-chip-picker
     resource: ../../../next/src/components/admin/PlayerChipPicker.tsx
     title: PlayerChipPicker
+  - id: pick-ban-builder
+    resource: ../../../next/src/components/admin/PickBanBuilder.tsx
+    title: PickBanBuilder
 ---
 
 `DESIGN.md` lists the shared components with what each shows. This file adds the rules that took a decision to settle.
@@ -170,7 +173,7 @@ Every view states its phone level in its page concept: Full, Read on phone or De
 
 # PickGrid and the create dialogs
 
-`PickGrid` is how an admin ticks many teams or maps: a grid of picture cards, two to a row on a phone, each with a real checkbox, a search, "Select all shown" and "Clear". A list of pictures is picked with it, never with a multi-select dropdown. `NewTeamDialog` and `NewMapDialog` create one team or one map with its picture and hand the stored row back, so a page offers the create where the pick happens and the admin never leaves the task. A team stored without its icon still counts as created, and the dialog says the icon is missing. `PlayerChipPicker` picks any number of players from a list: a search adds one, and each chip takes one back out. The captains of a team page and the captains and rosters of the season wizard use it.
+`PickGrid` is how an admin ticks many teams or maps: a grid of picture cards, two to a row on a phone, each with a real checkbox, a search, "Select all shown" and "Clear". A list of pictures is picked with it, never with a multi-select dropdown. `NewTeamDialog` and `NewMapDialog` create one team or one map with its picture and hand the stored row back, so a page offers the create where the pick happens and the admin never leaves the task. A team stored without its icon still counts as created, and the dialog says the icon is missing. `PlayerChipPicker` picks any number of players from a list: a search adds one, and each chip takes one back out. The captains of a team page and the captains and rosters of the season wizard use it. `PickBanBuilder` builds a pick and ban order a step at a time: the order as the season stores it, a button per step, "Delete last", "Use default", and the bans and picks the games and the pool allow, counted by `helpers/pick-ban.mjs` as the backend counts them. A step at its limit is not offered. The season wizard's Maps step and the season maps page use it.
 
 # The rest
 

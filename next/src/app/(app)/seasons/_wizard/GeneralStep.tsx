@@ -17,7 +17,8 @@ const SCORE_SYSTEMS = [
   { value: "helpstone", label: "Helpstone" },
 ];
 
-/** The season's own settings: name, rounds, dates, signups, check-in and the draft limit. */
+/** The season's own settings: name, rounds, dates, signups, check-in and the draft limit. The pick
+ *  and ban order is set with the pool on the Maps step. */
 export function GeneralStep({
   season,
   set,
@@ -50,9 +51,6 @@ export function GeneralStep({
       </Field>
       <Field label="End Date" htmlFor="edit-end-date">
         <Input id="edit-end-date" type="date" value={season.end_date ?? ""} onChange={(e) => set({ end_date: e.target.value || null })} />
-      </Field>
-      <Field label="Pick Ban Order" htmlFor="edit-pick-ban">
-        <Input id="edit-pick-ban" value={season.pick_ban ?? ""} onChange={(e) => set({ pick_ban: e.target.value })} />
       </Field>
       <Field label={SERIES_PER_FIXTURE} htmlFor="edit-series">
         <Input id="edit-series" type="number" value={season.series_per_round ?? ""} onChange={(e) => set({ series_per_round: e.target.value })} />

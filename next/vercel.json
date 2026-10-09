@@ -8,5 +8,5 @@
       "staging": true
     }
   },
-  "ignoreCommand": "[ \"$VERCEL_GIT_PREVIOUS_SHA\" != \"$VERCEL_GIT_COMMIT_SHA\" ] && git diff --quiet ${VERCEL_GIT_PREVIOUS_SHA:-HEAD^} HEAD -- . ../ADMIN_UI_USER_GUIDE.md"
+  "ignoreCommand": "[ \"$VERCEL_GIT_PREVIOUS_SHA\" != \"$VERCEL_GIT_COMMIT_SHA\" ] && git diff --quiet ${VERCEL_GIT_PREVIOUS_SHA:-HEAD^} HEAD -- . ../ADMIN_UI_USER_GUIDE.md || exit 1"
 }

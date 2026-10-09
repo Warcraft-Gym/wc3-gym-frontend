@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { MAP_MODES, modesLine, modesOf, modesText } from "@/helpers/map-modes.mjs";
 import { LadderImportDialog } from "@/components/LadderImportDialog";
 import type { ImportRow } from "@/components/LadderImportDialog";
 import { PageHeader } from "@/components/PageHeader";
@@ -217,7 +218,11 @@ export function MapsView() {
                     ) : null}
                   </div>
                   <div className="flex items-center gap-2 p-4">
-                    <div className="flex-1 font-medium">{item.name}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{item.name}</div>
+                      {/* the modes a map is played as; a cup offers its own mode first */}
+                      <div className="text-xs text-muted-foreground">{modesLine(item.modes)}</div>
+                    </div>
                     <RowActions
                       actions={[
                         { icon: "mdi-pencil", label: "Edit", onClick: () => editMap(item) },
@@ -263,6 +268,24 @@ export function MapsView() {
                   <Input id="map-shortname" value={selectedMap.shortname ?? ""} onChange={(e) => setSelectedMap({ ...selectedMap, shortname: e.target.value })} />
                 </Field>
               </div>
+              <Field className="mt-4" label="Played as" hint="A cup offers the maps of its own mode first" htmlFor="map-modes">
+                <ToggleGroup
+                  id="map-modes"
+                  multiple
+                  variant="outline"
+                  spacing={0}
+                  className="flex-wrap"
+                  aria-label="Played as"
+                  value={modesOf(selectedMap.modes)}
+                  onValueChange={(value) => setSelectedMap({ ...selectedMap, modes: modesText(value as string[]) })}
+                >
+                  {MAP_MODES.map((mode) => (
+                    <ToggleGroupItem key={mode.value} value={mode.value} className="min-h-9 px-3 aria-pressed:bg-primary/15 aria-pressed:text-primary-text">
+                      {mode.title}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </Field>
               <div className="mt-4 flex items-center gap-4">
                 <span className="block h-16 w-[100px] shrink-0 overflow-hidden rounded-[3px] bg-band">
                   {picturePreview ? <img src={picturePreview} alt={selectedMap.name} onError={hideMissingImage} className="block h-full w-full object-cover" /> : null}

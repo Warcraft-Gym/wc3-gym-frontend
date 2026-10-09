@@ -18,6 +18,7 @@ import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
 import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, SIGNUP_POLICIES, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
+import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -207,7 +208,7 @@ export function CupCreateView() {
             <p className="text-sm text-muted-foreground">You seed the players on the evening: by MMR, at random or by hand.</p>
           </div>
         ) : key === "maps" ? (
-          <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} ladderMode={ladderModeOf(teamSizeOf(form.game)) as string | null} />
+          <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} ladderMode={ladderModeOf(teamSizeOf(form.game)) as string | null} mode={cupMode(teamSizeOf(form.game))} />
         ) : key === "signups" ? (
           <div className="grid grid-cols-12 gap-3">
             <div className="col-span-12 flex flex-col gap-1 rounded-lg border border-border p-3">

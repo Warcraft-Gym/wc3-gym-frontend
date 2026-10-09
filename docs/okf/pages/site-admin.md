@@ -4,7 +4,7 @@ title: Site admin
 description: The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
 resource: ../../../next/src/app/(app)/config/ConfigView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T20:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-08T21:00:00Z }
 sources:
   - id: config
     resource: ../../../next/src/app/(app)/config/ConfigView.tsx
@@ -44,7 +44,7 @@ sources:
 
 **Access (`/config/access`).** The gym admins: the player, when granted, and the source, app or environment. "Add admin" takes a player from the list or a Discord id. An app-granted admin can be removed; an admin cannot remove their own row. Under the admins, "Event Organizers": the requests members sent, each with its note and whether the account has a player profile, answered with "Approve" (`POST /organizers/requests/{discord_id}/approve`) or "Decline"; then every organizer with the date of the grant and the count of cups they run, and "Revoke" (`DELETE /organizers/{discord_id}`). "Add organizer" takes a player from the list or a Discord id, as "Add admin" does, and writes `POST /organizers`.
 
-**Maps (`/maps`).** Every 1v1 map as a card with its picture and short name. Add a map (name, short name, picture), edit one, delete one, and import the W3Champions ladder pool.
+**Maps (`/maps`).** Every map as a card with its picture, its short name and the modes it is played as ("1v1 · 2v2", or "No mode set"). Add a map (name, short name, "Played as" 1v1 to 8v8 and FFA, picture), edit one, delete one, and import the W3Champions ladder pool, which names the mode of its ladder.
 
 **User guide (`/user-guide`).** The admin guide `ADMIN_UI_USER_GUIDE.md`, rendered from the repository file.
 

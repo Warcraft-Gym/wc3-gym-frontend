@@ -5,6 +5,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Icon } from "@/components/ui/Icon";
 import { Pick } from "@/components/ui/Pick";
 import { useEventStore, useMapStore } from "@/stores";
+import { forMode, modesLine } from "@/helpers/map-modes.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -21,6 +22,7 @@ export function MapPoolPicker({
   problem,
   excludeEventId,
   ladderMode = "1v1",
+  mode = "1v1",
 }: {
   pool: PoolMap[];
   onChange: (pool: PoolMap[]) => void;
@@ -28,6 +30,8 @@ export function MapPoolPicker({
   excludeEventId?: number | null;
   // the W3Champions ladder a cup of this size reads its pool from; none hides the button
   ladderMode?: string | null;
+  // the mode the cup is played as; its maps lead the "Add a map" list
+  mode?: string;
 }) {
   const mapStore = useMapStore();
   const eventStore = useEventStore();
@@ -133,7 +137,16 @@ export function MapPoolPicker({
         <Combobox
           label="Add a map"
           placeholder="Search the maps"
-          items={maps.filter((row) => !inPool.has(row.id)).map((row) => ({ value: String(row.id), title: row.name as string }))}
+          items={forMode(
+            maps.filter((row) => !inPool.has(row.id)),
+            mode,
+          ).map((row: Row) => ({ value: String(row.id), title: row.name as string, modes: modesLine(row.modes) }))}
+          row={(item) => (
+            <span className="flex flex-col text-left">
+              <span>{item.title}</span>
+              <span className="text-xs text-muted-foreground">{item.modes}</span>
+            </span>
+          )}
           value={null}
           onChange={(value) => {
             const row = maps.find((one) => String(one.id) === value);

@@ -4,7 +4,7 @@ title: Deploy to Vercel
 description: A merge to main builds staging, a GitHub Release builds production, and the environment is set per target on the project.
 resource: ../../../next/vercel.json
 tags: [deploy]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T10:40:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T11:40:00Z }
 stale_after: 2027-04-06T00:00:00Z
 sources:
   - id: source
@@ -24,7 +24,7 @@ sources:
 
 1. Release the backend first: it stays compatible with the old frontend, and a new frontend may need the new backend.
 2. `just release` publishes a GitHub Release of `main`, tagged `vYYYY.MM.DD.N`: the UTC date and that day's release count from 1, for example `v2026.10.09.1`. The notes list the pull requests since the last release.
-3. The `Release` workflow asks Vercel to build the tagged commit as production and waits until it serves. Release only a commit on `main`; a pre-release ships nothing. The workflow reads `VERCEL_TOKEN` and `VERCEL_TEAM_ID` from the GitHub environment `release`; keep that environment open to `v*` tags only.
+3. The `Release` workflow asks Vercel to build the tagged commit as production and waits until it serves. Release only a commit on `main`, tagged `vYYYY.MM.DD.N`; a pre-release ships nothing. The workflow reads `VERCEL_RELEASE_TOKEN`, a repository secret: set it to a token scoped to this Vercel project only.
 4. A failed build keeps the previous deployment live, and the workflow fails. The project's production branch is `releases-only`, a name no branch uses, so no push builds production. Never create a branch with that name. A rollback is Vercel's Instant Rollback to the previous production deployment.
 
 # Targets and their environment

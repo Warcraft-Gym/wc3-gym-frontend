@@ -1,17 +1,17 @@
 ---
 type: Convention
 title: Git and pull requests
-description: One branch and one pull request per change, squash merged, merges batched because each one builds production, and the merged combination built before a second merge.
-resource: ../../../.github/workflows/staging-branch.yml
+description: One branch and one pull request per change, squash merged, merges batched because each one builds staging, the merged combination built before a second merge, and a GitHub Release to ship production.
+resource: ../../../.github/workflows/deploy.yml
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T13:00:52Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T12:46:00Z }
 sources:
-  - id: staging
-    resource: ../../../.github/workflows/staging-branch.yml
-    title: The only workflow
+  - id: deploy
+    resource: ../../../.github/workflows/deploy.yml
+    title: The deploy workflow
   - id: vercel
     resource: ../../../next/vercel.json
-    title: Which branches deploy
+    title: Vercel's git deployments, turned off
 ---
 
 # Branches
@@ -24,11 +24,11 @@ sources:
 
 # Which pushes build
 
-Among pushes, only a merge to `main` creates a Vercel deployment: the project builds production and makes no preview from a push, so a branch and `staging` build nothing. Each merge creates one deployment against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
+A merge to `main` builds staging, the preview of `main`. A published GitHub Release of a commit on `main` deploys that commit to production through the deploy workflow; no push builds production. A pull request branch builds nothing. Each merge and each release creates one deployment against the plan's daily cap. Land a round of pull requests as one merge when they belong together. Not a hard rule, but the default.
 
 # There is no CI on pull requests
 
-This repository runs no lint, test or build on a pull request. Two workflows run on a push to `main`: one force-pushes `staging` to the merged commit, and one publishes the graph of this bundle when `docs/` changed. Vercel builds after the merge. So:
+This repository runs no lint, test or build on a pull request. On a push to `main`, one workflow publishes the graph of this bundle when `docs/` changed, and the deploy workflow builds staging when `next/` or the user guide changed. The deploy workflow also ships a published release. So:
 
 - run `pnpm lint`, `pnpm tsc --noEmit`, `pnpm test` and `pnpm build` from `next/` yourself before pushing;
 - before the second merge of a batch, build the combination: refresh the branch from `main` (or make a local merge) and run `pnpm build`, gated on the build's exit code, never on a grep of its output. Two green branches once broke `main` together when one removed a helper the other imported. See [the pitfall](../pitfalls/no-ci-build-the-merged-pair.md).

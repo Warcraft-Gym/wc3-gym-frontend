@@ -3,11 +3,11 @@ type: Pitfall
 title: "No CI on pull requests: build the merged pair"
 description: Two green branches broke main together because one removed a helper the other imported, and Vercel builds only after the merge.
 tags: [deploy, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-09-19T10:06:59Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T10:40:00Z }
 sources:
   - id: source
-    resource: ../../../.github/workflows/staging-branch.yml
-    title: The only workflow
+    resource: ../../../next/vercel.json
+    title: Which branches build
 ---
 
 # What happened

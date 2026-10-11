@@ -59,7 +59,7 @@ test('career pages use the edge cache while fresh reads keep the bearer', () => 
 
 test('caller-dependent reads and other queries keep the bearer', () => {
   for (const url of [
-    '/api/leagues/5', '/api/events/5', '/api/config/settings', '/api/maps/ladder-import',
+    '/api/leagues/5', '/api/leagues/5?archived=false', '/api/events/5', '/api/config/settings', '/api/maps/ladder-import',
     '/api/users/3/ladder?t=123', '/api/users/3/ladder?season_id=2&t=123', '/api/events/12/teams?t=123',
     '/api/events/12/teams/7/availability', '/api/config/discord-roles',
     '/api/events/12/series', '/api/events/12/series?match_id=5', '/api/events/12/series?team_id=5', '/api/events/12/entrants', '/api/events/12/entrants?t=123', '/api/events/12/stages/4/series?t=123',
@@ -68,14 +68,15 @@ test('caller-dependent reads and other queries keep the bearer', () => {
   }
 });
 
-test('the open events list and its league_id/kind/limit/offset queries are edge cached, other queries keep the bearer', () => {
+test('the open events list and its archived/league_id/kind/limit/offset queries are edge cached, other queries keep the bearer', () => {
   for (const url of [
     '/api/events', '/api/events?league_id=3', '/api/events?kind=koth', '/api/events?league_id=3&kind=gnl', '/api/events?kind=gnl&league_id=3',
     '/api/events?kind=koth&limit=25&offset=50', '/api/events?limit=25',
+    '/api/events?archived=false', '/api/events?archived=true', '/api/events?archived=false&league_id=3', '/api/events?archived=false&league_id=3&kind=koth',
   ]) {
     assert.equal(eventsListEdgeCached.test(url), true, url);
   }
-  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123', '/api/events?kind=koth&limit=25&offset=0&t=123', '/api/events?limit=', '/api/me/events']) {
+  for (const url of ['/api/events?t=123', '/api/events?published=false', '/api/events?league_id=3&t=123', '/api/events?kind=koth&limit=25&offset=0&t=123', '/api/events?limit=', '/api/me/events', '/api/events?archived=maybe', '/api/events?archived=false&t=123']) {
     assert.equal(eventsListEdgeCached.test(url), false, url);
   }
 });

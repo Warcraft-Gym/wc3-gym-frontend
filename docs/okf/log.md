@@ -1,5 +1,11 @@
 # Bundle history
 
+## 2026-10-09
+
+* **Update**: Vercel deploys nothing by itself. The deploy workflow builds staging on a push to `main` and production on a published release tagged `vYYYY.MM.DD.N` on `main`, both through the Vercel CLI with `VERCEL_RELEASE_TOKEN`, a repository secret scoped to the Vercel project. [Deploy to Vercel](runbooks/deploy-vercel.md).
+* **Update**: a merge to `main` builds staging, the preview of `main`; a GitHub Release of a commit on `main` deploys that commit to production through the release workflow, and no push builds production; tags are `vYYYY.MM.DD.N`. The `staging` branch and its workflow are gone. [Deploy to Vercel](runbooks/deploy-vercel.md), [overview](overview.md), [git and pull requests](conventions/git-and-pull-requests.md).
+* **Update**: the season wizard saves from every step, so a new season may be finished in the edit. The pick and ban order moves from General to Maps and is built with `PickBanBuilder`, a new season starting on the default order. The Maps step is empty or complete, and the save writes the order after the maps added. [The GNL season](pages/gnl-season.md), [shared components](concepts/shared-components.md).
+
 ## 2026-10-08
 
 * **Add**: a map names the modes it is played as. The Maps page shows them on every card and edits them in "Played as"; a cup's "Add a map" lists the maps of its own mode first. Site admin and event management state it.
@@ -19,6 +25,11 @@
 
 ## 2026-10-06
 
+* **Update**: an archived KOTH row whose players neither play the next series carries `winner_left`: with a winner, the muted "Withdrew" follows the winner's name; with none, the row reads "a vs b" with the muted "Winner withdrew" in the crown column. The KOTH page states it.
+* **Update**: an archived KOTH night orders its brackets weakest first and titles each card "Bracket 1", "Bracket 2" and on, with the source's label where a live card puts the MMR band; the run page draws no Brackets card for it. The KOTH page states it.
+* **Update**: an archived KOTH night draws each bracket with the head, the throne and the Results band of a closed night run in the app, with no Queue and no "Players who left"; the Results table is one shared component, its winner the side the source page wrote, else the one the play order infers, an inferred winner's crown mark in muted ink, and a series with no result as "a vs b". The KOTH page states it.
+* **Update**: the KOTH Events list marks an archived night with a neutral "Archived" chip beside its state, and an unpublished night reads "Draft"; the Events page names, under its table, that archived KOTH nights are on KOTH Events, for a reader who can open that page. The KOTH page and the leagues and events page state it.
+* **Update**: the Events page, the Leagues page, the one-league page and the event wizard read the events with `archived=false`, so archived KOTH nights show on the KOTH page alone; the events list stays edge cached with the `archived` key. The leagues and events page, event management and the session and auth concept state it.
 * **Update**: every concept was read against the code. The KOTH run page: results are a table with a fix dialog and Add result, the bounds sit in a dialog under Settings beside Clear all results, the page refreshes, and the labels say event. The stream view reads every 30 seconds only while a series exists. Git deploys only `main` and `staging`. The series store reads an event's series with `GET /events/{id}/series`; the routes that views and components call are listed apart. [KOTH](pages/koth.md), [the KOTH flow](flows/koth-night.md), [backend contract](concepts/backend-contract.md), [stores](concepts/stores.md), [shared components](concepts/shared-components.md), [theme](concepts/theme.md), [deploy to Vercel](runbooks/deploy-vercel.md), [git and pull requests](conventions/git-and-pull-requests.md).
 * **Update**: Vercel builds only `main`. No push builds a preview, so the staging alias does not follow a merge and each merge creates one deployment. [Overview](overview.md), [deploy to Vercel](runbooks/deploy-vercel.md), [git and pull requests](conventions/git-and-pull-requests.md).
 * **Add**: reporting from the draw. A box the reader may report carries "Report", or "Edit result" once a result is in, and opens the Report Result dialog in place; a player or a captain with a series waiting reads "Your match is waiting for its result" over the draw. The events pages and the shared components state it.

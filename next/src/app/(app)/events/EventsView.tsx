@@ -16,6 +16,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { dateRange, EVENT_KINDS, STATE_COLOR, STATE_LABEL, stateOf, titleOf } from "@/helpers/event-labels.mjs";
 import { fill, groupEvents, KIND_FILTERS, organizerCard } from "@/helpers/events-page.mjs";
 import { useAuth, useEventStore } from "@/stores";
+import { canSeeRole, metaOf } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -329,6 +330,13 @@ export function EventsView() {
             </Table>
           </div>
         </Card>
+
+        {/* The same test as the route guard of /koth */}
+        {me && canSeeRole(me.role, metaOf("/koth").role) ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Archived KOTH nights are on <Link href="/koth">KOTH Events</Link>.
+          </p>
+        ) : null}
       </section>
 
       <Dialog open={asking} onOpenChange={setAsking}>

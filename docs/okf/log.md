@@ -1,5 +1,11 @@
 # Bundle history
 
+## 2026-10-11
+
+* **Fix**: on a team cup the waiting match over the draw is the caller's own team's; it no longer offers a match of two other teams. `reportOf` gets the caller's teams, as the boxes of the draw do.
+* **Fix**: the veto board reads a step a team's player entered as that team's own; it no longer reads "Entered by an admin". The backend lists a team side's players in `member_ids`.
+* **Fix**: the run page of a team cup counts "4 teams in", offers check-in to a complete team only, and redraws a team's box with the new player right after a swap. [Event management](pages/event-management.md) states it.
+
 ## 2026-10-09
 
 * **Update**: Vercel deploys nothing by itself. The deploy workflow builds staging on a push to `main` and production on a published release tagged `vYYYY.MM.DD.N` on `main`, both through the Vercel CLI with `VERCEL_RELEASE_TOKEN`, a repository secret scoped to the Vercel project. [Deploy to Vercel](runbooks/deploy-vercel.md).

@@ -13,6 +13,9 @@ test('a team side is acted for by a player of that team, where the page knows th
   const row = { id: 5, entrant1_id: 10, entrant2_id: 11, team1: { id: 1 }, team2: { id: 2 }, player1_score: null, player2_score: null, rules: { map_rules: 'decider' } };
   assert.equal(vetoOf(row, { id: 7, teamIds: [2] }), true);
   assert.equal(vetoOf(row, { id: 7, teamIds: [3] }), false);
+  // the waiting match over the draw is the caller's own team's, never another team's
+  assert.equal(reportOf(row, { id: 7, teamIds: [2] }), 'report');
+  assert.equal(reportOf(row, { id: 7, teamIds: [3] }), null);
 });
 
 test('a side of an open cup series vetoes from the draw, nobody else does', () => {

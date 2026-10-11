@@ -224,7 +224,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         ) : null}
         <Badge className={toneClass(null)}>
           <Icon name="mdi-account-multiple" />
-          {evening.live} {evening.live === 1 ? "player" : "players"} in
+          {evening.live} {teams ? (evening.live === 1 ? "team" : "teams") : evening.live === 1 ? "player" : "players"} in
         </Badge>
         {event.checkin_enabled ? (
           <Badge className={toneClass(evening.checkedIn === evening.live && evening.live ? "success" : null)}>
@@ -303,7 +303,8 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                         <Icon name="mdi-check" />
                         Checked in
                       </Badge>
-                    ) : editable ? (
+                    ) : editable && !(teams && missing(row, event.team_size) > 0) ? (
+                      // a team short of players cannot play, so it is not checked in
                       <Button size="sm" variant="outline" disabled={busy === `in-${row.id}`} onClick={() => checkIn(row)}>
                         {busy === `in-${row.id}` ? <Icon name="mdi-loading mdi-spin" /> : <Icon name="mdi-check" />}
                         Check in

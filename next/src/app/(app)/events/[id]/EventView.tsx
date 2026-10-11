@@ -149,7 +149,7 @@ export function EventView({ id }: { id: string }) {
   const mine = auth.me
     ? drawn
         .flatMap((stage) => (stage.series as Row[]).map((row) => ({ row, stage })))
-        .find(({ row }) => reportOf(row, { id: viewer.id, seats: viewer.seats }) === "report") ?? null
+        .find(({ row }) => reportOf(row, { id: viewer.id, seats: viewer.seats, teamIds: viewer.teamIds }) === "report") ?? null
     : null;
   // The report dialog opens in place on the series it reads afresh, as the series page does
   const reportDialog = useRef<ReportResultDialogHandle>(null);

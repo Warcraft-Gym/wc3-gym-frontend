@@ -367,7 +367,16 @@ export function EventAdminView({ id }: { id: string }) {
     drawn: series.length > 0,
     organizers: runner.organizers,
     onEvent: setEvent,
-    onEntrants: setEntrants,
+    // a team's roster fills its boxes in the draw, so a swap or an added team reads the teams again
+    onEntrants: (rows: Row[]) => {
+      setEntrants(rows);
+      if (event?.entrant_kind === "team") {
+        teamStore
+          .fetchTeamsBySeason(event.id, true)
+          .then((teams: Row[]) => setRosters(rostersOf(rows, teams, event.id)))
+          .catch(() => {});
+      }
+    },
     series,
     onSeries: () => loadStage(),
     onOrganizers: runner.reload,

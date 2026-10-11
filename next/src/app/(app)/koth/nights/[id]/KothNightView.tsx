@@ -916,7 +916,7 @@ export function KothNightView({ id }: { id: string }) {
                 </div>
               </div>
             ) : null}
-            <p className="mt-4 mb-0 text-xs text-muted-foreground">The standing kings start the next event as King from last event.</p>
+            <p className="mt-4 mb-0 text-xs text-muted-foreground">The next event starts with no king. The standing kings carry a King from last event mark on their row.</p>
           </div>
           <div className="flex justify-end gap-2 p-4 pt-0">
             <Button variant="ghost" onClick={() => setClosing(false)}>

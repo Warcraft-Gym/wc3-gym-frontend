@@ -180,8 +180,7 @@ function RaceRows({ seat, bracket, brackets, admin, removable }: { seat: Row; br
   );
 }
 
-/** The throne: the standing king, the king from the last event while nobody has won tonight,
- *  or nobody at all. */
+/** The throne: the standing king, or nobody at all. Every event starts with an empty throne. */
 export function KingBlock({
   bracket,
   brackets,
@@ -198,7 +197,6 @@ export function KingBlock({
   onEnter?: () => void; // the drag left the line for the throne, so the line shows its own order again
 }) {
   const king: Row | null = bracket.king;
-  const defender: Row | null = bracket.defender;
   const row = king ? seatRow(king, admin?.picks ?? {}) : null;
   // an empty throne after a fix or a step down goes back to the newest winner in one tap
   // a drag in progress offers one thing to do, so the one-tap crown waits for it to end
@@ -231,12 +229,6 @@ export function KingBlock({
               warn={!!seatMark(king, row)}
             />
             <div className="text-xs text-muted-foreground">Holds the throne</div>
-          </div>
-        ) : defender ? (
-          <div className="min-w-0 flex-1 overflow-hidden [&_.name]:truncate [&_.player-name]:max-w-full">
-            <BoardPlayer row={defender} />
-            <div className="text-xs text-muted-foreground">King from last event, defending</div>
-            {crownHeir}
           </div>
         ) : (
           <div className="flex-1">
@@ -334,6 +326,7 @@ export function OpenSeries({ bracket, admin, you }: { bracket: Row; admin?: Brac
         {start.label}
       </Button>
       {start.note ? <p className="mt-1 mb-0 text-xs text-muted-foreground">{start.note}</p> : null}
+      {picked.length !== 2 && (bracket.queue ?? []).length >= 2 ? <p className="mt-1 mb-0 text-xs text-muted-foreground">Click two names in the line to pick another pair.</p> : null}
       {skipped && picked.length !== 2 ? (
         <p className="mt-1 mb-0 text-xs text-muted-foreground">Skipped {skipped.name}, playing in another bracket.</p>
       ) : null}
@@ -432,6 +425,12 @@ export function QueueRow({
             <Badge className={cn(toneClass("info"), "shrink-0")}>
               <Icon name="mdi-account-multiple" />
               {placeInQueue(bracket, you)}
+            </Badge>
+          ) : null}
+          {!bracket.king && bracket.defender?.user_id === seat.user_id ? (
+            <Badge className={cn(toneClass(null), "shrink-0")}>
+              <Icon name="mdi-crown-outline" />
+              King from last event
             </Badge>
           ) : null}
         </span>

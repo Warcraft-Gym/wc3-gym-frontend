@@ -4,7 +4,7 @@ title: A KOTH night
 description: One KOTH night from "Open tonight" to the close, with the three doors a player signs up through and the one board that the run page, the night page and the stream view read.
 resource: ../../../next/src/app/(app)/koth/KothView.tsx
 tags: [pages, koth, events]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-fable-5-1, at: 2026-10-11T02:43:36Z }
 sources:
   - id: koth
     resource: ../pages/koth.md
@@ -72,4 +72,4 @@ sequenceDiagram
 - The public board read carries no bearer, so the edge caches it for fifteen seconds; the clean stream view reads it again every thirty seconds while the night holds a series, every five minutes before the first one, and stops when the night closes or 24 hours after its start: [KOTH](../pages/koth.md), [the edge-cache pitfall](../pitfalls/edge-cache-no-bearer.md).
 - The entrants page takes no division or seed write for a night, because those writes rebuild the brackets and reorder the queue; the run page moves the bounds: [event management](../pages/event-management.md).
 - A king who withdraws loses a forfeit series to the first in line: [KOTH](../pages/koth.md).
-- Only the close ends a night, and the standing kings start the next night as King from last event: [KOTH](../pages/koth.md).
+- Only the close ends a night, and the next night starts with no king; the standing kings carry a King from last event mark: [KOTH](../pages/koth.md).

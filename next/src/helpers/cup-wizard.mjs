@@ -32,7 +32,20 @@ export const teamSizeOf = (game) => CUP_GAMES.find((item) => item.value === game
 export const CUP_FORMATS = [
   { value: 'single_elimination', title: 'Single elimination', hint: 'Lose once and you are out. 16 players play 4 rounds.' },
   { value: 'double_elimination', title: 'Double elimination', hint: 'Lose twice to go out; an upper and a lower bracket meet in the grand final.' },
+  { value: 'placement', title: 'Placement bracket', hint: 'Nobody goes home early: every round splits each group into its winners and its losers, and the last round decides every place.' },
 ];
+
+// How many losses end a run in a placement bracket; null plays every place
+export const PLACEMENT_LIVES = [
+  { value: 1, title: '1 loss', hint: 'single elimination: the players who go out share their places' },
+  { value: 2, title: '2 losses', hint: 'a second loss ends a run; that player shares the places of their group' },
+  { value: 3, title: '3 losses', hint: 'a third loss ends a run; that player shares the places of their group' },
+  { value: null, title: 'Every place', hint: 'every player plays every round, and every place is decided' },
+];
+
+/** The words for a placement bracket's loss limit, as the review and the stage line read it.
+ *  @param {number | null | undefined} lives */
+export const livesLine = (lives) => (lives ? `a run ends after ${lives} ${lives === 1 ? 'loss' : 'losses'}` : 'every place played out');
 
 export const CUP_BEST_OF = [1, 3, 5].map((value) => ({ value, title: `Bo${value}` }));
 
@@ -50,6 +63,8 @@ export const blankCup = () => ({
   format: 'single_elimination',
   third_place: false,
   grand_final_reset: true,
+  // a placement bracket: the losses that end a run, null playing every place
+  placement_lives: null,
   // the early rounds; a bracket part that plays its own best-of names it in the plan
   best_of: 3,
   best_of_plan: {},
@@ -112,6 +127,7 @@ export const cupPayload = (form) => ({
       scheduling_mode: 'immediate',
       third_place: form.format === 'single_elimination' && !!form.third_place,
       grand_final_modifier: form.format === 'double_elimination' && form.grand_final_reset ? 'reset' : 'one',
+      placement_lives: form.format === 'placement' ? form.placement_lives ?? null : null,
     },
   ],
 });

@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, where the blocked-times dialog lives, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T12:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-11T21:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -119,6 +119,7 @@ The one table for groups of rows: a tinted clickable header row per group, detai
 - A double elimination is one drawing: the lower ladder is a band under the upper one, and the grand final and its reset close the upper band, past the last column of the longer ladder. The upper final's line runs across to the grand final and the lower final's line runs up to it, so both winners meet where the upper ladder ends. `drawing` in `next/src/helpers/stage-view.mjs` places the bands, the round names and the lines; a single elimination is one band.
 - The reset, the series both of whose sides come from the grand final, is drawn only once the lower winner has taken the grand final, because otherwise the engine scores it a walkover of the same two players. With "Hide results" on it is always drawn, so its coming tells nothing. `withoutIdleReset` holds the rule, on the wide drawing and on the phone's round tabs alike.
 - A column head whose round plays its own best-of adds it, "Upper bracket final · Bo3", off the round's `best_of`; the phone's round card does the same.
+- A placement bracket draws no feeder lines: one column a round, each holding a card per group titled with the places it plays for, "Places 5–8", the best first and the group of place 1 in the primary border. The final, a round of its own in the backend, heads the last round's column as "Final · Places 1–2". `placementColumns` in `next/src/helpers/placement.mjs` groups the series by the `place_from` and `place_to` the backend names; a phone reads one round at a time.
 - The draw names no MMR: `StageView` passes `rated={false}` to `SeriesBox`, which hands `mmr={false}` to `PlayerName` and ends a name longer than its side in an ellipsis. A box is 204 px in a 228 px column. The series page and a fixture's series list keep the MMR.
 
 # RoundStrip

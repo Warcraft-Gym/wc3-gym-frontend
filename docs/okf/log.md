@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+* **Add**: the placement bracket. Create cup offers it as a third format, with "A player stops after" 1, 2 or 3 losses or "Every place", and its best-of names the "Last round" and the "Final". The draw shows one column a round of place groups, the final heading the last column, and Results lists a shared place as its range. A stage edit keeps `placement_lives`. [Event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md) and [shared components](concepts/shared-components.md#stageview) state it.
 * **Fix**: on a team cup the waiting match over the draw is the caller's own team's; it no longer offers a match of two other teams. `reportOf` gets the caller's teams, as the boxes of the draw do.
 * **Fix**: the veto board reads a step a team's player entered as that team's own; it no longer reads "Entered by an admin". The backend lists a team side's players in `member_ids`.
 * **Fix**: the run page of a team cup counts "4 teams in", offers check-in to a complete team only, and redraws a team's box with the new player right after a swap. [Event management](pages/event-management.md) states it.

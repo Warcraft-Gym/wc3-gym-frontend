@@ -239,3 +239,8 @@ test('a group seats two entrants and advances one', () => {
     'A group seats two entrants or more.',
   );
 });
+
+test('a stage edit keeps the loss limit of a placement bracket', () => {
+  const [stage] = readStagesPayload([{ id: 1, format: 'placement', best_of: 1, placement_lives: 2 }]);
+  assert.equal(stage.placement_lives, 2);
+});

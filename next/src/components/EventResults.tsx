@@ -9,6 +9,7 @@ import { stateOf } from "@/helpers/event-labels.mjs";
 import { resultRounds } from "@/helpers/event-tabs.mjs";
 import { winnerSide } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
+import { placeLabels } from "@/helpers/placement.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -111,7 +112,13 @@ export function EventResults({ event, stages, entrants = [], onOpenSeries }: { e
           ) : (
             placeGroups.map((group) => {
               const rows = group.rows as Row[];
-              const rest = rows.filter((row) => row.position > 3);
+              // a placement bracket shares a place between the players who stopped together, so the
+              // podium takes the first of each step and the list holds everyone else, a shared place
+              // read as its range
+              const stepped = new Set(STEPS.map((step) => rows.find((one) => one.position === step.place)?.entrant_id));
+              const rest = rows.filter((row) => !stepped.has(row.entrant_id));
+              const shared = placeLabels(rows) as string[];
+              const labels = new Map(rows.map((row, index) => [row.entrant_id, shared[index]]));
               return (
                 <div key={group.division_id ?? "all"} className="pb-2">
                   {placeGroups.length > 1 ? <div className="px-4 pt-2 text-xs font-bold text-muted-foreground uppercase">{group.division_name || "Division"}</div> : null}
@@ -120,7 +127,7 @@ export function EventResults({ event, stages, entrants = [], onOpenSeries }: { e
                     <ol className="mx-auto mt-4 flex max-w-[640px] flex-col">
                       {rest.map((row) => (
                         <li key={row.entrant_id} className="flex min-h-10 items-center gap-3 border-t border-border px-4">
-                          <span className="tnum w-6 text-right text-sm text-muted-foreground">{row.position}</span>
+                          <span className="tnum min-w-6 text-right text-sm text-muted-foreground">{labels.get(row.entrant_id)}</span>
                           <span className="min-w-0 flex-1">{placed(row)}</span>
                           <span className="text-sm text-muted-foreground">{placeTitle(row.position)}</span>
                         </li>

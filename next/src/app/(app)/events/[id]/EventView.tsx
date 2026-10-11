@@ -46,13 +46,14 @@ import { homeTab, tabOf, withTab } from "@/helpers/event-tabs.mjs";
 import { bestOfLine, parsePlan } from "@/helpers/best-of-plan.mjs";
 import { rulesOf } from "@/helpers/map-order.mjs";
 import { cn } from "@/lib/utils";
+import { livesLine } from "@/helpers/cup-wizard.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
 const phoneCell = "hidden min-[960px]:table-cell";
 // a bracket's places sit on the results tab, so its draw tab carries no table under it
-const BRACKETS = ["single_elimination", "double_elimination"];
+const BRACKETS = ["single_elimination", "double_elimination", "placement"];
 const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race;
 const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", "medal-bronze": "text-medal-bronze" };
 // The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
@@ -303,7 +304,7 @@ export function EventView({ id }: { id: string }) {
     stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`;
   // One line a stage: what it plays, for the draw tab before and over the bracket
   const stageLine = (stage: Row) =>
-    [stages.length > 1 ? stage.name || `Stage ${stage.position}` : null, titleOf(FORMATS, stage.format), bestOfOf(stage), seriesPerEntrant(stage) ? `${seriesPerEntrant(stage)} series each entrant a round` : null, titleOf(SCHEDULING_MODES, stage.scheduling_mode)]
+    [stages.length > 1 ? stage.name || `Stage ${stage.position}` : null, titleOf(FORMATS, stage.format), stage.format === "placement" ? livesLine(stage.placement_lives) : null, bestOfOf(stage), seriesPerEntrant(stage) ? `${seriesPerEntrant(stage)} series each entrant a round` : null, titleOf(SCHEDULING_MODES, stage.scheduling_mode)]
       .filter(Boolean)
       .join(" · ");
 

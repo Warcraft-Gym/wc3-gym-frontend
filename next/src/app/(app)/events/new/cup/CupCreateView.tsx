@@ -16,7 +16,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, SIGNUP_POLICIES, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, livesLine, PLACEMENT_LIVES, SIGNUP_POLICIES, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -100,6 +100,7 @@ export function CupCreateView() {
         format?.title,
         form.format === "single_elimination" && form.third_place ? "a match for third place" : null,
         form.format === "double_elimination" ? (form.grand_final_reset ? "grand final reset" : "one grand final") : null,
+        form.format === "placement" ? livesLine(form.placement_lives) : null,
       ]
         .filter(Boolean)
         .join(", "),
@@ -175,7 +176,7 @@ export function CupCreateView() {
           </div>
         ) : key === "format" ? (
           <div className="flex flex-col gap-5">
-            <div role="radiogroup" aria-label="Format" className="grid gap-3 min-[600px]:grid-cols-2">
+            <div role="radiogroup" aria-label="Format" className="grid gap-3 min-[600px]:grid-cols-3">
               {CUP_FORMATS.map((item) => (
                 <button
                   key={item.value}
@@ -195,11 +196,32 @@ export function CupCreateView() {
                 <Switch checked={!!form.third_place} onCheckedChange={(third_place) => set({ third_place })} />
                 Play a match for third place
               </Label>
-            ) : (
+            ) : form.format === "double_elimination" ? (
               <Label className="flex min-h-11 items-center gap-2">
                 <Switch checked={!!form.grand_final_reset} onCheckedChange={(grand_final_reset) => set({ grand_final_reset })} />
                 Grand final reset: the lower-bracket winner must win twice
               </Label>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div role="radiogroup" aria-label="A player stops after" className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">A player stops after</span>
+                  {PLACEMENT_LIVES.map((item) => (
+                    <Button
+                      key={item.title}
+                      type="button"
+                      size="sm"
+                      role="radio"
+                      aria-checked={item.value === (form.placement_lives ?? null)}
+                      variant={item.value === (form.placement_lives ?? null) ? "secondary" : "outline"}
+                      className="min-h-10 rounded-full"
+                      onClick={() => set({ placement_lives: item.value })}
+                    >
+                      {item.title}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">{PLACEMENT_LIVES.find((item) => item.value === (form.placement_lives ?? null))?.hint}</p>
+              </div>
             )}
             <div className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">Best of</span>

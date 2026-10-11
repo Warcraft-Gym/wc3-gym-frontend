@@ -19,6 +19,10 @@ export const PARTS = {
     { role: 'lower_final', title: 'Lower final' },
     { role: 'grand_final', title: 'Grand final', hint: 'and its reset' },
   ],
+  placement: [
+    { role: 'last_round', title: 'Last round', hint: 'every other place, decided in the same round' },
+    { role: 'final', title: 'Final', hint: 'places 1 and 2' },
+  ],
 };
 
 /** @param {string | null | undefined} format */

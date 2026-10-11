@@ -254,7 +254,7 @@ export const inDivision = (series, divisionId) => (divisionId == null
   ? series.filter((row) => row.division_id == null)
   : series.filter((row) => row.division_id === divisionId));
 
-const ELIMINATION = ['single_elimination', 'double_elimination'];
+const ELIMINATION = ['single_elimination', 'double_elimination', 'placement'];
 
 // What a generate will play over, read the way app/services/stage_engine.py does: a
 // withdrawn entrant never plays, and once any entrant carries a seed the seeded alone

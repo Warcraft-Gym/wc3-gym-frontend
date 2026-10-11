@@ -10,6 +10,7 @@ import { buchholz, championOf, columns, currentColumn, drawing, inDivision, path
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { reportOf, vetoOf } from "@/helpers/series-actions.mjs";
+import { placementColumns } from "@/helpers/placement.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -93,6 +94,8 @@ export function StageView({
   const stacked = useBreakpoint(SM_AND_DOWN);
 
   const isBracket = ["single_elimination", "double_elimination"].includes(stage.format);
+  // A placement bracket draws its rounds as columns of place groups, with no feeder lines
+  const isPlacement = stage.format === "placement";
   // A free for all plays lobbies: a bracket of them round by round, or one league lobby
   const isLobbyStage = stage.format === "ffa";
   // A table reads a Buchholz column only where the stage's ranking rule breaks ties on it
@@ -120,6 +123,7 @@ export function StageView({
         // the winner of the bracket, once its last series is scored; a table names no champion
         champion: isBracket ? championOf(cols) : null,
         current: currentColumn(cols),
+        placement: isPlacement ? (placementColumns(cols) as Row[]) : null,
       };
     })
     .filter((group) => group.columns.length);
@@ -234,7 +238,69 @@ export function StageView({
                 the lower ladder of a double elimination is drawn under the upper one, with its
                 final run up to the grand final at the end of the upper ladder. A pointer over a
                 player lights their way through it; the champion closes the bracket. */}
-            {isBracket && !stacked ? (
+            {isPlacement ? (
+              /* a placement bracket: one column a round, each holding the groups it splits into,
+                 the best places on top; a phone reads it one round at a time */
+              (() => {
+                const cols = group.placement as Row[];
+                const shown = Math.min(phoneRound[group.key] ?? currentColumn(cols), cols.length - 1);
+                const groupCard = (place: Row, wide: boolean) => (
+                  <div key={place.key} className={cn("flex flex-col gap-1.5 rounded-lg border p-2", place.from === 1 ? "border-primary/60" : "border-border")}>
+                    <div className="flex items-baseline justify-between gap-2 px-1">
+                      <span className={cn("font-heading text-sm font-bold", place.from === 1 && "text-primary-text")}>
+                        {place.final ? `Final · ${place.title}` : place.title}
+                        {bestOfNote(place.round)}
+                      </span>
+                    </div>
+                    {place.series.map((row: Row) => (
+                      <SeriesBox
+                        key={row.id}
+                        series={row}
+                        flat={!wide}
+                        rosters={rosters}
+                        seeds={seeds}
+                        rated={false}
+                        report={reportFor(row)}
+                        onVeto={vetoFor(row)}
+                        stateless
+                        onReport={onReport}
+                        round={place.final ? "Final" : place.title}
+                        onOpen={onOpenSeries}
+                      />
+                    ))}
+                  </div>
+                );
+                return !stacked ? (
+                  <div className="flex items-start gap-4 overflow-x-auto pb-2">
+                    {cols.map((column: Row) => (
+                      <section key={column.key} className="flex flex-none flex-col gap-3" style={{ width: `${BOX_W + 18}px` }}>
+                        <h3 className="text-xs font-bold tracking-wide text-muted-foreground uppercase">{column.name}</h3>
+                        {column.groups.map((place: Row) => groupCard(place, true))}
+                      </section>
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    <div role="tablist" aria-label="Rounds" className="mb-2 flex gap-2 overflow-x-auto pb-1">
+                      {cols.map((column: Row, index: number) => (
+                        <Button
+                          key={column.key}
+                          role="tab"
+                          aria-selected={index === shown}
+                          size="sm"
+                          variant={index === shown ? "secondary" : "outline"}
+                          className="flex-none rounded-full"
+                          onClick={() => setPhoneRound({ ...phoneRound, [group.key]: index })}
+                        >
+                          {column.name}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex max-w-[560px] flex-col gap-3">{cols[shown]?.groups.map((place: Row) => groupCard(place, false))}</div>
+                  </div>
+                );
+              })()
+            ) : isBracket && !stacked ? (
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span className="flex-1">{focusName ? `${focusName}: their way through the bracket is lit.` : "Point at a player to follow their way through the bracket."}</span>

@@ -37,6 +37,7 @@ import { bestOfLine, parsePlan } from "@/helpers/best-of-plan.mjs";
 import { tabOf, withTab } from "@/helpers/event-tabs.mjs";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { livesLine } from "@/helpers/cup-wizard.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -55,7 +56,7 @@ const NEEDS_FORCE = "A later series already carries a result";
 const MEDAL_TEXT: Record<string, string> = { "medal-gold": "text-medal-gold", "medal-silver": "text-medal-silver", "medal-bronze": "text-medal-bronze" };
 const WON = "flex-1 aria-pressed:bg-primary/15 aria-pressed:text-primary-text";
 // a bracket's places sit on the results tab, so its draw carries no table under it
-const BRACKETS = ["single_elimination", "double_elimination"];
+const BRACKETS = ["single_elimination", "double_elimination", "placement"];
 
 /** One ask of the run page: the title bar, the body and the row of answers. */
 function Ask({
@@ -445,6 +446,7 @@ export function EventAdminView({ id }: { id: string }) {
                   <>
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       <Badge className={toneClass(null)}>{titleOf(FORMATS, stage.format)}</Badge>
+                      {stage.format === "placement" ? <Badge className={toneClass(null)}>{livesLine(stage.placement_lives)}</Badge> : null}
                       <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>
                       {entrantSeries ? <Badge className={toneClass(null)}>{entrantSeries} series each entrant a round</Badge> : null}
                       {fixtureSeries ? <Badge className={toneClass(null)}>{fixtureSeries} series per fixture</Badge> : null}
@@ -521,6 +523,7 @@ export function EventAdminView({ id }: { id: string }) {
                 <>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <Badge className={toneClass(null)}>{titleOf(FORMATS, stage.format)}</Badge>
+                    {stage.format === "placement" ? <Badge className={toneClass(null)}>{livesLine(stage.placement_lives)}</Badge> : null}
                     <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>
                     {entrantSeries ? <Badge className={toneClass(null)}>{entrantSeries} series each entrant a round</Badge> : null}
                     {fixtureSeries ? <Badge className={toneClass(null)}>{fixtureSeries} series per fixture</Badge> : null}

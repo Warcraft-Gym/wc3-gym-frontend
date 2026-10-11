@@ -326,7 +326,7 @@ export function OpenSeries({ bracket, admin, you }: { bracket: Row; admin?: Brac
         {start.label}
       </Button>
       {start.note ? <p className="mt-1 mb-0 text-xs text-muted-foreground">{start.note}</p> : null}
-      {picked.length !== 2 ? <p className="mt-1 mb-0 text-xs text-muted-foreground">Click two names in the line to pick another pair.</p> : null}
+      {picked.length !== 2 && (bracket.queue ?? []).length >= 2 ? <p className="mt-1 mb-0 text-xs text-muted-foreground">Click two names in the line to pick another pair.</p> : null}
       {skipped && picked.length !== 2 ? (
         <p className="mt-1 mb-0 text-xs text-muted-foreground">Skipped {skipped.name}, playing in another bracket.</p>
       ) : null}

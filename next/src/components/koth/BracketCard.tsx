@@ -399,7 +399,9 @@ export function QueueRow({
       onDragEnd={() => onDragged?.(null)}
     >
       <div className="flex items-center gap-2 py-1.5 pl-1 pr-1">
-        {admin ? <Icon name="mdi-drag-vertical" size={18} className="shrink-0 text-muted-foreground" /> : null}
+        {/* the grip turns into a check while the row is picked, so the pick costs the name no room */}
+        {admin ? <Icon name={picked ? "mdi-check" : "mdi-drag-vertical"} size={18} className={cn("shrink-0", picked ? "text-primary-text" : "text-muted-foreground")} /> : null}
+        {picked ? <span className="sr-only">picked</span> : null}
         <span className="tnum w-4 shrink-0 text-right text-xs text-muted-foreground">{place}</span>
         {/* the name and the reader's chip wrap as one, so a long name keeps its room and pushes the chip under it */}
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
@@ -414,9 +416,7 @@ export function QueueRow({
                 warning={mark ?? undefined}
                 plain={live}
                 onClick={live ? undefined : () => admin.onPickSeat(seat)}
-              >
-                {picked ? <><Icon name="mdi-check" size={16} className="text-primary-text" /><span className="sr-only">picked</span></> : null}
-              </PlayerName>
+              />
             ) : (
               <BoardPlayer row={line} race={single ? (row?.race ?? null) : null} slot warn={!!mark} />
             )}

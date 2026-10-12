@@ -103,6 +103,7 @@ export function CupCreateView() {
         .join(", "),
     },
     { k: "Best of", v: bestOfLine(Number(form.best_of), form.best_of_plan, form.format) },
+    { k: "Seeds", v: form.hide_seeds ? "Hidden from players" : "Shown to everyone" },
     { k: "Maps", v: form.pool.length ? form.pool.map((row: PoolMap) => row.name).join(", ") : "No maps" },
     { k: "Who may sign up", v: SIGNUP_POLICIES.find((item) => item.value === (form.eligibility_required && form.bnet_required ? "members" : form.signup_policy))?.title },
     {
@@ -198,7 +199,15 @@ export function CupCreateView() {
               <span className="text-sm text-muted-foreground">Best of</span>
               <BestOfPlan format={form.format} bestOf={Number(form.best_of)} plan={form.best_of_plan} onChange={(best_of, best_of_plan) => set({ best_of, best_of_plan })} />
             </div>
-            <p className="text-sm text-muted-foreground">You seed the players on the evening: by MMR, at random or by hand.</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm text-muted-foreground">You seed the players on the evening: by MMR, at random or by hand.</p>
+              <Label htmlFor="cup-hide-seeds" className="flex min-h-11 items-center gap-2">
+                <Switch id="cup-hide-seeds" aria-describedby="cup-hide-seeds-hint" checked={!!form.hide_seeds} onCheckedChange={(hide_seeds) => set({ hide_seeds })} />
+                Hide seeds from players
+              </Label>
+              {/* the hint starts under the label text, past the switch and its gap */}
+              <p id="cup-hide-seeds-hint" className="pl-10 text-sm text-muted-foreground">Only the organizers and admins see the seed numbers.</p>
+            </div>
           </div>
         ) : key === "maps" ? (
           <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} />

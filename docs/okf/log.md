@@ -2,6 +2,7 @@
 
 ## 2026-10-12
 
+* **Update**: a bracket box prints each side's seed from `entrant1_seed` and `entrant2_seed` of the stage series read, which leaves them null where the event hides seeds from the reader, and a waiting side names the series that feeds it, "Loser of UB R1 M3", from `slot1_source` and `slot2_source`. The entrants page reads the stage "Locked" or "Unlocked", unlocks through `DELETE /events/{id}/stages/{stage_id}/seeds/lock`, and gives the API's reason on a disabled reseed or unlock. "Undo the draw" on a stage with results asks once more in the same dialog with the count the 409 names, then sends `confirm=true`. Create cup has "Hide seeds from players", written as `hide_seeds`. [Event management](pages/event-management.md), [shared components](concepts/shared-components.md).
 * **Update**: "Move the start" on a cup's run page opens on the stored start and writes no end date, so a changed day alone keeps the start time and a cup played past midnight still reads as running. [Event management](pages/event-management.md).
 * **Update**: the Events tab reads the events with `archived=false`, and under its Past table a reader who can open the KOTH page reads that archived KOTH nights are on KOTH Events. [Leagues and events](pages/leagues-and-events.md).
 

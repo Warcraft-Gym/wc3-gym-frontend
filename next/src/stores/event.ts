@@ -110,6 +110,10 @@ const store = {
   async lockSeeds(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/lock`);
   },
+  // A stage that holds series refuses the unlock until its draw is taken back
+  async unlockSeeds(event_id: number, stage_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/lock`);
+  },
   // The rounds and the series of one stage, with the feeder graph the bracket draws. These open
   // reads are cached by the edge and by the browser, so a read right after a write asks fresh:
   // the `t` misses both caches and keeps the bearer, which the edge never caches
@@ -119,11 +123,11 @@ const store = {
   async fetchStandings(event_id: number, stage_id: number, fresh = false) {
     return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/standings${freshQuery(fresh)}`, undefined, freshOptions(fresh));
   },
-  // Writes every series of the stage from its locked seeds, per division
-  // Takes the stage's draw back, results included, so the field may change and be drawn again
-  async undrawStage(event_id: number, stage_id: number) {
-    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`);
+  // Takes the stage's draw back so the field may change; results answer 409 until the call confirms
+  async undrawStage(event_id: number, stage_id: number, confirm = false) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/stages/${stage_id}/series${confirm ? "?confirm=true" : ""}`);
   },
+  // Writes every series of the stage from its seeds, per division
   async generateStage(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/generate`);
   },

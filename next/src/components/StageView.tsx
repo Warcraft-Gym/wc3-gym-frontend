@@ -55,7 +55,6 @@ export function StageView({
   divisions = [],
   standings = [],
   rosters = {}, // the players of each team entrant, by entrant id
-  seeds, // the seed of each entrant, by entrant id; a bracket names them when it has them
   viewer, // who reads the draw: a box this viewer acts for carries a report button
   onReport, // opens the report dialog in place, from that button
   onVeto, // opens the map veto in place, for a side of a cup series
@@ -67,7 +66,6 @@ export function StageView({
   divisions?: Row[];
   standings?: Row[];
   rosters?: Record<string, Row[]>;
-  seeds?: Record<string, number>;
   viewer?: { id?: number | null; isAdmin?: boolean; runs?: boolean; seats?: { team_id: number; season_id: number }[] };
   onReport?: (row: Row) => void;
   onVeto?: (row: Row) => void;
@@ -207,7 +205,6 @@ export function StageView({
                   series={row}
                   flat
                   rosters={rosters}
-                  seeds={seeds}
                   rated={false}
                   report={reportFor(row)}
                   onVeto={vetoFor(row)}
@@ -276,7 +273,6 @@ export function StageView({
                               <SeriesBox
                                 series={box.row}
                                 rosters={rosters}
-                                seeds={seeds}
                                 rated={false}
                                 report={reportFor(box.row)}
                                 onVeto={vetoFor(box.row)}

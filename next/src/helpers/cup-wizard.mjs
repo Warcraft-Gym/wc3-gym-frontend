@@ -43,6 +43,8 @@ export const blankCup = () => ({
   format: 'single_elimination',
   third_place: false,
   grand_final_reset: true,
+  // on: only the organizers and admins read the seed numbers
+  hide_seeds: false,
   // the early rounds; a bracket part that plays its own best-of names it in the plan
   best_of: 3,
   best_of_plan: {},
@@ -90,6 +92,7 @@ export const cupPayload = (form) => ({
   signups_open: !!form.signups_open,
   // every series vetoes from the pool by its own best-of, and game 1 plays the map left over
   veto_by_best_of: true,
+  hide_seeds: !!form.hide_seeds,
   map_ids: (form.pool || []).map((row) => row.id),
   stages: [
     {

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedPayload, seedsByEntrant, signupCount, teamRoster, warningLabel } from './entrants.mjs';
+import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedLock, seedPayload, SEEDS_LOCKED, signupCount, STAGE_DRAWN, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -177,7 +177,22 @@ test('a player whose every race withdrew reads withdrawn', () => {
   assert.equal(gone[0].withdrawn_at, '2026-09-14T20:00:00Z');
 });
 
-test('the seeds read by entrant id, and an unseeded entrant names none', () => {
-  assert.deepEqual(seedsByEntrant([{ id: 4, seed: 1 }, { id: 9, seed: 2 }, { id: 3, seed: null }]), { 4: 1, 9: 2 });
-  assert.deepEqual(seedsByEntrant(), {});
+test('an open stage reseeds and has nothing to unlock', () => {
+  assert.deepEqual(seedLock({ id: 5, seeds_locked_at: null }, []), { locked: false, drawn: false, reseed: null, unlock: null });
+});
+
+test('a locked stage with no series refuses a reseed and unlocks', () => {
+  const lock = seedLock({ id: 5, seeds_locked_at: '2026-10-12T18:00:00Z' }, [{ id: 1, stage_id: 4 }]);
+  // a round of another stage leaves this one undrawn
+  assert.deepEqual(lock, { locked: true, drawn: false, reseed: SEEDS_LOCKED, unlock: null });
+});
+
+test('a stage that holds series refuses the reseed and the unlock until its draw is taken back', () => {
+  const lock = seedLock({ id: 5, seeds_locked_at: '2026-10-12T18:00:00Z' }, [{ id: 1, stage_id: 4 }, { id: 2, stage_id: 5 }]);
+  assert.deepEqual(lock, { locked: true, drawn: true, reseed: STAGE_DRAWN, unlock: STAGE_DRAWN });
+});
+
+test('the reasons are the words of the API refusals', () => {
+  assert.equal(STAGE_DRAWN, 'The stage holds series; take its draw back first');
+  assert.equal(SEEDS_LOCKED, 'The seeds of this stage are locked');
 });

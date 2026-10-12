@@ -134,7 +134,18 @@ export function rostersByEntrant(entrants = [], teams = [], eventId = null) {
     .map((row) => [row.id, byTeam.get(row.team.id)]));
 }
 
-/** The seed of every seeded entrant, by entrant id, as a bracket names it beside the player. */
-export function seedsByEntrant(entrants = []) {
-  return Object.fromEntries(entrants.filter((row) => row.seed != null).map((row) => [row.id, row.seed]));
+// The refusals of the seed routes, word for word, so a disabled button gives the API's reason
+export const STAGE_DRAWN = 'The stage holds series; take its draw back first';
+export const SEEDS_LOCKED = 'The seeds of this stage are locked';
+
+// Whether a stage is locked and drawn (a round of it exists), and why a reseed or an unlock is refused
+export function seedLock(stage, rounds = []) {
+  const locked = !!stage?.seeds_locked_at;
+  const drawn = stage?.id != null && (rounds || []).some((round) => round.stage_id === stage.id);
+  return {
+    locked,
+    drawn,
+    reseed: drawn ? STAGE_DRAWN : locked ? SEEDS_LOCKED : null,
+    unlock: locked && drawn ? STAGE_DRAWN : null,
+  };
 }

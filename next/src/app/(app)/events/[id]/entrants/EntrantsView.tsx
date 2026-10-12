@@ -21,7 +21,7 @@ import { RowActions, type RowAction } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { bandOf, domainOf, quantileCuts } from "@/helpers/divisions.mjs";
-import { bandNames, bandsPayload, byPlayer, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, seedPayload, teamRoster, warningLabel } from "@/helpers/entrants.mjs";
+import { bandNames, bandsPayload, byPlayer, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, seedLock, seedPayload, teamRoster, warningLabel } from "@/helpers/entrants.mjs";
 import { eventLabel, timeText, titleOf, FORMATS } from "@/helpers/event-labels.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats";
@@ -53,6 +53,7 @@ const bandNames_ = bandNames as unknown as (divisions: Row[]) => string[];
 const label_ = eventLabel as (event: Row | null, league?: Row | null) => string;
 const warning_ = warningLabel as (code: string, event: Row) => string;
 const mergeSeeds_ = mergeSeeds as (entrants: Row[], seeded: Row[]) => Row[];
+const seedLock_ = seedLock as (stage: Row | null, rounds?: Row[]) => { locked: boolean; drawn: boolean; reseed: string | null; unlock: string | null };
 
 const phoneCell = "hidden min-[960px]:table-cell";
 const solo = (item: Row) => !raceRows(item).length;
@@ -73,12 +74,12 @@ function StateChip({ row, signedUp = true }: { row: Row; signedUp?: boolean }) {
   return signedUp ? <Badge className={toneClass(null)}><Icon name="mdi-account-clock" />signed up</Badge> : null;
 }
 
-/** The pin of a row a hand placed, with the words a screen reader takes. */
+/** The pin of a row a hand placed, whose seed a reseed keeps, with the words a screen reader takes. */
 function Pin({ row }: { row: Row }) {
   if (!row.manual_placement) return null;
   return (
     <>
-      <Icon name="mdi-pin" size={16} className="ml-1" />
+      <Icon name="mdi-pin" size={16} className="ml-1" title="Placed by hand" />
       <span className="sr-only">placed by hand</span>
     </>
   );
@@ -142,11 +143,15 @@ export function EntrantsView({ id }: { id: string }) {
   const playerGroups = groups.map((group) => ({ ...group, title: group.id == null ? `No ${groupWord}` : group.title, rows: byPlayer_(group.rows) }));
   const stages: Row[] = [...(event?.stages || [])].sort((a, b) => a.position - b.position).map((stage) => ({ ...stage, label: stage.name || titleOf(FORMATS, stage.format) }));
   const stage = stages.find((row) => row.id === stageId) || null;
-  const seedsLocked = !!stage?.seeds_locked_at;
+  // Locked or not, and the API's reason a reseed or an unlock is refused while the stage holds series
+  const lock = seedLock_(stage, event?.rounds);
+  const seedsLocked = lock.locked;
   // The standings of the stage before order these seeds, so the first stage is offered no button
   const hasPreviousStage = (stage?.position ?? 1) > 1;
   const takesTeams = event?.entrant_kind === "team";
-  const canReorder = isAdmin && !seedsLocked && !isKoth;
+  const canReorder = isAdmin && !lock.reseed && !isKoth;
+  // The seed chip and reason sit level with the stage pick, else with the buttons on a wide screen
+  const level = stages.length > 1 ? "mb-2" : "min-[960px]:mb-2";
 
   const columns: GroupedColumn[] = [
     { key: "player", title: "Entrant" },
@@ -234,15 +239,13 @@ export function EntrantsView({ id }: { id: string }) {
   const seedBy = (source: string) =>
     run(source, async () => setEntrants(mergeSeeds_(entrants, await store.setSeeds(eventId, stageId as number, { source }))), SEEDED[source]);
 
-  const lock = () =>
-    run(
-      "lock",
-      async () => {
-        const locked = await store.lockSeeds(eventId, stageId as number);
-        setEvent((was) => was && { ...was, stages: was.stages.map((row: Row) => (row.id === locked.id ? locked : row)) });
-      },
-      "The seeds of this stage are locked.",
-    );
+  // The lock routes answer the stage, which replaces its row in the event
+  const mergeStage = (answered: Row) =>
+    setEvent((was) => was && { ...was, stages: was.stages.map((row: Row) => (row.id === answered.id ? answered : row)) });
+  const lockSeeds = () =>
+    run("lock", async () => mergeStage(await store.lockSeeds(eventId, stageId as number)), "The seeds of this stage are locked.");
+  const unlockSeeds = () =>
+    run("unlock", async () => mergeStage(await store.unlockSeeds(eventId, stageId as number)), "The seeds of this stage are unlocked.");
 
   // A player moved onto another place of the same division takes it, his races together,
   // and the whole order posts
@@ -405,12 +408,6 @@ export function EntrantsView({ id }: { id: string }) {
           <Icon name="mdi-account-multiple" />
           {entered} entered
         </Badge>
-        {seedsLocked ? (
-          <Badge className={toneClass("secondary")}>
-            <Icon name="mdi-lock" />
-            seeds locked
-          </Badge>
-        ) : null}
         <span className="flex-1" />
         {isAdmin ? (
           <Button disabled={loading} onClick={openAdd}>
@@ -469,30 +466,52 @@ export function EntrantsView({ id }: { id: string }) {
 
           {/* A seed write reorders the queue a KOTH night is running, so the night takes none of these */}
           {isAdmin && !isKoth ? (
-            <div className="mt-4 flex flex-wrap items-end gap-2">
+            <div className="mt-4 flex flex-wrap items-end gap-x-2 gap-y-3">
               {stages.length > 1 ? (
-                <Pick labelAfter className="w-[240px]" label="Stage" items={stages.map((row) => ({ value: row.id as number, title: row.label as string }))} value={stageId} onChange={setStageId} />
+                <Pick labelAfter className="w-[240px] max-w-full" label="Stage" items={stages.map((row) => ({ value: row.id as number, title: row.label as string }))} value={stageId} onChange={setStageId} />
               ) : null}
-              {seedsLocked ? <span className="self-center text-muted-foreground">The seeds of this stage are locked.</span> : null}
-              <span className="flex-1" />
-              <Button variant="outline" disabled={busy === "mmr" || seedsLocked || !stageId} onClick={() => seedBy("mmr")}>
-                {busyIcon("mmr", "mdi-sort-numeric-ascending")}
-                Seed by MMR
-              </Button>
-              <Button variant="outline" disabled={busy === "random" || seedsLocked || !stageId} onClick={() => seedBy("random")}>
-                {busyIcon("random", "mdi-shuffle-variant")}
-                Shuffle
-              </Button>
-              {hasPreviousStage ? (
-                <Button variant="outline" disabled={busy === "previous_stage" || seedsLocked || !stageId} onClick={() => seedBy("previous_stage")}>
-                  {busyIcon("previous_stage", "mdi-arrow-right-bold-outline")}
-                  Seed from the previous stage
+              {stage ? (
+                <Badge id="seed-state" className={cn(toneClass(lock.locked ? "secondary" : null), level)}>
+                  <Icon name={lock.locked ? "mdi-lock" : "mdi-lock-open-variant-outline"} />
+                  <span className="sr-only">Seeds </span>
+                  {lock.locked ? "Locked" : "Unlocked"}
+                </Badge>
+              ) : null}
+              {/* the one line that says why the disabled buttons are disabled, in the API's words */}
+              {lock.reseed ? (
+                <span id="seed-reason" className={cn("basis-full text-sm text-muted-foreground min-[960px]:basis-auto", level)}>
+                  {lock.reseed}.
+                </span>
+              ) : null}
+              <span className="hidden flex-1 min-[960px]:block" />
+              <div className="flex flex-wrap gap-2">
+                <Button id="seed-mmr" variant="outline" disabled={busy === "mmr" || !!lock.reseed || !stageId} aria-describedby={lock.reseed ? "seed-reason" : undefined} onClick={() => seedBy("mmr")}>
+                  {busyIcon("mmr", "mdi-sort-numeric-ascending")}
+                  Seed by MMR
                 </Button>
-              ) : null}
-              <Button variant="outline" disabled={busy === "lock" || seedsLocked || !stageId} onClick={lock}>
-                {busyIcon("lock", "mdi-lock")}
-                Lock seeds
-              </Button>
+                <Button id="seed-random" variant="outline" disabled={busy === "random" || !!lock.reseed || !stageId} aria-describedby={lock.reseed ? "seed-reason" : undefined} onClick={() => seedBy("random")}>
+                  {busyIcon("random", "mdi-shuffle-variant")}
+                  Shuffle
+                </Button>
+                {hasPreviousStage ? (
+                  <Button id="seed-previous" variant="outline" disabled={busy === "previous_stage" || !!lock.reseed || !stageId} aria-describedby={lock.reseed ? "seed-reason" : undefined} onClick={() => seedBy("previous_stage")}>
+                    {busyIcon("previous_stage", "mdi-arrow-right-bold-outline")}
+                    Seed from the previous stage
+                  </Button>
+                ) : null}
+                {/* one toggle: a stage locks while open and unlocks while locked, until it holds series */}
+                {lock.locked ? (
+                  <Button id="seed-unlock" variant="outline" disabled={busy === "unlock" || !!lock.unlock || !stageId} aria-describedby={lock.unlock ? "seed-reason" : undefined} onClick={unlockSeeds}>
+                    {busyIcon("unlock", "mdi-lock-open-variant-outline")}
+                    Unlock seeds
+                  </Button>
+                ) : (
+                  <Button id="seed-lock" variant="outline" disabled={busy === "lock" || !stageId} onClick={lockSeeds}>
+                    {busyIcon("lock", "mdi-lock")}
+                    Lock seeds
+                  </Button>
+                )}
+              </div>
             </div>
           ) : null}
 
@@ -628,6 +647,7 @@ export function EntrantsView({ id }: { id: string }) {
                     <div className="flex items-center gap-2">
                       {solo(row) && row.seed ? <span className="tnum text-muted-foreground">{row.seed}</span> : null}
                       {row.user ? <PlayerName player={row.user} race={solo(row) ? row.race : undefined} mmr={false} /> : row.team ? <TeamName team={row.team} className="font-medium" /> : null}
+                      {solo(row) ? <Pin row={row} /> : null}
                       <span className="flex-1" />
                       {solo(row) ? <span className="tnum">{entrantMmr(row) || "—"}</span> : null}
                     </div>
@@ -636,6 +656,7 @@ export function EntrantsView({ id }: { id: string }) {
                         {race.seed ? <span className="tnum text-muted-foreground">{race.seed}</span> : null}
                         <RaceIcon raceIdentifier={race.race} />
                         <span>{raceName(race.race)}</span>
+                        <Pin row={race} />
                         <StateChip row={race} signedUp={false} />
                         <span className="flex-1" />
                         <span className="tnum">{race.mmr || "—"}</span>

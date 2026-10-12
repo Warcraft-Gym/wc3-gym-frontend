@@ -40,6 +40,11 @@ test('the third place plays only in single elimination, the reset only in double
   assert.equal(noReset.stages[0].grand_final_modifier, 'one');
 });
 
+test('the seeds show to everyone by default, and the switch hides them through the event setting', () => {
+  assert.equal(cupPayload(blankCup()).hide_seeds, false);
+  assert.equal(cupPayload({ ...blankCup(), hide_seeds: true }).hide_seeds, true);
+});
+
 test('blank bounds write nothing', () => {
   const body = cupPayload(blankCup());
   assert.deepEqual([body.entrant_min, body.entrant_cap, body.starts_at, body.mmr_min, body.mmr_max, body.min_games], [null, null, null, null, null, null]);

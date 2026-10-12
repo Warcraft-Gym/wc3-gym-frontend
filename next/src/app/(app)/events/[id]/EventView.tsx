@@ -25,7 +25,7 @@ import { SignupDialog } from "@/components/SignupDialog";
 import { StageView } from "@/components/StageView";
 import { StatusAlert } from "@/components/StatusAlert";
 import { placeIcon, placeMedal, placings } from "@/helpers/awards.mjs";
-import { byPlayer, bySeed, bySignup, entrantName, raceRows, rostersByEntrant, seedsByEntrant, signupCount } from "@/helpers/entrants.mjs";
+import { byPlayer, bySeed, bySignup, entrantName, raceRows, rostersByEntrant, signupCount } from "@/helpers/entrants.mjs";
 import { FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, stateOf, titleOf } from "@/helpers/event-labels.mjs";
 import { actOnEvent, blocksHint, eventActionButton } from "@/helpers/events.mjs";
 import { myRaces } from "@/helpers/koth.mjs";
@@ -105,7 +105,8 @@ export function EventView({ id }: { id: string }) {
   const keepsEntrants = event?.kind !== "gnl";
   const league = leagues.find((one) => one.id === event?.league_id) || null;
   const stages: Row[] = [...(event?.stages || [])].sort((a, b) => a.position - b.position);
-  const seedsLocked = stages.some((stage) => stage.seeds_locked_at);
+  // The seed column reads once a stage locked its order, and never where the event hides every seed
+  const seedsLocked = stages.some((stage) => stage.seeds_locked_at) && entrants.some((row) => row.seed != null);
   // An event that plays no stage is a sign-up list: the entrants are the whole page
   const signupOnly = !!event && !stages.length;
   // An event that plays stages reads as tabs: the draw, who is in, and the results. A GNL season
@@ -443,7 +444,6 @@ export function EventView({ id }: { id: string }) {
           divisions={event?.divisions}
           standings={tabbed && BRACKETS.includes(stage.format) ? [] : stage.standings}
           rosters={rosters}
-          seeds={seedsByEntrant(entrants) as Record<string, number>}
           viewer={anonymous ? undefined : viewer}
           onReport={anonymous ? undefined : openReport}
           onVeto={anonymous ? undefined : setVetoing}

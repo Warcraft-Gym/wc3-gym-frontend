@@ -4,7 +4,7 @@ import test from 'node:test';
 import {
   advancingRows, blocks, buchholz, columns, drawsByRound,
   generateFields, inDivision, isByeSide, isLobby, layout, lobbySeats, lobbyTargets,
-  nextRound, ranking, seriesState, shownPlayer, shownTeam, sideName,
+  nextRound, ranking, seriesState, shownPlayer, shownTeam, sideName, sideSeed, emptyLabel, undrawResults,
   standingsGroups, standsOn, winnerSide, pathOf, championOf, currentColumn, drawing, withoutIdleReset, playedEntrants, playedCount,
 } from './stage-view.mjs';
 
@@ -190,6 +190,37 @@ test('hiding the results takes the name off a fed side, and leaves a first round
   assert.strictEqual(shownPlayer(semi, 2, true).id, 4);
   assert.strictEqual(isByeSide(S(1, 1, 1, 7, 2), 2), false);
   assert.strictEqual(isByeSide(S(1, 2, 1, ['w', 1], ['w', 2]), 1), false);
+});
+
+test('a side prints the seed the stage read names, and none where the read leaves it out', () => {
+  const row = { ...S(1, 1, 1, 7, 2), entrant1_seed: 3, entrant2_seed: 6 };
+  assert.strictEqual(sideSeed(row, 1), 3);
+  assert.strictEqual(sideSeed(row, 2), 6);
+  // an event that hides its seeds answers no seed field to a reader who does not run it
+  assert.strictEqual(sideSeed(S(1, 1, 1, 7, 2), 1), null);
+});
+
+test('hidden results take the seed off a fed side, and leave a first round side its seed', () => {
+  const semi = { ...S(9, 2, 1, ['w', 1], 4), player1_id: 1, entrant1_seed: 1, entrant2_seed: 4 };
+  assert.strictEqual(sideSeed(semi, 1, false), 1);
+  assert.strictEqual(sideSeed(semi, 1, true), null);
+  assert.strictEqual(sideSeed(semi, 2, true), 4);
+});
+
+test('an empty side names a bye, else the series that feeds it, else that it waits', () => {
+  assert.strictEqual(emptyLabel(S(1, 1, 1, 7, null), 2), 'Bye');
+  const fed = { ...S(8, 4, 1, ['l', 1], ['l', 2]), slot2_source: 'Loser of UB R1 M3' };
+  assert.strictEqual(emptyLabel(fed, 2), 'Loser of UB R1 M3');
+  assert.strictEqual(emptyLabel(fed, 1), 'To be decided');
+});
+
+test('only the results refusal of a redraw names a count, read from the error', () => {
+  assert.strictEqual(undrawResults('3 series of this stage hold results; confirm to delete them'), 3);
+  assert.strictEqual(undrawResults('12 series of this stage hold results; confirm to delete them'), 12);
+  assert.strictEqual(undrawResults('A later stage is drawn; undo its draw first'), null);
+  // a number in another refusal is not a count of results
+  assert.strictEqual(undrawResults('Stage 2 holds no draw to undo'), null);
+  assert.strictEqual(undrawResults(null), null);
 });
 
 test('standings group by division in division order', () => {

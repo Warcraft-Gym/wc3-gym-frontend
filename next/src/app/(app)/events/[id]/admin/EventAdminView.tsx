@@ -24,11 +24,11 @@ import { winsFor } from "@/helpers/best-of.mjs";
 import { gameSlots, scoreOf } from "@/helpers/map-order.mjs";
 import {
   advancingRows, drawsByRound, generateFields, isLobby, isScored,
-  lobbySeats, lobbyTargets, nextRound, sideName, standsOn,
+  lobbySeats, lobbyTargets, nextRound, sideName, standsOn, undrawResults,
 } from "@/helpers/stage-view.mjs";
 import { awardList, placeIcon, placeMedal } from "@/helpers/awards.mjs";
 import { playedCount } from "@/helpers/stage-view.mjs";
-import { rostersByEntrant, seedsByEntrant } from "@/helpers/entrants.mjs";
+import { rostersByEntrant } from "@/helpers/entrants.mjs";
 import { useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
 import { CupConsole } from "@/components/CupConsole";
@@ -123,6 +123,7 @@ export function EventAdminView({ id }: { id: string }) {
   const [confirmAdvance, setConfirmAdvance] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [confirmUndraw, setConfirmUndraw] = useState(false);
+  const [resultsToDelete, setResultsToDelete] = useState<number | null>(null); // the results a confirmed redraw deletes
   const [confirmForce, setConfirmForce] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [lobbyOpen, setLobbyOpen] = useState(false);
@@ -256,13 +257,25 @@ export function EventAdminView({ id }: { id: string }) {
       await readEvent();
     }
   };
-  // Taking the draw back deletes the bracket; the entrants are read again, their seeds open
+  // Closing the undo dialog forgets the results count it asked about
+  const closeUndraw = (open: boolean) => {
+    setConfirmUndraw(open);
+    if (!open) setResultsToDelete(null);
+  };
+  // Taking the draw back deletes the bracket; a stage with results asks once more, then confirms
   const undraw = async () => {
-    if (!(await run(() => store.undrawStage(event!.id, stage!.id)))) {
-      setConfirmUndraw(false);
+    const refused = await run(() => store.undrawStage(event!.id, stage!.id, resultsToDelete != null));
+    if (!refused) {
+      closeUndraw(false);
       await readEvent();
       setEntrants(await store.fetchEntrants(event!.id, true));
+      return;
     }
+    const results = undrawResults(refused);
+    if (results == null) return;
+    setResultsToDelete(results);
+    setDialogError(null);
+    setError(null);
   };
   const reopenEvent = async () => {
     if (!(await run(() => store.reopenEvent(event!.id)))) await readEvent();
@@ -491,7 +504,7 @@ export function EventAdminView({ id }: { id: string }) {
                     {drawNote ? <p className="mt-1 text-xs text-muted-foreground">{drawNote}</p> : null}
 
                     <div className="mt-4">
-                      <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} seeds={seedsByEntrant(entrants) as Record<string, number>} onOpenSeries={openSeries} />
+                      <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
                     </div>
                   </>
                 ) : null}
@@ -560,7 +573,7 @@ export function EventAdminView({ id }: { id: string }) {
                   {drawNote ? <p className="mt-1 text-xs text-muted-foreground">{drawNote}</p> : null}
 
                   <div className="mt-4">
-                    <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} seeds={seedsByEntrant(entrants) as Record<string, number>} onOpenSeries={openSeries} />
+                    <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
                   </div>
                 </>
               ) : null}
@@ -649,22 +662,31 @@ export function EventAdminView({ id }: { id: string }) {
       {/* Taking the draw back loses every result in it, so the confirm names what goes */}
       <Ask
         open={confirmUndraw}
-        onOpenChange={setConfirmUndraw}
+        onOpenChange={closeUndraw}
         title="Undo the draw"
         tone="error"
         size="confirm"
         actions={
           <>
-            <Button variant="ghost" disabled={saving} onClick={() => setConfirmUndraw(false)}>Cancel</Button>
-            <Button variant="destructive" disabled={saving} onClick={undraw}>{busyIcon(saving)}Undo the draw</Button>
+            <Button id="undraw-cancel" variant="ghost" disabled={saving} onClick={() => closeUndraw(false)}>Cancel</Button>
+            <Button id="undraw-confirm" variant="destructive" disabled={saving} onClick={undraw}>
+              {busyIcon(saving)}
+              {resultsToDelete != null ? `Delete ${resultsToDelete} ${resultsToDelete === 1 ? "result" : "results"}` : "Undo the draw"}
+            </Button>
           </>
         }
       >
         <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
-        <p className="mb-2">
-          The bracket and its {series.length} {series.length === 1 ? "match" : "matches"} are deleted
-          {playedCount(series) ? `, with ${playedCount(series)} ${playedCount(series) === 1 ? "result" : "results"}` : ""}, their map vetoes and replays.
-        </p>
+        {resultsToDelete != null ? (
+          <p id="undraw-results" className="mb-2">
+            <span className="tnum font-bold">{resultsToDelete}</span> {resultsToDelete === 1 ? "series of this stage holds a result" : "series of this stage hold results"}. Undoing the draw deletes {resultsToDelete === 1 ? "it" : "them"}.
+          </p>
+        ) : (
+          <p className="mb-2">
+            The bracket and its {series.length} series are deleted
+            {playedCount(series) ? `, with ${playedCount(series)} ${playedCount(series) === 1 ? "result" : "results"}` : ""}, their map vetoes and replays.
+          </p>
+        )}
         <p className="text-muted-foreground">Every player stays in. Add or remove players, seed again and draw again.</p>
       </Ask>
 

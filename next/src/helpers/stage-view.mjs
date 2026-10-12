@@ -43,6 +43,21 @@ export const shownPlayer = (row, side, hidden = false) => (
 export const shownTeam = (row, side, hidden = false) => (
   hidden && feederOf(row, side) ? null : row?.[`team${side}`] || null);
 
+// The seed a side prints, null where the event hides seeds or a hidden result fed the side
+export const sideSeed = (row, side, hidden = false) => (
+  hidden && feederOf(row, side) ? null : row?.[`entrant${side}_seed`] ?? null);
+
+// What an empty side reads: a bye, else the series that feeds it ("Loser of UB R1 M3"), else that it waits
+export const emptyLabel = (row, side) => (isByeSide(row, side)
+  ? 'Bye'
+  : row?.[`slot${side}_source`] || 'To be decided');
+
+// The count of results a redraw deletes, read from the 409 of DELETE .../series; else null
+export function undrawResults(message) {
+  const match = /^(\d+) series of this stage hold results/.exec(message || '');
+  return match ? Number(match[1]) : null;
+}
+
 // What a side is called in a sentence: the team of a team entrant, else the player
 export const sideName = (row, side) => row?.[`team${side}`]?.name || row?.[`player${side}`]?.name || '';
 

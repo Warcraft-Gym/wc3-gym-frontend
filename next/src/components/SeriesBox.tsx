@@ -5,7 +5,7 @@ import { TeamName } from "@/components/TeamName";
 import { useHideResults } from "@/components/hide-results";
 import { sideRoster } from "@/helpers/fixture.mjs";
 import { teamLabel } from "@/helpers/teams.mjs";
-import { isByeSide, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, standsOn, winnerSide } from "@/helpers/stage-view.mjs";
+import { emptyLabel, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, sideSeed, standsOn, winnerSide } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -39,7 +39,6 @@ export function SeriesBox({
   fed, // a lobby seated by the round before it, not by the seeds
   onOpen,
   className,
-  seeds, // the seed of each entrant, by entrant id; a box without them names no seed
   rated = true, // false where the draw leaves the MMR out, so the names keep the room
   report = null, // "report" or "edit" when the viewer reports this series from the draw
   onVeto, // a side of a cup series vetoes from the draw, from a button beside the report one
@@ -57,7 +56,6 @@ export function SeriesBox({
   fed?: boolean;
   onOpen?: (series: Row) => void;
   className?: string;
-  seeds?: Record<string, number>;
   rated?: boolean;
   report?: "report" | "edit" | null;
   onVeto?: ((series: Row) => void) | null;
@@ -83,8 +81,12 @@ export function SeriesBox({
   // The stage row carries the rating of the race it names; a row without the field lets the line read its own
   const mmr = (side: number) => series[`player${side}_mmr`];
   const score = (side: number) => (hidden ? "" : series[`player${side}_score`] ?? "");
-  // A side with no feeder and no entrant can never fill: the other side passes through
-  const empty = (side: number) => (isByeSide(series, side) ? "Bye" : "To be decided");
+  // The stage series read names each side's seed, and none where the event hides seeds
+  const seed = (side: number) => sideSeed(series, side, hidden);
+  // One seed gutter for both sides, so the two names start at the same edge
+  const seeded = seed(1) != null || seed(2) != null;
+  // An empty side reads "Bye", the series that feeds it, or "To be decided"
+  const empty = (side: number) => emptyLabel(series, side);
   // Who a team side fields: the players the series names, else the one player it drafted,
   // else every member the team is rostered with. A series that names its own pick rule
   // fields the players it names alone, so a side nobody has named yet reads empty.
@@ -129,8 +131,8 @@ export function SeriesBox({
           onMouseEnter={onFocus ? () => onFocus(standsOn(series, side)) : undefined}
         >
           <span className={cn(MARK, markClass(sideClass(side)))} />
-          {seeds && standsOn(series, side) != null && seeds[standsOn(series, side)] != null ? (
-            <span className="tnum w-4 shrink-0 text-right text-xs font-normal text-muted-foreground">{seeds[standsOn(series, side)]}</span>
+          {seeded ? (
+            <span className="tnum w-4 shrink-0 text-right text-xs font-normal text-muted-foreground" title={seed(side) != null ? `Seed ${seed(side)}` : undefined}>{seed(side) ?? ""}</span>
           ) : null}
           {team(side) ? (
             <div className="flex min-w-0 flex-col gap-px">
@@ -148,7 +150,7 @@ export function SeriesBox({
           ) : player(side) ? (
             <PlayerName player={player(side)} race={race(side)} mmr={rated ? mmr(side) : false} plain={!readonly} />
           ) : (
-            <span className="text-[0.8125rem] text-muted-foreground">{empty(side)}</span>
+            <span className="min-w-0 truncate text-[0.8125rem] font-normal text-muted-foreground" title={empty(side)}>{empty(side)}</span>
           )}
           <span className="tnum ml-auto font-bold">{score(side)}</span>
         </div>

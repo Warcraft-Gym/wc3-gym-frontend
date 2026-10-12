@@ -194,8 +194,9 @@ export function StageView({
 
       {groups.map((group) => {
         // one round of the list, as a card; a phone reads a bracket one round at a time
-        const columnCard = (column: Row) => (
-          <Card key={column.key} className="card mb-3 max-w-[560px]">
+        // `grid` sits the card in a row of rounds, so it fills its cell instead of a column of its own
+        const columnCard = (column: Row, grid = false) => (
+          <Card key={column.key} className={cn("card", grid ? "min-w-0 gap-2" : "mb-3 max-w-[560px]")}>
             <CardHeader>
               <CardTitle>
                 {column.name}
@@ -397,8 +398,10 @@ export function StageView({
                 ) : null}
               </div>
             ) : (
-              /* a round robin reads as one list per round */
-              group.columns.map((column: Row) => columnCard(column))
+              /* a round robin and a Swiss stage read as their rounds side by side, three to a row on a wide screen */
+              <div className="grid items-start gap-3 min-[700px]:grid-cols-2 min-[1100px]:grid-cols-3">
+                {group.columns.map((column: Row) => columnCard(column, true))}
+              </div>
             )}
           </section>
         );

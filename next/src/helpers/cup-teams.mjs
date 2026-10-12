@@ -33,8 +33,10 @@ export const missing = (entrant, teamSize) => Math.max(0, (teamSize || 0) - (ent
 export function teamState(entrant, teamSize) {
   const short = missing(entrant, teamSize);
   if (!short) return 'Complete';
-  const waiting = (entrant?.invited || []).length;
-  if (waiting >= short) return `Waiting for ${short} of ${teamSize - 1} to accept`;
+  const invited = entrant?.invited || [];
+  // one open invite names the player it waits for; more read as a count
+  if (invited.length === 1 && short === 1 && invited[0]?.name) return `Waiting for ${invited[0].name} to accept`;
+  if (invited.length >= short) return `Waiting for ${short} of ${teamSize - 1} to accept`;
   return `${short} ${short === 1 ? 'player' : 'players'} missing`;
 }
 

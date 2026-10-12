@@ -693,7 +693,20 @@ export function EventView({ id }: { id: string }) {
               </DialogContent>
             </Dialog>
           ) : null}
-          {!anonymous ? <ReportResultDialog ref={reportDialog} onSaved={() => Promise.all([reload(), loadDrawings(event as Row, true)])} /> : null}
+          {!anonymous ? <ReportResultDialog
+              ref={reportDialog}
+              // a result can move the phase, so the header reads the event again with the draw
+              onSaved={() =>
+                Promise.all([
+                  reload(),
+                  loadDrawings(event as Row, true),
+                  store
+                    .fetchEvent((event as Row).id, true)
+                    .then((fresh: Row) => setEvent((old) => (old ? { ...old, ...fresh } : old)))
+                    .catch(() => {}),
+                ])
+              }
+            /> : null}
         </>
       ) : null}
     </HIDE_RESULTS.Provider>

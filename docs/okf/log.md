@@ -2,6 +2,7 @@
 
 ## 2026-10-12
 
+* **Update**: a team waiting on one invite names the player, "Waiting for AlterEgo to accept"; a cup page reads the event again after a report, so its phase moves to "Running" without a reload. [Event management](pages/event-management.md) states the team state.
 * **Add**: Swiss cups. Create cup offers Swiss with a set number of rounds or everyone plays everyone, then no playoff, the top 4 or the top 8; Results places the playoff first and the rest of the Swiss table after it. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.
 * **Add**: a cup's waitlist. A drawn or full cup offers "Join the waitlist"; a waiting player reads "On the waitlist" and can leave it; the Participants card lists it; the run page adds a waiting player to the cup before the draw, or swaps one in for a player who has not played after it. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.
 * **Add**: the run page withdraws a player after the draw, "Withdraw" after a confirm that names the forfeits, and a player's own withdraw from a drawn cup says it forfeits every open match. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.

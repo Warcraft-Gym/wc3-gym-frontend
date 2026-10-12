@@ -32,8 +32,9 @@ const store = {
   async fetchEventsPage(kind: string, limit: number, offset: number) {
     return await fetchWrapper.getPage(`${backendUrl}/events?kind=${kind}&limit=${limit}&offset=${offset}`);
   },
-  async fetchEvent(event_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}`);
+  // `fresh` reads past the edge cache, as a page does right after its own write
+  async fetchEvent(event_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}${fresh ? `?t=${Date.now()}` : ""}`);
   },
   async createEvent(event: any) {
     return await fetchWrapper.post(`${backendUrl}/events`, event);

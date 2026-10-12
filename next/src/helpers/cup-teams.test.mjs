@@ -19,6 +19,8 @@ test('the caller finds their own team, as captain, player or invited', () => {
 test('a team says what it still waits for', () => {
   assert.strictEqual(missing(BLUE, 2), 1);
   assert.strictEqual(teamState(BLUE, 2), 'Waiting for 1 of 1 to accept');
+  assert.strictEqual(teamState({ ...BLUE, invited: [{ id: 2, name: 'AlterEgo' }] }, 2), 'Waiting for AlterEgo to accept');
+  assert.strictEqual(teamState({ ...BLUE, invited: [{ id: 2, name: 'A' }, { id: 3, name: 'B' }] }, 3), 'Waiting for 2 of 2 to accept');
   assert.strictEqual(teamState({ ...BLUE, invited: [] }, 2), '1 player missing');
   assert.strictEqual(teamState(RED, 2), 'Complete');
 });

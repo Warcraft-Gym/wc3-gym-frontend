@@ -398,8 +398,8 @@ export function StageView({
                 ) : null}
               </div>
             ) : (
-              /* a round robin and a Swiss stage read as their rounds side by side, three to a row on a wide screen */
-              <div className="grid items-start gap-3 min-[700px]:grid-cols-2 min-[1100px]:grid-cols-3">
+              /* a round robin and a Swiss stage read as their rounds side by side, four to a row on a wide screen */
+              <div className="grid items-start gap-3 min-[700px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1200px]:grid-cols-4">
                 {group.columns.map((column: Row) => columnCard(column, true))}
               </div>
             )}

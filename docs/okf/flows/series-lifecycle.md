@@ -4,7 +4,7 @@ title: The life of one series
 description: The states a series passes through, from a GNL draft pairing to a reported result, who moves it out of each state, and what only an admin may do.
 resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
 tags: [pages, series, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-04T13:23:07Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-12T21:00:00Z }
 sources:
   - id: fixtures
     resource: ../pages/fixtures-and-series.md
@@ -32,8 +32,8 @@ This flow follows one series through its states: draft pairing, published, sched
 | 3. Book a time | the player a side names, a captain of the team that fields it, or an admin | the schedule dialog, from the action bar on `/`, the player page or `/series/:id` | `PUT /player-series/{id}` with `date_time` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 4. Take the veto turns | both sides, in turn; an admin edits either side | `/player-series/:id/veto`, or inside Report Result | `PUT /player-series/{id}/veto` | [Fixtures and series](../pages/fixtures-and-series.md) |
 | 5. Report the result with one replay per game | either side, or an admin | Report Result, from the action bar | `POST /player-series/{id}/replays/{game}/upload-url`, `PUT /player-series/{id}` | [Fixtures and series](../pages/fixtures-and-series.md) |
-| 6. Award a walkover or a forfeit | admin | `/series/:id`, or `/events/:id/admin` | `PUT /series/{id}/result-kind` | [Fixtures and series](../pages/fixtures-and-series.md) |
-| 7. Clear a result | either side, a captain of either team, or an admin; a walkover or a forfeit, an admin alone | "Clear result" in Report Result, or in the series edit on `/match/:id`; an admin also reopens on `/events/:id/admin` | `DELETE /series/{id}/result`; the admin page writes `PUT /series/{id}` with the scores cleared, and `?force=true` after a refusal | [Fixtures and series](../pages/fixtures-and-series.md), [Event management](../pages/event-management.md) |
+| 6. Award a walkover or a forfeit | admin | `/series/:id` | `PUT /series/{id}/result-kind` | [Fixtures and series](../pages/fixtures-and-series.md) |
+| 7. Clear a result | either side, a captain of either team, or an admin; a walkover or a forfeit, an admin alone | "Clear result" in Report Result, or in the series edit on `/match/:id`; a cup's runner reopens on `/events/:id/admin` | `DELETE /series/{id}/result`; a cup's series write `DELETE /cup-series/{id}/result`, and the run page `PUT /cup-series/{id}` with the scores cleared, `?force=true` after a refusal | [Fixtures and series](../pages/fixtures-and-series.md), [Event management](../pages/event-management.md) |
 
 # Diagram
 

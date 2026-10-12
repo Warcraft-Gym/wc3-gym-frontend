@@ -25,7 +25,7 @@ import { SignupDialog } from "@/components/SignupDialog";
 import { StageView } from "@/components/StageView";
 import { StatusAlert } from "@/components/StatusAlert";
 import { placeIcon, placeMedal, placings } from "@/helpers/awards.mjs";
-import { byPlayer, bySeed, bySignup, entrantName, raceRows, rostersByEntrant, signupCount } from "@/helpers/entrants.mjs";
+import { byPlayer, bySeed, bySignup, cupRosters, entrantName, raceRows, rostersByEntrant, signupCount } from "@/helpers/entrants.mjs";
 import { FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, stateOf, titleOf } from "@/helpers/event-labels.mjs";
 import { actOnEvent, blocksHint, eventActionButton } from "@/helpers/events.mjs";
 import { myRaces } from "@/helpers/koth.mjs";
@@ -153,13 +153,15 @@ export function EventView({ id }: { id: string }) {
         .flatMap((stage) => (stage.series as Row[]).map((row) => ({ row, stage })))
         .find(({ row }) => reportOf(row, { id: viewer.id, seats: viewer.seats, teamIds: viewer.teamIds }) === "report") ?? null
     : null;
-  // The report dialog opens in place on the series it reads afresh, as the series page does
+  // The report dialog opens in place on the series it reads afresh, as the series page does;
+  // a cup's series read and report on the cup's own routes
   const reportDialog = useRef<ReportResultDialogHandle>(null);
+  const cup = event?.kind === "cup";
   // The map veto of one series, opened in place from the draw or from the waiting match
   const [vetoing, setVetoing] = useState<Row | null>(null);
   const openReport = async (row: Row) => {
     try {
-      const full = await fetchWrapper.get(`${backendUrl}/series/${row.id}`);
+      const full = await fetchWrapper.get(`${backendUrl}/${cup ? "cup-series" : "series"}/${row.id}`);
       reportDialog.current?.open({ ...full, entrant1_id: row.entrant1_id ?? null, entrant2_id: row.entrant2_id ?? null });
     } catch (e) {
       setError(`The series did not load: ${(e as Error).message}`);
@@ -193,8 +195,9 @@ export function EventView({ id }: { id: string }) {
     setRow(mine.find((one: Row) => one.id === loaded.id) ?? null);
     // a team cup reads the invitations of the caller, for its panel
     if (auth.me && loaded.team_size) setTeamInvites(await store.myTeamInvites().catch(() => []));
-    // only a team event fields rosters, so nothing else pays for the read
-    if (loaded.entrant_kind === "team") {
+    // a cup team's entrant row carries its players; another team event reads its league teams
+    if (loaded.kind === "cup") setRosters(cupRosters(rows));
+    else if (loaded.entrant_kind === "team") {
       const teams = await teamStore.fetchTeamsBySeason(loaded.id).catch(() => []);
       setRosters(rostersOf(rows, teams, loaded.id));
     }
@@ -688,13 +691,14 @@ export function EventView({ id }: { id: string }) {
               <DialogContent size="xl" className="gap-0 p-0">
                 <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Map veto</DialogTitle>
                 <div className="max-h-[80vh] overflow-y-auto p-4">
-                  <VetoBoard seriesId={vetoing.id} />
+                  <VetoBoard seriesId={vetoing.id} cup={cup} />
                 </div>
               </DialogContent>
             </Dialog>
           ) : null}
           {!anonymous ? <ReportResultDialog
               ref={reportDialog}
+              cup={cup}
               // a result can move the phase, so the header reads the event again with the draw
               onSaved={() =>
                 Promise.all([

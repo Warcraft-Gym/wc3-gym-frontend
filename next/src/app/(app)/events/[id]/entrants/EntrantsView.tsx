@@ -21,7 +21,7 @@ import { RowActions, type RowAction } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CMmr } from "@/components/W3CMmr";
 import { bandOf, domainOf, quantileCuts } from "@/helpers/divisions.mjs";
-import { bandNames, bandsPayload, byPlayer, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, seedLock, seedPayload, teamRoster, warningLabel } from "@/helpers/entrants.mjs";
+import { bandNames, bandsPayload, byPlayer, cupRosters, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, seedLock, seedPayload, teamRoster, warningLabel } from "@/helpers/entrants.mjs";
 import { eventLabel, timeText, titleOf, FORMATS } from "@/helpers/event-labels.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { w3cPlayerUrl } from "@/helpers/w3c-stats";
@@ -185,7 +185,9 @@ export function EntrantsView({ id }: { id: string }) {
     return DOT[at === -1 ? "draw" : colors[colors.length - 1 - at] || "draw"];
   };
   const rosterOfTeam = (teamId: number): Row[] => teamRoster(rosters.find((team) => team.id === teamId), eventId);
-  const rosterFor = (row: Row) => rosterOfTeam(row.team?.id);
+  // a cup's team carries its players on its entrant row; a league team reads its season roster
+  const cupTeams = event?.kind === "cup" && takesTeams;
+  const rosterFor = (row: Row): Row[] => (cupTeams ? cupRosters(entrants)[row.id] || [] : rosterOfTeam(row.team?.id));
   const rosterText = (teamId: number) => {
     const size = rosterOfTeam(teamId).length;
     return size ? `${size} ${size === 1 ? "player" : "players"}` : "no roster for this event";
@@ -361,7 +363,7 @@ export function EntrantsView({ id }: { id: string }) {
         const stored = cutsOf_(loaded.divisions);
         setDivisionCount(count);
         setCuts(stored.length === count - 1 ? stored : quantileCuts(mmrsOf(rows.filter((row: Row) => !row.withdrawn_at)), count));
-        if (loaded.entrant_kind === "team" || rows.some((row: Row) => row.team)) setRosters(await teamStore.fetchTeamsBySeason(eventId));
+        if (loaded.kind !== "cup" && (loaded.entrant_kind === "team" || rows.some((row: Row) => row.team))) setRosters(await teamStore.fetchTeamsBySeason(eventId));
       } catch (e) {
         setError(`The entrants did not load: ${(e as Error).message}`);
       } finally {
@@ -409,7 +411,8 @@ export function EntrantsView({ id }: { id: string }) {
           {entered} entered
         </Badge>
         <span className="flex-1" />
-        {isAdmin ? (
+        {/* a cup enters the teams made for it, on its run page, and no league team */}
+        {isAdmin && !cupTeams ? (
           <Button disabled={loading} onClick={openAdd}>
             <Icon name="mdi-account-plus" />
             Add entrant

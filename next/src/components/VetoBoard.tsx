@@ -34,16 +34,18 @@ const say = (error: unknown, fallback: string) =>
 /** The map veto of one series: the pool, the order of bans and picks, and the maps the series
  *  plays. `report`: the board sits inside Report Result; the reporter enters both sides, then
  *  only the series shows. `onChange` hears every board the server answers; it is read at
- *  mount, so a caller hands in a stable function. */
+ *  mount, so a caller hands in a stable function. `cup` reads a cup's series off the cup's routes. */
 export function VetoBoard({
   seriesId,
   report = false,
+  cup = false,
   onChange,
   className,
   children,
 }: {
   seriesId: number | string;
   report?: boolean;
+  cup?: boolean;
   onChange?: (board: Row) => void;
   className?: string;
   children?: React.ReactNode;
@@ -72,7 +74,7 @@ export function VetoBoard({
   const admin = auth.isAdmin && recording;
   const collapsed = report && !!board?.complete;
 
-  const vetoUrl = `${backendUrl}/player-series/${seriesId}/veto`;
+  const vetoUrl = `${backendUrl}/${cup ? "cup-series" : "player-series"}/${seriesId}/veto`;
   // the board payload names maps only on the steps taken, so the pool is labelled from /maps
   const [maps, setMaps] = useState<Row[]>([]);
   const mapsById = new Map(maps.map((map) => [map.id, map]));

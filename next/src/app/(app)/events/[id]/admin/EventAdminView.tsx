@@ -28,7 +28,7 @@ import {
 } from "@/helpers/stage-view.mjs";
 import { awardList, placeIcon, placeMedal } from "@/helpers/awards.mjs";
 import { playedCount } from "@/helpers/stage-view.mjs";
-import { rostersByEntrant } from "@/helpers/entrants.mjs";
+import { cupRosters, rostersByEntrant } from "@/helpers/entrants.mjs";
 import { useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
 import { CupConsole } from "@/components/CupConsole";
@@ -144,7 +144,8 @@ export function EventAdminView({ id }: { id: string }) {
 
   // The two series settings, each where it applies: the round robin's own, and the fixture's
   const entrantSeries = seriesPerEntrant(stage);
-  const fixtureSeries = seriesPerFixture(event);
+  // a cup plays one series a pairing and holds no fixture, so it names no series per fixture
+  const fixtureSeries = event?.kind === "cup" ? null : seriesPerFixture(event);
 
   // What the generate dialog promises: where the seeds come from, and the field per division
   const seedSource = titleOf(SEED_SOURCES, entrants.find((row) => row.seed_source)?.seed_source || "mmr");
@@ -205,8 +206,9 @@ export function EventAdminView({ id }: { id: string }) {
         setLeague(leagues.find((one: Row) => one.id === row.league_id) || null);
         const rows: Row[] = await store.fetchEntrants(row.id, true).catch(() => []);
         setEntrants(rows);
-        // only a team event fields rosters, so nothing else pays for the read
-        if (row.entrant_kind === "team") {
+        // a cup team's entrant row carries its players; another team event reads its league teams
+        if (row.kind === "cup") setRosters(cupRosters(rows));
+        else if (row.entrant_kind === "team") {
           const teams = await teamStore.fetchTeamsBySeason(row.id).catch(() => []);
           setRosters(rostersOf(rows, teams, row.id));
         }
@@ -358,7 +360,7 @@ export function EventAdminView({ id }: { id: string }) {
     if (!(await run(() => store.scoreSeries(picked!.id, { player1_score: a, player2_score: b })))) setResultOpen(false);
   };
   const award = async (kind: string) => {
-    if (!(await run(() => store.awardSeries(picked!.id, kind, awardSide)))) setResultOpen(false);
+    if (!(await run(() => store.awardCupSeries(picked!.id, kind, awardSide)))) setResultOpen(false);
   };
 
   const reopen = async (force: boolean) => {
@@ -384,7 +386,8 @@ export function EventAdminView({ id }: { id: string }) {
     // a team's roster fills its boxes in the draw, so a swap or an added team reads the teams again
     onEntrants: (rows: Row[]) => {
       setEntrants(rows);
-      if (event?.entrant_kind === "team") {
+      if (event?.kind === "cup") setRosters(cupRosters(rows));
+      else if (event?.entrant_kind === "team") {
         teamStore
           .fetchTeamsBySeason(event.id, true)
           .then((teams: Row[]) => setRosters(rostersOf(rows, teams, event.id)))

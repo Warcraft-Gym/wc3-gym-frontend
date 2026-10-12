@@ -134,6 +134,14 @@ export function rostersByEntrant(entrants = [], teams = [], eventId = null) {
     .map((row) => [row.id, byTeam.get(row.team.id)]));
 }
 
+// The roster every team of a cup fields, keyed by entrant id, from the players its entrant row
+// carries, so a series box prints them under the team name; the captain leads.
+export function cupRosters(entrants = []) {
+  return Object.fromEntries(entrants
+    .filter((row) => row.team && (row.roster || []).length)
+    .map((row) => [row.id, row.roster.map((member) => ({ player: member.user, race: member.user?.race ?? null, captain: !!member.captain }))]));
+}
+
 // The refusals of the seed routes, word for word, so a disabled button gives the API's reason
 export const STAGE_DRAWN = 'The stage holds series; take its draw back first';
 export const SEEDS_LOCKED = 'The seeds of this stage are locked';

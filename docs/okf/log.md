@@ -2,6 +2,7 @@
 
 ## 2026-10-12
 
+* **Update**: a cup's series read, report, veto and score on the cup's own routes, `/cup-series/{id}`; the Report Result dialog and the veto board take a `cup` switch, a cup report takes no replay, and a team box reads its players off the entrants. A GNL captain seat counts on a fixture side alone. The New Event wizard makes a sign-up list; a cup is made with Create cup, and the entrants page adds no league team to a cup. The series page names no fixture roster. [Run a cup](flows/run-a-cup.md), [event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md) and the [backend contract](concepts/backend-contract.md) state it.
 * **Update**: the rounds of a round robin and a Swiss stage stand side by side, four to a row on a wide screen. [Shared components](concepts/shared-components.md#stageview) states it.
 * **Update**: a team waiting on one invite names the player, "Waiting for <player> to accept"; a cup page reads the event again after a report, so its phase moves to "Running" without a reload. [Event management](pages/event-management.md) states the team state.
 * **Add**: Swiss cups. Create cup offers Swiss with a set number of rounds or everyone plays everyone, then no playoff, the top 4 or the top 8; Results places the playoff first and the rest of the Swiss table after it. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.

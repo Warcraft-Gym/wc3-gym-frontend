@@ -92,6 +92,10 @@ test('the two players, a captain of a side and an admin may act', () => {
   assert.equal(actsForSeries(named, { id: 77 }), false);
   assert.equal(actsForSeries(named, { id: 77, seats: [{ team_id: 21, season_id: 19 }] }), true);
   assert.equal(actsForSeries(named, { id: 77, seats: [{ team_id: 22, season_id: 19 }] }), false);
+  // a cup team is no league team: a captain seat that shares its id reaches nothing, its own players act
+  const cup = { id: 3, entrant1_id: 8, entrant2_id: 9, team1: { id: 21 }, team2: { id: 22 } };
+  assert.equal(actsForSeries(cup, { id: 77, seats: [{ team_id: 21, season_id: 19 }], teamIds: [] }), false);
+  assert.equal(actsForSeries(cup, { id: 77, teamIds: [21] }), true);
 });
 
 test('a captain of a fixture team acts for the side his team fields, in that event alone', () => {

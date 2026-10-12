@@ -39,23 +39,6 @@ export function fixtureRows(series = []) {
 export const fixtureScore = (series = []) => [1, 2]
   .map((side) => series.filter((row) => winnerSide(row) === side).length);
 
-// Whether a series still takes a roster write: it plays a fixture, it fields more than
-// one player a side, and nobody has played it yet.
-export const takesRoster = (row) => !!row?.match_id && (row.side_size || 1) > 1
-  && !isScored(row);
-
-// The sides of a series whose roster this caller may name: the side whose team he
-// captains, and both sides for an admin.
-export function rosterSides(row, rosters = {}, userId = null, admin = false) {
-  if (!takesRoster(row)) return [];
-  return [1, 2].filter((side) => {
-    const seats = rosters[row[`entrant${side}_id`]] || [];
-    return admin
-      ? seats.length > 0
-      : seats.some((seat) => seat.captain && seat.player.id === userId);
-  });
-}
-
 // The roster each side of a fixture fields for the event, keyed by entrant id. The series
 // rows name the team standing on each side, so the entrants read is not needed.
 export function fixtureRosters(series = [], teams = [], eventId = null) {

@@ -181,7 +181,7 @@ test('a step names what it still needs', () => {
 });
 
 test('the create body carries the stages, so one write makes the whole event', () => {
-  const body = createPayload({ ...blankForm({ id: 2 }), name: 'Autumn cup' });
+  const body = createPayload({ ...blankForm({ id: 2 }), kind: 'cup', name: 'Autumn cup' });
   assert.equal(body.name, 'Autumn cup');
   assert.equal(body.league_id, 2);
   assert.equal(body.stages.length, 1);
@@ -190,8 +190,9 @@ test('the create body carries the stages, so one write makes the whole event', (
 
 test('a signup-only event skips the stages step and every other kind keeps it', () => {
   const keys = (form) => stepsFor(form).map((step) => step.key);
-  assert.deepEqual(keys(blankForm()), ['basics', 'entrants', 'stages', 'divisions', 'review']);
-  assert.deepEqual(keys({ ...blankForm(), kind: 'signup' }), ['basics', 'entrants', 'divisions', 'review']);
+  // the wizard opens on a sign-up list; a cup is made in Create cup
+  assert.deepEqual(keys(blankForm()), ['basics', 'entrants', 'divisions', 'review']);
+  assert.deepEqual(keys({ ...blankForm(), kind: 'cup' }), ['basics', 'entrants', 'stages', 'divisions', 'review']);
   assert.deepEqual(keys(undefined), ['basics', 'entrants', 'stages', 'divisions', 'review']);
 });
 

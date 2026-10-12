@@ -238,24 +238,18 @@ const store = {
   async advanceStage(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/advance`);
   },
-  // A cleared score reopens the bracket below; force allows it past a later result
+  // A runner writes a cup series' result; a cleared score reopens the bracket below, and force allows it past a later result
   async scoreSeries(series_id: number, scores: any, force = false) {
     const query = force ? "?force=true" : "";
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}${query}`, scores);
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}${query}`, scores);
   },
   // Where every seat of a free for all lobby finished; a lobby plays one game
   async setPlaces(series_id: number, places: any) {
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}/places`, { places });
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/places`, { places });
   },
   // Seats a lobby again before it is played, so an entrant moves between lobbies
   async setLobbySides(series_id: number, entrant_ids: number[]) {
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}/sides`, { entrant_ids });
-  },
-  // The players one side of a fixture series fields; a captain writes his own side
-  async setSideRoster(series_id: number, side_no: number, user_ids: number[]) {
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}/sides`, {
-      sides: [{ side_no, user_ids }],
-    });
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/sides`, { entrant_ids });
   },
   // Closes the event: the table of its last stage becomes the places it awards
   async finishEvent(event_id: number) {
@@ -307,6 +301,10 @@ const store = {
   // A series no game was played for: a walkover or a forfeit, with the side that takes it
   async awardSeries(series_id: number, result_kind: string, winner: any) {
     return await fetchWrapper.put(`${backendUrl}/series/${series_id}/result-kind`, { result_kind, winner });
+  },
+  // The same for a cup's series, which its runners record on the cup's own route
+  async awardCupSeries(series_id: number, result_kind: string, winner: any) {
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/result-kind`, { result_kind, winner });
   },
 };
 

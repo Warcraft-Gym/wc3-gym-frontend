@@ -24,8 +24,9 @@ const teamSides = (series) => {
   return series.match ? [1, 2].map((side) => [series.match[`team${side}_id`], series.match.season_id]) : [];
 };
 
-// The viewer captains the team a side fields: `/me` lists one seat per (team, event) pair he captains
-const captainOfSide = (series, seats) => teamSides(series).some(([team, event]) => team != null
+// The viewer captains the team a fixture side fields: `/me` lists one seat per (team, event) pair he
+// captains. A cup's team is no league team and holds no seat: its own players act for it.
+const captainOfSide = (series, seats) => !series.match ? false : teamSides(series).some(([team, event]) => team != null
   && seats.some((seat) => Number(seat.team_id) === Number(team) && (event == null || Number(seat.season_id) === Number(event))));
 
 /** Who may act on a series, the rule the API gate `acts_for_side` applies: the player a side names, a captain of the team that fields a side, a member of the roster of a side that names no player, and an admin, who acts for either side on the same routes.

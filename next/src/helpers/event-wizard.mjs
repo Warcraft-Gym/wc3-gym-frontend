@@ -17,8 +17,8 @@ export const stepsFor = (form) => (form?.kind === 'signup'
   ? STEPS.filter((step) => step.key !== 'stages')
   : STEPS);
 
-// A wizard writes a new run of a league; a GNL season and a KOTH night are made elsewhere
-export const WIZARD_KINDS = EVENT_KINDS.filter((kind) => kind.value === 'cup' || kind.value === 'signup');
+// A wizard writes a sign-up list of a league; a cup is made in Create cup, and a GNL season and a KOTH night elsewhere
+export const WIZARD_KINDS = EVENT_KINDS.filter((kind) => kind.value === 'signup');
 // A drafted-team event needs the team draft, which is not part of creating the event
 export const WIZARD_ENTRANT_KINDS = ENTRANT_KINDS.filter((kind) => kind.value !== 'drafted_teams');
 
@@ -45,7 +45,7 @@ export const blankForm = (league = null) => ({
   league_id: league?.id ?? null,
   parent_id: null,
   name: '',
-  kind: 'cup',
+  kind: 'signup',
   start_date: null,
   end_date: null,
   start_time: '',

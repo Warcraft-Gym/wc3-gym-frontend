@@ -125,6 +125,8 @@ const ACTION_BUTTON = {
   sign_up: { text: 'Sign up', icon: 'mdi-account-plus', color: 'primary', variant: 'elevated' },
   withdraw: { text: 'Withdraw', icon: 'mdi-account-remove', color: 'error', variant: 'outlined' },
   check_in: { text: 'Check in', icon: 'mdi-check', color: 'primary', variant: 'elevated' },
+  // a signup on a cup's waitlist leaves it the way a signup withdraws
+  waitlisted: { text: 'Leave the waitlist', icon: 'mdi-account-clock', color: 'error', variant: 'outlined' },
   view: { text: 'View the stage', icon: 'mdi-tournament', color: 'primary', variant: 'outlined' },
 };
 
@@ -137,9 +139,14 @@ export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
 // gives back that race alone; without one, every race the caller entered goes. Once a cup is
 // drawn the question says the withdraw forfeits every match still open.
 export async function actOnEvent(action, { store, eventId, row, reload, race = null, raceName = race, drawn = false }) {
-  const question = (race ? `Withdraw ${raceName}?` : 'Withdraw from this event? Every race you entered is withdrawn.')
-    + (drawn ? ' You forfeit every match you still have, and your opponents go through.' : '');
-  if (action === 'withdraw' && !globalThis.confirm(question)) return null;
+  if (action === 'waitlisted') {
+    if (!globalThis.confirm('Leave the waitlist?')) return null;
+    action = 'withdraw';
+  } else {
+    const question = (race ? `Withdraw ${raceName}?` : 'Withdraw from this event? Every race you entered is withdrawn.')
+      + (drawn ? ' You forfeit every match you still have, and your opponents go through.' : '');
+    if (action === 'withdraw' && !globalThis.confirm(question)) return null;
+  }
   try {
     if (action === 'withdraw') await store.withdraw(eventId, race);
     if (action === 'check_in') await store.checkInRow(row);

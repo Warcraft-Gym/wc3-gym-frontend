@@ -85,6 +85,10 @@ const store = {
   async removeEntrant(event_id: number, entrant_id: number) {
     return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`);
   },
+  // A runner lets a signup in off a cup's waitlist, before the draw
+  async admitEntrant(event_id: number, entrant_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/admit`);
+  },
   // A runner withdraws one entrant after the draw; on a cup it forfeits every match it still has
   async withdrawEntrant(event_id: number, entrant_id: number) {
     await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/withdraw`);

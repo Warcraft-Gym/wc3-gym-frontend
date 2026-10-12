@@ -41,7 +41,7 @@ import { VetoBoard } from "@/components/VetoBoard";
 import { TeamCupPanel } from "@/components/TeamCupPanel";
 import { teamIdsOf } from "@/helpers/cup-teams.mjs";
 import { backendUrl, fetchWrapper } from "@/helpers";
-import { eligibilityLines } from "@/helpers/events-page.mjs";
+import { eligibilityLines, joinsWaitlist, waitlistOf } from "@/helpers/events-page.mjs";
 import { homeTab, tabOf, withTab } from "@/helpers/event-tabs.mjs";
 import { bestOfLine, parsePlan } from "@/helpers/best-of-plan.mjs";
 import { rulesOf } from "@/helpers/map-order.mjs";
@@ -370,7 +370,7 @@ export function EventView({ id }: { id: string }) {
         <CardContent className="px-0">
           {entrants.length ? (
             <ul className="flex flex-col">
-              {byPlayer(entrants).map((entrant: Row) => (
+              {byPlayer(entrants.filter((entrant) => !entrant.waitlisted_at)).map((entrant: Row) => (
                 <li key={entrant.id} className={cn("px-4 py-1", entrant.withdrawn_at && "text-muted-foreground")}>
                   <div className="flex items-center gap-3">
                     {seedsLocked ? <span className="tnum min-w-[2ch] text-right text-xs text-muted-foreground">{solo(entrant) ? entrant.seed ?? "—" : ""}</span> : null}
@@ -421,6 +421,20 @@ export function EventView({ id }: { id: string }) {
           ) : (
             <p className="px-4 pb-4 text-muted-foreground">No entrants yet</p>
           )}
+          {/* a cup that is drawn or full keeps its late signups in line; a runner lets them in */}
+          {waitlistOf(entrants).length ? (
+            <>
+              <h3 className="mt-3 px-4 text-sm font-bold text-muted-foreground uppercase">Waitlist</h3>
+              <ol className="flex flex-col">
+                {waitlistOf(entrants).map((entrant: Row, index: number) => (
+                  <li key={entrant.id} className="flex items-center gap-3 px-4 py-1 text-muted-foreground">
+                    <span className="tnum w-6 text-right text-xs">{index + 1}</span>
+                    {entrant.user ? <PlayerName player={entrant.user} race={entrant.race || undefined} /> : <span>{entrant.team?.name || "A team"}</span>}
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : null}
         </CardContent>
       </Card>
     ),
@@ -542,7 +556,19 @@ export function EventView({ id }: { id: string }) {
                 </Button>
               ))
             ) : button ? (
-              <ActionButton button={button} busy={acting === true} onClick={() => act()} />
+              <>
+                {row?.action === "waitlisted" ? (
+                  <Badge className={toneClass("warning")}>
+                    <Icon name="mdi-account-clock" />
+                    On the waitlist
+                  </Badge>
+                ) : null}
+                <ActionButton
+                  button={row?.action === "sign_up" && joinsWaitlist(event, entrants, drawn.length > 0) ? { ...button, text: "Join the waitlist" } : button}
+                  busy={acting === true}
+                  onClick={() => act()}
+                />
+              </>
             ) : anonymous && event.signups_open && keepsEntrants ? (
               <Button size="sm" onClick={logIn}>
                 <Icon name="mdi-login" />

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { eligibilityLines, eveningOf, fill, groupEvents, moveStartBody, moveStartForm, organizerCard, runsEvent } from './events-page.mjs';
+import { eligibilityLines, eveningOf, fill, groupEvents, joinsWaitlist, moveStartBody, moveStartForm, organizerCard, runsEvent, waitlistOf } from './events-page.mjs';
 
 const event = (id, kind, phase, starts_at = null) => ({ id, kind, phase, starts_at });
 
@@ -112,4 +112,15 @@ test('a cup that counts races by their games reads the best of the races played'
     'At least 10 games recently, over all races',
   ]);
   assert.deepEqual(eligibilityLines({ race_games_min: 20, eligibility_required: true }), ['A battle tag W3Champions rates', 'At least 20 games on one race']);
+});
+
+test('a signup on the waitlist stands in no field, and a drawn or full cup takes the next one there', () => {
+  const cup = { kind: 'cup', entrant_cap: 2 };
+  const rows = [{ id: 1 }, { id: 2, waitlisted_at: '2026-10-12T10:00:00Z' }, { id: 3, waitlisted_at: '2026-10-12T09:00:00Z' }, { id: 4, waitlisted_at: '2026-10-12T08:00:00Z', withdrawn_at: '2026-10-12T08:30:00Z' }];
+  assert.equal(eveningOf(cup, rows).live, 1);
+  assert.deepEqual(waitlistOf(rows).map((row) => row.id), [3, 2]);
+  assert.equal(joinsWaitlist(cup, rows, false), false);
+  assert.equal(joinsWaitlist(cup, rows, true), true);
+  assert.equal(joinsWaitlist(cup, [{ id: 1 }, { id: 5 }], false), true);
+  assert.equal(joinsWaitlist({ kind: 'koth', entrant_cap: 1 }, [{ id: 1 }], true), false);
 });

@@ -70,7 +70,8 @@ export function runsEvent(me, organizers) {
  *  the event's minimum. The draw seats every entrant that has not withdrawn, so a no-show
  *  still counts until a runner removes them. */
 export function eveningOf(event, entrants) {
-  const live = (entrants || []).filter((row) => !row.withdrawn_at);
+  // a signup on the waitlist stands in no field until a runner lets it in
+  const live = (entrants || []).filter((row) => !row.withdrawn_at && !row.waitlisted_at);
   const checkedIn = live.filter((row) => row.checked_in_at);
   const noShows = event?.checkin_enabled ? live.filter((row) => !row.checked_in_at) : [];
   const min = event?.entrant_min ?? null;
@@ -83,6 +84,19 @@ export function eveningOf(event, entrants) {
     // what the draw would hold once the no-shows go
     afterNoShows: live.length - noShows.length,
   };
+}
+
+/** The cup's waitlist, first come first: every signup that waits and has not withdrawn.
+ *  @param {any[]} entrants */
+export const waitlistOf = (entrants = []) =>
+  entrants.filter((row) => row.waitlisted_at && !row.withdrawn_at).sort((a, b) => String(a.waitlisted_at).localeCompare(String(b.waitlisted_at)));
+
+/** Whether a signup now lands on the waitlist: the cup is drawn, or it holds as many as it takes.
+ *  @param {any} event @param {any[]} entrants @param {boolean} drawn */
+export function joinsWaitlist(event, entrants = [], drawn = false) {
+  if (event?.kind !== 'cup') return false;
+  if (drawn) return true;
+  return event.entrant_cap != null && eveningOf(event, entrants).live >= event.entrant_cap;
 }
 
 /** What a player needs to sign up, as the event page states it: one line per rule, or none

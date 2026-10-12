@@ -133,6 +133,7 @@ export function TeamCupPanel({
           <CardHeader className="flex flex-row flex-wrap items-center gap-2">
             <CardTitle className="flex-1">Your team: {entrant.team?.name}</CardTitle>
             <Badge className={toneClass(short ? "warning" : "success")}>{teamState(entrant, size)}</Badge>
+            {entrant.waitlisted_at ? <Badge className={toneClass("warning")}>On the waitlist</Badge> : null}
             {entrant.checked_in_at ? (
               <Badge className={toneClass("success")}>
                 <Icon name="mdi-check" />

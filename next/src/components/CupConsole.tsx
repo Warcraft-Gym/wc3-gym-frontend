@@ -16,7 +16,7 @@ import { raceWrapper } from "@/helpers/races.js";
 import { toneClass } from "@/components/ui/tone";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
-import { eveningOf, moveStartBody, moveStartForm } from "@/helpers/events-page.mjs";
+import { eveningOf, moveStartBody, moveStartForm, waitlistOf } from "@/helpers/events-page.mjs";
 import { playedEntrants } from "@/helpers/stage-view.mjs";
 import { missing, teamState } from "@/helpers/cup-teams.mjs";
 import type { EventOrganizer } from "@/hooks/event-runner";
@@ -81,15 +81,18 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const store = useEventStore();
   const playerStore = usePlayerStore();
   const evening = eveningOf(event, entrants) as Evening;
-  // the players still in, in seed order once seeded and else in signup order
+  // the players still in, in seed order once seeded and else in signup order; the waitlist stands apart
   const players = entrants
-    .filter((row) => !row.withdrawn_at)
+    .filter((row) => !row.withdrawn_at && !row.waitlisted_at)
     .slice()
     .sort((a, b) => (a.seed ?? 1e9) - (b.seed ?? 1e9) || a.id - b.id);
   const editable = !drawn && !event.closed_at;
   const closed = !!event.closed_at;
   const [busy, setBusy] = useState<string | null>(null);
-  const [ask, setAsk] = useState<"noshows" | "cancel" | "move" | "remove" | "withdraw" | "add" | "team" | "incomplete" | null>(null);
+  const [ask, setAsk] = useState<"noshows" | "cancel" | "move" | "remove" | "withdraw" | "add" | "team" | "incomplete" | "swapin" | null>(null);
+  // the waitlist: a late signup comes in before the draw, or after it in the place of one who has not played
+  const [waiting, setWaiting] = useState<Row | null>(null);
+  const [outId, setOutId] = useState<number | null>(null);
   // a team cup lists teams; its swap takes one player of a team out
   const teams = !!event.team_size;
   const [memberOut, setMemberOut] = useState<{ entrant: Row; user: Row } | null>(null);
@@ -125,6 +128,20 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     work(`in-${row.id}`, async () => {
       const done = await store.checkIn(event.id, row.id);
       onEntrants(entrants.map((old) => (old.id === done.id ? { ...old, ...done } : old)));
+    });
+  const waitlist = waitlistOf(entrants) as Row[];
+  const admit = (row: Row) =>
+    work(`admit-${row.id}`, async () => {
+      await store.admitEntrant(event.id, row.id);
+      onEntrants(await store.fetchEntrants(event.id, true));
+    });
+  const swapIn = () =>
+    work("swapin", async () => {
+      await store.replaceEntrant(event.id, outId!, { user_id: waiting!.user.id, race: waiting!.race });
+      onEntrants(await store.fetchEntrants(event.id, true));
+      await onSeries?.();
+      setWaiting(null);
+      setOutId(null);
     });
   // after the draw a player leaves by withdrawing: the row stays and every match still open is forfeited
   const withdrawOne = () =>
@@ -386,6 +403,47 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
             </ul>
           </div>
 
+          {waitlist.length ? (
+            <div className="flex flex-col gap-1">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase">Waitlist</h3>
+              <p className="text-sm text-muted-foreground">
+                {drawn
+                  ? teams
+                    ? "The bracket is drawn, so a waiting team comes in only if you undo the draw."
+                    : "The bracket is drawn: swap a waiting player in for one who has not played, a no-show for example."
+                  : "Signed up after the cup was full. Add them to the cup, past the maximum if you like."}
+              </p>
+              <ul className="flex flex-col">
+                {waitlist.map((row, index) => (
+                  <li key={row.id} className="flex min-h-11 flex-wrap items-center gap-3 border-t border-border py-1">
+                    <span className="tnum w-5 text-right text-xs text-muted-foreground">{index + 1}</span>
+                    <span className="min-w-0 flex-1">{row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team?.name || "A team"}</span>
+                    {!closed && !drawn ? (
+                      <Button size="sm" variant="outline" disabled={busy === `admit-${row.id}`} onClick={() => admit(row)}>
+                        <Icon name={busy === `admit-${row.id}` ? "mdi-loading mdi-spin" : "mdi-account-arrow-right"} />
+                        Add to the cup
+                      </Button>
+                    ) : null}
+                    {!closed && drawn && !teams && row.user ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setWaiting(row);
+                          setOutId(null);
+                          setAsk("swapin");
+                        }}
+                      >
+                        <Icon name="mdi-swap-horizontal" />
+                        Swap in
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {!drawn && !closed ? (
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" nativeButton={false} render={<Link href={`/events/${event.id}/entrants`} />}>
@@ -492,6 +550,29 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         <p>
           {removing?.user?.name || "This entrant"} {removing?.race ? `(${raceName(removing.race)}) ` : ""}is taken out of the cup. They can sign up again while sign-ups are open.
         </p>
+      </Confirm>
+
+      <Confirm
+        open={ask === "swapin"}
+        onOpenChange={(open) => {
+          setAsk(open ? "swapin" : null);
+          if (!open) setWaiting(null);
+        }}
+        title={`Swap ${waiting?.user?.name || "the player"} in`}
+        busy={busy === "swapin"}
+        confirm="Swap in"
+        onConfirm={() => outId != null && swapIn()}
+      >
+        <p className="mb-3">
+          {waiting?.user?.name || "The player"} takes the place, the seed and the matches of the player you pick, who leaves the cup. Only a player who has
+          not played a match can be swapped out.
+        </p>
+        <Pick
+          label="In place of"
+          items={players.filter((row) => !played.has(row.id)).map((row) => ({ value: row.id as number, title: (row.user?.name as string) || "Entrant" }))}
+          value={outId}
+          onChange={setOutId}
+        />
       </Confirm>
 
       <Confirm

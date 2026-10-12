@@ -177,7 +177,7 @@ function swissStages(form) {
   const league = form.swiss_mode === 'all';
   const stages = [
     {
-      name: league ? 'League' : 'Swiss',
+      name: league ? 'League' : 'Swiss rounds',
       format: league ? 'round_robin' : 'swiss',
       best_of: bestOf,
       best_of_by_round: null,

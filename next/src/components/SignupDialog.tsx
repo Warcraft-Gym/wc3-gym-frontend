@@ -179,7 +179,12 @@ export function SignupDialog({
             </div>
           ) : (
             <>
-              <p>You are in. See you on the ladder.</p>
+              {/* a cup that is drawn or full keeps the signup on its waitlist until an organizer lets it in */}
+              <p>
+                {entrant.waitlisted_at
+                  ? "You are on the waitlist. The bracket is drawn or the cup is full, so an organizer lets you in when a place opens."
+                  : "You are in. See you on the ladder."}
+              </p>
               {warnings.length ? (
                 <div className="flex flex-wrap gap-2">
                   {warnings.map((code) => (

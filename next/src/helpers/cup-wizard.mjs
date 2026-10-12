@@ -33,7 +33,35 @@ export const CUP_FORMATS = [
   { value: 'single_elimination', title: 'Single elimination', hint: 'Lose once and you are out. 16 players play 4 rounds.' },
   { value: 'double_elimination', title: 'Double elimination', hint: 'Lose twice to go out; an upper and a lower bracket meet in the grand final.' },
   { value: 'placement', title: 'Placement bracket', hint: 'Nobody goes home early: every round splits each group into its winners and its losers, and the last round decides every place.' },
+  { value: 'swiss', title: 'Swiss', hint: 'Every round pairs players on the same score; the table after the last round is the result, or the top of it plays off.' },
 ];
+
+// How long a Swiss cup runs: a set number of rounds, paired on the table, or a full league
+export const SWISS_MODES = [
+  { value: 'rounds', title: 'A set number of rounds' },
+  { value: 'all', title: 'Everyone plays everyone' },
+];
+
+// The playoff after the Swiss rounds: none, or the top four or eight in a single elimination
+export const PLAYOFFS = [
+  { value: 0, title: 'No playoff' },
+  { value: 4, title: 'Top 4' },
+  { value: 8, title: 'Top 8' },
+];
+
+/** The format whose bracket parts the best-of plan names: a Swiss cup's playoff, or the cup's own.
+ *  @param {any} form */
+export const planFormat = (form) => (form.format === 'swiss' ? (form.playoff ? 'single_elimination' : 'swiss') : form.format);
+
+/** How a Swiss cup reads in a line: "Swiss, 3 rounds, then the top 4 play off".
+ *  @param {any} form */
+export const swissLine = (form) =>
+  [
+    form.swiss_mode === 'all' ? 'Swiss, everyone plays everyone' : `Swiss, ${Number(form.swiss_rounds) || '?'} rounds`,
+    form.playoff ? `then the top ${form.playoff} play off` : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
 // How many losses end a run in a placement bracket; null plays every place
 export const PLACEMENT_LIVES = [
@@ -67,6 +95,10 @@ export const blankCup = () => ({
   hide_seeds: false,
   // a placement bracket: the losses that end a run, null playing every place
   placement_lives: null,
+  // a Swiss cup: a set number of rounds or a full league, and the playoff after it
+  swiss_mode: 'rounds',
+  swiss_rounds: 3,
+  playoff: 0,
   // the early rounds; a bracket part that plays its own best-of names it in the plan
   best_of: 3,
   best_of_plan: {},
@@ -121,7 +153,7 @@ export const cupPayload = (form) => ({
   veto_by_best_of: true,
   hide_seeds: !!form.hide_seeds,
   map_ids: (form.pool || []).map((row) => row.id),
-  stages: [
+  stages: form.format === 'swiss' ? swissStages(form) : [
     {
       format: form.format,
       best_of: Number(form.best_of),
@@ -136,7 +168,48 @@ export const cupPayload = (form) => ({
 });
 
 /** What keeps a step from being left, or null when it is complete. */
+/** A Swiss cup's stages: the rounds, paired on the table or a full league, then the playoff,
+ *  which the last Swiss result seeds and draws.
+ *  @param {any} form */
+function swissStages(form) {
+  const bestOf = Number(form.best_of);
+  const playoff = Number(form.playoff) || 0;
+  const league = form.swiss_mode === 'all';
+  const stages = [
+    {
+      name: league ? 'League' : 'Swiss',
+      format: league ? 'round_robin' : 'swiss',
+      best_of: bestOf,
+      best_of_by_round: null,
+      scheduling_mode: 'immediate',
+      swiss_rounds: league ? null : Number(form.swiss_rounds),
+      advance_count: playoff || null,
+      auto_advance: playoff > 0,
+      third_place: false,
+      grand_final_modifier: 'one',
+      placement_lives: null,
+    },
+  ];
+  if (playoff) {
+    stages.push({
+      name: 'Playoff',
+      format: 'single_elimination',
+      best_of: bestOf,
+      best_of_by_round: planText(form.best_of_plan || {}, 'single_elimination', bestOf),
+      scheduling_mode: 'immediate',
+      third_place: !!form.third_place,
+      grand_final_modifier: 'one',
+      placement_lives: null,
+    });
+  }
+  return stages;
+}
+
 export function cupProblem(form, step) {
+  if (step === 'format' && form.format === 'swiss' && form.swiss_mode !== 'all') {
+    const rounds = Number(form.swiss_rounds);
+    if (!Number.isInteger(rounds) || rounds < 2) return 'A Swiss cup plays at least 2 rounds.';
+  }
   if (step === 'basics') {
     if (!(form.name || '').trim()) return 'Name the cup.';
     if (!form.start_date) return 'Pick the day the cup is played.';

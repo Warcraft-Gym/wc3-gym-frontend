@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem, livesLine } from './cup-wizard.mjs';
+import { blankCup, cupPayload, cupProblem, livesLine, planFormat, swissLine } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -91,4 +91,17 @@ test('a step names what it still needs', () => {
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '1' }, 'signups'), 'A cup needs at least 2 players.');
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '9', entrant_cap: '8' }, 'signups'), 'The minimum cannot be above the maximum.');
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '8', entrant_cap: '16' }, 'signups'), null);
+});
+
+test('a Swiss cup writes its rounds, and a playoff as a second stage the last result draws', () => {
+  const swiss = cupPayload({ ...blankCup(), format: 'swiss', swiss_rounds: 4, playoff: 4, best_of: 1, best_of_plan: { final: 3 } });
+  assert.deepEqual(swiss.stages.map((stage) => stage.format), ['swiss', 'single_elimination']);
+  assert.deepEqual([swiss.stages[0].swiss_rounds, swiss.stages[0].advance_count, swiss.stages[0].auto_advance], [4, 4, true]);
+  assert.equal(swiss.stages[1].best_of_by_round, 'final:3');
+  const league = cupPayload({ ...blankCup(), format: 'swiss', swiss_mode: 'all', playoff: 0 });
+  assert.deepEqual(league.stages.map((stage) => [stage.format, stage.swiss_rounds, stage.auto_advance]), [['round_robin', null, false]]);
+  assert.equal(cupProblem({ ...blankCup(), format: 'swiss', swiss_rounds: 1 }, 'format'), 'A Swiss cup plays at least 2 rounds.');
+  assert.equal(cupProblem({ ...blankCup(), format: 'swiss', swiss_mode: 'all', swiss_rounds: 1 }, 'format'), null);
+  assert.equal(planFormat({ format: 'swiss', playoff: 8 }), 'single_elimination');
+  assert.equal(swissLine({ swiss_mode: 'rounds', swiss_rounds: 3, playoff: 4 }), 'Swiss, 3 rounds, then the top 4 play off');
 });

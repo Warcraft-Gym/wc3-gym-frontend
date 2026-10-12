@@ -16,7 +16,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, livesLine, PLACEMENT_LIVES, SIGNUP_POLICIES, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, livesLine, PLACEMENT_LIVES, planFormat, PLAYOFFS, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -101,11 +101,12 @@ export function CupCreateView() {
         form.format === "single_elimination" && form.third_place ? "a match for third place" : null,
         form.format === "double_elimination" ? (form.grand_final_reset ? "grand final reset" : "one grand final") : null,
         form.format === "placement" ? livesLine(form.placement_lives) : null,
+        form.format === "swiss" ? swissLine(form) : null,
       ]
         .filter(Boolean)
         .join(", "),
     },
-    { k: "Best of", v: bestOfLine(Number(form.best_of), form.best_of_plan, form.format) },
+    { k: "Best of", v: bestOfLine(Number(form.best_of), form.best_of_plan, planFormat(form)) },
     { k: "Seeds", v: form.hide_seeds ? "Hidden from players" : "Shown to everyone" },
     { k: "Maps", v: form.pool.length ? form.pool.map((row: PoolMap) => row.name).join(", ") : "No maps" },
     { k: "Who may sign up", v: SIGNUP_POLICIES.find((item) => item.value === (form.eligibility_required && form.bnet_required ? "members" : form.signup_policy))?.title },
@@ -177,7 +178,7 @@ export function CupCreateView() {
           </div>
         ) : key === "format" ? (
           <div className="flex flex-col gap-5">
-            <div role="radiogroup" aria-label="Format" className="grid gap-3 min-[600px]:grid-cols-3">
+            <div role="radiogroup" aria-label="Format" className="grid gap-3 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
               {CUP_FORMATS.map((item) => (
                 <button
                   key={item.value}
@@ -202,6 +203,76 @@ export function CupCreateView() {
                 <Switch checked={!!form.grand_final_reset} onCheckedChange={(grand_final_reset) => set({ grand_final_reset })} />
                 Grand final reset: the lower-bracket winner must win twice
               </Label>
+            ) : form.format === "swiss" ? (
+              <div className="flex flex-col gap-3">
+                <div role="radiogroup" aria-label="How long it runs" className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">It runs</span>
+                  {SWISS_MODES.map((item) => (
+                    <Button
+                      key={item.value}
+                      type="button"
+                      size="sm"
+                      role="radio"
+                      aria-checked={item.value === form.swiss_mode}
+                      variant={item.value === form.swiss_mode ? "secondary" : "outline"}
+                      className="min-h-10 rounded-full"
+                      onClick={() => set({ swiss_mode: item.value })}
+                    >
+                      {item.title}
+                    </Button>
+                  ))}
+                </div>
+                {form.swiss_mode === "all" ? (
+                  <p className="text-sm text-muted-foreground">
+                    Every player meets every other player once, and the table is the result. An odd field gives one player a bye each round.
+                  </p>
+                ) : (
+                  <Field
+                    label="Rounds"
+                    hint="Each round pairs players on the same score. 8 players usually play 3 rounds, 16 play 4, 32 play 5; more rounds than the field holds are cut at the draw."
+                    htmlFor="cup-swiss-rounds"
+                  >
+                    <Input
+                      id="cup-swiss-rounds"
+                      type="number"
+                      min={2}
+                      max={20}
+                      className="w-28"
+                      value={form.swiss_rounds}
+                      onChange={(e) => set({ swiss_rounds: e.target.value })}
+                    />
+                  </Field>
+                )}
+                <div role="radiogroup" aria-label="Then a playoff" className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Then</span>
+                  {PLAYOFFS.map((item) => (
+                    <Button
+                      key={item.value}
+                      type="button"
+                      size="sm"
+                      role="radio"
+                      aria-checked={item.value === Number(form.playoff)}
+                      variant={item.value === Number(form.playoff) ? "secondary" : "outline"}
+                      className="min-h-10 rounded-full"
+                      onClick={() => set({ playoff: item.value })}
+                    >
+                      {item.title}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {Number(form.playoff)
+                    ? `The top ${form.playoff} of the table play a single elimination, drawn by itself once the last result is in.`
+                    : "The table after the last round gives every place."}{" "}
+                  The next round draws itself once every result of a round is in.
+                </p>
+                {Number(form.playoff) ? (
+                  <Label className="flex min-h-11 items-center gap-2">
+                    <Switch checked={!!form.third_place} onCheckedChange={(third_place) => set({ third_place })} />
+                    The playoff plays a match for third place
+                  </Label>
+                ) : null}
+              </div>
             ) : (
               <div className="flex flex-col gap-2">
                 <div role="radiogroup" aria-label="A player stops after" className="flex flex-wrap items-center gap-2">
@@ -226,7 +297,7 @@ export function CupCreateView() {
             )}
             <div className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">Best of</span>
-              <BestOfPlan format={form.format} bestOf={Number(form.best_of)} plan={form.best_of_plan} onChange={(best_of, best_of_plan) => set({ best_of, best_of_plan })} />
+              <BestOfPlan format={planFormat(form)} bestOf={Number(form.best_of)} plan={form.best_of_plan} onChange={(best_of, best_of_plan) => set({ best_of, best_of_plan })} />
             </div>
             <div className="flex flex-col gap-1">
               <p className="text-sm text-muted-foreground">You seed the players on the evening: by MMR, at random or by hand.</p>

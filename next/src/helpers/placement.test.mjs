@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { placeLabels, placementColumns, placementGroups, placesTitle } from './placement.mjs';
+import { eventPlaces, placeLabels, placementColumns, placementGroups, placesTitle } from './placement.mjs';
 
 const row = (id, round, from, to) => ({ id, round_id: round, place_from: from, place_to: to });
 
@@ -32,4 +32,12 @@ test('the final joins the last round at its top', () => {
 
 test('a shared place reads as its range', () => {
   assert.deepEqual(placeLabels([{ position: 1 }, { position: 2 }, { position: 3 }, { position: 3 }, { position: 5 }]), ['1', '2', '3–4', '3–4', '5']);
+});
+
+test('a playoff places its players first, and the Swiss table places everyone else after them', () => {
+  const swiss = { standings: [{ division_id: null, rows: [1, 2, 3, 4, 5, 6].map((id, index) => ({ entrant_id: id, position: index + 1 })) }] };
+  const playoff = { standings: [{ division_id: null, rows: [{ entrant_id: 3, position: 1 }, { entrant_id: 1, position: 2 }, { entrant_id: 2, position: 3 }, { entrant_id: 4, position: 4 }] }] };
+  const [all] = eventPlaces([swiss, playoff]);
+  assert.deepEqual(all.rows.map((row) => [row.entrant_id, row.position]), [[3, 1], [1, 2], [2, 3], [4, 4], [5, 5], [6, 6]]);
+  assert.deepEqual(eventPlaces([swiss])[0].rows.map((row) => row.position), [1, 2, 3, 4, 5, 6]);
 });

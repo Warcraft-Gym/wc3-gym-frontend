@@ -48,3 +48,26 @@ export function placeLabels(rows = []) {
     return shared > 1 ? `${row.position}–${row.position + shared - 1}` : String(row.position);
   });
 }
+
+/** The places of an event over all its stages, the way the backend awards them: the last stage
+ *  that holds a table places its own entrants, and each stage before it places the entrants no
+ *  later stage played, after all of those, in its own order. Divisions place apart.
+ *  @param {any[]} stages each with its `standings`, a table per division */
+export function eventPlaces(stages = []) {
+  const withTables = stages.filter((stage) => stage.standings?.length);
+  /** @type {Map<any, { division_id: any, division_name: any, rows: any[] }>} */
+  const groups = new Map();
+  const seen = new Set();
+  withTables.reverse().forEach((stage, index) => {
+    for (const table of stage.standings) {
+      const key = table.division_id ?? null;
+      if (!groups.has(key)) groups.set(key, { division_id: table.division_id ?? null, division_name: table.division_name ?? null, rows: [] });
+      const group = groups.get(key);
+      const fresh = (table.rows || []).filter((row) => !seen.has(row.entrant_id));
+      const start = group.rows.length;
+      fresh.forEach((row, number) => group.rows.push(index === 0 ? row : { ...row, position: start + number + 1 }));
+      fresh.forEach((row) => seen.add(row.entrant_id));
+    }
+  });
+  return [...groups.values()];
+}

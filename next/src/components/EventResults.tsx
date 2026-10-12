@@ -9,7 +9,7 @@ import { stateOf } from "@/helpers/event-labels.mjs";
 import { resultRounds } from "@/helpers/event-tabs.mjs";
 import { winnerSide } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
-import { placeLabels } from "@/helpers/placement.mjs";
+import { eventPlaces, placeLabels } from "@/helpers/placement.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -35,9 +35,8 @@ const roundsOf = resultRounds as unknown as (series: Row[], rounds: Row[]) => { 
 export function EventResults({ event, stages, entrants = [], onOpenSeries }: { event: Row; stages: Row[]; entrants?: Row[]; onOpenSeries?: (row: Row) => void }) {
   const hidden = useHideResults();
   const finished = stateOf(event) === "finished" || !!event.closed_at;
-  // Closing freezes the table of the last stage as the places, so the places are that table
-  const last = [...stages].reverse().find((stage) => stage.standings?.length);
-  const placeGroups: Row[] = finished ? last?.standings || [] : [];
+  // Closing freezes the places: the last stage's table first, then the entrants a playoff left out
+  const placeGroups: Row[] = finished ? (eventPlaces(stages) as Row[]) : [];
   const played = stages.map((stage) => ({ stage, rounds: roundsOf(stage.series || [], stage.rounds || []) })).filter((one) => one.rounds.length);
   const hiddenNote = <p className="px-4 pb-4 text-muted-foreground">Results are hidden. Turn off &quot;Hide results&quot; to read them.</p>;
 

@@ -1,6 +1,8 @@
 // The Events page: the kind a reader filters on, the three groups the events fall in, and the
 // one organizer card a session sees. The backend derives every event's phase; nothing here
 // stores one.
+import { dayDate, dayIso } from './date-input.mjs';
+import { pickerParts, storedUtc, viewerZone } from './timezone.mjs';
 
 // Cups lead, because they are what a member joins from this page; the other kinds have homes
 // of their own and read here too
@@ -99,4 +101,23 @@ export function eligibilityLines(event) {
   else if (high !== null) lines.push(`MMR up to ${high} on that race`);
   if (event?.min_games) lines.push(`At least ${event.min_games} games on that race recently`);
   return lines;
+}
+
+/** The Move the start dialog's day and time: the stored start read in the zone, or the
+ *  stored day and no time for a cup that has no start time. */
+export function moveStartForm(event, zone = viewerZone()) {
+  if (event?.starts_at) return pickerParts(event.starts_at, zone);
+  return { date: dayDate(event?.start_date), time: '' };
+}
+
+/** The fields Move the start writes. No end date, since a cup ends on its finish or its last
+ *  result; with no time picked, the new day keeps the stored time of day. */
+export function moveStartBody(event, day, time, zone = viewerZone()) {
+  const date = day instanceof Date ? day : dayDate(day);
+  const at = time || (event?.starts_at ? pickerParts(event.starts_at, zone).time : '');
+  return {
+    start_date: date ? dayIso(date) : null,
+    end_date: null,
+    starts_at: date && at ? storedUtc(date, at, zone) : null,
+  };
 }

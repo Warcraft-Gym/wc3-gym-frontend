@@ -2,6 +2,7 @@
 
 ## 2026-10-12
 
+* **Update**: "Move the start" on a cup's run page opens on the stored start and writes no end date, so a changed day alone keeps the start time and a cup played past midnight still reads as running. [Event management](pages/event-management.md).
 * **Update**: the Events tab reads the events with `archived=false`, and under its Past table a reader who can open the KOTH page reads that archived KOTH nights are on KOTH Events. [Leagues and events](pages/leagues-and-events.md).
 
 ## 2026-10-09

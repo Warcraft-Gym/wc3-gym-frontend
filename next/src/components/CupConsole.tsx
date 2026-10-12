@@ -16,10 +16,8 @@ import { raceWrapper } from "@/helpers/races.js";
 import { toneClass } from "@/components/ui/tone";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
-import { dayIso } from "@/helpers/date-input.mjs";
-import { eveningOf } from "@/helpers/events-page.mjs";
+import { eveningOf, moveStartBody, moveStartForm } from "@/helpers/events-page.mjs";
 import { playedEntrants } from "@/helpers/stage-view.mjs";
-import { storedUtc } from "@/helpers/timezone.mjs";
 import type { EventOrganizer } from "@/hooks/event-runner";
 import { useEventStore, usePlayerStore } from "@/stores";
 
@@ -99,7 +97,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const [roster, setRoster] = useState<Row[]>([]);
   const [pickedId, setPickedId] = useState<string>("");
   const [pickedRace, setPickedRace] = useState<string | null>(null);
-  const [day, setDay] = useState<string | Date | null>(event.start_date ?? null);
+  const [day, setDay] = useState<Date | null>(null);
   const [time, setTime] = useState("");
   const [coId, setCoId] = useState("");
   const [coName, setCoName] = useState("");
@@ -163,11 +161,14 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       onEntrants(await store.fetchEntrants(event.id, true));
     });
   const cancel = () => work("cancel", async () => onEvent(await store.cancelEvent(event.id)));
-  const moveStart = () =>
-    work("move", async () => {
-      const date = day ? dayIso(day) : null;
-      onEvent(await store.updateEvent(event.id, { start_date: date, end_date: date, starts_at: day && time ? storedUtc(day, time) : null }));
-    });
+  // the dialog opens on the cup's stored start, so a changed day alone keeps the start time
+  const openMove = () => {
+    const form = moveStartForm(event);
+    setDay(form.date);
+    setTime(form.time);
+    setAsk("move");
+  };
+  const moveStart = () => work("move", async () => onEvent(await store.updateEvent(event.id, moveStartBody(event, day, time))));
   const addCo = () =>
     work("co", async () => {
       await store.addEventOrganizer(event.id, coId.trim(), coName.trim());
@@ -222,7 +223,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
             </span>
             <span className="text-sm text-muted-foreground">Wait for more sign-ups, move the start, or cancel the cup. The bracket cannot be drawn until enough players are in.</span>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setAsk("move")}>
+              <Button variant="outline" onClick={openMove}>
                 <Icon name="mdi-clock-edit-outline" />
                 Move the start
               </Button>
@@ -430,8 +431,8 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
 
       <Confirm open={ask === "move"} onOpenChange={(open) => setAsk(open ? "move" : null)} title="Move the start" busy={busy === "move"} confirm="Move it" onConfirm={moveStart}>
         <div className="grid gap-3 min-[600px]:grid-cols-2">
-          <SimpleDatePicker modelValue={day} label="Day" onUpdateModelValue={setDay} />
-          <SimpleTimePicker modelValue={time} label="Start time" onUpdateModelValue={setTime} />
+          <SimpleDatePicker id="cup-move-day" modelValue={day} label="Day" onUpdateModelValue={setDay} />
+          <SimpleTimePicker id="cup-move-time" modelValue={time} label="Start time" onUpdateModelValue={setTime} />
         </div>
       </Confirm>
     </>

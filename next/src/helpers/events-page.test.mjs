@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { eligibilityLines, eveningOf, fill, groupEvents, organizerCard, runsEvent } from './events-page.mjs';
+import { eligibilityLines, eveningOf, fill, groupEvents, moveStartBody, moveStartForm, organizerCard, runsEvent } from './events-page.mjs';
 
 const event = (id, kind, phase, starts_at = null) => ({ id, kind, phase, starts_at });
 
@@ -85,4 +85,22 @@ test('the eligibility reads one line per rule the event names', () => {
   ]);
   assert.deepEqual(eligibilityLines({ mmr_max: 1600 }), ['MMR up to 1600 on that race']);
   assert.deepEqual(eligibilityLines({ mmr_min: 1200 }), ['MMR 1200 or more on that race']);
+});
+
+// 09:00 UTC is 20:00 in Sydney in October (UTC+11)
+const cup = { start_date: '2026-10-16', starts_at: '2026-10-16T09:00:00' };
+const zone = 'Australia/Sydney';
+
+test('Move the start opens on the stored start in the zone, or the stored day and no time', () => {
+  assert.deepEqual(moveStartForm(cup, zone), { date: new Date(2026, 9, 16), time: '20:00' });
+  assert.deepEqual(moveStartForm({ start_date: '2026-10-16', starts_at: null }, zone), { date: new Date(2026, 9, 16), time: '' });
+});
+
+test('Move the start writes no end date and keeps the time of day when no time is picked', () => {
+  const later = new Date(2026, 9, 18);
+  assert.deepEqual(moveStartBody(cup, later, '', zone), { start_date: '2026-10-18', end_date: null, starts_at: '2026-10-18T09:00:00' });
+  assert.deepEqual(moveStartBody(cup, later, '19:30', zone), { start_date: '2026-10-18', end_date: null, starts_at: '2026-10-18T08:30:00' });
+  assert.equal(moveStartBody(cup, '2026-10-18', '', zone).starts_at, '2026-10-18T09:00:00');
+  assert.deepEqual(moveStartBody({ start_date: '2026-10-16', starts_at: null }, later, '', zone), { start_date: '2026-10-18', end_date: null, starts_at: null });
+  assert.deepEqual(moveStartBody(cup, null, '20:00', zone), { start_date: null, end_date: null, starts_at: null });
 });

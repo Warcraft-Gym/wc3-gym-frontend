@@ -222,7 +222,7 @@ export function EventView({ id }: { id: string }) {
       return document.getElementById("the-draw")?.scrollIntoView({ behavior: "smooth" });
     }
     setActing(race ?? true);
-    setError(await act_(action, { store, eventId: event!.id, row, reload, race, raceName: race ? raceName(race) : race }));
+    setError(await act_(action, { store, eventId: event!.id, row, reload, race, raceName: race ? raceName(race) : race, drawn: drawn.length > 0 }));
     setActing(false);
   };
 

@@ -85,6 +85,10 @@ const store = {
   async removeEntrant(event_id: number, entrant_id: number) {
     return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`);
   },
+  // A runner withdraws one entrant after the draw; on a cup it forfeits every match it still has
+  async withdrawEntrant(event_id: number, entrant_id: number) {
+    await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/withdraw`);
+  },
   // The caller's own row, or any row for an admin
   // A team cup: a captain signs a team up and invites the rest; each answers their invite
   async signUpTeam(event_id: number, name: string, member_ids: number[]) {

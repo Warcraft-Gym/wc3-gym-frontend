@@ -134,9 +134,11 @@ export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
 // then the store call and the reload. It answers the sentence a failure reads, or null,
 // so each page keeps its own loading flag. `sign_up` and `view` never reach here, because
 // one opens its own dialog and the other scrolls its own draw. A withdraw with a race
-// gives back that race alone; without one, every race the caller entered goes.
-export async function actOnEvent(action, { store, eventId, row, reload, race = null, raceName = race }) {
-  const question = race ? `Withdraw ${raceName}?` : 'Withdraw from this event? Every race you entered is withdrawn.';
+// gives back that race alone; without one, every race the caller entered goes. Once a cup is
+// drawn the question says the withdraw forfeits every match still open.
+export async function actOnEvent(action, { store, eventId, row, reload, race = null, raceName = race, drawn = false }) {
+  const question = (race ? `Withdraw ${raceName}?` : 'Withdraw from this event? Every race you entered is withdrawn.')
+    + (drawn ? ' You forfeit every match you still have, and your opponents go through.' : '');
   if (action === 'withdraw' && !globalThis.confirm(question)) return null;
   try {
     if (action === 'withdraw') await store.withdraw(eventId, race);

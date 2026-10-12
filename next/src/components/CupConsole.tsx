@@ -89,7 +89,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const editable = !drawn && !event.closed_at;
   const closed = !!event.closed_at;
   const [busy, setBusy] = useState<string | null>(null);
-  const [ask, setAsk] = useState<"noshows" | "cancel" | "move" | "remove" | "add" | "team" | "incomplete" | null>(null);
+  const [ask, setAsk] = useState<"noshows" | "cancel" | "move" | "remove" | "withdraw" | "add" | "team" | "incomplete" | null>(null);
   // a team cup lists teams; its swap takes one player of a team out
   const teams = !!event.team_size;
   const [memberOut, setMemberOut] = useState<{ entrant: Row; user: Row } | null>(null);
@@ -125,6 +125,14 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     work(`in-${row.id}`, async () => {
       const done = await store.checkIn(event.id, row.id);
       onEntrants(entrants.map((old) => (old.id === done.id ? { ...old, ...done } : old)));
+    });
+  // after the draw a player leaves by withdrawing: the row stays and every match still open is forfeited
+  const withdrawOne = () =>
+    work("withdraw", async () => {
+      await store.withdrawEntrant(event.id, removing!.id);
+      onEntrants(await store.fetchEntrants(event.id, true));
+      await onSeries?.();
+      setRemoving(null);
     });
   const removeOne = () =>
     work("remove", async () => {
@@ -321,6 +329,21 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                       Swap
                     </Button>
                   ) : null}
+                  {drawn && !closed ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-error"
+                      aria-label={`Withdraw ${row.user?.name || row.team?.name || "this entrant"}`}
+                      onClick={() => {
+                        setRemoving(row);
+                        setAsk("withdraw");
+                      }}
+                    >
+                      <Icon name="mdi-flag-remove-outline" />
+                      Withdraw
+                    </Button>
+                  ) : null}
                   {editable ? (
                     <Button
                       size="sm"
@@ -468,6 +491,24 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       >
         <p>
           {removing?.user?.name || "This entrant"} {removing?.race ? `(${raceName(removing.race)}) ` : ""}is taken out of the cup. They can sign up again while sign-ups are open.
+        </p>
+      </Confirm>
+
+      <Confirm
+        open={ask === "withdraw"}
+        onOpenChange={(open) => {
+          setAsk(open ? "withdraw" : null);
+          if (!open) setRemoving(null);
+        }}
+        title={`Withdraw ${removing?.user?.name || removing?.team?.name || "the entrant"}`}
+        danger
+        busy={busy === "withdraw"}
+        confirm="Withdraw"
+        onConfirm={withdrawOne}
+      >
+        <p>
+          {removing?.user?.name || removing?.team?.name || "This entrant"} leaves the cup and forfeits every match still open, now and later in the bracket, so the
+          opponents go through. Results already played stay.
         </p>
       </Confirm>
 

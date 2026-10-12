@@ -159,8 +159,12 @@ export function KothView() {
               id: "state",
               header: "State",
               enableSorting: false,
+              // An unpublished night reads "Draft"; an archived night adds a neutral "Archived" on the same line
               cell: ({ row }) => (
-                <Badge className={toneClass(stateColor[nightState(row.original)])}>{stateLabel[nightState(row.original)] || "—"}</Badge>
+                <div className="flex items-center gap-1 whitespace-nowrap">
+                  <Badge className={toneClass(stateColor[nightState(row.original)])}>{stateLabel[nightState(row.original)] || "—"}</Badge>
+                  {row.original.archived ? <Badge className={toneClass(null)}>Archived</Badge> : null}
+                </div>
               ),
             },
           ]}

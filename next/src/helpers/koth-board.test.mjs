@@ -54,16 +54,16 @@ test('an empty throne pairs the first two seats, and one seat alone pairs nobody
   assert.equal(skippedSeat(two), null);
 });
 
-test('an empty throne with a defender pairs him first, wherever he stands in the line', () => {
+test('an empty throne pairs the first two free seats, whoever was king last event', () => {
   const bracket = {
     king: null,
     defender: { user_id: 4, name: 'Duskrell' },
     queue: [seat(2, 'Kaldris', [row(2, 'OC')]), seat(3, 'Ashvane', [row(3, 'HU')]), seat(4, 'Duskrell', [row(4, 'UD')])],
   };
-  assert.deepEqual(defaultPair(bracket).map((s) => s.name), ['Duskrell', 'Kaldris']);
-  // a defender who is playing in another bracket waits like anyone else
-  bracket.queue[2].busy = true;
   assert.deepEqual(defaultPair(bracket).map((s) => s.name), ['Kaldris', 'Ashvane']);
+  // a seat playing in another bracket is stepped over, and the next free seat moves up
+  bracket.queue[0].busy = true;
+  assert.deepEqual(defaultPair(bracket).map((s) => s.name), ['Ashvane', 'Duskrell']);
 });
 
 test('the start button names the pair, and a side game says the crown stays', () => {
@@ -324,9 +324,9 @@ test('a player seated in one bracket still reads in the list of another bracket 
 });
 
 
-test('historical brackets preserve source order and categorical labels', () => {
+test('historical brackets read weakest first and keep their labels', () => {
   const brackets = [{ name: 'Platinum to 1700 MMR', lower_bound: null }, { name: '1500 to ~1700 MMR', lower_bound: 1500 }, { name: 'Gold and below', lower_bound: null }];
-  assert.deepEqual(orderedBrackets({ historical: true, brackets }), brackets);
+  assert.deepEqual(orderedBrackets({ historical: true, brackets }), [brackets[2], brackets[0], brackets[1]]);
 });
 
 const fixSeat = (user_id, name) => ({ user_id, name, rows: [] });

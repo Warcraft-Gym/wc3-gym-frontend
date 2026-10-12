@@ -9,23 +9,17 @@ import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { NewMapDialog } from "@/components/admin/NewMapDialog";
+import { PickBanBuilder } from "@/components/admin/PickBanBuilder";
 import { LadderImportDialog } from "@/components/LadderImportDialog";
 import type { ImportRow } from "@/components/LadderImportDialog";
 import { StatusAlert } from "@/components/StatusAlert";
 import { W3CIcon } from "@/components/W3CIcon";
 import { DEFAULT_RULES } from "@/helpers/best-of.mjs";
 import { MAP_RULES, titleOf } from "@/helpers/event-labels.mjs";
+import { orderOf, orderProblem, vetoLimits } from "@/helpers/pick-ban.mjs";
 import { hideMissingImage } from "@/helpers/team-image";
 import { useMapStore, useSeason } from "@/stores";
-
-const STEPS = [
-  { value: "Ban_A", label: "+ Ban A", color: "text-error" },
-  { value: "Ban_B", label: "+ Ban B", color: "text-error" },
-  { value: "Pick_A", label: "+ Pick A", color: "text-primary-text" },
-  { value: "Pick_B", label: "+ Pick B", color: "text-primary-text" },
-];
 
 // What the page asks before it drops the map rules and the order it holds unsaved.
 const LEAVE_UNSAVED = "The map rules and the pick and ban order are not saved. Leave the page?";
@@ -69,22 +63,9 @@ export function SeasonMapsView({ id }: { id: string }) {
   const isDirty = rules.join(",") !== savedRules || order.join("|") !== savedOrder;
 
   // A game whose rule names its own map takes that map out of the veto
-  const vetoPool = pool.length - (usesFixedMap ? 1 : 0);
+  const { vetoPool } = vetoLimits(rules.join(","), pool.length);
   const leftOver = vetoPool - order.length;
-  // A veto or loser game draws its map from the picks; every map left after the picks may be banned
-  const picksMax = rules.filter((rule) => rule === "veto" || rule === "loser").length;
-  const bansMax = Math.max(vetoPool - picksMax, 0);
-  const bans = order.filter((step) => step.startsWith("Ban")).length;
-  const picks = order.length - bans;
-  const overLimit = bans > bansMax || picks > picksMax;
-  const atLimit = (step: string) => (step.startsWith("Ban") ? bans >= bansMax : picks >= picksMax);
-  const counts = [
-    { label: "Steps", value: order.length },
-    { label: "Bans", value: `${bans} / ${bansMax}`, negative: bans > bansMax },
-    { label: "Picks", value: `${picks} / ${picksMax}`, negative: picks > picksMax },
-    { label: "Maps in the veto", value: vetoPool },
-    { label: "Left over", value: leftOver, negative: leftOver < 0 },
-  ];
+  const overLimit = orderProblem(order, rules.join(","), pool.length) != null;
 
   // Which outcome of the order fills each game: veto games take the picks in order, then the maps left over
   const pickSides = order.filter((step) => step.startsWith("Pick")).map((step) => step.slice(-1));
@@ -205,7 +186,7 @@ export function SeasonMapsView({ id }: { id: string }) {
         const current = await refresh();
         const nextRules = (current.map_rules || DEFAULT_RULES).split(",");
         setRules(nextRules);
-        setOrder(current.pick_ban ? current.pick_ban.split("|") : []);
+        setOrder(orderOf(current.pick_ban));
         // the default rules are what the page shows, so they are what "saved" compares against
         setSavedRules(nextRules.join(","));
         setSavedOrder(current.pick_ban || "");
@@ -426,24 +407,7 @@ export function SeasonMapsView({ id }: { id: string }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="mb-3 rounded bg-muted px-3 py-2 text-xs leading-relaxed break-words">{order.join("|") || "No order set"}</div>
-              <div className="mb-3 flex flex-wrap gap-2">
-                {STEPS.map((step) => (
-                  <Button key={step.value} size="sm" variant="outline" className={step.color} disabled={atLimit(step.value)} onClick={() => setOrder([...order, step.value])}>
-                    {step.label}
-                  </Button>
-                ))}
-                <Button size="sm" variant="outline" disabled={!order.length} onClick={() => setOrder(order.slice(0, -1))}>
-                  Delete last
-                </Button>
-              </div>
-              <Separator className="mb-2" />
-              {counts.map((count) => (
-                <div key={count.label} className="flex justify-between py-1">
-                  <span className="text-xs text-muted-foreground">{count.label}</span>
-                  <span className={`font-bold tnum ${count.negative ? "text-error" : ""}`}>{count.value}</span>
-                </div>
-              ))}
+              <PickBanBuilder order={order} onChange={setOrder} mapRules={rules.join(",")} poolSize={pool.length} />
             </CardContent>
           </Card>
 

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Field } from "@/components/ui/Field";
@@ -20,7 +20,8 @@ import { StreamLinks } from "@/components/koth/StreamLinks";
 import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { HistoricalBoard } from "@/components/koth/HistoricalBoard";
-import { BoardPlayer, BracketCard, raceName, seatMark, type BracketAdmin } from "@/components/koth/BracketCard";
+import { BoardPlayer } from "@/components/koth/BoardPlayer";
+import { BracketCard, raceName, seatMark, type BracketAdmin } from "@/components/koth/BracketCard";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { domainOf, bandOf } from "@/helpers/divisions.mjs";
@@ -503,22 +504,6 @@ export function KothNightView({ id }: { id: string }) {
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
       {loading ? <Progress value={null} /> : null}
 
-      {/* an archived night keeps the words its source wrote for each bracket */}
-      {board?.historical ? (
-        <Card className="card mb-4">
-          <CardHeader>
-            <CardTitle>Brackets</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="mb-0 flex flex-col gap-1">
-              {brackets.map((bracket: Row) => (
-                <li key={bracket.division_id}>{bracket.name}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
-
       {/* The MMR line between the brackets, set once a night from Settings */}
       <Dialog open={boundsOpen && !!board && !board.historical} onOpenChange={setBoundsOpen}>
         <DialogContent showCloseButton={false} size="lg" compact className="gap-0 p-0">
@@ -931,7 +916,7 @@ export function KothNightView({ id }: { id: string }) {
                 </div>
               </div>
             ) : null}
-            <p className="mt-4 mb-0 text-xs text-muted-foreground">The standing kings start the next event as King from last event.</p>
+            <p className="mt-4 mb-0 text-xs text-muted-foreground">The next event starts with no king. The standing kings carry a King from last event mark on their row.</p>
           </div>
           <div className="flex justify-end gap-2 p-4 pt-0">
             <Button variant="ghost" onClick={() => setClosing(false)}>

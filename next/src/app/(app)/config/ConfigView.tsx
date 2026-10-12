@@ -62,7 +62,7 @@ const SECTION_KEYS: Record<string, string[]> = {
 };
 
 // The backend route Nightbot calls for a KOTH signup from chat
-const KOTH_SIGNUP_URL = "https://backend.warcraft-gym.com/koth/signup";
+const KOTH_SIGNUP_URL = "https://api.warcraft-gym.com/koth/signup";
 
 // The message of the !kothsignup command in Nightbot; each $(...) is a Nightbot variable
 const nightbotMessage = (token: string) => `$(urlfetch ${KOTH_SIGNUP_URL}?token=${token}&twitch=$(user)&q=$(querystring))`;

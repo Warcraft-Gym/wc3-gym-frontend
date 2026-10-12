@@ -1,5 +1,13 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
+# Release main to production: a GitHub Release tagged vYYYY.MM.DD.N, the UTC date and that day's count from 1.
+release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    day="v$(date -u +%Y.%m.%d)"
+    last=$(git ls-remote --tags --refs origin "refs/tags/$day.*" | awk -F. '{print $NF}' | sort -n | tail -1)
+    gh release create "$day.$((${last:-0} + 1))" --target main --generate-notes
+
 # Regenerate docs/okf/index.html, the graph viewer that GitHub Pages serves. Node colours per concept type.
 okf-graph:
     #!/usr/bin/env bash

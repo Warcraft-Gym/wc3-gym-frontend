@@ -14,18 +14,38 @@ export const CUP_STEPS = [
   { key: 'review', title: 'Review' },
 ];
 
-// The games a cup is played as; only 1v1 is built, the rest name what comes later
+// The games a cup is played as: one against one, or real team games of a size; custom games
+// and FFA name what comes later
 export const CUP_GAMES = [
-  { value: '1v1', title: '1v1', ready: true },
-  { value: '2v2', title: '2v2', ready: false },
-  { value: 'custom', title: 'Custom game', ready: false },
-  { value: 'ffa', title: 'FFA', ready: false },
+  { value: '1v1', title: '1v1', ready: true, size: null },
+  { value: '2v2', title: '2v2', ready: true, size: 2 },
+  { value: '3v3', title: '3v3', ready: true, size: 3 },
+  { value: '4v4', title: '4v4', ready: true, size: 4 },
+  { value: 'custom', title: 'Custom game', ready: false, size: null },
+  { value: 'ffa', title: 'FFA', ready: false, size: null },
 ];
+
+/** How many players a team of this game fields, or null for 1v1.
+ *  @param {string} game */
+export const teamSizeOf = (game) => CUP_GAMES.find((item) => item.value === game)?.size ?? null;
 
 export const CUP_FORMATS = [
   { value: 'single_elimination', title: 'Single elimination', hint: 'Lose once and you are out. 16 players play 4 rounds.' },
   { value: 'double_elimination', title: 'Double elimination', hint: 'Lose twice to go out; an upper and a lower bracket meet in the grand final.' },
+  { value: 'placement', title: 'Placement bracket', hint: 'Nobody goes home early: every round splits each group into its winners and its losers, and the last round decides every place.' },
 ];
+
+// How many losses end a run in a placement bracket; null plays every place
+export const PLACEMENT_LIVES = [
+  { value: 1, title: '1 loss', hint: 'single elimination: the players who go out share their places' },
+  { value: 2, title: '2 losses', hint: 'a second loss ends a run; that player shares the places of their group' },
+  { value: 3, title: '3 losses', hint: 'a third loss ends a run; that player shares the places of their group' },
+  { value: null, title: 'Every place', hint: 'every player plays every round, and every place is decided' },
+];
+
+/** The words for a placement bracket's loss limit, as the review and the stage line read it.
+ *  @param {number | null | undefined} lives */
+export const livesLine = (lives) => (lives ? `a run ends after ${lives} ${lives === 1 ? 'loss' : 'losses'}` : 'every place played out');
 
 export const CUP_BEST_OF = [1, 3, 5].map((value) => ({ value, title: `Bo${value}` }));
 
@@ -45,6 +65,8 @@ export const blankCup = () => ({
   grand_final_reset: true,
   // on: only the organizers and admins read the seed numbers
   hide_seeds: false,
+  // a placement bracket: the losses that end a run, null playing every place
+  placement_lives: null,
   // the early rounds; a bracket part that plays its own best-of names it in the plan
   best_of: 3,
   best_of_plan: {},
@@ -58,6 +80,8 @@ export const blankCup = () => ({
   mmr_min: '',
   mmr_max: '',
   min_games: '',
+  // the lifetime games a race needs before its MMR counts, so a few games on another race never decide
+  race_games_min: 20,
   entrant_min: '',
   entrant_cap: '',
   checkin_enabled: true,
@@ -72,7 +96,9 @@ const count = (value) => (value === '' || value === null || value === undefined 
 export const cupPayload = (form) => ({
   name: (form.name || '').trim(),
   kind: 'cup',
-  entrant_kind: 'solo',
+  // a team cup enters the teams its captains sign up, each of team_size players
+  entrant_kind: teamSizeOf(form.game) ? 'team' : 'solo',
+  team_size: teamSizeOf(form.game),
   description: text(form.description),
   start_date: form.start_date ? dayIso(form.start_date) : null,
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played
@@ -85,6 +111,7 @@ export const cupPayload = (form) => ({
   mmr_min: count(form.mmr_min),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
+  race_games_min: count(form.race_games_min),
   entrant_min: count(form.entrant_min),
   entrant_cap: count(form.entrant_cap),
   checkin_enabled: !!form.checkin_enabled,
@@ -103,6 +130,7 @@ export const cupPayload = (form) => ({
       scheduling_mode: 'immediate',
       third_place: form.format === 'single_elimination' && !!form.third_place,
       grand_final_modifier: form.format === 'double_elimination' && form.grand_final_reset ? 'reset' : 'one',
+      placement_lives: form.format === 'placement' ? form.placement_lives ?? null : null,
     },
   ],
 });
@@ -125,6 +153,7 @@ export function cupProblem(form, step) {
     const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
     if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
     if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
+    if (count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
   }
   return null;
 }

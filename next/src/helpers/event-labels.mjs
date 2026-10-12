@@ -79,6 +79,7 @@ export const FORMATS = [
   { value: 'round_robin', title: 'Round robin' },
   { value: 'single_elimination', title: 'Single elimination' },
   { value: 'double_elimination', title: 'Double elimination' },
+  { value: 'placement', title: 'Placement bracket' },
   { value: 'swiss', title: 'Swiss' },
   { value: 'koth', title: 'KOTH' },
   { value: 'ffa', title: 'Free for all' },

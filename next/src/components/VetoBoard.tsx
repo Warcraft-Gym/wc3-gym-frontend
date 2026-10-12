@@ -112,10 +112,12 @@ export function VetoBoard({
   const last = taken[taken.length - (forcedLast ? 2 : 1)];
   const canUndo = !!last && (admin || last.side === board?.viewer_side || (viewerId != null && last.entered_by === viewerId));
 
-  // a step typed in for the other side names who entered it; an admin who plays neither side is "an admin"
+  // a step typed in for the other side names who entered it; an admin who plays neither side is "an admin".
+  // A team side names no user, so any of its players enters for it
+  const standsFor = (side: string, userId: number) => playerId(side) === userId || (sideOf(board, side)?.member_ids || []).includes(userId);
   const enteredBy = (step?: Row) => {
-    if (!step?.entered_by || step.entered_by === playerId(step.side)) return null;
-    const side = ["A", "B"].find((s) => playerId(s) === step.entered_by);
+    if (!step?.entered_by || standsFor(step.side, step.entered_by)) return null;
+    const side = ["A", "B"].find((s) => standsFor(s, step.entered_by));
     return side ? sideName(side) : "an admin";
   };
 

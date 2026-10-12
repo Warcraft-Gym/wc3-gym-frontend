@@ -59,6 +59,8 @@ export const blankForm = (league = null) => ({
   mmr_min: '',
   mmr_max: '',
   min_games: '',
+  // the lifetime games a race needs before its MMR counts
+  race_games_min: 20,
   // On: a signup outside the bounds, or without a battle tag W3Champions rates, is refused
   eligibility_required: true,
   // On beside it: that tag verified through Battle.net too
@@ -101,6 +103,7 @@ export const eventPayload = (form) => ({
   mmr_min: count(form.mmr_min),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
+  race_games_min: count(form.race_games_min),
   // How many of the newest W3C seasons the games floor counts over; nothing counts them all
   min_games_seasons: count(form.min_games_seasons),
   checkin_enabled: !!form.checkin_enabled,
@@ -149,7 +152,8 @@ const STAGE_WRITE_FIELDS = [
   'name', 'format', 'best_of', 'series_per_entrant_per_round', 'swiss_rounds', 'points_by_place',
   'lobby_size', 'group_advance', 'map_rules', 'scheduling_mode', 'ranking_rule',
   'points_series_won', 'points_series_drawn', 'points_game_won', 'advance_count', 'group_size',
-  'auto_advance', 'third_place', 'grand_final_modifier', 'best_of_by_round',
+  'auto_advance', 'third_place', 'grand_final_modifier', 'best_of_by_round', 'placement_lives',
+  'seed_source',
 ];
 
 // The write replaces every field of every stage, so each stage goes back as it was read

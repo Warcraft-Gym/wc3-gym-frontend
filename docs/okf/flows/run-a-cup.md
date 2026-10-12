@@ -4,7 +4,7 @@ title: Run a cup
 description: A cup from its creation to the awards, run by an admin or an organizer, with the members' signups and results in between, each step on its page with the route it writes.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-07T22:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-08T19:00:00Z }
 sources:
   - id: event-management
     resource: ../pages/event-management.md
@@ -25,6 +25,7 @@ This flow takes a cup from its creation to its awards. Its runner, an admin or a
 |---|---|---|---|---|
 | 1. Make the league | admin | `/leagues` | `POST /leagues` | [Event management](../pages/event-management.md) |
 | 2. Make the cup: the short way, with its best-of per bracket part and its map pool, or the five-step wizard | organizer or admin | `/events/new/cup`, or `/events/new` | `POST /events` with the stages and the pool, then for the wizard `PUT /events/{id}/divisions` | [Event management](../pages/event-management.md) |
+| 3a. On a team cup, sign a team up, and every invited player accepts | member | `/events/:id`, "Sign up a team", the invitation | `POST /events/{id}/cup-teams`, `POST /events/{id}/cup-teams/{team_id}/accept` | [Leagues and events](../pages/leagues-and-events.md) |
 | 3. Sign up, and check in when the event asks for it | member; an admin adds anyone by hand on `/events/:id/entrants` | `/events/:id`, the signup dialog | `POST /events/{id}/entrants`, `POST /events/{id}/entrants/{entrant_id}/checkin` | [Leagues and events](../pages/leagues-and-events.md) |
 | 4. Cut the divisions and set the seeds | admin | `/events/:id/entrants` | `PUT /events/{id}/divisions`, `POST /events/{id}/divisions/assign`, `PUT /events/{id}/stages/{stage_id}/seeds` | [Event management](../pages/event-management.md) |
 | 5. Lock the seeds | admin | `/events/:id/entrants` | `POST /events/{id}/stages/{stage_id}/seeds/lock` | [Event management](../pages/event-management.md) |

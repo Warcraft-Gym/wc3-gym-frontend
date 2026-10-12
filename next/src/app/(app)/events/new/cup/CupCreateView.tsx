@@ -16,7 +16,9 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, SIGNUP_POLICIES } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, livesLine, PLACEMENT_LIVES, SIGNUP_POLICIES, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { ladderModeOf } from "@/helpers/cup-teams.mjs";
+import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -98,6 +100,7 @@ export function CupCreateView() {
         format?.title,
         form.format === "single_elimination" && form.third_place ? "a match for third place" : null,
         form.format === "double_elimination" ? (form.grand_final_reset ? "grand final reset" : "one grand final") : null,
+        form.format === "placement" ? livesLine(form.placement_lives) : null,
       ]
         .filter(Boolean)
         .join(", "),
@@ -112,6 +115,7 @@ export function CupCreateView() {
         form.eligibility_required ? (form.bnet_required ? "Battle.net-linked, rated players only" : "Rated players only") : "Warnings only",
         form.mmr_min || form.mmr_max ? `MMR ${form.mmr_min || "any"} to ${form.mmr_max || "any"}` : null,
         form.min_games ? `at least ${form.min_games} games` : null,
+        form.race_games_min ? `a race counts from ${form.race_games_min} games` : null,
       ]
         .filter(Boolean)
         .join(", "),
@@ -161,7 +165,11 @@ export function CupCreateView() {
             </div>
             <div className="col-span-12">
               <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
-              <p className="mt-1 text-sm text-muted-foreground">2v2, custom game and FFA cups come later.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {teamSizeOf(form.game)
+                  ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game and FFA cups come later.`
+                  : "Custom game and FFA cups come later."}
+              </p>
             </div>
             <Field className="col-span-12" label="Description" htmlFor="cup-description">
               <Textarea id="cup-description" rows={3} value={form.description} placeholder="Maps, rules, how results are reported" onChange={(e) => set({ description: e.target.value })} />
@@ -169,7 +177,7 @@ export function CupCreateView() {
           </div>
         ) : key === "format" ? (
           <div className="flex flex-col gap-5">
-            <div role="radiogroup" aria-label="Format" className="grid gap-3 min-[600px]:grid-cols-2">
+            <div role="radiogroup" aria-label="Format" className="grid gap-3 min-[600px]:grid-cols-3">
               {CUP_FORMATS.map((item) => (
                 <button
                   key={item.value}
@@ -189,11 +197,32 @@ export function CupCreateView() {
                 <Switch checked={!!form.third_place} onCheckedChange={(third_place) => set({ third_place })} />
                 Play a match for third place
               </Label>
-            ) : (
+            ) : form.format === "double_elimination" ? (
               <Label className="flex min-h-11 items-center gap-2">
                 <Switch checked={!!form.grand_final_reset} onCheckedChange={(grand_final_reset) => set({ grand_final_reset })} />
                 Grand final reset: the lower-bracket winner must win twice
               </Label>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div role="radiogroup" aria-label="A player stops after" className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">A player stops after</span>
+                  {PLACEMENT_LIVES.map((item) => (
+                    <Button
+                      key={item.title}
+                      type="button"
+                      size="sm"
+                      role="radio"
+                      aria-checked={item.value === (form.placement_lives ?? null)}
+                      variant={item.value === (form.placement_lives ?? null) ? "secondary" : "outline"}
+                      className="min-h-10 rounded-full"
+                      onClick={() => set({ placement_lives: item.value })}
+                    >
+                      {item.title}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">{PLACEMENT_LIVES.find((item) => item.value === (form.placement_lives ?? null))?.hint}</p>
+              </div>
             )}
             <div className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">Best of</span>
@@ -210,7 +239,7 @@ export function CupCreateView() {
             </div>
           </div>
         ) : key === "maps" ? (
-          <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} />
+          <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} ladderMode={ladderModeOf(teamSizeOf(form.game)) as string | null} mode={cupMode(teamSizeOf(form.game))} />
         ) : key === "signups" ? (
           <div className="grid grid-cols-12 gap-3">
             <div className="col-span-12 flex flex-col gap-1 rounded-lg border border-border p-3">
@@ -237,10 +266,20 @@ export function CupCreateView() {
               type="number"
               min="0"
               label="Games at least"
-              hint="On the race they sign up with, this W3C season and the one before"
+              hint="Over all races, this W3C season and the one before"
               placeholder="No minimum"
               value={form.min_games}
               onChange={(e) => set({ min_games: e.target.value })}
+            />
+            <TextField
+              className="col-span-12 min-[600px]:col-span-4"
+              type="number"
+              min="1"
+              label="A race counts from"
+              hint="Lifetime games on a race before its MMR counts; the best of those races is checked"
+              placeholder="20"
+              value={form.race_games_min}
+              onChange={(e) => set({ race_games_min: e.target.value })}
             />
             <div className="col-span-12">
               <Choice

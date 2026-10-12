@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem } from './cup-wizard.mjs';
+import { blankCup, cupPayload, cupProblem, livesLine } from './cup-wizard.mjs';
+import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
 
@@ -15,10 +16,19 @@ test('a cup writes one immediate elimination stage and the bounds it was given',
   assert.ok(body.starts_at);
   assert.deepEqual([body.entrant_min, body.entrant_cap], [8, 16]);
   assert.deepEqual(body.stages, [
-    { format: 'single_elimination', best_of: 3, best_of_by_round: null, scheduling_mode: 'immediate', third_place: false, grand_final_modifier: 'one' },
+    { format: 'single_elimination', best_of: 3, best_of_by_round: null, scheduling_mode: 'immediate', third_place: false, grand_final_modifier: 'one', placement_lives: null },
   ]);
   assert.equal(body.veto_by_best_of, true);
+  assert.equal(body.team_size, null);
+  // a race counts from 20 lifetime games unless the organizer names another number
+  assert.equal(body.race_games_min, 20);
   assert.deepEqual(body.map_ids, []);
+});
+
+test('a 2v2 cup enters teams of two', () => {
+  const body = cupPayload({ ...blankCup(), game: '2v2' });
+  assert.equal(body.team_size, 2);
+  assert.equal(body.entrant_kind, 'team');
 });
 
 test('a cup names the best-of of its bracket parts and the maps it vetoes from', () => {
@@ -43,6 +53,18 @@ test('the third place plays only in single elimination, the reset only in double
 test('the seeds show to everyone by default, and the switch hides them through the event setting', () => {
   assert.equal(cupPayload(blankCup()).hide_seeds, false);
   assert.equal(cupPayload({ ...blankCup(), hide_seeds: true }).hide_seeds, true);
+});
+
+test('a placement bracket sends its loss limit, and only it does', () => {
+  const placement = cupPayload({ ...blankCup(), format: 'placement', placement_lives: 2, third_place: true, grand_final_reset: true, best_of: 1, best_of_plan: { last_round: 3, final: 5, grand_final: 5 } });
+  const stage = placement.stages[0];
+  assert.deepEqual([stage.format, stage.placement_lives, stage.third_place, stage.grand_final_modifier], ['placement', 2, false, 'one']);
+  assert.equal(stage.best_of_by_round, 'last_round:3,final:5');
+  assert.equal(cupPayload({ ...blankCup(), format: 'placement' }).stages[0].placement_lives, null);
+  assert.equal(cupPayload({ ...blankCup(), placement_lives: 2 }).stages[0].placement_lives, null);
+  assert.equal(livesLine(null), 'every place played out');
+  assert.equal(livesLine(1), 'a run ends after 1 loss');
+  assert.equal(bestOfLine(1, { last_round: 3, final: 5 }, 'placement'), 'Bo1 early · last round Bo3 · final Bo5');
 });
 
 test('blank bounds write nothing', () => {

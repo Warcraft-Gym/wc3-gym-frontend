@@ -6,11 +6,25 @@
 * **Update**: "Move the start" on a cup's run page opens on the stored start and writes no end date, so a changed day alone keeps the start time and a cup played past midnight still reads as running. [Event management](pages/event-management.md).
 * **Update**: the Events tab reads the events with `archived=false`, and under its Past table a reader who can open the KOTH page reads that archived KOTH nights are on KOTH Events. [Leagues and events](pages/leagues-and-events.md).
 
+## 2026-10-11
+
+* **Add**: the placement bracket. Create cup offers it as a third format, with "A player stops after" 1, 2 or 3 losses or "Every place", and its best-of names the "Last round" and the "Final". The draw shows one column a round of place groups, the final heading the last column, and Results lists a shared place as its range. A stage edit keeps `placement_lives`. [Event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md) and [shared components](concepts/shared-components.md#stageview) state it.
+* **Fix**: on a team cup the waiting match over the draw is the caller's own team's; it no longer offers a match of two other teams. `reportOf` gets the caller's teams, as the boxes of the draw do.
+* **Fix**: the veto board reads a step a team's player entered as that team's own; it no longer reads "Entered by an admin". The backend lists a team side's players in `member_ids`.
+* **Fix**: the run page of a team cup counts "4 teams in", offers check-in to a complete team only, and redraws a team's box with the new player right after a swap. [Event management](pages/event-management.md) states it.
+
 ## 2026-10-09
 
 * **Update**: Vercel deploys nothing by itself. The deploy workflow builds staging on a push to `main` and production on a published release tagged `vYYYY.MM.DD.N` on `main`, both through the Vercel CLI with `VERCEL_RELEASE_TOKEN`, a repository secret scoped to the Vercel project. [Deploy to Vercel](runbooks/deploy-vercel.md).
 * **Update**: a merge to `main` builds staging, the preview of `main`; a GitHub Release of a commit on `main` deploys that commit to production through the release workflow, and no push builds production; tags are `vYYYY.MM.DD.N`. The `staging` branch and its workflow are gone. [Deploy to Vercel](runbooks/deploy-vercel.md), [overview](overview.md), [git and pull requests](conventions/git-and-pull-requests.md).
 * **Update**: the season wizard saves from every step, so a new season may be finished in the edit. The pick and ban order moves from General to Maps and is built with `PickBanBuilder`, a new season starting on the default order. The Maps step is empty or complete, and the save writes the order after the maps added. [The GNL season](pages/gnl-season.md), [shared components](concepts/shared-components.md).
+
+## 2026-10-08
+
+* **Add**: a map names the modes it is played as. The Maps page shows them on every card and edits them in "Played as"; a cup's "Add a map" lists the maps of its own mode first. Site admin and event management state it.
+* **Fix**: "Use the ladder pool" adds the whole ladder pool: the ladder maps the app lacks are imported first, so an organizer no longer needs an admin to add them. Event management states it.
+* **Add**: team cups. Create cup offers 2v2, 3v3 and 4v4, and the Maps step reads the ladder pool of that size. The cup page signs a team up, shows the invitation with Accept and Decline, and the caller's team with what it waits for; `/events` lists the team invitations; the run page lists teams with their players, swaps a player, adds a team and removes the incomplete ones; a team box carries Veto and Report for its own players only. Event management, the events pages, the backend contract and the cup flow state it.
+* **Update**: a cup checks the highest MMR of the races a player has really played. Create cup and the event wizard carry "A race counts from", 20 lifetime games by default, the games floor counts over all races, and the event page says so. Event management and the events pages state it.
 
 ## 2026-10-07
 

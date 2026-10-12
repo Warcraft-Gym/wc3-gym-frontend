@@ -91,6 +91,20 @@ export function eveningOf(event, entrants) {
 export function eligibilityLines(event) {
   const lines = [];
   const [low, high] = [event?.mmr_min ?? null, event?.mmr_max ?? null];
+  // An event that counts a race by its lifetime games rates the best of the races played
+  const counted = event?.race_games_min ?? null;
+  if (counted !== null) {
+    if (event?.eligibility_required) {
+      lines.push(event.bnet_required ? 'A battle tag linked to Battle.net, rated by W3Champions' : 'A battle tag W3Champions rates');
+    }
+    const races = `of the races with ${counted} games or more`;
+    if (low !== null && high !== null) lines.push(`Highest MMR ${races} from ${low} to ${high}`);
+    else if (low !== null) lines.push(`Highest MMR ${races} ${low} or more`);
+    else if (high !== null) lines.push(`Highest MMR ${races} up to ${high}`);
+    else if (event?.eligibility_required) lines.push(`At least ${counted} games on one race`);
+    if (event?.min_games) lines.push(`At least ${event.min_games} games recently, over all races`);
+    return lines;
+  }
   if (event?.eligibility_required) {
     lines.push(event.bnet_required
       ? 'A battle tag linked to Battle.net, rated by W3Champions on the race you sign up with'

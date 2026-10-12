@@ -104,3 +104,12 @@ test('Move the start writes no end date and keeps the time of day when no time i
   assert.deepEqual(moveStartBody({ start_date: '2026-10-16', starts_at: null }, later, '', zone), { start_date: '2026-10-18', end_date: null, starts_at: null });
   assert.deepEqual(moveStartBody(cup, null, '20:00', zone), { start_date: null, end_date: null, starts_at: null });
 });
+
+test('a cup that counts races by their games reads the best of the races played', () => {
+  assert.deepEqual(eligibilityLines({ race_games_min: 20, eligibility_required: true, mmr_max: 1000, min_games: 10 }), [
+    'A battle tag W3Champions rates',
+    'Highest MMR of the races with 20 games or more up to 1000',
+    'At least 10 games recently, over all races',
+  ]);
+  assert.deepEqual(eligibilityLines({ race_games_min: 20, eligibility_required: true }), ['A battle tag W3Champions rates', 'At least 20 games on one race']);
+});

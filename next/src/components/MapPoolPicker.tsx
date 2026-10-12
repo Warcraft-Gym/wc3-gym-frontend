@@ -5,6 +5,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Icon } from "@/components/ui/Icon";
 import { Pick } from "@/components/ui/Pick";
 import { useEventStore, useMapStore } from "@/stores";
+import { forMode, modesLine } from "@/helpers/map-modes.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -20,11 +21,17 @@ export function MapPoolPicker({
   onChange,
   problem,
   excludeEventId,
+  ladderMode = "1v1",
+  mode = "1v1",
 }: {
   pool: PoolMap[];
   onChange: (pool: PoolMap[]) => void;
   problem?: string | null;
   excludeEventId?: number | null;
+  // the W3Champions ladder a cup of this size reads its pool from; none hides the button
+  ladderMode?: string | null;
+  // the mode the cup is played as; its maps lead the "Add a map" list
+  mode?: string;
 }) {
   const mapStore = useMapStore();
   const eventStore = useEventStore();
@@ -53,17 +60,26 @@ export function MapPoolPicker({
   const inPool = new Set(pool.map((row) => row.id));
   const add = (rows: PoolMap[]) => onChange([...pool, ...rows.filter((row) => !inPool.has(row.id))]);
 
+  // The whole ladder pool: the ladder maps the app lacks are imported first, then every one joins
   const useLadder = async () => {
     setBusy("ladder");
     setNote(null);
     try {
-      const rows: Row[] = await mapStore.fetchLadderMapImport();
+      const mode = ladderMode || "1v1";
+      let rows: Row[] = await mapStore.fetchLadderMapImport(mode);
+      const lacking = rows.filter((row) => row.status !== "off_ladder" && row.map_id == null).map((row) => row.w3c_name);
+      let all = maps;
+      if (lacking.length) {
+        await mapStore.importLadderMaps(lacking, mode);
+        [rows, all] = await Promise.all([mapStore.fetchLadderMapImport(mode), mapStore.fetchMaps(true)]);
+        setMaps(all);
+      }
       const ladder = rows.filter((row) => row.status !== "off_ladder");
       const known = ladder.filter((row) => row.map_id != null);
-      const byId = new Map(maps.map((row) => [row.id, row]));
+      const byId = new Map(all.map((row: Row) => [row.id, row]));
       add(known.map((row) => asPoolMap(byId.get(row.map_id) ?? { id: row.map_id, name: row.matched_name || row.w3c_name, shortname: row.shortname })));
       const missing = ladder.filter((row) => row.map_id == null).map((row) => row.w3c_name);
-      setNote(missing.length ? `Not in the app yet, ask an admin to add them: ${missing.join(", ")}.` : null);
+      setNote(missing.length ? `These ladder maps could not be added: ${missing.join(", ")}.` : `${known.length} ladder maps added.`);
     } catch (e) {
       setNote(`The ladder pool did not load: ${(e as Error).message}`);
     } finally {
@@ -96,10 +112,12 @@ export function MapPoolPicker({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-2">
-        <Button variant="outline" disabled={busy === "ladder"} onClick={useLadder}>
-          <Icon name={busy === "ladder" ? "mdi-loading mdi-spin" : "mdi-ladder"} />
-          Use the 1v1 ladder pool
-        </Button>
+        {ladderMode ? (
+          <Button variant="outline" disabled={busy === "ladder"} onClick={useLadder}>
+            <Icon name={busy === "ladder" ? "mdi-loading mdi-spin" : "mdi-ladder"} />
+            Use the {ladderMode} ladder pool
+          </Button>
+        ) : null}
         <div className="flex min-w-[260px] flex-[1_1_260px] items-end gap-2">
           <Pick
             className="flex-1"
@@ -119,7 +137,16 @@ export function MapPoolPicker({
         <Combobox
           label="Add a map"
           placeholder="Search the maps"
-          items={maps.filter((row) => !inPool.has(row.id)).map((row) => ({ value: String(row.id), title: row.name as string }))}
+          items={forMode(
+            maps.filter((row) => !inPool.has(row.id)),
+            mode,
+          ).map((row: Row) => ({ value: String(row.id), title: row.name as string, modes: modesLine(row.modes) }))}
+          row={(item) => (
+            <span className="flex flex-col text-left">
+              <span>{item.title}</span>
+              <span className="text-xs text-muted-foreground">{item.modes}</span>
+            </span>
+          )}
           value={null}
           onChange={(value) => {
             const row = maps.find((one) => String(one.id) === value);

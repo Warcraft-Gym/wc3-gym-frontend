@@ -40,7 +40,8 @@ function EventCard({ event }: { event: Row }) {
       <CardContent className="flex h-full flex-col gap-3 p-4">
         <div className="flex items-center justify-between gap-2">
           <StateBadge event={event} />
-          <span className="text-sm text-muted-foreground">{titleOf(EVENT_KINDS, event.kind)}</span>
+          {/* a team cup names its size, "2v2 cup" */}
+          <span className="text-sm text-muted-foreground">{event.team_size ? `${event.team_size}v${event.team_size} cup` : titleOf(EVENT_KINDS, event.kind)}</span>
         </div>
         <Link href={`/events/${event.id}`} className="font-heading text-lg font-bold text-foreground">
           {event.name}
@@ -85,6 +86,21 @@ export function EventsView() {
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  // the team invitations the reader has not answered, each answered right here
+  const [invites, setInvites] = useState<Row[]>([]);
+  const [answering, setAnswering] = useState<string | null>(null);
+  const answer = async (invite: Row, accept: boolean) => {
+    setAnswering(`${invite.event_id}-${invite.team.id}`);
+    try {
+      if (accept) await store.acceptInvite(invite.event_id, invite.team.id);
+      else await store.declineInvite(invite.event_id, invite.team.id);
+      setInvites(await store.myTeamInvites());
+    } catch (e) {
+      setError((e as Error).message || "That did not go through");
+    } finally {
+      setAnswering(null);
+    }
+  };
 
   const card = organizerCard(sent && me ? { ...me, organizer_request: "pending" } : me);
   const { live, upcoming, past } = groupEvents(events, kind) as Record<"live" | "upcoming" | "past", Row[]>;
@@ -98,6 +114,7 @@ export function EventsView() {
         ]);
         setEvents(eventRows);
         setMine(mineRows);
+        if (me) setInvites(await store.myTeamInvites().catch(() => []));
       } catch (e) {
         setError(`The events did not load: ${(e as Error).message}`);
       } finally {
@@ -141,6 +158,30 @@ export function EventsView() {
       </PageHeader>
 
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
+
+      {invites.length ? (
+        <Card className="card mb-6 border-primary/60">
+          <CardContent className="p-4">
+            <h2 className="mb-2 text-xl">Team invitations</h2>
+            <ul className="flex flex-col">
+              {invites.map((invite) => (
+                <li key={`${invite.event_id}-${invite.team.id}`} className="flex min-h-12 flex-wrap items-center gap-3 border-t border-border py-2">
+                  <span className="min-w-0 flex-1">
+                    <strong>{invite.captain?.name || "A captain"}</strong> invited you to <strong>{invite.team.name}</strong> for{" "}
+                    <Link href={`/events/${invite.event_id}`}>{invite.event_name}</Link>
+                  </span>
+                  <Button size="sm" variant="outline" disabled={!!answering} onClick={() => answer(invite, false)}>
+                    Decline
+                  </Button>
+                  <Button size="sm" disabled={!!answering} onClick={() => answer(invite, true)}>
+                    Accept
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {card === "organizer" ? (
         <Card className="card mb-6 border-dashed">

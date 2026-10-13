@@ -52,6 +52,9 @@ test('the third place plays only in single elimination, the reset only in double
 
 test('the seeds show to everyone by default, and the switch hides them through the event setting', () => {
   assert.equal(cupPayload(blankCup()).hide_seeds, false);
+  // divisions are the cup's choice, off unless it splits its players
+  assert.equal(cupPayload(blankCup()).uses_divisions, false);
+  assert.equal(cupPayload({ ...blankCup(), uses_divisions: true }).uses_divisions, true);
   assert.equal(cupPayload({ ...blankCup(), hide_seeds: true }).hide_seeds, true);
 });
 

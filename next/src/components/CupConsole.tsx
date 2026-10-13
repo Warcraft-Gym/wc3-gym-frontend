@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,7 @@ function Confirm({ open, onOpenChange, title, danger, busy, confirm, onConfirm, 
  *  are in and checked in, the minimum it is played with, moving the start and calling it off.
  *  `people` is the participants tab: every player who is in, each checked in or taken out on
  *  its own row, a player added by hand, the no-shows to take out before the draw, and who else
- *  runs it. Seeding and the divisions stay on the entrants page. */
+ *  runs it. A cup's divisions are cut above it, and its seeds sit beside the draw. */
 export function CupConsole({ part, event, entrants, drawn, series = [], organizers, onEvent, onEntrants, onSeries, onOrganizers, onError }: {
   part: "evening" | "people";
   event: Row;
@@ -446,10 +445,6 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
 
           {!drawn && !closed ? (
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" nativeButton={false} render={<Link href={`/events/${event.id}/entrants`} />}>
-                <Icon name="mdi-account-check" />
-                Seed players
-              </Button>
               {incomplete.length ? (
                 <Button variant="outline" disabled={!!busy} onClick={() => setAsk("incomplete")}>
                   <Icon name="mdi-account-group-outline" />

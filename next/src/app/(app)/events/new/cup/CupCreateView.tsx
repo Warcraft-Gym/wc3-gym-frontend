@@ -125,6 +125,7 @@ export function CupCreateView() {
       k: "Players",
       v: [form.entrant_min ? `at least ${form.entrant_min}` : null, form.entrant_cap ? `at most ${form.entrant_cap}` : null].filter(Boolean).join(", ") || "No bounds",
     },
+    { k: "Divisions", v: form.uses_divisions ? "Split by MMR on the run page" : "One field" },
     { k: "Check-in", v: form.checkin_enabled ? "Players check in before the start" : "No check-in" },
     { k: "Visible", v: form.published ? (form.signups_open ? "Published, sign-ups open" : "Published, sign-ups closed") : "Draft: only you and the admins see it" },
   ];
@@ -365,6 +366,13 @@ export function CupCreateView() {
             <p className="col-span-12 text-sm text-muted-foreground">
               The bracket is drawn with the players who are still in on the evening. Below the minimum you choose to wait, move the start or cancel.
             </p>
+            <div className="col-span-12">
+              <Label className="flex min-h-11 items-center gap-2">
+                <Switch checked={!!form.uses_divisions} onCheckedChange={(uses_divisions) => set({ uses_divisions })} />
+                Split the players into divisions
+              </Label>
+              <p className="text-sm text-muted-foreground">You cut the divisions by MMR on the run page once the players have signed up. Each division plays its own bracket.</p>
+            </div>
             <Label className="col-span-12 flex min-h-11 items-center gap-2">
               <Switch checked={!!form.checkin_enabled} onCheckedChange={(checkin_enabled) => set({ checkin_enabled })} />
               Players check in before the start

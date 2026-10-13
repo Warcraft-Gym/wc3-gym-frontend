@@ -116,6 +116,8 @@ export const blankCup = () => ({
   race_games_min: 20,
   entrant_min: '',
   entrant_cap: '',
+  // on: the players split into divisions, cut by MMR on the run page once they have signed up
+  uses_divisions: false,
   checkin_enabled: true,
   published: true,
   signups_open: true,
@@ -146,6 +148,7 @@ export const cupPayload = (form) => ({
   race_games_min: count(form.race_games_min),
   entrant_min: count(form.entrant_min),
   entrant_cap: count(form.entrant_cap),
+  uses_divisions: !!form.uses_divisions,
   checkin_enabled: !!form.checkin_enabled,
   published: !!form.published,
   signups_open: !!form.signups_open,

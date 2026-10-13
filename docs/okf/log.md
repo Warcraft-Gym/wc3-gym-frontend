@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-13
+
+* **Add**: Create cup asks whether the cup splits its players into divisions, off by default. A cup with divisions cuts them on its run page's Participants tab, a panel with the MMR strip and one card per division, and every cup seeds its first stage in a Seeds sidebar beside the draw, per division when it has them, with a pin that keeps a seed. A cup without divisions shows none, its Generate dialog included. [Event management](pages/event-management.md) and [run a cup](flows/run-a-cup.md) state it.
+
 ## 2026-10-12
 
 * **Update**: a cup's series read, report, veto and score on the cup's own routes, `/cup-series/{id}`; the Report Result dialog and the veto board take a `cup` switch, a cup report takes no replay, and a team box reads its players off the entrants. A GNL captain seat counts on a fixture side alone. The New Event wizard makes a sign-up list; a cup is made with Create cup, and the entrants page adds no league team to a cup. The series page names no fixture roster. [Run a cup](flows/run-a-cup.md), [event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md) and the [backend contract](concepts/backend-contract.md) state it.

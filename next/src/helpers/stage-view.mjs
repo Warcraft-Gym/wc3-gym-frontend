@@ -278,7 +278,8 @@ export function generateFields(entrants = [], divisions = [], format = null) {
   const bands = divisions?.length
     ? [...divisions].sort((a, b) => a.position - b.position)
     : [{ id: null, position: 1, name: null }];
-  const standing = entrants.filter((row) => !row.withdrawn_at);
+  // a cup's waitlist plays no part in the draw
+  const standing = entrants.filter((row) => !row.withdrawn_at && !row.waitlisted_at);
   const seeded = standing.filter((row) => row.seed != null);
   const field = seeded.length ? seeded : standing;
   const pads = ELIMINATION.includes(format);

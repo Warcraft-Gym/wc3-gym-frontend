@@ -143,6 +143,10 @@ const store = {
   async placeEntrant(event_id: number, entrant_id: number, placement: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`, placement);
   },
+  // A cup player's pins: its division, placed by hand, and its seed, which a reshuffle keeps
+  async pinEntrant(event_id: number, entrant_id: number, pins: { division_pinned?: boolean; seed_pinned?: boolean }) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/pins`, pins);
+  },
   // The seeds of one stage: mmr, random, or an order of entrant ids for manual
   async setSeeds(event_id: number, stage_id: number, seeds: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds`, seeds);

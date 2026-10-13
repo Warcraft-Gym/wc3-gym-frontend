@@ -125,6 +125,16 @@ export function EventView({ id }: { id: string }) {
   const entered = entrants.length ? byPlayer(entrants).length : event?.entrant_count ?? 0;
 
   const solo = (item: Row) => !raceRows(item).length;
+  // A cup that splits its players lists them by division; every other event lists one field
+  const listed: Row[] = byPlayer(entrants.filter((entrant) => !entrant.waitlisted_at));
+  const cupDivisions: Row[] = event?.kind === "cup" && event?.uses_divisions ? [...(event?.divisions || [])].sort((a: Row, b: Row) => a.position - b.position) : [];
+  const looseRows = listed.filter((entrant) => !cupDivisions.some((division) => division.id === entrant.division_id));
+  const participantBlocks: { key: string; title: string | null; rows: Row[] }[] = cupDivisions.length
+    ? [
+        ...cupDivisions.map((division) => ({ key: String(division.id), title: division.name as string, rows: listed.filter((entrant) => entrant.division_id === division.id) })),
+        ...(looseRows.length ? [{ key: "loose", title: "Not in a division yet", rows: looseRows }] : []),
+      ]
+    : [{ key: "all", title: null, rows: listed }];
   const divisionName = (band: Row) => {
     const division = (event?.divisions || []).find((one: Row) => one.id === band.division_id);
     return division ? division.name || `Division ${division.position}` : null;
@@ -372,8 +382,11 @@ export function EventView({ id }: { id: string }) {
         </CardHeader>
         <CardContent className="px-0">
           {entrants.length ? (
+            participantBlocks.map((block) => (
+            <div key={block.key}>
+            {block.title ? <h3 className="mt-3 px-4 text-sm font-bold text-muted-foreground uppercase">{block.title}</h3> : null}
             <ul className="flex flex-col">
-              {byPlayer(entrants.filter((entrant) => !entrant.waitlisted_at)).map((entrant: Row) => (
+              {block.rows.map((entrant: Row) => (
                 <li key={entrant.id} className={cn("px-4 py-1", entrant.withdrawn_at && "text-muted-foreground")}>
                   <div className="flex items-center gap-3">
                     {seedsLocked ? <span className="tnum min-w-[2ch] text-right text-xs text-muted-foreground">{solo(entrant) ? entrant.seed ?? "—" : ""}</span> : null}
@@ -421,6 +434,8 @@ export function EventView({ id }: { id: string }) {
                 </li>
               ))}
             </ul>
+            </div>
+            ))
           ) : (
             <p className="px-4 pb-4 text-muted-foreground">No entrants yet</p>
           )}

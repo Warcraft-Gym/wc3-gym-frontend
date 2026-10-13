@@ -28,6 +28,8 @@ import {
 } from "@/helpers/stage-view.mjs";
 import { awardList, placeIcon, placeMedal } from "@/helpers/awards.mjs";
 import { playedCount } from "@/helpers/stage-view.mjs";
+import { CupDivisionsPanel } from "@/components/CupDivisionsPanel";
+import { CupSeedsPanel } from "@/components/CupSeedsPanel";
 import { cupRosters, rostersByEntrant } from "@/helpers/entrants.mjs";
 import { useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
@@ -377,6 +379,10 @@ export function EventAdminView({ id }: { id: string }) {
 
   // Every event but a GNL season runs in tabs: the draw, who is in, the results
   const tabbed = !!event && event.kind !== "gnl";
+  // A cup that plays without divisions is one field, and names no division anywhere
+  const oneField = event?.kind === "cup" && !event.uses_divisions;
+  // A cup's first stage is seeded beside its draw; a later stage plays what the stage before sends on
+  const seedsAside = event?.kind === "cup" && !!stage && stage.position === stages[0]?.position;
   const consoleProps = {
     event: event as Row,
     entrants,
@@ -517,13 +523,17 @@ export function EventAdminView({ id }: { id: string }) {
                     </div>
                     {drawNote ? <p className="mt-1 text-xs text-muted-foreground">{drawNote}</p> : null}
 
-                    <div className="mt-4">
-                      <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
+                    <div className={seedsAside ? "mt-4 grid items-start gap-4 min-[1100px]:grid-cols-[minmax(0,1fr)_20rem]" : "mt-4"}>
+                      <div className="min-w-0">
+                        <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
+                      </div>
+                      {seedsAside ? <CupSeedsPanel event={event} stage={stage} entrants={entrants} drawn={series.length > 0} onEntrants={consoleProps.onEntrants} /> : null}
                     </div>
                   </>
                 ) : null}
               </TabsContent>
               <TabsContent value="participants" className="mt-4">
+                {event.kind === "cup" && event.uses_divisions ? <CupDivisionsPanel event={event} entrants={entrants} drawn={series.length > 0} onEvent={setEvent} onEntrants={consoleProps.onEntrants} /> : null}
                 <CupConsole part="people" {...consoleProps} />
               </TabsContent>
               <TabsContent value="results" className="mt-4">
@@ -613,7 +623,7 @@ export function EventAdminView({ id }: { id: string }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Division</TableHead>
+              {oneField ? null : <TableHead>Division</TableHead>}
               <TableHead className="text-right">Entrants</TableHead>
               {showByes ? <TableHead className="text-right">Byes</TableHead> : null}
             </TableRow>
@@ -621,7 +631,7 @@ export function EventAdminView({ id }: { id: string }) {
           <TableBody>
             {fields.map((row) => (
               <TableRow key={row.key}>
-                <TableCell>{row.name}</TableCell>
+                {oneField ? null : <TableCell>{row.name}</TableCell>}
                 <TableCell className="tnum text-right">{row.entrants}</TableCell>
                 {showByes ? <TableCell className="tnum text-right">{row.byes}</TableCell> : null}
               </TableRow>

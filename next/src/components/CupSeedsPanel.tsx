@@ -22,7 +22,8 @@ const placed = placedOrder as (rows: Row[], id: number, place: number) => number
 const bodyOf = seedBody as (source: string, divisionId: number | null, order?: number[]) => Row;
 
 /** The seeds of a cup's first stage, beside its draw: the players in seed order, a reshuffle by
- *  MMR or at random, and a player dragged to a place or given a seed number. A cup with divisions
+ *  MMR or at random, a player dragged to a place or given a seed number, and a pin that keeps a
+ *  seed through a reshuffle. A cup with divisions
  *  seeds each division on its own. After the draw every change draws the bracket again
  *  from the new seeds in the same write (`onRedrawn` reads the draw back); while its series hold
  *  results the change asks first, because the redraw deletes them. A finished cup or round only
@@ -102,6 +103,11 @@ export function CupSeedsPanel({
     const order = placed(rows, id, to);
     if (order) reseed(group, "manual", order);
   };
+  const pin = (row: Row) =>
+    run(`pin-${row.id}`, async () => {
+      const answered = await store.pinEntrant(event.id, row.id, { seed_pinned: !row.seed_pinned });
+      onEntrants(entrants.map((old) => (old.id === answered.id ? answered : old)));
+    });
   const drop = (group: Group, rows: Row[], index: number) => {
     if (dragging && dragging.group === group.id) place(group, rows, dragging.id, index + 1);
     setDragging(null);
@@ -189,6 +195,21 @@ export function CupSeedsPanel({
                   )}
                   <span className="min-w-0 flex-1 truncate">{row.team ? <TeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
                   <span className="tnum text-xs text-muted-foreground">{(entrantMmr(row) as number) || ""}</span>
+                  {/* a pinned seed stays where it is through "By MMR" and "Shuffle"; a finished cup still shows it */}
+                  {editable ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-pressed={!!row.seed_pinned}
+                      aria-label={row.seed_pinned ? "Let a reshuffle move this seed" : "Keep this seed through a reshuffle"}
+                      disabled={!!busy || row.seed == null}
+                      onClick={() => pin(row)}
+                    >
+                      <Icon name={row.seed_pinned ? "mdi-pin" : "mdi-pin-outline"} className={row.seed_pinned ? "text-primary-text" : "text-muted-foreground"} />
+                    </Button>
+                  ) : row.seed_pinned ? (
+                    <Icon name="mdi-pin" size={14} className="text-muted-foreground" title="Pinned seed" />
+                  ) : null}
                 </li>
               ))}
             </ol>

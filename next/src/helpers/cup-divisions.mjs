@@ -40,6 +40,19 @@ export function movedOrder(rows, id, step) {
   return ids;
 }
 
+/** The ids of a group after one player moves to seed `place` (1 is the top), dragged there or
+ *  typed in; a place past either end is the end. Null when the player stays where it is.
+ *  @param {any[]} rows @param {number} id @param {number} place */
+export function placedOrder(rows, id, place) {
+  const ids = rows.map((row) => row.id);
+  const from = ids.indexOf(id);
+  if (from < 0 || !Number.isFinite(place)) return null;
+  const to = Math.min(Math.max(Math.round(place), 1), ids.length) - 1;
+  if (to === from) return null;
+  ids.splice(to, 0, ...ids.splice(from, 1));
+  return ids;
+}
+
 /** The body of one seed write: by MMR, shuffled, or a manual order, for one division or, on a
  *  cup without divisions, for the whole field.
  *  @param {string} source @param {number|null} divisionId @param {number[]} [order] */

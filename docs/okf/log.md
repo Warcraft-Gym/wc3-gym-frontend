@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-14
+
+* **Add**: a cup's Seeds sidebar stays open after the draw, and every change draws the bracket again from the new seeds, asking first while results stand. A seed is typed into its number field or a player dragged to a new place. [Event management](pages/event-management.md) states it.
+
 ## 2026-10-13
 
 * **Add**: recurring cups. "Repeat this cup" on a cup's run page sets a rule up, every week or the nth weekday of the month at a start time; the rule's page `/events/recurring/:id` lists its next eight days with "Create" for a runner and the cups so far, and a cup made from it reads "Part of" the rule. The Events page has a "Recurring cups" filter. [Event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md) and [run a cup](flows/run-a-cup.md) state it.

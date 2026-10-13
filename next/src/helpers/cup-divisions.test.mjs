@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { divisionGroups, inSeedOrder, movedOrder, seedBody, unplaced } from './cup-divisions.mjs';
+import { divisionGroups, inSeedOrder, movedOrder, placedOrder, seedBody, unplaced } from './cup-divisions.mjs';
 
 const DIVISIONS = [
   { id: 8, position: 2, name: 'Open' },
@@ -48,4 +48,16 @@ test('a seed write names its division, or none on a cup without divisions', () =
   assert.deepEqual(seedBody('mmr', 9), { source: 'mmr', division_id: 9 });
   assert.deepEqual(seedBody('manual', 8, [3]), { source: 'manual', order: [3], division_id: 8 });
   assert.deepEqual(seedBody('random', null), { source: 'random' });
+});
+
+test('a player dragged or typed to a seed lands there, and the rest close up', () => {
+  const field = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }];
+  assert.deepEqual(placedOrder(field, 5, 2), [1, 5, 2, 3, 4]);
+  assert.deepEqual(placedOrder(field, 1, 4), [2, 3, 4, 1, 5]);
+  // a place past either end is the end, and its own place changes nothing
+  assert.deepEqual(placedOrder(field, 3, 99), [1, 2, 4, 5, 3]);
+  assert.deepEqual(placedOrder(field, 3, 0), [3, 1, 2, 4, 5]);
+  assert.equal(placedOrder(field, 3, 3), null);
+  assert.equal(placedOrder(field, 3, NaN), null);
+  assert.equal(placedOrder(field, 9, 1), null);
 });

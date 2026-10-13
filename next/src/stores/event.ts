@@ -191,6 +191,11 @@ const store = {
   async setSeeds(event_id: number, stage_id: number, seeds: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds`, seeds);
   },
+  // A cup's seeds after its draw: the stage is drawn again from them in the same write; a stage
+  // whose series hold results answers 409 until the call confirms
+  async redrawSeeds(event_id: number, stage_id: number, seeds: any, confirm = false) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/redraw${confirm ? "?confirm=true" : ""}`, seeds);
+  },
   async lockSeeds(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/lock`);
   },

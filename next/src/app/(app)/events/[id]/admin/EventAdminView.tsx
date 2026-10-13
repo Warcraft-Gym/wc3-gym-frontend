@@ -588,7 +588,18 @@ export function EventAdminView({ id }: { id: string }) {
                       <div className="min-w-0">
                         <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
                       </div>
-                      {seedsAside ? <CupSeedsPanel event={event} stage={stage} entrants={field} drawn={series.length > 0} onEntrants={consoleProps.onEntrants} /> : null}
+                      {seedsAside ? <CupSeedsPanel
+                          event={event}
+                          stage={stage}
+                          entrants={field}
+                          drawn={series.length > 0}
+                          editable={!event.closed_at && !leg?.finished_at}
+                          onEntrants={consoleProps.onEntrants}
+                          onRedrawn={async () => {
+                            await loadStage();
+                            setEvent(await store.fetchEvent(event.id, true));
+                          }}
+                        /> : null}
                     </div>
                   </>
                 ) : null}

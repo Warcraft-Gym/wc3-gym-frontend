@@ -168,6 +168,25 @@ const store = {
   async fetchOverall(event_id: number, fresh = false) {
     return await fetchWrapper.get(`${backendUrl}/events/${event_id}/overall${freshQuery(fresh)}`, undefined, freshOptions(fresh));
   },
+  // A cup that repeats on a rule: set it up from a cup, read it, make the cup of a coming day
+  async repeatCup(event_id: number, rule: any) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/recurrence`, rule);
+  },
+  async fetchRecurrences(fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/cup-recurrences${freshQuery(fresh)}`, undefined, freshOptions(fresh));
+  },
+  async fetchRecurrence(recurrence_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/cup-recurrences/${recurrence_id}${freshQuery(fresh)}`, undefined, freshOptions(fresh));
+  },
+  async updateRecurrence(recurrence_id: number, changes: any) {
+    return await fetchWrapper.put(`${backendUrl}/cup-recurrences/${recurrence_id}`, changes);
+  },
+  async deleteRecurrence(recurrence_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/cup-recurrences/${recurrence_id}`);
+  },
+  async createOccurrence(recurrence_id: number, on: string) {
+    return await fetchWrapper.post(`${backendUrl}/cup-recurrences/${recurrence_id}/occurrences`, { on });
+  },
   // The seeds of one stage: mmr, random, or an order of entrant ids for manual
   async setSeeds(event_id: number, stage_id: number, seeds: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds`, seeds);

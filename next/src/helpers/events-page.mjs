@@ -8,6 +8,8 @@ import { pickerParts, storedUtc, viewerZone } from './timezone.mjs';
 // of their own and read here too
 export const KIND_FILTERS = [
   { value: 'cup', title: 'Cups' },
+  // the rules cups repeat on, in place of the events
+  { value: 'recurring', title: 'Recurring cups' },
   { value: 'koth', title: 'KOTH nights' },
   { value: 'gnl', title: 'GNL seasons' },
   { value: 'all', title: 'All' },

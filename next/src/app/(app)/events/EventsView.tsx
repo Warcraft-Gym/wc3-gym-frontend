@@ -8,13 +8,33 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
-import { dateRange, EVENT_KINDS, STATE_COLOR, STATE_LABEL, stateOf, titleOf } from "@/helpers/event-labels.mjs";
-import { fill, groupEvents, KIND_FILTERS, organizerCard } from "@/helpers/events-page.mjs";
+import {
+  dateRange,
+  EVENT_KINDS,
+  STATE_COLOR,
+  STATE_LABEL,
+  stateOf,
+  titleOf,
+} from "@/helpers/event-labels.mjs";
+import {
+  fill,
+  groupEvents,
+  KIND_FILTERS,
+  organizerCard,
+} from "@/helpers/events-page.mjs";
+import { dayText, ruleLine } from "@/helpers/cup-recurrence.mjs";
 import { useAuth, useEventStore } from "@/stores";
 import { canSeeRole, metaOf } from "@/lib/routes";
 import { cn } from "@/lib/utils";
@@ -28,7 +48,9 @@ const stateColor = STATE_COLOR as Record<string, string>;
 const stateLabel = STATE_LABEL as Record<string, string>;
 
 const StateBadge = ({ event }: { event: Row }) => (
-  <Badge className={toneClass(stateColor[stateOf(event)])}>{stateLabel[stateOf(event)] || "—"}</Badge>
+  <Badge className={toneClass(stateColor[stateOf(event)])}>
+    {stateLabel[stateOf(event)] || "—"}
+  </Badge>
 );
 
 /** One event still to come, as a card: its state, its name, when and how it plays, how full it is. */
@@ -41,28 +63,51 @@ function EventCard({ event }: { event: Row }) {
         <div className="flex items-center justify-between gap-2">
           <StateBadge event={event} />
           {/* a team cup names its size, "2v2 cup" */}
-          <span className="text-sm text-muted-foreground">{event.team_size ? `${event.team_size}v${event.team_size} cup` : titleOf(EVENT_KINDS, event.kind)}</span>
+          <span className="text-sm text-muted-foreground">
+            {event.team_size
+              ? `${event.team_size}v${event.team_size} cup`
+              : titleOf(EVENT_KINDS, event.kind)}
+          </span>
         </div>
-        <Link href={`/events/${event.id}`} className="font-heading text-lg font-bold text-foreground">
+        <Link
+          href={`/events/${event.id}`}
+          className="font-heading text-lg font-bold text-foreground"
+        >
           {event.name}
         </Link>
         <div className="flex flex-col gap-1 text-sm text-muted-foreground">
           {dateRange(event) ? <span>{dateRange(event)}</span> : null}
-          {event.stages?.[0]?.format ? <span>{event.stages.length} stage{event.stages.length > 1 ? "s" : ""}</span> : null}
+          {event.stages?.[0]?.format ? (
+            <span>
+              {event.stages.length} stage{event.stages.length > 1 ? "s" : ""}
+            </span>
+          ) : null}
         </div>
         {event.entrant_count != null ? (
           <div className="flex items-center gap-2">
             {full.percent != null ? (
               <div className="h-1.5 flex-1 overflow-hidden rounded bg-muted">
-                <div className="h-1.5 bg-primary" style={{ width: `${full.percent}%` }} />
+                <div
+                  className="h-1.5 bg-primary"
+                  style={{ width: `${full.percent}%` }}
+                />
               </div>
             ) : null}
             <span className="text-sm text-muted-foreground">{full.label}</span>
           </div>
         ) : null}
         <div className="mt-auto">
-          <Button className="w-full" variant={joinable ? "default" : "outline"} nativeButton={false} render={<Link href={`/events/${event.id}`} />}>
-            {stateOf(event) === "checkin" ? "Check in" : joinable ? "Sign up" : "View"}
+          <Button
+            className="w-full"
+            variant={joinable ? "default" : "outline"}
+            nativeButton={false}
+            render={<Link href={`/events/${event.id}`} />}
+          >
+            {stateOf(event) === "checkin"
+              ? "Check in"
+              : joinable
+                ? "Sign up"
+                : "View"}
           </Button>
         </div>
       </CardContent>
@@ -88,6 +133,8 @@ export function EventsView() {
   const [sent, setSent] = useState(false);
   // the team invitations the reader has not answered, each answered right here
   const [invites, setInvites] = useState<Row[]>([]);
+  // the recurring cups, read when the filter asks for them
+  const [recurring, setRecurring] = useState<Row[] | null>(null);
   const [answering, setAnswering] = useState<string | null>(null);
   const answer = async (invite: Row, accept: boolean) => {
     setAnswering(`${invite.event_id}-${invite.team.id}`);
@@ -102,15 +149,22 @@ export function EventsView() {
     }
   };
 
-  const card = organizerCard(sent && me ? { ...me, organizer_request: "pending" } : me);
-  const { live, upcoming, past } = groupEvents(events, kind) as Record<"live" | "upcoming" | "past", Row[]>;
+  const card = organizerCard(
+    sent && me ? { ...me, organizer_request: "pending" } : me,
+  );
+  const { live, upcoming, past } = groupEvents(events, kind) as Record<
+    "live" | "upcoming" | "past",
+    Row[]
+  >;
 
   useEffect(() => {
     const load = async () => {
       try {
         const [eventRows, mineRows] = await Promise.all([
           store.fetchEvents(),
-          card === "organizer" ? store.myOrganizedEvents() : Promise.resolve([]),
+          card === "organizer"
+            ? store.myOrganizedEvents()
+            : Promise.resolve([]),
         ]);
         setEvents(eventRows);
         setMine(mineRows);
@@ -124,6 +178,17 @@ export function EventsView() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card === "organizer"]);
+
+  useEffect(() => {
+    if (kind !== "recurring" || recurring) return;
+    store
+      .fetchRecurrences()
+      .then(setRecurring)
+      .catch((e: Error) =>
+        setError(`The recurring cups did not load: ${e.message}`),
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind]);
 
   const sendRequest = async () => {
     setSending(true);
@@ -165,15 +230,30 @@ export function EventsView() {
             <h2 className="mb-2 text-xl">Team invitations</h2>
             <ul className="flex flex-col">
               {invites.map((invite) => (
-                <li key={`${invite.event_id}-${invite.team.id}`} className="flex min-h-12 flex-wrap items-center gap-3 border-t border-border py-2">
+                <li
+                  key={`${invite.event_id}-${invite.team.id}`}
+                  className="flex min-h-12 flex-wrap items-center gap-3 border-t border-border py-2"
+                >
                   <span className="min-w-0 flex-1">
-                    <strong>{invite.captain?.name || "A captain"}</strong> invited you to <strong>{invite.team.name}</strong> for{" "}
-                    <Link href={`/events/${invite.event_id}`}>{invite.event_name}</Link>
+                    <strong>{invite.captain?.name || "A captain"}</strong>{" "}
+                    invited you to <strong>{invite.team.name}</strong> for{" "}
+                    <Link href={`/events/${invite.event_id}`}>
+                      {invite.event_name}
+                    </Link>
                   </span>
-                  <Button size="sm" variant="outline" disabled={!!answering} onClick={() => answer(invite, false)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!!answering}
+                    onClick={() => answer(invite, false)}
+                  >
                     Decline
                   </Button>
-                  <Button size="sm" disabled={!!answering} onClick={() => answer(invite, true)}>
+                  <Button
+                    size="sm"
+                    disabled={!!answering}
+                    onClick={() => answer(invite, true)}
+                  >
                     Accept
                   </Button>
                 </li>
@@ -188,18 +268,37 @@ export function EventsView() {
           <CardContent className="p-4">
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-xl">Your cups</h2>
-              <span className="text-sm text-muted-foreground">The cups you create or were added to</span>
+              <span className="text-sm text-muted-foreground">
+                The cups you create or were added to
+              </span>
             </div>
             {mine.length ? (
               <ul className="flex flex-col">
                 {mine.map((event) => (
-                  <li key={event.id} className="flex min-h-12 flex-wrap items-center gap-3 border-t border-border py-2">
-                    <Link href={`/events/${event.id}`} className="min-w-0 flex-1 font-bold">
+                  <li
+                    key={event.id}
+                    className="flex min-h-12 flex-wrap items-center gap-3 border-t border-border py-2"
+                  >
+                    <Link
+                      href={`/events/${event.id}`}
+                      className="min-w-0 flex-1 font-bold"
+                    >
                       {event.name}
                     </Link>
-                    {event.published === false ? <Badge variant="outline">Draft</Badge> : <StateBadge event={event} />}
-                    <span className="text-sm text-muted-foreground">{dateRange(event)}</span>
-                    <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/events/${event.id}/admin`} />}>
+                    {event.published === false ? (
+                      <Badge variant="outline">Draft</Badge>
+                    ) : (
+                      <StateBadge event={event} />
+                    )}
+                    <span className="text-sm text-muted-foreground">
+                      {dateRange(event)}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      nativeButton={false}
+                      render={<Link href={`/events/${event.id}/admin`} />}
+                    >
                       <Icon name="mdi-tune-variant" />
                       Run it
                     </Button>
@@ -207,7 +306,9 @@ export function EventsView() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground">You run no cup yet. Create one to get started.</p>
+              <p className="text-muted-foreground">
+                You run no cup yet. Create one to get started.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -216,9 +317,15 @@ export function EventsView() {
       {card === "ask" || card === "pending" ? (
         <Card className="card mb-6 border-dashed">
           <CardContent className="flex flex-wrap items-center gap-4 p-4">
-            <Icon name="mdi-trophy-outline" size={28} className="text-primary-text" />
+            <Icon
+              name="mdi-trophy-outline"
+              size={28}
+              className="text-primary-text"
+            />
             <div className="min-w-0 flex-[1_1_320px]">
-              <h2 className="text-lg">{card === "pending" ? "Request sent" : "Want to run a cup?"}</h2>
+              <h2 className="text-lg">
+                {card === "pending" ? "Request sent" : "Want to run a cup?"}
+              </h2>
               <p className="text-sm text-muted-foreground">
                 {card === "pending"
                   ? "An admin will look at it. Once it is approved, Create cup shows up on this page."
@@ -251,7 +358,51 @@ export function EventsView() {
 
       {loading ? <Progress value={null} className="mb-4" /> : null}
 
-      {live.length ? (
+      {kind === "recurring" ? (
+        <section className="mb-6">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Cups played on a rule, such as every Friday. Each time is a cup of
+            its own; open one to see its coming days and the cups so far.
+          </p>
+          {recurring === null ? (
+            <Progress value={null} className="mb-4" />
+          ) : recurring.length ? (
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+              {recurring.map((row) => (
+                <Card key={row.id} className="card">
+                  <CardContent className="flex h-full flex-col gap-2 p-4">
+                    <div className="font-heading text-lg font-bold">
+                      {row.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {ruleLine(row)}
+                    </div>
+                    <div className="text-sm">
+                      {row.next_on
+                        ? `Next: ${dayText(row.next_on)}`
+                        : "No day left"}
+                    </div>
+                    <span className="flex-1" />
+                    <Button
+                      variant="outline"
+                      nativeButton={false}
+                      render={<Link href={`/events/recurring/${row.id}`} />}
+                    >
+                      Open
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              No cup repeats yet. A cup&apos;s run page sets it to repeat.
+            </p>
+          )}
+        </section>
+      ) : null}
+
+      {kind !== "recurring" && live.length ? (
         <section className="mb-6">
           <h2 className="mb-3 text-xl">Live now</h2>
           <div className="flex flex-col gap-3">
@@ -263,10 +414,20 @@ export function EventsView() {
                     Live
                   </span>
                   <div className="min-w-0 flex-[1_1_320px]">
-                    <div className="font-heading text-lg font-bold">{event.name}</div>
-                    <div className="text-sm text-muted-foreground">{[titleOf(EVENT_KINDS, event.kind), dateRange(event)].filter(Boolean).join(" · ")}</div>
+                    <div className="font-heading text-lg font-bold">
+                      {event.name}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {[titleOf(EVENT_KINDS, event.kind), dateRange(event)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </div>
                   </div>
-                  <Button variant="outline" nativeButton={false} render={<Link href={`/events/${event.id}`} />}>
+                  <Button
+                    variant="outline"
+                    nativeButton={false}
+                    render={<Link href={`/events/${event.id}`} />}
+                  >
                     Open
                   </Button>
                 </CardContent>
@@ -276,78 +437,119 @@ export function EventsView() {
         </section>
       ) : null}
 
-      <section className="mb-6">
-        <h2 className="mb-3 text-xl">Upcoming</h2>
-        {upcoming.length ? (
-          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
-            {upcoming.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">{loading ? "" : "Nothing is coming up yet."}</p>
-        )}
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-xl">Past</h2>
-        <Card className="card">
-          <div className="table-scroll overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Event</TableHead>
-                  <TableHead className={phoneCell}>Kind</TableHead>
-                  <TableHead className={phoneCell}>Date</TableHead>
-                  <TableHead>State</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {past.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell className="py-3">
-                      <Link href={`/events/${event.id}`}>
-                        <strong>{event.name}</strong>
-                      </Link>
-                      {/* a phone drops the middle columns, so their words ride under the name */}
-                      <div className="text-xs text-muted-foreground min-[960px]:hidden">
-                        {[titleOf(EVENT_KINDS, event.kind), dateRange(event)].filter(Boolean).join(" · ")}
-                      </div>
-                    </TableCell>
-                    <TableCell className={phoneCell}>{titleOf(EVENT_KINDS, event.kind)}</TableCell>
-                    <TableCell className={cn(phoneCell, "whitespace-nowrap")}>{dateRange(event) || "—"}</TableCell>
-                    <TableCell>{event.cancelled_at ? <Badge variant="outline">Cancelled</Badge> : <StateBadge event={event} />}</TableCell>
-                  </TableRow>
+      {kind !== "recurring" ? (
+        <>
+          <section className="mb-6">
+            <h2 className="mb-3 text-xl">Upcoming</h2>
+            {upcoming.length ? (
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+                {upcoming.map((event) => (
+                  <EventCard key={event.id} event={event} />
                 ))}
-                {!past.length && !loading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                      Nothing has been played yet.
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                {loading ? "" : "Nothing is coming up yet."}
+              </p>
+            )}
+          </section>
 
-        {/* The same test as the route guard of /koth */}
-        {me && canSeeRole(me.role, metaOf("/koth").role) ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Archived KOTH nights are on <Link href="/koth">KOTH Events</Link>.
-          </p>
-        ) : null}
-      </section>
+          <section>
+            <h2 className="mb-3 text-xl">Past</h2>
+            <Card className="card">
+              <div className="table-scroll overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Event</TableHead>
+                      <TableHead className={phoneCell}>Kind</TableHead>
+                      <TableHead className={phoneCell}>Date</TableHead>
+                      <TableHead>State</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {past.map((event) => (
+                      <TableRow key={event.id}>
+                        <TableCell className="py-3">
+                          <Link href={`/events/${event.id}`}>
+                            <strong>{event.name}</strong>
+                          </Link>
+                          {/* a phone drops the middle columns, so their words ride under the name */}
+                          <div className="text-xs text-muted-foreground min-[960px]:hidden">
+                            {[
+                              titleOf(EVENT_KINDS, event.kind),
+                              dateRange(event),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                        </TableCell>
+                        <TableCell className={phoneCell}>
+                          {titleOf(EVENT_KINDS, event.kind)}
+                        </TableCell>
+                        <TableCell
+                          className={cn(phoneCell, "whitespace-nowrap")}
+                        >
+                          {dateRange(event) || "—"}
+                        </TableCell>
+                        <TableCell>
+                          {event.cancelled_at ? (
+                            <Badge variant="outline">Cancelled</Badge>
+                          ) : (
+                            <StateBadge event={event} />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!past.length && !loading ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="py-6 text-center text-muted-foreground"
+                        >
+                          Nothing has been played yet.
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+
+            {/* The same test as the route guard of /koth */}
+            {me && canSeeRole(me.role, metaOf("/koth").role) ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Archived KOTH nights are on{" "}
+                <Link href="/koth">KOTH Events</Link>.
+              </p>
+            ) : null}
+          </section>
+        </>
+      ) : null}
 
       <Dialog open={asking} onOpenChange={setAsking}>
         <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
-          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Request organizer access</DialogTitle>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">
+            Request organizer access
+          </DialogTitle>
           <div className="flex flex-col gap-3 p-4">
             <p className="text-sm text-muted-foreground">
-              Organizers create cups and run them on this site. An admin reads your request and answers it here. You don&apos;t need a player profile for this.
+              Organizers create cups and run them on this site. An admin reads
+              your request and answers it here. You don&apos;t need a player
+              profile for this.
             </p>
-            <Field label="What would you like to run? (optional)" htmlFor="organizer-note">
-              <Textarea id="organizer-note" rows={3} maxLength={300} value={note} placeholder="For example: a weekly 1v1 cup on Friday evenings" onChange={(e) => setNote(e.target.value)} />
+            <Field
+              label="What would you like to run? (optional)"
+              htmlFor="organizer-note"
+            >
+              <Textarea
+                id="organizer-note"
+                rows={3}
+                maxLength={300}
+                value={note}
+                placeholder="For example: a weekly 1v1 cup on Friday evenings"
+                onChange={(e) => setNote(e.target.value)}
+              />
             </Field>
           </div>
           <div className="flex justify-end gap-2 px-4 py-3">

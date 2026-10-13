@@ -541,6 +541,12 @@ export function EventView({ id }: { id: string }) {
               Cancelled
             </Badge>
           ) : null}
+          {event.cup_recurrence ? (
+            <Link href={`/events/recurring/${event.cup_recurrence.id}`} className="mt-2 inline-flex items-center gap-1 text-sm">
+              <Icon name="mdi-calendar-sync" />
+              Part of {event.cup_recurrence.name}
+            </Link>
+          ) : null}
           {runner.organizers.length ? (
             <p className="mt-2 text-sm text-muted-foreground">Run by {runner.organizers.map((one) => one.name || "an organizer").join(", ")}</p>
           ) : null}

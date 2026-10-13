@@ -4,7 +4,7 @@ title: Run a cup
 description: A cup from its creation to the awards, run by an admin or an organizer, with the members' signups and results in between, each step on its page with the route it writes.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-13T16:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-13T20:00:00Z }
 sources:
   - id: event-management
     resource: ../pages/event-management.md
@@ -37,6 +37,7 @@ This flow takes a cup from its creation to its awards. Its runner, an admin or a
 | 9. Advance the stage, on a stage another stage follows | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/advance` | [Event management](../pages/event-management.md) |
 | 9a. On a cup over rounds, finish each round once it is played; its places pay points into the overall table | organizer or admin | `/events/:id/admin`, the rounds bar | `POST /events/{id}/legs/{leg_id}/finish`, `DELETE` to reopen | [Event management](../pages/event-management.md) |
 | 10. Finish the event, or reopen a finished one | admin | `/events/:id/admin`, the last stage | `POST /events/{id}/finish`, `POST /events/{id}/reopen` | [Event management](../pages/event-management.md) |
+| 11. Repeat the cup on a rule, and create each next cup on a coming day | organizer or admin | `/events/:id/admin`, "Repeat this cup"; `/events/recurring/:id`, "Create" | `POST /events/{id}/recurrence`, `POST /cup-recurrences/{id}/occurrences` | [Event management](../pages/event-management.md) |
 
 Steps 6 to 9 repeat for every stage. A cup plays one stage, so it skips step 9 and finishes.
 

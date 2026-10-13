@@ -37,6 +37,7 @@ import { CupConsole } from "@/components/CupConsole";
 import { CupFormatCard } from "@/components/CupFormatCard";
 import { CupOverallTable } from "@/components/CupOverallTable";
 import { CupRoundPicker } from "@/components/CupRoundPicker";
+import { RepeatCupDialog } from "@/components/RepeatCupDialog";
 import { CupRoundsBar } from "@/components/CupRoundsBar";
 import { allLegsFinished, legField, legsOf, legStages, legTitle, openLegIndex } from "@/helpers/cup-rounds.mjs";
 import { bestOfLine, parsePlan } from "@/helpers/best-of-plan.mjs";
@@ -122,6 +123,7 @@ export function EventAdminView({ id }: { id: string }) {
   // read again after a round is finished or reopened, so the overall table follows
   const [overallVersion, setOverallVersion] = useState(0);
   const [overallRows, setOverallRows] = useState<Row[]>([]);
+  const [repeating, setRepeating] = useState(false);
   // The page's own tab, Draw, Participants or Results, as the address names it; the stage tab
   // above is which stage the draw and the results read
   const [view, setView] = useState(() => (typeof window === "undefined" ? "draw" : tabOf(new URLSearchParams(window.location.search).get("tab"))));
@@ -468,6 +470,23 @@ export function EventAdminView({ id }: { id: string }) {
             ← {event.name}
           </Link>
           <EventHeader event={event} league={league} />
+          {/* a cup made from a rule names it; any other cup can be set to repeat */}
+          {event.kind === "cup" ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {event.cup_recurrence ? (
+                <Link href={`/events/recurring/${event.cup_recurrence.id}`} className="inline-flex items-center gap-1 text-sm">
+                  <Icon name="mdi-calendar-sync" />
+                  Part of {event.cup_recurrence.name}
+                </Link>
+              ) : (
+                <Button size="sm" variant="outline" disabled={!event.starts_at} onClick={() => setRepeating(true)}>
+                  <Icon name="mdi-calendar-sync" />
+                  Repeat this cup
+                </Button>
+              )}
+            </div>
+          ) : null}
+          {repeating ? <RepeatCupDialog event={event} open onOpenChange={setRepeating} /> : null}
 
           {tabbed ? (
             <Tabs value={view} onValueChange={(value) => pickView(value as string)} className="mt-4">

@@ -28,18 +28,6 @@ export const unplaced = (entrants = [], divisions = [], usesDivisions = false) =
 export const inSeedOrder = (rows = []) =>
   [...rows].sort((a, b) => (a.seed ?? Infinity) - (b.seed ?? Infinity) || (entrantMmr(b) ?? 0) - (entrantMmr(a) ?? 0) || entrantName(a).localeCompare(entrantName(b)));
 
-/** The ids of a group after one player moves `step` places up (-1) or down (+1); a move past
- *  either end leaves the order as it is.
- *  @param {any[]} rows @param {number} id @param {number} step */
-export function movedOrder(rows, id, step) {
-  const ids = rows.map((row) => row.id);
-  const from = ids.indexOf(id);
-  const to = from + step;
-  if (from < 0 || to < 0 || to >= ids.length) return ids;
-  ids.splice(to, 0, ...ids.splice(from, 1));
-  return ids;
-}
-
 /** The ids of a group after one player moves to seed `place` (1 is the top), dragged there or
  *  typed in; a place past either end is the end. Null when the player stays where it is.
  *  @param {any[]} rows @param {number} id @param {number} place */

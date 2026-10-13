@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
 import { TeamName } from "@/components/TeamName";
-import { divisionGroups, inSeedOrder, movedOrder, placedOrder, seedBody } from "@/helpers/cup-divisions.mjs";
+import { divisionGroups, inSeedOrder, placedOrder, seedBody } from "@/helpers/cup-divisions.mjs";
 import { entrantMmr } from "@/helpers/entrants.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -18,14 +18,12 @@ type Group = { id: number | null; title: string | null; rows: Row[] };
 
 const groupsOf = divisionGroups as (entrants: Row[], divisions: Row[], uses: boolean) => Group[];
 const ordered = inSeedOrder as (rows: Row[]) => Row[];
-const moved = movedOrder as (rows: Row[], id: number, step: number) => number[];
 const placed = placedOrder as (rows: Row[], id: number, place: number) => number[] | null;
 const bodyOf = seedBody as (source: string, divisionId: number | null, order?: number[]) => Row;
 
 /** The seeds of a cup's first stage, beside its draw: the players in seed order, a reshuffle by
- *  MMR or at random, a player dragged to a place or given a seed number, a move up or down, and a
- *  pin that keeps a seed through a reshuffle. A cup with
- *  divisions seeds each division on its own. After the draw every change draws the bracket again
+ *  MMR or at random, and a player dragged to a place or given a seed number. A cup with divisions
+ *  seeds each division on its own. After the draw every change draws the bracket again
  *  from the new seeds in the same write (`onRedrawn` reads the draw back); while its series hold
  *  results the change asks first, because the redraw deletes them. A finished cup or round only
  *  reads its seeds. */
@@ -99,7 +97,6 @@ export function CupSeedsPanel({
     setAsking(null);
     return run(pending.key, () => write(pending.body, true));
   };
-  const step = (group: Group, rows: Row[], row: Row, by: number) => reseed(group, "manual", moved(rows, row.id, by));
   // a drop or a typed seed moves the player straight to that place; its own place writes nothing
   const place = (group: Group, rows: Row[], id: number, to: number) => {
     const order = placed(rows, id, to);
@@ -110,11 +107,6 @@ export function CupSeedsPanel({
     setDragging(null);
     setOver(null);
   };
-  const pin = (row: Row) =>
-    run(`pin-${row.id}`, async () => {
-      const answered = await store.pinEntrant(event.id, row.id, { seed_pinned: !row.seed_pinned });
-      onEntrants(entrants.map((old) => (old.id === answered.id ? answered : old)));
-    });
 
   return (
     <aside className="card rounded-lg p-3 shadow-sm" aria-label="Seeds">
@@ -170,11 +162,12 @@ export function CupSeedsPanel({
                         ref={(el) => {
                           if (el && document.activeElement !== el) el.value = String(index + 1);
                         }}
-                        type="number"
-                        min="1"
-                        max={rows.length}
+                        // plain text, so the field carries no spinner; a phone still opens its number pad
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         disabled={!!busy}
-                        className="tnum h-7 w-12 px-1 text-right"
+                        className="tnum h-7 w-9 px-1 text-center"
                         aria-label={`Seed of ${row.user?.name ?? row.team?.name ?? "player"}`}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") e.currentTarget.blur();
@@ -184,9 +177,10 @@ export function CupSeedsPanel({
                           }
                         }}
                         onBlur={(e) => {
-                          const to = Number(e.target.value);
+                          // an emptied field or a word puts the seed back and moves nobody
+                          const typed = e.target.value.trim();
                           e.target.value = String(index + 1);
-                          if (e.target.value !== String(to)) place(group, rows, row.id, to);
+                          if (/^\d+$/.test(typed)) place(group, rows, row.id, Number(typed));
                         }}
                       />
                     </>
@@ -195,26 +189,6 @@ export function CupSeedsPanel({
                   )}
                   <span className="min-w-0 flex-1 truncate">{row.team ? <TeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
                   <span className="tnum text-xs text-muted-foreground">{(entrantMmr(row) as number) || ""}</span>
-                  {!editable ? null : (
-                    <>
-                      <Button variant="ghost" size="icon-sm" aria-label={`Move ${row.user?.name ?? row.team?.name ?? "player"} up`} disabled={!!busy || index === 0} onClick={() => step(group, rows, row, -1)}>
-                        <Icon name="mdi-chevron-up" />
-                      </Button>
-                      <Button variant="ghost" size="icon-sm" aria-label={`Move ${row.user?.name ?? row.team?.name ?? "player"} down`} disabled={!!busy || index === rows.length - 1} onClick={() => step(group, rows, row, 1)}>
-                        <Icon name="mdi-chevron-down" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-pressed={!!row.seed_pinned}
-                        aria-label={row.seed_pinned ? "Let a reshuffle move this seed" : "Keep this seed through a reshuffle"}
-                        disabled={!!busy || row.seed == null}
-                        onClick={() => pin(row)}
-                      >
-                        <Icon name={row.seed_pinned ? "mdi-pin" : "mdi-pin-outline"} />
-                      </Button>
-                    </>
-                  )}
                 </li>
               ))}
             </ol>

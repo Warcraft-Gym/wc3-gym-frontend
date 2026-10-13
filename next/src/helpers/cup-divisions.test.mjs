@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { divisionGroups, inSeedOrder, movedOrder, placedOrder, seedBody, unplaced } from './cup-divisions.mjs';
+import { divisionGroups, inSeedOrder, placedOrder, seedBody, unplaced } from './cup-divisions.mjs';
 
 const DIVISIONS = [
   { id: 8, position: 2, name: 'Open' },
@@ -35,13 +35,9 @@ test('a cup with divisions lists them strongest first and the unplaced last, onl
   assert.equal(unplaced(placed, DIVISIONS, true), false);
 });
 
-test('a group reads in seed order and a move steps one place inside it', () => {
+test('a group reads in seed order', () => {
   const pro = inSeedOrder(rows.filter((row) => row.division_id === 9));
   assert.deepEqual(pro.map((row) => row.id), [2, 1]);
-  assert.deepEqual(movedOrder(pro, 1, -1), [1, 2]);
-  // a move past either end changes nothing
-  assert.deepEqual(movedOrder(pro, 2, -1), [2, 1]);
-  assert.deepEqual(movedOrder(pro, 1, 1), [2, 1]);
 });
 
 test('a seed write names its division, or none on a cup without divisions', () => {

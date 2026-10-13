@@ -123,4 +123,6 @@ test('a signup on the waitlist stands in no field, and a drawn or full cup takes
   assert.equal(joinsWaitlist(cup, rows, true), true);
   assert.equal(joinsWaitlist(cup, [{ id: 1 }, { id: 5 }], false), true);
   assert.equal(joinsWaitlist({ kind: 'koth', entrant_cap: 1 }, [{ id: 1 }], true), false);
+  // a cup over rounds takes a late player for its later rounds
+  assert.equal(joinsWaitlist({ kind: 'cup', cup_legs: [{ id: 1 }] }, [{ id: 1 }], true), false);
 });

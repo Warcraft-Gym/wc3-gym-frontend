@@ -92,10 +92,11 @@ export const waitlistOf = (entrants = []) =>
   entrants.filter((row) => row.waitlisted_at && !row.withdrawn_at).sort((a, b) => String(a.waitlisted_at).localeCompare(String(b.waitlisted_at)));
 
 /** Whether a signup now lands on the waitlist: the cup is drawn, or it holds as many as it takes.
+ *  A cup played over rounds takes a late player for its later rounds, so only its cap counts.
  *  @param {any} event @param {any[]} entrants @param {boolean} drawn */
 export function joinsWaitlist(event, entrants = [], drawn = false) {
   if (event?.kind !== 'cup') return false;
-  if (drawn) return true;
+  if (drawn && !(event.cup_legs || []).length) return true;
   return event.entrant_cap != null && eveningOf(event, entrants).live >= event.entrant_cap;
 }
 

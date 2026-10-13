@@ -9,6 +9,7 @@ import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import { bestOfLine, largestBestOf, parsePlan, planText, poolProblem } from "@/helpers/best-of-plan.mjs";
 import { readStagesPayload } from "@/helpers/event-wizard.mjs";
+import { legStages } from "@/helpers/cup-rounds.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { useEventStore } from "@/stores";
@@ -46,8 +47,12 @@ export function CupFormatCard({ event, stage, drawn, onEvent }: { event: Row; st
     setSaving(true);
     setError(null);
     try {
-      const stages = readStagesPayload(event.stages, {}).map((row: Row, index: number) =>
-        event.stages[index]?.id === stage.id ? { ...row, best_of: bestOf, best_of_by_round: planText(plan, stage.format, bestOf) } : row,
+      // a cup over rounds plays the same format every round, so it sends one round's stages and
+      // the backend writes them onto every round
+      const leg = (event.cup_legs || []).find((one: Row) => one.stage_ids.includes(stage.id));
+      const own: Row[] = leg ? legStages(event.stages, leg) : event.stages;
+      const stages = readStagesPayload(own, {}).map((row: Row, index: number) =>
+        own[index]?.id === stage.id ? { ...row, best_of: bestOf, best_of_by_round: planText(plan, stage.format, bestOf) } : row,
       );
       const writeStages = () => store.setStages(event.id, stages);
       const writePool = () => store.setEventPool(event.id, pool.map((row) => row.id));

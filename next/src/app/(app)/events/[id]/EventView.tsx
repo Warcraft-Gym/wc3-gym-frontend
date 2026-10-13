@@ -47,6 +47,9 @@ import { bestOfLine, parsePlan } from "@/helpers/best-of-plan.mjs";
 import { rulesOf } from "@/helpers/map-order.mjs";
 import { cn } from "@/lib/utils";
 import { livesLine } from "@/helpers/cup-wizard.mjs";
+import { legsOf, legTitle, openLegIndex, ownEntry } from "@/helpers/cup-rounds.mjs";
+import { CupOverallTable } from "@/components/CupOverallTable";
+import { CupRoundPicker } from "@/components/CupRoundPicker";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -89,6 +92,10 @@ export function EventView({ id }: { id: string }) {
   const [answering, setAnswering] = useState(false);
   const [stageData, setStageData] = useState<Record<string, Row>>({});
   const [dialog, setDialog] = useState(false);
+  // A cup played over rounds shows one round's draw at a time
+  const [legIndex, setLegIndex] = useState(0);
+  // the overall table's rows, which place a finished cup over rounds on its podium
+  const [overallRows, setOverallRows] = useState<Row[]>([]);
   // the wizard lands here when the event was written but its divisions were not
   const [error, setError] = useState<string | null>(search.get("divisions") === "unsaved" ? "The event was created, but its divisions were not saved." : null);
 
@@ -152,6 +159,12 @@ export function EventView({ id }: { id: string }) {
 
   // Only the stages that hold series are drawn; the table above lists every stage
   const drawn = stages.map((stage) => ({ ...stage, ...(stageData[stage.id] || {}) })).filter((stage) => stage.series?.length);
+  // A cup over rounds reads the draw and the results of the round picked, and adds them up overall
+  const legs: Row[] = legsOf(event);
+  const leg: Row | null = legs[legIndex] || null;
+  const inLeg = (stage: Row) => !leg || leg.stage_ids.includes(stage.id);
+  const shownStages = stages.filter(inLeg);
+  const shownDrawn = drawn.filter(inLeg);
 
   // Who reads the draw, as the report rule asks: the player row, the seats, and whether they run
   // the event; a reader who is not logged in reports nothing
@@ -180,7 +193,8 @@ export function EventView({ id }: { id: string }) {
 
   // Closing an event freezes the table of its last stage as the places it awards, so a
   // finished event names its champion and every other place off that table.
-  const places: Record<string, Row> = stateOf(event) !== "finished" ? {} : placesOf(drawn.at(-1)?.standings || []);
+  // a cup over rounds places its players on the overall table instead
+  const places: Record<string, Row> = stateOf(event) !== "finished" || legs.length ? {} : placesOf(drawn.at(-1)?.standings || []);
 
   const logIn = () => {
     saveReturnUrl(window.location.pathname + window.location.search);
@@ -266,6 +280,7 @@ export function EventView({ id }: { id: string }) {
               })
             : null;
         setEvent(loaded);
+        setLegIndex(openLegIndex(legsOf(loaded)));
         setLeagues(leagueRows);
         setBoard(night);
         if (night) return;
@@ -318,7 +333,7 @@ export function EventView({ id }: { id: string }) {
     stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`;
   // One line a stage: what it plays, for the draw tab before and over the bracket
   const stageLine = (stage: Row) =>
-    [stages.length > 1 ? stage.name || `Stage ${stage.position}` : null, titleOf(FORMATS, stage.format), stage.format === "placement" ? livesLine(stage.placement_lives) : null, bestOfOf(stage), seriesPerEntrant(stage) ? `${seriesPerEntrant(stage)} series each entrant a round` : null, titleOf(SCHEDULING_MODES, stage.scheduling_mode)]
+    [shownStages.length > 1 ? stage.name || `Stage ${stage.position}` : null, titleOf(FORMATS, stage.format), stage.format === "placement" ? livesLine(stage.placement_lives) : null, bestOfOf(stage), seriesPerEntrant(stage) ? `${seriesPerEntrant(stage)} series each entrant a round` : null, titleOf(SCHEDULING_MODES, stage.scheduling_mode)]
       .filter(Boolean)
       .join(" · ");
 
@@ -484,7 +499,7 @@ export function EventView({ id }: { id: string }) {
     ) : null,
 
     // The stages read the same drawing the run page shows, with no admin control on it
-    draw: drawn.map((stage) => (
+    draw: shownDrawn.map((stage) => (
       <div key={stage.id}>
         {tabbed ? (
           <p className="mb-3 text-sm text-muted-foreground">{stageLine(stage)}</p>
@@ -664,13 +679,25 @@ export function EventView({ id }: { id: string }) {
                 {hideSwitch}
               </div>
               <TabsContent value="draw" id="the-draw" className="mt-4">
+                {legs.length ? (
+                  <CupRoundPicker
+                    event={event}
+                    legs={legs}
+                    legIndex={legIndex}
+                    onLeg={setLegIndex}
+                    entry={ownEntry(entrants, auth.me?.user?.id)}
+                    drawn={shownDrawn.length > 0}
+                    onLegs={(cup_legs) => setEvent((old) => (old ? { ...old, cup_legs } : old))}
+                    onError={setError}
+                  />
+                ) : null}
                 {sections.mine}
-                {drawn.length ? (
+                {shownDrawn.length ? (
                   sections.draw
                 ) : (
                   <Card className="card">
                     <CardContent className="flex flex-col gap-1 p-4">
-                      {stages.map((stage) => (
+                      {shownStages.map((stage) => (
                         <p key={stage.id}>{stageLine(stage)}</p>
                       ))}
                       <p className="text-muted-foreground">The bracket shows here once the organizers draw it.</p>
@@ -682,7 +709,16 @@ export function EventView({ id }: { id: string }) {
                 {sections.entrants}
               </TabsContent>
               <TabsContent value="results" className="mt-4">
-                <EventResults event={event as Row} stages={drawn} entrants={entrants} />
+                {legs.length ? <CupOverallTable event={event} onRows={setOverallRows} /> : null}
+                {/* the matches below are one round's; the picker names which */}
+                {legs.length ? <CupRoundPicker event={event} legs={legs} legIndex={legIndex} onLeg={setLegIndex} entry={null} drawn onLegs={() => {}} onError={setError} /> : null}
+                <EventResults
+                  event={event as Row}
+                  stages={shownDrawn}
+                  entrants={entrants}
+                  places={legs.length ? overallRows.filter((row: Row) => row.legs?.length).map((row: Row) => ({ entrant_id: row.entrant_id, position: row.position, name: row.name, user_id: row.user?.id ?? null })) : undefined}
+                  matchesTitle={leg ? `Matches · ${legTitle(leg)}` : undefined}
+                />
               </TabsContent>
             </Tabs>
           ) : event ? (

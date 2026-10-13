@@ -32,11 +32,26 @@ const roundsOf = resultRounds as unknown as (series: Row[], rounds: Row[]) => { 
  *  and race. A bye and a reset nobody played are no result, so they are left out. The spoiler
  *  switch of the page hides both. A click on a series opens it: the series page for a reader,
  *  the result dialog for a runner. The entrants name the flag and the race a table row lacks. */
-export function EventResults({ event, stages, entrants = [], onOpenSeries }: { event: Row; stages: Row[]; entrants?: Row[]; onOpenSeries?: (row: Row) => void }) {
+export function EventResults({
+  event,
+  stages,
+  entrants = [],
+  onOpenSeries,
+  places,
+  matchesTitle = "Matches",
+}: {
+  event: Row;
+  stages: Row[];
+  entrants?: Row[];
+  onOpenSeries?: (row: Row) => void;
+  // the places when the stages do not decide them: a cup over rounds places on its overall table
+  places?: Row[];
+  matchesTitle?: string;
+}) {
   const hidden = useHideResults();
   const finished = stateOf(event) === "finished" || !!event.closed_at;
   // Closing freezes the places: the last stage's table first, then the entrants a playoff left out
-  const placeGroups: Row[] = finished ? (eventPlaces(stages) as Row[]) : [];
+  const placeGroups: Row[] = !finished ? [] : places ? (places.length ? [{ division_id: null, rows: places }] : []) : (eventPlaces(stages) as Row[]);
   const played = stages.map((stage) => ({ stage, rounds: roundsOf(stage.series || [], stage.rounds || []) })).filter((one) => one.rounds.length);
   const hiddenNote = <p className="px-4 pb-4 text-muted-foreground">Results are hidden. Turn off &quot;Hide results&quot; to read them.</p>;
 
@@ -142,7 +157,7 @@ export function EventResults({ event, stages, entrants = [], onOpenSeries }: { e
 
       <Card className="card">
         <CardHeader>
-          <CardTitle>Matches</CardTitle>
+          <CardTitle>{matchesTitle}</CardTitle>
         </CardHeader>
         <CardContent className="px-0">
           {hidden ? (

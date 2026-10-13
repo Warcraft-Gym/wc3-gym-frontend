@@ -147,6 +147,27 @@ const store = {
   async pinEntrant(event_id: number, entrant_id: number, pins: { division_pinned?: boolean; seed_pinned?: boolean }) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/pins`, pins);
   },
+  // A cup played over rounds: check a player in for one round, or out again; a runner names the entry
+  async checkInLeg(event_id: number, leg_id: number, entrant_id: number | null = null) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins`, { entrant_id });
+  },
+  async checkOutLeg(event_id: number, leg_id: number, entrant_id: number | null = null) {
+    const query = entrant_id ? `?entrant_id=${entrant_id}` : "";
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins${query}`);
+  },
+  async checkEveryoneInLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins/everyone`);
+  },
+  // Finishing a round counts its places in the overall table; the reopen takes that back
+  async finishLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/finish`);
+  },
+  async reopenLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/legs/${leg_id}/finish`);
+  },
+  async fetchOverall(event_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/overall${freshQuery(fresh)}`, undefined, freshOptions(fresh));
+  },
   // The seeds of one stage: mmr, random, or an order of entrant ids for manual
   async setSeeds(event_id: number, stage_id: number, seeds: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds`, seeds);

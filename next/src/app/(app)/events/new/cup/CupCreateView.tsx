@@ -16,7 +16,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_STEPS, cupPayload, cupProblem, livesLine, PLACEMENT_LIVES, planFormat, PLAYOFFS, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -62,7 +62,8 @@ function Choice<V extends string | number>({ label, items, value, onChange }: { 
   );
 }
 
-/** Create cup: the few things an organizer decides for an evening's cup, in five short steps.
+/** Create cup: the few things an organizer decides for a cup, in five short steps, or six for a
+ *  cup played over rounds, which also sets the points each place of a round pays.
  *  The cup is created with one elimination stage; seeding, check-in and the draw happen on its
  *  run page on the evening. */
 export function CupCreateView() {
@@ -74,7 +75,13 @@ export function CupCreateView() {
   const [error, setError] = useState<string | null>(null);
 
   const set = (patch: Row) => setForm((current) => ({ ...current, ...patch }));
-  const key = CUP_STEPS[step - 1].key;
+  const steps = cupSteps(form);
+  const key = steps[step - 1].key;
+  const rounds = form.play === "rounds";
+  const later: Row[] = laterRounds(form);
+  // a round the organizer changed keeps its own day and time from then on
+  const setLater = (index: number, patch: Row) => set({ later_rounds: later.map((row, at) => (at === index ? { ...row, ...patch, edited: true } : row)) });
+  const ordinal = (place: number) => (place === 1 ? "1st" : place === 2 ? "2nd" : place === 3 ? "3rd" : `${place}th`);
   const problem: string | null = cupProblem(form, key);
   const format = CUP_FORMATS.find((item) => item.value === form.format);
 
@@ -92,7 +99,12 @@ export function CupCreateView() {
 
   const review = [
     { k: "Name", v: form.name.trim() },
-    { k: "When", v: dateRange_({ starts_at: cupPayload(form).starts_at }) || "No time yet" },
+    rounds
+      ? {
+          k: "Rounds",
+          v: (cupPayload(form).legs || []).map((leg: Row, index: number) => `Round ${index + 1}: ${dateRange_({ starts_at: leg.starts_at }) || "no time yet"}`).join(" · "),
+        }
+      : { k: "When", v: dateRange_({ starts_at: cupPayload(form).starts_at }) || "No time yet" },
     { k: "Game", v: CUP_GAMES.find((game) => game.value === form.game)?.title },
     {
       k: "Format",
@@ -126,7 +138,8 @@ export function CupCreateView() {
       v: [form.entrant_min ? `at least ${form.entrant_min}` : null, form.entrant_cap ? `at most ${form.entrant_cap}` : null].filter(Boolean).join(", ") || "No bounds",
     },
     { k: "Divisions", v: form.uses_divisions ? "Split by MMR on the run page" : "One field" },
-    { k: "Check-in", v: form.checkin_enabled ? "Players check in before the start" : "No check-in" },
+    ...(rounds ? [{ k: "Points per place", v: pointsOf(form).join(", ") }] : []),
+    { k: "Check-in", v: rounds ? "Players check in for each round" : form.checkin_enabled ? "Players check in before the start" : "No check-in" },
     { k: "Visible", v: form.published ? (form.signups_open ? "Published, sign-ups open" : "Published, sign-ups closed") : "Draft: only you and the admins see it" },
   ];
 
@@ -141,16 +154,16 @@ export function CupCreateView() {
 
       {/* five step names do not fit a phone, so it reads the one it is on */}
       <div className="mb-2 text-muted-foreground min-[600px]:hidden">
-        Step {step} of {CUP_STEPS.length} · {CUP_STEPS[step - 1].title}
+        Step {step} of {steps.length} · {steps[step - 1].title}
       </div>
       <ol className="mb-4 hidden items-center gap-3 min-[600px]:flex">
-        {CUP_STEPS.map((item, index) => (
+        {steps.map((item, index) => (
           <li key={item.key} aria-current={index + 1 === step ? "step" : undefined} className={cn("flex flex-1 items-center gap-2", index + 1 !== step && "text-muted-foreground")}>
             <span className={cn("tnum flex size-6 items-center justify-center rounded-full text-xs", index + 1 <= step ? "bg-primary text-on-primary" : "bg-muted")}>
               {index + 1 < step ? <Icon name="mdi-check" /> : index + 1}
             </span>
             {item.title}
-            {index < CUP_STEPS.length - 1 ? <span className="h-px flex-1 bg-border" /> : null}
+            {index < steps.length - 1 ? <span className="h-px flex-1 bg-border" /> : null}
           </li>
         ))}
       </ol>
@@ -160,11 +173,43 @@ export function CupCreateView() {
           <div className="grid grid-cols-12 gap-3">
             <TextField className="col-span-12" label="Name" autoFocus placeholder="Friday Night Cup #13" value={form.name} onChange={(e) => set({ name: e.target.value })} />
             <div className="col-span-12 min-[600px]:col-span-6">
-              <SimpleDatePicker modelValue={form.start_date} label="Day" onUpdateModelValue={(start_date) => set({ start_date })} />
+              <SimpleDatePicker modelValue={form.start_date} label={rounds ? "Round 1 day" : "Day"} onUpdateModelValue={(start_date) => set({ start_date })} />
             </div>
             <div className="col-span-12 min-[600px]:col-span-6">
               <SimpleTimePicker modelValue={form.start_time} label="Start time" onUpdateModelValue={(start_time) => set({ start_time })} />
             </div>
+            <div className="col-span-12">
+              <Choice label="How it is played" items={CUP_PLAYS} value={form.play} onChange={(play) => set({ play })} />
+              <p className="mt-1 text-sm text-muted-foreground">
+                {rounds
+                  ? "Each round is a cup of its own with the same format. Players sign up once and check in for each round; every round's places pay points into an overall table."
+                  : "The whole cup is played on one evening."}
+              </p>
+            </div>
+            {rounds ? (
+              <>
+                <TextField
+                  className="col-span-12 min-[600px]:col-span-4"
+                  type="number"
+                  min="2"
+                  max={MAX_ROUNDS}
+                  label="Rounds"
+                  hint="Each a week after the one before; change any round's day below"
+                  value={form.round_count}
+                  onChange={(e) => set({ round_count: e.target.value })}
+                />
+                {later.map((row, index) => (
+                  <div key={index} className="col-span-12 grid grid-cols-12 gap-3">
+                    <div className="col-span-12 min-[600px]:col-span-6">
+                      <SimpleDatePicker modelValue={row.date} label={`Round ${index + 2} day`} onUpdateModelValue={(date) => setLater(index, { date })} />
+                    </div>
+                    <div className="col-span-12 min-[600px]:col-span-6">
+                      <SimpleTimePicker modelValue={row.time} label="Start time" onUpdateModelValue={(time) => setLater(index, { time })} />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : null}
             <div className="col-span-12">
               <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
               <p className="mt-1 text-sm text-muted-foreground">
@@ -373,10 +418,14 @@ export function CupCreateView() {
               </Label>
               <p className="text-sm text-muted-foreground">You cut the divisions by MMR on the run page once the players have signed up. Each division plays its own bracket.</p>
             </div>
-            <Label className="col-span-12 flex min-h-11 items-center gap-2">
-              <Switch checked={!!form.checkin_enabled} onCheckedChange={(checkin_enabled) => set({ checkin_enabled })} />
-              Players check in before the start
-            </Label>
+            {rounds ? (
+              <p className="col-span-12 text-sm text-muted-foreground">Players check in for each round on the cup&apos;s page; a round is drawn with the players checked in for it.</p>
+            ) : (
+              <Label className="col-span-12 flex min-h-11 items-center gap-2">
+                <Switch checked={!!form.checkin_enabled} onCheckedChange={(checkin_enabled) => set({ checkin_enabled })} />
+                Players check in before the start
+              </Label>
+            )}
             <Label className="col-span-12 flex min-h-11 items-center gap-2">
               <Switch checked={!!form.published} onCheckedChange={(published) => set({ published })} />
               Publish now; off keeps it a draft only you and the admins see
@@ -385,6 +434,37 @@ export function CupCreateView() {
               <Switch checked={!!form.signups_open} onCheckedChange={(signups_open) => set({ signups_open })} />
               Open sign-ups now
             </Label>
+          </div>
+        ) : key === "points" ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              The points each place of a round pays. A player who misses a round scores 0 for it, and a place past the list pays 0. Players level on points are split by their best single result.
+            </p>
+            <div className="grid grid-cols-3 gap-3 min-[600px]:grid-cols-6">
+              {(form.points as string[]).map((value, index) => (
+                <TextField
+                  key={index}
+                  type="number"
+                  min="0"
+                  label={ordinal(index + 1)}
+                  value={value}
+                  onChange={(e) => set({ points: (form.points as string[]).map((old, at) => (at === index ? e.target.value : old)) })}
+                />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => set({ points: [...form.points, ""] })}>
+                <Icon name="mdi-plus" />
+                Add a place
+              </Button>
+              <Button variant="outline" disabled={form.points.length <= 1} onClick={() => set({ points: form.points.slice(0, -1) })}>
+                <Icon name="mdi-minus" />
+                Remove the last place
+              </Button>
+              <Button variant="ghost" onClick={() => set({ points: DEFAULT_POINTS.map(String) })}>
+                Reset to {DEFAULT_POINTS.join(", ")}
+              </Button>
+            </div>
           </div>
         ) : (
           review.map((row) => (
@@ -409,7 +489,7 @@ export function CupCreateView() {
         )}
         {problem ? <span className="text-sm text-muted-foreground">{problem}</span> : null}
         <span className="flex-1" />
-        {step < CUP_STEPS.length ? (
+        {step < steps.length ? (
           <Button disabled={!!problem} onClick={() => setStep(step + 1)}>
             Next
           </Button>

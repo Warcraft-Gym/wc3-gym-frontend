@@ -2,6 +2,7 @@
 
 ## 2026-10-13
 
+* **Add**: a cup over rounds. Create cup asks "One evening" or "Several rounds", with the number of rounds and a day and time each, a week apart by default, and a Points step, 10, 8, 6, 5, 4, 3, 2, 1 to start. The run page's rounds bar checks players in per round, draws the round with them, and finishes it; the event page lets a player check in for a round and reads the overall table, with the podium placed on it. [Event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md) and [run a cup](flows/run-a-cup.md) state it.
 * **Add**: Create cup asks whether the cup splits its players into divisions, off by default. A cup with divisions cuts them on its run page's Participants tab, a panel with the MMR strip and one card per division, and every cup seeds its first stage in a Seeds sidebar beside the draw, per division when it has them, with a pin that keeps a seed. A cup without divisions shows none, its Generate dialog included. [Event management](pages/event-management.md) and [run a cup](flows/run-a-cup.md) state it.
 
 ## 2026-10-12

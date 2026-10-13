@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem, livesLine, planFormat, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupPayload, cupProblem, cupSteps, laterRounds, livesLine, planFormat, pointsOf, swissLine } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -107,4 +107,50 @@ test('a Swiss cup writes its rounds, and a playoff as a second stage the last re
   assert.equal(cupProblem({ ...blankCup(), format: 'swiss', swiss_mode: 'all', swiss_rounds: 1 }, 'format'), null);
   assert.equal(planFormat({ format: 'swiss', playoff: 8 }), 'single_elimination');
   assert.equal(swissLine({ swiss_mode: 'rounds', swiss_rounds: 3, playoff: 4 }), 'Swiss, 3 rounds, then the top 4 play off');
+});
+
+test('a cup of one evening sends no rounds and keeps its own check-in', () => {
+  const body = cupPayload({ ...blankCup(), start_date: day, start_time: '20:00' });
+  assert.equal(body.legs, undefined);
+  assert.equal(body.points_by_place, undefined);
+  assert.equal(body.checkin_enabled, true);
+  assert.deepEqual(cupSteps(blankCup()).map((row) => row.key), ['basics', 'format', 'maps', 'signups', 'review']);
+});
+
+test('a cup over rounds dates them a week apart and checks its players in per round', () => {
+  const form = { ...blankCup(), name: 'Weekly Cup', play: 'rounds', round_count: 3, start_date: day, start_time: '20:00' };
+  const later = laterRounds(form);
+  assert.deepEqual(later.map((row) => [row.date.getDate(), row.date.getMonth(), row.time]), [[23, 9, '20:00'], [30, 9, '20:00']]);
+  const body = cupPayload(form);
+  assert.equal(body.legs.length, 3);
+  assert.equal(body.legs[0].starts_at, body.starts_at);
+  assert.deepEqual(body.points_by_place, [10, 8, 6, 5, 4, 3, 2, 1]);
+  assert.equal(body.checkin_enabled, false);
+  assert.deepEqual(cupSteps(form).map((row) => row.key), ['basics', 'format', 'maps', 'signups', 'points', 'review']);
+  assert.equal(cupProblem(form, 'basics'), null);
+});
+
+test('a round the organizer moved keeps its day when the first round moves', () => {
+  const moved = { date: new Date(2026, 9, 25), time: '18:00', edited: true };
+  const form = { ...blankCup(), play: 'rounds', round_count: 3, start_date: new Date(2026, 9, 9), start_time: '20:00', later_rounds: [moved] };
+  const later = laterRounds(form);
+  assert.equal(later[0], moved);
+  assert.equal(later[1].date.getDate(), 23);
+});
+
+test('the rounds need a day each, in order, and two to twelve of them', () => {
+  const base = { ...blankCup(), name: 'Weekly Cup', play: 'rounds', start_date: day, start_time: '20:00' };
+  assert.equal(cupProblem({ ...base, round_count: 1 }, 'basics'), 'A cup plays 2 to 12 rounds.');
+  const early = { date: new Date(2026, 9, 10), time: '20:00', edited: true };
+  assert.equal(cupProblem({ ...base, round_count: 2, later_rounds: [early] }, 'basics'), 'Round 2 starts after round 1.');
+  const blank = { date: null, time: '', edited: true };
+  assert.equal(cupProblem({ ...base, round_count: 2, later_rounds: [blank] }, 'basics'), 'Pick the day and time of round 2.');
+});
+
+test('the points table drops its empty tail and refuses a negative place', () => {
+  const form = { ...blankCup(), play: 'rounds', points: ['12', '', '5', '', ''] };
+  assert.deepEqual(pointsOf(form), [12, 0, 5]);
+  assert.equal(cupProblem(form, 'points'), null);
+  assert.equal(cupProblem({ ...form, points: ['', ''] }, 'points'), 'Give at least the winner of a round some points.');
+  assert.equal(cupProblem({ ...form, points: ['3', '-1'] }, 'points'), 'Points are whole numbers, 0 or more.');
 });

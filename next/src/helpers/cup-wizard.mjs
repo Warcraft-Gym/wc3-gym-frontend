@@ -14,6 +14,45 @@ export const CUP_STEPS = [
   { key: 'review', title: 'Review' },
 ];
 
+/** The steps of this cup: a cup played over rounds also sets the points each place pays.
+ *  @param {any} form */
+export const cupSteps = (form) =>
+  form.play === 'rounds'
+    ? [...CUP_STEPS.slice(0, -1), { key: 'points', title: 'Points' }, CUP_STEPS[CUP_STEPS.length - 1]]
+    : CUP_STEPS;
+
+// How a cup is played: on one evening, or over several rounds, each a competition of its own
+// whose places pay points into an overall table
+export const CUP_PLAYS = [
+  { value: 'one', title: 'One evening' },
+  { value: 'rounds', title: 'Several rounds' },
+];
+
+// What each place of a round pays unless the organizer changes it; a place past the list pays 0
+export const DEFAULT_POINTS = [10, 8, 6, 5, 4, 3, 2, 1];
+export const MAX_ROUNDS = 12;
+
+const addDays = (date, days) => (date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate() + days) : null);
+
+/** The rounds after the first, `count` of them in all: each one a week after the one before at
+ *  the cup's start time, unless the organizer changed its day or time.
+ *  @param {any} form
+ *  @param {number} [count] */
+export const laterRounds = (form, count = Number(form.round_count) || 0) =>
+  Array.from({ length: Math.max(count - 1, 0) }, (_, index) => {
+    const kept = (form.later_rounds || [])[index];
+    if (kept?.edited) return kept;
+    return { date: addDays(form.start_date, 7 * (index + 1)), time: form.start_time, edited: false };
+  });
+
+/** The points table as numbers, best place first; empty fields at the end are dropped.
+ *  @param {any} form */
+export const pointsOf = (form) => {
+  const values = (form.points || []).map((value) => (value === '' || value === null || value === undefined ? null : Number(value)));
+  while (values.length && values[values.length - 1] === null) values.pop();
+  return values.map((value) => value ?? 0);
+};
+
 // The games a cup is played as: one against one, or real team games of a size; custom games
 // and FFA name what comes later
 export const CUP_GAMES = [
@@ -118,6 +157,11 @@ export const blankCup = () => ({
   entrant_cap: '',
   // on: the players split into divisions, cut by MMR on the run page once they have signed up
   uses_divisions: false,
+  // one evening, or several rounds: their count, the rounds after the first, and the points a place pays
+  play: 'one',
+  round_count: 3,
+  later_rounds: [],
+  points: DEFAULT_POINTS.map(String),
   checkin_enabled: true,
   published: true,
   signups_open: true,
@@ -149,7 +193,9 @@ export const cupPayload = (form) => ({
   entrant_min: count(form.entrant_min),
   entrant_cap: count(form.entrant_cap),
   uses_divisions: !!form.uses_divisions,
-  checkin_enabled: !!form.checkin_enabled,
+  // a cup played over rounds checks its players in per round, never once for the cup
+  checkin_enabled: form.play === 'rounds' ? false : !!form.checkin_enabled,
+  ...roundsPayload(form),
   published: !!form.published,
   signups_open: !!form.signups_open,
   // every series vetoes from the pool by its own best-of, and game 1 plays the map left over
@@ -170,7 +216,17 @@ export const cupPayload = (form) => ({
   ],
 });
 
-/** What keeps a step from being left, or null when it is complete. */
+/** A cup played over rounds: one entry per round, each an instant in UTC, and the points table.
+ *  @param {any} form */
+function roundsPayload(form) {
+  if (form.play !== 'rounds') return {};
+  const first = form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null;
+  return {
+    legs: [{ starts_at: first }, ...laterRounds(form).map((row) => ({ starts_at: row.date && row.time ? storedUtc(row.date, row.time) : null }))],
+    points_by_place: pointsOf(form),
+  };
+}
+
 /** A Swiss cup's stages: the rounds, paired on the table or a full league, then the playoff,
  *  which the last Swiss result seeds and draws.
  *  @param {any} form */
@@ -208,6 +264,7 @@ function swissStages(form) {
   return stages;
 }
 
+/** What keeps a step from being left, or null when it is complete. */
 export function cupProblem(form, step) {
   if (step === 'format' && form.format === 'swiss' && form.swiss_mode !== 'all') {
     const rounds = Number(form.swiss_rounds);
@@ -217,6 +274,21 @@ export function cupProblem(form, step) {
     if (!(form.name || '').trim()) return 'Name the cup.';
     if (!form.start_date) return 'Pick the day the cup is played.';
     if (!form.start_time) return 'Pick the time it starts.';
+    if (form.play === 'rounds') {
+      const rounds = Number(form.round_count);
+      if (!Number.isInteger(rounds) || rounds < 2 || rounds > MAX_ROUNDS) return `A cup plays 2 to ${MAX_ROUNDS} rounds.`;
+      const later = laterRounds(form);
+      const missing = later.findIndex((row) => !row.date || !row.time);
+      if (missing >= 0) return `Pick the day and time of round ${missing + 2}.`;
+      const stamps = [storedUtc(form.start_date, form.start_time), ...later.map((row) => storedUtc(row.date, row.time))];
+      const early = stamps.findIndex((stamp, index) => index > 0 && stamp <= stamps[index - 1]);
+      if (early > 0) return `Round ${early + 1} starts after round ${early}.`;
+    }
+  }
+  if (step === 'points') {
+    const points = pointsOf(form);
+    if (!points.length) return 'Give at least the winner of a round some points.';
+    if (points.some((value) => !Number.isInteger(value) || value < 0)) return 'Points are whole numbers, 0 or more.';
   }
   if (step === 'maps') {
     return poolProblem((form.pool || []).length, Number(form.best_of), form.best_of_plan || {});

@@ -35,6 +35,10 @@ import { useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
 import { CupConsole } from "@/components/CupConsole";
 import { CupFormatCard } from "@/components/CupFormatCard";
+import { CupOverallTable } from "@/components/CupOverallTable";
+import { CupRoundPicker } from "@/components/CupRoundPicker";
+import { CupRoundsBar } from "@/components/CupRoundsBar";
+import { allLegsFinished, legField, legsOf, legStages, legTitle, openLegIndex } from "@/helpers/cup-rounds.mjs";
 import { bestOfLine, parsePlan } from "@/helpers/best-of-plan.mjs";
 import { tabOf, withTab } from "@/helpers/event-tabs.mjs";
 import Link from "next/link";
@@ -113,6 +117,11 @@ export function EventAdminView({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [tab, setTab] = useState(0);
+  // A cup played over rounds shows one round at a time; the stage tab is a stage of that round
+  const [legIndex, setLegIndex] = useState(0);
+  // read again after a round is finished or reopened, so the overall table follows
+  const [overallVersion, setOverallVersion] = useState(0);
+  const [overallRows, setOverallRows] = useState<Row[]>([]);
   // The page's own tab, Draw, Participants or Results, as the address names it; the stage tab
   // above is which stage the draw and the results read
   const [view, setView] = useState(() => (typeof window === "undefined" ? "draw" : tabOf(new URLSearchParams(window.location.search).get("tab"))));
@@ -139,8 +148,12 @@ export function EventAdminView({ id }: { id: string }) {
   const [winners, setWinners] = useState<(string | null)[]>([]);
   const [awardSide, setAwardSide] = useState<number | null>(null);
 
-  const stagesOf = (row: Row | null): Row[] => [...(row?.stages || [])].sort((a, b) => a.position - b.position);
-  const stages = stagesOf(event);
+  const legs: Row[] = legsOf(event);
+  const leg: Row | null = legs[legIndex] || null;
+  const stagesOf = (row: Row | null, ofLeg: Row | null = null): Row[] => legStages(row?.stages || [], ofLeg);
+  const stages = stagesOf(event, leg);
+  // the players a round draws are the ones checked in for it
+  const field: Row[] = legField(entrants, leg);
   const stage: Row | null = stages[tab] || null;
   const complete = series.length > 0 && series.every(isScored);
 
@@ -151,14 +164,16 @@ export function EventAdminView({ id }: { id: string }) {
 
   // What the generate dialog promises: where the seeds come from, and the field per division
   const seedSource = titleOf(SEED_SOURCES, entrants.find((row) => row.seed_source)?.seed_source || "mmr");
-  const fields = fieldsOf(entrants, event?.divisions, stage?.format);
+  const fields = fieldsOf(field, event?.divisions, stage?.format);
   const showByes = fields.some((row) => row.byes != null);
 
   // Who the next stage takes: the top of each division's table, or the whole table
   const advancing = advancingOf(standings, stage?.advance_count);
 
-  // Closing the event freezes the table of its last stage, so the finish sits on that tab
+  // Closing the event freezes the table of its last stage, so the finish sits on that tab; a cup
+  // over rounds pays its overall table, so it finishes once every round is finished
   const lastStage = !!stage && tab === stages.length - 1;
+  const finishes = lastStage && (!legs.length || allLegsFinished(legs));
   const awards = awardsOf(standings);
   const awardsByDivision = awards.some((one) => one.division);
 
@@ -193,6 +208,16 @@ export function EventAdminView({ id }: { id: string }) {
     setTab(index);
     loadStage(event, stages[index] || null);
   };
+  const pickLeg = (index: number) => {
+    setLegIndex(index);
+    setTab(0);
+    loadStage(event, stagesOf(event, legs[index] || null)[0] || null);
+  };
+  // A finished or reopened round clears the seeds and changes the overall table
+  const afterLeg = async () => {
+    setEntrants(await store.fetchEntrants(event!.id, true));
+    setOverallVersion((version) => version + 1);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -214,7 +239,10 @@ export function EventAdminView({ id }: { id: string }) {
           const teams = await teamStore.fetchTeamsBySeason(row.id).catch(() => []);
           setRosters(rostersOf(rows, teams, row.id));
         }
-        await loadStage(row, stagesOf(row)[0] || null);
+        // a cup over rounds opens on its first round not finished
+        const openLeg = legsOf(row)[openLegIndex(legsOf(row))] || null;
+        setLegIndex(openLegIndex(legsOf(row)));
+        await loadStage(row, stagesOf(row, openLeg)[0] || null);
       } catch (e) {
         setError(`The event did not load: ${(e as Error).message}`);
       } finally {
@@ -460,6 +488,20 @@ export function EventAdminView({ id }: { id: string }) {
               </TabsList>
               <TabsContent value="draw" className="mt-4">
                 <CupConsole part="evening" {...consoleProps} />
+                {legs.length ? (
+                  <CupRoundsBar
+                    event={event}
+                    legs={legs}
+                    legIndex={legIndex}
+                    onLeg={pickLeg}
+                    entrants={entrants}
+                    drawn={tab > 0 || series.length > 0}
+                    played={lastStage && complete}
+                    onLegs={(cup_legs) => setEvent({ ...event, cup_legs })}
+                    onFinished={afterLeg}
+                    onError={setError}
+                  />
+                ) : null}
                 {/* a cup's best-of and maps change until its bracket is drawn */}
                 {event.kind === "cup" && stage ? <CupFormatCard key={stage.id} event={event} stage={stage} drawn={series.length > 0} onEvent={setEvent} /> : null}
                 {stages.length > 1 ? stagePicker : null}
@@ -499,22 +541,22 @@ export function EventAdminView({ id }: { id: string }) {
                           Advance
                         </Button>
                       ) : null}
-                    {/* a drawn stage can be taken back and drawn again, until the event is finished */}
-                      {series.length > 0 && !event.closed_at && event.kind !== "gnl" ? (
+                    {/* a drawn stage can be taken back and drawn again, until the event or its round is finished */}
+                      {series.length > 0 && !event.closed_at && event.kind !== "gnl" && !leg?.finished_at ? (
                         <Button variant="outline" className="text-error" disabled={saving} onClick={() => setConfirmUndraw(true)}>
                           <Icon name="mdi-undo-variant" />
                           Undo the draw
                         </Button>
                       ) : null}
                       {/* The event ends on its last stage, so only that stage's table pays the places */}
-                      {lastStage ? (
+                      {finishes ? (
                         <Button variant="outline" className="text-primary-text" disabled={saving} onClick={() => setConfirmFinish(true)}>
                           <Icon name="mdi-trophy" />
                           Finish
                         </Button>
                       ) : null}
                       {/* Finish stamps the event closed; the reopen clears the stamp and the places it paid */}
-                      {lastStage && event.closed_at ? (
+                      {finishes && event.closed_at ? (
                         <Button variant="outline" disabled={saving} onClick={reopenEvent}>
                           <Icon name="mdi-lock-open-variant" />
                           Reopen
@@ -527,7 +569,7 @@ export function EventAdminView({ id }: { id: string }) {
                       <div className="min-w-0">
                         <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
                       </div>
-                      {seedsAside ? <CupSeedsPanel event={event} stage={stage} entrants={entrants} drawn={series.length > 0} onEntrants={consoleProps.onEntrants} /> : null}
+                      {seedsAside ? <CupSeedsPanel event={event} stage={stage} entrants={field} drawn={series.length > 0} onEntrants={consoleProps.onEntrants} /> : null}
                     </div>
                   </>
                 ) : null}
@@ -537,8 +579,19 @@ export function EventAdminView({ id }: { id: string }) {
                 <CupConsole part="people" {...consoleProps} />
               </TabsContent>
               <TabsContent value="results" className="mt-4">
+                {legs.length ? <CupOverallTable event={event} fresh version={overallVersion} onRows={setOverallRows} /> : null}
+                {legs.length ? <CupRoundPicker event={event} legs={legs} legIndex={legIndex} onLeg={pickLeg} entry={null} drawn onLegs={() => {}} onError={setError} /> : null}
                 {stages.length > 1 ? stagePicker : null}
-                {stage ? <EventResults event={event} stages={[{ ...stage, series, rounds, standings: lastStage ? standings : [] }]} entrants={entrants} onOpenSeries={openSeries} /> : null}
+                {stage ? (
+                  <EventResults
+                    event={event}
+                    stages={[{ ...stage, series, rounds, standings: lastStage ? standings : [] }]}
+                    entrants={entrants}
+                    onOpenSeries={openSeries}
+                    places={legs.length ? overallRows.filter((row: Row) => row.legs?.length).map((row: Row) => ({ entrant_id: row.entrant_id, position: row.position, name: row.name, user_id: row.user?.id ?? null })) : undefined}
+                    matchesTitle={leg ? `Matches · ${legTitle(leg)}` : undefined}
+                  />
+                ) : null}
               </TabsContent>
             </Tabs>
           ) : (

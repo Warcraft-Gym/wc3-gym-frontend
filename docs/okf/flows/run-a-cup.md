@@ -4,7 +4,7 @@ title: Run a cup
 description: A cup from its creation to the awards, run by an admin or an organizer, with the members' signups and results in between, each step on its page with the route it writes.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-13T10:30:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-13T16:00:00Z }
 sources:
   - id: event-management
     resource: ../pages/event-management.md
@@ -26,6 +26,7 @@ This flow takes a cup from its creation to its awards. Its runner, an admin or a
 | 1. Make the league | admin | `/leagues` | `POST /leagues` | [Event management](../pages/event-management.md) |
 | 2. Make the cup, with its best-of per bracket part and its map pool | organizer or admin | `/events/new/cup` | `POST /events` with the stages and the pool | [Event management](../pages/event-management.md) |
 | 3a. On a team cup, sign a team up, and every invited player accepts | member | `/events/:id`, "Sign up a team", the invitation | `POST /events/{id}/cup-teams`, `POST /events/{id}/cup-teams/{team_id}/accept` | [Leagues and events](../pages/leagues-and-events.md) |
+| 3b. On a cup over rounds, check in for each round before its draw | member for their own entry; organizer or admin for anyone | `/events/:id`, "Check in for Round n"; `/events/:id/admin`, the rounds bar | `POST` and `DELETE /events/{id}/legs/{leg_id}/checkins`, `POST /events/{id}/legs/{leg_id}/checkins/everyone` | [Event management](../pages/event-management.md) |
 | 3. Sign up, and check in when the event asks for it | member; an admin adds anyone by hand on `/events/:id/entrants` | `/events/:id`, the signup dialog | `POST /events/{id}/entrants`, `POST /events/{id}/entrants/{entrant_id}/checkin` | [Leagues and events](../pages/leagues-and-events.md) |
 | 4. On a cup made with divisions, cut them; then set the seeds | organizer or admin | `/events/:id/admin`, the Participants tab's Divisions panel and the Draw tab's Seeds | `PUT /events/{id}/divisions`, `POST /events/{id}/divisions/assign`, `PUT /events/{id}/stages/{stage_id}/seeds` | [Event management](../pages/event-management.md) |
 | 5. The draw locks the seeds | organizer or admin | `/events/:id/admin`, Generate | `POST /events/{id}/stages/{stage_id}/generate` | [Event management](../pages/event-management.md) |
@@ -34,6 +35,7 @@ This flow takes a cup from its creation to its awards. Its runner, an admin or a
 | 7. Veto and report a result | either side of the series, a team's every player | `/events/:id`, the draw's Veto and Report | `PUT /cup-series/{id}/veto`, `PUT /cup-series/{id}/report` | [Leagues and events](../pages/leagues-and-events.md) |
 | 8. Enter a result, a walkover or a forfeit | organizer or admin | `/events/:id/admin`, the result dialog | `PUT /cup-series/{id}`, `PUT /cup-series/{id}/result-kind`, `PUT /cup-series/{id}/places` for a lobby | [Event management](../pages/event-management.md) |
 | 9. Advance the stage, on a stage another stage follows | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/advance` | [Event management](../pages/event-management.md) |
+| 9a. On a cup over rounds, finish each round once it is played; its places pay points into the overall table | organizer or admin | `/events/:id/admin`, the rounds bar | `POST /events/{id}/legs/{leg_id}/finish`, `DELETE` to reopen | [Event management](../pages/event-management.md) |
 | 10. Finish the event, or reopen a finished one | admin | `/events/:id/admin`, the last stage | `POST /events/{id}/finish`, `POST /events/{id}/reopen` | [Event management](../pages/event-management.md) |
 
 Steps 6 to 9 repeat for every stage. A cup plays one stage, so it skips step 9 and finishes.

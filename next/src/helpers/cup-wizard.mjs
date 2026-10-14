@@ -94,6 +94,31 @@ export const teamSizeOf = (game) => CUP_GAMES.find((item) => item.value === game
  *  @param {any} form */
 export const isFfa = (form) => form?.game === 'ffa';
 
+// The FFA modes: every player for themselves, or teams of 2 to 4 that share a lobby with other
+// teams, signed up by their captains as a team cup is
+export const FFA_TEAM_SIZES = [
+  { value: 1, title: '1v1' },
+  { value: 2, title: '2v2' },
+  { value: 3, title: '3v3' },
+  { value: 4, title: '4v4' },
+];
+
+/** The players a team of this cup fields, or null for a cup of single players: the game's team
+ *  size, or a team FFA's mode.
+ *  @param {any} form */
+export const cupTeamSize = (form) => {
+  if (!isFfa(form)) return teamSizeOf(form.game);
+  const size = Number(form.ffa_team_size) || 1;
+  return size > 1 ? size : null;
+};
+
+/** How the FFA mode reads: "1v1v1v1" for single players, "2v2v2v2" for teams of two.
+ *  @param {any} form */
+export const ffaModeLine = (form) => {
+  const size = cupTeamSize(form) || 1;
+  return Array.from({ length: 4 }, () => size).join('v');
+};
+
 // How a free for all cup is played: heats of lobbies down to one final lobby, or one lobby that
 // plays several games and adds the place points up
 export const FFA_MODES = [
@@ -118,10 +143,12 @@ export const ffaAdvance = (form) => Number(form.lobby_advance) || Math.max(Math.
 
 /** How a free for all cup reads in a line, for the review.
  *  @param {any} form */
-export const ffaLine = (form) =>
-  form.ffa_mode === 'league'
-    ? `One lobby of ${Number(form.lobby_size) || '?'}, ${Number(form.ffa_games) || '?'} games, the points add up`
-    : `Heats of ${Number(form.lobby_size) || '?'}, the top ${ffaAdvance(form)} of each go on, down to one final lobby`;
+export const ffaLine = (form) => {
+  const who = cupTeamSize(form) ? ' teams' : '';
+  return form.ffa_mode === 'league'
+    ? `One lobby of ${Number(form.lobby_size) || '?'}${who}, ${Number(form.ffa_games) || '?'} games, the points add up`
+    : `Heats of ${Number(form.lobby_size) || '?'}${who}, the top ${ffaAdvance(form)} of each go on, down to one final lobby`;
+};
 
 export const CUP_FORMATS = [
   { value: 'single_elimination', title: 'Single elimination', hint: 'Lose once and you are out. 16 players play 4 rounds.' },
@@ -220,6 +247,8 @@ export const blankCup = () => ({
   // a free for all: heats or one lobby, the seats of a lobby, the places that go on, the games,
   // and the points each place pays (empty: the lobby size counting down)
   ffa_mode: 'heats',
+  // 1 plays every player for themselves; 2 to 4 play teams in the lobbies
+  ffa_team_size: 1,
   lobby_size: 4,
   lobby_advance: '',
   ffa_games: 3,
@@ -242,8 +271,8 @@ export const cupPayload = (form) => ({
   name: (form.name || '').trim(),
   kind: 'cup',
   // a team cup enters the teams its captains sign up, each of team_size players
-  entrant_kind: teamSizeOf(form.game) ? 'team' : 'solo',
-  team_size: teamSizeOf(form.game),
+  entrant_kind: cupTeamSize(form) ? 'team' : 'solo',
+  team_size: cupTeamSize(form),
   description: text(form.description),
   start_date: form.start_date ? dayIso(form.start_date) : null,
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played

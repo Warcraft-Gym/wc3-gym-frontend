@@ -334,6 +334,7 @@ export function lobbySeats(row, hidden = false, fed = false) {
   if (hidden) {
     return seats.map((seat) => ({
       ...seat, key: seat.side_no, place: null, result: null, user: fed ? null : seat.user,
+      team: fed ? null : seat.team, players: fed ? [] : seat.players,
     }));
   }
   return seats

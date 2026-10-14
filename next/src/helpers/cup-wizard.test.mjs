@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem, cupSteps, ffaLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupPayload, cupProblem, cupSteps, cupTeamSize, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -228,4 +228,17 @@ test('the FFA points default to the lobby counting down, and the format step che
   assert.equal(cupProblem({ ...form, lobby_advance: '4' }, 'format'), '1 to 3 places of a heat go on.');
   assert.equal(cupProblem({ ...form, ffa_mode: 'league', ffa_games: 1 }, 'format'), 'One lobby plays 2 to 10 games.');
   assert.equal(cupProblem({ ...form, ffa_points: ['3', '-1'] }, 'format'), 'Points are whole numbers, 0 or more.');
+});
+
+test('an FFA of teams enters teams of its mode and seats teams in its lobbies', () => {
+  const form = { ...blankCup(), game: 'ffa', ffa_team_size: 2, lobby_size: 4 };
+  const body = cupPayload(form);
+  assert.deepEqual([body.entrant_kind, body.team_size], ['team', 2]);
+  assert.equal(body.stages[0].format, 'ffa');
+  assert.equal(ffaModeLine(form), '2v2v2v2');
+  assert.equal(ffaLine(form), 'Heats of 4 teams, the top 2 of each go on, down to one final lobby');
+  // the solo mode and a 1v1 cup enter single players
+  assert.equal(cupTeamSize({ ...form, ffa_team_size: 1 }), null);
+  assert.equal(ffaModeLine({ ...form, ffa_team_size: 1 }), '1v1v1v1');
+  assert.equal(cupTeamSize({ ...blankCup(), game: '3v3', ffa_team_size: 2 }), 3);
 });

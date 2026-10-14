@@ -117,9 +117,28 @@ export function SeriesBox({
 
   const rows = seats.length
     ? seats.map((seat, index) => (
-        <div key={seat.key} className={cn(SIDE, index && "border-t", seat.result === "won" && "font-bold", me != null && seat.user?.id === me && "bg-primary/15")}>
+        <div
+          key={seat.key}
+          className={cn(
+            SIDE,
+            index && "border-t",
+            seat.result === "won" && "font-bold",
+            me != null && (seat.user?.id === me || (seat.players || []).some((one: Row) => one.id === me)) && "bg-primary/15",
+          )}
+        >
           <span className={cn(MARK, markClass(seat.result))} />
-          {seat.user ? (
+          {seat.team ? (
+            <div className="flex min-w-0 flex-col gap-px">
+              <TeamName team={seat.team} plain={!readonly} />
+              {(seat.players || []).length ? (
+                <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
+                  {(seat.players as Row[]).map((one) => (
+                    <PlayerName key={one.id} player={one} plain={!readonly} />
+                  ))}
+                </span>
+              ) : null}
+            </div>
+          ) : seat.user ? (
             <PlayerName player={seat.user} plain={!readonly} />
           ) : (
             <span className="text-[0.8125rem] text-muted-foreground">{fed ? "To be decided" : "Empty seat"}</span>

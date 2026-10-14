@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
+import { TeamName } from "@/components/TeamName";
 import { isScored, lobbySeats } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +55,7 @@ export function LobbyPlacesDialog({
   const empty = order.filter((seat) => !seat.entrant_id).length;
   // a lobby seats two entrants or more, so the third seat is the first one free to leave
   const movable = !!onMove && !played && order.filter((seat) => seat.entrant_id).length > 2;
-  const nameOf = (seat: Row) => seat.user?.name || `seat ${seat.side_no}`;
+  const nameOf = (seat: Row) => seat.team?.name || seat.user?.name || `seat ${seat.side_no}`;
 
   const move = (from: number | null, to: number) => {
     if (from == null || from === to || to < 0 || to >= order.length) return;
@@ -123,7 +124,16 @@ export function LobbyPlacesDialog({
                     if (/^\d+$/.test(typed)) move(index, Math.min(Math.max(Number(typed), 1), order.length) - 1);
                   }}
                 />
-                {seat.user ? <PlayerName player={seat.user} plain /> : <span className="text-muted-foreground">Empty seat</span>}
+                {seat.team ? (
+                  <span className="flex min-w-0 flex-col">
+                    <TeamName team={seat.team} plain />
+                    <span className="truncate text-xs text-muted-foreground">{(seat.players || []).map((one: Row) => one.name).join(", ")}</span>
+                  </span>
+                ) : seat.user ? (
+                  <PlayerName player={seat.user} plain />
+                ) : (
+                  <span className="text-muted-foreground">Empty seat</span>
+                )}
                 <span className="flex-1" />
                 {movable && seat.entrant_id ? (
                   <Button variant="ghost" size="sm" disabled={saving} onClick={() => onMove!(seat)}>

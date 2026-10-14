@@ -16,7 +16,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, FFA_MODES, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, cupTeamSize, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -87,6 +87,8 @@ export function CupCreateView() {
   const repeats: { value: number | null; title: string }[] = repeatChoices(form.start_date);
   const repeatsAs = repeats.find((item) => item.value === form.repeat_nth) || repeats[0];
   const ffa = isFfa(form);
+  // the players a team fields, or null for single players; a team FFA seats teams in its lobbies
+  const teamSize: number | null = cupTeamSize(form);
   const ordinal = (place: number) => (place === 1 ? "1st" : place === 2 ? "2nd" : place === 3 ? "3rd" : `${place}th`);
   const problem: string | null = cupProblem(form, key);
   const format = CUP_FORMATS.find((item) => item.value === form.format);
@@ -111,7 +113,7 @@ export function CupCreateView() {
           v: (cupPayload(form).legs || []).map((leg: Row, index: number) => `Round ${index + 1}: ${dateRange_({ starts_at: leg.starts_at }) || "no time yet"}`).join(" · "),
         }
       : { k: "When", v: dateRange_({ starts_at: cupPayload(form).starts_at }) || "No time yet" },
-    { k: "Game", v: CUP_GAMES.find((game) => game.value === form.game)?.title },
+    { k: "Game", v: ffa ? `FFA, ${ffaModeLine(form)}` : CUP_GAMES.find((game) => game.value === form.game)?.title },
     {
       k: "Format",
       v: ffa ? ffaLine(form) : [
@@ -259,11 +261,18 @@ export function CupCreateView() {
             </div>
             <div className="col-span-12">
               <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
+              {ffa ? (
+                <div className="mt-3">
+                  <Choice label="FFA mode" items={FFA_TEAM_SIZES} value={Number(form.ffa_team_size) || 1} onChange={(ffa_team_size) => set({ ffa_team_size })} />
+                </div>
+              ) : null}
               <p className="mt-1 text-sm text-muted-foreground">
-                {teamSizeOf(form.game)
-                  ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game cups come later.`
-                  : ffa
-                    ? "Free for all: every lobby is one game of single players, and a player of the lobby reports its places. Custom game cups come later."
+                {ffa
+                  ? teamSize
+                    ? `Free for all of teams, ${ffaModeLine(form)}: a captain signs a team of ${teamSize} up and invites the others, every player confirms, and any player of a team in a lobby reports its places. Custom game cups come later.`
+                    : "Free for all, every player for themselves: every lobby is one game, and a player of the lobby reports its places. Custom game cups come later."
+                  : teamSizeOf(form.game)
+                    ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game cups come later.`
                     : "Custom game cups come later."}
               </p>
             </div>
@@ -294,8 +303,8 @@ export function CupCreateView() {
                 type="number"
                 min={3}
                 max={form.ffa_mode === "league" ? 12 : 8}
-                label={form.ffa_mode === "league" ? "Players in the lobby" : "Players per heat"}
-                hint={form.ffa_mode === "league" ? "Also the most players the cup takes" : "Uneven fields share out over the heats"}
+                label={form.ffa_mode === "league" ? (teamSize ? "Teams in the lobby" : "Players in the lobby") : teamSize ? "Teams per heat" : "Players per heat"}
+                hint={form.ffa_mode === "league" ? (teamSize ? "Also the most teams the cup takes" : "Also the most players the cup takes") : "Uneven fields share out over the heats"}
                 value={form.lobby_size}
                 onChange={(e) => set({ lobby_size: e.target.value, ffa_points: [] })}
               />

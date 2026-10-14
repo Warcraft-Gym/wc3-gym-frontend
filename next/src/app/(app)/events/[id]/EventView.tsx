@@ -493,7 +493,7 @@ export function EventView({ id }: { id: string }) {
               <>
                 <div className="font-heading text-base font-bold">Your lobby is waiting for its places</div>
                 <div className="text-sm text-muted-foreground">
-                  {(mine.row.sides as Row[]).map((seat) => seat.user?.name).filter(Boolean).join(", ")}
+                  {(mine.row.sides as Row[]).map((seat) => seat.team?.name || seat.user?.name).filter(Boolean).join(", ")}
                   {mine.row.lobby_map ? ` · ${mine.row.lobby_map.name}` : ""}. Played it? Enter where everyone finished.
                 </div>
               </>

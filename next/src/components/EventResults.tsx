@@ -192,7 +192,7 @@ export function EventResults({
                                   {seats.map((seat) => (
                                     <span key={seat.side_no} className={cn("inline-flex items-center gap-1", seat.place === 1 && "font-bold")}>
                                       <span className="tnum text-xs text-muted-foreground">{seat.place}.</span>
-                                      {seat.user ? <PlayerName player={seat.user} plain /> : <span>Seat {seat.side_no}</span>}
+                                      {seat.team ? <span>{seat.team.name}</span> : seat.user ? <PlayerName player={seat.user} plain /> : <span>Seat {seat.side_no}</span>}
                                     </span>
                                   ))}
                                 </span>

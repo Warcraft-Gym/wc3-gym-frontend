@@ -145,13 +145,15 @@ export const vetoOf = (series, viewer = {}) =>
 
 /** What the draw offers on a free for all lobby: `report` while it waits for its places, `edit`
  *  once it holds them, or null. A player seated in the lobby enters its places, and so does an
- *  organizer or an admin; a lobby still waiting for a player of the round before offers nothing.
+ *  organizer or an admin, and in a team free for all every player of a seated team; a lobby
+ *  still waiting for a player of the round before offers nothing.
  *  @param {any} series @param {{ id?: number | null, isAdmin?: boolean, runs?: boolean }} [viewer] */
 export const lobbyReportOf = (series, viewer = {}) => {
   const seats = series?.sides || [];
   if (!seats.length || series.entrant1_id || series.entrant2_id) return null;
   if (seats.some((seat) => !seat.entrant_id)) return null;
-  const seated = viewer.id != null && seats.some((seat) => seat.user_id === viewer.id || seat.user?.id === viewer.id);
+  // a seat of the viewer's own, or of a team the viewer plays in
+  const seated = viewer.id != null && seats.some((seat) => seat.user_id === viewer.id || seat.user?.id === viewer.id || (seat.players || []).some((/** @type {any} */ one) => one.id === viewer.id));
   if (!seated && !viewer.isAdmin && !viewer.runs) return null;
   return holdsResult(series) ? 'edit' : 'report';
 };

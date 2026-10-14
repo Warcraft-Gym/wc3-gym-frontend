@@ -179,3 +179,16 @@ test('a lobby offers its places to a player seated in it and to its organizers',
   assert.equal(lobbyReportOf({ ...lobby, sides: [...lobby.sides, { side_no: 4, entrant_id: null, user_id: null }] }, { id: 7 }), null);
   assert.equal(lobbyReportOf({ id: 1, player1_id: 7, player2_id: 8 }, { id: 7 }), null);
 });
+
+test('a team lobby offers its places to every player of a seated team', () => {
+  const lobby = {
+    id: 6,
+    sides: [
+      { side_no: 1, entrant_id: 21, user_id: null, team: { id: 3, name: 'Pair' }, players: [{ id: 7 }, { id: 8 }] },
+      { side_no: 2, entrant_id: 22, user_id: null, team: { id: 4, name: 'Duo' }, players: [{ id: 9 }, { id: 10 }] },
+      { side_no: 3, entrant_id: 23, user_id: null, team: { id: 5, name: 'Twins' }, players: [{ id: 11 }, { id: 12 }] },
+    ],
+  };
+  assert.equal(lobbyReportOf(lobby, { id: 8 }), 'report');
+  assert.equal(lobbyReportOf(lobby, { id: 13 }), null);
+});

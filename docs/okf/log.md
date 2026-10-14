@@ -2,6 +2,7 @@
 
 ## 2026-10-14
 
+* **Add**: team FFA. Create cup's FFA game offers the modes 1v1, 2v2, 3v3 and 4v4; a team mode signs teams up as a team cup does, a lobby seat reads as its team over its players, and any player of a seated team reports the places. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.
 * **Add**: FFA cups. Create cup offers "Heats down to a final" and "One lobby, several games" with the points each place pays and an FFA map pool; a player seated in a lobby reports its places on the event page, a runner corrects, clears and changes a lobby's map on the run page, the box names the map, and Results lists the lobbies by place. [Event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md) and [run a cup](flows/run-a-cup.md) state it.
 * **Add**: "Edit rounds" on a cup's run page renames, moves, adds and removes rounds after creation; "Edit" on a recurring cup's page changes its name, start time and last day; Create cup can repeat the cup on a schedule from the start; and a division's seed change after the draw redraws that division alone. [Event management](pages/event-management.md) states it.
 * **Update**: a cup's Divisions panel previews a changed cut live: the cards place every player as saving would and mark who changes division, before anything is saved. [Event management](pages/event-management.md) states it.

@@ -10,6 +10,7 @@ export const MAP_MODES = [
   { value: '6v6', title: '6v6' },
   { value: '8v8', title: '8v8' },
   { value: 'ffa', title: 'FFA' },
+  { value: 'custom', title: 'Custom' },
 ];
 
 /** The modes a map names, as a list.

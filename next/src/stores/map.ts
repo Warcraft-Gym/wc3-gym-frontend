@@ -9,6 +9,10 @@ const store = {
   async updateMap(map: any) {
     await fetchWrapper.put(`${backendUrl}/maps/${map.id}`, map);
   },
+  // A custom game's map by its name: the app's map of that name, or a new one an organizer adds
+  async addCustomMap(name: string) {
+    return await fetchWrapper.post(`${backendUrl}/maps/custom`, { name });
+  },
   async createMap(map: any) {
     return await fetchWrapper.post(`${backendUrl}/maps`, map);
   },

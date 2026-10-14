@@ -15,8 +15,9 @@ import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
+import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, cupTeamSize, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -87,6 +88,7 @@ export function CupCreateView() {
   const repeats: { value: number | null; title: string }[] = repeatChoices(form.start_date);
   const repeatsAs = repeats.find((item) => item.value === form.repeat_nth) || repeats[0];
   const ffa = isFfa(form);
+  const custom = isCustom(form);
   // the players a team fields, or null for single players; a team FFA seats teams in its lobbies
   const teamSize: number | null = cupTeamSize(form);
   const ordinal = (place: number) => (place === 1 ? "1st" : place === 2 ? "2nd" : place === 3 ? "3rd" : `${place}th`);
@@ -113,7 +115,14 @@ export function CupCreateView() {
           v: (cupPayload(form).legs || []).map((leg: Row, index: number) => `Round ${index + 1}: ${dateRange_({ starts_at: leg.starts_at }) || "no time yet"}`).join(" · "),
         }
       : { k: "When", v: dateRange_({ starts_at: cupPayload(form).starts_at }) || "No time yet" },
-    { k: "Game", v: ffa ? `FFA, ${ffaModeLine(form)}` : CUP_GAMES.find((game) => game.value === form.game)?.title },
+    {
+      k: "Game",
+      v: custom
+        ? `Custom game, ${ffa ? `FFA ${ffaModeLine(form)}` : form.custom_mode}`
+        : ffa
+          ? `FFA, ${ffaModeLine(form)}`
+          : CUP_GAMES.find((game) => game.value === form.game)?.title,
+    },
     {
       k: "Format",
       v: ffa ? ffaLine(form) : [
@@ -130,7 +139,9 @@ export function CupCreateView() {
       ? { k: "Points per place", v: `${(ffaPoints(form) as number[]).join(", ")}; every lobby is one game` }
       : { k: "Best of", v: bestOfLine(Number(form.best_of), form.best_of_plan, planFormat(form)) },
     { k: "Seeds", v: form.hide_seeds ? "Hidden from players" : "Shown to everyone" },
-    { k: "Maps", v: form.pool.length ? form.pool.map((row: PoolMap) => row.name).join(", ") : "No maps" },
+    custom
+      ? { k: "Map", v: form.custom_map ? `${form.custom_map.name}, every game; no veto` : "No map yet" }
+      : { k: "Maps", v: form.pool.length ? form.pool.map((row: PoolMap) => row.name).join(", ") : "No maps" },
     { k: "Who may sign up", v: SIGNUP_POLICIES.find((item) => item.value === (form.eligibility_required && form.bnet_required ? "members" : form.signup_policy))?.title },
     {
       k: "Eligibility",
@@ -261,12 +272,18 @@ export function CupCreateView() {
             </div>
             <div className="col-span-12">
               <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
+              {custom ? (
+                <div className="mt-3">
+                  <Choice label="Mode" items={CUSTOM_MODES} value={form.custom_mode} onChange={(custom_mode) => set({ custom_mode })} />
+                </div>
+              ) : null}
               {ffa ? (
                 <div className="mt-3">
                   <Choice label="FFA mode" items={FFA_TEAM_SIZES} value={Number(form.ffa_team_size) || 1} onChange={(ffa_team_size) => set({ ffa_team_size })} />
                 </div>
               ) : null}
               <p className="mt-1 text-sm text-muted-foreground">
+                {custom ? "A custom game is played on one map you pick in the Maps step, every game on it and nothing vetoed. " : ""}
                 {ffa
                   ? teamSize
                     ? `Free for all of teams, ${ffaModeLine(form)}: a captain signs a team of ${teamSize} up and invites the others, every player confirms, and any player of a team in a lobby reports its places. Custom game cups come later.`
@@ -481,6 +498,8 @@ export function CupCreateView() {
               <p id="cup-hide-seeds-hint" className="pl-10 text-sm text-muted-foreground">Only the organizers and admins see the seed numbers.</p>
             </div>
           </div>
+        ) : key === "maps" && custom ? (
+          <CustomMapPicker value={form.custom_map} onChange={(custom_map) => set({ custom_map })} problem={problem} />
         ) : key === "maps" ? (
           <MapPoolPicker
             pool={form.pool}

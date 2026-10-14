@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
+import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import {
   bestOfLine,
@@ -50,11 +51,17 @@ export function CupFormatCard({
   const editable = !drawn && !event.closed_at;
   // a free for all lobby is one game on one map of the pool, so it names no best-of
   const ffa = stage.format === "ffa";
-  const problem = ffa
-    ? pool.length
+  // a custom game is played on its one map, every game on it
+  const custom = !!event.custom_game;
+  const problem = custom
+    ? pool.length === 1
       ? null
-      : "Add at least one map; every lobby plays a map of the pool."
-    : poolProblem(pool.length, bestOf, plan);
+      : "Pick the map the cup is played on."
+    : ffa
+      ? pool.length
+        ? null
+        : "Add at least one map; every lobby plays a map of the pool."
+      : poolProblem(pool.length, bestOf, plan);
 
   const edit = () => {
     setBestOf(stage.best_of);
@@ -106,9 +113,10 @@ export function CupFormatCard({
         await writeStages();
         await writePool();
       }
-      // a cup made before the veto by best-of takes it on with its first pool
+      // a cup made before the veto by best-of takes it on with its first pool; a free for all
+      // and a custom game never veto
       onEvent(
-        event.veto_by_best_of
+        event.veto_by_best_of || ffa || custom
           ? await store.fetchEvent(event.id)
           : await store.updateEvent(event.id, { veto_by_best_of: true }),
       );
@@ -138,12 +146,23 @@ export function CupFormatCard({
             {bestOfLine(stage.best_of, stored, stage.format)}
           </div>
         )}
-        <div>
-          <span className="text-muted-foreground">Maps: </span>
-          {maps.length
-            ? maps.map((row) => row.name).join(", ")
-            : "No maps yet. Add them before the draw, so the players can veto."}
-        </div>
+        {custom ? (
+          <div>
+            <span className="text-muted-foreground">Map: </span>
+            {maps[0]?.name ?? "No map yet"}
+            <span className="text-muted-foreground">
+              {" "}
+              · a custom game, every game on it, no veto
+            </span>
+          </div>
+        ) : (
+          <div>
+            <span className="text-muted-foreground">Maps: </span>
+            {maps.length
+              ? maps.map((row) => row.name).join(", ")
+              : "No maps yet. Add them before the draw, so the players can veto."}
+          </div>
+        )}
         {drawn ? (
           <div className="text-xs text-muted-foreground">
             The bracket is drawn, so its best-of and its maps stay as they are.
@@ -169,16 +188,36 @@ export function CupFormatCard({
                 }}
               />
             )}
-            <MapPoolPicker
-              pool={pool}
-              onChange={setPool}
-              problem={problem}
-              excludeEventId={event.id}
-              ladderMode={
-                ffa ? null : (ladderModeOf(event.team_size) as string | null)
-              }
-              mode={ffa ? "ffa" : cupMode(event.team_size)}
-            />
+            {custom ? (
+              <CustomMapPicker
+                value={pool[0] ? { id: pool[0].id, name: pool[0].name } : null}
+                onChange={(map) =>
+                  setPool(
+                    map
+                      ? [
+                          {
+                            id: map.id,
+                            name: map.name,
+                            shortname: null,
+                          } as PoolMap,
+                        ]
+                      : [],
+                  )
+                }
+                problem={problem}
+              />
+            ) : (
+              <MapPoolPicker
+                pool={pool}
+                onChange={setPool}
+                problem={problem}
+                excludeEventId={event.id}
+                ladderMode={
+                  ffa ? null : (ladderModeOf(event.team_size) as string | null)
+                }
+                mode={ffa ? "ffa" : cupMode(event.team_size)}
+              />
+            )}
           </div>
           <div className="flex justify-end gap-2 p-4">
             <Button

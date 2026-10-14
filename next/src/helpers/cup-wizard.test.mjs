@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem, cupSteps, cupTeamSize, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -241,4 +241,25 @@ test('an FFA of teams enters teams of its mode and seats teams in its lobbies', 
   assert.equal(cupTeamSize({ ...form, ffa_team_size: 1 }), null);
   assert.equal(ffaModeLine({ ...form, ffa_team_size: 1 }), '1v1v1v1');
   assert.equal(cupTeamSize({ ...blankCup(), game: '3v3', ffa_team_size: 2 }), 3);
+});
+
+test('a custom game plays its one map with no veto, as a match or a free for all', () => {
+  const form = { ...blankCup(), name: 'Frenzy', game: 'custom', custom_mode: '2v2', custom_map: { id: 9, name: 'Footmen Frenzy' }, pool: [{ id: 3 }] };
+  const body = cupPayload(form);
+  assert.equal(isCustom(form), true);
+  assert.deepEqual([body.custom_game, body.veto_by_best_of, body.map_ids], [true, false, [9]]);
+  assert.deepEqual([body.entrant_kind, body.team_size], ['team', 2]);
+  // a match keeps its bracket and its best-of
+  assert.equal(body.stages[0].format, 'single_elimination');
+  assert.equal(cupProblem(form, 'maps'), null);
+  assert.equal(cupProblem({ ...form, custom_map: null }, 'maps'), 'Pick or add the map the cup is played on.');
+
+  // played as a free for all it draws lobbies, of single players or of teams
+  const ffa = { ...form, custom_mode: 'ffa', ffa_team_size: 1 };
+  assert.equal(isFfa(ffa), true);
+  assert.equal(cupPayload(ffa).stages[0].format, 'ffa');
+  assert.deepEqual([cupPayload(ffa).entrant_kind, cupTeamSize(ffa)], ['solo', null]);
+  assert.equal(cupTeamSize({ ...ffa, ffa_team_size: 3 }), 3);
+  // any other cup is no custom game
+  assert.equal(cupPayload({ ...blankCup() }).custom_game, false);
 });

@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-15
+
+* **Add**: custom game cups. Create cup's "Custom game" takes a mode, 1v1 to 4v4 or FFA with its modes, and one map, picked or added by name; every game is played on it with no veto. The run page swaps the map, and the event page names it. [Event management](pages/event-management.md) states it.
+
 ## 2026-10-14
 
 * **Add**: team FFA. Create cup's FFA game offers the modes 1v1, 2v2, 3v3 and 4v4; a team mode signs teams up as a team cup does, a lobby seat reads as its team over its players, and any player of a seated team reports the places. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.

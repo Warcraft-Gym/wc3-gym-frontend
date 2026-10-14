@@ -82,7 +82,7 @@ export const CUP_GAMES = [
   { value: '2v2', title: '2v2', ready: true, size: 2 },
   { value: '3v3', title: '3v3', ready: true, size: 3 },
   { value: '4v4', title: '4v4', ready: true, size: 4 },
-  { value: 'custom', title: 'Custom game', ready: false, size: null },
+  { value: 'custom', title: 'Custom game', ready: true, size: null },
   { value: 'ffa', title: 'FFA', ready: true, size: null },
 ];
 
@@ -90,9 +90,22 @@ export const CUP_GAMES = [
  *  @param {string} game */
 export const teamSizeOf = (game) => CUP_GAMES.find((item) => item.value === game)?.size ?? null;
 
-/** Whether the cup is a free for all: lobbies of single players, each placed 1st to last.
+/** Whether the cup is a custom game: played on one map, no veto, every game on it.
  *  @param {any} form */
-export const isFfa = (form) => form?.game === 'ffa';
+export const isCustom = (form) => form?.game === 'custom';
+
+// The modes a custom game is played as: a match of two sides, or a free for all
+export const CUSTOM_MODES = [
+  { value: '1v1', title: '1v1' },
+  { value: '2v2', title: '2v2' },
+  { value: '3v3', title: '3v3' },
+  { value: '4v4', title: '4v4' },
+  { value: 'ffa', title: 'FFA' },
+];
+
+/** Whether the cup plays lobbies: an FFA cup, or a custom game played as a free for all.
+ *  @param {any} form */
+export const isFfa = (form) => form?.game === 'ffa' || (isCustom(form) && form.custom_mode === 'ffa');
 
 // The FFA modes: every player for themselves, or teams of 2 to 4 that share a lobby with other
 // teams, signed up by their captains as a team cup is
@@ -107,7 +120,7 @@ export const FFA_TEAM_SIZES = [
  *  size, or a team FFA's mode.
  *  @param {any} form */
 export const cupTeamSize = (form) => {
-  if (!isFfa(form)) return teamSizeOf(form.game);
+  if (!isFfa(form)) return isCustom(form) ? teamSizeOf(form.custom_mode) : teamSizeOf(form.game);
   const size = Number(form.ffa_team_size) || 1;
   return size > 1 ? size : null;
 };
@@ -249,6 +262,9 @@ export const blankCup = () => ({
   ffa_mode: 'heats',
   // 1 plays every player for themselves; 2 to 4 play teams in the lobbies
   ffa_team_size: 1,
+  // a custom game: how it is played, and the one map it is played on, { id, name }
+  custom_mode: '1v1',
+  custom_map: null,
   lobby_size: 4,
   lobby_advance: '',
   ffa_games: 3,
@@ -297,9 +313,11 @@ export const cupPayload = (form) => ({
   published: !!form.published,
   signups_open: !!form.signups_open,
   // every series vetoes from the pool by its own best-of, and game 1 plays the map left over
-  veto_by_best_of: !isFfa(form),
+  // a lobby is one game, and a custom game plays its one map, so neither vetoes
+  veto_by_best_of: !isFfa(form) && !isCustom(form),
+  custom_game: isCustom(form),
   hide_seeds: !!form.hide_seeds,
-  map_ids: (form.pool || []).map((row) => row.id),
+  map_ids: isCustom(form) ? (form.custom_map ? [form.custom_map.id] : []) : (form.pool || []).map((row) => row.id),
   stages: isFfa(form) ? [ffaStage(form)] : form.format === 'swiss' ? swissStages(form) : [
     {
       format: form.format,
@@ -443,6 +461,9 @@ export function cupProblem(form, step) {
     const points = pointsOf(form);
     if (!points.length) return 'Give at least the winner of a round some points.';
     if (points.some((value) => !Number.isInteger(value) || value < 0)) return 'Points are whole numbers, 0 or more.';
+  }
+  if (step === 'maps' && isCustom(form)) {
+    return form.custom_map ? null : 'Pick or add the map the cup is played on.';
   }
   if (step === 'maps' && isFfa(form)) {
     return (form.pool || []).length ? null : 'Add at least one map; every lobby plays a map of the pool.';

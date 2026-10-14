@@ -118,6 +118,12 @@ export function MyEvents({
                 ) : null}
               </div>
 
+              {card.waiting ? (
+                <p className="text-sm text-muted-foreground">
+                  {card.waiting.players} of {card.waiting.size} players have accepted. The team checks in and is drawn once everyone has.
+                </p>
+              ) : null}
+
               {card.checkIn ? (
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="min-w-0 flex-1">{card.team ? "Check-in is open: check your team in." : "Check-in is open."}</span>

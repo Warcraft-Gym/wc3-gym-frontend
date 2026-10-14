@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { legTitle } from "@/helpers/cup-rounds.mjs";
+import { missing } from "@/helpers/cup-teams.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +44,9 @@ export function CupRoundPicker({
   const leg = legs[legIndex];
   if (!leg) return null;
   const checkedIn = !!entry && (leg.checked_in || []).includes(entry.id);
-  const open = !!entry && !drawn && !leg.finished_at && !event.closed_at && !event.cancelled_at;
+  // a cup team checks in once every invited player has accepted
+  const short = !!entry && !!event.team_size && missing(entry, event.team_size) > 0;
+  const open = !!entry && !short && !drawn && !leg.finished_at && !event.closed_at && !event.cancelled_at;
 
   const toggle = async () => {
     setBusy(true);
@@ -82,7 +85,11 @@ export function CupRoundPicker({
             </Badge>
           ) : (
             <span className="flex-1 text-sm">
-              {open ? `Playing ${legTitle(leg)}? Check in before it is drawn; the draw takes the players checked in.` : `You are not checked in for ${legTitle(leg)}.`}
+              {open
+                ? `Playing ${legTitle(leg)}? Check in before it is drawn; the draw takes the players checked in.`
+                : short
+                  ? `Your team checks in for ${legTitle(leg)} once every player has accepted their invitation.`
+                  : `You are not checked in for ${legTitle(leg)}.`}
             </span>
           )}
           {open ? (

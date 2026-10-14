@@ -51,7 +51,7 @@ test('upcoming events are the cups and lists open to the member, soonest first, 
 test('my events merge the joined events, the cups run, the invites and the open series, one card an event', () => {
   const events = [
     { id: 1, kind: 'cup', name: 'Solo Cup', joined: true, action: 'withdraw', start: '2026-10-20' },
-    { id: 2, kind: 'cup', name: 'Duo Cup', joined: true, action: 'check_in', start: '2026-10-25', team_size: 2, cup_team: { id: 9, name: 'Blue', captain: false } },
+    { id: 2, kind: 'cup', name: 'Duo Cup', joined: true, action: 'check_in', start: '2026-10-25', team_size: 2, cup_team: { id: 9, name: 'Blue', captain: false, players: 2 } },
     { id: 3, kind: 'gnl', name: 'Season 20', joined: true, action: 'view' },
     { id: 4, kind: 'cup', name: 'Old Cup', joined: true, action: 'view', phase: 'finished' },
     { id: 5, kind: 'cup', name: 'Trio Cup', joined: false, action: 'sign_up', team_size: 3, start: '2026-11-01' },
@@ -79,12 +79,23 @@ test('my events merge the joined events, the cups run, the invites and the open 
   assert.equal(duo.team.name, 'Blue');
   assert.equal(duo.checkIn, true);
   assert.equal(duo.invite, null);
+  assert.equal(duo.waiting, null);
+  assert.equal(solo.waiting, null);
   assert.equal(trio.role, 'invited');
   assert.equal(trio.invite.team.name, 'Red');
   assert.equal(trio.format, '3v3 cup');
   assert.equal(mine.role, 'organizer');
   assert.equal(mine.draft, true);
   assert.equal(mine.to, '/events/7/admin');
+});
+
+test('a cup team still short of players says how many accepted, and offers no check-in', () => {
+  const events = [
+    { id: 3, kind: 'cup', name: 'Trio Cup', joined: true, action: 'view', checkin_open: true, team_size: 3, cup_team: { id: 4, name: 'Red', captain: true, players: 1 } },
+  ];
+  const [card] = myEventCards({ events });
+  assert.deepEqual(card.waiting, { players: 1, size: 3 });
+  assert.equal(card.checkIn, false);
 });
 
 test('an open cup series reads where it sits, who plays it and whether it vetoes first', () => {

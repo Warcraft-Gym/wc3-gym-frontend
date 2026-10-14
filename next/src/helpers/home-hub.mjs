@@ -71,6 +71,12 @@ export const myEventCards = ({ events = [], organized = [], invites = [], series
     cards.get(Number(one.event_id)).series.push(one);
   }
   const todo = (one) => one.series.length > 0 || !!one.invite || one.row?.action === 'check_in';
+  // a cup team that waits for invited players: how many accepted, of the team size
+  const waiting = (row) => {
+    const size = Number(row?.team_size) || 0;
+    const players = row?.cup_team?.players ?? size;
+    return size && players < size ? { players, size } : null;
+  };
   return [...cards.values()]
     .map((one) => {
       const row = one.row ?? events.find((event) => Number(event.id) === one.id) ?? null;
@@ -81,6 +87,7 @@ export const myEventCards = ({ events = [], organized = [], invites = [], series
         team: row?.cup_team ?? null,
         checkIn: one.row?.action === 'check_in',
         checkedIn: !!one.row?.checked_in_at,
+        waiting: waiting(one.row),
         to: one.organizer ? `/events/${one.id}/admin` : `/events/${one.id}`,
         todo: todo(one),
       };

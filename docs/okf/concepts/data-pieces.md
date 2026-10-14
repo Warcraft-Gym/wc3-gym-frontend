@@ -42,6 +42,7 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | Piece | Where it lives | Use it when | Do not use it when |
 |---|---|---|---|
 | `PlayerName` | `next/src/components/PlayerName.tsx` | Any surface names a player. | The surface is a sorted roster with aligned tracks; `TeamRoster` draws its own aligned line there. |
+| `CupTeamName` | `next/src/components/CupTeamName.tsx` | A cup surface names a cup team. | Never on a league team: a cup team has no logo and no team page. |
 | `TeamName` | `next/src/components/TeamName.tsx` | Any surface names a team. | The card or row already links as a whole, or the name is the `h1` of the team's own page; then pass `plain`. |
 | `RaceIcon` | `next/src/components/RaceIcon.tsx` | The row has a race: this game, this scheduled series, this signup. | The row has no race source. A profile race is not a race for a row. |
 | `FlagIcon` | `next/src/components/FlagIcon.tsx` | A player line names a country. | The surface already draws `PlayerName`, which draws the flag itself. |

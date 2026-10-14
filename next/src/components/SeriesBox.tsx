@@ -2,6 +2,7 @@
 import { PlayerName } from "@/components/PlayerName";
 import { Icon } from "@/components/ui/Icon";
 import { TeamName } from "@/components/TeamName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { useHideResults } from "@/components/hide-results";
 import { sideRoster } from "@/helpers/fixture.mjs";
 import { teamLabel } from "@/helpers/teams.mjs";
@@ -42,6 +43,7 @@ export function SeriesBox({
   rated = true, // false where the draw leaves the MMR out, so the names keep the room
   report = null, // "report" or "edit" when the viewer reports this series from the draw
   me = null, // the viewer, whose own seat of a lobby is lit
+  cup = false, // a cup's draw: its teams are cup teams, with no logo and no team page
   onVeto, // a side of a cup series vetoes from the draw, from a button beside the report one
   stateless = false, // the draw: no state word, a played box reads as done by its look
   onReport,
@@ -61,6 +63,7 @@ export function SeriesBox({
   report?: "report" | "edit" | null;
   // the viewer, whose own seat of a lobby is lit
   me?: number | null;
+  cup?: boolean;
   onVeto?: ((series: Row) => void) | null;
   stateless?: boolean;
   onReport?: (series: Row) => void;
@@ -129,7 +132,7 @@ export function SeriesBox({
           <span className={cn(MARK, markClass(seat.result))} />
           {seat.team ? (
             <div className="flex min-w-0 flex-col gap-px">
-              <TeamName team={seat.team} plain={!readonly} />
+              {cup ? <CupTeamName team={seat.team} /> : <TeamName team={seat.team} plain={!readonly} />}
               {(seat.players || []).length ? (
                 <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
                   {(seat.players as Row[]).map((one) => (
@@ -158,7 +161,7 @@ export function SeriesBox({
           ) : null}
           {team(side) ? (
             <div className="flex min-w-0 flex-col gap-px">
-              <TeamName team={team(side)} plain={!readonly} />
+              {cup ? <CupTeamName team={team(side)} /> : <TeamName team={team(side)} plain={!readonly} />}
               {roster(side).length ? (
                 <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
                   {roster(side).map((seat) => (

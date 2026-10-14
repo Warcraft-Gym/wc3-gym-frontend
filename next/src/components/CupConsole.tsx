@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/Combobox";
 import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { raceWrapper } from "@/helpers/races.js";
 import { toneClass } from "@/components/ui/tone";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
@@ -319,7 +320,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                 <li key={row.id} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border py-1">
                   {row.seed != null ? <span className="tnum w-5 text-right text-xs text-muted-foreground">{row.seed}</span> : null}
                   <span className="min-w-0 flex-1">
-                    {row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team?.name || "Entrant"}
+                    {row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team ? <CupTeamName team={row.team} /> : "Entrant"}
                   </span>
                   {teams ? <Badge variant="outline">{teamState(row, event.team_size)}</Badge> : null}
                   {event.checkin_enabled ? (
@@ -416,7 +417,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                 {waitlist.map((row, index) => (
                   <li key={row.id} className="flex min-h-11 flex-wrap items-center gap-3 border-t border-border py-1">
                     <span className="tnum w-5 text-right text-xs text-muted-foreground">{index + 1}</span>
-                    <span className="min-w-0 flex-1">{row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team?.name || "A team"}</span>
+                    <span className="min-w-0 flex-1">{row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team ? <CupTeamName team={row.team} /> : "A team"}</span>
                     {!closed && !drawn ? (
                       <Button size="sm" variant="outline" disabled={busy === `admit-${row.id}`} onClick={() => admit(row)}>
                         <Icon name={busy === `admit-${row.id}` ? "mdi-loading mdi-spin" : "mdi-account-arrow-right"} />

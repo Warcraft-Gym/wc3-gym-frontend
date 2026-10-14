@@ -582,7 +582,7 @@ export function EventAdminView({ id }: { id: string }) {
 
                     <div className={seedsAside ? "mt-4 grid items-start gap-4 min-[1100px]:grid-cols-[minmax(0,1fr)_20rem]" : "mt-4"}>
                       <div className="min-w-0">
-                        <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
+                        <StageView cup={event.kind === "cup"} stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
                       </div>
                       {seedsAside ? <CupSeedsPanel
                           event={event}
@@ -677,7 +677,7 @@ export function EventAdminView({ id }: { id: string }) {
                   {drawNote ? <p className="mt-1 text-xs text-muted-foreground">{drawNote}</p> : null}
 
                   <div className="mt-4">
-                    <StageView stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
+                    <StageView cup={event.kind === "cup"} stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
                   </div>
                 </>
               ) : null}

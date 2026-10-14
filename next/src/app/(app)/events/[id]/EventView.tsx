@@ -52,6 +52,7 @@ import { livesLine } from "@/helpers/cup-wizard.mjs";
 import { legsOf, legTitle, openLegIndex, ownEntry } from "@/helpers/cup-rounds.mjs";
 import { CupOverallTable } from "@/components/CupOverallTable";
 import { CupRoundPicker } from "@/components/CupRoundPicker";
+import { CupTeamName } from "@/components/CupTeamName";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -419,7 +420,13 @@ export function EventView({ id }: { id: string }) {
                 <li key={entrant.id} className={cn("px-4 py-1", entrant.withdrawn_at && "text-muted-foreground")}>
                   <div className="flex items-center gap-3">
                     {seedsLocked ? <span className="tnum min-w-[2ch] text-right text-xs text-muted-foreground">{solo(entrant) ? entrant.seed ?? "—" : ""}</span> : null}
-                    {entrant.user ? <PlayerName player={entrant.user} race={solo(entrant) ? entrant.race : undefined} /> : <span>{entrantName(entrant)}</span>}
+                    {entrant.user ? (
+                      <PlayerName player={entrant.user} race={solo(entrant) ? entrant.race : undefined} />
+                    ) : cup && entrant.team ? (
+                      <CupTeamName team={entrant.team} />
+                    ) : (
+                      <span>{entrantName(entrant)}</span>
+                    )}
                     {places[entrant.id] ? (
                       <Badge variant="outline">
                         {placeMedal(places[entrant.id].place) ? (
@@ -533,6 +540,7 @@ export function EventView({ id }: { id: string }) {
           <h3 className="mt-4 mb-2 font-bold">{stage.name || `Stage ${stage.position}`}</h3>
         )}
         <StageView
+          cup={cup}
           stage={stage}
           series={stage.series}
           rounds={stage.rounds}

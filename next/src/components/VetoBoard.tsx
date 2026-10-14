@@ -9,6 +9,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
 import { TeamName } from "@/components/TeamName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { DEFAULT_RULES } from "@/helpers/best-of.mjs";
 import { hideMissingImage } from "@/helpers/team-image";
@@ -279,9 +280,9 @@ export function VetoBoard({
         {/* A team side names a team and no player, so it reads as the team name */}
         {board ? (
           <span className="flex items-center gap-2 text-muted-foreground">
-            {board.player1?.team_name ? <TeamName team={teamOf(board.player1)} plain={report} /> : <PlayerName player={board.player1} plain={report} />}
+            {board.player1?.team_name ? cup ? <CupTeamName team={teamOf(board.player1)} /> : <TeamName team={teamOf(board.player1)} plain={report} /> : <PlayerName player={board.player1} plain={report} />}
             <span>vs</span>
-            {board.player2?.team_name ? <TeamName team={teamOf(board.player2)} plain={report} /> : <PlayerName player={board.player2} plain={report} />}
+            {board.player2?.team_name ? cup ? <CupTeamName team={teamOf(board.player2)} /> : <TeamName team={teamOf(board.player2)} plain={report} /> : <PlayerName player={board.player2} plain={report} />}
           </span>
         ) : null}
         <span className="flex-1" />

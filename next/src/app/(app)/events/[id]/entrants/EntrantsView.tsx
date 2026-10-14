@@ -15,6 +15,7 @@ import { DivisionBracketing } from "@/components/DivisionBracketing";
 import { GroupedTable, type GroupedColumn } from "@/components/GroupedTable";
 import { PlayerName } from "@/components/PlayerName";
 import { TeamName } from "@/components/TeamName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { RaceSelect } from "@/components/RaceSelect";
 import { RowActions, type RowAction } from "@/components/RowActions";
@@ -569,7 +570,7 @@ export function EntrantsView({ id }: { id: string }) {
                         <PlayerName player={row.user} race={solo(row) ? row.race : undefined} mmr={false} />
                       ) : row.team ? (
                         <>
-                          <TeamName team={row.team} className="font-medium" />
+                          {event?.kind === "cup" ? <CupTeamName team={row.team} className="font-medium" /> : <TeamName team={row.team} className="font-medium" />}
                           {roster(row)}
                         </>
                       ) : null}
@@ -649,7 +650,7 @@ export function EntrantsView({ id }: { id: string }) {
                   <div key={row.id} className={cn("mb-2 rounded-lg border p-3", row.withdrawn_at && "opacity-(--v-medium-emphasis-opacity)")}>
                     <div className="flex items-center gap-2">
                       {solo(row) && row.seed ? <span className="tnum text-muted-foreground">{row.seed}</span> : null}
-                      {row.user ? <PlayerName player={row.user} race={solo(row) ? row.race : undefined} mmr={false} /> : row.team ? <TeamName team={row.team} className="font-medium" /> : null}
+                      {row.user ? <PlayerName player={row.user} race={solo(row) ? row.race : undefined} mmr={false} /> : row.team ? event?.kind === "cup" ? <CupTeamName team={row.team} className="font-medium" /> : <TeamName team={row.team} className="font-medium" /> : null}
                       {solo(row) ? <Pin row={row} /> : null}
                       <span className="flex-1" />
                       {solo(row) ? <span className="tnum">{entrantMmr(row) || "—"}</span> : null}

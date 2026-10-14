@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, where the blocked-times dialog lives, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-12T22:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-15T15:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -79,6 +79,7 @@ A team is drawn as `{logo} {name}` everywhere, and it links to the team page. Th
 - A few surfaces draw the team themselves: a card or row that already links as a whole (the teams table, the season match cards and the team cards), the role group button, and the `h1` of a team's own page.
 - The logo is the `icon_url` the payload names, at one fixed size on every surface, so names in a column line up. The component asks the backend for no image: a team whose payload names no `icon_url` reads a muted shield outline of that same size. The payloads that name a team name its logo: the ladder read answers `teams[].icon_url`, the ladder players read `rows[].team_icon_url`, the veto board `player1/player2.team_icon_url`, a player's history `events[].team_icon_url`, and the fantasy breakdown `team_breakdown.team_icon_url`; `grind_breakdown` is the one exception and names none.
 - The name truncates inside a narrow cell and carries the full name in its `title`, so a long name cannot widen a bracket box or a phone column.
+- A cup team is no league team: it lives for its one cup in a table of its own, so a cup surface names it with `CupTeamName` (`next/src/components/CupTeamName.tsx`), one placeholder icon every cup team shares beside the name, never a logo and never a link to a team page. The cup run page, the seeds and divisions panels, the lobby dialog, the team panel and the entrants page of a cup use it, and `SeriesBox`, `StageView`, `VetoBoard` and `EventResults` switch to it on a cup (`cup`).
 - `seasonKey` picks the season team page, the path the team cards and the ladder already use; without one the link is the plain team page.
 - On a drafting page (the match page and the season team assign page) and inside the player panel, under `PanelLinksContext` with the value `true`, the name is plain text with no link, for the same reason the player name is: a click would leave unsaved work.
 - Pass `plain` for text only: inside another link or a button, inside a form dialog that holds unsaved work, and in the `h1` of the team's own page. A select option stays a plain option.

@@ -2,6 +2,7 @@
 
 ## 2026-10-15
 
+* **Update**: a cup team is named with `CupTeamName`, one placeholder icon beside its name and no link, so no cup surface sends a reader to a league team page. [Shared components](concepts/shared-components.md#teamname) states it.
 * **Update**: the FFA modes name the size of a side, not a count of sides: "Solo (1v1v1…)" and "Teams of 2 (2v2v2…)" to "Teams of 4", and the review reads "FFA, teams of 2". [Event management](pages/event-management.md) states it.
 * **Add**: custom game cups. Create cup's "Custom game" takes a mode, 1v1 to 4v4 or FFA with its modes, and one map, picked or added by name; every game is played on it with no veto. The run page swaps the map, and the event page names it. [Event management](pages/event-management.md) states it.
 

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
-import { TeamName } from "@/components/TeamName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { isScored, lobbySeats } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
@@ -126,7 +126,7 @@ export function LobbyPlacesDialog({
                 />
                 {seat.team ? (
                   <span className="flex min-w-0 flex-col">
-                    <TeamName team={seat.team} plain />
+                    <CupTeamName team={seat.team} />
                     <span className="truncate text-xs text-muted-foreground">{(seat.players || []).map((one: Row) => one.name).join(", ")}</span>
                   </span>
                 ) : seat.user ? (

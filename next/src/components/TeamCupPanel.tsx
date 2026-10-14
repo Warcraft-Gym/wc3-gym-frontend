@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CupTeamName } from "@/components/CupTeamName";
 import { Combobox } from "@/components/ui/Combobox";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
@@ -131,7 +132,7 @@ export function TeamCupPanel({
       {entrant && !mine?.invited ? (
         <Card className="card mt-4">
           <CardHeader className="flex flex-row flex-wrap items-center gap-2">
-            <CardTitle className="flex-1">Your team: {entrant.team?.name}</CardTitle>
+            <CardTitle className="flex flex-1 items-center gap-2">Your team: <CupTeamName team={entrant.team} /></CardTitle>
             <Badge className={toneClass(short ? "warning" : "success")}>{teamState(entrant, size)}</Badge>
             {entrant.waitlisted_at ? <Badge className={toneClass("warning")}>On the waitlist</Badge> : null}
             {entrant.checked_in_at ? (

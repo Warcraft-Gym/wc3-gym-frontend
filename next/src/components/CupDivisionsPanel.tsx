@@ -9,7 +9,7 @@ import { DivisionBracketing } from "@/components/DivisionBracketing";
 import { PlayerName } from "@/components/PlayerName";
 import { RowActions, type RowAction } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
-import { TeamName } from "@/components/TeamName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { W3CMmr } from "@/components/W3CMmr";
 import { bandRange, cutChanged, divisionGroups, previewDivisions } from "@/helpers/cup-divisions.mjs";
 import { bandOf, domainOf, quantileCuts } from "@/helpers/divisions.mjs";
@@ -177,7 +177,7 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
                   <ul className="flex flex-col gap-1">
                     {band.rows.map((row) => (
                       <li key={row.id} className="flex items-center gap-2">
-                        <span className="min-w-0 flex-1 truncate">{row.team ? <TeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
+                        <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
                         {row.from ? (
                           <Badge className={toneClass("info")}>
                             <Icon name="mdi-arrow-right" />
@@ -206,7 +206,7 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
               <ul className="flex flex-col gap-1">
                 {group.rows.map((row) => (
                   <li key={row.id} className="flex items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate">{row.team ? <TeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
+                    <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
                     {row.division_pinned ? <Icon name="mdi-pin" className="text-muted-foreground" aria-label="Placed by hand" /> : null}
                     <span className="tnum text-sm text-muted-foreground">{mmrOf(row) || "–"}</span>
                     <RowActions actions={actionsFor(row)} menu />

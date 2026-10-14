@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/Icon";
 import { PlayerName } from "@/components/PlayerName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { useHideResults } from "@/components/hide-results";
 import { placeIcon, placeMedal, placeTitle } from "@/helpers/awards.mjs";
 import { stateOf } from "@/helpers/event-labels.mjs";
@@ -55,9 +56,13 @@ export function EventResults({
   const played = stages.map((stage) => ({ stage, rounds: roundsOf(stage.series || [], stage.rounds || []) })).filter((one) => one.rounds.length);
   const hiddenNote = <p className="px-4 pb-4 text-muted-foreground">Results are hidden. Turn off &quot;Hide results&quot; to read them.</p>;
 
+  // a cup's teams are cup teams: one placeholder icon, no logo and no team page
+  const cup = event.kind === "cup";
   const side = (row: Row, n: number) =>
     row[`player${n}`] ? (
       <PlayerName player={row[`player${n}`]} race={row[`player${n}_race`] || undefined} plain />
+    ) : cup && row[`team${n}`] ? (
+      <CupTeamName team={row[`team${n}`]} />
     ) : (
       <span>{row[`team${n}`]?.name || "To be decided"}</span>
     );
@@ -72,7 +77,7 @@ export function EventResults({
     const players: Row[] = entrant?.roster || [];
     return (
       <span className="inline-flex flex-col items-center">
-        <span>{entrant?.team?.name || row.name}</span>
+        {cup ? <CupTeamName team={{ name: entrant?.team?.name || row.name }} /> : <span>{entrant?.team?.name || row.name}</span>}
         {players.length ? (
           <span className="flex flex-wrap justify-center gap-x-2 text-xs font-normal text-muted-foreground">
             {players.map((one) => (
@@ -192,7 +197,7 @@ export function EventResults({
                                   {seats.map((seat) => (
                                     <span key={seat.side_no} className={cn("inline-flex items-center gap-1", seat.place === 1 && "font-bold")}>
                                       <span className="tnum text-xs text-muted-foreground">{seat.place}.</span>
-                                      {seat.team ? <span>{seat.team.name}</span> : seat.user ? <PlayerName player={seat.user} plain /> : <span>Seat {seat.side_no}</span>}
+                                      {seat.team ? <CupTeamName team={seat.team} /> : seat.user ? <PlayerName player={seat.user} plain /> : <span>Seat {seat.side_no}</span>}
                                     </span>
                                   ))}
                                 </span>

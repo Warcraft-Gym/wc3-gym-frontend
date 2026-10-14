@@ -138,6 +138,10 @@ const store = {
   async myTeamInvites() {
     return await fetchWrapper.get(`${backendUrl}/me/team-invites`);
   },
+  // A runner checks every entrant of a cup in at once; a team short of players stays out
+  async checkInEveryone(event_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/checkin-everyone`);
+  },
   async checkIn(event_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/checkin`);
   },

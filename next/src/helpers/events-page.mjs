@@ -83,8 +83,6 @@ export function eveningOf(event, entrants) {
     noShows,
     min,
     belowMin: min !== null && live.length < min,
-    // what the draw would hold once the no-shows go
-    afterNoShows: live.length - noShows.length,
   };
 }
 

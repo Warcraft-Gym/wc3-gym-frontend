@@ -68,7 +68,7 @@ test('the evening counts the entrants still in, the check-ins, the no-shows and 
     { id: 4, checked_in_at: null, withdrawn_at: 't' },
   ];
   const evening = eveningOf({ checkin_enabled: true, entrant_min: 3 }, rows);
-  assert.deepEqual([evening.live, evening.checkedIn, evening.noShows.map((r) => r.id), evening.belowMin, evening.afterNoShows], [3, 2, [3], false, 2]);
+  assert.deepEqual([evening.live, evening.checkedIn, evening.noShows.map((r) => r.id), evening.belowMin], [3, 2, [3], false]);
   assert.equal(eveningOf({ checkin_enabled: true, entrant_min: 4 }, rows).belowMin, true);
   // with no check-in nobody is a no-show, and no minimum is never short
   const open = eveningOf({ checkin_enabled: false, entrant_min: null }, rows);

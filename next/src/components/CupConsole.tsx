@@ -28,7 +28,7 @@ type Row = Record<string, any>;
 const RACE_ITEMS = raceWrapper.races.map((race) => ({ value: race.id, title: race.name }));
 const raceName = (race: string | null | undefined) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
 
-type Evening = { live: number; checkedIn: number; noShows: Row[]; min: number | null; belowMin: boolean; afterNoShows: number };
+type Evening = { live: number; checkedIn: number; noShows: Row[]; min: number | null; belowMin: boolean };
 
 /** One small confirming dialog of the console. */
 function Confirm({ open, onOpenChange, title, danger, busy, confirm, onConfirm, children }: {
@@ -89,7 +89,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const editable = !drawn && !event.closed_at;
   const closed = !!event.closed_at;
   const [busy, setBusy] = useState<string | null>(null);
-  const [ask, setAsk] = useState<"noshows" | "cancel" | "move" | "remove" | "withdraw" | "add" | "team" | "incomplete" | "swapin" | null>(null);
+  const [ask, setAsk] = useState<"cancel" | "move" | "remove" | "withdraw" | "add" | "team" | "incomplete" | "swapin" | null>(null);
   // the waitlist: a late signup comes in before the draw, or after it in the place of one who has not played
   const [waiting, setWaiting] = useState<Row | null>(null);
   const [outId, setOutId] = useState<number | null>(null);
@@ -195,8 +195,9 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       await store.addTeam(event.id, teamName.trim(), captain, others);
       onEntrants(await store.fetchEntrants(event.id, true));
     });
-  // a team short of players cannot be drawn, so the evening takes it out first
-  const incomplete = teams ? players.filter((row) => missing(row, event.team_size) > 0) : [];
+  // a team short of players cannot be drawn: a cup that takes check-in leaves it out, as it cannot
+  // check in, and any other cup takes it out first
+  const incomplete = teams && !event.checkin_enabled ? players.filter((row) => missing(row, event.team_size) > 0) : [];
   const removeIncomplete = () =>
     work("incomplete", async () => {
       for (const row of incomplete) await store.removeEntrant(event.id, row.id);
@@ -212,11 +213,8 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     .filter((player) => !entered.has(player.id))
     .map((player) => ({ value: String(player.id), title: player.name, tag: player.battleTag || "" }));
 
-  const removeNoShows = () =>
-    work("noshows", async () => {
-      for (const row of evening.noShows) await store.removeEntrant(event.id, row.id);
-      onEntrants(await store.fetchEntrants(event.id, true));
-    });
+  // the draw takes the players who checked in; a runner who skipped the check-in checks everyone in
+  const checkEveryoneIn = () => work("everyone", async () => onEntrants(await store.checkInEveryone(event.id)));
   const cancel = () => work("cancel", async () => onEvent(await store.cancelEvent(event.id)));
   // the dialog opens on the cup's stored start, so a changed day alone keeps the start time
   const openMove = () => {
@@ -444,18 +442,24 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
             </div>
           ) : null}
 
+          {event.checkin_enabled && !drawn && !closed && evening.noShows.length ? (
+            <p className="text-sm text-muted-foreground">
+              The draw takes the {teams ? "teams" : "players"} who checked in, so it leaves out{" "}
+              {evening.noShows.map((row) => row.team?.name || row.name || row.user?.name).filter(Boolean).join(", ") || `${evening.noShows.length} who did not`}. They stay signed up; check one in to draw them.
+            </p>
+          ) : null}
           {!drawn && !closed ? (
             <div className="flex flex-wrap gap-2">
+              {editable && event.checkin_enabled && evening.noShows.length ? (
+                <Button variant="outline" disabled={!!busy} onClick={checkEveryoneIn}>
+                  {busy === "everyone" ? <Icon name="mdi-loading mdi-spin" /> : <Icon name="mdi-account-check" />}
+                  Check everyone in
+                </Button>
+              ) : null}
               {incomplete.length ? (
                 <Button variant="outline" disabled={!!busy} onClick={() => setAsk("incomplete")}>
                   <Icon name="mdi-account-group-outline" />
                   Remove {incomplete.length} incomplete {incomplete.length === 1 ? "team" : "teams"}
-                </Button>
-              ) : null}
-              {evening.noShows.length ? (
-                <Button variant="outline" disabled={!!busy} onClick={() => setAsk("noshows")}>
-                  <Icon name="mdi-account-remove" />
-                  Remove {evening.noShows.length} {evening.noShows.length === 1 ? "no-show" : "no-shows"}
                 </Button>
               ) : null}
             </div>
@@ -524,12 +528,6 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         </div>
       </Confirm>
 
-      <Confirm open={ask === "noshows"} onOpenChange={(open) => setAsk(open ? "noshows" : null)} title="Remove the no-shows" busy={busy === "noshows"} confirm="Remove them" onConfirm={removeNoShows}>
-        <p>
-          {evening.noShows.map((row) => row.name || row.user?.name).filter(Boolean).join(", ") || "The players who did not check in"} will be taken out, so the bracket is drawn with the {evening.afterNoShows}{" "}
-          who checked in.
-        </p>
-      </Confirm>
 
       <Confirm
         open={ask === "remove"}

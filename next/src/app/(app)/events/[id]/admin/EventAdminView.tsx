@@ -524,7 +524,7 @@ export function EventAdminView({ id }: { id: string }) {
                     <div className="mt-4 flex flex-wrap items-center gap-3">
                       <Badge className={toneClass(null)}>{titleOf(FORMATS, stage.format)}</Badge>
                       {stage.format === "placement" ? <Badge className={toneClass(null)}>{livesLine(stage.placement_lives)}</Badge> : null}
-                      <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>
+                      {stage.format === "ffa" ? null : <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>}
                       {entrantSeries ? <Badge className={toneClass(null)}>{entrantSeries} series each entrant a round</Badge> : null}
                       {fixtureSeries ? <Badge className={toneClass(null)}>{fixtureSeries} series per fixture</Badge> : null}
                       {stage.auto_advance ? (
@@ -627,7 +627,7 @@ export function EventAdminView({ id }: { id: string }) {
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <Badge className={toneClass(null)}>{titleOf(FORMATS, stage.format)}</Badge>
                     {stage.format === "placement" ? <Badge className={toneClass(null)}>{livesLine(stage.placement_lives)}</Badge> : null}
-                    <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>
+                    {stage.format === "ffa" ? null : <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>}
                     {entrantSeries ? <Badge className={toneClass(null)}>{entrantSeries} series each entrant a round</Badge> : null}
                     {fixtureSeries ? <Badge className={toneClass(null)}>{fixtureSeries} series per fixture</Badge> : null}
                     {stage.auto_advance ? (

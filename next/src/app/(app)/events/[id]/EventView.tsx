@@ -340,8 +340,9 @@ export function EventView({ id }: { id: string }) {
   }
 
   // The best-of a stage plays: one for every match, or the early rounds and each part with its own
+  // a free for all lobby is one game, so its line names no best-of
   const bestOfOf = (stage: Row) =>
-    stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`;
+    stage.format === "ffa" ? null : stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`;
   // One line a stage: what it plays, for the draw tab before and over the bracket
   const stageLine = (stage: Row) =>
     [shownStages.length > 1 ? stage.name || `Stage ${stage.position}` : null, titleOf(FORMATS, stage.format), stage.format === "placement" ? livesLine(stage.placement_lives) : null, bestOfOf(stage), seriesPerEntrant(stage) ? `${seriesPerEntrant(stage)} series each entrant a round` : null, titleOf(SCHEDULING_MODES, stage.scheduling_mode)]

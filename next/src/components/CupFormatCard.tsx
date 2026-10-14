@@ -7,7 +7,13 @@ import { Icon } from "@/components/ui/Icon";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { StatusAlert } from "@/components/StatusAlert";
-import { bestOfLine, largestBestOf, parsePlan, planText, poolProblem } from "@/helpers/best-of-plan.mjs";
+import {
+  bestOfLine,
+  largestBestOf,
+  parsePlan,
+  planText,
+  poolProblem,
+} from "@/helpers/best-of-plan.mjs";
 import { readStagesPayload } from "@/helpers/event-wizard.mjs";
 import { legStages } from "@/helpers/cup-rounds.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
@@ -20,7 +26,17 @@ type Row = Record<string, any>;
 /** What a cup plays, over its draw on the run page: the best-of of each bracket part and the map
  *  pool the players veto from. Both change until the bracket is drawn; after it the rounds keep
  *  the best-of the draw wrote, so the card only reads. */
-export function CupFormatCard({ event, stage, drawn, onEvent }: { event: Row; stage: Row; drawn: boolean; onEvent: (event: Row) => void }) {
+export function CupFormatCard({
+  event,
+  stage,
+  drawn,
+  onEvent,
+}: {
+  event: Row;
+  stage: Row;
+  drawn: boolean;
+  onEvent: (event: Row) => void;
+}) {
   const store = useEventStore();
   const [open, setOpen] = useState(false);
   const [bestOf, setBestOf] = useState<number>(stage.best_of);
@@ -32,12 +48,24 @@ export function CupFormatCard({ event, stage, drawn, onEvent }: { event: Row; st
   const stored = parsePlan(stage.best_of_by_round);
   const maps: Row[] = event.maps || [];
   const editable = !drawn && !event.closed_at;
-  const problem = poolProblem(pool.length, bestOf, plan);
+  // a free for all lobby is one game on one map of the pool, so it names no best-of
+  const ffa = stage.format === "ffa";
+  const problem = ffa
+    ? pool.length
+      ? null
+      : "Add at least one map; every lobby plays a map of the pool."
+    : poolProblem(pool.length, bestOf, plan);
 
   const edit = () => {
     setBestOf(stage.best_of);
     setPlan(stored);
-    setPool(maps.map((row) => ({ id: row.id, name: row.name, shortname: row.shortname })));
+    setPool(
+      maps.map((row) => ({
+        id: row.id,
+        name: row.name,
+        shortname: row.shortname,
+      })),
+    );
     setError(null);
     setOpen(true);
   };
@@ -49,14 +77,28 @@ export function CupFormatCard({ event, stage, drawn, onEvent }: { event: Row; st
     try {
       // a cup over rounds plays the same format every round, so it sends one round's stages and
       // the backend writes them onto every round
-      const leg = (event.cup_legs || []).find((one: Row) => one.stage_ids.includes(stage.id));
+      const leg = (event.cup_legs || []).find((one: Row) =>
+        one.stage_ids.includes(stage.id),
+      );
       const own: Row[] = leg ? legStages(event.stages, leg) : event.stages;
-      const stages = readStagesPayload(own, {}).map((row: Row, index: number) =>
-        own[index]?.id === stage.id ? { ...row, best_of: bestOf, best_of_by_round: planText(plan, stage.format, bestOf) } : row,
+      const stages = readStagesPayload(own, {}).map(
+        (row: Row, index: number) =>
+          own[index]?.id === stage.id
+            ? {
+                ...row,
+                best_of: bestOf,
+                best_of_by_round: planText(plan, stage.format, bestOf),
+              }
+            : row,
       );
       const writeStages = () => store.setStages(event.id, stages);
-      const writePool = () => store.setEventPool(event.id, pool.map((row) => row.id));
-      const growing = largestBestOf(bestOf, plan) >= largestBestOf(stage.best_of, stored);
+      const writePool = () =>
+        store.setEventPool(
+          event.id,
+          pool.map((row) => row.id),
+        );
+      const growing =
+        largestBestOf(bestOf, plan) >= largestBestOf(stage.best_of, stored);
       if (growing) {
         await writePool();
         await writeStages();
@@ -65,7 +107,11 @@ export function CupFormatCard({ event, stage, drawn, onEvent }: { event: Row; st
         await writePool();
       }
       // a cup made before the veto by best-of takes it on with its first pool
-      onEvent(event.veto_by_best_of ? await store.fetchEvent(event.id) : await store.updateEvent(event.id, { veto_by_best_of: true }));
+      onEvent(
+        event.veto_by_best_of
+          ? await store.fetchEvent(event.id)
+          : await store.updateEvent(event.id, { veto_by_best_of: true }),
+      );
       setOpen(false);
     } catch (e) {
       setError((e as Error).message || "The write failed");
@@ -86,39 +132,68 @@ export function CupFormatCard({ event, stage, drawn, onEvent }: { event: Row; st
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-1 text-sm">
-        <div>
-          <span className="text-muted-foreground">Best of: </span>
-          {bestOfLine(stage.best_of, stored, stage.format)}
-        </div>
+        {ffa ? null : (
+          <div>
+            <span className="text-muted-foreground">Best of: </span>
+            {bestOfLine(stage.best_of, stored, stage.format)}
+          </div>
+        )}
         <div>
           <span className="text-muted-foreground">Maps: </span>
-          {maps.length ? maps.map((row) => row.name).join(", ") : "No maps yet. Add them before the draw, so the players can veto."}
+          {maps.length
+            ? maps.map((row) => row.name).join(", ")
+            : "No maps yet. Add them before the draw, so the players can veto."}
         </div>
-        {drawn ? <div className="text-xs text-muted-foreground">The bracket is drawn, so its best-of and its maps stay as they are.</div> : null}
+        {drawn ? (
+          <div className="text-xs text-muted-foreground">
+            The bracket is drawn, so its best-of and its maps stay as they are.
+          </div>
+        ) : null}
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent size="lg" className="gap-0 p-0">
-          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Format and maps</DialogTitle>
+          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">
+            Format and maps
+          </DialogTitle>
           <div className="flex max-h-[70vh] flex-col gap-5 overflow-y-auto p-4">
             <StatusAlert modelValue={error} onClose={() => setError(null)} />
-            <BestOfPlan
-              format={stage.format}
-              bestOf={bestOf}
-              plan={plan}
-              onChange={(next, nextPlan) => {
-                setBestOf(next);
-                setPlan(nextPlan);
-              }}
+            {ffa ? null : (
+              <BestOfPlan
+                format={stage.format}
+                bestOf={bestOf}
+                plan={plan}
+                onChange={(next, nextPlan) => {
+                  setBestOf(next);
+                  setPlan(nextPlan);
+                }}
+              />
+            )}
+            <MapPoolPicker
+              pool={pool}
+              onChange={setPool}
+              problem={problem}
+              excludeEventId={event.id}
+              ladderMode={
+                ffa ? null : (ladderModeOf(event.team_size) as string | null)
+              }
+              mode={ffa ? "ffa" : cupMode(event.team_size)}
             />
-            <MapPoolPicker pool={pool} onChange={setPool} problem={problem} excludeEventId={event.id} ladderMode={ladderModeOf(event.team_size) as string | null} mode={cupMode(event.team_size)} />
           </div>
           <div className="flex justify-end gap-2 p-4">
-            <Button variant="ghost" disabled={saving} onClick={() => setOpen(false)}>
+            <Button
+              variant="ghost"
+              disabled={saving}
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button disabled={saving || !!problem} onClick={save}>
-              {saving ? <Icon name="mdi-loading mdi-spin" /> : <Icon name="mdi-content-save" />}
+              {saving ? (
+                <Icon name="mdi-loading mdi-spin" />
+              ) : (
+                <Icon name="mdi-content-save" />
+              )}
               Save
             </Button>
           </div>

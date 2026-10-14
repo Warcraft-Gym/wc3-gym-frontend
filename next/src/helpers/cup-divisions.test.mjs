@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { divisionGroups, inSeedOrder, placedOrder, seedBody, unplaced } from './cup-divisions.mjs';
+import { bandRange, cutChanged, divisionGroups, inSeedOrder, placedOrder, previewDivisions, seedBody, unplaced } from './cup-divisions.mjs';
 
 const DIVISIONS = [
   { id: 8, position: 2, name: 'Open' },
@@ -56,4 +56,43 @@ test('a player dragged or typed to a seed lands there, and the rest close up', (
   assert.equal(placedOrder(field, 3, 3), null);
   assert.equal(placedOrder(field, 3, NaN), null);
   assert.equal(placedOrder(field, 9, 1), null);
+});
+
+test('the cut differs from the saved divisions by its count or a threshold', () => {
+  const saved = [
+    { id: 9, position: 1, name: 'Pro', lower_bound: 1700 },
+    { id: 8, position: 2, name: 'Open', lower_bound: null },
+  ];
+  assert.equal(cutChanged([1700], saved), false);
+  assert.equal(cutChanged([1650], saved), true);
+  assert.equal(cutChanged([1400, 1700], saved), true);
+  assert.equal(cutChanged([1700], []), true);
+});
+
+test('the preview places every player by MMR, strongest division first, and names who moves', () => {
+  const saved = [
+    { id: 9, position: 1, name: 'Division 1', lower_bound: 1850 },
+    { id: 8, position: 2, name: 'Division 2', lower_bound: null },
+  ];
+  const field = [
+    ...rows,
+    // unrated: the weakest division takes it
+    { id: 7, division_id: null, mmr: null, user: { name: 'P7' } },
+  ];
+  const groups = previewDivisions(field, [1450, 1700], ['Division 3', 'Division 2', 'Division 1'], saved);
+  assert.deepEqual(groups.map((group) => [group.title, bandRange(group), group.rows.map((row) => row.id)]), [
+    ['Division 1', '1700+', [1, 2]],
+    ['Division 2', '1450–1699', [3]],
+    ['Division 3', 'below 1450', [4, 7]],
+  ]);
+  // P2 stood in Division 1 already; P3 stays in Division 2; P4 had none
+  assert.deepEqual(groups.flatMap((group) => group.rows.map((row) => [row.id, row.from])), [
+    [1, null],
+    [2, null],
+    [3, null],
+    [4, 'no division'],
+    [7, 'no division'],
+  ]);
+  // before anything is saved, nobody moves from anywhere
+  assert.ok(previewDivisions(rows, [1700], ['Division 2', 'Division 1'], []).every((group) => group.rows.every((row) => row.from === null)));
 });

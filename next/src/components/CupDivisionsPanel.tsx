@@ -11,7 +11,7 @@ import { RowActions, type RowAction } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
 import { TeamName } from "@/components/TeamName";
 import { W3CMmr } from "@/components/W3CMmr";
-import { divisionGroups } from "@/helpers/cup-divisions.mjs";
+import { bandRange, cutChanged, divisionGroups, previewDivisions } from "@/helpers/cup-divisions.mjs";
 import { bandOf, domainOf, quantileCuts } from "@/helpers/divisions.mjs";
 import { bandNames, bandsPayload, cutsOf, entrantMmr, entrantName } from "@/helpers/entrants.mjs";
 import { useEventStore } from "@/stores";
@@ -27,10 +27,16 @@ const groupsOf = divisionGroups as (entrants: Row[], divisions: Row[], uses: boo
 const cutsOf_ = cutsOf as (divisions: Row[]) => number[];
 const bandNames_ = bandNames as (divisions: Row[]) => string[];
 const mmrOf = (row: Row) => (entrantMmr(row) as number) || 0;
+type Band = { band: number; title: string; low: number | null; high: number | null; rows: Row[] };
+const previewOf = previewDivisions as (entrants: Row[], cuts: number[], names: string[], divisions: Row[]) => Band[];
+const rangeOf = bandRange as (band: Band) => string;
 
 /** The divisions of a cup that splits its players: the cut by MMR on a strip, then every player
- *  listed in its division with a move to another one. A move pins the player, so a new cut leaves
- *  it where the runner put it. Once the cup is drawn the divisions stay, and the panel only reads. */
+ *  listed in its division with a move to another one. While the count or a threshold differs from
+ *  the saved divisions, the cards preview the cut as saving would place the players, each one that
+ *  moves marked with where it stands today; nothing is written until "Save and place the players".
+ *  A move pins the player, so reassigning the saved cut leaves it where the runner put it. Once the
+ *  cup is drawn the divisions stay, and the panel only reads. */
 export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants }: { event: Row; entrants: Row[]; drawn: boolean; onEvent: (event: Row) => void; onEntrants: (rows: Row[]) => void }) {
   const store = useEventStore();
   const divisions: Row[] = event.divisions || [];
@@ -54,6 +60,14 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
     pinned: !!row.division_pinned,
   }));
   const groups = groupsOf(entrants, divisions, true);
+  // the strip differs from what is saved: the cards follow it live until it is saved
+  const changed = !drawn && cutChanged(cuts, divisions);
+  const preview = changed ? previewOf(entrants, cuts, names, divisions) : [];
+  const moving = preview.reduce((total, band) => total + band.rows.filter((row) => row.from).length, 0);
+  const backToSaved = () => {
+    setCount(divisions.length);
+    setCuts(cutsOf_(divisions));
+  };
 
   const run = async (key: string, work: () => Promise<void>, message?: string) => {
     setBusy(key);
@@ -135,7 +149,53 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
           <DivisionBracketing cuts={cuts} onUpdateCuts={setCuts} players={strip} names={names} colors={colors} domain={domainOf(rated) as number[]} stored={cutsOf_(divisions)} />
         </>
       )}
-      {divisions.length ? (
+      {changed ? (
+        <>
+          <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-primary/60 px-3 py-2 text-sm">
+            <Icon name="mdi-eye-outline" className="text-primary-text" />
+            <span className="min-w-0 flex-1">
+              {divisions.length
+                ? `Preview of the new cut: ${moving} ${moving === 1 ? "player changes" : "players change"} division. Nothing is saved yet.`
+                : "Preview of the cut. Nothing is saved yet."}
+            </span>
+            {divisions.length ? (
+              <Button size="sm" variant="ghost" onClick={backToSaved}>
+                <Icon name="mdi-undo-variant" />
+                Back to the saved cut
+              </Button>
+            ) : null}
+          </div>
+          <div className="mt-3 grid gap-3 min-[700px]:grid-cols-2 min-[1200px]:grid-cols-3">
+            {preview.map((band) => (
+              <div key={band.band} className="rounded border border-dashed p-3">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="font-bold">{band.title}</span>
+                  <Badge className={toneClass(null)}>{band.rows.length}</Badge>
+                  <span className="text-xs text-muted-foreground">MMR {rangeOf(band)}</span>
+                </div>
+                {band.rows.length ? (
+                  <ul className="flex flex-col gap-1">
+                    {band.rows.map((row) => (
+                      <li key={row.id} className="flex items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate">{row.team ? <TeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
+                        {row.from ? (
+                          <Badge className={toneClass("info")}>
+                            <Icon name="mdi-arrow-right" />
+                            from {row.from}
+                          </Badge>
+                        ) : null}
+                        <span className="tnum text-sm text-muted-foreground">{mmrOf(row) || "–"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nobody falls in this division.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : divisions.length ? (
         <div className="mt-4 grid gap-3 min-[700px]:grid-cols-2 min-[1200px]:grid-cols-3">
           {groups.map((group) => (
             <div key={group.id ?? "none"} className="rounded border p-3">

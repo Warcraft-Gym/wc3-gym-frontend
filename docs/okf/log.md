@@ -2,6 +2,7 @@
 
 ## 2026-10-14
 
+* **Update**: a cup's Divisions panel previews a changed cut live: the cards place every player as saving would and mark who changes division, before anything is saved. [Event management](pages/event-management.md) states it.
 * **Add**: a cup's Seeds sidebar stays open after the draw, and every change draws the bracket again from the new seeds, asking first while results stand. A seed is typed into its number field or a player dragged to a new place. [Event management](pages/event-management.md) states it.
 
 ## 2026-10-13

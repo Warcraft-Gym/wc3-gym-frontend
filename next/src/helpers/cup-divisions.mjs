@@ -1,6 +1,7 @@
 // A cup's divisions and seeds as its run page and its event page draw them. A cup chooses at
 // creation whether it splits its players (`uses_divisions`); a cup that does not shows no division
 // anywhere, so every helper here answers one field without a title for it.
+import { bandOf } from './divisions.mjs';
 import { entrantMmr, entrantName } from './entrants.mjs';
 
 // The players a draw plays: neither withdrawn nor waiting on the waitlist
@@ -17,6 +18,48 @@ export function divisionGroups(entrants = [], divisions = [], usesDivisions = fa
   const loose = rows.filter((row) => !ordered.some((division) => division.id === row.division_id));
   return loose.length ? [...groups, { id: null, title: 'Not in a division', rows: loose }] : groups;
 }
+
+/** Whether the cut on the strip differs from the divisions the cup has saved: another count, or
+ *  another threshold. A cup with no divisions saved yet always differs.
+ *  @param {number[]} cuts ascending thresholds @param {any[]} divisions */
+export function cutChanged(cuts = [], divisions = []) {
+  if (!divisions.length) return true;
+  const saved = [...divisions]
+    .sort((a, b) => b.position - a.position)
+    .map((division) => division.lower_bound)
+    .filter((bound) => bound != null);
+  return saved.length !== cuts.length || saved.some((bound, index) => bound !== cuts[index]);
+}
+
+/** The divisions as saving this cut would make them, strongest first, before anything is saved.
+ *  Saving places every player by the MMR of their signup race, the ones placed by hand included,
+ *  and an unrated player in the weakest division, the backend's rule. Each row says the division
+ *  it stands in today (`from`) when the cut moves it.
+ *  @param {any[]} entrants @param {number[]} cuts ascending thresholds
+ *  @param {string[]} names one per band, weakest first @param {any[]} divisions the saved ones */
+export function previewDivisions(entrants = [], cuts = [], names = [], divisions = []) {
+  const rows = playing(entrants);
+  const current = new Map(divisions.map((division) => [division.id, division.name]));
+  const bands = Array.from({ length: cuts.length + 1 }, (unused, index) => index).reverse();
+  return bands.map((band) => {
+    const title = names[band] || `Division ${cuts.length + 1 - band}`;
+    const low = band === 0 ? null : cuts[band - 1];
+    const high = band === cuts.length ? null : cuts[band];
+    const members = rows
+      .filter((row) => bandOf(entrantMmr(row) || 0, cuts) === band)
+      .sort((a, b) => (entrantMmr(b) ?? 0) - (entrantMmr(a) ?? 0) || entrantName(a).localeCompare(entrantName(b)))
+      .map((row) => {
+        const today = row.division_id != null ? current.get(row.division_id) ?? null : null;
+        return { ...row, from: divisions.length && today !== title ? today ?? 'no division' : null };
+      });
+    return { band, title, low, high, rows: members };
+  });
+}
+
+/** How a preview band reads its MMR range: "1800+", "1500–1799" or "below 1500".
+ *  @param {{ low: number | null, high: number | null }} band */
+export const bandRange = ({ low, high }) =>
+  low == null && high == null ? 'everyone' : low == null ? `below ${high}` : high == null ? `${low}+` : `${low}–${high - 1}`;
 
 /** Whether the draw would leave a player out: a cup with divisions and a player in none of them.
  *  @param {any[]} entrants @param {any[]} divisions @param {boolean} usesDivisions */

@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toneClass } from "@/components/ui/tone";
 import { CupTeamName } from "@/components/CupTeamName";
 import { HomePanel, ROW, SkeletonRows } from "@/components/home/HomePanel";
@@ -23,6 +25,42 @@ type Row = Record<string, any>;
 
 // What the member is to the event, in a word beside its name
 const ROLE_CHIP: Record<string, string> = { organizer: "Organizer", team: "Playing", player: "Playing", invited: "Invited" };
+
+/** The switch that takes or leaves the cup announcement role in the guild: every new cup, its
+ *  check-in reminder, its draws and its podium ping the members who hold it. It shows only once the
+ *  admins have set the announcement channel and role, and for a member of the guild. */
+function AnnouncementSwitch({ onError, onMessage }: { onError: (message: string | null) => void; onMessage: (message: string) => void }) {
+  const store = useEventStore();
+  const [state, setState] = useState<{ available: boolean; subscribed: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    store
+      .myAnnouncements()
+      .then(setState)
+      .catch(() => setState(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (!state?.available) return null;
+  const flip = async (subscribed: boolean) => {
+    setBusy(true);
+    onError(null);
+    try {
+      setState(await store.setMyAnnouncements(subscribed));
+      onMessage(subscribed ? "You will get the cup announcements in Discord." : "You no longer get the cup announcements.");
+    } catch (e) {
+      onError((e as Error).message || "That did not go through");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Label className="flex cursor-pointer items-center gap-2 font-normal text-on-banner" title="Get pinged in Discord for every new cup, its check-in, its draws and its podium">
+      <Icon name={state.subscribed ? "mdi-bell-ring" : "mdi-bell-outline"} />
+      Announcements
+      <Switch checked={state.subscribed} disabled={busy} onCheckedChange={(value) => flip(!!value)} aria-label="Cup announcements in Discord" />
+    </Label>
+  );
+}
 
 /** The member's own events: the cups and lists they play in, alone or in a cup team, the cups
  *  whose team invited them, and the events they run. Each card offers what is left to do in
@@ -82,7 +120,7 @@ export function MyEvents({
   };
 
   return (
-    <HomePanel icon="mdi-trophy-outline" title="My Events" order={order}>
+    <HomePanel icon="mdi-trophy-outline" title="My Events" order={order} action={<AnnouncementSwitch onError={onError} onMessage={onMessage} />}>
       {loading ? (
         <SkeletonRows rows={2} />
       ) : cards.length ? (

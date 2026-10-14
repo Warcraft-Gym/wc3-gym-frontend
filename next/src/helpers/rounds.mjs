@@ -135,22 +135,6 @@ export const roundStateChip = (card, asks = true) => {
   return title;
 };
 
-const opponentName = (series, playerId) =>
-  (series.player1_id === playerId ? series.player2 : series.player1)?.name ?? 'your opponent';
-
-// The read-only line of one round card, read from the player's side. Null while
-// the round is still open, which is where the check-in belongs.
-export const roundLine = (card, playerId, when = '') => {
-  const series = card?.series;
-  if (!series) return card?.over ? 'Not paired' : null;
-  const mine = series.player1_id === playerId;
-  const name = opponentName(series, playerId);
-  if (isUnscored(series)) return [`vs ${name}`, when].filter(Boolean).join(' · ');
-  const my = (mine ? series.player1_score : series.player2_score) ?? 0;
-  const theirs = (mine ? series.player2_score : series.player1_score) ?? 0;
-  return `Played · ${my > theirs ? 'won' : my < theirs ? 'lost' : 'drew'} vs ${name}`;
-};
-
 // What the player still owes, over every season he is in: a series with no result,
 // and every round whose check-in window is open and unanswered. One line each, in
 // round order. `asks` is false for a season that does not run the check-in.

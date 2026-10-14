@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultSignupRace, kingPlayer, matchesPlayerSearch, myProfilePath, playersWithCareers, runEach, signupGroups, toggleIds } from './players.mjs';
+import { defaultSignupRace, matchesPlayerSearch, myProfilePath, playersWithCareers, runEach, signupGroups, toggleIds } from './players.mjs';
 
 // A signup needs the race of THIS season, and the profile race cannot carry
 // that for a player who plays two. The last signup is his own answer; the
@@ -42,17 +42,6 @@ test('a career row joins its player, and a row no player claims stands alone', (
 });
 
 // A Twitch signup carries no users row, so the name falls back to the battle tag.
-test('a king shows his twitch name, else his battle tag', () => {
-  assert.deepEqual(
-    kingPlayer({ twitch_username: 'grubby', battle_tag: 'Grubby#1234', country: 'NL' }),
-    { name: 'grubby', country: 'NL' },
-  );
-  assert.deepEqual(
-    kingPlayer({ twitch_username: '', battle_tag: 'Grubby#1234', country: null }),
-    { name: 'Grubby#1234', country: null },
-  );
-});
-
 test('the account menu points at the own player page, or the signup page', () => {
   assert.equal(myProfilePath({ user: { id: 7, battleTag: 'thanks#11187' } }), '/player/thanks%2311187');
   assert.equal(myProfilePath({ user: { id: 7 } }), '/player/7');

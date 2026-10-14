@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { PANEL_ORDER, captainRow, cupSeriesLine, formatChip, homeRounds, myEventCards, ownScore, ownSeries, rowContext, seasonFixtures, seasonState, seriesWhen, teamMatch, upcomingEvents } from './home-hub.mjs';
+import { PANEL_ORDER, captainRow, cupSeriesLine, formatChip, homeRounds, myEventCards, ownScore, rowContext, seasonFixtures, seasonState, seriesWhen, teamMatch, upcomingEvents } from './home-hub.mjs';
 
 test('on a phone the own season and the own events come first, then the upcoming series and events, then fantasy', () => {
   assert.deepEqual(PANEL_ORDER, { games: 1, mine: 2, next: 3, upcoming: 4, fantasy: 5 });
@@ -110,20 +110,6 @@ test('an open cup series reads where it sits, who plays it and whether it vetoes
     series: { sides: [{ side_no: 1, user_id: 1 }, { side_no: 2, user_id: 2 }, { side_no: 3, user_id: 3 }], lobby_map: { name: 'Twisted Meadows' }, rules: { map_rules: 'fixed' } },
   });
   assert.deepEqual(lobby, { where: 'Heat 1', sides: '3 in the lobby · Twisted Meadows', lobby: true, veto: false });
-});
-
-test('the own panel takes the next round to play and the last round played', () => {
-  const series = [
-    { id: 1, player1_id: 7, player2_id: 8, player1_score: 2, player2_score: 0, match: { playday: 1 } },
-    { id: 2, player1_id: 9, player2_id: 7, player1_score: 1, player2_score: 2, match: { playday: 2 } },
-    { id: 3, player1_id: 7, player2_id: 5, player1_score: null, player2_score: null, match: { playday: 3 } },
-    { id: 4, player1_id: 7, player2_id: 4, player1_score: null, player2_score: null, match: { playday: 4 } },
-    { id: 5, player1_id: 1, player2_id: 2, player1_score: null, player2_score: null, match: { playday: 3 } },
-  ];
-  const { next, last } = ownSeries(series, 7);
-  assert.equal(next.id, 3);
-  assert.equal(last.id, 2);
-  assert.deepEqual(ownSeries([], 7), { next: null, last: null });
 });
 
 test('a result reads the viewer his own score first', () => {

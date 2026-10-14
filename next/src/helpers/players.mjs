@@ -8,9 +8,6 @@ export const matchesPlayerSearch = (player, query) => {
     || (player.tags || []).some((row) => (row.tag || '').toLowerCase().includes(q));
 };
 
-// The row-props of a player grid
-export const playerRowProps = () => ({ class: 'player-row' });
-
 // Only applies once the user moved a slider handle off the 0-3000 defaults.
 export const filterByMmrRange = (list, range, getMmr) => {
   if (!Array.isArray(range) || range.length !== 2) return list;
@@ -42,13 +39,6 @@ export const playersWithCareers = (players, careers) => {
       .map(c => ({ id: null, name: c.user?.name ?? c.player_name, key: `c${c.id ?? c.user_id}`, ...totals(c) })),
   ];
 };
-
-// A KOTH king as PlayerName wants him: the Twitch name a chat signup carries,
-// else his battle tag. Both KOTH views read the same fallback.
-export const kingPlayer = (king) => ({
-  name: king.twitch_username || king.battle_tag,
-  country: king.country,
-});
 
 // The player page path. The battle tag is the key, like w3champions; the id
 // serves rows that carry none, and old links.

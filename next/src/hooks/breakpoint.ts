@@ -18,9 +18,3 @@ export function useBreakpoint(query: string) {
     () => false,
   );
 }
-
-/** Columns marked `mobile: false` are dropped below the md breakpoint. */
-export function useColumns<T extends { mobile?: boolean }>(headers: T[]): T[] {
-  const mdAndUp = useBreakpoint(MD_AND_UP);
-  return headers.filter((h) => mdAndUp || h.mobile !== false);
-}

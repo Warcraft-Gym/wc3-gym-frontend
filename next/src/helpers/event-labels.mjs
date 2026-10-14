@@ -47,8 +47,6 @@ export const STATE_COLOR = {
 };
 // The reads answer the state under `phase`
 export const stateOf = (event) => event?.state ?? event?.phase ?? null;
-// The events list filters on the model's own states, never on a GNL phase
-export const STATE_ITEMS = Object.entries(EVENT_STATE_LABEL).map(([value, title]) => ({ value, title }));
 
 export const LEAGUE_KINDS = [
   { value: 'gnl', title: 'GNL' },

@@ -211,8 +211,6 @@ export const PLACEMENT_LIVES = [
  *  @param {number | null | undefined} lives */
 export const livesLine = (lives) => (lives ? `a run ends after ${lives} ${lives === 1 ? 'loss' : 'losses'}` : 'every place played out');
 
-export const CUP_BEST_OF = [1, 3, 5].map((value) => ({ value, title: `Bo${value}` }));
-
 export const SIGNUP_POLICIES = [
   { value: 'members', title: 'Members of the Discord' },
   { value: 'anyone', title: 'Anyone with a battle tag' },

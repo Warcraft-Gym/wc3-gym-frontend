@@ -126,14 +126,6 @@ export const seriesWhen = (row, now = DateTime.now()) => {
   return at < now ? `Started ${at.toFormat('HH:mm')}` : at.toFormat('ccc d LLL, HH:mm');
 };
 
-// A round orders the member's series; a booked time breaks the ties inside one round
-const seriesKey = (series) => [series.match?.playday ?? 0, series.date_time ?? ''];
-const byRound = (a, b) => {
-  const [roundA, timeA] = seriesKey(a);
-  const [roundB, timeB] = seriesKey(b);
-  return roundA - roundB || String(timeA).localeCompare(String(timeB));
-};
-
 /** Where the member stands in the current season, from its /me seasons row: on a team ('playing'),
  *  signed up and waiting for the draft ('waiting'), or not in it ('not_in').
  *  @param {any} entry */
@@ -146,15 +138,6 @@ export const homeRounds = (cards = []) => ({
   ahead: cards.filter((card) => !card.over),
   played: cards.filter((card) => card.over).reverse(),
 });
-
-/** The member's own next series and last result out of one season's series.
- *  @param {any[]} [series] @param {number|null} [playerId] */
-export const ownSeries = (series = [], playerId = null) => {
-  const mine = series.filter((row) => [row.player1_id, row.player2_id].includes(playerId));
-  const open = mine.filter(isUnscored).sort(byRound);
-  const played = mine.filter((row) => !isUnscored(row)).sort(byRound);
-  return { next: open[0] ?? null, last: played[played.length - 1] ?? null };
-};
 
 /** The score of a played series read from one player's side: his own score first, whether he won,
  *  and the sentence a screen reader gets. Null while the series carries no result.

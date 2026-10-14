@@ -176,7 +176,8 @@ export function StageView({
                       <tr key={row.entrant_id} className="detail-row">
                         <td />
                         <td className="text-right">{row.position}</td>
-                        <td>{row.user_id ? <PlayerName player={{ id: row.user_id, name: row.name }} /> : <span>{row.name}</span>}</td>
+                        {/* a team row names its team; the gap matches the one a player's flag leaves */}
+                        <td>{row.user_id ? <PlayerName player={{ id: row.user_id, name: row.name }} /> : <span className="pl-4">{row.name}</span>}</td>
                         <td className={cn("text-right", phoneCell)}>{row.played}</td>
                         <td className="text-right">{row.won}</td>
                         <td className={cn("text-right", phoneCell)}>{row.lost}</td>

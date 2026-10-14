@@ -518,6 +518,15 @@ export function EventAdminView({ id }: { id: string }) {
                     played={lastStage && complete}
                     onLegs={(cup_legs) => setEvent({ ...event, cup_legs })}
                     onFinished={afterLeg}
+                    onChanged={async () => {
+                      // a round added or removed changes the stages, so the round shown is read again
+                      const fresh = await store.fetchEvent(event.id, true);
+                      const index = Math.min(legIndex, Math.max(legsOf(fresh).length - 1, 0));
+                      setEvent(fresh);
+                      setLegIndex(index);
+                      setTab(0);
+                      await loadStage(fresh, stagesOf(fresh, legsOf(fresh)[index] || null)[0] || null);
+                    }}
                     onError={setError}
                   />
                 ) : null}

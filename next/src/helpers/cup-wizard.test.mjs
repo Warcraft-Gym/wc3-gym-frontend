@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem, cupSteps, laterRounds, livesLine, planFormat, pointsOf, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupPayload, cupProblem, cupSteps, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -153,4 +153,31 @@ test('the points table drops its empty tail and refuses a negative place', () =>
   assert.equal(cupProblem(form, 'points'), null);
   assert.equal(cupProblem({ ...form, points: ['', ''] }, 'points'), 'Give at least the winner of a round some points.');
   assert.equal(cupProblem({ ...form, points: ['3', '-1'] }, 'points'), 'Points are whole numbers, 0 or more.');
+});
+
+test('a cup repeats every week or on the nth or last weekday its own day is', () => {
+  // Friday 16 October 2026 is the third Friday and not the last
+  assert.deepEqual(repeatChoices(day), [
+    { value: null, title: 'Every Friday' },
+    { value: 3, title: 'The third Friday of the month' },
+  ]);
+  // Friday 30 October 2026 is the fifth Friday: no fifth to name, but the last
+  assert.deepEqual(repeatChoices(new Date(2026, 9, 30)).map((item) => item.value), [null, -1]);
+  // Friday 27 November 2026 is the fourth and the last
+  assert.deepEqual(repeatChoices(new Date(2026, 10, 27)).map((item) => item.value), [null, 4, -1]);
+  assert.deepEqual(repeatChoices(null), []);
+});
+
+test('a repeating cup sends its rule with the cup, one evening or over rounds', () => {
+  const form = { ...blankCup(), name: 'Friday Cup #1', start_date: day, start_time: '20:00', repeat: true, repeat_nth: 3 };
+  const rule = cupPayload(form).recurrence;
+  assert.equal(rule.name, 'Friday Cup');
+  assert.deepEqual([rule.weekday, rule.nth, rule.start_time, rule.ends_on], [4, 3, '20:00', null]);
+  assert.ok(rule.zone);
+  // a choice the day does not offer falls back to every week
+  assert.equal(cupPayload({ ...form, repeat_nth: -1 }).recurrence.nth, null);
+  assert.equal(cupPayload({ ...form, repeat: false }).recurrence, null);
+  assert.equal(repeatName({ name: 'Cup', repeat_name: ' Weekly ' }), 'Weekly');
+  assert.equal(cupProblem({ ...form, repeat_until: new Date(2026, 9, 1) }, 'basics'), 'The last day comes after the first cup.');
+  assert.equal(cupProblem(form, 'basics'), null);
 });

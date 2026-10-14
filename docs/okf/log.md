@@ -2,6 +2,7 @@
 
 ## 2026-10-14
 
+* **Add**: "Edit rounds" on a cup's run page renames, moves, adds and removes rounds after creation; "Edit" on a recurring cup's page changes its name, start time and last day; Create cup can repeat the cup on a schedule from the start; and a division's seed change after the draw redraws that division alone. [Event management](pages/event-management.md) states it.
 * **Update**: a cup's Divisions panel previews a changed cut live: the cards place every player as saving would and mark who changes division, before anything is saved. [Event management](pages/event-management.md) states it.
 * **Add**: a cup's Seeds sidebar stays open after the draw, and every change draws the bracket again from the new seeds, asking first while results stand. A seed is typed into its number field or a player dragged to a new place. [Event management](pages/event-management.md) states it.
 

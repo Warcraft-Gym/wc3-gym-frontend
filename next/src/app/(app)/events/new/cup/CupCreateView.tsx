@@ -16,10 +16,12 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
+import { dayText } from "@/helpers/cup-recurrence.mjs";
+import { dayIso } from "@/helpers/date-input.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +83,9 @@ export function CupCreateView() {
   const later: Row[] = laterRounds(form);
   // a round the organizer changed keeps its own day and time from then on
   const setLater = (index: number, patch: Row) => set({ later_rounds: later.map((row, at) => (at === index ? { ...row, ...patch, edited: true } : row)) });
+  // how often a cup on the picked day can repeat, and the one picked
+  const repeats: { value: number | null; title: string }[] = repeatChoices(form.start_date);
+  const repeatsAs = repeats.find((item) => item.value === form.repeat_nth) || repeats[0];
   const ordinal = (place: number) => (place === 1 ? "1st" : place === 2 ? "2nd" : place === 3 ? "3rd" : `${place}th`);
   const problem: string | null = cupProblem(form, key);
   const format = CUP_FORMATS.find((item) => item.value === form.format);
@@ -139,6 +144,14 @@ export function CupCreateView() {
     },
     { k: "Divisions", v: form.uses_divisions ? "Split by MMR on the run page" : "One field" },
     ...(rounds ? [{ k: "Points per place", v: pointsOf(form).join(", ") }] : []),
+    {
+      k: "Repeats",
+      v: form.repeat
+        ? [`"${repeatName(form)}": ${repeatsAs?.title ?? "every week"} at ${form.start_time || "the start time"}`, form.repeat_until ? `until ${dayText(dayIso(form.repeat_until))}` : null]
+            .filter(Boolean)
+            .join(", ") + ". You create each next cup on its page."
+        : "No, this cup stands alone",
+    },
     { k: "Check-in", v: rounds ? "Players check in for each round" : form.checkin_enabled ? "Players check in before the start" : "No check-in" },
     { k: "Visible", v: form.published ? (form.signups_open ? "Published, sign-ups open" : "Published, sign-ups closed") : "Draft: only you and the admins see it" },
   ];
@@ -210,6 +223,37 @@ export function CupCreateView() {
                 ))}
               </>
             ) : null}
+            <div className="col-span-12 flex flex-col gap-3 rounded-lg border border-border p-3">
+              <Label className="flex min-h-11 items-center gap-2">
+                <Switch checked={!!form.repeat} onCheckedChange={(repeat) => set({ repeat })} />
+                Repeat this cup on a schedule
+              </Label>
+              {form.repeat ? (
+                repeats.length ? (
+                  <>
+                    <Choice label="How often" items={repeats.map((item) => ({ value: String(item.value), title: item.title }))} value={String(repeatsAs?.value ?? null)} onChange={(value) => set({ repeat_nth: value === "null" ? null : Number(value) })} />
+                    <div className="grid grid-cols-12 gap-3">
+                      <TextField
+                        className="col-span-12 min-[600px]:col-span-6"
+                        label="Name of the recurring cup"
+                        hint="Each next cup is named after it and its day"
+                        placeholder={repeatName({ name: form.name }) || "Friday Night Cup"}
+                        value={form.repeat_name}
+                        onChange={(e) => set({ repeat_name: e.target.value })}
+                      />
+                      <div className="col-span-12 min-[600px]:col-span-6">
+                        <SimpleDatePicker modelValue={form.repeat_until} label="Last day (optional)" onUpdateModelValue={(repeat_until) => set({ repeat_until })} />
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Each time is a cup of its own with its own sign-ups. After creating, the recurring cup&apos;s page lists the coming days, and you create each next cup there with one press, as a copy of the last one.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Pick the day first; the cup repeats on that weekday.</p>
+                )
+              ) : null}
+            </div>
             <div className="col-span-12">
               <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
               <p className="mt-1 text-sm text-muted-foreground">

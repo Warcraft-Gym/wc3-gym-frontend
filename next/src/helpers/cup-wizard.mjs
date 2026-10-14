@@ -4,7 +4,8 @@
 import { planText, poolProblem } from './best-of-plan.mjs';
 import { dayIso } from './date-input.mjs';
 import { text } from './event-labels.mjs';
-import { storedUtc } from './timezone.mjs';
+import { storedUtc, viewerZone } from './timezone.mjs';
+import { WEEKDAYS } from './cup-recurrence.mjs';
 
 export const CUP_STEPS = [
   { key: 'basics', title: 'Basics' },
@@ -44,6 +45,27 @@ export const laterRounds = (form, count = Number(form.round_count) || 0) =>
     if (kept?.edited) return kept;
     return { date: addDays(form.start_date, 7 * (index + 1)), time: form.start_time, edited: false };
   });
+
+/** How often a cup on this day can repeat: every week, the nth such weekday of the month the
+ *  day is, and the last of the month when the day is the last one. The weekday is the day's own.
+ *  @param {Date | null} day */
+export const repeatChoices = (day) => {
+  if (!(day instanceof Date)) return [];
+  const name = WEEKDAYS[(day.getDay() + 6) % 7];
+  const nth = Math.ceil(day.getDate() / 7);
+  const last = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 7).getMonth() !== day.getMonth();
+  const ordinal = ['first', 'second', 'third', 'fourth'][nth - 1];
+  return [
+    { value: null, title: `Every ${name}` },
+    ...(ordinal ? [{ value: nth, title: `The ${ordinal} ${name} of the month` }] : []),
+    ...(last ? [{ value: -1, title: `The last ${name} of the month` }] : []),
+  ];
+};
+
+/** The name a repeating cup's rule takes: the one typed, or the cup's name without a trailing
+ *  number, so "Friday Cup #1" repeats as "Friday Cup".
+ *  @param {any} form */
+export const repeatName = (form) => (form.repeat_name || '').trim() || (form.name || '').trim().replace(/\s+#?\d+$/, '');
 
 /** The points table as numbers, best place first; empty fields at the end are dropped.
  *  @param {any} form */
@@ -162,6 +184,11 @@ export const blankCup = () => ({
   round_count: 3,
   later_rounds: [],
   points: DEFAULT_POINTS.map(String),
+  // on: the cup repeats on a rule from its own day, every week or the nth weekday of the month
+  repeat: false,
+  repeat_nth: null,
+  repeat_name: '',
+  repeat_until: null,
   checkin_enabled: true,
   published: true,
   signups_open: true,
@@ -196,6 +223,7 @@ export const cupPayload = (form) => ({
   // a cup played over rounds checks its players in per round, never once for the cup
   checkin_enabled: form.play === 'rounds' ? false : !!form.checkin_enabled,
   ...roundsPayload(form),
+  recurrence: repeatPayload(form),
   published: !!form.published,
   signups_open: !!form.signups_open,
   // every series vetoes from the pool by its own best-of, and game 1 plays the map left over
@@ -215,6 +243,21 @@ export const cupPayload = (form) => ({
     },
   ],
 });
+
+/** The rule a repeating cup is created with, in the viewer's zone, or null.
+ *  @param {any} form */
+function repeatPayload(form) {
+  if (!form.repeat || !(form.start_date instanceof Date)) return null;
+  const choices = repeatChoices(form.start_date);
+  return {
+    name: repeatName(form),
+    weekday: (form.start_date.getDay() + 6) % 7,
+    nth: choices.some((item) => item.value === form.repeat_nth) ? form.repeat_nth : null,
+    start_time: form.start_time,
+    zone: viewerZone(),
+    ends_on: form.repeat_until ? dayIso(form.repeat_until) : null,
+  };
+}
 
 /** A cup played over rounds: one entry per round, each an instant in UTC, and the points table.
  *  @param {any} form */
@@ -284,6 +327,10 @@ export function cupProblem(form, step) {
       const early = stamps.findIndex((stamp, index) => index > 0 && stamp <= stamps[index - 1]);
       if (early > 0) return `Round ${early + 1} starts after round ${early}.`;
     }
+  }
+  if (step === 'basics' && form.repeat) {
+    if (!repeatName(form)) return 'Name the recurring cup.';
+    if (form.repeat_until && form.start_date && dayIso(form.repeat_until) < dayIso(form.start_date)) return 'The last day comes after the first cup.';
   }
   if (step === 'points') {
     const points = pointsOf(form);

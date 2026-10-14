@@ -158,6 +158,16 @@ const store = {
   async checkEveryoneInLeg(event_id: number, leg_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins/everyone`);
   },
+  // A cup's rounds after creation: rename or move one, add one after the last, remove one not drawn
+  async updateLeg(event_id: number, leg_id: number, changes: { name?: string | null; starts_at?: string | null }) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/legs/${leg_id}`, changes);
+  },
+  async addLeg(event_id: number, leg: { name?: string | null; starts_at?: string | null }) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs`, leg);
+  },
+  async removeLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/legs/${leg_id}`);
+  },
   // Finishing a round counts its places in the overall table; the reopen takes that back
   async finishLeg(event_id: number, leg_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/finish`);

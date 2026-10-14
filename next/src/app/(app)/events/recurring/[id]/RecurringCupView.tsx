@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
+import { RecurrenceEditDialog } from "@/components/RecurrenceEditDialog";
 import { dayText, ruleLine, upcomingRows } from "@/helpers/cup-recurrence.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { useEventRunner } from "@/hooks/event-runner";
@@ -32,6 +33,7 @@ export function RecurringCupView({ id }: { id: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stopping, setStopping] = useState(false);
+  const [editing, setEditing] = useState(false);
   // who runs the latest cup runs the rule
   const runner = useEventRunner(recurrence?.latest_event_id ? String(recurrence.latest_event_id) : "");
   const runs = !!recurrence?.latest_event_id && runner.runs;
@@ -94,6 +96,12 @@ export function RecurringCupView({ id }: { id: string }) {
             }
             lead={`${ruleLine(recurrence)}, ${recurrence.zone}. Each time is a cup of its own.`}
           >
+            {runs ? (
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                <Icon name="mdi-pencil" />
+                Edit
+              </Button>
+            ) : null}
             {runs ? (
               <Button variant="outline" className="text-error" onClick={() => setStopping(true)}>
                 <Icon name="mdi-calendar-remove" />
@@ -172,6 +180,7 @@ export function RecurringCupView({ id }: { id: string }) {
         </>
       ) : null}
 
+      {editing && recurrence ? <RecurrenceEditDialog recurrence={recurrence} open onOpenChange={setEditing} onSaved={setRecurrence} /> : null}
       <Dialog open={stopping} onOpenChange={setStopping}>
         <DialogContent size="confirm" className="gap-0 p-0">
           <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Stop repeating</DialogTitle>

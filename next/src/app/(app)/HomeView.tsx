@@ -81,9 +81,10 @@ export function HomeView() {
   const currentEntry: Row | null = ((me?.seasons ?? []) as Row[]).find((season) => Number(season.id) === Number(currentId)) ?? null;
   const fantasySeasonId: number | null = currentId;
 
-  // The events side: his own events, one card each, and the cups he may still enter, none twice
+  // The events side: his own events, one card each, and the cups he may still enter; a cup he runs
+  // but has not entered shows in both
   const mine = myEventCards({ events: myEvents, ...eventsSide });
-  const upcoming = upcomingEvents(myEvents, mine.map((card: Row) => card.id));
+  const upcoming = upcomingEvents(myEvents, mine);
 
   // A captain's fixtures: every one of the current season sits on its round in My Season, which only
   // a member with a player row sees; the next one to draft of every other event stays in Upcoming Series

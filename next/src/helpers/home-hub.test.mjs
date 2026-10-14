@@ -27,7 +27,7 @@ test('a format chip names the cup: its side size, a free for all and a custom ga
   assert.equal(formatChip({ kind: 'gnl' }), null);
 });
 
-test('upcoming events are the cups and lists open to the member, soonest first, and none My events lists', () => {
+test('upcoming events are the cups and lists open to the member, soonest first, and none they joined or are invited to', () => {
   const rows = [
     { id: 1, kind: 'cup', action: 'sign_up', joined: false, start: '2026-11-09' },
     { id: 2, kind: 'signup', action: 'sign_up', joined: false, start: '2026-10-20' },
@@ -37,9 +37,15 @@ test('upcoming events are the cups and lists open to the member, soonest first, 
     { id: 6, kind: 'cup', action: 'closed', joined: false, start: '2026-10-04' },
     { id: 7, kind: 'cup', action: 'sign_up', joined: false, start: null },
     { id: 8, kind: 'cup', action: 'sign_up', joined: false, start: '2026-10-05' },
+    { id: 9, kind: 'cup', action: 'sign_up', joined: false, start: '2026-10-06' },
   ];
-  // the cup the member runs or is invited to sits in My events
-  assert.deepEqual(upcomingEvents(rows, [8]).map((row) => row.id), [2, 1, 7]);
+  // the cup the member is invited to sits in My events alone; the one they run but have not
+  // entered stays open to them here too
+  const cards = [
+    { id: 8, row: null, invite: { team: { id: 3 } } },
+    { id: 9, row: null, invite: null, organizer: true },
+  ];
+  assert.deepEqual(upcomingEvents(rows, cards).map((row) => row.id), [9, 2, 1, 7]);
 });
 
 test('my events merge the joined events, the cups run, the invites and the open series, one card an event', () => {

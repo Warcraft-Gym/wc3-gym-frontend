@@ -29,11 +29,12 @@ export const formatChip = (row) => {
   return row.ffa ? lobby : `${size}v${size} cup`;
 };
 
-/** The cups and sign-up lists the member may still enter, soonest first. One the member joined,
- *  is invited to or runs is in My events instead, so no event shows twice.
- *  @param {any[]} [rows] the GET /me/events rows @param {Iterable<number>} [elsewhere] the ids My events lists */
-export const upcomingEvents = (rows = [], elsewhere = []) => {
-  const skip = new Set([...elsewhere].map(Number));
+/** The cups and sign-up lists the member may still enter, soonest first. One the member joined or
+ *  is invited to is in My events instead. One they run stays here until they sign up for it, since
+ *  an organizer may play their own cup; My events lists it too, for the run page.
+ *  @param {any[]} [rows] the GET /me/events rows @param {any[]} [cards] the cards of myEventCards */
+export const upcomingEvents = (rows = [], cards = []) => {
+  const skip = new Set(cards.filter((card) => card.row || card.invite).map((card) => Number(card.id)));
   return rows
     .filter((row) => EVENT_KINDS.includes(row.kind) && row.action === 'sign_up' && !row.joined && !skip.has(Number(row.id)))
     .sort((a, b) => startKey(a.start).localeCompare(startKey(b.start)));

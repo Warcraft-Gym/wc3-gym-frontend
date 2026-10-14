@@ -7,7 +7,7 @@ import { useHideResults } from "@/components/hide-results";
 import { placeIcon, placeMedal, placeTitle } from "@/helpers/awards.mjs";
 import { stateOf } from "@/helpers/event-labels.mjs";
 import { resultRounds } from "@/helpers/event-tabs.mjs";
-import { winnerSide } from "@/helpers/stage-view.mjs";
+import { isLobby, lobbySeats, winnerSide } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 import { eventPlaces, placeLabels } from "@/helpers/placement.mjs";
 
@@ -172,7 +172,34 @@ export function EventResults({
                   <section key={round.key} className="mx-auto mb-2 max-w-[720px]">
                     <div className="px-4 pt-2 pb-1 text-xs font-bold text-muted-foreground uppercase">{round.name}</div>
                     <ul className="flex flex-col">
-                      {round.series.map((row) => {
+                      {round.series.map((row, index) => {
+                        if (isLobby(row)) {
+                          // a lobby reads as its players by place, the winner first, and its map
+                          const seats = [...(lobbySeats(row) as Row[])].sort((a, b) => (a.place ?? 99) - (b.place ?? 99));
+                          return (
+                            <li key={row.id} className="border-t border-border">
+                              <button
+                                type="button"
+                                className="flex min-h-10 w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1 text-left hover:bg-primary/5 disabled:cursor-default"
+                                disabled={!onOpenSeries}
+                                onClick={() => onOpenSeries?.(row)}
+                              >
+                                <span className="text-sm text-muted-foreground">
+                                  {round.series.length > 1 ? `Lobby ${index + 1}` : "Lobby"}
+                                  {row.lobby_map ? ` · ${row.lobby_map.name}` : ""}
+                                </span>
+                                <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                                  {seats.map((seat) => (
+                                    <span key={seat.side_no} className={cn("inline-flex items-center gap-1", seat.place === 1 && "font-bold")}>
+                                      <span className="tnum text-xs text-muted-foreground">{seat.place}.</span>
+                                      {seat.user ? <PlayerName player={seat.user} plain /> : <span>Seat {seat.side_no}</span>}
+                                    </span>
+                                  ))}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        }
                         const won = winnerSide(row);
                         return (
                           <li key={row.id} className="border-t border-border">

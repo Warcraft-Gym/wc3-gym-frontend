@@ -143,6 +143,19 @@ export const holdsResult = (series) => series?.player1_score != null && series?.
 export const vetoOf = (series, viewer = {}) =>
   rulesOf(series?.rules?.map_rules).includes('decider') && reportOf(series, { id: viewer.id ?? null, seats: viewer.seats ?? [], teamIds: viewer.teamIds ?? null }) === 'report';
 
+/** What the draw offers on a free for all lobby: `report` while it waits for its places, `edit`
+ *  once it holds them, or null. A player seated in the lobby enters its places, and so does an
+ *  organizer or an admin; a lobby still waiting for a player of the round before offers nothing.
+ *  @param {any} series @param {{ id?: number | null, isAdmin?: boolean, runs?: boolean }} [viewer] */
+export const lobbyReportOf = (series, viewer = {}) => {
+  const seats = series?.sides || [];
+  if (!seats.length || series.entrant1_id || series.entrant2_id) return null;
+  if (seats.some((seat) => !seat.entrant_id)) return null;
+  const seated = viewer.id != null && seats.some((seat) => seat.user_id === viewer.id || seat.user?.id === viewer.id);
+  if (!seated && !viewer.isAdmin && !viewer.runs) return null;
+  return holdsResult(series) ? 'edit' : 'report';
+};
+
 export const reportOf = (series, viewer = {}) => {
   if (!series || series.sides?.length) return null;
   const named = (side) => series[`player${side}_id`] ?? series[`entrant${side}_id`] ?? series[`team${side}`]?.id;

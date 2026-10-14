@@ -56,3 +56,10 @@ test('the results list the played series round by round, never a bye or an idle 
   assert.deepStrictEqual(made.map((round) => round.series.map((row) => row.id)), [[1], [4]]);
   assert.deepStrictEqual(resultRounds([], rounds), []);
 });
+
+test('a lobby with its places is a result, a lobby still to play is not', () => {
+  const rounds = [{ id: 1, number: 1, name: 'Round 1' }];
+  const seats = [{ side_no: 1, entrant_id: 11, place: 1 }, { side_no: 2, entrant_id: 12, place: 2 }];
+  const lobby = (id, score) => ({ id, round_id: 1, sequence: id, sides: seats, player1_score: score, player2_score: score === null ? null : 0 });
+  assert.deepStrictEqual(resultRounds([lobby(1, 1), lobby(2, null)], rounds).map((round) => round.series.map((row) => row.id)), [[1]]);
+});

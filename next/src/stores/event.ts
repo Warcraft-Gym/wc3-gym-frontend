@@ -306,6 +306,13 @@ const store = {
   async setPlaces(series_id: number, places: any) {
     return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/places`, { places });
   },
+  // A runner plays a lobby on another map of the pool, or takes its places back with the seats they sent on
+  async setLobbyMap(series_id: number, map_id: number) {
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/lobby-map`, { map_id });
+  },
+  async clearLobby(series_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/cup-series/${series_id}/result`);
+  },
   // Seats a lobby again before it is played, so an entrant moves between lobbies
   async setLobbySides(series_id: number, entrant_ids: number[]) {
     return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/sides`, { entrant_ids });

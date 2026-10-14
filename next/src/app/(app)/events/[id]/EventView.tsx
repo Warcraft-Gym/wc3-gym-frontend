@@ -35,7 +35,9 @@ import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { useAuth, useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
 import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/ReportResultDialog";
-import { reportOf } from "@/helpers/series-actions.mjs";
+import { lobbyReportOf, reportOf } from "@/helpers/series-actions.mjs";
+import { isLobby } from "@/helpers/stage-view.mjs";
+import { LobbyPlacesDialog } from "@/components/LobbyPlacesDialog";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VetoBoard } from "@/components/VetoBoard";
 import { TeamCupPanel } from "@/components/TeamCupPanel";
@@ -174,7 +176,7 @@ export function EventView({ id }: { id: string }) {
   const mine = auth.me
     ? drawn
         .flatMap((stage) => (stage.series as Row[]).map((row) => ({ row, stage })))
-        .find(({ row }) => reportOf(row, { id: viewer.id, seats: viewer.seats, teamIds: viewer.teamIds }) === "report") ?? null
+        .find(({ row }) => reportOf(row, { id: viewer.id, seats: viewer.seats, teamIds: viewer.teamIds }) === "report" || lobbyReportOf(row, { id: viewer.id }) === "report") ?? null
     : null;
   // The report dialog opens in place on the series it reads afresh, as the series page does;
   // a cup's series read and report on the cup's own routes
@@ -182,7 +184,16 @@ export function EventView({ id }: { id: string }) {
   const cup = event?.kind === "cup";
   // The map veto of one series, opened in place from the draw or from the waiting match
   const [vetoing, setVetoing] = useState<Row | null>(null);
+  // a lobby takes its places in the places dialog instead of a score
+  const [placing, setPlacing] = useState<Row | null>(null);
+  const [placingError, setPlacingError] = useState<string | null>(null);
+  const [placingSaving, setPlacingSaving] = useState(false);
   const openReport = async (row: Row) => {
+    if (isLobby(row)) {
+      setPlacingError(null);
+      setPlacing(row);
+      return;
+    }
     try {
       const full = await fetchWrapper.get(`${backendUrl}/${cup ? "cup-series" : "series"}/${row.id}`);
       reportDialog.current?.open({ ...full, entrant1_id: row.entrant1_id ?? null, entrant2_id: row.entrant2_id ?? null });
@@ -477,14 +488,26 @@ export function EventView({ id }: { id: string }) {
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <Icon name="mdi-sword-cross" size={24} className="text-primary-text" />
           <div className="min-w-0 flex-[1_1_260px]">
-            <div className="font-heading text-base font-bold">Your match is waiting for its result</div>
-            <div className="text-sm text-muted-foreground">
-              {[mine.row.player1?.name || mine.row.team1?.name, mine.row.player2?.name || mine.row.team2?.name].filter(Boolean).join(" vs ")}
-              {mine.stage.name ? ` · ${mine.stage.name}` : ""}. Played it? Report the result here, or with the Report button on your box in the draw.
-            </div>
+            {isLobby(mine.row) ? (
+              <>
+                <div className="font-heading text-base font-bold">Your lobby is waiting for its places</div>
+                <div className="text-sm text-muted-foreground">
+                  {(mine.row.sides as Row[]).map((seat) => seat.user?.name).filter(Boolean).join(", ")}
+                  {mine.row.lobby_map ? ` · ${mine.row.lobby_map.name}` : ""}. Played it? Enter where everyone finished.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="font-heading text-base font-bold">Your match is waiting for its result</div>
+                <div className="text-sm text-muted-foreground">
+                  {[mine.row.player1?.name || mine.row.team1?.name, mine.row.player2?.name || mine.row.team2?.name].filter(Boolean).join(" vs ")}
+                  {mine.stage.name ? ` · ${mine.stage.name}` : ""}. Played it? Report the result here, or with the Report button on your box in the draw.
+                </div>
+              </>
+            )}
           </div>
           {/* a cup series vetoes its maps first: game 1 plays the map the veto leaves */}
-          {(rulesOf(mine.row.rules?.map_rules) as string[]).includes("decider") ? (
+          {!isLobby(mine.row) && (rulesOf(mine.row.rules?.map_rules) as string[]).includes("decider") ? (
             <Button variant="outline" onClick={() => setVetoing(mine.row)}>
               <Icon name="mdi-map-outline" />
               Map veto
@@ -492,7 +515,7 @@ export function EventView({ id }: { id: string }) {
           ) : null}
           <Button onClick={() => openReport(mine.row)}>
             <Icon name="mdi-clipboard-check-outline" />
-            Report result
+            {isLobby(mine.row) ? "Report places" : "Report result"}
           </Button>
         </CardContent>
       </Card>
@@ -742,6 +765,31 @@ export function EventView({ id }: { id: string }) {
             </>
           ) : null}
 
+          {placing ? (
+            <LobbyPlacesDialog
+              key={placing.id}
+              lobby={placing}
+              title="Report the places"
+              open
+              onOpenChange={(open) => !open && setPlacing(null)}
+              saving={placingSaving}
+              error={placingError}
+              onError={setPlacingError}
+              onSave={async (places) => {
+                setPlacingSaving(true);
+                setPlacingError(null);
+                try {
+                  await store.setPlaces(placing.id, places);
+                  setPlacing(null);
+                  await Promise.all([reload(), loadDrawings(event as Row, true)]);
+                } catch (e) {
+                  setPlacingError((e as Error).message || "The places were not saved");
+                } finally {
+                  setPlacingSaving(false);
+                }
+              }}
+            />
+          ) : null}
           {dialog ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={() => reload()} /> : null}
           {vetoing ? (
             <Dialog open onOpenChange={(open) => !open && setVetoing(null)}>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem, cupSteps, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupPayload, cupProblem, cupSteps, ffaLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -180,4 +180,52 @@ test('a repeating cup sends its rule with the cup, one evening or over rounds', 
   assert.equal(repeatName({ name: 'Cup', repeat_name: ' Weekly ' }), 'Weekly');
   assert.equal(cupProblem({ ...form, repeat_until: new Date(2026, 9, 1) }, 'basics'), 'The last day comes after the first cup.');
   assert.equal(cupProblem(form, 'basics'), null);
+});
+
+test('an FFA cup of heats writes one lobby stage, no best-of and no veto', () => {
+  const form = { ...blankCup(), name: 'FFA Night', game: 'ffa', start_date: day, start_time: '20:00', pool: [{ id: 3 }] };
+  const body = cupPayload(form);
+  assert.equal(body.entrant_kind, 'solo');
+  assert.equal(body.team_size, null);
+  assert.equal(body.veto_by_best_of, false);
+  assert.deepEqual(body.stages, [
+    {
+      name: 'Heats',
+      format: 'ffa',
+      best_of: 1,
+      best_of_by_round: null,
+      scheduling_mode: 'immediate',
+      lobby_size: 4,
+      group_advance: 2,
+      swiss_rounds: null,
+      points_by_place: '4,3,2,1',
+      third_place: false,
+      grand_final_modifier: 'one',
+      placement_lives: null,
+    },
+  ]);
+  assert.equal(ffaLine(form), 'Heats of 4, the top 2 of each go on, down to one final lobby');
+  assert.equal(cupProblem(form, 'format'), null);
+  assert.equal(cupProblem(form, 'maps'), null);
+  assert.equal(cupProblem({ ...form, pool: [] }, 'maps'), 'Add at least one map; every lobby plays a map of the pool.');
+});
+
+test('one FFA lobby seats the whole field, plays its games and caps the sign-ups', () => {
+  const form = { ...blankCup(), game: 'ffa', ffa_mode: 'league', lobby_size: 6, ffa_games: 4, entrant_cap: '10' };
+  const body = cupPayload(form);
+  assert.deepEqual([body.stages[0].lobby_size, body.stages[0].swiss_rounds, body.stages[0].group_advance], [null, 4, null]);
+  assert.equal(body.stages[0].points_by_place, '6,5,4,3,2,1');
+  assert.equal(body.entrant_cap, 6);
+  assert.equal(cupPayload({ ...form, entrant_cap: '' }).entrant_cap, 6);
+  assert.equal(ffaLine(form), 'One lobby of 6, 4 games, the points add up');
+});
+
+test('the FFA points default to the lobby counting down, and the format step checks its numbers', () => {
+  const form = { ...blankCup(), game: 'ffa' };
+  assert.deepEqual(ffaPoints({ ...form, lobby_size: 5 }), [5, 4, 3, 2, 1]);
+  assert.deepEqual(ffaPoints({ ...form, ffa_points: ['10', '6', '', ''] }), [10, 6]);
+  assert.equal(cupProblem({ ...form, lobby_size: 2 }, 'format'), 'A heat seats 3 to 8 players.');
+  assert.equal(cupProblem({ ...form, lobby_advance: '4' }, 'format'), '1 to 3 places of a heat go on.');
+  assert.equal(cupProblem({ ...form, ffa_mode: 'league', ffa_games: 1 }, 'format'), 'One lobby plays 2 to 10 games.');
+  assert.equal(cupProblem({ ...form, ffa_points: ['3', '-1'] }, 'format'), 'Points are whole numbers, 0 or more.');
 });

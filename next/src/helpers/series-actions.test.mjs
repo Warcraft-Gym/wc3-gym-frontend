@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { vetoOf, actsForSeries, holdsResult, needsVeto, seriesContext, seriesEditBody, reportOf, seriesMapLine, seriesSteps } from './series-actions.mjs';
+import { vetoOf, actsForSeries, holdsResult, needsVeto, seriesContext, seriesEditBody, lobbyReportOf, reportOf, seriesMapLine, seriesSteps } from './series-actions.mjs';
 
 const ME = 9;
 const OPEN = { id: 12, player1_id: ME, player2_id: 4, player1_score: null, player2_score: null };
@@ -167,4 +167,15 @@ test('the draw offers a report to whoever acts for a side, and an edit once a re
   assert.equal(reportOf({ ...open, sides: [{ side_no: 1 }] }, { id: 7 }), null);
   assert.equal(reportOf({ ...open, result_kind: 'walkover', player1_score: 2, player2_score: 0 }, { id: 7 }), null);
   assert.equal(reportOf(null, { id: 7 }), null);
+});
+
+test('a lobby offers its places to a player seated in it and to its organizers', () => {
+  const lobby = { id: 5, sides: [{ side_no: 1, entrant_id: 11, user_id: 7 }, { side_no: 2, entrant_id: 12, user_id: 8 }, { side_no: 3, entrant_id: 13, user_id: 9 }] };
+  assert.equal(lobbyReportOf(lobby, { id: 8 }), 'report');
+  assert.equal(lobbyReportOf(lobby, { id: 4 }), null);
+  assert.equal(lobbyReportOf(lobby, { id: 4, runs: true }), 'report');
+  assert.equal(lobbyReportOf({ ...lobby, player1_score: 1, player2_score: 0 }, { id: 7 }), 'edit');
+  // a seat still waiting for the round before, and a two-sided series, offer nothing here
+  assert.equal(lobbyReportOf({ ...lobby, sides: [...lobby.sides, { side_no: 4, entrant_id: null, user_id: null }] }, { id: 7 }), null);
+  assert.equal(lobbyReportOf({ id: 1, player1_id: 7, player2_id: 8 }, { id: 7 }), null);
 });

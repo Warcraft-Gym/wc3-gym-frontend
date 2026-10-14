@@ -1,6 +1,6 @@
 // The tabs of an event page and of its run page: the draw first, then who is in, then the
 // results. The tab rides in the address as `?tab=`, so a link opens the tab it names.
-import { columns, isScored, standsOn, withoutIdleReset } from './stage-view.mjs';
+import { columns, isLobby, isScored, standsOn, withoutIdleReset } from './stage-view.mjs';
 
 export const EVENT_TABS = ['draw', 'participants', 'results'];
 
@@ -26,10 +26,10 @@ export function withTab(href, tab, home = 'draw') {
 /** The played series of one stage, round by round, in the order the draw reads them. A series
  *  with a side nobody fills, a bye or the lower slot a bye feeds, is scored through but never
  *  played, and the reset nobody played draws the final twice, so neither is a result; a round
- *  with nothing played yet is left out.
+ *  with nothing played yet is left out. A free for all lobby with its places is a result too.
  *  @param {any[]} series @param {any[]} rounds */
 export function resultRounds(series = [], rounds = []) {
   const played = withoutIdleReset(series)
-    .filter((row) => isScored(row) && standsOn(row, 1) != null && standsOn(row, 2) != null);
+    .filter((row) => isScored(row) && (isLobby(row) || (standsOn(row, 1) != null && standsOn(row, 2) != null)));
   return columns(played, rounds).filter((column) => column.series.length);
 }

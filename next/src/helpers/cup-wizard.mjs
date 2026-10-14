@@ -83,12 +83,45 @@ export const CUP_GAMES = [
   { value: '3v3', title: '3v3', ready: true, size: 3 },
   { value: '4v4', title: '4v4', ready: true, size: 4 },
   { value: 'custom', title: 'Custom game', ready: false, size: null },
-  { value: 'ffa', title: 'FFA', ready: false, size: null },
+  { value: 'ffa', title: 'FFA', ready: true, size: null },
 ];
 
 /** How many players a team of this game fields, or null for 1v1.
  *  @param {string} game */
 export const teamSizeOf = (game) => CUP_GAMES.find((item) => item.value === game)?.size ?? null;
+
+/** Whether the cup is a free for all: lobbies of single players, each placed 1st to last.
+ *  @param {any} form */
+export const isFfa = (form) => form?.game === 'ffa';
+
+// How a free for all cup is played: heats of lobbies down to one final lobby, or one lobby that
+// plays several games and adds the place points up
+export const FFA_MODES = [
+  { value: 'heats', title: 'Heats down to a final', hint: 'Lobbies of a few players; the top places of each lobby go on until one final lobby decides the winner.' },
+  { value: 'league', title: 'One lobby, several games', hint: 'Everyone plays in one lobby, several games in a row; the place points of every game add up.' },
+];
+
+/** The points each place of a lobby pays, best place first: the ones the organizer typed, or the
+ *  lobby size counting down, so a lobby of 4 pays 4, 3, 2, 1.
+ *  @param {any} form */
+export const ffaPoints = (form) => {
+  const typed = (form.ffa_points || []).map((value) => (value === '' || value === null || value === undefined ? null : Number(value)));
+  while (typed.length && typed[typed.length - 1] === null) typed.pop();
+  if (typed.length) return typed.map((value) => value ?? 0);
+  const seats = Number(form.lobby_size) || 4;
+  return Array.from({ length: seats }, (unused, index) => seats - index);
+};
+
+/** How many places of a heat go on: the organizer's number, or half the lobby.
+ *  @param {any} form */
+export const ffaAdvance = (form) => Number(form.lobby_advance) || Math.max(Math.floor((Number(form.lobby_size) || 4) / 2), 1);
+
+/** How a free for all cup reads in a line, for the review.
+ *  @param {any} form */
+export const ffaLine = (form) =>
+  form.ffa_mode === 'league'
+    ? `One lobby of ${Number(form.lobby_size) || '?'}, ${Number(form.ffa_games) || '?'} games, the points add up`
+    : `Heats of ${Number(form.lobby_size) || '?'}, the top ${ffaAdvance(form)} of each go on, down to one final lobby`;
 
 export const CUP_FORMATS = [
   { value: 'single_elimination', title: 'Single elimination', hint: 'Lose once and you are out. 16 players play 4 rounds.' },
@@ -184,6 +217,13 @@ export const blankCup = () => ({
   round_count: 3,
   later_rounds: [],
   points: DEFAULT_POINTS.map(String),
+  // a free for all: heats or one lobby, the seats of a lobby, the places that go on, the games,
+  // and the points each place pays (empty: the lobby size counting down)
+  ffa_mode: 'heats',
+  lobby_size: 4,
+  lobby_advance: '',
+  ffa_games: 3,
+  ffa_points: [],
   // on: the cup repeats on a rule from its own day, every week or the nth weekday of the month
   repeat: false,
   repeat_nth: null,
@@ -218,7 +258,8 @@ export const cupPayload = (form) => ({
   min_games: count(form.min_games),
   race_games_min: count(form.race_games_min),
   entrant_min: count(form.entrant_min),
-  entrant_cap: count(form.entrant_cap),
+  // one lobby seats the whole field, so it takes no more players than its seats
+  entrant_cap: isFfa(form) && form.ffa_mode === 'league' ? Math.min(count(form.entrant_cap) ?? Infinity, Number(form.lobby_size)) : count(form.entrant_cap),
   uses_divisions: !!form.uses_divisions,
   // a cup played over rounds checks its players in per round, never once for the cup
   checkin_enabled: form.play === 'rounds' ? false : !!form.checkin_enabled,
@@ -227,10 +268,10 @@ export const cupPayload = (form) => ({
   published: !!form.published,
   signups_open: !!form.signups_open,
   // every series vetoes from the pool by its own best-of, and game 1 plays the map left over
-  veto_by_best_of: true,
+  veto_by_best_of: !isFfa(form),
   hide_seeds: !!form.hide_seeds,
   map_ids: (form.pool || []).map((row) => row.id),
-  stages: form.format === 'swiss' ? swissStages(form) : [
+  stages: isFfa(form) ? [ffaStage(form)] : form.format === 'swiss' ? swissStages(form) : [
     {
       format: form.format,
       best_of: Number(form.best_of),
@@ -267,6 +308,28 @@ function roundsPayload(form) {
   return {
     legs: [{ starts_at: first }, ...laterRounds(form).map((row) => ({ starts_at: row.date && row.time ? storedUtc(row.date, row.time) : null }))],
     points_by_place: pointsOf(form),
+  };
+}
+
+/** A free for all cup's one stage. Heats name the seats of a lobby, so a field larger than one
+ *  lobby plays down to a final; one lobby seats the whole field and plays `ffa_games` games, which
+ *  the stage holds in `swiss_rounds`. Every lobby is one game: no best-of, no veto.
+ *  @param {any} form */
+function ffaStage(form) {
+  const league = form.ffa_mode === 'league';
+  return {
+    name: league ? 'Lobby' : 'Heats',
+    format: 'ffa',
+    best_of: 1,
+    best_of_by_round: null,
+    scheduling_mode: 'immediate',
+    lobby_size: league ? null : Number(form.lobby_size),
+    group_advance: league ? null : ffaAdvance(form),
+    swiss_rounds: league ? Number(form.ffa_games) : null,
+    points_by_place: ffaPoints(form).join(','),
+    third_place: false,
+    grand_final_modifier: 'one',
+    placement_lives: null,
   };
 }
 
@@ -309,6 +372,21 @@ function swissStages(form) {
 
 /** What keeps a step from being left, or null when it is complete. */
 export function cupProblem(form, step) {
+  if (step === 'format' && isFfa(form)) {
+    const seats = Number(form.lobby_size);
+    if (form.ffa_mode === 'league') {
+      if (!Number.isInteger(seats) || seats < 3 || seats > 12) return 'One lobby seats 3 to 12 players.';
+      const games = Number(form.ffa_games);
+      if (!Number.isInteger(games) || games < 2 || games > 10) return 'One lobby plays 2 to 10 games.';
+    } else {
+      if (!Number.isInteger(seats) || seats < 3 || seats > 8) return 'A heat seats 3 to 8 players.';
+      const advance = ffaAdvance(form);
+      if (!Number.isInteger(advance) || advance < 1 || advance >= seats) return `1 to ${seats - 1} places of a heat go on.`;
+    }
+    const points = ffaPoints(form);
+    if (points.some((value) => !Number.isInteger(value) || value < 0)) return 'Points are whole numbers, 0 or more.';
+    return null;
+  }
   if (step === 'format' && form.format === 'swiss' && form.swiss_mode !== 'all') {
     const rounds = Number(form.swiss_rounds);
     if (!Number.isInteger(rounds) || rounds < 2) return 'A Swiss cup plays at least 2 rounds.';
@@ -336,6 +414,9 @@ export function cupProblem(form, step) {
     const points = pointsOf(form);
     if (!points.length) return 'Give at least the winner of a round some points.';
     if (points.some((value) => !Number.isInteger(value) || value < 0)) return 'Points are whole numbers, 0 or more.';
+  }
+  if (step === 'maps' && isFfa(form)) {
+    return (form.pool || []).length ? null : 'Add at least one map; every lobby plays a map of the pool.';
   }
   if (step === 'maps') {
     return poolProblem((form.pool || []).length, Number(form.best_of), form.best_of_plan || {});

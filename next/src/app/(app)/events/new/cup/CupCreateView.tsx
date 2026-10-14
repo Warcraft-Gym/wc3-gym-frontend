@@ -16,7 +16,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, CUP_FORMATS, CUP_GAMES, FFA_MODES, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -86,6 +86,7 @@ export function CupCreateView() {
   // how often a cup on the picked day can repeat, and the one picked
   const repeats: { value: number | null; title: string }[] = repeatChoices(form.start_date);
   const repeatsAs = repeats.find((item) => item.value === form.repeat_nth) || repeats[0];
+  const ffa = isFfa(form);
   const ordinal = (place: number) => (place === 1 ? "1st" : place === 2 ? "2nd" : place === 3 ? "3rd" : `${place}th`);
   const problem: string | null = cupProblem(form, key);
   const format = CUP_FORMATS.find((item) => item.value === form.format);
@@ -113,7 +114,7 @@ export function CupCreateView() {
     { k: "Game", v: CUP_GAMES.find((game) => game.value === form.game)?.title },
     {
       k: "Format",
-      v: [
+      v: ffa ? ffaLine(form) : [
         format?.title,
         form.format === "single_elimination" && form.third_place ? "a match for third place" : null,
         form.format === "double_elimination" ? (form.grand_final_reset ? "grand final reset" : "one grand final") : null,
@@ -123,7 +124,9 @@ export function CupCreateView() {
         .filter(Boolean)
         .join(", "),
     },
-    { k: "Best of", v: bestOfLine(Number(form.best_of), form.best_of_plan, planFormat(form)) },
+    ffa
+      ? { k: "Points per place", v: `${(ffaPoints(form) as number[]).join(", ")}; every lobby is one game` }
+      : { k: "Best of", v: bestOfLine(Number(form.best_of), form.best_of_plan, planFormat(form)) },
     { k: "Seeds", v: form.hide_seeds ? "Hidden from players" : "Shown to everyone" },
     { k: "Maps", v: form.pool.length ? form.pool.map((row: PoolMap) => row.name).join(", ") : "No maps" },
     { k: "Who may sign up", v: SIGNUP_POLICIES.find((item) => item.value === (form.eligibility_required && form.bnet_required ? "members" : form.signup_policy))?.title },
@@ -258,13 +261,83 @@ export function CupCreateView() {
               <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
               <p className="mt-1 text-sm text-muted-foreground">
                 {teamSizeOf(form.game)
-                  ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game and FFA cups come later.`
-                  : "Custom game and FFA cups come later."}
+                  ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game cups come later.`
+                  : ffa
+                    ? "Free for all: every lobby is one game of single players, and a player of the lobby reports its places. Custom game cups come later."
+                    : "Custom game cups come later."}
               </p>
             </div>
             <Field className="col-span-12" label="Description" htmlFor="cup-description">
               <Textarea id="cup-description" rows={3} value={form.description} placeholder="Maps, rules, how results are reported" onChange={(e) => set({ description: e.target.value })} />
             </Field>
+          </div>
+        ) : key === "format" && ffa ? (
+          <div className="flex flex-col gap-5">
+            <div role="radiogroup" aria-label="Format" className="grid gap-3 min-[600px]:grid-cols-2">
+              {FFA_MODES.map((item: Row) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={item.value === form.ffa_mode}
+                  onClick={() => set({ ffa_mode: item.value })}
+                  className={cn("flex flex-col gap-1 rounded-lg border-2 p-4 text-left", item.value === form.ffa_mode ? "border-primary bg-primary/10" : "border-border")}
+                >
+                  <span className="font-heading text-lg font-bold">{item.title}</span>
+                  <span className="text-sm text-muted-foreground">{item.hint}</span>
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-12 gap-3">
+              <TextField
+                className="col-span-12 min-[600px]:col-span-4"
+                type="number"
+                min={3}
+                max={form.ffa_mode === "league" ? 12 : 8}
+                label={form.ffa_mode === "league" ? "Players in the lobby" : "Players per heat"}
+                hint={form.ffa_mode === "league" ? "Also the most players the cup takes" : "Uneven fields share out over the heats"}
+                value={form.lobby_size}
+                onChange={(e) => set({ lobby_size: e.target.value, ffa_points: [] })}
+              />
+              {form.ffa_mode === "league" ? (
+                <TextField className="col-span-12 min-[600px]:col-span-4" type="number" min={2} max={10} label="Games" hint="The lobby plays them one after another" value={form.ffa_games} onChange={(e) => set({ ffa_games: e.target.value })} />
+              ) : (
+                <TextField
+                  className="col-span-12 min-[600px]:col-span-4"
+                  type="number"
+                  min={1}
+                  label="Places that go on"
+                  hint="From every heat to the next round"
+                  placeholder={String(ffaAdvance({ ...form, lobby_advance: "" }))}
+                  value={form.lobby_advance}
+                  onChange={(e) => set({ lobby_advance: e.target.value })}
+                />
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-sm text-muted-foreground">
+                Points each place pays{form.ffa_mode === "league" ? ", added up over the games" : "; the final lobby decides the top places"}
+              </span>
+              <div className="grid grid-cols-4 gap-2 min-[600px]:grid-cols-8">
+                {(ffaPoints(form) as number[]).map((value, index, all) => (
+                  <TextField
+                    key={index}
+                    type="number"
+                    min="0"
+                    label={ordinal(index + 1)}
+                    value={(form.ffa_points as string[])[index] ?? String(value)}
+                    onChange={(e) => set({ ffa_points: all.map((old, at) => (at === index ? e.target.value : (form.ffa_points as string[])[at] ?? String(old))) })}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm text-muted-foreground">You seed the players on the evening; the heats share the seeds out so the strongest meet late.</p>
+              <Label htmlFor="cup-hide-seeds" className="flex min-h-11 items-center gap-2">
+                <Switch id="cup-hide-seeds" checked={!!form.hide_seeds} onCheckedChange={(hide_seeds) => set({ hide_seeds })} />
+                Hide seeds from players
+              </Label>
+            </div>
           </div>
         ) : key === "format" ? (
           <div className="flex flex-col gap-5">
@@ -400,7 +473,14 @@ export function CupCreateView() {
             </div>
           </div>
         ) : key === "maps" ? (
-          <MapPoolPicker pool={form.pool} onChange={(pool) => set({ pool })} problem={problem} ladderMode={ladderModeOf(teamSizeOf(form.game)) as string | null} mode={cupMode(teamSizeOf(form.game))} />
+          <MapPoolPicker
+            pool={form.pool}
+            onChange={(pool) => set({ pool })}
+            problem={problem}
+            // no FFA ladder pool to import: the FFA maps of the app come first
+            ladderMode={ffa ? null : (ladderModeOf(teamSizeOf(form.game)) as string | null)}
+            mode={ffa ? "ffa" : cupMode(teamSizeOf(form.game))}
+          />
         ) : key === "signups" ? (
           <div className="grid grid-cols-12 gap-3">
             <div className="col-span-12 flex flex-col gap-1 rounded-lg border border-border p-3">

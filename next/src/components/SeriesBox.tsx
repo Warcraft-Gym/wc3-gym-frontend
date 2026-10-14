@@ -41,6 +41,7 @@ export function SeriesBox({
   className,
   rated = true, // false where the draw leaves the MMR out, so the names keep the room
   report = null, // "report" or "edit" when the viewer reports this series from the draw
+  me = null, // the viewer, whose own seat of a lobby is lit
   onVeto, // a side of a cup series vetoes from the draw, from a button beside the report one
   stateless = false, // the draw: no state word, a played box reads as done by its look
   onReport,
@@ -58,6 +59,8 @@ export function SeriesBox({
   className?: string;
   rated?: boolean;
   report?: "report" | "edit" | null;
+  // the viewer, whose own seat of a lobby is lit
+  me?: number | null;
   onVeto?: ((series: Row) => void) | null;
   stateless?: boolean;
   onReport?: (series: Row) => void;
@@ -114,7 +117,7 @@ export function SeriesBox({
 
   const rows = seats.length
     ? seats.map((seat, index) => (
-        <div key={seat.key} className={cn(SIDE, index && "border-t", seat.result === "won" && "font-bold")}>
+        <div key={seat.key} className={cn(SIDE, index && "border-t", seat.result === "won" && "font-bold", me != null && seat.user?.id === me && "bg-primary/15")}>
           <span className={cn(MARK, markClass(seat.result))} />
           {seat.user ? (
             <PlayerName player={seat.user} plain={!readonly} />

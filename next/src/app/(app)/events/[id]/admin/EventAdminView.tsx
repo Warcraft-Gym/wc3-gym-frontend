@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, type DialogSize } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
-import { Input } from "@/components/ui/input";
 import { Pick } from "@/components/ui/Pick";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -16,7 +15,6 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toneClass } from "@/components/ui/tone";
 import { EventHeader } from "@/components/EventHeader";
 import { EventResults } from "@/components/EventResults";
-import { PlayerName } from "@/components/PlayerName";
 import { StageView } from "@/components/StageView";
 import { StatusAlert } from "@/components/StatusAlert";
 import { FORMATS, SEED_SOURCES, seriesPerEntrant, seriesPerFixture, titleOf } from "@/helpers/event-labels.mjs";
@@ -37,6 +35,7 @@ import { CupConsole } from "@/components/CupConsole";
 import { CupFormatCard } from "@/components/CupFormatCard";
 import { CupOverallTable } from "@/components/CupOverallTable";
 import { CupRoundPicker } from "@/components/CupRoundPicker";
+import { LobbyPlacesDialog } from "@/components/LobbyPlacesDialog";
 import { RepeatCupDialog } from "@/components/RepeatCupDialog";
 import { CupRoundsBar } from "@/components/CupRoundsBar";
 import { allLegsFinished, legField, legsOf, legStages, legTitle, openLegIndex } from "@/helpers/cup-rounds.mjs";
@@ -142,8 +141,6 @@ export function EventAdminView({ id }: { id: string }) {
   const [resultOpen, setResultOpen] = useState(false);
   const [lobbyOpen, setLobbyOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
-  const [order, setOrder] = useState<Row[]>([]); // the seats of the open lobby, best place first
-  const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [moving, setMoving] = useState<Row | null>(null); // the seat the move dialog carries
   const [moveTo, setMoveTo] = useState<number | null>(null);
   const [picked, setPicked] = useState<Row | null>(null);
@@ -200,7 +197,6 @@ export function EventAdminView({ id }: { id: string }) {
       // A reload swaps every series row, so the open dialog follows the one it was showing
       const shown = picked ? rows.find((row) => row.id === picked.id) || null : null;
       setPicked(shown);
-      if (shown && lobbyOpen) setOrder(seatsOf(shown));
     } catch (e) {
       setError(`The stage did not load: ${(e as Error).message}`);
     }
@@ -323,7 +319,6 @@ export function EventAdminView({ id }: { id: string }) {
     setDialogError(null);
     setAwardSide(null);
     if (isLobby(row)) {
-      setOrder(seatsOf(row));
       setLobbyOpen(true);
       return;
     }
@@ -332,23 +327,13 @@ export function EventAdminView({ id }: { id: string }) {
     setResultOpen(true);
   };
 
-  // The places are the order of the rows, so a drag and a typed place do the same move
-  const moveSeat = (from: number | null, to: number | null) => {
-    if (from == null || to == null || to < 0 || to >= order.length || from === to) return;
-    const rows = [...order];
-    rows.splice(to, 0, ...rows.splice(from, 1));
-    setOrder(rows);
-  };
-
-  const lobbyScored = isScored(picked);
-  const emptySeats = order.filter((seat) => !seat.entrant_id).length;
-  // A lobby seats two entrants or more, so the third seat is the first one free to leave
-  const canMove = order.filter((seat) => seat.entrant_id).length > 2;
-  const seatName = (seat: Row) => seat.user?.name || `seat ${seat.side_no}`;
-
-  const savePlaces = async () => {
-    const places = order.map((seat, index) => ({ side_no: seat.side_no, place: index + 1 }));
+  // A lobby's places, its map and its clear, from the shared places dialog
+  const savePlaces = async (places: { side_no: number; place: number }[]) => {
     if (!(await run(() => store.setPlaces(picked!.id, places)))) setLobbyOpen(false);
+  };
+  const changeMap = (mapId: number) => run(() => store.setLobbyMap(picked!.id, mapId));
+  const clearLobby = async () => {
+    if (!(await run(() => store.clearLobby(picked!.id)))) setLobbyOpen(false);
   };
 
   const moveTargets = targetsOf(series, picked);
@@ -364,7 +349,7 @@ export function EventAdminView({ id }: { id: string }) {
   const moveEntrant = async () => {
     const target = series.find((row) => row.id === moveTo);
     const taken = (target?.sides || []).map((seat: Row) => seat.entrant_id).filter(Boolean);
-    const left = order.map((seat) => seat.entrant_id).filter((entrantId) => entrantId && entrantId !== moving!.entrant_id);
+    const left = seatsOf(picked!).map((seat) => seat.entrant_id).filter((entrantId) => entrantId && entrantId !== moving!.entrant_id);
     const refused = await run(async () => {
       await store.setLobbySides(target!.id, [...taken, moving!.entrant_id]);
       await store.setLobbySides(picked!.id, left);
@@ -851,63 +836,23 @@ export function EventAdminView({ id }: { id: string }) {
         )}
       </Ask>
 
-      {/* One free for all lobby: where every seat finished, and who sits in it */}
-      <Ask
-        open={lobbyOpen && !!picked}
-        onOpenChange={setLobbyOpen}
-        title="Enter the places"
-        size="md"
-        actions={
-          <>
-            <Button variant="ghost" disabled={saving} onClick={() => setLobbyOpen(false)}>Close</Button>
-            <Button disabled={!!emptySeats || saving} onClick={savePlaces}>{busyIcon(saving, "mdi-content-save")}Save places</Button>
-          </>
-        }
-      >
-        <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
-        <p className="mb-4 text-muted-foreground">The order is the result: drag a seat, or type its place. The winner is 1.</p>
-        {/* One seat a row: the place first, then who sits in it, then the move out of the lobby */}
-        <div>
-          {order.map((seat, index) => (
-            <div
-              key={seat.side_no}
-              className={cn("flex items-center gap-2.5 border-t py-1 first:border-t-0", dragFrom === index && "opacity-50")}
-              draggable
-              onDragStart={() => setDragFrom(index)}
-              onDragEnd={() => setDragFrom(null)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => moveSeat(dragFrom, index)}
-            >
-              <Icon name="mdi-drag-horizontal-variant" size={18} className="cursor-grab text-muted-foreground" />
-              <Input
-                // The box follows its seat: it reads the place again whenever it is not being typed into
-                ref={(el) => {
-                  if (el && document.activeElement !== el) el.value = String(index + 1);
-                }}
-                type="number"
-                min="1"
-                max={order.length}
-                className="tnum max-w-[76px]"
-                aria-label={`Place of ${seatName(seat)}`}
-                onChange={(e) => moveSeat(index, Number(e.target.value) - 1)}
-                onBlur={(e) => (e.target.value = String(index + 1))}
-              />
-              {seat.user ? <PlayerName player={seat.user} plain /> : <span className="text-muted-foreground">Empty seat</span>}
-              <span className="flex-1" />
-              {!lobbyScored && seat.entrant_id && canMove ? (
-                <Button variant="ghost" size="sm" disabled={saving} onClick={() => openMove(seat)}>
-                  Move
-                </Button>
-              ) : null}
-            </div>
-          ))}
-        </div>
-        {emptySeats ? (
-          <p className="mt-3 text-xs text-muted-foreground">This lobby seats nobody yet in {emptySeats} of its places. It fills when the round before it is played.</p>
-        ) : !lobbyScored && !canMove ? (
-          <p className="mt-3 text-xs text-muted-foreground">A lobby seats two entrants or more, so nobody leaves this one.</p>
-        ) : null}
-      </Ask>
+      {/* One free for all lobby: where every seat finished, its map, and who sits in it */}
+      {lobbyOpen && picked ? (
+        <LobbyPlacesDialog
+          key={picked.id}
+          lobby={picked}
+          open
+          onOpenChange={setLobbyOpen}
+          saving={saving}
+          error={dialogError}
+          onError={setDialogError}
+          onSave={savePlaces}
+          maps={event?.maps || []}
+          onMap={changeMap}
+          onClear={clearLobby}
+          onMove={openMove}
+        />
+      ) : null}
 
       {/* An entrant leaves one lobby for another, before either of them is played */}
       <Ask

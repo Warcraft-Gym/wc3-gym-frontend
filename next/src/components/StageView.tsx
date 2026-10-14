@@ -9,7 +9,7 @@ import { SM_AND_DOWN, useBreakpoint } from "@/hooks/breakpoint";
 import { buchholz, championOf, columns, currentColumn, drawing, inDivision, pathOf, ranking, sideName, standingsGroups, standsOn, withoutIdleReset } from "@/helpers/stage-view.mjs";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
-import { reportOf, vetoOf } from "@/helpers/series-actions.mjs";
+import { lobbyReportOf, reportOf, vetoOf } from "@/helpers/series-actions.mjs";
 import { placementColumns } from "@/helpers/placement.mjs";
 import { cn } from "@/lib/utils";
 
@@ -79,7 +79,8 @@ export function StageView({
     return games && games !== stage.best_of ? <span className="text-primary-text"> · Bo{games}</span> : null;
   };
   // what one box offers this viewer: a report, an edit, or nothing
-  const reportFor = (row: Row) => (onReport && viewer ? (reportOf(row, viewer) as "report" | "edit" | null) : null);
+  // a lobby offers its places to a player seated in it, a two-sided series its result
+  const reportFor = (row: Row) => (onReport && viewer ? ((reportOf(row, viewer) ?? lobbyReportOf(row, viewer)) as "report" | "edit" | null) : null);
   // a side of an open cup series vetoes from a button over the report one
   const vetoFor = (row: Row) => (onVeto && viewer && vetoOf(row, viewer) ? onVeto : null);
   // The entrant whose way through the bracket is lit, the drawing's scale, and the round a
@@ -216,7 +217,9 @@ export function StageView({
                   stateless
                   onReport={onReport}
                   round={column.name}
-                  label={boxLabel(group, column, row)}
+                  // a lobby names the map it is played on beside its number
+                  label={[boxLabel(group, column, row), row.lobby_map?.name].filter(Boolean).join(" · ")}
+                  me={viewer?.id ?? null}
                   fed={isLobbyStage && column.index > 0}
                   // A lobby is a block of seats, so the next lobby stands off the one above it
                   className={cn(index && "border-t", index && isLobbyStage && "mt-2.5")}

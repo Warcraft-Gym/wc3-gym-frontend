@@ -499,7 +499,8 @@ export function CupCreateView() {
             </div>
           </div>
         ) : key === "maps" && custom ? (
-          <CustomMapPicker value={form.custom_map} onChange={(custom_map) => set({ custom_map })} problem={problem} />
+          // the step's footer names what is missing, so the picker does not repeat it
+          <CustomMapPicker value={form.custom_map} onChange={(custom_map) => set({ custom_map })} />
         ) : key === "maps" ? (
           <MapPoolPicker
             pool={form.pool}

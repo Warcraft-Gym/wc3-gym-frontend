@@ -362,10 +362,12 @@ export function EventAdminView({ id }: { id: string }) {
 
   const scored = isScored(picked);
   const bothSides = !!(standsOn(picked, 1) && standsOn(picked, 2));
-  const wins = winsFor(stage?.best_of);
+  // the series' own best-of: a bracket part may play its own, such as a Bo3 final after Bo1 rounds
+  const bestOf: number = picked?.rules?.best_of ?? stage?.best_of ?? 3;
+  const wins = winsFor(bestOf);
   const score: number[] = scoreOf(winners);
   // every game answered, plus the next while the series is open
-  const gameRows = Array.from({ length: gameSlots(stage?.best_of || 3, winners) }, (unused, index) => index + 1);
+  const gameRows = Array.from({ length: gameSlots(bestOf, winners) }, (unused, index) => index + 1);
   const validScore = bothSides && (score[0] === wins) !== (score[1] === wins) && Math.max(score[0], score[1]) === wins;
 
   const nameOf = (side: number) => sideName(picked, side) || `Side ${side}`;

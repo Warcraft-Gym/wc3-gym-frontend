@@ -37,6 +37,8 @@ const EMPTY_SETTINGS: SettingsMap = {
   results_channel_id: "",
   content_channel_id: "",
   fantasy_dashboard_channel_id: "",
+  announcement_channel_id: "",
+  announcement_role_id: "",
 };
 
 // The Discord channel and role ids, each with its label, hint and icon

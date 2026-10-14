@@ -235,11 +235,11 @@ test('an FFA of teams enters teams of its mode and seats teams in its lobbies', 
   const body = cupPayload(form);
   assert.deepEqual([body.entrant_kind, body.team_size], ['team', 2]);
   assert.equal(body.stages[0].format, 'ffa');
-  assert.equal(ffaModeLine(form), '2v2v2v2');
+  assert.equal(ffaModeLine(form), 'teams of 2');
   assert.equal(ffaLine(form), 'Heats of 4 teams, the top 2 of each go on, down to one final lobby');
   // the solo mode and a 1v1 cup enter single players
   assert.equal(cupTeamSize({ ...form, ffa_team_size: 1 }), null);
-  assert.equal(ffaModeLine({ ...form, ffa_team_size: 1 }), '1v1v1v1');
+  assert.equal(ffaModeLine({ ...form, ffa_team_size: 1 }), 'every player for themselves');
   assert.equal(cupTeamSize({ ...blankCup(), game: '3v3', ffa_team_size: 2 }), 3);
 });
 

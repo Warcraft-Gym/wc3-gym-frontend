@@ -118,7 +118,7 @@ export function CupCreateView() {
     {
       k: "Game",
       v: custom
-        ? `Custom game, ${ffa ? `FFA ${ffaModeLine(form)}` : form.custom_mode}`
+        ? `Custom game, ${ffa ? `FFA, ${ffaModeLine(form)}` : form.custom_mode}`
         : ffa
           ? `FFA, ${ffaModeLine(form)}`
           : CUP_GAMES.find((game) => game.value === form.game)?.title,
@@ -286,8 +286,8 @@ export function CupCreateView() {
                 {custom ? "A custom game is played on one map you pick in the Maps step, every game on it and nothing vetoed. " : ""}
                 {ffa
                   ? teamSize
-                    ? `Free for all of teams, ${ffaModeLine(form)}: a captain signs a team of ${teamSize} up and invites the others, every player confirms, and any player of a team in a lobby reports its places. Custom game cups come later.`
-                    : "Free for all, every player for themselves: every lobby is one game, and a player of the lobby reports its places. Custom game cups come later."
+                    ? `Free for all of teams of ${teamSize}: every lobby seats as many teams as play in it (${teamSize}v${teamSize}v${teamSize}…). A captain signs a team up and invites the others, every player confirms, and any player of a team in a lobby reports its places.`
+                    : "Free for all, every player for themselves: every lobby seats as many players as play in it (1v1v1…), is one game, and a player of the lobby reports its places."
                   : teamSizeOf(form.game)
                     ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game cups come later.`
                     : "Custom game cups come later."}

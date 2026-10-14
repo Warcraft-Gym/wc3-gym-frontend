@@ -108,12 +108,13 @@ export const CUSTOM_MODES = [
 export const isFfa = (form) => form?.game === 'ffa' || (isCustom(form) && form.custom_mode === 'ffa');
 
 // The FFA modes: every player for themselves, or teams of 2 to 4 that share a lobby with other
-// teams, signed up by their captains as a team cup is
+// teams, signed up by their captains as a team cup is. A lobby holds as many sides as play in it,
+// so a mode names the size of a side, never how many sides meet: 1v1v1…, 2v2v2…
 export const FFA_TEAM_SIZES = [
-  { value: 1, title: '1v1' },
-  { value: 2, title: '2v2' },
-  { value: 3, title: '3v3' },
-  { value: 4, title: '4v4' },
+  { value: 1, title: 'Solo (1v1v1…)' },
+  { value: 2, title: 'Teams of 2 (2v2v2…)' },
+  { value: 3, title: 'Teams of 3 (3v3v3…)' },
+  { value: 4, title: 'Teams of 4 (4v4v4…)' },
 ];
 
 /** The players a team of this cup fields, or null for a cup of single players: the game's team
@@ -125,11 +126,12 @@ export const cupTeamSize = (form) => {
   return size > 1 ? size : null;
 };
 
-/** How the FFA mode reads: "1v1v1v1" for single players, "2v2v2v2" for teams of two.
+/** How the FFA mode reads: "every player for themselves", or "teams of 2" for teams of two; a
+ *  lobby holds as many sides as play in it, so the line names no count of sides.
  *  @param {any} form */
 export const ffaModeLine = (form) => {
-  const size = cupTeamSize(form) || 1;
-  return Array.from({ length: 4 }, () => size).join('v');
+  const size = cupTeamSize(form);
+  return size ? `teams of ${size}` : 'every player for themselves';
 };
 
 // How a free for all cup is played: heats of lobbies down to one final lobby, or one lobby that

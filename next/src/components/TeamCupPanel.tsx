@@ -4,15 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CupTeamName } from "@/components/CupTeamName";
-import { Combobox } from "@/components/ui/Combobox";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
-import { Input } from "@/components/ui/input";
 import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
+import { TeamSignupDialog } from "@/components/TeamSignupDialog";
 import { missing, myTeam, teamState } from "@/helpers/cup-teams.mjs";
-import { useEventStore, usePlayerStore } from "@/stores";
+import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -39,15 +37,11 @@ export function TeamCupPanel({
   onError: (message: string | null) => void;
 }) {
   const store = useEventStore();
-  const playerStore = usePlayerStore();
   const size: number = event.team_size;
   const mine = myTeam(entrants, userId) as Mine;
   const invite = invites.find((one) => one.event_id === event.id) ?? null;
   const [busy, setBusy] = useState<string | null>(null);
   const [ask, setAsk] = useState<"signup" | "invite" | "withdraw" | "leave" | null>(null);
-  const [roster, setRoster] = useState<Row[]>([]);
-  const [name, setName] = useState("");
-  const [picked, setPicked] = useState<string[]>([]);
 
   const work = async (key: string, task: () => Promise<unknown>) => {
     setBusy(key);
@@ -63,44 +57,9 @@ export function TeamCupPanel({
     }
   };
 
-  const open = async (what: "signup" | "invite") => {
-    setName("");
-    setPicked(what === "signup" ? Array(Math.max(0, size - 1)).fill("") : [""]);
-    setAsk(what);
-    if (!roster.length) {
-      try {
-        setRoster(await playerStore.fetchPlayers());
-      } catch (e) {
-        onError((e as Error).message || "The players did not load");
-      }
-    }
-  };
+  const open = (what: "signup" | "invite") => setAsk(what);
   // every player already in a team of this cup, or invited by one, is left out of the pick
-  const taken = new Set<number>([
-    ...(userId != null ? [userId] : []),
-    ...entrants.flatMap((row) => [...(row.roster || []).map((one: Row) => one.user?.id), ...(row.invited || []).map((one: Row) => one.id)]),
-  ]);
-  const itemsFor = (index: number) =>
-    roster
-      .filter((player) => !taken.has(player.id) && !picked.some((id, at) => at !== index && id === String(player.id)))
-      .map((player) => ({ value: String(player.id), title: player.name as string, tag: player.battleTag || "" }));
-  const pickers = picked.map((value, index) => (
-    <Field key={index} label={picked.length > 1 ? `Player ${index + 2}` : "Player"} htmlFor={`team-player-${index}`}>
-      <Combobox
-        id={`team-player-${index}`}
-        label="Pick a player"
-        items={itemsFor(index)}
-        value={value || null}
-        onChange={(next) => setPicked(picked.map((one, at) => (at === index ? next ?? "" : one)))}
-        row={(item) => (
-          <span className="flex flex-col text-left">
-            <span>{item.title}</span>
-            <span className="text-xs text-muted-foreground">{item.tag}</span>
-          </span>
-        )}
-      />
-    </Field>
-  ));
+  const taken: number[] = entrants.flatMap((row) => [...(row.roster || []).map((one: Row) => one.user?.id), ...(row.invited || []).map((one: Row) => one.id)]);
 
   const entrant = mine?.entrant;
   const short = entrant ? missing(entrant, size) : size;
@@ -198,40 +157,16 @@ export function TeamCupPanel({
         </div>
       ) : null}
 
-      <Dialog open={ask === "signup" || ask === "invite"} onOpenChange={(value) => !value && setAsk(null)}>
-        <DialogContent size="sm" className="gap-0 p-0">
-          <DialogTitle className="banner bg-banner px-4 py-3 text-primary">{ask === "signup" ? "Sign up a team" : "Invite a player"}</DialogTitle>
-          <div className="flex flex-col gap-3 p-4">
-            {ask === "signup" ? (
-              <Field label="Team name" htmlFor="team-name">
-                <Input id="team-name" maxLength={50} value={name} autoFocus onChange={(e) => setName(e.target.value)} />
-              </Field>
-            ) : null}
-            {pickers}
-            <p className="text-sm text-muted-foreground">
-              {ask === "signup"
-                ? "You captain the team. Each player you pick gets an invitation and joins once they accept; the cup checks every player's rating."
-                : "The player joins once they accept."}
-            </p>
-          </div>
-          <div className="flex justify-end gap-2 p-4 pt-0">
-            <Button variant="ghost" onClick={() => setAsk(null)}>
-              Back
-            </Button>
-            <Button
-              disabled={!!busy || picked.some((id) => !id) || (ask === "signup" && !name.trim())}
-              onClick={() =>
-                ask === "signup"
-                  ? work("signup", () => store.signUpTeam(event.id, name.trim(), picked.map(Number)))
-                  : work("invite", () => store.inviteToTeam(event.id, entrant!.team.id, Number(picked[0])))
-              }
-            >
-              {busy === "signup" || busy === "invite" ? <Icon name="mdi-loading mdi-spin" /> : null}
-              {ask === "signup" ? "Sign up" : "Invite"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TeamSignupDialog
+        event={event}
+        mode={ask === "invite" ? "invite" : "signup"}
+        teamId={entrant?.team?.id ?? null}
+        taken={taken}
+        userId={userId}
+        open={ask === "signup" || ask === "invite"}
+        onOpenChange={(value) => !value && setAsk(null)}
+        onDone={onChanged}
+      />
 
       <Dialog open={ask === "withdraw" || ask === "leave"} onOpenChange={(value) => !value && setAsk(null)}>
         <DialogContent size="confirm" className="gap-0 p-0">

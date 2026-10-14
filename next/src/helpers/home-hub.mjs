@@ -1,19 +1,110 @@
-// The pure parts of the home hub: the panel order, the open signups, the member's season and rounds, the captain row.
+// The pure parts of the home hub: the panel order, the member's season and rounds, the captain row, and the events side.
 import { DateTime } from 'luxon';
 import { record } from './figures.mjs';
 import { local, timeMissing } from './schedule.mjs';
+import { rulesOf } from './map-order.mjs';
 import { isUnscored } from './season-phase.mjs';
+import { isLobby } from './stage-view.mjs';
 
 /** The CSS order of each Home panel. One order drives both layouts: the phone stack, and the panels
- *  inside each desktop column. An open signup comes first, because it is the one thing that expires;
- *  the upcoming events the member cannot act on yet follow the upcoming series. */
-export const PANEL_ORDER = { signup: 1, games: 2, next: 3, upcoming: 4, fantasy: 5, stats: 6 };
+ *  inside each desktop column, where the GNL panels stand on the left and the events on the right.
+ *  On a phone the member's own season and own events come first, then what is coming up. */
+export const PANEL_ORDER = { games: 1, mine: 2, next: 3, upcoming: 4, fantasy: 5 };
 
-/** The events the member may still enter, leave or check in to, in the order the events start.
- *  @param {any[]} [rows] the GET /me/events rows */
-export const openSignups = (rows = []) => rows
-  .filter((row) => row.action === 'sign_up' || row.action === 'check_in' || (row.action === 'withdraw' && row.signups_open))
-  .sort((a, b) => String(a.start ?? '9999').localeCompare(String(b.start ?? '9999')));
+// The kinds of event the events side lists; a GNL season sits in My Season, a KOTH night on its own page
+const EVENT_KINDS = ['cup', 'signup'];
+
+// A start that sorts an event with no date last
+const startKey = (value) => String(value ?? '9999');
+
+/** The format an event row names in one short chip: "2v2 cup", "FFA, teams of 2", "Custom game, 1v1".
+ *  A sign-up list plays nothing, and every other kind names no format.
+ *  @param {any} row a GET /me/events row, or an event */
+export const formatChip = (row) => {
+  if (row?.kind === 'signup') return 'Sign-up list';
+  if (row?.kind !== 'cup') return null;
+  const size = Number(row.team_size) || 1;
+  const lobby = size > 1 ? `FFA, teams of ${size}` : 'FFA, solo';
+  if (row.custom_game) return `Custom game, ${row.ffa ? lobby : `${size}v${size}`}`;
+  return row.ffa ? lobby : `${size}v${size} cup`;
+};
+
+/** The cups and sign-up lists the member may still enter, soonest first. One the member joined,
+ *  is invited to or runs is in My events instead, so no event shows twice.
+ *  @param {any[]} [rows] the GET /me/events rows @param {Iterable<number>} [elsewhere] the ids My events lists */
+export const upcomingEvents = (rows = [], elsewhere = []) => {
+  const skip = new Set([...elsewhere].map(Number));
+  return rows
+    .filter((row) => EVENT_KINDS.includes(row.kind) && row.action === 'sign_up' && !row.joined && !skip.has(Number(row.id)))
+    .sort((a, b) => startKey(a.start).localeCompare(startKey(b.start)));
+};
+
+/** The member's own events, one card each: the cups and lists they play in, alone or in a cup team,
+ *  the cups whose team invited them, and the events they run. Each card carries the matches and
+ *  lobbies still to play, the check-in and the invite, and the link in: the player's page, or the
+ *  run page for an organizer. A card with something to do comes first, then the soonest.
+ *  @param {{ events?: any[], organized?: any[], invites?: any[], series?: any[] }} sources
+ *    the GET /me/events, /me/organized-events, /me/team-invites and /me/cup-series answers */
+export const myEventCards = ({ events = [], organized = [], invites = [], series = [] } = {}) => {
+  const cards = new Map();
+  const card = (id, fields) => {
+    const key = Number(id);
+    const known = cards.get(key) ?? { id: key, name: null, kind: null, start: null, row: null, organizer: false, invite: null, series: [] };
+    cards.set(key, { ...known, ...Object.fromEntries(Object.entries(fields).filter(([, value]) => value != null)) });
+  };
+  for (const row of events) {
+    if (row.kind === 'gnl' || !row.joined || row.phase === 'finished') continue;
+    card(row.id, { name: row.name, kind: row.kind, start: row.start, row });
+  }
+  for (const event of organized) {
+    if (event.state === 'finished' || event.phase === 'finished' || event.state === 'closed') continue;
+    card(event.id, { name: event.name, kind: event.kind, start: event.starts_at ?? event.start_date ?? null, organizer: true, draft: event.published === false });
+  }
+  for (const invite of invites) {
+    // a player who already plays the cup in a team reads that team, not the invite
+    if (cards.get(Number(invite.event_id))?.row?.cup_team) continue;
+    card(invite.event_id, { name: invite.event_name, invite });
+  }
+  for (const one of series) {
+    card(one.event_id, { name: one.event_name });
+    cards.get(Number(one.event_id)).series.push(one);
+  }
+  const todo = (one) => one.series.length > 0 || !!one.invite || one.row?.action === 'check_in';
+  return [...cards.values()]
+    .map((one) => {
+      const row = one.row ?? events.find((event) => Number(event.id) === one.id) ?? null;
+      return {
+        ...one,
+        format: formatChip(row ?? one),
+        role: one.organizer ? 'organizer' : row?.cup_team ? 'team' : one.row ? 'player' : one.invite ? 'invited' : 'player',
+        team: row?.cup_team ?? null,
+        checkIn: one.row?.action === 'check_in',
+        checkedIn: !!one.row?.checked_in_at,
+        to: one.organizer ? `/events/${one.id}/admin` : `/events/${one.id}`,
+        todo: todo(one),
+      };
+    })
+    .sort((a, b) => Number(b.todo) - Number(a.todo) || startKey(a.start).localeCompare(startKey(b.start)));
+};
+
+/** One open cup series as My events lists it: where it sits, who plays it, and what the member does.
+ *  A lobby reports its places; a series with a veto offers it before its result.
+ *  @param {any} one a GET /me/cup-series row */
+export const cupSeriesLine = (one) => {
+  const box = one?.series ?? {};
+  const lobby = isLobby(box);
+  const round = one?.round_name || (one?.round_number ? `Round ${one.round_number}` : null);
+  const sides = lobby
+    ? `${box.sides.length} in the lobby${box.lobby_map?.name ? ` · ${box.lobby_map.name}` : ''}`
+    : [box.player1?.name || box.team1?.name, box.player2?.name || box.team2?.name].map((name) => name || 'To be decided').join(' vs ');
+  return {
+    where: [one?.stage_name, round].filter(Boolean).join(' · '),
+    sides,
+    lobby,
+    // a cup series vetoes first: game 1 plays the map the veto leaves
+    veto: !lobby && rulesOf(box.rules?.map_rules).includes('decider'),
+  };
+};
 
 /** When a series row reads: its local day and time, "Started HH:mm" once its time has passed, or no time.
  *

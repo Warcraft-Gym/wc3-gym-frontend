@@ -123,6 +123,10 @@ const store = {
   async replaceTeamMember(event_id: number, team_id: number, user_id: number, new_user_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/members/${user_id}/replace`, { user_id: new_user_id });
   },
+  // The cup series and lobbies the caller still plays, each with its cup, stage and round
+  async myCupSeries() {
+    return await fetchWrapper.get(`${backendUrl}/me/cup-series`);
+  },
   async myTeamInvites() {
     return await fetchWrapper.get(`${backendUrl}/me/team-invites`);
   },

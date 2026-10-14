@@ -54,7 +54,7 @@ export function NextMatches({ rows, fixtures, loading, failed, order }: { rows: 
   return (
     <HomePanel
       icon="mdi-clock-outline"
-      title="Upcoming Series"
+      title="GNL Upcoming Series"
       order={order}
       action={loading ? null : <Link href="/upcoming" className="text-on-banner underline">All upcoming</Link>}
     >

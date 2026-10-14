@@ -4,7 +4,7 @@ title: Data pieces
 description: Every shared piece that shows league data, by group, with where it lives, when to use it and which piece to use instead.
 resource: ../../../DESIGN.md
 tags: [design, components]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-15T16:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -32,7 +32,6 @@ A row names the piece, the file that holds it, the reader question it answers, a
 | MMR season label of a stale race, and synced time | `next/src/components/RaceMmrChips.tsx`, `next/src/helpers/w3c-stats.js` | The figure is W3Champions data. | The figure comes from the app's own series. |
 | Signed game difference | `next/src/components/StageView.tsx` | A standings table ranks on game difference. | A free for all lobby stage; a lobby counts no games and the column is dropped. |
 | Win rate percent | `next/src/helpers/ladder-days.mjs` | The page already prints the record and wants one share. | `record` can carry the percent itself. |
-| Stat tile | `next/src/components/home/StatsPanel.tsx` | One number answers the page's question. | The reader needs to compare many values; then a table or a chart. |
 | Matchup time cell: the hours both are free and the clock gap | `next/src/app/(app)/match/[id]/plan/MatchupTable.tsx` | The reader pairs two players who must find a time. The hours print only when both players entered availability, and the gap warns from 8 h. | The series is already booked; then the schedule dialog. |
 | Ladder stat tiles | `next/src/components/ladder/PlayerLadderTab.tsx` | The reader opens one player's ladder season. | The surface compares two players; then `MatchupCompare`. |
 | `CareerStatsDialog` | `next/src/components/CareerStatsDialog.tsx` | The reader asks what a player has done overall. | The figure belongs to one event. |

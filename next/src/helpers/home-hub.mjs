@@ -5,6 +5,7 @@ import { local, timeMissing } from './schedule.mjs';
 import { rulesOf } from './map-order.mjs';
 import { isUnscored } from './season-phase.mjs';
 import { isLobby } from './stage-view.mjs';
+import { myNight } from './koth.mjs';
 
 /** The CSS order of each Home panel. One order drives both layouts: the phone stack, and the panels
  *  inside each desktop column, where the GNL panels stand on the left and the events on the right.
@@ -41,7 +42,8 @@ export const upcomingEvents = (rows = [], cards = []) => {
 };
 
 /** The member's own events, one card each: the cups and lists they play in, alone or in a cup team,
- *  the cups whose team invited them, and the events they run. Each card carries the matches and
+ *  tonight's KOTH night, the cups whose team invited them, and the events they run. A KOTH league
+ *  runs one night after another, so only tonight's night takes a card. Each card carries the matches and
  *  lobbies still to play, the check-in and the invite, and the link in: the player's page, or the
  *  run page for an organizer. A card with something to do comes first, then the soonest.
  *  @param {{ events?: any[], organized?: any[], invites?: any[], series?: any[] }} sources
@@ -53,13 +55,16 @@ export const myEventCards = ({ events = [], organized = [], invites = [], series
     const known = cards.get(key) ?? { id: key, name: null, kind: null, start: null, row: null, organizer: false, invite: null, series: [] };
     cards.set(key, { ...known, ...Object.fromEntries(Object.entries(fields).filter(([, value]) => value != null)) });
   };
+  const night = myNight(events);
   for (const row of events) {
     if (row.kind === 'gnl' || !row.joined || row.phase === 'finished') continue;
+    if (row.kind === 'koth' && row.id !== night?.id) continue;
     card(row.id, { name: row.name, kind: row.kind, start: row.start, row });
   }
   for (const event of organized) {
     if (event.state === 'finished' || event.phase === 'finished' || event.state === 'closed') continue;
-    card(event.id, { name: event.name, kind: event.kind, start: event.starts_at ?? event.start_date ?? null, organizer: true, draft: event.published === false });
+    // a draft has no /me/events row, so its format chip reads the event itself
+    card(event.id, { name: event.name, kind: event.kind, start: event.starts_at ?? event.start_date ?? null, organizer: true, draft: event.published === false, team_size: event.team_size, ffa: event.ffa, custom_game: event.custom_game });
   }
   for (const invite of invites) {
     // a player who already plays the cup in a team reads that team, not the invite

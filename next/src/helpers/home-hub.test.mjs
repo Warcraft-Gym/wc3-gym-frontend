@@ -89,6 +89,25 @@ test('my events merge the joined events, the cups run, the invites and the open 
   assert.equal(mine.to, '/events/7/admin');
 });
 
+test('a KOTH league takes one card, tonight\'s night, never every night the member joined', () => {
+  const events = [
+    { id: 20, kind: 'koth', name: 'KOTH 20', joined: true, action: 'withdraw', start: '2026-10-08' },
+    { id: 21, kind: 'koth', name: 'KOTH 21', joined: true, action: 'withdraw', start: '2026-10-15' },
+    { id: 1, kind: 'cup', name: 'Solo Cup', joined: true, action: 'withdraw', start: '2026-10-20' },
+  ];
+  assert.deepEqual(myEventCards({ events }).map((card) => card.id).sort(), [1, 21]);
+});
+
+test('a draft cup with no member row names its format from the event itself', () => {
+  const organized = [
+    { id: 7, kind: 'cup', name: 'Duo Draft', published: false, state: 'draft', team_size: 2 },
+    { id: 8, kind: 'cup', name: 'FFA Draft', published: false, state: 'draft', team_size: 3, ffa: true },
+    { id: 9, kind: 'cup', name: 'Custom Draft', published: false, state: 'draft', custom_game: true },
+  ];
+  const cards = myEventCards({ organized });
+  assert.deepEqual(cards.map((card) => [card.id, card.format]), [[7, '2v2 cup'], [8, 'FFA, teams of 3'], [9, 'Custom game, 1v1']]);
+});
+
 test('a cup team still short of players says how many accepted, and offers no check-in', () => {
   const events = [
     { id: 3, kind: 'cup', name: 'Trio Cup', joined: true, action: 'view', checkin_open: true, team_size: 3, cup_team: { id: 4, name: 'Red', captain: true, players: 1 } },

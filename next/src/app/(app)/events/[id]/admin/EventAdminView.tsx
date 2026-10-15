@@ -29,7 +29,7 @@ import { playedCount } from "@/helpers/stage-view.mjs";
 import { CupDivisionsPanel } from "@/components/CupDivisionsPanel";
 import { CupSeedsPanel } from "@/components/CupSeedsPanel";
 import { cupRosters, rostersByEntrant } from "@/helpers/entrants.mjs";
-import { useEventStore, useTeamStore } from "@/stores";
+import { useAuth, useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
 import { CupConsole } from "@/components/CupConsole";
 import { CupFormatCard } from "@/components/CupFormatCard";
@@ -49,7 +49,7 @@ import { livesLine } from "@/helpers/cup-wizard.mjs";
 type Row = Record<string, any>;
 
 // The helpers are plain JS, so their defaults type the parameters; the seam names the real shapes.
-const fieldsOf = generateFields as unknown as (entrants: Row[], divisions?: Row[], format?: string) => Row[];
+const fieldsOf = generateFields as unknown as (entrants: Row[], divisions?: Row[], format?: string, checksIn?: boolean) => Row[];
 const advancingOf = advancingRows as unknown as (standings: Row[], count?: number | null) => Row[];
 const awardsOf = awardList as unknown as (standings: Row[]) => Row[];
 const targetsOf = lobbyTargets as unknown as (series: Row[], picked: Row | null) => { id: number; label: string }[];
@@ -103,6 +103,7 @@ export function EventAdminView({ id }: { id: string }) {
   const router = useRouter();
   const store = useEventStore();
   const teamStore = useTeamStore();
+  const { isOrganizer } = useAuth();
   const runner = useEventRunner(id);
 
   const [event, setEvent] = useState<Row | null>(null);
@@ -163,7 +164,7 @@ export function EventAdminView({ id }: { id: string }) {
 
   // What the generate dialog promises: where the seeds come from, and the field per division
   const seedSource = titleOf(SEED_SOURCES, entrants.find((row) => row.seed_source)?.seed_source || "mmr");
-  const fields = fieldsOf(field, event?.divisions, stage?.format);
+  const fields = fieldsOf(field, event?.divisions, stage?.format, !!event?.checkin_enabled);
   const showByes = fields.some((row) => row.byes != null);
 
   // Who the next stage takes: the top of each division's table, or the whole table
@@ -337,6 +338,8 @@ export function EventAdminView({ id }: { id: string }) {
   };
 
   const moveTargets = targetsOf(series, picked);
+  // a finished or cancelled cup takes no series write until it is reopened
+  const seriesOpener = event?.kind === "cup" && event.closed_at ? undefined : openSeries;
 
   const openMove = (seat: Row) => {
     setMoving(seat);
@@ -435,7 +438,14 @@ export function EventAdminView({ id }: { id: string }) {
     </Tabs>
   );
 
-  // The route admits every member; the event's own list says who runs it
+  // The route admits every member; the event's own list says who runs it, so a list that did not load asks again
+  if (runner.loaded && !runner.runs && runner.error) {
+    return (
+      <div className="mx-auto max-w-[560px] p-4">
+        <StatusAlert modelValue={`The organizers of this event did not load: ${runner.error}`} retry={runner.reload} />
+      </div>
+    );
+  }
   if (runner.loaded && !runner.runs) {
     return (
       <div className="mx-auto max-w-[560px] p-4">
@@ -457,8 +467,8 @@ export function EventAdminView({ id }: { id: string }) {
             ← {event.name}
           </Link>
           <EventHeader event={event} league={league} />
-          {/* a cup made from a rule names it; any other cup can be set to repeat */}
-          {event.kind === "cup" ? (
+          {/* a cup made from a rule names it; an organizer with the grant can set any other cup to repeat */}
+          {event.kind === "cup" && (event.cup_recurrence || isOrganizer) ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {event.cup_recurrence ? (
                 <Link href={`/events/recurring/${event.cup_recurrence.id}`} className="inline-flex items-center gap-1 text-sm">
@@ -582,7 +592,7 @@ export function EventAdminView({ id }: { id: string }) {
 
                     <div className={seedsAside ? "mt-4 grid items-start gap-4 min-[1100px]:grid-cols-[minmax(0,1fr)_20rem]" : "mt-4"}>
                       <div className="min-w-0">
-                        <StageView cup={event.kind === "cup"} stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={openSeries} />
+                        <StageView cup={event.kind === "cup"} stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={seriesOpener} />
                       </div>
                       {seedsAside ? <CupSeedsPanel
                           event={event}
@@ -590,7 +600,11 @@ export function EventAdminView({ id }: { id: string }) {
                           entrants={field}
                           drawn={series.length > 0}
                           editable={!event.closed_at && !leg?.finished_at}
-                          onEntrants={consoleProps.onEntrants}
+                          onSeeded={(rows) => {
+                            // the panel seeds the round's field, so its rows replace their copies in the whole list
+                            const byId = new Map(rows.map((row) => [row.id, row]));
+                            consoleProps.onEntrants(entrants.map((row) => byId.get(row.id) ?? row));
+                          }}
                           onRedrawn={async () => {
                             await loadStage();
                             setEvent(await store.fetchEvent(event.id, true));
@@ -613,7 +627,7 @@ export function EventAdminView({ id }: { id: string }) {
                     event={event}
                     stages={[{ ...stage, series, rounds, standings: lastStage ? standings : [] }]}
                     entrants={entrants}
-                    onOpenSeries={openSeries}
+                    onOpenSeries={seriesOpener}
                     places={legs.length ? overallRows.filter((row: Row) => row.legs?.length).map((row: Row) => ({ entrant_id: row.entrant_id, position: row.position, name: row.name, user_id: row.user?.id ?? null })) : undefined}
                     matchesTitle={leg ? `Matches · ${legTitle(leg)}` : undefined}
                   />

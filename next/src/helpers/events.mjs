@@ -27,6 +27,24 @@ const ACTION_BUTTON = {
 
 export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
 
+// The Events tab's card button from the caller's own /me/events row. Every card button opens
+// the cup, so it names where the caller stands; an action to take is filled, a state is outlined.
+const CARD_BUTTON = {
+  sign_up: { text: ACTION_BUTTON.sign_up.text, outline: false },
+  check_in: { text: ACTION_BUTTON.check_in.text, outline: false },
+  withdraw: { text: 'Signed up', outline: true },
+  checked_in: { text: 'Checked in', outline: true },
+  waitlisted: { text: 'On the waitlist', outline: true },
+};
+
+/** The card button for the caller's row, or null for no row, a closed event, and a running or
+ *  finished one the caller is not in, where the card keeps the button its phase gives.
+ *  @param {any} row a GET /me/events row */
+export const cardButton = (row) => {
+  if (row?.action === 'view') return row.joined ? CARD_BUTTON.withdraw : null;
+  return CARD_BUTTON[row?.action] ?? null;
+};
+
 // The action word the home card and the event page both act on: a withdraw asks once,
 // then the store call and the reload. It answers the sentence a failure reads, or null,
 // so each page keeps its own loading flag. `sign_up` and `view` never reach here, because

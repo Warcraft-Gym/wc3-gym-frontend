@@ -61,7 +61,7 @@ export function CupFormatCard({
       ? pool.length
         ? null
         : "Add at least one map; every lobby plays a map of the pool."
-      : poolProblem(pool.length, bestOf, plan);
+      : poolProblem(pool.length, bestOf, plan, stage.format);
 
   const edit = () => {
     setBestOf(stage.best_of);
@@ -105,7 +105,7 @@ export function CupFormatCard({
           pool.map((row) => row.id),
         );
       const growing =
-        largestBestOf(bestOf, plan) >= largestBestOf(stage.best_of, stored);
+        largestBestOf(bestOf, plan, stage.format) >= largestBestOf(stage.best_of, stored, stage.format);
       if (growing) {
         await writePool();
         await writeStages();

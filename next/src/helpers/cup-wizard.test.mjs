@@ -39,6 +39,9 @@ test('a cup names the best-of of its bracket parts and the maps it vetoes from',
   assert.deepEqual(body.map_ids, [4, 2]);
   assert.equal(cupProblem(form, 'maps'), 'A Bo5 needs at least 5 maps in the pool; it holds 2.');
   assert.equal(cupProblem({ ...form, pool: [1, 2, 3, 4, 5].map((id) => ({ id })) }, 'maps'), null);
+  // the Bo5 final the double elimination does not play asks no fifth map
+  const kept = { ...form, best_of_plan: { upper_final: 3, final: 5 }, pool: [1, 2, 3].map((id) => ({ id })) };
+  assert.equal(cupProblem(kept, 'maps'), null);
 });
 
 test('the third place plays only in single elimination, the reset only in double', () => {

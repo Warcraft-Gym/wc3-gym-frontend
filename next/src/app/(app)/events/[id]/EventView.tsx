@@ -173,8 +173,10 @@ export function EventView({ id }: { id: string }) {
   // the event; a reader who is not logged in reports nothing
   // a team cup's side is acted for by its own players, so the draw knows the caller's teams
   const viewer = { id: auth.me?.user?.id ?? null, isAdmin: auth.isAdmin, runs: runner.runs, seats: auth.me?.seats ?? [], teamIds: event?.team_size ? (teamIdsOf(entrants, auth.me?.user?.id) as number[]) : null };
+  // A finished or cancelled cup takes no series write until it is reopened, so it offers no report and no veto
+  const reports = !anonymous && !(event?.kind === "cup" && event.closed_at);
   // The caller's own next series to report, as a player or a captain: the prompt over the draw
-  const mine = auth.me
+  const mine = reports
     ? drawn
         .flatMap((stage) => (stage.series as Row[]).map((row) => ({ row, stage })))
         .find(({ row }) => reportOf(row, { id: viewer.id, seats: viewer.seats, teamIds: viewer.teamIds }) === "report" || lobbyReportOf(row, { id: viewer.id }) === "report") ?? null
@@ -206,7 +208,8 @@ export function EventView({ id }: { id: string }) {
   // Closing an event freezes the table of its last stage as the places it awards, so a
   // finished event names its champion and every other place off that table.
   // a cup over rounds places its players on the overall table instead
-  const places: Record<string, Row> = stateOf(event) !== "finished" || legs.length ? {} : placesOf(drawn.at(-1)?.standings || []);
+  // a cancelled cup awards no place
+  const places: Record<string, Row> = stateOf(event) !== "finished" || legs.length || event?.cancelled_at ? {} : placesOf(drawn.at(-1)?.standings || []);
 
   const logIn = () => {
     saveReturnUrl(window.location.pathname + window.location.search);
@@ -548,8 +551,8 @@ export function EventView({ id }: { id: string }) {
           standings={tabbed && BRACKETS.includes(stage.format) ? [] : stage.standings}
           rosters={rosters}
           viewer={anonymous ? undefined : viewer}
-          onReport={anonymous ? undefined : openReport}
-          onVeto={anonymous ? undefined : setVetoing}
+          onReport={reports ? openReport : undefined}
+          onVeto={reports ? setVetoing : undefined}
         />
       </div>
     )),
@@ -694,7 +697,7 @@ export function EventView({ id }: { id: string }) {
           </div>
 
           {event.team_size ? (
-            <TeamCupPanel event={event} entrants={entrants} userId={auth.me?.user?.id ?? null} invites={teamInvites} onChanged={() => reload()} onError={setError} />
+            <TeamCupPanel event={event} entrants={entrants} drawn={drawn.length > 0} userId={auth.me?.user?.id ?? null} invites={teamInvites} onChanged={() => reload()} onError={setError} />
           ) : null}
 
           {tabbed ? (

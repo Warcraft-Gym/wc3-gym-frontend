@@ -28,7 +28,7 @@ type Row = Record<string, any>;
 const RACE_ITEMS = raceWrapper.races.map((race) => ({ value: race.id, title: race.name }));
 const raceName = (race: string | null | undefined) => (race ? raceWrapper.getRaceObject(race)?.name || race : "");
 
-type Evening = { live: number; checkedIn: number; noShows: Row[]; min: number | null; belowMin: boolean };
+type Evening = { live: number; checkedIn: number; noShows: Row[]; seated: number; min: number | null; belowMin: boolean };
 
 /** One small confirming dialog of the console. */
 function Confirm({ open, onOpenChange, title, danger, busy, confirm, onConfirm, children }: {
@@ -237,6 +237,8 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       await onOrganizers();
     });
 
+  // a cup that takes check-in draws the players who checked in alone
+  const checkedWord = event.checkin_enabled ? "checked in" : "in";
   const evenPart = (
     <div className="mb-4 flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border px-3 py-2">
@@ -262,7 +264,8 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
           </span>
         ) : null}
         <span className="flex-1" />
-        {!closed && !evening.belowMin ? (
+        {/* a short field offers its cancel in the alert below until the draw, and here after it */}
+        {!closed && !(evening.belowMin && !drawn) ? (
           <Button variant="ghost" size="sm" className="text-error" onClick={() => setAsk("cancel")}>
             <Icon name="mdi-cancel" />
             Cancel the cup
@@ -274,9 +277,9 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         <Alert className="alert border-loss">
           <AlertDescription className="flex flex-col gap-3 text-foreground">
             <span className="font-bold">
-              Only {evening.live} {evening.live === 1 ? "player is" : "players are"} in. This cup is played with at least {evening.min}.
+              Only {evening.seated} {evening.seated === 1 ? "player is" : "players are"} {checkedWord}. This cup is played with at least {evening.min}.
             </span>
-            <span className="text-sm text-muted-foreground">Wait for more sign-ups, move the start, or cancel the cup. The bracket cannot be drawn until enough players are in.</span>
+            <span className="text-sm text-muted-foreground">Wait for more sign-ups, move the start, or cancel the cup. The bracket cannot be drawn until enough players are {checkedWord}.</span>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={openMove}>
                 <Icon name="mdi-clock-edit-outline" />

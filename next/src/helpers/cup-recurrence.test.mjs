@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayText, ruleFrom, ruleLine, ruleProblem, upcomingRows } from './cup-recurrence.mjs';
+import { DateTime } from 'luxon';
+import { dayText, ruleFrom, ruleLine, ruleProblem, todayIn, upcomingRows } from './cup-recurrence.mjs';
 
 test('a rule reads every week or the nth weekday of the month', () => {
   assert.equal(ruleLine({ weekday: 4, nth: null, start_time: '20:00' }), 'Every Friday at 20:00');
@@ -32,4 +33,14 @@ test('a coming day carries the cup made on it', () => {
   const rows = upcomingRows({ upcoming: [{ on: '2030-01-04', event_id: 7 }, { on: '2030-01-11', event_id: null }], occurrences: [{ event_id: 7, name: 'Cup' }] });
   assert.equal(rows[0].occurrence.name, 'Cup');
   assert.equal(rows[1].occurrence, null);
+});
+
+test('today is the date in the rule zone, else in the viewer zone', () => {
+  // 02:00 UTC is still the evening before in New York, where the rule counts its days
+  const now = new Date('2026-10-16T02:00:00Z');
+  assert.equal(todayIn('America/New_York', now), '2026-10-15');
+  assert.equal(todayIn('Asia/Tokyo', new Date('2026-10-15T23:30:00Z')), '2026-10-16');
+  // no zone, or one the browser cannot read, takes the viewer's own date
+  assert.equal(todayIn(null, now), DateTime.fromJSDate(now).toISODate());
+  assert.equal(todayIn('Not/A_Zone', now), DateTime.fromJSDate(now).toISODate());
 });

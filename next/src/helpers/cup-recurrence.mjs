@@ -1,5 +1,6 @@
 // A cup that repeats on a rule: a weekday, every week or the nth of the month, at a local start
 // time. The rule's page lists its cups and its next days, and a runner makes each next cup there.
+import { DateTime } from 'luxon';
 import { viewerZone } from './timezone.mjs';
 
 export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -67,6 +68,15 @@ export const ruleProblem = (rule) => {
   if (!String(rule?.name || '').trim()) return 'Name the recurring cup.';
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(rule?.start_time || '')) return 'Pick the start time.';
   return null;
+};
+
+/** Today as "yyyy-mm-dd" in the rule's zone, as the backend counts the coming days, or in the
+ *  viewer's zone when the rule names none or a zone it cannot read.
+ *  @param {string | null | undefined} zone @param {Date} [now] @returns {string} */
+export const todayIn = (zone, now = new Date()) => {
+  const here = DateTime.fromJSDate(now);
+  const there = zone ? here.setZone(zone) : here;
+  return (there.isValid ? there : here).toISODate();
 };
 
 /** The coming days split by whether their cup is made yet.

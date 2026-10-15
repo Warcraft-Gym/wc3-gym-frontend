@@ -51,8 +51,9 @@ export function EventResults({
 }) {
   const hidden = useHideResults();
   const finished = stateOf(event) === "finished" || !!event.closed_at;
-  // Closing freezes the places: the last stage's table first, then the entrants a playoff left out
-  const placeGroups: Row[] = !finished ? [] : places ? (places.length ? [{ division_id: null, rows: places }] : []) : (eventPlaces(stages) as Row[]);
+  // Closing freezes the places: the last stage's table first, then the entrants a playoff left out;
+  // a cancelled cup awards none
+  const placeGroups: Row[] = !finished || event.cancelled_at ? [] : places ? (places.length ? [{ division_id: null, rows: places }] : []) : (eventPlaces(stages) as Row[]);
   const played = stages.map((stage) => ({ stage, rounds: roundsOf(stage.series || [], stage.rounds || []) })).filter((one) => one.rounds.length);
   const hiddenNote = <p className="px-4 pb-4 text-muted-foreground">Results are hidden. Turn off &quot;Hide results&quot; to read them.</p>;
 

@@ -27,14 +27,15 @@ const bodyOf = seedBody as (source: string, divisionId: number | null, order?: n
  *  seeds each division on its own. After the draw every change draws the bracket again
  *  from the new seeds in the same write (`onRedrawn` reads the draw back); while its series hold
  *  results the change asks first, because the redraw deletes them. A finished cup or round only
- *  reads its seeds. */
+ *  reads its seeds. `entrants` is the field the round draws; `onSeeded` hands back the rows a
+ *  write answered, for the page to merge into its whole list. */
 export function CupSeedsPanel({
   event,
   stage,
   entrants,
   drawn,
   editable = true,
-  onEntrants,
+  onSeeded,
   onRedrawn,
 }: {
   event: Row;
@@ -42,7 +43,7 @@ export function CupSeedsPanel({
   entrants: Row[];
   drawn: boolean;
   editable?: boolean;
-  onEntrants: (rows: Row[]) => void;
+  onSeeded: (rows: Row[]) => void;
   onRedrawn?: () => Promise<void>;
 }) {
   const store = useEventStore();
@@ -57,11 +58,6 @@ export function CupSeedsPanel({
   // a player in no division is seeded once the Participants tab places it
   const groups = groupsOf(entrants, event.divisions || [], divided).filter((group) => !divided || group.id != null);
 
-  // A write answers the rows it seeded; every other row keeps its seed
-  const merge = (answered: Row[]) => {
-    const byId = new Map(answered.map((row) => [row.id, row]));
-    onEntrants(entrants.map((row) => byId.get(row.id) ?? row));
-  };
   const run = async (key: string, work: () => Promise<void>) => {
     setBusy(key);
     setError(null);
@@ -75,8 +71,8 @@ export function CupSeedsPanel({
   };
   // before the draw a seed write is all; after it the same write draws the bracket again
   const write = async (body: Row, confirm = false) => {
-    if (!drawn) return merge(await store.setSeeds(event.id, stage.id, body));
-    merge(await store.redrawSeeds(event.id, stage.id, body, confirm));
+    if (!drawn) return onSeeded(await store.setSeeds(event.id, stage.id, body));
+    onSeeded(await store.redrawSeeds(event.id, stage.id, body, confirm));
     await onRedrawn?.();
   };
   const reseed = (group: Group, source: string, order?: number[]) => {
@@ -105,8 +101,7 @@ export function CupSeedsPanel({
   };
   const pin = (row: Row) =>
     run(`pin-${row.id}`, async () => {
-      const answered = await store.pinEntrant(event.id, row.id, { seed_pinned: !row.seed_pinned });
-      onEntrants(entrants.map((old) => (old.id === answered.id ? answered : old)));
+      onSeeded([await store.pinEntrant(event.id, row.id, { seed_pinned: !row.seed_pinned })]);
     });
   const drop = (group: Group, rows: Row[], index: number) => {
     if (dragging && dragging.group === group.id) place(group, rows, dragging.id, index + 1);

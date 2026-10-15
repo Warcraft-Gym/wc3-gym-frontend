@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { actOnEvent, blocksHint, checkInFor, eventActionButton, hideResultsStored, seasonAction, storeHideResults } from './events.mjs';
+import { actOnEvent, blocksHint, cardButton, checkInFor, eventActionButton, hideResultsStored, seasonAction, storeHideResults } from './events.mjs';
 
 // one row of GET /me/events; the caller's own state rides on it
 const row = (over) => ({
@@ -28,6 +28,21 @@ test('every action word the member read answers picks one button, or none', () =
   assert.equal(eventActionButton('checked_in'), null);
   assert.equal(eventActionButton('closed'), null);
   assert.equal(eventActionButton(undefined), null);
+});
+
+test('an Events card names where the caller stands from their own row', () => {
+  assert.deepEqual(cardButton(row()), { text: 'Sign up', outline: false });
+  assert.deepEqual(cardButton(row({ joined: true, action: 'withdraw' })), { text: 'Signed up', outline: true });
+  assert.deepEqual(cardButton(row({ joined: true, action: 'view', phase: 'running' })), { text: 'Signed up', outline: true });
+  assert.deepEqual(cardButton(row({ joined: true, action: 'check_in' })), { text: 'Check in', outline: false });
+  assert.deepEqual(cardButton(row({ joined: true, action: 'checked_in' })), { text: 'Checked in', outline: true });
+  assert.deepEqual(cardButton(row({ joined: true, action: 'waitlisted' })), { text: 'On the waitlist', outline: true });
+  // an event closed to the caller, or running without them, reads View
+  assert.deepEqual(cardButton(row({ action: 'closed', phase: 'checkin' }), 'checkin'), { text: 'View', outline: true });
+  assert.deepEqual(cardButton(row({ action: 'view', phase: 'running' }), 'running'), { text: 'View', outline: true });
+  // a guest reads the phase: Sign up while sign-ups stand open, else View, since only an entrant checks in
+  assert.deepEqual(cardButton(undefined, 'signups_open'), { text: 'Sign up', outline: false });
+  assert.deepEqual(cardButton(undefined, 'checkin'), { text: 'View', outline: true });
 });
 
 test('the check-in shape picks the call: the entrant row, or the next round availability', () => {

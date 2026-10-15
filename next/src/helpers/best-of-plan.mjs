@@ -49,9 +49,11 @@ export const planText = (plan, format, bestOf) =>
     .map((part) => `${part.role}:${plan[part.role]}`)
     .join(',') || null;
 
-/** The most games one series of the stage plays: what the map pool must hold.
- *  @param {number} bestOf @param {Record<string, number>} plan */
-export const largestBestOf = (bestOf, plan) => Math.max(Number(bestOf) || 1, ...Object.values(plan || {}).map(Number));
+/** The most games one series of the stage plays: what the map pool must hold. Only the parts
+ *  the format plays count, as `planText` keeps them; a part of another format plays nothing.
+ *  @param {number} bestOf @param {Record<string, number>} plan @param {string | null} format */
+export const largestBestOf = (bestOf, plan, format) =>
+  Math.max(Number(bestOf) || 1, ...partsOf(format).filter((part) => plan?.[part.role]).map((part) => Number(plan[part.role])));
 
 /** One line for the stage: the early rounds, then every part that plays its own best-of.
  *  @param {number} bestOf @param {Record<string, number>} plan @param {string} format */
@@ -62,9 +64,9 @@ export function bestOfLine(bestOf, plan, format) {
 }
 
 /** What a pool this size cannot play, or null when every series has a map for each game.
- *  @param {number} size @param {number} bestOf @param {Record<string, number>} plan */
-export function poolProblem(size, bestOf, plan) {
-  const need = largestBestOf(bestOf, plan);
+ *  @param {number} size @param {number} bestOf @param {Record<string, number>} plan @param {string | null} format */
+export function poolProblem(size, bestOf, plan, format) {
+  const need = largestBestOf(bestOf, plan, format);
   if (size >= need) return null;
   return `A Bo${need} needs at least ${need} ${need === 1 ? 'map' : 'maps'} in the pool; it holds ${size}.`;
 }

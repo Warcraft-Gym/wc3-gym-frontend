@@ -26,8 +26,16 @@ test('one line names the early rounds and every part with its own best-of', () =
 });
 
 test('the pool holds a map for every game of the longest series', () => {
-  assert.strictEqual(largestBestOf(1, { final: 5 }), 5);
-  assert.strictEqual(poolProblem(5, 1, { final: 5 }), null);
-  assert.strictEqual(poolProblem(4, 1, { final: 5 }), 'A Bo5 needs at least 5 maps in the pool; it holds 4.');
-  assert.strictEqual(poolProblem(0, 1, {}), 'A Bo1 needs at least 1 map in the pool; it holds 0.');
+  assert.strictEqual(largestBestOf(1, { final: 5 }, 'single_elimination'), 5);
+  assert.strictEqual(poolProblem(5, 1, { final: 5 }, 'single_elimination'), null);
+  assert.strictEqual(poolProblem(4, 1, { final: 5 }, 'single_elimination'), 'A Bo5 needs at least 5 maps in the pool; it holds 4.');
+  assert.strictEqual(poolProblem(0, 1, {}, 'single_elimination'), 'A Bo1 needs at least 1 map in the pool; it holds 0.');
+});
+
+test('the longest series counts only the parts the format plays', () => {
+  // a single elimination final left in the plan plays no game of a double elimination
+  assert.strictEqual(largestBestOf(1, { upper_final: 3, final: 5 }, 'double_elimination'), 3);
+  assert.strictEqual(poolProblem(3, 1, { upper_final: 3, final: 5 }, 'double_elimination'), null);
+  // a format with no parts plays its own best-of alone
+  assert.strictEqual(largestBestOf(3, { final: 5 }, 'round_robin'), 3);
 });

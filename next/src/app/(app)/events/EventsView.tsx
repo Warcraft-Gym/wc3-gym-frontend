@@ -29,11 +29,11 @@ import {
   titleOf,
 } from "@/helpers/event-labels.mjs";
 import {
-  fill,
   groupEvents,
   KIND_FILTERS,
   organizerCard,
 } from "@/helpers/events-page.mjs";
+import { cardButton } from "@/helpers/events.mjs";
 import { dayText, ruleLine } from "@/helpers/cup-recurrence.mjs";
 import { useAuth, useEventStore } from "@/stores";
 import { canSeeRole, metaOf } from "@/lib/routes";
@@ -53,10 +53,10 @@ const StateBadge = ({ event }: { event: Row }) => (
   </Badge>
 );
 
-/** One event still to come, as a card: its state, its name, when and how it plays, how full it is. */
-function EventCard({ event }: { event: Row }) {
-  const full = fill(event);
-  const joinable = ["signups_open", "checkin"].includes(stateOf(event));
+/** One event still to come, as a card: its state, its name, when and how it plays, and a button
+ *  into it that names where the caller stands once their /me/events row says so. */
+function EventCard({ event, row }: { event: Row; row?: Row }) {
+  const button = cardButton(row, stateOf(event)) as { text: string; outline: boolean };
   return (
     <Card className="card">
       <CardContent className="flex h-full flex-col gap-3 p-4">
@@ -83,31 +83,14 @@ function EventCard({ event }: { event: Row }) {
             </span>
           ) : null}
         </div>
-        {event.entrant_count != null ? (
-          <div className="flex items-center gap-2">
-            {full.percent != null ? (
-              <div className="h-1.5 flex-1 overflow-hidden rounded bg-muted">
-                <div
-                  className="h-1.5 bg-primary"
-                  style={{ width: `${full.percent}%` }}
-                />
-              </div>
-            ) : null}
-            <span className="text-sm text-muted-foreground">{full.label}</span>
-          </div>
-        ) : null}
         <div className="mt-auto">
           <Button
             className="w-full"
-            variant={joinable ? "default" : "outline"}
+            variant={button.outline ? "outline" : "default"}
             nativeButton={false}
             render={<Link href={`/events/${event.id}`} />}
           >
-            {stateOf(event) === "checkin"
-              ? "Check in"
-              : joinable
-                ? "Sign up"
-                : "View"}
+            {button.text}
           </Button>
         </div>
       </CardContent>
@@ -135,6 +118,9 @@ export function EventsView() {
   const [invites, setInvites] = useState<Row[]>([]);
   // the recurring cups, read when the filter asks for them
   const [recurring, setRecurring] = useState<Row[] | null>(null);
+  // the member's own row of each event, by event id, so a card names where they stand
+  const [own, setOwn] = useState<Map<number, Row>>(new Map());
+  const member = !!me && me.role !== "guest";
   const [answering, setAnswering] = useState<string | null>(null);
   const answer = async (invite: Row, accept: boolean) => {
     setAnswering(`${invite.event_id}-${invite.team.id}`);
@@ -178,6 +164,15 @@ export function EventsView() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card === "organizer"]);
+
+  useEffect(() => {
+    if (!member) return;
+    store
+      .myEvents()
+      .then((rows: Row[]) => setOwn(new Map(rows.map((row) => [Number(row.id), row]))))
+      .catch((e: Error) => setError(`Your own entries did not load: ${e.message}`));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member]);
 
   useEffect(() => {
     if (kind !== "recurring" || recurring) return;
@@ -444,7 +439,7 @@ export function EventsView() {
             {upcoming.length ? (
               <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
                 {upcoming.map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard key={event.id} event={event} row={own.get(Number(event.id))} />
                 ))}
               </div>
             ) : (

@@ -12,10 +12,10 @@ import { toneClass } from "@/components/ui/tone";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusAlert } from "@/components/StatusAlert";
 import { RecurrenceEditDialog } from "@/components/RecurrenceEditDialog";
-import { dayText, ruleLine, upcomingRows } from "@/helpers/cup-recurrence.mjs";
+import { dayText, ruleLine, todayIn, upcomingRows } from "@/helpers/cup-recurrence.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { useEventRunner } from "@/hooks/event-runner";
-import { useEventStore } from "@/stores";
+import { useAuth, useEventStore } from "@/stores";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -23,8 +23,8 @@ type Row = Record<string, any>;
 const dateRange_ = dateRange as (event: Row) => string;
 
 /** A recurring cup: its rule, its next eight days and the cups made from it. A runner of the
- *  latest cup creates the cup of a coming day with one press, a copy of the latest one, and can
- *  stop the rule; every cup it made stays. */
+ *  latest cup can stop the rule, and one who also holds the organizer grant edits it and creates
+ *  the cup of a coming day with one press, a copy of the latest one; every cup it made stays. */
 export function RecurringCupView({ id }: { id: string }) {
   const router = useRouter();
   const store = useEventStore();
@@ -37,6 +37,9 @@ export function RecurringCupView({ id }: { id: string }) {
   // who runs the latest cup runs the rule
   const runner = useEventRunner(recurrence?.latest_event_id ? String(recurrence.latest_event_id) : "");
   const runs = !!recurrence?.latest_event_id && runner.runs;
+  // a rule makes cups, so its edit and its create need the grant to create events
+  const { isOrganizer } = useAuth();
+  const makes = runs && isOrganizer;
 
   const load = async (fresh = false) => {
     try {
@@ -76,7 +79,7 @@ export function RecurringCupView({ id }: { id: string }) {
   };
 
   const occurrences: Row[] = [...(recurrence?.occurrences || [])].reverse();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIn(recurrence?.zone);
 
   return (
     <>
@@ -96,7 +99,7 @@ export function RecurringCupView({ id }: { id: string }) {
             }
             lead={`${ruleLine(recurrence)}, ${recurrence.zone}. Each time is a cup of its own.`}
           >
-            {runs ? (
+            {makes ? (
               <Button variant="outline" onClick={() => setEditing(true)}>
                 <Icon name="mdi-pencil" />
                 Edit
@@ -114,7 +117,7 @@ export function RecurringCupView({ id }: { id: string }) {
             <Card className="card">
               <CardHeader>
                 <CardTitle>Coming days</CardTitle>
-                {runs ? <p className="text-sm text-muted-foreground">Create copies the latest cup onto that day: its format, maps, sign-up rules and organizers.</p> : null}
+                {makes ? <p className="text-sm text-muted-foreground">Create copies the latest cup onto that day: its format, maps, sign-up rules and organizers.</p> : null}
               </CardHeader>
               <CardContent className="px-0">
                 {upcomingRows(recurrence).length ? (
@@ -129,7 +132,7 @@ export function RecurringCupView({ id }: { id: string }) {
                         ) : (
                           <span className="min-w-0 flex-1 text-sm text-muted-foreground">Not created yet</span>
                         )}
-                        {!row.occurrence && runs && row.on >= today ? (
+                        {!row.occurrence && makes && row.on >= today ? (
                           <Button size="sm" disabled={!!busy} onClick={() => create(row.on)}>
                             {busy === row.on ? <Icon name="mdi-loading mdi-spin" /> : <Icon name="mdi-plus" />}
                             Create

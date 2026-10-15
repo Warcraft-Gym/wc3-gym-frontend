@@ -327,6 +327,13 @@ test('the generate field drops withdrawn entrants and pads only a bracket', () =
   assert.strictEqual(generateFields([], [], 'single_elimination')[0].byes, null);
 });
 
+test('the generate field of a cup that takes check-in leaves out the players who did not check in', () => {
+  const rows = [E(1, null, { checked_in_at: 't' }), E(2, null, { checked_in_at: 't' }), E(3, null, { checked_in_at: 't' }), E(4, null), E(5, null)];
+  assert.deepStrictEqual(generateFields(rows, [], 'single_elimination', true), [{ key: 'all', name: 'Division 1', entrants: 3, byes: 1 }]);
+  // a cup that takes no check-in draws every player still in
+  assert.strictEqual(generateFields(rows, [], 'single_elimination', false)[0].entrants, 5);
+});
+
 test('the generate field counts the seeded alone once any entrant carries a seed', () => {
   const bands = [{ id: 1, position: 1, name: 'Gold' }, { id: 2, position: 2, name: 'Silver' }];
   const rows = [

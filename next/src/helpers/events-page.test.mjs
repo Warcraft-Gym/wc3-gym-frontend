@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { eligibilityLines, eveningOf, fill, groupEvents, joinsWaitlist, moveStartBody, moveStartForm, organizerCard, runsEvent, waitlistOf } from './events-page.mjs';
+import { eligibilityLines, eveningOf, groupEvents, joinsWaitlist, moveStartBody, moveStartForm, organizerCard, runsEvent, waitlistOf } from './events-page.mjs';
 
 const event = (id, kind, phase, starts_at = null) => ({ id, kind, phase, starts_at });
 
@@ -42,12 +42,6 @@ test('the organizer card follows the session: organizer, pending, ask, or none',
   assert.equal(organizerCard({ role: 'member', organizer: false, organizer_request: null }), 'ask');
 });
 
-test('a capped cup reads its count over its cap; no cap reads the count alone', () => {
-  assert.deepEqual(fill({ entrant_count: 9, entrant_cap: 16 }), { count: 9, label: '9 / 16', percent: 56 });
-  assert.deepEqual(fill({ entrant_count: 20, entrant_cap: 16 }).percent, 100);
-  assert.deepEqual(fill({ entrant_count: 3 }), { count: 3, label: '3 signed up', percent: null });
-});
-
 test('an admin runs every event; a member runs the ones whose organizer list names it', () => {
   const list = [{ discord_id: '50' }];
   assert.equal(runsEvent(null, list), false);
@@ -67,12 +61,27 @@ test('the evening counts the entrants still in, the check-ins, the no-shows and 
     { id: 3, checked_in_at: null },
     { id: 4, checked_in_at: null, withdrawn_at: 't' },
   ];
-  const evening = eveningOf({ checkin_enabled: true, entrant_min: 3 }, rows);
-  assert.deepEqual([evening.live, evening.checkedIn, evening.noShows.map((r) => r.id), evening.belowMin], [3, 2, [3], false]);
-  assert.equal(eveningOf({ checkin_enabled: true, entrant_min: 4 }, rows).belowMin, true);
+  const evening = eveningOf({ checkin_enabled: true, checkin_open: true, entrant_min: 2 }, rows);
+  assert.deepEqual([evening.live, evening.checkedIn, evening.noShows.map((r) => r.id), evening.seated, evening.belowMin], [3, 2, [3], 2, false]);
   // with no check-in nobody is a no-show, and no minimum is never short
   const open = eveningOf({ checkin_enabled: false, entrant_min: null }, rows);
   assert.deepEqual([open.noShows.length, open.belowMin], [0, false]);
+});
+
+test('a cup that takes check-in is short of its minimum by the players who checked in, as the draw seats them', () => {
+  const rows = [
+    { id: 1, checked_in_at: 't' },
+    { id: 2, checked_in_at: 't' },
+    { id: 3, checked_in_at: null },
+  ];
+  // three are in but two checked in, so while the window is open a minimum of three holds the draw
+  const open = eveningOf({ checkin_enabled: true, checkin_open: true, entrant_min: 3 }, rows);
+  assert.deepEqual([open.seated, open.byCheckIn, open.belowMin], [2, true, true]);
+  // before the window opens the count is the sign-ups
+  const shut = eveningOf({ checkin_enabled: true, checkin_open: false, entrant_min: 3 }, rows);
+  assert.deepEqual([shut.seated, shut.byCheckIn, shut.belowMin], [3, false, false]);
+  // a cup that takes no check-in seats every player still in
+  assert.equal(eveningOf({ checkin_enabled: false, checkin_open: true, entrant_min: 3 }, rows).belowMin, false);
 });
 
 test('the eligibility reads one line per rule the event names', () => {

@@ -272,14 +272,15 @@ export const inDivision = (series, divisionId) => (divisionId == null
 const ELIMINATION = ['single_elimination', 'double_elimination', 'placement'];
 
 // What a generate will play over, read the way app/services/stage_engine.py does: a
-// withdrawn entrant never plays, and once any entrant carries a seed the seeded alone
-// stand. Only an elimination bracket pads to a power of two, so only it counts byes.
-export function generateFields(entrants = [], divisions = [], format = null) {
+// withdrawn entrant never plays, a cup that takes check-in plays the ones who checked in,
+// and once any entrant carries a seed the seeded alone stand. Only an elimination bracket
+// pads to a power of two, so only it counts byes.
+export function generateFields(entrants = [], divisions = [], format = null, checksIn = false) {
   const bands = divisions?.length
     ? [...divisions].sort((a, b) => a.position - b.position)
     : [{ id: null, position: 1, name: null }];
-  // a cup's waitlist plays no part in the draw
-  const standing = entrants.filter((row) => !row.withdrawn_at && !row.waitlisted_at);
+  // a cup's waitlist plays no part in the draw, and nor does a no-show of a cup that takes check-in
+  const standing = entrants.filter((row) => !row.withdrawn_at && !row.waitlisted_at && (!checksIn || row.checked_in_at));
   const seeded = standing.filter((row) => row.seed != null);
   const field = seeded.length ? seeded : standing;
   const pads = ELIMINATION.includes(format);

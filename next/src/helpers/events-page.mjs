@@ -59,19 +59,22 @@ export function runsEvent(me, organizers) {
 /** The evening's count on the run page: the entrants still in, how many checked in, the
  *  no-shows a runner may remove before the draw, how many the draw seats and whether that
  *  falls short of the event's minimum. As app/services/cup_engine.py draws, a cup that takes
- *  check-in seats the entrants who checked in, and any other cup every entrant still in. */
+ *  check-in seats the entrants who checked in, so while its window stands open the count is
+ *  the check-ins (`byCheckIn`); before the window and on any other cup it is every entrant still in. */
 export function eveningOf(event, entrants) {
   // a signup on the waitlist stands in no field until a runner lets it in
   const live = (entrants || []).filter((row) => !row.withdrawn_at && !row.waitlisted_at);
   const checkedIn = live.filter((row) => row.checked_in_at);
   const noShows = event?.checkin_enabled ? live.filter((row) => !row.checked_in_at) : [];
-  const seated = event?.checkin_enabled ? checkedIn.length : live.length;
+  const byCheckIn = !!(event?.checkin_enabled && event?.checkin_open);
+  const seated = byCheckIn ? checkedIn.length : live.length;
   const min = event?.entrant_min ?? null;
   return {
     live: live.length,
     checkedIn: checkedIn.length,
     noShows,
     seated,
+    byCheckIn,
     min,
     belowMin: min !== null && seated < min,
   };

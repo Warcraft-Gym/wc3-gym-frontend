@@ -164,7 +164,8 @@ export function EventAdminView({ id }: { id: string }) {
 
   // What the generate dialog promises: where the seeds come from, and the field per division
   const seedSource = titleOf(SEED_SOURCES, entrants.find((row) => row.seed_source)?.seed_source || "mmr");
-  const fields = fieldsOf(field, event?.divisions, stage?.format, !!event?.checkin_enabled);
+  // a round's field is its own check-ins already, so only a cup played in one go filters on the cup's check-in
+  const fields = fieldsOf(field, event?.divisions, stage?.format, !!event?.checkin_enabled && !leg);
   const showByes = fields.some((row) => row.byes != null);
 
   // Who the next stage takes: the top of each division's table, or the whole table

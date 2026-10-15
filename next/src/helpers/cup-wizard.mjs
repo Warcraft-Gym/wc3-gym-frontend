@@ -469,9 +469,7 @@ export function cupProblem(form, step) {
     return (form.pool || []).length ? null : 'Add at least one map; every lobby plays a map of the pool.';
   }
   if (step === 'maps') {
-    // the plan plays in the cup's bracket, or in a Swiss cup's playoff
-    const planned = form.format === 'swiss' ? (Number(form.playoff) ? 'single_elimination' : null) : form.format;
-    return poolProblem((form.pool || []).length, Number(form.best_of), form.best_of_plan || {}, planned);
+    return poolProblem((form.pool || []).length, Number(form.best_of), form.best_of_plan || {}, planFormat(form));
   }
   if (step === 'signups') {
     const [least, most] = [count(form.entrant_min), count(form.entrant_cap)];

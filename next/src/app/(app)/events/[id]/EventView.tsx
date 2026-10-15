@@ -697,7 +697,7 @@ export function EventView({ id }: { id: string }) {
           </div>
 
           {event.team_size ? (
-            <TeamCupPanel event={event} entrants={entrants} drawn={drawn.length > 0} userId={auth.me?.user?.id ?? null} invites={teamInvites} onChanged={() => reload()} onError={setError} />
+            <TeamCupPanel event={event} entrants={entrants} userId={auth.me?.user?.id ?? null} invites={teamInvites} onChanged={() => reload()} onError={setError} />
           ) : null}
 
           {tabbed ? (

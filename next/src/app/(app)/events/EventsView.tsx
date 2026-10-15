@@ -56,9 +56,7 @@ const StateBadge = ({ event }: { event: Row }) => (
 /** One event still to come, as a card: its state, its name, when and how it plays, and a button
  *  into it that names where the caller stands once their /me/events row says so. */
 function EventCard({ event, row }: { event: Row; row?: Row }) {
-  const joinable = ["signups_open", "checkin"].includes(stateOf(event));
-  // a guest and an event with no row of the caller read the button the phase gives
-  const own = cardButton(row) as { text: string; outline: boolean } | null;
+  const button = cardButton(row, stateOf(event)) as { text: string; outline: boolean };
   return (
     <Card className="card">
       <CardContent className="flex h-full flex-col gap-3 p-4">
@@ -88,17 +86,11 @@ function EventCard({ event, row }: { event: Row; row?: Row }) {
         <div className="mt-auto">
           <Button
             className="w-full"
-            variant={(own ? !own.outline : joinable) ? "default" : "outline"}
+            variant={button.outline ? "outline" : "default"}
             nativeButton={false}
             render={<Link href={`/events/${event.id}`} />}
           >
-            {own
-              ? own.text
-              : stateOf(event) === "checkin"
-                ? "Check in"
-                : joinable
-                  ? "Sign up"
-                  : "View"}
+            {button.text}
           </Button>
         </div>
       </CardContent>

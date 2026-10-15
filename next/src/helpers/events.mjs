@@ -35,14 +35,16 @@ const CARD_BUTTON = {
   withdraw: { text: 'Signed up', outline: true },
   checked_in: { text: 'Checked in', outline: true },
   waitlisted: { text: 'On the waitlist', outline: true },
+  closed: { text: 'View', outline: true },
 };
 
-/** The card button for the caller's row, or null for no row, a closed event, and a running or
- *  finished one the caller is not in, where the card keeps the button its phase gives.
- *  @param {any} row a GET /me/events row */
-export const cardButton = (row) => {
-  if (row?.action === 'view') return row.joined ? CARD_BUTTON.withdraw : null;
-  return CARD_BUTTON[row?.action] ?? null;
+/** The card button for the caller's row: a joined event that runs reads "Signed up", and one
+ *  closed to the caller "View". A guest, or an event with no row, reads its phase: "Sign up"
+ *  while sign-ups stand open, else "View", since only an entrant checks in.
+ *  @param {any} row a GET /me/events row @param {string | null} [state] the event's `stateOf` */
+export const cardButton = (row, state = null) => {
+  if (row?.action === 'view') return row.joined ? CARD_BUTTON.withdraw : CARD_BUTTON.closed;
+  return CARD_BUTTON[row?.action] ?? (state === 'signups_open' ? CARD_BUTTON.sign_up : CARD_BUTTON.closed);
 };
 
 // The action word the home card and the event page both act on: a withdraw asks once,

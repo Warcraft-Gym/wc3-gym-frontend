@@ -26,14 +26,11 @@ export function TeamCupPanel({
   entrants,
   userId,
   invites,
-  drawn,
   onChanged,
   onError,
 }: {
   event: Row;
   entrants: Row[];
-  // the draw seats the teams checked in by then, so a check-in after it plays no part
-  drawn: boolean;
   userId: number | null;
   invites: Row[];
   onChanged: () => Promise<void> | void;
@@ -102,7 +99,7 @@ export function TeamCupPanel({
                 <Icon name="mdi-check" />
                 Checked in
               </Badge>
-            ) : event.checkin_enabled && !short && !entrant.waitlisted_at && !drawn ? (
+            ) : event.checkin_enabled && !short && !entrant.waitlisted_at ? (
               <Button size="sm" disabled={!!busy} onClick={() => work("checkin", () => store.checkIn(event.id, entrant.id))}>
                 <Icon name="mdi-check" />
                 Check the team in

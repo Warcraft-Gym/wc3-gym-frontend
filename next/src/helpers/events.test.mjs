@@ -37,10 +37,12 @@ test('an Events card names where the caller stands from their own row', () => {
   assert.deepEqual(cardButton(row({ joined: true, action: 'check_in' })), { text: 'Check in', outline: false });
   assert.deepEqual(cardButton(row({ joined: true, action: 'checked_in' })), { text: 'Checked in', outline: true });
   assert.deepEqual(cardButton(row({ joined: true, action: 'waitlisted' })), { text: 'On the waitlist', outline: true });
-  // no row, a closed event and a running one the caller is not in keep the phase's button
-  assert.equal(cardButton(undefined), null);
-  assert.equal(cardButton(row({ action: 'closed' })), null);
-  assert.equal(cardButton(row({ action: 'view', phase: 'running' })), null);
+  // an event closed to the caller, or running without them, reads View
+  assert.deepEqual(cardButton(row({ action: 'closed', phase: 'checkin' }), 'checkin'), { text: 'View', outline: true });
+  assert.deepEqual(cardButton(row({ action: 'view', phase: 'running' }), 'running'), { text: 'View', outline: true });
+  // a guest reads the phase: Sign up while sign-ups stand open, else View, since only an entrant checks in
+  assert.deepEqual(cardButton(undefined, 'signups_open'), { text: 'Sign up', outline: false });
+  assert.deepEqual(cardButton(undefined, 'checkin'), { text: 'View', outline: true });
 });
 
 test('the check-in shape picks the call: the entrant row, or the next round availability', () => {

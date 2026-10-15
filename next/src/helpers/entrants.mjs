@@ -9,6 +9,7 @@ import { rosterOf } from './team-roster.mjs';
 export function warningLabel(code, event = {}) {
   if (code === 'under_min_games') return event.min_games ? `under ${event.min_games} games` : 'under the game count';
   if (code === 'over_mmr_max') return 'over the MMR cap';
+  if (code === 'under_mmr_min') return event.mmr_min ? `under ${event.mmr_min} MMR` : 'under the MMR floor';
   if (code === 'banned') return 'banned';
   return code;
 }
@@ -131,4 +132,28 @@ export function rostersByEntrant(entrants = [], teams = [], eventId = null) {
   return Object.fromEntries(entrants
     .filter((row) => byTeam.get(row.team?.id)?.length)
     .map((row) => [row.id, byTeam.get(row.team.id)]));
+}
+
+// The roster every team of a cup fields, keyed by entrant id, from the players its entrant row
+// carries, so a series box prints them under the team name; the captain leads.
+export function cupRosters(entrants = []) {
+  return Object.fromEntries(entrants
+    .filter((row) => row.team && (row.roster || []).length)
+    .map((row) => [row.id, row.roster.map((member) => ({ player: member.user, race: member.user?.race ?? null, captain: !!member.captain }))]));
+}
+
+// The refusals of the seed routes, word for word, so a disabled button gives the API's reason
+export const STAGE_DRAWN = 'The stage holds series; take its draw back first';
+export const SEEDS_LOCKED = 'The seeds of this stage are locked';
+
+// Whether a stage is locked and drawn (a round of it exists), and why a reseed or an unlock is refused
+export function seedLock(stage, rounds = []) {
+  const locked = !!stage?.seeds_locked_at;
+  const drawn = stage?.id != null && (rounds || []).some((round) => round.stage_id === stage.id);
+  return {
+    locked,
+    drawn,
+    reseed: drawn ? STAGE_DRAWN : locked ? SEEDS_LOCKED : null,
+    unlock: locked && drawn ? STAGE_DRAWN : null,
+  };
 }

@@ -1,6 +1,5 @@
 // A player's soft blocks: the weekday bits the backend stores, the lines that
 // read them back, and the free time two players of a series share.
-import { DateTime } from 'luxon';
 import { dayDate, dayIso } from './date-input.mjs';
 import { roundLabel } from './rounds.mjs';
 import { viewerZone } from './timezone.mjs';
@@ -101,14 +100,6 @@ export const weekFree = (blocks = []) => DAY_NAMES.map((name, index) => {
   }
   const free = freeOf(spans);
   return { day, name, free, line: line(free) };
-});
-
-// The shared free ranges of a series, read in the viewer's zone
-export const freeLines = (ranges = [], zone = viewerZone()) => ranges.map(({ start, end }) => {
-  const from = DateTime.fromISO(start, { zone: 'UTC' }).setZone(zone);
-  const to = DateTime.fromISO(end, { zone: 'UTC' }).setZone(zone);
-  const head = from.toFormat('ccc d LLL, HH:mm');
-  return from.hasSame(to, 'day') ? `${head}–${to.toFormat('HH:mm')}` : `${head} to ${to.toFormat('ccc d LLL, HH:mm')}`;
 });
 
 // "14 h in common this round"; under an hour counts in minutes

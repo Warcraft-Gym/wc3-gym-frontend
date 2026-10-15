@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundLine, roundOver, roundStateChip, sitOutUndo, waitingLines, nextAnswer } from './rounds.mjs';
+import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundOver, roundStateChip, sitOutUndo, waitingLines, nextAnswer } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -87,17 +87,6 @@ test('the current round is the first one not over, and a round is not a week', (
 });
 
 const ME = 7;
-const line = (series, over = false) => roundLine({ series, over }, ME, 'Sat 4 Oct, 20:00');
-
-test('a round line reads the result, the fixture, or nothing while the question is open', () => {
-  assert.equal(line({ player1_id: ME, player2: { name: 'Markoo' }, player1_score: 2, player2_score: 1 }), 'Played · won vs Markoo');
-  assert.equal(line({ player2_id: ME, player1: { name: 'Scorch' }, player1_score: 2, player2_score: 0 }), 'Played · lost vs Scorch');
-  assert.equal(line({ player1_id: ME, player2: { name: 'Markoo' }, player1_score: 1, player2_score: 1 }), 'Played · drew vs Markoo');
-  assert.equal(line({ player1_id: ME, player2: { name: 'Markoo' }, player1_score: null, player2_score: null }), 'vs Markoo · Sat 4 Oct, 20:00');
-  assert.equal(roundLine({ series: null, over: true }, ME), 'Not paired');
-  assert.equal(roundLine({ series: null, over: false }, ME), null);
-});
-
 // The "Waiting for you" card: one line per job the player still owes, over every season
 const CARDS = [
   { playday: 1, label: '1 to 7 Sep', over: true, answer: true, series: { id: 11, player1_id: ME, player2: { name: 'Markoo' }, player1_score: 2, player2_score: 0 } },

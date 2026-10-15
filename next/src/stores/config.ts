@@ -34,6 +34,25 @@ const store = {
   async removeAdmin(discord_id: string) {
     await fetchWrapper.delete(`${backendUrl}/config/admins/${discord_id}`);
   },
+  // Organizers create cups and run the ones they hold a row of; members ask, an admin answers
+  async fetchOrganizers() {
+    return await fetchWrapper.get(`${backendUrl}/organizers`);
+  },
+  async addOrganizer({ discord_id, name }: { discord_id: string; name: string }) {
+    return await fetchWrapper.post(`${backendUrl}/organizers`, { discord_id, name });
+  },
+  async removeOrganizer(discord_id: string) {
+    await fetchWrapper.delete(`${backendUrl}/organizers/${discord_id}`);
+  },
+  async fetchOrganizerRequests() {
+    return await fetchWrapper.get(`${backendUrl}/organizers/requests`);
+  },
+  async approveOrganizer(discord_id: string) {
+    return await fetchWrapper.post(`${backendUrl}/organizers/requests/${discord_id}/approve`);
+  },
+  async declineOrganizer(discord_id: string) {
+    await fetchWrapper.post(`${backendUrl}/organizers/requests/${discord_id}/decline`);
+  },
   async fetchDiscordGuildRoles() {
     return await fetchWrapper.get(`${backendUrl}/config/discord-guild-roles`);
   },

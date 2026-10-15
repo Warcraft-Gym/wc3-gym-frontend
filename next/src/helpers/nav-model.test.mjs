@@ -100,11 +100,11 @@ test('a guest gets no links; their one page is /profile', () => {
 
 test('the tabs hold only the hats a person wears', () => {
   const keys = (me) => navTabs(buildNav(me, canSeeAs(me.role))).map((t) => t.key);
-  assert.deepEqual(keys(player), ['home', 'stats', 'team']);
-  assert.deepEqual(keys(adminOnly), ['home', 'admin']);
-  assert.deepEqual(keys(adminAndPlayer), ['home', 'stats', 'team', 'admin']);
-  assert.deepEqual(keys(allThree), ['home', 'stats', 'team', 'admin']);
-  assert.deepEqual(keys({ ...player, seasons: [S19] }), ['home', 'stats']);
+  assert.deepEqual(keys(player), ['home', 'stats', 'team', 'events']);
+  assert.deepEqual(keys(adminOnly), ['home', 'events', 'admin']);
+  assert.deepEqual(keys(adminAndPlayer), ['home', 'stats', 'team', 'events', 'admin']);
+  assert.deepEqual(keys(allThree), ['home', 'stats', 'team', 'events', 'admin']);
+  assert.deepEqual(keys({ ...player, seasons: [S19] }), ['home', 'stats', 'events']);
   // one team: the tab is its page; two teams: the tab opens the picker
   assert.equal(navTabs(buildNav(player, canSeeAs('member'))).find((t) => t.key === 'team').to, '/team/3/season/19');
   assert.equal(navTabs(buildNav(twoSeats, canSeeAs('captain'))).find((t) => t.key === 'team').to, null);

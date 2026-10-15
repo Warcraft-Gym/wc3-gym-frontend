@@ -4,7 +4,7 @@ title: Site admin
 description: The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
 resource: ../../../next/src/app/(app)/config/ConfigView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-03T04:59:33Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-15T19:30:00Z }
 sources:
   - id: config
     resource: ../../../next/src/app/(app)/config/ConfigView.tsx
@@ -38,13 +38,13 @@ sources:
 
 # What it does
 
-**Settings (`/config`).** One form over the settings the backend stores, in groups: the W3Champions season and API URL; the current GNL season; whether fantasy team creation is enabled; the fantasy bet points (fixed or a minimum and a maximum); the Discord bot's invite URL, its two role ids and its channel ids (signup, player profile, fantasy dashboard, scheduling, results, content); and the KOTH Nightbot token, which the server makes: with no token the section says so and offers "Generate token"; with one it shows the token hidden as text, never as a field, copied with one button and replaced with another. Under it the chat command block says what players type, `!kothsignup` then a battle tag and an optional race, and how to install it: copy the message, add the custom command `!kothsignup` with it in the Nightbot dashboard or edit the one already there, and paste the new message into that command after a new token, never into chat, because the message holds the token. The message box masks the token until the eye shows it, and "Copy message" copies it with the real token. Save writes the changed settings.
+**Settings (`/config`).** One form over the settings the backend stores, in groups: the W3Champions season and API URL; the current GNL season; whether fantasy team creation is enabled; the fantasy bet points (fixed or a minimum and a maximum); the Discord bot's invite URL, its two role ids and its channel ids (signup, player profile, fantasy dashboard, scheduling, results, content); the cup announcement channel id and the announcement role id, which members take on Home; and the KOTH Nightbot token, which the server makes: with no token the section says so and offers "Generate token"; with one it shows the token hidden as text, never as a field, copied with one button and replaced with another. Under it the chat command block says what players type, `!kothsignup` then a battle tag and an optional race, and how to install it: copy the message, add the custom command `!kothsignup` with it in the Nightbot dashboard or edit the one already there, and paste the new message into that command after a new token, never into chat, because the message holds the token. The message box masks the token until the eye shows it, and "Copy message" copies it with the real token. Save writes the changed settings.
 
 **Discord roles (`/config/discord-roles`).** One card per role of the Discord server, in three columns: managed, where the sync grants and removes the role; ignored, bound but applied by hand; and not bound. A card moves by drag, by double click or by its buttons, and a binding names the group it points at: a season's players, a team's roster, a captains group and so on, counted over the current season, one season or every season. A role that sits above the bot's own role is locked. Roles that do not matter are hidden under the last column. A table view lists the same roles in rows. "Sync all" applies every managed binding; the report under it lists the accounts whose Discord roles differ from the database, with a sync per account and per role.
 
-**Access (`/config/access`).** The gym admins: the player, when granted, and the source, app or environment. "Add admin" takes a player from the list or a Discord id. An app-granted admin can be removed; an admin cannot remove their own row.
+**Access (`/config/access`).** The gym admins: the player, when granted, and the source, app or environment. "Add admin" takes a player from the list or a Discord id. An app-granted admin can be removed; an admin cannot remove their own row. Under the admins, "Event Organizers": the requests members sent, each with its note and whether the account has a player profile, answered with "Approve" (`POST /organizers/requests/{discord_id}/approve`) or "Decline"; then every organizer with the date of the grant and the count of cups they run, and "Revoke" (`DELETE /organizers/{discord_id}`). "Add organizer" takes a player from the list or a Discord id, as "Add admin" does, and writes `POST /organizers`.
 
-**Maps (`/maps`).** Every 1v1 map as a card with its picture and short name. Add a map (name, short name, picture), edit one, delete one, and import the W3Champions ladder pool.
+**Maps (`/maps`).** Every map as a card with its picture, its short name and the modes it is played as ("1v1 · 2v2", or "No mode set"). Add a map (name, short name, "Played as" 1v1 to 8v8 and FFA, picture), edit one, delete one, and import the W3Champions ladder pool, which names the mode of its ladder.
 
 **User guide (`/user-guide`).** The admin guide `ADMIN_UI_USER_GUIDE.md`, rendered from the repository file.
 
@@ -62,6 +62,12 @@ sources:
 | `config.unhideDiscordRole` | `DELETE /config/discord-hidden-roles/{role}` |
 | `config.addAdmin` | `POST /config/admins` |
 | `config.removeAdmin` | `DELETE /config/admins/{discord_id}` |
+| `config.fetchOrganizers` | `GET /organizers` |
+| `config.addOrganizer` | `POST /organizers` |
+| `config.removeOrganizer` | `DELETE /organizers/{discord_id}` |
+| `config.fetchOrganizerRequests` | `GET /organizers/requests` |
+| `config.approveOrganizer` | `POST /organizers/requests/{discord_id}/approve` |
+| `config.declineOrganizer` | `POST /organizers/requests/{discord_id}/decline` |
 | `map.createMap` | `POST /maps` |
 | `map.updateMap` | `PUT /maps/{id}` |
 | `map.uploadMapImage` | `POST /maps/{id}/image` |

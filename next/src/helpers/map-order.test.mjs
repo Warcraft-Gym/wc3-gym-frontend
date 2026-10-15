@@ -1,8 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported, fixedMapOf } from './map-order.mjs';
+import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported, fixedMapOf, deciderOf, vetoOffers } from './map-order.mjs';
 
 const PICKS = { A: 11, B: 22 };
+
+test('a cup series plays the decider first, then each loser takes their next pick', () => {
+  const steps = [
+    { step_no: 1, side: 'A', action: 'ban', map_id: 9 },
+    { step_no: 2, side: 'A', action: 'pick', map_id: 11 },
+    { step_no: 3, side: 'B', action: 'pick', map_id: 21 },
+    { step_no: 4, side: 'A', action: 'pick', map_id: 12 },
+    { step_no: 5, side: 'B', action: 'pick', map_id: 22 },
+  ];
+  const veto = { steps, pool: [9, 11, 12, 21, 22, 30], complete: true };
+  const offers = vetoOffers('decider,loser,loser,loser,loser', veto);
+  assert.deepEqual(offers, { queue: { A: [11, 12], B: [21, 22] }, decider: 30 });
+  // B wins two, then A loses no more: A picks games 2 and 3, B games 4 and 5
+  assert.deepEqual(mapsByGame('decider,loser,loser,loser,loser', null, {}, ['B', 'B', 'A', 'A'], offers), [30, 11, 12, 21, 22]);
+  // an unfinished veto names no decider, and a GNL series reads no queue
+  assert.equal(deciderOf(veto.pool, steps, false), null);
+  assert.deepEqual(vetoOffers('fixed,loser,loser', veto), {});
+});
 
 test('a fixed game takes the round map and a loser game waits for a winner', () => {
   assert.deepEqual(mapsByGame('fixed,loser,loser', 7, PICKS, []), [7, null, null]);

@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Progress } from "@/components/ui/progress";
-import { multiSelectTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toneClass } from "@/components/ui/tone";
@@ -16,7 +14,6 @@ import { CastChips, type CastSeries } from "@/components/CastChips";
 import { FixtureSeries } from "@/components/FixtureSeries";
 import { HeadToHeadCell } from "@/components/HeadToHeadCell";
 import { PageHeader } from "@/components/PageHeader";
-import { PlayerName } from "@/components/PlayerName";
 import { ScheduleDialog, type ScheduleDialogHandle } from "@/components/player/ScheduleDialog";
 import { ReportResultDialog, SIDE_BUTTON, type ReportResultDialogHandle } from "@/components/ReportResultDialog";
 import { SeriesActionBar } from "@/components/SeriesActionBar";
@@ -27,7 +24,7 @@ import { moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
 import { formatDateTime } from "@/helpers/datetime";
 import { eventLabel, MAP_RULES, titleOf } from "@/helpers/event-labels.mjs";
 import { record } from "@/helpers/figures.mjs";
-import { fixtureRosters, modeLabel, pickLabel, rosterSides as sidesFor, sideRoster } from "@/helpers/fixture.mjs";
+import { fixtureRosters, modeLabel, pickLabel } from "@/helpers/fixture.mjs";
 import { meetingRecord } from "@/helpers/head-to-head.mjs";
 import { fixedMapOf, rulesOf } from "@/helpers/map-order.mjs";
 import { seriesContext, seriesMapLine, seriesSteps } from "@/helpers/series-actions.mjs";
@@ -40,7 +37,6 @@ type Row = Record<string, any>;
 const phoneOnly = "min-[600px]:hidden";
 const wideOnly = "hidden min-[600px]:table-cell";
 // The helper is plain JS, so its defaults type the parameters; the seam names the real shapes.
-const sidesOf = sidesFor as unknown as (row: Row | null, rosters: Record<string, Row[]>, userId?: number | null, admin?: boolean) => number[];
 const rostersOf = fixtureRosters as unknown as (series: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;
 
 /** One series, whatever event it belongs to: the event it is played in, the two sides
@@ -60,11 +56,6 @@ export function SeriesView({ id }: { id: string }) {
   const [fixture, setFixture] = useState<Row[]>([]); // every series the fixture holds, in play order
   const [rounds, setRounds] = useState<Row[]>([]); // the event's rounds, which carry the fixed map of each round
   const [rosters, setRosters] = useState<Record<string, Row[]>>({}); // the roster each team entrant fields for the event, by entrant id
-  const [rosterOpen, setRosterOpen] = useState(false);
-  const [rosterSide, setRosterSide] = useState(1);
-  const [picked, setPicked] = useState<number[]>([]);
-  const [rosterError, setRosterError] = useState<string | null>(null);
-  const [savingRoster, setSavingRoster] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [replays, setReplays] = useState<Row[]>([]); // the uploaded replay of each game of this series
@@ -93,21 +84,7 @@ export function SeriesView({ id }: { id: string }) {
   const box = stageRow || series;
   const mode = modeLabel(stageRow?.side_size);
   const pick = pickLabel(stageRow?.pick_rule);
-  const sideSize: number = stageRow?.side_size || 1;
-  const teamName = (side: number) => stageRow?.[`team${side}`]?.name || `side ${side}`;
   const sideName = (side: number) => nameOfSide(box, side) || `Side ${side}`;
-
-  // A captain names his own side, an admin either; a side already named is changed, not written
-  const rosterSides = sidesOf(stageRow, rosters, auth.me?.user?.id, auth.isAdmin);
-  const rosterVerb = (side: number) => (sideRoster(stageRow, side).length ? "Change" : "Name");
-  const rosterItems: Row[] = (rosters[stageRow?.[`entrant${rosterSide}_id`]] || []).map((seat) => ({ id: seat.player.id, name: seat.player.name, player: seat.player, race: seat.race }));
-
-  const openRoster = (side: number) => {
-    setRosterSide(side);
-    setRosterError(null);
-    setPicked(sideRoster(stageRow, side).map((player: Row) => player.id));
-    setRosterOpen(true);
-  };
 
   const mapName = (mapId?: number | null) => maps.find((row) => row.id === mapId)?.name;
 
@@ -239,20 +216,6 @@ export function SeriesView({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const saveRoster = async () => {
-    setSavingRoster(true);
-    setRosterError(null);
-    try {
-      await eventStore.setSideRoster(series!.id, rosterSide, picked);
-      setRosterOpen(false);
-      await load();
-    } catch (e) {
-      setRosterError((e as Error).message);
-    } finally {
-      setSavingRoster(false);
-    }
-  };
-
   const award = async (kind: string) => {
     setAwarding(true);
     setAwardError(null);
@@ -325,12 +288,6 @@ export function SeriesView({ id }: { id: string }) {
               <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
                 <CastChips series={series as CastSeries} />
                 <span className="flex-1" />
-                {rosterSides.map((side) => (
-                  <Button key={side} variant="outline" size="sm" className="text-primary-text" onClick={() => openRoster(side)}>
-                    <Icon name="mdi-account-group" />
-                    {rosterVerb(side)} {teamName(side)}
-                  </Button>
-                ))}
                 {auth.isAdmin && !scored ? (
                   <Button variant="outline" size="sm" onClick={() => setAwardOpen(true)}>
                     <Icon name="mdi-account-cancel" />
@@ -402,39 +359,6 @@ export function SeriesView({ id }: { id: string }) {
 
           {/* The whole fixture, so a reader reads the five series from any one of them */}
           {fixture.length > 1 ? <FixtureSeries className="mt-4" series={fixture} rosters={rosters} currentId={series.id} /> : null}
-
-          {/* A captain names the players his side fields, out of the roster his team holds */}
-          <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
-            <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">
-              <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Name the roster</DialogTitle>
-              <div className="p-4">
-                <StatusAlert modelValue={rosterError} onClose={() => setRosterError(null)} />
-                <Field label={teamName(rosterSide)} htmlFor="series-roster" hint={`Pick ${sideSize} ${sideSize === 1 ? "player" : "players"}.`}>
-                  <Select multiple value={picked} onValueChange={(value) => setPicked(value as number[])}>
-                    <SelectTrigger id="series-roster" className={`${multiSelectTrigger} w-full`}>
-                      <SelectValue>{(ids: number[]) => ids.map((one) => rosterItems.find((item) => item.id === one)?.name ?? one).join(", ")}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rosterItems.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <PlayerName player={item.player} race={item.race || undefined} plain />
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </div>
-              <div className="flex justify-end gap-2 p-4 pt-0">
-                <Button variant="ghost" disabled={savingRoster} onClick={() => setRosterOpen(false)}>
-                  Cancel
-                </Button>
-                <Button disabled={picked.length !== sideSize || savingRoster} onClick={saveRoster}>
-                  <Icon name={savingRoster ? "mdi-loading mdi-spin" : "mdi-content-save"} />
-                  Save roster
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           {/* An admin scores a series nobody played: the side that takes it, then the kind */}
           <Dialog open={awardOpen} onOpenChange={setAwardOpen}>

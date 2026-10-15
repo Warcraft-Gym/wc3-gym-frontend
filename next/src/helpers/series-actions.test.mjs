@@ -1,13 +1,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { actsForSeries, holdsResult, needsVeto, seriesContext, seriesEditBody, seriesMapLine, seriesSteps } from './series-actions.mjs';
+import { vetoOf, actsForSeries, holdsResult, needsVeto, seriesContext, seriesEditBody, lobbyReportOf, reportOf, seriesMapLine, seriesSteps } from './series-actions.mjs';
 
 const ME = 9;
 const OPEN = { id: 12, player1_id: ME, player2_id: 4, player1_score: null, player2_score: null };
 const NOW = DateTime.fromISO('2026-09-20T10:00:00Z');
 const stateOf = (series, viewer = { id: ME }) =>
   Object.fromEntries(seriesSteps(series, viewer, NOW).steps.map((step) => [step.step, step.state]));
+
+test('a team side is acted for by a player of that team, where the page knows the teams', () => {
+  const row = { id: 5, entrant1_id: 10, entrant2_id: 11, team1: { id: 1 }, team2: { id: 2 }, player1_score: null, player2_score: null, rules: { map_rules: 'decider' } };
+  assert.equal(vetoOf(row, { id: 7, teamIds: [2] }), true);
+  assert.equal(vetoOf(row, { id: 7, teamIds: [3] }), false);
+  // the waiting match over the draw is the caller's own team's, never another team's
+  assert.equal(reportOf(row, { id: 7, teamIds: [2] }), 'report');
+  assert.equal(reportOf(row, { id: 7, teamIds: [3] }), null);
+});
+
+test('a side of an open cup series vetoes from the draw, nobody else does', () => {
+  const row = { id: 9, player1_id: 1, player2_id: 2, player1_score: null, player2_score: null, rules: { map_rules: 'decider,loser,loser' } };
+  assert.equal(vetoOf(row, { id: 1 }), true);
+  // a runner who plays neither side reports, but has no side to veto for
+  assert.equal(vetoOf(row, { id: 7, runs: true }), false);
+  // a series with a result, or a GNL series, vetoes nowhere on the draw
+  assert.equal(vetoOf({ ...row, player1_score: 1, player2_score: 0 }, { id: 1 }), false);
+  assert.equal(vetoOf({ ...row, rules: { map_rules: 'fixed,loser,loser' } }, { id: 1 }), false);
+});
 
 test('the steps run schedule, veto, report and name the next one', () => {
   assert.deepEqual(stateOf(OPEN), { schedule: 'next', veto: 'later', report: 'later' });
@@ -73,6 +92,10 @@ test('the two players, a captain of a side and an admin may act', () => {
   assert.equal(actsForSeries(named, { id: 77 }), false);
   assert.equal(actsForSeries(named, { id: 77, seats: [{ team_id: 21, season_id: 19 }] }), true);
   assert.equal(actsForSeries(named, { id: 77, seats: [{ team_id: 22, season_id: 19 }] }), false);
+  // a cup team is no league team: a captain seat that shares its id reaches nothing, its own players act
+  const cup = { id: 3, entrant1_id: 8, entrant2_id: 9, team1: { id: 21 }, team2: { id: 22 } };
+  assert.equal(actsForSeries(cup, { id: 77, seats: [{ team_id: 21, season_id: 19 }], teamIds: [] }), false);
+  assert.equal(actsForSeries(cup, { id: 77, teamIds: [21] }), true);
 });
 
 test('a captain of a fixture team acts for the side his team fields, in that event alone', () => {
@@ -130,4 +153,42 @@ test('a 0-0 holds a result to clear, an unscored series none', () => {
   assert.equal(holdsResult(OPEN), false);
   assert.equal(holdsResult({ ...OPEN, player1_score: 0, player2_score: 0 }), true);
   assert.equal(holdsResult({ ...OPEN, player1_score: 2, player2_score: 1 }), true);
+});
+
+test('the draw offers a report to whoever acts for a side, and an edit once a result is in', () => {
+  const open = { id: 1, player1_id: 7, player2_id: 8, result_kind: 'played' };
+  assert.equal(reportOf(open, { id: 7 }), 'report');
+  assert.equal(reportOf(open, { id: 9 }), null);
+  assert.equal(reportOf(open, { id: 9, runs: true }), 'report');
+  assert.equal(reportOf(open, { isAdmin: true }), 'report');
+  assert.equal(reportOf({ ...open, player1_score: 2, player2_score: 1 }, { id: 8 }), 'edit');
+  // a side still to come, a bye, a lobby and a walkover offer nothing
+  assert.equal(reportOf({ ...open, player2_id: null }, { id: 7 }), null);
+  assert.equal(reportOf({ ...open, sides: [{ side_no: 1 }] }, { id: 7 }), null);
+  assert.equal(reportOf({ ...open, result_kind: 'walkover', player1_score: 2, player2_score: 0 }, { id: 7 }), null);
+  assert.equal(reportOf(null, { id: 7 }), null);
+});
+
+test('a lobby offers its places to a player seated in it and to its organizers', () => {
+  const lobby = { id: 5, sides: [{ side_no: 1, entrant_id: 11, user_id: 7 }, { side_no: 2, entrant_id: 12, user_id: 8 }, { side_no: 3, entrant_id: 13, user_id: 9 }] };
+  assert.equal(lobbyReportOf(lobby, { id: 8 }), 'report');
+  assert.equal(lobbyReportOf(lobby, { id: 4 }), null);
+  assert.equal(lobbyReportOf(lobby, { id: 4, runs: true }), 'report');
+  assert.equal(lobbyReportOf({ ...lobby, player1_score: 1, player2_score: 0 }, { id: 7 }), 'edit');
+  // a seat still waiting for the round before, and a two-sided series, offer nothing here
+  assert.equal(lobbyReportOf({ ...lobby, sides: [...lobby.sides, { side_no: 4, entrant_id: null, user_id: null }] }, { id: 7 }), null);
+  assert.equal(lobbyReportOf({ id: 1, player1_id: 7, player2_id: 8 }, { id: 7 }), null);
+});
+
+test('a team lobby offers its places to every player of a seated team', () => {
+  const lobby = {
+    id: 6,
+    sides: [
+      { side_no: 1, entrant_id: 21, user_id: null, team: { id: 3, name: 'Pair' }, players: [{ id: 7 }, { id: 8 }] },
+      { side_no: 2, entrant_id: 22, user_id: null, team: { id: 4, name: 'Duo' }, players: [{ id: 9 }, { id: 10 }] },
+      { side_no: 3, entrant_id: 23, user_id: null, team: { id: 5, name: 'Twins' }, players: [{ id: 11 }, { id: 12 }] },
+    ],
+  };
+  assert.equal(lobbyReportOf(lobby, { id: 8 }), 'report');
+  assert.equal(lobbyReportOf(lobby, { id: 13 }), null);
 });

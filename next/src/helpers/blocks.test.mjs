@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { asBlock, asBusy, bitsOf, blockFields, blockLine, busyFields, busyLine, commonHours, dayLabel, daysOf, dirty, freeLines, mark, weekFree, zoneBody } from './blocks.mjs';
+import { asBlock, asBusy, bitsOf, blockFields, blockLine, busyFields, busyLine, commonHours, dayLabel, daysOf, dirty, mark, weekFree, zoneBody } from './blocks.mjs';
 
 test('weekday bits read as ISO days, Monday first', () => {
   assert.deepEqual(daysOf(1), [1]);
@@ -64,15 +64,6 @@ test('a row saved round-trip stops asking to be saved', () => {
   assert.deepEqual(asBusy(away), { label: null, first_day: '2026-09-13', last_day: '2026-09-19' });
   away.label = 'Trip';
   assert.equal(dirty(away, asBusy), true);
-});
-
-test('shared ranges read in the viewer zone, a crossing range names both days', () => {
-  const ranges = [
-    { start: '2026-09-17T17:00:00+00:00', end: '2026-09-17T21:00:00+00:00' },
-    { start: '2026-09-18T22:00:00+00:00', end: '2026-09-19T01:00:00+00:00' },
-  ];
-  assert.deepEqual(freeLines(ranges, 'UTC'), ['Thu 17 Sep, 17:00–21:00', 'Fri 18 Sep, 22:00 to Sat 19 Sep, 01:00']);
-  assert.deepEqual(freeLines(ranges, 'Europe/Berlin'), ['Thu 17 Sep, 19:00–23:00', 'Sat 19 Sep, 00:00–03:00']);
 });
 
 test('hours in common are worded, and zero says so', () => {

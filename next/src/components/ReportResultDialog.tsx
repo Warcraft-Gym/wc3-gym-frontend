@@ -15,7 +15,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { VetoBoard } from "@/components/VetoBoard";
 import { authHeader, backendUrl, fetchWrapper } from "@/helpers";
 import { gamesOf, winsFor, isValidResult, moveMessage, moveTargets, replaysNeeded } from "@/helpers/best-of.mjs";
-import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported } from "@/helpers/map-order.mjs";
+import { mapsByGame, picksOf, scoreOf, gameSlots, gamesReported, vetoOffers } from "@/helpers/map-order.mjs";
 import { mapMismatch, mapMismatches, reportWarning, swapMapFields } from "@/helpers/replay-maps.mjs";
 import { uploadReplay } from "@/helpers/replay-upload";
 import { readReplay, matchMap, isOtherSeries } from "@/helpers/w3g.mjs";
@@ -62,7 +62,8 @@ const showHeld = (file?: File | null) => (input: HTMLInputElement | null) => {
 };
 
 // The map the season's rules offer for each game, given the veto and who won the games before
-const offeredMaps = (form: Form, veto: Row | null): (number | null)[] => mapsByGame(form.map_rules, veto?.week_map_id, picksOf(veto?.steps), form.winners || []);
+const offeredMaps = (form: Form, veto: Row | null): (number | null)[] =>
+  mapsByGame(form.map_rules, veto?.week_map_id, picksOf(veto?.steps), form.winners || [], vetoOffers(form.map_rules, veto));
 const mapOfIn = (form: Form, veto: Row | null, game: number) => form.maps?.[game] ?? offeredMaps(form, veto)[game - 1] ?? null;
 // Names the games saved without a replay, or null
 const missingLine = (games: number[]) =>
@@ -72,8 +73,11 @@ const missingLine = (games: number[]) =>
  *  the replay file per game. A roster member reports for a team side, which names no
  *  race of its own. The veto warns when it is not complete, and a game played without its
  *  replay warns too; neither blocks. The caller
- *  opens it through its ref and hands in the series row. */
-export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (message: string) => void; onMoved?: (replays: Row[]) => void; ref?: React.Ref<ReportResultDialogHandle> }) {
+ *  opens it through its ref and hands in the series row. A cup's series (`cup`) reports
+ *  through the cup's own routes and takes no replay. */
+export function ReportResultDialog({ onSaved, onMoved, ref, cup = false }: { onSaved?: (message: string) => void; onMoved?: (replays: Row[]) => void; ref?: React.Ref<ReportResultDialogHandle>; cup?: boolean }) {
+  // the series routes of a cup are its own; every other series reports on the GNL routes
+  const seriesBase = cup ? `${backendUrl}/cup-series` : `${backendUrl}/series`;
   const mapStore = useMapStore();
   const matchStore = useMatchStore();
   const seriesStore = useSeriesStore();
@@ -115,7 +119,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
   const loadGames = async (id: number) => {
     let games: Row[] = [];
     try {
-      games = await fetchWrapper.get(`${backendUrl}/series/${id}/games`);
+      games = await fetchWrapper.get(`${seriesBase}/${id}/games`);
     } catch {
       return; // a series with no games recorded answers nothing to start from
     }
@@ -155,7 +159,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
         reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score : 0,
         scored: holdsResult(item),
         // ponytail: only a fixture's page lists its replays, so a series without one takes no file until a page shows it
-        listsReplays: item.match_id !== null,
+        listsReplays: !cup && item.match_id != null,
         replays: {},
         // the side that won each game, in play order, and the map named for a game
         winners: [],
@@ -341,7 +345,15 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
       }
 
       let missing: number[] = [];
-      if (fix && uploaded.length) {
+      if (cup) {
+        // a cup's report is the score, the games and the races played; it takes no replay
+        await fetchWrapper.put(`${seriesBase}/${id}/report`, {
+          player1_score: p1,
+          player2_score: p2,
+          games,
+          ...(series.raceOpen ? { player1_off_race: series.races.player1 || "", player2_off_race: series.races.player2 || "" } : {}),
+        });
+      } else if (fix && uploaded.length) {
         // the result stands; each new file replaces one stored replay
         for (const game of uploaded) await fetchWrapper.put(`${backendUrl}/player-series/${id}/replays/${game}`);
       } else {
@@ -381,7 +393,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
     setSaving(true);
     setErrorMessage(null);
     try {
-      await seriesStore.clearSeriesResult(series.id!);
+      if (cup) await fetchWrapper.delete(`${seriesBase}/${series.id}/result`);
+      else await seriesStore.clearSeriesResult(series.id!);
       close();
       onSaved?.("Result cleared. The series can be reported again.");
     } catch (error) {
@@ -470,7 +483,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref }: { onSaved?: (messa
           {/* The board stays mounted while it is folded, and shows its loader or error until it answers */}
           {series.id ? (
             <div hidden={!!scoreVeto && (!hasVeto || !vetoOpen)}>
-              <VetoBoard key={series.id} seriesId={series.id} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} />
+              <VetoBoard key={series.id} seriesId={series.id} cup={cup} report onChange={(board) => openId.current === series.id && setScoreVeto(board)} />
             </div>
           ) : null}
 

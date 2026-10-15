@@ -9,6 +9,10 @@ const store = {
   async updateMap(map: any) {
     await fetchWrapper.put(`${backendUrl}/maps/${map.id}`, map);
   },
+  // A custom game's map by its name: the app's map of that name, or a new one an organizer adds
+  async addCustomMap(name: string) {
+    return await fetchWrapper.post(`${backendUrl}/maps/custom`, { name });
+  },
   async createMap(map: any) {
     return await fetchWrapper.post(`${backendUrl}/maps`, map);
   },
@@ -20,11 +24,13 @@ const store = {
   async deleteMap(map_id: number) {
     await fetchWrapper.delete(`${backendUrl}/maps/${map_id}`);
   },
-  async fetchLadderMapImport() {
-    return await fetchWrapper.get(`${backendUrl}/maps/ladder-import`);
+  // The ladder pool of one W3Champions game mode, 1v1 unless named
+  async fetchLadderMapImport(mode: string = "1v1") {
+    return await fetchWrapper.get(`${backendUrl}/maps/ladder-import${mode === "1v1" ? "" : `?mode=${mode}`}`);
   },
-  async importLadderMaps(names: string[]) {
-    await fetchWrapper.post(`${backendUrl}/maps/ladder-import`, { names });
+  // Creates, renames and pictures the named maps of one ladder, 1v1 unless named
+  async importLadderMaps(names: string[], mode: string = "1v1") {
+    await fetchWrapper.post(`${backendUrl}/maps/ladder-import${mode === "1v1" ? "" : `?mode=${mode}`}`, { names });
   },
 };
 

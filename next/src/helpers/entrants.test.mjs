@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedPayload, signupCount, teamRoster, warningLabel } from './entrants.mjs';
+import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cupRosters, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedLock, seedPayload, SEEDS_LOCKED, signupCount, STAGE_DRAWN, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -175,4 +175,36 @@ test('a player whose every race withdrew reads withdrawn', () => {
   ]);
   assert.equal(gone.length, 1);
   assert.equal(gone[0].withdrawn_at, '2026-09-14T20:00:00Z');
+});
+
+test('an open stage reseeds and has nothing to unlock', () => {
+  assert.deepEqual(seedLock({ id: 5, seeds_locked_at: null }, []), { locked: false, drawn: false, reseed: null, unlock: null });
+});
+
+test('a locked stage with no series refuses a reseed and unlocks', () => {
+  const lock = seedLock({ id: 5, seeds_locked_at: '2026-10-12T18:00:00Z' }, [{ id: 1, stage_id: 4 }]);
+  // a round of another stage leaves this one undrawn
+  assert.deepEqual(lock, { locked: true, drawn: false, reseed: SEEDS_LOCKED, unlock: null });
+});
+
+test('a stage that holds series refuses the reseed and the unlock until its draw is taken back', () => {
+  const lock = seedLock({ id: 5, seeds_locked_at: '2026-10-12T18:00:00Z' }, [{ id: 1, stage_id: 4 }, { id: 2, stage_id: 5 }]);
+  assert.deepEqual(lock, { locked: true, drawn: true, reseed: STAGE_DRAWN, unlock: STAGE_DRAWN });
+});
+
+test('the reasons are the words of the API refusals', () => {
+  assert.equal(STAGE_DRAWN, 'The stage holds series; take its draw back first');
+  assert.equal(SEEDS_LOCKED, 'The seeds of this stage are locked');
+});
+
+test('a cup team rosters from its entrant row, the captain first', () => {
+  const entrants = [
+    { id: 90, team: { id: 4 }, roster: [{ user: { id: 2, name: 'P2', race: 'OC' }, captain: true }, { user: { id: 1, name: 'P1', race: 'NE' }, captain: false }] },
+    { id: 91, team: { id: 5 }, roster: [] },
+    { id: 92, user: { id: 9 } },
+  ];
+  const rosters = cupRosters(entrants);
+  assert.deepEqual(Object.keys(rosters), ['90']);
+  assert.deepEqual(rosters[90].map((seat) => [seat.player.name, seat.race, seat.captain]), [['P2', 'OC', true], ['P1', 'NE', false]]);
+  assert.deepEqual(cupRosters(), {});
 });

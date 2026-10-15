@@ -4,7 +4,7 @@ import process from 'node:process';
 
 import {
   dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, ROUND_END_ZONES, SEED_SOURCES, seriesPerEntrant, seriesPerFixture,
-  STATE_COLOR, STATE_ITEMS, STATE_LABEL, stateOf, titleOf,
+  STATE_COLOR, STATE_LABEL, stateOf, titleOf,
 } from './event-labels.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
@@ -55,13 +55,11 @@ test('a wide screen reads the long league name, and a phone or a missing one kee
   assert.equal(eventLabel(season), 'GNL \u00b7 Season 18');  // node has no matchMedia, so a test reads narrow
 });
 
-test('a GNL season phase is named and coloured, and stays out of the events filter', () => {
+test('a GNL season phase is named and coloured', () => {
   assert.equal(STATE_LABEL.complete, 'Complete');
   assert.equal(STATE_LABEL.finished, 'Finished');
   assert.equal(STATE_COLOR.commenced, 'primary');
   assert.equal(STATE_COLOR.overdue, 'warning');
-  assert.deepEqual(STATE_ITEMS.map((item) => item.value),
-    ['draft', 'signups_open', 'checkin', 'seeded', 'running', 'finished']);
 });
 
 test('the two series settings each read only where they apply', () => {

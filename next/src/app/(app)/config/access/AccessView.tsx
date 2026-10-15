@@ -18,10 +18,12 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { MD_AND_UP, useBreakpoint } from "@/hooks/breakpoint";
 import { useAuth, useConfigStore, usePlayerStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
+import { OrganizersCard } from "./OrganizersCard";
 
 type Admin = { discord_id: string; name?: string; granted_at?: string | null; source: string };
 
-/** The people the app grants admin rights to, beside the ones the environment names. */
+/** The people the app grants admin rights to, beside the ones the environment names, and the
+ *  organizers who run cups beside them. */
 export function AccessView() {
   const { me } = useAuth();
   const configStore = useConfigStore();
@@ -190,6 +192,8 @@ export function AccessView() {
           />
         </CardContent>
       </Card>
+
+      <OrganizersCard players={players} />
 
       <Dialog open={addDialog} onOpenChange={setAddDialog} disablePointerDismissal>
         <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">

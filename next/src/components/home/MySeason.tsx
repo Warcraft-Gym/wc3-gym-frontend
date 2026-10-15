@@ -9,7 +9,8 @@ import { SeriesActionBar } from "@/components/SeriesActionBar";
 import { TeamName } from "@/components/TeamName";
 import { HomePanel, ROW, SkeletonRows } from "@/components/home/HomePanel";
 import { SitOutRestDialog } from "@/components/player/SitOutRestDialog";
-import { seasonAction } from "@/helpers/events.mjs";
+import { dateRange } from "@/helpers/event-labels.mjs";
+import { SUPERADMIN_SIGNUP_NOTE, seasonAction } from "@/helpers/events.mjs";
 import { homeRounds, ownScore, seasonState, teamMatch } from "@/helpers/home-hub.mjs";
 import { checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { local } from "@/helpers/schedule.mjs";
@@ -24,6 +25,9 @@ type Row = Record<string, any>;
 type Viewer = { id?: number | null; isAdmin?: boolean; seats?: { team_id: number; season_id: number }[] };
 
 const LABEL = "mt-3 block text-xs font-medium tracking-wide text-muted-foreground first:mt-0";
+
+// The title already says GNL, so a season named "GNL S20" reads "S20" beside it
+const shortName = (name: string) => name.replace(/^gnl\s*/i, "") || name;
 
 /** The member's side of one series: the team it meets and the player he faces. */
 function Opponent({ series, season, teamId, playerId }: { series: Row; season: Row; teamId: number | null; playerId: number | null }) {
@@ -189,6 +193,7 @@ export function MySeason({
   onUndo,
   onSchedule,
   onReport,
+  superadmin = false,
 }: {
   season: Row | null; // the current season's event row: its name, its check-in settings, its switches
   entry: Row | null; // the /me seasons row of the current season, or null when the member is not in it
@@ -205,6 +210,7 @@ export function MySeason({
   onUndo: () => void;
   onSchedule: (series: Row) => void;
   onReport: (series: Row) => void;
+  superadmin?: boolean; // the admin token, which holds no player account and cannot sign up
 }) {
   const state = seasonState(entry);
   const asks = season?.scheduling_enabled !== false;
@@ -301,7 +307,7 @@ export function MySeason({
   );
 
   return (
-    <HomePanel id="my-season" icon="mdi-sword-cross" title={season?.name ? `My Season · ${season.name}` : "My Season"} order={order} action={loading ? null : links}>
+    <HomePanel id="my-season" icon="mdi-sword-cross" title={season?.name ? `My GNL Season · ${shortName(season.name)}` : "My GNL Season"} order={order} action={loading ? null : links}>
       {loading ? (
         <SkeletonRows rows={3} />
       ) : !season ? (
@@ -311,12 +317,33 @@ export function MySeason({
         <p className="text-sm">{season.name} is over. The next season shows here as soon as it opens.</p>
       ) : state === "not_in" ? (
         <>
-          {/* the sign-up button lives in the Open signups panel; this line only says where the member stands */}
-          <p className="text-sm">
-            {seasonAction(season) === "signup"
-              ? `You are not signed up for ${season.name} yet. Sign up in the Open signups panel.`
-              : `You are not signed up for ${season.name}.`}
-          </p>
+          {/* the season's own signup lives here: the form while it takes signups, an ask to the admins once it runs */}
+          {superadmin && seasonAction(season) ? (
+            <p className="text-sm">{SUPERADMIN_SIGNUP_NOTE}</p>
+          ) : seasonAction(season) === "signup" ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-md border border-primary/60 p-3">
+              <Icon name="mdi-account-plus" size={24} className="text-primary-text" />
+              <div className="min-w-0 flex-[1_1_200px]">
+                <div className="font-heading font-bold">{season.name} takes signups</div>
+                <div className="text-sm text-muted-foreground">
+                  You are not signed up yet.{dateRange(season) ? ` Plays ${dateRange(season)}.` : ""}
+                </div>
+              </div>
+              <Button nativeButton={false} render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
+                <Icon name="mdi-account-plus" />
+                Sign up
+              </Button>
+            </div>
+          ) : seasonAction(season) === "request" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="min-w-0 flex-[1_1_200px] text-sm">You are not signed up for {season.name}. It has started; ask the admins to join.</p>
+              <Button nativeButton={false} variant="outline" size="sm" className="text-primary-text" render={<Link href={`/signup?season=${seasonSlug(season)}`} />}>
+                Ask to join
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm">You are not signed up for {season.name}.</p>
+          )}
           {/* a captain who plays on no roster still reads his team's match on every round */}
           {fixtures.length ? (
             <>

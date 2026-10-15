@@ -9,13 +9,56 @@ export const otherSide = (side) => (side === 'A' ? 'B' : 'A');
 export const rulesOf = (mapRules) => (mapRules || DEFAULT_RULES).split(',').map((rule) => rule.trim()).filter(Boolean);
 
 // The map to offer for each game, in game order. A game nobody can work out yet answers null.
-export const mapsByGame = (mapRules, fixedMapId, picks, winners = []) =>
-  rulesOf(mapRules).map((rule, index) => {
+// A series that vetoes by its best-of hands over `queue`, every pick of each side in veto order,
+// so a side that loses twice plays its second pick, and `decider`, the map game 1 plays.
+/** @param {string | null | undefined} mapRules @param {number | null | undefined} fixedMapId
+ *  @param {any} picks @param {(string | null | undefined)[]} winners
+ *  @param {{ queue?: Record<string, number[]> | null, decider?: number | null }} [offers] */
+export const mapsByGame = (mapRules, fixedMapId, picks, winners = [], { queue = null, decider = null } = {}) => {
+  /** @type {Record<string, number>} */
+  const used = { A: 0, B: 0 };
+  return rulesOf(mapRules).map((rule, index) => {
     if (rule === 'fixed') return fixedMapId || null;
+    if (rule === 'decider') return decider || null;
     if (rule !== 'loser') return null;
     const before = winners[index - 1];
-    return before ? picks[otherSide(before)] || null : null;
+    if (!before) return null;
+    const loser = otherSide(before);
+    if (!queue) return picks[loser] || null;
+    const own = queue[loser] || [];
+    return own[used[loser]++] ?? null;
   });
+};
+
+// Every pick of each side, in veto order: a series of five games takes two a side
+/** @param {any[] | null | undefined} steps @returns {Record<string, number[]>} */
+export const pickQueueOf = (steps) => {
+  /** @type {Record<string, number[]>} */
+  const queue = { A: [], B: [] };
+  for (const step of [...(steps || [])].sort((a, b) => a.step_no - b.step_no)) {
+    if (step.action === 'pick' && step.side in queue) queue[step.side].push(step.map_id);
+  }
+  return queue;
+};
+
+// The map game 1 plays once the veto is done: the one nobody banned or picked
+/** @param {number[] | null | undefined} pool @param {any[] | null | undefined} steps @param {boolean | null | undefined} complete
+ *  @returns {number | null} */
+export const deciderOf = (pool, steps, complete) => {
+  if (!complete) return null;
+  const used = new Set((steps || []).map((step) => step.map_id));
+  const left = (pool || []).filter((id) => !used.has(id));
+  return left.length === 1 ? left[0] : null;
+};
+
+// What the offers of a series read off its veto board: a series that vetoes by its best-of
+// carries the decider rule, and only it reads the queue and the decider
+/** @param {string | null | undefined} mapRules @param {any} veto
+ *  @returns {{ queue?: Record<string, number[]>, decider?: number | null }} */
+export const vetoOffers = (mapRules, veto) =>
+  rulesOf(mapRules).includes('decider')
+    ? { queue: pickQueueOf(veto?.steps), decider: deciderOf(veto?.pool, veto?.steps, veto?.complete) }
+    : {};
 
 // The map each side picked in the veto, taking a side's first pick as its own
 export const picksOf = (steps) => {

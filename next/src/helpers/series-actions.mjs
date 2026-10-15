@@ -24,18 +24,22 @@ const teamSides = (series) => {
   return series.match ? [1, 2].map((side) => [series.match[`team${side}_id`], series.match.season_id]) : [];
 };
 
-// The viewer captains the team a side fields: `/me` lists one seat per (team, event) pair he captains
-const captainOfSide = (series, seats) => teamSides(series).some(([team, event]) => team != null
+// The viewer captains the team a fixture side fields: `/me` lists one seat per (team, event) pair he
+// captains. A cup's team is no league team and holds no seat: its own players act for it.
+const captainOfSide = (series, seats) => !series.match ? false : teamSides(series).some(([team, event]) => team != null
   && seats.some((seat) => Number(seat.team_id) === Number(team) && (event == null || Number(seat.season_id) === Number(event))));
 
 /** Who may act on a series, the rule the API gate `acts_for_side` applies: the player a side names, a captain of the team that fields a side, a member of the roster of a side that names no player, and an admin, who acts for either side on the same routes.
  *  @param {any} series
- *  @param {{ id?: number|null, isAdmin?: boolean, seats?: { team_id: number, season_id: number }[] }} [viewer] */
-export const actsForSeries = (series, { id = null, isAdmin = false, seats = [] } = {}) => {
+ *  @param {{ id?: number|null, isAdmin?: boolean, seats?: { team_id: number, season_id: number }[], teamIds?: number[] | null }} [viewer] */
+export const actsForSeries = (series, { id = null, isAdmin = false, seats = [], teamIds = null } = {}) => {
   if (isAdmin) return true;
   if (id == null || !series) return false;
   if (series.player1_id === id || series.player2_id === id) return true;
-  return captainOfSide(series, seats) || unnamedSide(series);
+  if (captainOfSide(series, seats)) return true;
+  if (!unnamedSide(series)) return false;
+  // a page that knows the viewer's teams asks for a side of one; else the API decides
+  return teamIds == null || teamSides(series).some(([team]) => team != null && teamIds.includes(Number(team)));
 };
 
 // A series is played once its booked time has passed; one with no time never is
@@ -125,3 +129,40 @@ export const seriesEditBody = (row) => ({
 /** Whether the series holds a result to clear: both scores, a 0-0 of a series never played included.
  *  @param {any} series */
 export const holdsResult = (series) => series?.player1_score != null && series?.player2_score != null;
+
+/** What the draw offers on one series box: `report` while it waits for a result, `edit` once it
+ *  holds one, or null. Null too while a side is still to be decided, for a free for all lobby,
+ *  whose places its organizers enter, and for a walkover or a forfeit, which only they record.
+ *  `runs` is an organizer of the event, who acts for either side as an admin does.
+ *  @param {any} series
+ *  @param {{ id?: number|null, isAdmin?: boolean, runs?: boolean, seats?: { team_id: number, season_id: number }[] }} [viewer] */
+/** Whether the viewer vetoes this series from the draw: a side of it, never a runner who
+ *  plays neither, while it has no result, on a cup series, whose game 1 is the map the veto
+ *  leaves. A GNL series vetoes on its own page.
+ *  @param {any} series @param {{ id?: number | null, seats?: any[] }} viewer */
+export const vetoOf = (series, viewer = {}) =>
+  rulesOf(series?.rules?.map_rules).includes('decider') && reportOf(series, { id: viewer.id ?? null, seats: viewer.seats ?? [], teamIds: viewer.teamIds ?? null }) === 'report';
+
+/** What the draw offers on a free for all lobby: `report` while it waits for its places, `edit`
+ *  once it holds them, or null. A player seated in the lobby enters its places, and so does an
+ *  organizer or an admin, and in a team free for all every player of a seated team; a lobby
+ *  still waiting for a player of the round before offers nothing.
+ *  @param {any} series @param {{ id?: number | null, isAdmin?: boolean, runs?: boolean }} [viewer] */
+export const lobbyReportOf = (series, viewer = {}) => {
+  const seats = series?.sides || [];
+  if (!seats.length || series.entrant1_id || series.entrant2_id) return null;
+  if (seats.some((seat) => !seat.entrant_id)) return null;
+  // a seat of the viewer's own, or of a team the viewer plays in
+  const seated = viewer.id != null && seats.some((seat) => seat.user_id === viewer.id || seat.user?.id === viewer.id || (seat.players || []).some((/** @type {any} */ one) => one.id === viewer.id));
+  if (!seated && !viewer.isAdmin && !viewer.runs) return null;
+  return holdsResult(series) ? 'edit' : 'report';
+};
+
+export const reportOf = (series, viewer = {}) => {
+  if (!series || series.sides?.length) return null;
+  const named = (side) => series[`player${side}_id`] ?? series[`entrant${side}_id`] ?? series[`team${side}`]?.id;
+  if (!named(1) || !named(2)) return null;
+  if (series.result_kind && !['played', null].includes(series.result_kind)) return null;
+  if (!actsForSeries(series, { ...viewer, isAdmin: !!(viewer.isAdmin || viewer.runs) })) return null;
+  return holdsResult(series) ? 'edit' : 'report';
+};

@@ -4,7 +4,7 @@ title: Shared components
 description: The pieces every page reuses, with the rules that decide when a player or team name links, opens a panel or is plain text, when a race icon may show, how a round strip and a roster are drawn, where the standings sit in a stage, how the veto board knows its side, how the series action bar is drawn, where the blocked-times dialog lives, what a control shows before its data arrives, and the notice a phone shows for a task that is easier on a computer.
 resource: ../../../DESIGN.md
 tags: [components, design]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T12:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-15T15:00:00Z }
 sources:
   - id: design
     resource: ../../../DESIGN.md
@@ -79,6 +79,7 @@ A team is drawn as `{logo} {name}` everywhere, and it links to the team page. Th
 - A few surfaces draw the team themselves: a card or row that already links as a whole (the teams table, the season match cards and the team cards), the role group button, and the `h1` of a team's own page.
 - The logo is the `icon_url` the payload names, at one fixed size on every surface, so names in a column line up. The component asks the backend for no image: a team whose payload names no `icon_url` reads a muted shield outline of that same size. The payloads that name a team name its logo: the ladder read answers `teams[].icon_url`, the ladder players read `rows[].team_icon_url`, the veto board `player1/player2.team_icon_url`, a player's history `events[].team_icon_url`, and the fantasy breakdown `team_breakdown.team_icon_url`; `grind_breakdown` is the one exception and names none.
 - The name truncates inside a narrow cell and carries the full name in its `title`, so a long name cannot widen a bracket box or a phone column.
+- A cup team is no league team: it lives for its one cup in a table of its own, so a cup surface names it with `CupTeamName` (`next/src/components/CupTeamName.tsx`), one placeholder icon every cup team shares beside the name, never a logo and never a link to a team page. The cup run page, the seeds and divisions panels, the lobby dialog, the team panel and the entrants page of a cup use it, and `SeriesBox`, `StageView`, `VetoBoard` and `EventResults` switch to it on a cup (`cup`).
 - `seasonKey` picks the season team page, the path the team cards and the ladder already use; without one the link is the plain team page.
 - On a drafting page (the match page and the season team assign page) and inside the player panel, under `PanelLinksContext` with the value `true`, the name is plain text with no link, for the same reason the player name is: a click would leave unsaved work.
 - Pass `plain` for text only: inside another link or a button, inside a form dialog that holds unsaved work, and in the `h1` of the team's own page. A select option stays a plain option.
@@ -115,6 +116,13 @@ The one table for groups of rows: a tinted clickable header row per group, detai
 
 - The standings card is the first child of the stage in the DOM, so a screen reader and a keyboard user meet the table before the rounds. A bracket alone pushes it under the draw with CSS `order`, because a bracket is read first and ranked after. No other page reorders with CSS.
 - The third-place box names itself off the stage's `third_place` flag and the two loser slots its series carries, never off the column's name.
+- A wide bracket follows one entrant: a pointer over a side lights every box and feeder line of that entrant's way through it, and a line under the bracket names them. Its scale is 75, 100 or 125 per cent. A box names each side's seed from `entrant1_seed` and `entrant2_seed` of the stage series read, which leaves them null where the event hides seeds from the reader, and a side still waiting names the series that feeds it from `slot1_source` and `slot2_source`, such as "Loser of UB R1 M3". The last ladder ends on a "Champion" box, the winner of the last series once it is scored. A phone reads a bracket one round at a time behind round tabs, opening on the first round with a series still to play. A page that passes `viewer` and `onReport` gets a "Report" or "Edit result" button on every box that viewer may report, and a page that passes `onVeto` a "Veto" button beside it, in the same row, on a box of a cup series the viewer plays; `StageView` draws its boxes `stateless`: no state word, and a box with a result reads as done by a success frame and tint, a check and its beaten side dimmed; a box with no `onOpen` is no button and opens nothing; the box grows by a line to hold it, and the box's own label moves beside its state.
+- A double elimination is one drawing: the lower ladder is a band under the upper one, and the grand final and its reset close the upper band, past the last column of the longer ladder. The upper final's line runs across to the grand final and the lower final's line runs up to it, so both winners meet where the upper ladder ends. `drawing` in `next/src/helpers/stage-view.mjs` places the bands, the round names and the lines; a single elimination is one band.
+- The reset, the series both of whose sides come from the grand final, is drawn only once the lower winner has taken the grand final, because otherwise the engine scores it a walkover of the same two players. With "Hide results" on it is always drawn, so its coming tells nothing. `withoutIdleReset` holds the rule, on the wide drawing and on the phone's round tabs alike.
+- A column head whose round plays its own best-of adds it, "Upper bracket final · Bo3", off the round's `best_of`; the phone's round card does the same.
+- A round robin and a Swiss stage draw their rounds as cards side by side, four to a row on a wide screen, three or two on a narrower one and one on a phone; each card holds the round's series.
+- A placement bracket draws no feeder lines: one column a round, each holding a card per group titled with the places it plays for, "Places 5–8", the best first and the group of place 1 in the primary border. The final, a round of its own in the backend, heads the last round's column as "Final · Places 1–2". `placementColumns` in `next/src/helpers/placement.mjs` groups the series by the `place_from` and `place_to` the backend names; a phone reads one round at a time.
+- The draw names no MMR: `StageView` passes `rated={false}` to `SeriesBox`, which hands `mmr={false}` to `PlayerName` and ends a name longer than its side in an ellipsis. A box is 204 px in a 228 px column. The series page and a fixture's series list keep the MMR.
 
 # RoundStrip
 
@@ -164,6 +172,8 @@ The roster of one team in one event is one card: the captains, then the members,
 The tag one season row was played as: "as TAG" in small muted text, no icon and no link. It renders nothing when `played_as` is null or equals the person's `battleTag`. The team roster, the season team table and the player's Events card use it.
 
 # VetoBoard
+
+A cup series answers the rules `decider,loser,...`: its board lists game 1 as "The map the veto leaves" until the veto is done and then names that map, and a side with two picks reads them as "Map A, then Map B". `vetoOffers` in `next/src/helpers/map-order.mjs` hands the Report Result dialog the pick queue and the decider, so a side that loses twice is offered its second pick; a GNL series reads no queue.
 
 `VetoBoard` reads which side the viewer acts for from the board answer's `viewer_side`; it never works the side out from ids on the client. A side that is a team shows its team name when the answer sets `team_name`, and the player through `PlayerName` otherwise. See [the backend contract](backend-contract.md).
 

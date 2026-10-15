@@ -9,6 +9,7 @@ import { toneClass } from "@/components/ui/tone";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
 import { TeamName } from "@/components/TeamName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { DEFAULT_RULES } from "@/helpers/best-of.mjs";
 import { hideMissingImage } from "@/helpers/team-image";
@@ -34,16 +35,18 @@ const say = (error: unknown, fallback: string) =>
 /** The map veto of one series: the pool, the order of bans and picks, and the maps the series
  *  plays. `report`: the board sits inside Report Result; the reporter enters both sides, then
  *  only the series shows. `onChange` hears every board the server answers; it is read at
- *  mount, so a caller hands in a stable function. */
+ *  mount, so a caller hands in a stable function. `cup` reads a cup's series off the cup's routes. */
 export function VetoBoard({
   seriesId,
   report = false,
+  cup = false,
   onChange,
   className,
   children,
 }: {
   seriesId: number | string;
   report?: boolean;
+  cup?: boolean;
   onChange?: (board: Row) => void;
   className?: string;
   children?: React.ReactNode;
@@ -72,7 +75,7 @@ export function VetoBoard({
   const admin = auth.isAdmin && recording;
   const collapsed = report && !!board?.complete;
 
-  const vetoUrl = `${backendUrl}/player-series/${seriesId}/veto`;
+  const vetoUrl = `${backendUrl}/${cup ? "cup-series" : "player-series"}/${seriesId}/veto`;
   // the board payload names maps only on the steps taken, so the pool is labelled from /maps
   const [maps, setMaps] = useState<Row[]>([]);
   const mapsById = new Map(maps.map((map) => [map.id, map]));
@@ -112,10 +115,12 @@ export function VetoBoard({
   const last = taken[taken.length - (forcedLast ? 2 : 1)];
   const canUndo = !!last && (admin || last.side === board?.viewer_side || (viewerId != null && last.entered_by === viewerId));
 
-  // a step typed in for the other side names who entered it; an admin who plays neither side is "an admin"
+  // a step typed in for the other side names who entered it; an admin who plays neither side is "an admin".
+  // A team side names no user, so any of its players enters for it
+  const standsFor = (side: string, userId: number) => playerId(side) === userId || (sideOf(board, side)?.member_ids || []).includes(userId);
   const enteredBy = (step?: Row) => {
-    if (!step?.entered_by || step.entered_by === playerId(step.side)) return null;
-    const side = ["A", "B"].find((s) => playerId(s) === step.entered_by);
+    if (!step?.entered_by || standsFor(step.side, step.entered_by)) return null;
+    const side = ["A", "B"].find((s) => standsFor(s, step.entered_by));
     return side ? sideName(side) : "an admin";
   };
 
@@ -167,6 +172,10 @@ export function VetoBoard({
       if (rule === "fixed") {
         mapId = board?.week_map_id;
         source = "Fixed map";
+      } else if (rule === "decider") {
+        // game 1 of a cup plays the one map the veto leaves
+        mapId = leftOver.length === 1 ? leftOver[0] : null;
+        source = mapId ? "Left over" : "The map the veto leaves";
       } else if (rule === "loser") {
         source = index ? `Loser of game ${index} picks` : "Loser picks";
       } else if (rule === "veto") {
@@ -187,9 +196,10 @@ export function VetoBoard({
   })();
 
   const showPicks = rules.includes("loser") && order.some((entry) => /^pick/i.test(entry));
+  // a series of five games takes two picks a side: the first for the first game they lose
   const picks = ["A", "B"].map((side) => {
-    const step = taken.find((row) => row.action === "pick" && row.side === side);
-    return { side, who: sideName(side), mapId: step?.map_id, map: step ? mapName(step.map_id) : null };
+    const own = taken.filter((row) => row.action === "pick" && row.side === side);
+    return { side, who: sideName(side), mapId: own[0]?.map_id, map: own.length ? own.map((step) => mapName(step.map_id)).join(", then ") : null };
   });
 
   // a read that keeps failing stops the poll until Try again reads the board
@@ -270,9 +280,9 @@ export function VetoBoard({
         {/* A team side names a team and no player, so it reads as the team name */}
         {board ? (
           <span className="flex items-center gap-2 text-muted-foreground">
-            {board.player1?.team_name ? <TeamName team={teamOf(board.player1)} plain={report} /> : <PlayerName player={board.player1} plain={report} />}
+            {board.player1?.team_name ? cup ? <CupTeamName team={teamOf(board.player1)} /> : <TeamName team={teamOf(board.player1)} plain={report} /> : <PlayerName player={board.player1} plain={report} />}
             <span>vs</span>
-            {board.player2?.team_name ? <TeamName team={teamOf(board.player2)} plain={report} /> : <PlayerName player={board.player2} plain={report} />}
+            {board.player2?.team_name ? cup ? <CupTeamName team={teamOf(board.player2)} /> : <TeamName team={teamOf(board.player2)} plain={report} /> : <PlayerName player={board.player2} plain={report} />}
           </span>
         ) : null}
         <span className="flex-1" />

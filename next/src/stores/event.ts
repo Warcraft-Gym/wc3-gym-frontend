@@ -5,6 +5,10 @@ import { availabilityStore } from "./availability";
 
 // The leagues and their events. A league is what repeats, an event is one run of it,
 // and a GNL season is the gnl-kind event of the GNL league. Reads are open, writes admin.
+// A read that must not come from a cache: a query no cache holds, and no browser cache either
+const freshQuery = (fresh: boolean) => (fresh ? `?t=${Date.now()}` : "");
+const freshOptions = (fresh: boolean) => (fresh ? { cache: "no-store" as RequestCache } : undefined);
+
 const store = {
   async fetchLeagues() {
     return await fetchWrapper.get(`${backendUrl}/leagues`);
@@ -28,8 +32,9 @@ const store = {
   async fetchEventsPage(kind: string, limit: number, offset: number) {
     return await fetchWrapper.getPage(`${backendUrl}/events?kind=${kind}&limit=${limit}&offset=${offset}`);
   },
-  async fetchEvent(event_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}`);
+  // `fresh` reads past the edge cache, as a page does right after its own write
+  async fetchEvent(event_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}${fresh ? `?t=${Date.now()}` : ""}`);
   },
   async createEvent(event: any) {
     return await fetchWrapper.post(`${backendUrl}/events`, event);
@@ -52,8 +57,9 @@ const store = {
   async assignDivisions(event_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/divisions/assign`);
   },
-  async fetchEntrants(event_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/entrants`);
+  // the browser keeps this read too, so a read right after a write asks fresh
+  async fetchEntrants(event_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/entrants${freshQuery(fresh)}`, undefined, freshOptions(fresh));
   },
   // Every published event with the caller's own entrant, check-in window and one action
   async myEvents() {
@@ -73,10 +79,69 @@ const store = {
   async addEntrant(event_id: number, entrant: any) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/admin`, entrant);
   },
+  // Another player takes the place, the seed and the series of one who has not played
+  async replaceEntrant(event_id: number, entrant_id: number, entrant: any) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/replace`, entrant);
+  },
   async removeEntrant(event_id: number, entrant_id: number) {
     return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`);
   },
+  // A runner lets a signup in off a cup's waitlist, before the draw
+  async admitEntrant(event_id: number, entrant_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/admit`);
+  },
+  // A runner withdraws one entrant after the draw; on a cup it forfeits every match it still has
+  async withdrawEntrant(event_id: number, entrant_id: number) {
+    await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/withdraw`);
+  },
   // The caller's own row, or any row for an admin
+  // A team cup: a captain signs a team up and invites the rest; each answers their invite
+  async signUpTeam(event_id: number, name: string, member_ids: number[]) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams`, { name, member_ids });
+  },
+  async addTeam(event_id: number, name: string, captain_id: number, member_ids: number[]) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/admin`, { name, captain_id, member_ids });
+  },
+  async acceptInvite(event_id: number, team_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/accept`);
+  },
+  async declineInvite(event_id: number, team_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/decline`);
+  },
+  async inviteToTeam(event_id: number, team_id: number, user_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/invites`, { user_id });
+  },
+  async takeBackInvite(event_id: number, team_id: number, user_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/invites/${user_id}`);
+  },
+  async leaveTeam(event_id: number, team_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/members/me`);
+  },
+  async withdrawTeam(event_id: number, team_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/cup-teams/${team_id}`);
+  },
+  async replaceTeamMember(event_id: number, team_id: number, user_id: number, new_user_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cup-teams/${team_id}/members/${user_id}/replace`, { user_id: new_user_id });
+  },
+  // Whether Home offers the cup announcement switch, and where it stands
+  async myAnnouncements() {
+    return await fetchWrapper.get(`${backendUrl}/me/announcements`);
+  },
+  // Take or leave the cup announcement role in the guild
+  async setMyAnnouncements(subscribed: boolean) {
+    return await fetchWrapper.put(`${backendUrl}/me/announcements`, { subscribed });
+  },
+  // The cup series and lobbies the caller still plays, each with its cup, stage and round
+  async myCupSeries() {
+    return await fetchWrapper.get(`${backendUrl}/me/cup-series`);
+  },
+  async myTeamInvites() {
+    return await fetchWrapper.get(`${backendUrl}/me/team-invites`);
+  },
+  // A runner checks every entrant of a cup in at once; a team short of players stays out
+  async checkInEveryone(event_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/checkin-everyone`);
+  },
   async checkIn(event_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/checkin`);
   },
@@ -94,21 +159,90 @@ const store = {
   async placeEntrant(event_id: number, entrant_id: number, placement: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/entrants/${entrant_id}`, placement);
   },
+  // A cup player's pins: its division, placed by hand, and its seed, which a reshuffle keeps
+  async pinEntrant(event_id: number, entrant_id: number, pins: { division_pinned?: boolean; seed_pinned?: boolean }) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/pins`, pins);
+  },
+  // A cup played over rounds: check a player in for one round, or out again; a runner names the entry
+  async checkInLeg(event_id: number, leg_id: number, entrant_id: number | null = null) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins`, { entrant_id });
+  },
+  async checkOutLeg(event_id: number, leg_id: number, entrant_id: number | null = null) {
+    const query = entrant_id ? `?entrant_id=${entrant_id}` : "";
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins${query}`);
+  },
+  async checkEveryoneInLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins/everyone`);
+  },
+  // A cup's rounds after creation: rename or move one, add one after the last, remove one not drawn
+  async updateLeg(event_id: number, leg_id: number, changes: { name?: string | null; starts_at?: string | null }) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/legs/${leg_id}`, changes);
+  },
+  async addLeg(event_id: number, leg: { name?: string | null; starts_at?: string | null }) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs`, leg);
+  },
+  async removeLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/legs/${leg_id}`);
+  },
+  // Finishing a round counts its places in the overall table; the reopen takes that back
+  async finishLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/finish`);
+  },
+  async reopenLeg(event_id: number, leg_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/legs/${leg_id}/finish`);
+  },
+  async fetchOverall(event_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/overall${freshQuery(fresh)}`, undefined, freshOptions(fresh));
+  },
+  // A cup that repeats on a rule: set it up from a cup, read it, make the cup of a coming day
+  async repeatCup(event_id: number, rule: any) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/recurrence`, rule);
+  },
+  async fetchRecurrences(fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/cup-recurrences${freshQuery(fresh)}`, undefined, freshOptions(fresh));
+  },
+  async fetchRecurrence(recurrence_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/cup-recurrences/${recurrence_id}${freshQuery(fresh)}`, undefined, freshOptions(fresh));
+  },
+  async updateRecurrence(recurrence_id: number, changes: any) {
+    return await fetchWrapper.put(`${backendUrl}/cup-recurrences/${recurrence_id}`, changes);
+  },
+  async deleteRecurrence(recurrence_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/cup-recurrences/${recurrence_id}`);
+  },
+  async createOccurrence(recurrence_id: number, on: string) {
+    return await fetchWrapper.post(`${backendUrl}/cup-recurrences/${recurrence_id}/occurrences`, { on });
+  },
   // The seeds of one stage: mmr, random, or an order of entrant ids for manual
   async setSeeds(event_id: number, stage_id: number, seeds: any) {
     return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds`, seeds);
   },
+  // A cup's seeds after its draw: the stage is drawn again from them in the same write; a stage
+  // whose series hold results answers 409 until the call confirms
+  async redrawSeeds(event_id: number, stage_id: number, seeds: any, confirm = false) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/redraw${confirm ? "?confirm=true" : ""}`, seeds);
+  },
   async lockSeeds(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/lock`);
   },
-  // The rounds and the series of one stage, with the feeder graph the bracket draws
-  async fetchStage(event_id: number, stage_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/series`);
+  // A stage that holds series refuses the unlock until its draw is taken back
+  async unlockSeeds(event_id: number, stage_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/stages/${stage_id}/seeds/lock`);
   },
-  async fetchStandings(event_id: number, stage_id: number) {
-    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/standings`);
+  // The rounds and the series of one stage, with the feeder graph the bracket draws. These open
+  // reads are cached by the edge and by the browser, so a read right after a write asks fresh:
+  // the `t` misses both caches and keeps the bearer, which the edge never caches
+  async fetchStage(event_id: number, stage_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/series${freshQuery(fresh)}`, undefined, freshOptions(fresh));
   },
-  // Writes every series of the stage from its locked seeds, per division
+  async fetchStandings(event_id: number, stage_id: number, fresh = false) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/stages/${stage_id}/standings${freshQuery(fresh)}`, undefined, freshOptions(fresh));
+  },
+  // Takes the stage's draw back so the field may change; results answer 409 until the call confirms
+  async undrawStage(event_id: number, stage_id: number, confirm = false) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/stages/${stage_id}/series${confirm ? "?confirm=true" : ""}`);
+  },
+  // Writes every series of the stage from its seeds, per division
   async generateStage(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/generate`);
   },
@@ -179,24 +313,25 @@ const store = {
   async advanceStage(event_id: number, stage_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/stages/${stage_id}/advance`);
   },
-  // A cleared score reopens the bracket below; force allows it past a later result
+  // A runner writes a cup series' result; a cleared score reopens the bracket below, and force allows it past a later result
   async scoreSeries(series_id: number, scores: any, force = false) {
     const query = force ? "?force=true" : "";
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}${query}`, scores);
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}${query}`, scores);
   },
   // Where every seat of a free for all lobby finished; a lobby plays one game
   async setPlaces(series_id: number, places: any) {
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}/places`, { places });
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/places`, { places });
+  },
+  // A runner plays a lobby on another map of the pool, or takes its places back with the seats they sent on
+  async setLobbyMap(series_id: number, map_id: number) {
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/lobby-map`, { map_id });
+  },
+  async clearLobby(series_id: number) {
+    return await fetchWrapper.delete(`${backendUrl}/cup-series/${series_id}/result`);
   },
   // Seats a lobby again before it is played, so an entrant moves between lobbies
   async setLobbySides(series_id: number, entrant_ids: number[]) {
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}/sides`, { entrant_ids });
-  },
-  // The players one side of a fixture series fields; a captain writes his own side
-  async setSideRoster(series_id: number, side_no: number, user_ids: number[]) {
-    return await fetchWrapper.put(`${backendUrl}/series/${series_id}/sides`, {
-      sides: [{ side_no, user_ids }],
-    });
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/sides`, { entrant_ids });
   },
   // Closes the event: the table of its last stage becomes the places it awards
   async finishEvent(event_id: number) {
@@ -219,9 +354,39 @@ const store = {
     }
     return { event, series: [] };
   },
+  // The maps an event's series veto from, in order; the whole pool is written at once
+  async setEventPool(event_id: number, map_ids: number[]) {
+    return await fetchWrapper.put(`${backendUrl}/events/${event_id}/maps`, { map_ids });
+  },
+  // The events the caller runs, newest first, drafts included
+  async myOrganizedEvents() {
+    return await fetchWrapper.get(`${backendUrl}/me/organized-events`);
+  },
+  // A member asks to become an organizer; an admin answers on the access page
+  async requestOrganizer(note: string | null) {
+    return await fetchWrapper.post(`${backendUrl}/organizers/requests`, { note: note || null });
+  },
+  // Who runs one event; an open read, so the event page names its organizers
+  async fetchEventOrganizers(event_id: number) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/organizers`);
+  },
+  async addEventOrganizer(event_id: number, discord_id: string, name = "") {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/organizers`, { discord_id, name });
+  },
+  async removeEventOrganizer(event_id: number, discord_id: string) {
+    return await fetchWrapper.delete(`${backendUrl}/events/${event_id}/organizers/${discord_id}`);
+  },
+  // Calls the event off: it reads finished and pays no place; a reopen takes it back
+  async cancelEvent(event_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/cancel`);
+  },
   // A series no game was played for: a walkover or a forfeit, with the side that takes it
   async awardSeries(series_id: number, result_kind: string, winner: any) {
     return await fetchWrapper.put(`${backendUrl}/series/${series_id}/result-kind`, { result_kind, winner });
+  },
+  // The same for a cup's series, which its runners record on the cup's own route
+  async awardCupSeries(series_id: number, result_kind: string, winner: any) {
+    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/result-kind`, { result_kind, winner });
   },
 };
 

@@ -32,7 +32,7 @@ test('a start date and a typed time are stored as the UTC instant they name', ()
 });
 
 test('the new event fields ride along, and a blank number is nothing', () => {
-  const body = eventPayload({ ...blankForm({ id: 1 }), parent_id: 9, signup_policy: 'anyone', entrant_cap: '32' });
+  const body = eventPayload({ ...blankForm({ id: 1 }), parent_id: 9, signup_policy: 'anyone', eligibility_required: false, entrant_cap: '32' });
   assert.equal(body.parent_id, 9);
   assert.equal(body.signup_policy, 'anyone');
   assert.equal(body.entrant_cap, 32);
@@ -42,6 +42,13 @@ test('the new event fields ride along, and a blank number is nothing', () => {
   assert.equal(body.min_games_seasons, null);  // nothing counts every W3C season
   assert.equal(body.early_checkin, false);
   assert.equal(body.round_end_zone, null);
+});
+
+test('a new event checks who signs up, in its MMR range; asking for Battle.net takes members only', () => {
+  const body = eventPayload({ ...blankForm(), signup_policy: 'anyone', mmr_min: '1200', mmr_max: '1600' });
+  assert.deepEqual([body.eligibility_required, body.bnet_required, body.signup_policy, body.mmr_min, body.mmr_max], [true, false, 'anyone', 1200, 1600]);
+  const linked = eventPayload({ ...blankForm(), signup_policy: 'anyone', bnet_required: true });
+  assert.deepEqual([linked.bnet_required, linked.signup_policy], [true, 'members']);
 });
 
 test('one entry per race starts off and sends its switch', () => {
@@ -174,7 +181,7 @@ test('a step names what it still needs', () => {
 });
 
 test('the create body carries the stages, so one write makes the whole event', () => {
-  const body = createPayload({ ...blankForm({ id: 2 }), name: 'Autumn cup' });
+  const body = createPayload({ ...blankForm({ id: 2 }), kind: 'cup', name: 'Autumn cup' });
   assert.equal(body.name, 'Autumn cup');
   assert.equal(body.league_id, 2);
   assert.equal(body.stages.length, 1);
@@ -183,8 +190,9 @@ test('the create body carries the stages, so one write makes the whole event', (
 
 test('a signup-only event skips the stages step and every other kind keeps it', () => {
   const keys = (form) => stepsFor(form).map((step) => step.key);
-  assert.deepEqual(keys(blankForm()), ['basics', 'entrants', 'stages', 'divisions', 'review']);
-  assert.deepEqual(keys({ ...blankForm(), kind: 'signup' }), ['basics', 'entrants', 'divisions', 'review']);
+  // the wizard opens on a sign-up list; a cup is made in Create cup
+  assert.deepEqual(keys(blankForm()), ['basics', 'entrants', 'divisions', 'review']);
+  assert.deepEqual(keys({ ...blankForm(), kind: 'cup' }), ['basics', 'entrants', 'stages', 'divisions', 'review']);
   assert.deepEqual(keys(undefined), ['basics', 'entrants', 'stages', 'divisions', 'review']);
 });
 
@@ -231,4 +239,10 @@ test('a group seats two entrants and advances one', () => {
     stepProblem({ stages: [{ format: 'round_robin', best_of: 3, group_size: '1' }] }, 'stages'),
     'A group seats two entrants or more.',
   );
+});
+
+test('a stage edit keeps the loss limit of a placement bracket and the seed source', () => {
+  const [stage] = readStagesPayload([{ id: 1, format: 'placement', best_of: 1, placement_lives: 2, seed_source: 'random' }]);
+  assert.equal(stage.placement_lives, 2);
+  assert.equal(stage.seed_source, 'random');
 });

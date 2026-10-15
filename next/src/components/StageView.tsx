@@ -1,11 +1,30 @@
 "use client";
+import { useState } from "react";
 import { GroupedTable, type GroupedColumn } from "@/components/GroupedTable";
 import { PlayerName } from "@/components/PlayerName";
+import { CupTeamName } from "@/components/CupTeamName";
 import { SeriesBox } from "@/components/SeriesBox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHideResults } from "@/components/hide-results";
 import { SM_AND_DOWN, useBreakpoint } from "@/hooks/breakpoint";
-import { blocks, buchholz, columns, inDivision, layout, ranking, standingsGroups } from "@/helpers/stage-view.mjs";
+import {
+  buchholz,
+  championOf,
+  columns,
+  currentColumn,
+  drawing,
+  inDivision,
+  pathOf,
+  ranking,
+  sideName,
+  standingsGroups,
+  standsOn,
+  withoutIdleReset,
+} from "@/helpers/stage-view.mjs";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/Icon";
+import { lobbyReportOf, reportOf, vetoOf } from "@/helpers/series-actions.mjs";
+import { placementColumns } from "@/helpers/placement.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -21,17 +40,31 @@ const STANDING_COLUMNS: GroupedColumn[] = [
   { key: "points", title: "Points", align: "right" },
 ];
 // A lobby counts no games, so a free for all table reads its place points and nothing else
-const LOBBY_COLUMNS = STANDING_COLUMNS.filter((column) => column.key !== "game_diff");
+const LOBBY_COLUMNS = STANDING_COLUMNS.filter(
+  (column) => column.key !== "game_diff",
+);
 // The tie break a Swiss table ranks on sits beside the points it breaks
-const BUCHHOLZ_COLUMN: GroupedColumn = { key: "buchholz", title: "Buchholz", align: "right", phone: false };
+const BUCHHOLZ_COLUMN: GroupedColumn = {
+  key: "buchholz",
+  title: "Buchholz",
+  align: "right",
+  phone: false,
+};
 
-const COL_W = 244;
+// The box that closes a bracket with its winner, and the scales a reader picks for a wide bracket
+const CHAMPION_W = 200;
+// A box of the draw and the column it stands in; the draw names no MMR, so a box holds a name
+// and its race in less room, and the gap between two columns holds the feeder line
+const BOX_W = 204;
+const COL_W = 228;
+const ZOOMS = [0.75, 1, 1.25];
 // A team side prints its name over its roster, so a box of team sides is taller than a box
 // of two names. A roster name wears a flag and a race icon and takes a line of the box on
 // its own, and the box holds two sides.
 const ROSTER_LINE = 22;
 
-const signed = (value: number) => (value > 0 ? `+${value}` : String(value ?? 0));
+const signed = (value: number) =>
+  value > 0 ? `+${value}` : String(value ?? 0);
 const phoneCell = "hidden min-[960px]:table-cell";
 
 /** One stage, drawn once per division. An elimination stage is bracket columns joined by their
@@ -45,6 +78,10 @@ export function StageView({
   divisions = [],
   standings = [],
   rosters = {}, // the players of each team entrant, by entrant id
+  viewer, // who reads the draw: a box this viewer acts for carries a report button
+  onReport, // opens the report dialog in place, from that button
+  cup = false, // a cup's draw names its teams as cup teams
+  onVeto, // opens the map veto in place, for a side of a cup series
   onOpenSeries,
 }: {
   stage: Row;
@@ -53,13 +90,51 @@ export function StageView({
   divisions?: Row[];
   standings?: Row[];
   rosters?: Record<string, Row[]>;
+  viewer?: {
+    id?: number | null;
+    isAdmin?: boolean;
+    runs?: boolean;
+    seats?: { team_id: number; season_id: number }[];
+  };
+  onReport?: (row: Row) => void;
+  cup?: boolean;
+  onVeto?: (row: Row) => void;
   onOpenSeries?: (row: Row) => void;
 }) {
+  // A round that plays its own best-of says so on its head, so a reader sees where the games grow
+  const roundBestOf = new Map(
+    rounds.map((round: Row) => [round.id, round.best_of]),
+  );
+  const bestOfNote = (round: unknown) => {
+    const games = roundBestOf.get(round);
+    return games && games !== stage.best_of ? (
+      <span className="text-primary-text"> · Bo{games}</span>
+    ) : null;
+  };
+  // what one box offers this viewer: a report, an edit, or nothing
+  // a lobby offers its places to a player seated in it, a two-sided series its result
+  const reportFor = (row: Row) =>
+    onReport && viewer
+      ? ((reportOf(row, viewer) ?? lobbyReportOf(row, viewer)) as
+          "report" | "edit" | null)
+      : null;
+  // a side of an open cup series vetoes from a button over the report one
+  const vetoFor = (row: Row) =>
+    onVeto && viewer && vetoOf(row, viewer) ? onVeto : null;
+  // The entrant whose way through the bracket is lit, the drawing's scale, and the round a
+  // phone reads, per division
+  const [focus, setFocus] = useState<number | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [phoneRound, setPhoneRound] = useState<Record<string, number>>({});
   // The spoiler switch of the page around this stage; the standings give the whole result away
   const hidden = useHideResults();
   const stacked = useBreakpoint(SM_AND_DOWN);
 
-  const isBracket = ["single_elimination", "double_elimination"].includes(stage.format);
+  const isBracket = ["single_elimination", "double_elimination"].includes(
+    stage.format,
+  );
+  // A placement bracket draws its rounds as columns of place groups, with no feeder lines
+  const isPlacement = stage.format === "placement";
   // A free for all plays lobbies: a bracket of them round by round, or one league lobby
   const isLobbyStage = stage.format === "ffa";
   // A table reads a Buchholz column only where the stage's ranking rule breaks ties on it
@@ -68,27 +143,67 @@ export function StageView({
     ? LOBBY_COLUMNS
     : !showBuchholz
       ? STANDING_COLUMNS
-      : STANDING_COLUMNS.toSpliced(STANDING_COLUMNS.findIndex((column) => column.key === "points"), 0, BUCHHOLZ_COLUMN);
+      : STANDING_COLUMNS.toSpliced(
+          STANDING_COLUMNS.findIndex((column) => column.key === "points"),
+          0,
+          BUCHHOLZ_COLUMN,
+        );
 
-  const boxH = 88 + 2 * ROSTER_LINE * Math.max(0, ...series.flatMap((row) => [1, 2].map((side) => (rosters[row[`entrant${side}_id`]] || []).length)));
+  const boxH =
+    (onReport ? 98 : 88) +
+    2 *
+      ROSTER_LINE *
+      Math.max(
+        0,
+        ...series.flatMap((row) =>
+          [1, 2].map(
+            (side) => (rosters[row[`entrant${side}_id`]] || []).length,
+          ),
+        ),
+      );
 
   // One drawing per division; a stage with no divisions draws its whole field once
-  const bands = divisions.length ? [...divisions].sort((a, b) => a.position - b.position) : [{ id: null, position: 1, name: null }];
+  const bands = divisions.length
+    ? [...divisions].sort((a, b) => a.position - b.position)
+    : [{ id: null, position: 1, name: null }];
   const groups = bands
     .map((band) => {
-      const rows = inDivision(series, band.id);
+      // a grand final reset nobody plays would draw the final twice, so it shows once it is played
+      const rows = withoutIdleReset(inDivision(series, band.id), hidden);
       const cols = columns(rows, rounds);
       return {
         key: band.id ?? "all",
         name: band.name || `Division ${band.position}`,
-        columns: cols.map((column: Row, index: number) => ({ ...column, index })),
-        blocks: isBracket ? blocks(cols).map((block: Row) => ({ ...block, drawn: layout(block.columns, { boxH }) })) : [],
+        columns: cols.map((column: Row, index: number) => ({
+          ...column,
+          index,
+        })),
+        drawn: isBracket
+          ? drawing(cols, { boxH, boxW: BOX_W, colW: COL_W })
+          : null,
+        // the winner of the bracket, once its last series is scored; a table names no champion
+        champion: isBracket ? championOf(cols) : null,
+        current: currentColumn(cols),
+        placement: isPlacement ? (placementColumns(cols) as Row[]) : null,
       };
     })
     .filter((group) => group.columns.length);
 
+  // the name of the entrant whose way is lit, read off the first series that names it
+  const focusRow =
+    focus == null
+      ? null
+      : series.find(
+          (row) => standsOn(row, 1) === focus || standsOn(row, 2) === focus,
+        );
+  const focusName = focusRow
+    ? sideName(focusRow, standsOn(focusRow, 1) === focus ? 1 : 2)
+    : "";
+
   const tables = standingsGroups(standings, divisions);
-  const buchholzOf: Map<number, number> = showBuchholz ? buchholz(standings, series) : new Map();
+  const buchholzOf: Map<number, number> = showBuchholz
+    ? buchholz(standings, series)
+    : new Map();
 
   // The beaten semi-finalists play last in the final column, so the second box names itself.
   // A free for all names each box instead: a lobby of a round, or a game of the one league
@@ -102,12 +217,18 @@ export function StageView({
     }
     // The third-place series is the one the two beaten semi-finalists play, so both its
     // sides take a loser; the stage says whether it runs one at all
-    return stage.third_place && row.slot1_takes_loser && row.slot2_takes_loser ? "Third place" : "";
+    return stage.third_place && row.slot1_takes_loser && row.slot2_takes_loser
+      ? "Third place"
+      : "";
   };
 
   return (
     <div className="flex flex-col">
-      {!series.length ? <p className="my-4 text-muted-foreground">No series yet. Generate the stage to draw it.</p> : null}
+      {!series.length ? (
+        <p className="my-4 text-muted-foreground">
+          No series yet. Generate the stage to draw it.
+        </p>
+      ) : null}
 
       {/* A table stage is read from its standings down, so the card leads the DOM; only a
           bracket, which is read first and ranked after, is pushed below by its order */}
@@ -118,26 +239,54 @@ export function StageView({
           </CardHeader>
           <CardContent className="px-0">
             {hidden ? (
-              <p className="px-4 pb-4 text-muted-foreground">Results are hidden. Turn off &quot;Hide results&quot; to read the standings.</p>
+              <p className="px-4 pb-4 text-muted-foreground">
+                Results are hidden. Turn off &quot;Hide results&quot; to read
+                the standings.
+              </p>
             ) : (
               <GroupedTable
                 columns={standingColumns}
                 groups={tables}
                 defaultOpen
                 empty="No standings yet"
-                group={({ group }) => <td colSpan={standingColumns.length}>{group.label}</td>}
+                group={({ group }) => (
+                  <td colSpan={standingColumns.length}>{group.label}</td>
+                )}
                 rows={({ group }) => (
                   <>
                     {(group.rows as Row[]).map((row) => (
                       <tr key={row.entrant_id} className="detail-row">
                         <td />
                         <td className="text-right">{row.position}</td>
-                        <td>{row.user_id ? <PlayerName player={{ id: row.user_id, name: row.name }} /> : <span>{row.name}</span>}</td>
-                        <td className={cn("text-right", phoneCell)}>{row.played}</td>
+                        {/* a team row names its team; the gap matches the one a player's flag leaves */}
+                        <td>
+                          {row.user_id ? (
+                            <PlayerName
+                              player={{ id: row.user_id, name: row.name }}
+                            />
+                          ) : cup ? (
+                            <CupTeamName team={{ name: row.name }} />
+                          ) : (
+                            <span className="pl-4">{row.name}</span>
+                          )}
+                        </td>
+                        <td className={cn("text-right", phoneCell)}>
+                          {row.played}
+                        </td>
                         <td className="text-right">{row.won}</td>
-                        <td className={cn("text-right", phoneCell)}>{row.lost}</td>
-                        {!isLobbyStage ? <td className="text-right">{signed(row.game_diff)}</td> : null}
-                        {showBuchholz ? <td className={cn("text-right", phoneCell)}>{buchholzOf.get(row.entrant_id) ?? 0}</td> : null}
+                        <td className={cn("text-right", phoneCell)}>
+                          {row.lost}
+                        </td>
+                        {!isLobbyStage ? (
+                          <td className="text-right">
+                            {signed(row.game_diff)}
+                          </td>
+                        ) : null}
+                        {showBuchholz ? (
+                          <td className={cn("text-right", phoneCell)}>
+                            {buchholzOf.get(row.entrant_id) ?? 0}
+                          </td>
+                        ) : null}
                         <td className="text-right">{row.points}</td>
                       </tr>
                     ))}
@@ -149,66 +298,345 @@ export function StageView({
         </Card>
       ) : null}
 
-      {groups.map((group) => (
-        <section key={group.key} className="mb-6" style={{ order: 1 }}>
-          {groups.length > 1 ? <h2 className="mb-2">{group.name}</h2> : null}
+      {groups.map((group) => {
+        // one round of the list, as a card; a phone reads a bracket one round at a time
+        // `grid` sits the card in a row of rounds, so it fills its cell instead of a column of its own
+        const columnCard = (column: Row, grid = false) => (
+          <Card
+            key={column.key}
+            className={cn(
+              "card",
+              grid ? "min-w-0 gap-2" : "mb-3 max-w-[560px]",
+            )}
+          >
+            <CardHeader>
+              <CardTitle>
+                {column.name}
+                {bestOfNote(column.key)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-0">
+              {column.series.map((row: Row, index: number) => (
+                <SeriesBox
+                  cup={cup}
+                  key={row.id}
+                  series={row}
+                  flat
+                  rosters={rosters}
+                  rated={false}
+                  report={reportFor(row)}
+                  onVeto={vetoFor(row)}
+                  stateless
+                  onReport={onReport}
+                  round={column.name}
+                  // a lobby names the map it is played on beside its number
+                  label={[boxLabel(group, column, row), row.lobby_map?.name]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  me={viewer?.id ?? null}
+                  fed={isLobbyStage && column.index > 0}
+                  // A lobby is a block of seats, so the next lobby stands off the one above it
+                  className={cn(
+                    index && "border-t",
+                    index && isLobbyStage && "mt-2.5",
+                  )}
+                  onOpen={onOpenSeries}
+                />
+              ))}
+            </CardContent>
+          </Card>
+        );
+        const lit = pathOf(series, focus);
+        const shownRound = phoneRound[group.key] ?? group.current;
+        return (
+          <section key={group.key} className="mb-6" style={{ order: 1 }}>
+            {groups.length > 1 ? <h2 className="mb-2">{group.name}</h2> : null}
 
-          {/* a bracket on a wide screen: the boxes sit on the feeder lines they follow, and
-              the lower ladder of a double elimination is drawn under the upper one */}
-          {isBracket && !stacked ? (
-            <div className="overflow-x-auto">
-              {group.blocks.map((block: Row) => (
-                <div key={block.key} className="relative mb-5" style={{ width: `${block.drawn.width}px`, height: `${block.drawn.height + 28}px` }}>
-                  {block.columns.map((column: Row, index: number) => (
-                    <div key={column.key} className="absolute top-0 text-xs text-muted-foreground" style={{ left: `${index * COL_W}px`, width: `${block.drawn.boxW}px` }}>
-                      {column.name}
+            {/* a bracket on a wide screen: the boxes sit on the feeder lines they follow, and
+                the lower ladder of a double elimination is drawn under the upper one, with its
+                final run up to the grand final at the end of the upper ladder. A pointer over a
+                player lights their way through it; the champion closes the bracket. */}
+            {isPlacement ? (
+              /* a placement bracket: one column a round, each holding the groups it splits into,
+                 the best places on top; a phone reads it one round at a time */
+              (() => {
+                const cols = group.placement as Row[];
+                const shown = Math.min(
+                  phoneRound[group.key] ?? currentColumn(cols),
+                  cols.length - 1,
+                );
+                const groupCard = (place: Row, wide: boolean) => (
+                  <div
+                    key={place.key}
+                    className={cn(
+                      "flex flex-col gap-1.5 rounded-lg border p-2",
+                      place.from === 1 ? "border-primary/60" : "border-border",
+                    )}
+                  >
+                    <div className="flex items-baseline justify-between gap-2 px-1">
+                      <span
+                        className={cn(
+                          "font-heading text-sm font-bold",
+                          place.from === 1 && "text-primary-text",
+                        )}
+                      >
+                        {place.final ? `Final · ${place.title}` : place.title}
+                        {bestOfNote(place.round)}
+                      </span>
                     </div>
-                  ))}
-                  {/* The feeder lines are a recessive mark: the boxes carry the reading */}
-                  <svg className="absolute top-[28px] left-0" width={block.drawn.width} height={block.drawn.height} aria-hidden="true">
-                    {block.drawn.lines.map((line: Row) => (
-                      <path key={line.key} d={line.d} fill="none" stroke="rgba(var(--v-theme-on-surface), 0.28)" strokeWidth={2} />
+                    {place.series.map((row: Row) => (
+                      <SeriesBox
+                        cup={cup}
+                        key={row.id}
+                        series={row}
+                        flat={!wide}
+                        rosters={rosters}
+                        rated={false}
+                        report={reportFor(row)}
+                        onVeto={vetoFor(row)}
+                        stateless
+                        onReport={onReport}
+                        round={place.final ? "Final" : place.title}
+                        onOpen={onOpenSeries}
+                      />
                     ))}
-                  </svg>
-                  {block.drawn.boxes.map((box: Row) => (
-                    <div key={box.key} className="absolute" style={{ left: `${box.x}px`, top: `${box.cy - block.drawn.boxH / 2 + 28}px`, width: `${block.drawn.boxW}px` }}>
-                      <SeriesBox series={box.row} rosters={rosters} round={block.columns[box.column].name} label={boxLabel(group, block.columns[box.column], box.row)} onOpen={onOpenSeries} />
+                  </div>
+                );
+                return !stacked ? (
+                  <div className="flex items-start gap-4 overflow-x-auto pb-2">
+                    {cols.map((column: Row) => (
+                      <section
+                        key={column.key}
+                        className="flex flex-none flex-col gap-3"
+                        style={{ width: `${BOX_W + 18}px` }}
+                      >
+                        <h3 className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                          {column.name}
+                        </h3>
+                        {column.groups.map((place: Row) =>
+                          groupCard(place, true),
+                        )}
+                      </section>
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    <div
+                      role="tablist"
+                      aria-label="Rounds"
+                      className="mb-2 flex gap-2 overflow-x-auto pb-1"
+                    >
+                      {cols.map((column: Row, index: number) => (
+                        <Button
+                          key={column.key}
+                          role="tab"
+                          aria-selected={index === shown}
+                          size="sm"
+                          variant={index === shown ? "secondary" : "outline"}
+                          className="flex-none rounded-full"
+                          onClick={() =>
+                            setPhoneRound({ ...phoneRound, [group.key]: index })
+                          }
+                        >
+                          {column.name}
+                        </Button>
+                      ))}
                     </div>
+                    <div className="flex max-w-[560px] flex-col gap-3">
+                      {cols[shown]?.groups.map((place: Row) =>
+                        groupCard(place, false),
+                      )}
+                    </div>
+                  </div>
+                );
+              })()
+            ) : isBracket && !stacked ? (
+              <div>
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="flex-1">
+                    {focusName
+                      ? `${focusName}: their way through the bracket is lit.`
+                      : "Point at a player to follow their way through the bracket."}
+                  </span>
+                  {ZOOMS.map((value) => (
+                    <Button
+                      key={value}
+                      size="sm"
+                      variant={zoom === value ? "secondary" : "outline"}
+                      aria-pressed={zoom === value}
+                      onClick={() => setZoom(value)}
+                    >
+                      {Math.round(value * 100)}%
+                    </Button>
                   ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            /* a phone and a round robin both read as one list per round */
-            group.columns.map((column: Row) => (
-              <Card key={column.key} className="card mb-3 max-w-[560px]">
-                <CardHeader>
-                  <CardTitle>{column.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="px-0">
-                  {column.series.map((row: Row, index: number) => (
-                    <SeriesBox
-                      key={row.id}
-                      series={row}
-                      flat
-                      rosters={rosters}
-                      round={column.name}
-                      label={boxLabel(group, column, row)}
-                      fed={isLobbyStage && column.index > 0}
-                      // A lobby is a block of seats, so the next lobby stands off the one above it
-                      className={cn(index && "border-t", index && isLobbyStage && "mt-2.5")}
-                      onOpen={onOpenSeries}
-                    />
+                <div
+                  className="overflow-x-auto"
+                  onMouseLeave={() => setFocus(null)}
+                >
+                  {(() => {
+                    const drawn = group.drawn as Row;
+                    const finalBox = drawn.last;
+                    const width =
+                      drawn.width + (finalBox ? CHAMPION_W + 16 : 0);
+                    const height = drawn.height;
+                    return (
+                      <div
+                        className="relative mb-5"
+                        style={{
+                          width: `${width * zoom}px`,
+                          height: `${height * zoom}px`,
+                        }}
+                      >
+                        <div
+                          className="absolute top-0 left-0 origin-top-left"
+                          style={{
+                            width: `${width}px`,
+                            height: `${height}px`,
+                            transform: `scale(${zoom})`,
+                          }}
+                        >
+                          {drawn.heads.map((head: Row) => (
+                            <div
+                              key={head.key}
+                              className="absolute text-xs whitespace-nowrap text-muted-foreground"
+                              style={{
+                                left: `${head.x}px`,
+                                top: `${head.y}px`,
+                              }}
+                            >
+                              {head.name}
+                              {bestOfNote(head.round)}
+                            </div>
+                          ))}
+                          {/* The feeder lines are a recessive mark: the boxes carry the reading */}
+                          <svg
+                            className="absolute top-0 left-0"
+                            width={drawn.width}
+                            height={drawn.height}
+                            aria-hidden="true"
+                          >
+                            {drawn.lines.map((line: Row) => (
+                              <path
+                                key={line.key}
+                                d={line.d}
+                                fill="none"
+                                stroke={
+                                  lit.has(line.from) && lit.has(line.to)
+                                    ? "rgb(var(--v-theme-primary))"
+                                    : "rgba(var(--v-theme-on-surface), 0.28)"
+                                }
+                                strokeWidth={2}
+                              />
+                            ))}
+                          </svg>
+                          {drawn.boxes.map((box: Row) => (
+                            <div
+                              key={box.key}
+                              className="absolute"
+                              style={{
+                                left: `${box.x}px`,
+                                top: `${box.cy - drawn.boxH / 2}px`,
+                                width: `${drawn.boxW}px`,
+                              }}
+                            >
+                              <SeriesBox
+                                cup={cup}
+                                series={box.row}
+                                rosters={rosters}
+                                rated={false}
+                                report={reportFor(box.row)}
+                                onVeto={vetoFor(box.row)}
+                                stateless
+                                onReport={onReport}
+                                focus={focus}
+                                onFocus={setFocus}
+                                className={
+                                  lit.has(box.row.id)
+                                    ? "border-primary"
+                                    : undefined
+                                }
+                                round={box.round.name}
+                                label={boxLabel(group, box.round, box.row)}
+                                onOpen={onOpenSeries}
+                              />
+                            </div>
+                          ))}
+                          {finalBox ? (
+                            <div
+                              className="absolute flex flex-col gap-1 rounded-lg border border-dashed border-primary p-3"
+                              style={{
+                                left: `${finalBox.x + drawn.boxW + 16}px`,
+                                top: `${finalBox.cy - 32}px`,
+                                width: `${CHAMPION_W}px`,
+                              }}
+                            >
+                              <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wide text-primary-text uppercase">
+                                <Icon name="mdi-trophy" />
+                                Champion
+                              </span>
+                              <span className="font-heading text-base font-bold">
+                                {hidden
+                                  ? "Results are hidden"
+                                  : group.champion?.name || "To be decided"}
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : isBracket ? (
+              /* a phone reads a bracket one round at a time, opening on the round being played */
+              <div>
+                <div
+                  role="tablist"
+                  aria-label="Rounds"
+                  className="mb-2 flex gap-2 overflow-x-auto pb-1"
+                >
+                  {group.columns.map((column: Row, index: number) => (
+                    <Button
+                      key={column.key}
+                      role="tab"
+                      aria-selected={index === shownRound}
+                      size="sm"
+                      variant={index === shownRound ? "secondary" : "outline"}
+                      className="flex-none rounded-full"
+                      onClick={() =>
+                        setPhoneRound({ ...phoneRound, [group.key]: index })
+                      }
+                    >
+                      {column.name}
+                    </Button>
                   ))}
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </section>
-      ))}
+                </div>
+                {group.columns[shownRound]
+                  ? columnCard(group.columns[shownRound])
+                  : null}
+                {group.champion && !hidden ? (
+                  <p className="inline-flex items-center gap-1.5 text-sm">
+                    <Icon name="mdi-trophy" className="text-primary-text" />
+                    Champion: <strong>{group.champion.name}</strong>
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              /* a round robin and a Swiss stage read as their rounds side by side, four to a row on a wide screen */
+              <div className="grid items-start gap-3 min-[700px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1200px]:grid-cols-4">
+                {group.columns.map((column: Row) => columnCard(column, true))}
+              </div>
+            )}
+          </section>
+        );
+      })}
 
       {series.length ? (
-        <div className="mb-4 flex gap-4 text-xs text-muted-foreground" style={{ order: 1 }}>
+        <div
+          className="mb-4 flex gap-4 text-xs text-muted-foreground"
+          style={{ order: 1 }}
+        >
           {!hidden ? (
             <>
               <span className="inline-flex items-center gap-1.5">

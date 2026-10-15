@@ -1,7 +1,8 @@
 // The app's links, built from /me. A person wears up to three hats at once: a player (a roster
 // row), a captain (a seat) and an admin. The nav holds only the places each hat works in: Home and
-// My Stats for a player, My Team for a team's players and captains, Admin for an admin. Every
-// shared page (standings, upcoming series, fantasy) is reached through the Home panels.
+// My Stats for a player, My Team for a team's players and captains, Admin for an admin. Events is
+// every member's: the cups and the other events to join, and an organizer runs theirs from there.
+// Every shared page (standings, upcoming series, fantasy) is reached through the Home panels.
 import { myProfilePath } from './players.mjs';
 
 /** Where a team entry points. The captain hub replaces this link in its own step. */
@@ -49,6 +50,7 @@ export function buildNav(me, canSee) {
     // a player row has a dashboard; a guest's one page stays /profile, reached from the account menu
     stats: home && me?.user ? { title: 'My Stats', to: myProfilePath(me) } : null,
     teams: home && me ? myTeams(me) : [],
+    events: home ? { title: 'Events', to: '/events' } : null,
     admin: canSee('/admin') ? { title: 'Admin', to: '/admin' } : null,
   };
 }
@@ -61,6 +63,7 @@ export function navTabs(nav) {
     nav.home ? { key: 'home', title: 'Home', icon: 'mdi-home-outline', to: nav.home.to } : null,
     nav.stats ? { key: 'stats', title: 'My Stats', icon: 'mdi-account-circle-outline', to: nav.stats.to } : null,
     nav.teams.length ? { key: 'team', title: 'My Team', icon: 'mdi-shield-account-outline', to: nav.teams.length === 1 ? nav.teams[0].to : null } : null,
+    nav.events ? { key: 'events', title: 'Events', icon: 'mdi-trophy-outline', to: nav.events.to } : null,
     nav.admin ? { key: 'admin', title: 'Admin', icon: 'mdi-cog-outline', to: nav.admin.to } : null,
   ].filter(Boolean);
 }

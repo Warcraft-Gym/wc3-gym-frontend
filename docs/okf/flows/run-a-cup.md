@@ -1,10 +1,10 @@
 ---
 type: Flow
 title: Run a cup
-description: An admin's cup from a new league to the awards, with the members' signups and results in between, each step on its page with the route it writes.
+description: A cup from its creation to the awards, run by an admin or an organizer, with the members' signups and results in between, each step on its page with the route it writes.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-01T09:45:36Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-14T20:00:00Z }
 sources:
   - id: event-management
     resource: ../pages/event-management.md
@@ -17,24 +17,30 @@ sources:
     title: Fixtures and series
 ---
 
-This flow takes a cup from an empty league to its awards. The admin drives every step but two: members sign up on the event page, and the sides of a series report its result on the series page. The stage engine pairs the series, so a cup has no draft pairing. A stage loops through generate, results and advance until the last stage finishes the event.
+This flow takes a cup from its creation to its awards. Its runner, an admin or an organizer the cup names, drives every step but two: members sign up on the event page, and the sides of a series veto and report its result from the draw on the same page. A cup's series live on the cup's own routes, `/cup-series/{id}`. The stage engine pairs the series, so a cup has no draft pairing. A stage loops through generate, results and advance until the last stage finishes the event.
 
 # Steps
 
 | Step | Who | Where | Writes | Owner |
 |---|---|---|---|---|
 | 1. Make the league | admin | `/leagues` | `POST /leagues` | [Event management](../pages/event-management.md) |
-| 2. Make the event in the five-step wizard | admin | `/events/new` | `POST /events` with the stages, then `PUT /events/{id}/divisions` | [Event management](../pages/event-management.md) |
+| 2. Make the cup, with its best-of per bracket part and its map pool | organizer or admin | `/events/new/cup` | `POST /events` with the stages and the pool | [Event management](../pages/event-management.md) |
+| 3a. On a team cup, sign a team up, and every invited player accepts | member | `/events/:id`, "Sign up a team", the invitation | `POST /events/{id}/cup-teams`, `POST /events/{id}/cup-teams/{team_id}/accept` | [Leagues and events](../pages/leagues-and-events.md) |
+| 3b. On a cup over rounds, check in for each round before its draw | member for their own entry; organizer or admin for anyone | `/events/:id`, "Check in for Round n"; `/events/:id/admin`, the rounds bar | `POST` and `DELETE /events/{id}/legs/{leg_id}/checkins`, `POST /events/{id}/legs/{leg_id}/checkins/everyone` | [Event management](../pages/event-management.md) |
 | 3. Sign up, and check in when the event asks for it | member; an admin adds anyone by hand on `/events/:id/entrants` | `/events/:id`, the signup dialog | `POST /events/{id}/entrants`, `POST /events/{id}/entrants/{entrant_id}/checkin` | [Leagues and events](../pages/leagues-and-events.md) |
-| 4. Cut the divisions and set the seeds | admin | `/events/:id/entrants` | `PUT /events/{id}/divisions`, `POST /events/{id}/divisions/assign`, `PUT /events/{id}/stages/{stage_id}/seeds` | [Event management](../pages/event-management.md) |
-| 5. Lock the seeds | admin | `/events/:id/entrants` | `POST /events/{id}/stages/{stage_id}/seeds/lock` | [Event management](../pages/event-management.md) |
+| 4. On a cup made with divisions, cut them; then set the seeds | organizer or admin | `/events/:id/admin`, the Participants tab's Divisions panel and the Draw tab's Seeds | `PUT /events/{id}/divisions`, `POST /events/{id}/divisions/assign`, `PUT /events/{id}/stages/{stage_id}/seeds` | [Event management](../pages/event-management.md) |
+| 5. The draw locks the seeds | organizer or admin | `/events/:id/admin`, Generate | `POST /events/{id}/stages/{stage_id}/generate` | [Event management](../pages/event-management.md) |
 | 6. Generate the stage | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/generate`; a Swiss stage draws each round with `POST /events/{id}/stages/{stage_id}/rounds` | [Event management](../pages/event-management.md) |
-| 7. Report a result | either side of the series | `/series/:id`, Report Result | `PUT /player-series/{id}` | [Fixtures and series](../pages/fixtures-and-series.md) |
-| 8. Enter a result, a walkover or a forfeit | admin | `/events/:id/admin`, the result dialog | `PUT /series/{id}`, `PUT /series/{id}/result-kind`, `PUT /series/{id}/places` for a lobby | [Event management](../pages/event-management.md) |
-| 9. Advance the stage | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/advance` | [Event management](../pages/event-management.md) |
+| 6a. Undo the draw, or swap a player who has not played | organizer or admin | `/events/:id/admin`, Draw and Participants | `DELETE /events/{id}/stages/{stage_id}/series`, `POST /events/{id}/entrants/{entrant_id}/replace` | [Event management](../pages/event-management.md) |
+| 7a. In an FFA cup, report a lobby's places | a player seated in the lobby; organizer or admin | `/events/:id`, "Report places"; `/events/:id/admin`, the places dialog | `PUT /cup-series/{id}/places`; a runner also `PUT /cup-series/{id}/lobby-map` and `DELETE /cup-series/{id}/result` | [Leagues and events](../pages/leagues-and-events.md) |
+| 7. Veto and report a result | either side of the series, a team's every player | `/events/:id`, the draw's Veto and Report | `PUT /cup-series/{id}/veto`, `PUT /cup-series/{id}/report` | [Leagues and events](../pages/leagues-and-events.md) |
+| 8. Enter a result, a walkover or a forfeit | organizer or admin | `/events/:id/admin`, the result dialog | `PUT /cup-series/{id}`, `PUT /cup-series/{id}/result-kind`, `PUT /cup-series/{id}/places` for a lobby | [Event management](../pages/event-management.md) |
+| 9. Advance the stage, on a stage another stage follows | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/advance` | [Event management](../pages/event-management.md) |
+| 9a. On a cup over rounds, finish each round once it is played; its places pay points into the overall table | organizer or admin | `/events/:id/admin`, the rounds bar | `POST /events/{id}/legs/{leg_id}/finish`, `DELETE` to reopen | [Event management](../pages/event-management.md) |
 | 10. Finish the event, or reopen a finished one | admin | `/events/:id/admin`, the last stage | `POST /events/{id}/finish`, `POST /events/{id}/reopen` | [Event management](../pages/event-management.md) |
+| 11. Repeat the cup on a rule, and create each next cup on a coming day | organizer or admin | `/events/:id/admin`, "Repeat this cup"; `/events/recurring/:id`, "Create" | `POST /events/{id}/recurrence`, `POST /cup-recurrences/{id}/occurrences` | [Event management](../pages/event-management.md) |
 
-Steps 6 to 9 repeat for every stage.
+Steps 6 to 9 repeat for every stage. A cup plays one stage, so it skips step 9 and finishes.
 
 # Diagram
 
@@ -44,14 +50,14 @@ sequenceDiagram
     participant Member
     participant Backend
     Admin->>Backend: new league on /leagues, POST /leagues
-    Admin->>Backend: event wizard on /events/new, POST /events
+    Admin->>Backend: Create cup on /events/new/cup, POST /events
     Member->>Backend: sign up on /events/:id, POST /events/:id/entrants
     Admin->>Backend: divisions and seeds on /events/:id/entrants
     Admin->>Backend: lock seeds, POST /events/:id/stages/:stage_id/seeds/lock
     loop every stage
         Admin->>Backend: generate on /events/:id/admin
         par results
-            Member->>Backend: report on /series/:id, PUT /player-series/:id
+            Member->>Backend: veto and report on /events/:id, PUT /cup-series/:id/report
         and
             Admin->>Backend: result, walkover or forfeit on /events/:id/admin
         end
@@ -68,5 +74,5 @@ sequenceDiagram
 - "Create event" writes the event and its stages in one body, so no event exists without its stages: [event management](../pages/event-management.md).
 - The eligibility warnings show as chips after a signup and never block it: [leagues and events](../pages/leagues-and-events.md).
 - A locked stage takes no reorder, and the public page shows the seeds once they are locked: [event management](../pages/event-management.md).
-- "Advance" waits until every series of the stage carries a result. A reopen of a series that the engine refuses asks once more and forces: [event management](../pages/event-management.md).
+- "Advance" waits until every series of the stage carries a result, and the last stage never shows it. A reopen of a series that the engine refuses asks once more and forces: [event management](../pages/event-management.md).
 - "Finish" freezes the last stage's table into the award rows, and a first place reaches the player page's trophy shelf: [event management](../pages/event-management.md).

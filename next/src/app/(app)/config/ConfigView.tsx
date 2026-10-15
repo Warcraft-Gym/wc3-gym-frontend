@@ -37,6 +37,8 @@ const EMPTY_SETTINGS: SettingsMap = {
   results_channel_id: "",
   content_channel_id: "",
   fantasy_dashboard_channel_id: "",
+  announcement_channel_id: "",
+  announcement_role_id: "",
 };
 
 // The Discord channel and role ids, each with its label, hint and icon
@@ -50,6 +52,8 @@ const DISCORD_FIELDS = [
   { key: "scheduling_channel_id", label: "Scheduling channel ID", hint: "Where match scheduling notifications are posted", icon: "mdi-calendar-clock", wide: false },
   { key: "results_channel_id", label: "Results channel ID", hint: "Where match results and replays are posted", icon: "mdi-trophy-outline", wide: false },
   { key: "content_channel_id", label: "Content channel ID", hint: "Where cast claims and stream reminders are posted", icon: "mdi-broadcast", wide: false },
+  { key: "announcement_channel_id", label: "Announcement channel ID", hint: "Where cups announce their signups, check-in, draws and podium", icon: "mdi-bullhorn-outline", wide: false },
+  { key: "announcement_role_id", label: "Announcement role ID", hint: "The role members take on Home; place it below the bot and bind it to nothing", icon: "mdi-bell-ring-outline", wide: false },
 ];
 
 // The keys each section holds, so a failed save opens the sections with unsaved edits

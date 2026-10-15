@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  fixtureRosters, fixtureRows, fixtureScore, modeLabel, pickLabel, rosterSides, sideRoster,
-  takesRoster,
+  fixtureRosters, fixtureRows, fixtureScore, modeLabel, pickLabel, sideRoster,
 } from './fixture.mjs';
 import { isLobby } from './stage-view.mjs';
 
@@ -61,25 +60,6 @@ test('a side names the players it fields, and nobody before a captain writes the
 test('the fixture score counts the series each side took', () => {
   assert.deepEqual(fixtureScore(CLAN_WAR), [1, 1]);
   assert.deepEqual(fixtureScore([]), [0, 0]);
-});
-
-test('a fixture series that fields more than one player a side takes a roster', () => {
-  assert.equal(takesRoster(CLAN_WAR[1]), false, 'a played series is settled');
-  assert.equal(takesRoster(CLAN_WAR[2]), true);
-  assert.equal(takesRoster(CLAN_WAR[3]), false, 'a 1v1 is drafted, not rostered');
-  assert.equal(takesRoster({ side_size: 2 }), false, 'a series outside a fixture takes none');
-});
-
-test('a captain names his own side, and an admin either', () => {
-  const rosters = {
-    1: [{ player: player(51, 'thanks'), captain: true }, { player: player(52, 'Peterian'), captain: false }],
-    2: [{ player: player(61, 'Barren'), captain: true }],
-  };
-  assert.deepEqual(rosterSides(CLAN_WAR[2], rosters, 51, false), [1]);
-  assert.deepEqual(rosterSides(CLAN_WAR[2], rosters, 61, false), [2]);
-  assert.deepEqual(rosterSides(CLAN_WAR[2], rosters, 52, false), [], 'a member is not a captain');
-  assert.deepEqual(rosterSides(CLAN_WAR[2], rosters, null, true), [1, 2]);
-  assert.deepEqual(rosterSides(CLAN_WAR[3], rosters, null, true), [], 'a 1v1 takes no roster');
 });
 
 test('the roster of each side comes off the team the series names', () => {

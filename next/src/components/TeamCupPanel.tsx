@@ -99,7 +99,7 @@ export function TeamCupPanel({
                 <Icon name="mdi-check" />
                 Checked in
               </Badge>
-            ) : event.checkin_enabled && !short && !entrant.waitlisted_at ? (
+            ) : event.checkin_enabled && event.checkin_open && !short && !entrant.waitlisted_at ? (
               <Button size="sm" disabled={!!busy} onClick={() => work("checkin", () => store.checkIn(event.id, entrant.id))}>
                 <Icon name="mdi-check" />
                 Check the team in

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Settings } from 'luxon';
-import { checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, editOpening, openingAmount, toMinutes, unitOf } from './checkin-window.mjs';
+import { checkinOpenNow, checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, editOpening, openingAmount, toMinutes, unitOf } from './checkin-window.mjs';
 
 // The reader's clock: Berlin, an hour ahead of UTC once summer time ends on 25 Oct 2026
 Settings.defaultZone = 'Europe/Berlin';
@@ -86,4 +86,16 @@ test("a round's window reads the server's times, or the time a runner closed it"
   assert.equal(checkinWindowLine(leg, true), 'Check-in from sign-up until the draw.');
   assert.equal(checkinWindowLine({ ...leg, checkin_closes_at: '2026-10-30T18:30:00Z' }, false), 'Check-in from 30 Oct 2026, 18:00 until 30 Oct 2026, 19:30.');
   assert.equal(checkinWindowLine({ ...leg, checkin_closes_at: '2026-10-30T18:10:00Z', checkin_closed_at: '2026-10-30T18:10:00Z' }, false), 'Check-in closed on 30 Oct 2026, 19:10.');
+});
+
+test('a round takes a player between its opening and its close, and early check-in skips the opening', () => {
+  const at = (iso) => Date.parse(iso);
+  const leg = { checkin_opens_at: '2026-10-30T18:00:00Z', checkin_closes_at: null };
+  assert.equal(checkinOpenNow(leg, false, at('2026-10-30T17:59:00Z')), false);
+  assert.equal(checkinOpenNow(leg, true, at('2026-10-30T17:59:00Z')), true);
+  assert.equal(checkinOpenNow(leg, false, at('2026-10-30T18:00:00Z')), true);
+  // a runner's close, a timed close or a finished cup all read as checkin_closes_at
+  const closed = { ...leg, checkin_closes_at: '2026-10-30T19:00:00Z' };
+  assert.equal(checkinOpenNow(closed, true, at('2026-10-30T18:59:00Z')), true);
+  assert.equal(checkinOpenNow(closed, true, at('2026-10-30T19:00:00Z')), false);
 });

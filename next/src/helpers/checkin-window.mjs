@@ -84,6 +84,12 @@ export const checkinPayload = (settings) => ({
   early_checkin: !!settings.early_checkin,
 });
 
+/** Whether the server takes a player's own check-in for a cup or a round now: its close covers a
+ *  runner's close, a timed close and a finished or cancelled cup.
+ *  @param {any} target @param {boolean} early @param {number} [now] */
+export const checkinOpenNow = (target, early, now = Date.now()) =>
+  (!target.checkin_closes_at || now < Date.parse(target.checkin_closes_at)) && (early || !target.checkin_opens_at || now >= Date.parse(target.checkin_opens_at));
+
 /** The window the server answers for a cup or one of its rounds: from its opening, or from
  *  sign-up with early check-in, until its close or its draw; or the time a runner closed it.
  *  @param {any} leg @param {boolean} early */

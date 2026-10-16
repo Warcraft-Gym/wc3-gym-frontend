@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { legTitle } from "@/helpers/cup-rounds.mjs";
+import { checkinOpenNow } from "@/helpers/checkin-window.mjs";
 import { missing } from "@/helpers/cup-teams.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
@@ -46,7 +47,7 @@ export function CupRoundPicker({
   const checkedIn = !!entry && (leg.checked_in || []).includes(entry.id);
   // a cup team checks in once every invited player has accepted
   const short = !!entry && !!event.team_size && missing(entry, event.team_size) > 0;
-  const open = !!entry && !short && !drawn && !leg.finished_at && !event.closed_at && !event.cancelled_at;
+  const open = !!entry && !short && !drawn && !leg.finished_at && !event.closed_at && !event.cancelled_at && checkinOpenNow(leg, !!event.early_checkin);
 
   const toggle = async () => {
     setBusy(true);

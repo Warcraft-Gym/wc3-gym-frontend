@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { CHECKIN_UNITS, checkinProblem, checkinSummary, toMinutes, unitOf } from "@/helpers/checkin-window.mjs";
+import { CHECKIN_UNITS, checkinProblem, checkinSummary, editOpening, openingAmount, toMinutes, unitOf } from "@/helpers/checkin-window.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -35,10 +35,8 @@ export function CheckinSettings({
   startsAt?: string | null;
 }) {
   const [advanced, setAdvanced] = useState(false);
-  // the unit picked for the opening; until then the one that counts the stored minutes whole
-  const [unitPick, setUnitPick] = useState<string | null>(null);
-  const unit = unitPick ?? unitOf(value.checkin_opens_minutes);
-  const size = CHECKIN_UNITS.find((item) => item.value === unit)?.minutes ?? 1;
+  // the opening's unit: the one that counts the minutes whole as the block mounts, then only the Select's pick
+  const [unit, setUnit] = useState(() => unitOf(value.checkin_opens_minutes));
   const opens: number | null = value.checkin_opens_minutes ?? null;
   const closes = value.checkin_closes_minutes;
   const before = closes !== null && closes !== undefined;
@@ -84,15 +82,15 @@ export function CheckinSettings({
                     min={0}
                     className="w-24"
                     aria-describedby={`${id}-opens-hint`}
-                    value={opens == null ? "" : String(opens / size)}
-                    onChange={(e) => onChange({ checkin_opens_minutes: toMinutes(e.target.value, unit) })}
+                    value={openingAmount(opens, unit)}
+                    onChange={(e) => onChange({ checkin_opens_minutes: editOpening({ minutes: opens, unit }, { amount: e.target.value }).minutes })}
                   />
                   <Select
                     value={unit}
-                    onValueChange={(next) => {
-                      setUnitPick(next as string);
-                      // the amount stays as typed and takes the new unit
-                      if (opens != null) onChange({ checkin_opens_minutes: toMinutes(opens / size, next as string) });
+                    onValueChange={(picked) => {
+                      const next = editOpening({ minutes: opens, unit }, { unit: picked as string });
+                      setUnit(next.unit);
+                      if (next.minutes !== opens) onChange({ checkin_opens_minutes: next.minutes });
                     }}
                   >
                     <SelectTrigger id={`${id}-opens-unit`} aria-label="Unit" className="w-32">

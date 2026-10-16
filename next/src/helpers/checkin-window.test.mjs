@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Settings } from 'luxon';
-import { checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, toMinutes, unitOf } from './checkin-window.mjs';
+import { checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, editOpening, openingAmount, toMinutes, unitOf } from './checkin-window.mjs';
 
 // The reader's clock: Berlin, an hour ahead of UTC once summer time ends on 25 Oct 2026
 Settings.defaultZone = 'Europe/Berlin';
@@ -22,6 +22,28 @@ test('an amount in a unit is sent as minutes, and a blank as null', () => {
   assert.equal(toMinutes('0', 'days'), 0);
   assert.equal(toMinutes('', 'hours'), null);
   assert.equal(toMinutes(null, 'days'), null);
+});
+
+test('the Opens field keeps its unit while the runner types, and changes it only on a pick', () => {
+  // the GNL default reads 3 days; a cleared amount keeps days, so 5 is 5 days and not 5 hours
+  let field = { minutes: 4320, unit: unitOf(4320) };
+  assert.equal(openingAmount(field.minutes, field.unit), 3);
+  field = editOpening(field, { amount: '' });
+  assert.deepEqual(field, { minutes: null, unit: 'days' });
+  assert.equal(openingAmount(field.minutes, field.unit), '');
+  field = editOpening(field, { amount: '5' });
+  assert.deepEqual(field, { minutes: 7200, unit: 'days' });
+  assert.equal(openingAmount(field.minutes, field.unit), 5);
+  // 24 typed in hours stays 24 hours, not 1 day
+  field = editOpening({ minutes: null, unit: 'hours' }, { amount: '24' });
+  assert.deepEqual(field, { minutes: 1440, unit: 'hours' });
+  assert.equal(openingAmount(field.minutes, field.unit), 24);
+  // a picked unit keeps the amount as typed: 2 hours become 2 days
+  assert.deepEqual(editOpening({ minutes: 120, unit: 'hours' }, { unit: 'days' }), { minutes: 2880, unit: 'days' });
+  assert.deepEqual(editOpening({ minutes: null, unit: 'hours' }, { unit: 'minutes' }), { minutes: null, unit: 'minutes' });
+  // a fraction reads to two decimals, so the field shows 1.5 and 0.33 and not a long tail
+  assert.equal(openingAmount(90, 'hours'), 1.5);
+  assert.equal(openingAmount(20, 'hours'), 0.33);
 });
 
 test('a cup reads when its check-in opens and that it closes at the draw or by hand', () => {

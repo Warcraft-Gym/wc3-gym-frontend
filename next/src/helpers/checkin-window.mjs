@@ -24,6 +24,17 @@ export const unitOf = (minutes) => {
  *  @param {string|number|null|undefined} amount @param {string} unit */
 export const toMinutes = (amount, unit) => (amount === '' || amount == null ? null : Math.max(Math.round(Number(amount) * sizeOf(unit)), 0));
 
+/** The Opens amount for `minutes` in `unit` to two decimals, as a number so the field keeps a typed "1.0".
+ *  @param {number|null|undefined} minutes @param {string} unit */
+export const openingAmount = (minutes, unit) => (minutes == null ? '' : Math.round((minutes / sizeOf(unit)) * 100) / 100);
+
+/** The Opens field after a typed amount or a picked unit; only a pick changes the unit and it keeps the amount.
+ *  @param {{minutes: number|null, unit: string}} field @param {{amount?: string, unit?: string}} edit */
+export const editOpening = (field, edit) =>
+  edit.unit === undefined
+    ? { minutes: toMinutes(edit.amount, field.unit), unit: field.unit }
+    : { minutes: field.minutes == null ? null : toMinutes(field.minutes / sizeOf(field.unit), edit.unit), unit: edit.unit };
+
 /** "2 hours", "1 day", "90 minutes".
  *  @param {number} minutes */
 export const durationText = (minutes) => {

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DateTime } from 'luxon';
-import { checkinOpensLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundOver, roundStateChip, sitOutUndo, waitingLines, nextAnswer } from './rounds.mjs';
+import { DateTime, Settings } from 'luxon';
+import { checkinLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundOver, roundStateChip, sitOutUndo, waitingLines, nextAnswer } from './rounds.mjs';
 
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
@@ -127,16 +127,29 @@ test('nothing waits when every series is played and every open round is answered
   assert.deepEqual(waitingLines([], ME), []);
 });
 
-// The check-in window: it opens checkin_days before the round starts and closes with it
+// The check-in window as the server sends it for a season with no zone: from 3 days before a
+// round until the round ends at midnight UTC
 const WINDOW_ROUNDS = [
-  { playday: 1, start_date: '2026-09-20', end_date: '2026-09-26' },
-  { playday: 2, start_date: '2026-09-27', end_date: '2026-10-03' },
+  { playday: 1, start_date: '2026-09-20', end_date: '2026-09-26', checkin_opens_at: '2026-09-17T00:00:00Z', checkin_closes_at: '2026-09-27T00:00:00Z' },
+  { playday: 2, start_date: '2026-09-27', end_date: '2026-10-03', checkin_opens_at: '2026-09-24T00:00:00Z', checkin_closes_at: '2026-10-04T00:00:00Z' },
 ];
-const windowCards = (today, checkinDays = 3, answers = []) =>
-  roundCards({ rounds: WINDOW_ROUNDS, answers, checkinDays }, DateTime.fromISO(today));
-const checkinLines = (today, checkinDays = 3, answers = []) => waitingLines(
-  [{ season: { id: 5, name: 'GNL Ladder Season' }, cards: windowCards(today, checkinDays, answers) }], ME,
+// A season that opens its check-in from sign-up sends no opening
+const OPEN_ROUNDS = WINDOW_ROUNDS.map((round) => ({ ...round, checkin_opens_at: null }));
+const windowCards = (today, rounds = WINDOW_ROUNDS, answers = []) =>
+  roundCards({ rounds, answers }, DateTime.fromISO(today));
+const checkinLines = (today, rounds = WINDOW_ROUNDS, answers = []) => waitingLines(
+  [{ season: { id: 5, name: 'GNL Ladder Season' }, cards: windowCards(today, rounds, answers) }], ME,
 ).map(row => row.text);
+// The reader's clock, for the lines that name a time
+const inZone = (zone, check) => {
+  const was = Settings.defaultZone;
+  Settings.defaultZone = zone;
+  try {
+    check();
+  } finally {
+    Settings.defaultZone = was;
+  }
+};
 
 test('a card carries the day its check-in opens', () => {
   const cards = windowCards('2026-09-22T10:00');
@@ -144,8 +157,8 @@ test('a card carries the day its check-in opens', () => {
   assert.deepEqual(cards.map(card => card.open), [true, false]);
   // the window closes with the round
   assert.deepEqual(windowCards('2026-09-28T10:00').map(card => card.open), [false, true]);
-  // a season that names no checkin_days has no window, so the check-in is always open
-  assert.deepEqual(windowCards('2026-09-22T10:00', null).map(card => [card.opens, card.open]), [[null, true], [null, true]]);
+  // a season that sends no opening is open from sign-up
+  assert.deepEqual(windowCards('2026-09-22T10:00', OPEN_ROUNDS).map(card => [card.opens, card.open]), [[null, true], [null, true]]);
 });
 
 test('a round asks for a check-in only inside its window', () => {
@@ -158,13 +171,13 @@ test('a round asks for a check-in only inside its window', () => {
 });
 
 test('an answered round drops out of the check-in lines', () => {
-  assert.deepEqual(checkinLines('2026-09-24T10:00', 3, [{ playday: 1, available: true }]), [
+  assert.deepEqual(checkinLines('2026-09-24T10:00', WINDOW_ROUNDS, [{ playday: 1, available: true }]), [
     'GNL Ladder Season - Round 2 - Check in for 27 Sep to 3 Oct',
   ]);
 });
 
 test('a card whose answers are still being read is pending and asks nothing', () => {
-  const cards = roundCards({ rounds: WINDOW_ROUNDS, checkinDays: 3 }, DateTime.fromISO('2026-09-24T10:00'));
+  const cards = roundCards({ rounds: WINDOW_ROUNDS }, DateTime.fromISO('2026-09-24T10:00'));
   assert.deepEqual(cards.map(card => [card.pending, card.answer]), [[true, null], [true, null]]);
   assert.deepEqual(waitingLines([{ season: { id: 5, name: 'GNL Ladder Season' }, cards }], ME), []);
   // an answer that has arrived, empty or not, ends the pending state and asks again
@@ -172,8 +185,8 @@ test('a card whose answers are still being read is pending and asks nothing', ()
   assert.equal(checkinLines('2026-09-24T10:00').length, 2);
 });
 
-test('a season without checkin_days asks the round in play, as before', () => {
-  assert.deepEqual(checkinLines('2026-09-22T10:00', null), ['GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep']);
+test('a season open from sign-up asks the round in play', () => {
+  assert.deepEqual(checkinLines('2026-09-22T10:00', OPEN_ROUNDS), ['GNL Ladder Season - Round 1 - Check in for 20 to 26 Sep']);
 });
 
 test('the state chip reads the round before it reads the window', () => {
@@ -182,9 +195,9 @@ test('the state chip reads the round before it reads the window', () => {
   assert.equal(roundStateChip(past), 'Not paired');
   assert.equal(roundStateChip(open), 'No answer');
   assert.equal(roundStateChip(open, false), 'Not paired yet');
-  // before its window a round names the day it opens, but only to the player who checks in
+  // before its window a round names when it opens on the reader's clock, but only to the player who checks in
   const [ahead] = windowCards('2026-09-15T10:00');
-  assert.equal(roundStateChip(ahead), 'Check-in opens 17 Sep');
+  inZone('Europe/Berlin', () => assert.equal(roundStateChip(ahead), 'Check-in opens 17 Sep, 02:00'));
   assert.equal(roundStateChip(ahead, false), 'Not paired yet');
   assert.equal(roundStateChip({ ...ahead, answer: true }), 'Checked in');
   assert.equal(roundStateChip({ ...ahead, answer: false }), 'Out');
@@ -192,7 +205,7 @@ test('the state chip reads the round before it reads the window', () => {
 
 test('a derived answer reads as out through the blocked times', () => {
   const [card] = roundCards(
-    { rounds: WINDOW_ROUNDS, answers: [{ playday: 1, available: false, blocked_out: true, set_by_user_id: null }], checkinDays: 3 },
+    { rounds: WINDOW_ROUNDS, answers: [{ playday: 1, available: false, blocked_out: true, set_by_user_id: null }] },
     DateTime.fromISO('2026-09-22T10:00'),
   );
   assert.equal(card.blocked, true);
@@ -200,7 +213,7 @@ test('a derived answer reads as out through the blocked times', () => {
   assert.equal(roundStateChip(card), 'Out (blocked times)');
   // a stored answer is not derived, and names who set it
   const [stored] = roundCards(
-    { rounds: WINDOW_ROUNDS, answers: [{ playday: 1, available: false, set_by_user_id: 9, set_by_name: 'Peterian' }], checkinDays: 3 },
+    { rounds: WINDOW_ROUNDS, answers: [{ playday: 1, available: false, set_by_user_id: 9, set_by_name: 'Peterian' }] },
     DateTime.fromISO('2026-09-22T10:00'),
   );
   assert.equal(stored.blocked, false);
@@ -210,17 +223,43 @@ test('a derived answer reads as out through the blocked times', () => {
 
 test('early check-in takes an answer before the window opens', () => {
   const ahead = DateTime.fromISO('2026-09-15T10:00');
-  assert.deepEqual(roundCards({ rounds: WINDOW_ROUNDS, answers: [], checkinDays: 3 }, ahead).map(c => c.takes), [false, false]);
-  const early = roundCards({ rounds: WINDOW_ROUNDS, answers: [], checkinDays: 3, earlyCheckin: true }, ahead);
+  assert.deepEqual(roundCards({ rounds: WINDOW_ROUNDS, answers: [] }, ahead).map(c => c.takes), [false, false]);
+  const early = roundCards({ rounds: WINDOW_ROUNDS, answers: [], earlyCheckin: true }, ahead);
   assert.deepEqual(early.map(c => c.takes), [true, true]);
-  // the chip still names the day the window opens, under the buttons
+  // the line under the buttons still names when the window opens
   assert.equal(roundStateChip(early[0]), 'No answer');
-  assert.equal(checkinOpensLine(early[0]), 'Check-in opens 17 Sep');
+  inZone('UTC', () => assert.equal(checkinLine(early[0]), 'Check-in opens 17 Sep, 00:00'));
   // a round that is over takes no answer, early check-in or not
   assert.deepEqual(
-    roundCards({ rounds: WINDOW_ROUNDS, answers: [], checkinDays: 3, earlyCheckin: true }, DateTime.fromISO('2026-10-04T10:00')).map(c => c.takes),
+    roundCards({ rounds: WINDOW_ROUNDS, answers: [], earlyCheckin: true }, DateTime.fromISO('2026-10-04T10:00')).map(c => c.takes),
     [false, false],
   );
+});
+
+test("a card reads the server's window and works none out of checkin_days", () => {
+  // opens 2 hours before the round starts and closes 30 minutes before it, which no day count gives
+  const rounds = [{ playday: 1, start_date: '2026-09-20', end_date: '2026-09-26', checkin_opens_at: '2026-09-19T22:00:00Z', checkin_closes_at: '2026-09-19T23:30:00Z' }];
+  const at = (iso) => roundCards({ rounds, answers: [], checkinDays: 3 }, DateTime.fromISO(iso))[0];
+  assert.deepEqual(['2026-09-17T12:00:00Z', '2026-09-19T22:30:00Z', '2026-09-19T23:45:00Z'].map((iso) => at(iso).takes), [false, true, false]);
+  // closed early, the round is still in play but takes no answer
+  const shut = at('2026-09-20T10:00:00Z');
+  assert.deepEqual([shut.over, shut.current, shut.open, shut.takes], [false, true, false, false]);
+  assert.equal(roundCards({ rounds, answers: [], earlyCheckin: true }, DateTime.fromISO('2026-09-20T10:00:00Z'))[0].takes, false);
+  inZone('UTC', () => {
+    assert.equal(checkinLine(at('2026-09-17T12:00:00Z')), 'Check-in opens 19 Sep, 22:00');
+    assert.equal(checkinLine(at('2026-09-19T22:30:00Z')), 'Check-in closes 19 Sep, 23:30');
+    assert.equal(roundStateChip(shut), 'Check-in closed 19 Sep, 23:30');
+  });
+  // a close at the round's end is the round's end line, not a check-in line
+  inZone('UTC', () => assert.equal(checkinLine(windowCards('2026-09-22T10:00')[0]), ''));
+});
+
+test('a season with no zone ends its rounds at midnight UTC, as the server does', () => {
+  // 26 Sep 20:00 UTC is 27 Sep 04:00 in Perth, and round 1 still runs until 27 Sep 00:00 UTC
+  inZone('Australia/Perth', () => {
+    const cards = roundCards({ rounds: WINDOW_ROUNDS, answers: [] }, DateTime.fromISO('2026-09-26T20:00:00Z'));
+    assert.deepEqual(cards.map((card) => [card.over, card.current, card.takes]), [[false, true, true], [false, false, true]]);
+  });
 });
 
 test('a round ends at midnight in the event zone', () => {

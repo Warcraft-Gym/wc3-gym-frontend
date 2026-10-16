@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { StatusAlert } from "@/components/StatusAlert";
+import { checkinPayload } from "@/helpers/checkin-window.mjs";
 import { readStagesPayload } from "@/helpers/event-wizard.mjs";
 import { DEFAULT_PICK_BAN } from "@/helpers/pick-ban.mjs";
 import { changedRounds, crewChanges, drawMatchups, dropUnpooled, fillRoundMaps, idDiff, matchupRows, stepProblem, wizardSteps } from "@/helpers/season-wizard.mjs";
@@ -28,17 +29,19 @@ type Linked = {
   rosters: Record<number, number[]>;
 };
 
-// A GNL season opens early check-in, asks for 20 games over the last 2 W3C seasons and plays the default veto
+// A GNL season opens check-in 3 days before a round with early check-in, closes it when the round
+// ends, asks for 20 games over the last 2 W3C seasons and plays the default veto
 const blankSeason = (): Row => ({
   name: "", round_count: 0, pick_ban: DEFAULT_PICK_BAN, series_per_round: 0, score_system: "standard", discordRole: "", start_date: null, end_date: null,
-  fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_enabled: true, checkin_days: 3, early_checkin: true,
+  fantasy_grind: false, signups_open: true, scheduling_enabled: true, checkin_enabled: true, checkin_opens_minutes: 3 * 1440, checkin_closes_minutes: null, early_checkin: true,
   round_end_zone: null, min_games: 20, min_games_seasons: 2,
 });
 
-// A cleared field is null: check-in all season, a floor over every W3C season, a round that ends where the reader is
+// A cleared field is null: a floor over every W3C season, no round end zone; the check-in window
+// goes as minutes, and the server keeps checkin_days in step with them
 const blanksAsNull = (season: Row): Row => ({
   ...season,
-  checkin_days: season.checkin_days === "" ? null : season.checkin_days,
+  ...checkinPayload(season),
   min_games: season.min_games === "" ? null : season.min_games,
   min_games_seasons: season.min_games_seasons === "" ? null : season.min_games_seasons,
   round_end_zone: season.round_end_zone || null,

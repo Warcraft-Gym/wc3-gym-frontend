@@ -155,7 +155,6 @@ export function PlayerProfile({ playerKey, onLoaded }: { playerKey: string; onLo
       rounds: answer.rounds ?? [],
       series: answer.series ?? [],
       answers: answer.availability ?? [],
-      checkinDays: full.checkin_days ?? season.checkin_days ?? null,
       earlyCheckin: !!full.early_checkin,
       zone: full.round_end_zone ?? null,
     });

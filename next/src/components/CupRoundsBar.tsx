@@ -7,6 +7,7 @@ import { toneClass } from "@/components/ui/tone";
 import { CupRoundsEditor } from "@/components/CupRoundsEditor";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { legState, legTitle } from "@/helpers/cup-rounds.mjs";
+import { checkinWindowLine } from "@/helpers/checkin-window.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -181,7 +182,39 @@ export function CupRoundsBar({
                   Check everyone in
                 </Button>
               ) : null}
+              {/* a runner closes this round's check-in to players, and reopens it */}
+              {!closed ? (
+                <Button
+                  id={`round-checkin-close-${leg.id}`}
+                  size="sm"
+                  variant="outline"
+                  disabled={busy === "close"}
+                  onClick={() =>
+                    work("close", () =>
+                      store.closeLegCheckin(
+                        event.id,
+                        leg.id,
+                        !leg.checkin_closed_at,
+                      ),
+                    )
+                  }
+                >
+                  <Icon
+                    name={
+                      busy === "close"
+                        ? "mdi-loading mdi-spin"
+                        : leg.checkin_closed_at
+                          ? "mdi-lock-open-variant-outline"
+                          : "mdi-lock-outline"
+                    }
+                  />
+                  {leg.checkin_closed_at ? "Reopen check-in" : "Close check-in"}
+                </Button>
+              ) : null}
             </div>
+            <p className="text-sm text-muted-foreground">
+              {checkinWindowLine(leg, !!event.early_checkin)}
+            </p>
             <ul
               className="flex flex-wrap gap-2"
               aria-label={`Check-in for ${legTitle(leg)}`}

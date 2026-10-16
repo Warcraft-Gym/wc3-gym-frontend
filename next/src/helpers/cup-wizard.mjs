@@ -6,6 +6,7 @@ import { dayIso } from './date-input.mjs';
 import { text } from './event-labels.mjs';
 import { storedUtc, viewerZone } from './timezone.mjs';
 import { WEEKDAYS } from './cup-recurrence.mjs';
+import { checkinPayload, checkinProblem } from './checkin-window.mjs';
 
 export const CUP_STEPS = [
   { key: 'basics', title: 'Basics' },
@@ -275,8 +276,22 @@ export const blankCup = () => ({
   repeat_name: '',
   repeat_until: null,
   checkin_enabled: true,
+  // check-in opens 2 hours before the start and closes at the draw
+  checkin_opens_minutes: 120,
+  checkin_closes_minutes: null,
+  // null takes the cup's default: off on one evening, on over rounds, so a round takes players from sign-up
+  early_checkin: null,
   published: true,
   signups_open: true,
+});
+
+/** The check-in settings of the cup: a cup over rounds checks in for each round, always.
+ *  @param {any} form */
+export const cupCheckin = (form) => ({
+  checkin_enabled: form.play === 'rounds' || !!form.checkin_enabled,
+  checkin_opens_minutes: form.checkin_opens_minutes,
+  checkin_closes_minutes: form.checkin_closes_minutes,
+  early_checkin: form.early_checkin ?? form.play === 'rounds',
 });
 
 const count = (value) => (value === '' || value === null || value === undefined ? null : Number(value));
@@ -308,6 +323,7 @@ export const cupPayload = (form) => ({
   uses_divisions: !!form.uses_divisions,
   // a cup played over rounds checks its players in per round, never once for the cup
   checkin_enabled: form.play === 'rounds' ? false : !!form.checkin_enabled,
+  ...checkinPayload(cupCheckin(form)),
   ...roundsPayload(form),
   recurrence: repeatPayload(form),
   published: !!form.published,
@@ -480,6 +496,7 @@ export function cupProblem(form, step) {
     if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
     if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
     if (count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
+    return checkinProblem(cupCheckin(form));
   }
   return null;
 }

@@ -12,7 +12,7 @@ import { SitOutRestDialog } from "@/components/player/SitOutRestDialog";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { SUPERADMIN_SIGNUP_NOTE, seasonAction } from "@/helpers/events.mjs";
 import { homeRounds, ownScore, seasonState, teamMatch } from "@/helpers/home-hub.mjs";
-import { checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
+import { checkinLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { local } from "@/helpers/schedule.mjs";
 import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { teamLabel } from "@/helpers/teams.mjs";
@@ -223,7 +223,6 @@ export function MySeason({
         rounds: data.rounds ?? [],
         series: data.series ?? [],
         answers: data.availability ?? [],
-        checkinDays: season?.checkin_days ?? null,
         earlyCheckin: !!season?.early_checkin,
         zone,
       } as any)
@@ -237,8 +236,8 @@ export function MySeason({
   const roundRow = (card: Row) => {
     const list: Row[] = card.seriesList ?? [];
     // a captain who plays on no roster checks into nothing, so his row reads only when the round ends
-    const opens = state === "not_in" ? "" : checkinOpensLine(card);
-    const when = card.over ? null : opens || roundEndLine(card.endsAt, zone, viewerZone());
+    const checkin = state === "not_in" ? "" : checkinLine(card);
+    const when = card.over ? null : checkin || roundEndLine(card.endsAt, zone, viewerZone());
     const fixture = fixtureOf(card.playday);
     return (
       <div key={card.playday} className={cn(ROW, card.current && "font-medium")}>

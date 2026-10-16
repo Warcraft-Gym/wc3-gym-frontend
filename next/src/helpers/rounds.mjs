@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import { seriesContext } from './series-actions.mjs';
 import { isUnscored } from './season-phase.mjs';
 import { checkInStatus } from './check-in.mjs';
+import { zonedTimeText } from './event-labels.mjs';
 
 // A round card read as the check-in answer it holds, so the card and the captain grid say one thing
 export const cardStatus = (card) => checkInStatus({ available: card?.answer, blocked_out: card?.blocked });
@@ -40,11 +41,10 @@ export const roundEndLine = (end, zone = null, viewer = null) => {
   return `Ends ${stamp(end)} ${zone}${mine?.isValid ? ` · ${stamp(mine)} your time` : ''}`;
 };
 
-// On the reader's clock: "Check-in opens 10 Oct, 02:00" while the window is ahead, and "Check-in
-// closes 16 Oct, 22:00" or "Check-in closed ..." when it closes before the round ends; else ''
+// "Check-in opens 10 Oct 2026, 02:00 CEST" ahead of the window, "Check-in closes/closed ..." before the round ends, else ''
 export const checkinLine = (card) => {
   if (!card || card.over) return '';
-  const stamp = (at) => at.toLocal().toFormat('d LLL, HH:mm');
+  const stamp = (at) => zonedTimeText(at.toISO());
   if (card.opens && !card.open && !card.shut) return `Check-in opens ${stamp(card.opens)}`;
   if (card.closesEarly) return `Check-in ${card.shut ? 'closed' : 'closes'} ${stamp(card.closes)}`;
   return '';

@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { DateTime, Settings } from 'luxon';
 import { checkinLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundOver, roundStateChip, sitOutUndo, waitingLines, nextAnswer } from './rounds.mjs';
 
+// The locale names the zone: "GMT+2" for Berlin in en-US, where en-GB reads "CEST"
+Settings.defaultLocale = 'en-US';
+
 test('a round is labelled by its window', () => {
   assert.equal(roundLabel({ playday: 1, start_date: '2026-09-13', end_date: '2026-09-19' }), '13 to 19 Sep');
   assert.equal(roundLabel({ playday: 3, start_date: '2026-09-28', end_date: '2026-10-04' }), '28 Sep to 4 Oct');
@@ -197,7 +200,7 @@ test('the state chip reads the round before it reads the window', () => {
   assert.equal(roundStateChip(open, false), 'Not paired yet');
   // before its window a round names when it opens on the reader's clock, but only to the player who checks in
   const [ahead] = windowCards('2026-09-15T10:00');
-  inZone('Europe/Berlin', () => assert.equal(roundStateChip(ahead), 'Check-in opens 17 Sep, 02:00'));
+  inZone('Europe/Berlin', () => assert.equal(roundStateChip(ahead), 'Check-in opens 17 Sep 2026, 02:00 GMT+2'));
   assert.equal(roundStateChip(ahead, false), 'Not paired yet');
   assert.equal(roundStateChip({ ...ahead, answer: true }), 'Checked in');
   assert.equal(roundStateChip({ ...ahead, answer: false }), 'Out');
@@ -228,7 +231,7 @@ test('early check-in takes an answer before the window opens', () => {
   assert.deepEqual(early.map(c => c.takes), [true, true]);
   // the line under the buttons still names when the window opens
   assert.equal(roundStateChip(early[0]), 'No answer');
-  inZone('UTC', () => assert.equal(checkinLine(early[0]), 'Check-in opens 17 Sep, 00:00'));
+  inZone('UTC', () => assert.equal(checkinLine(early[0]), 'Check-in opens 17 Sep 2026, 00:00 UTC'));
   // a round that is over takes no answer, early check-in or not
   assert.deepEqual(
     roundCards({ rounds: WINDOW_ROUNDS, answers: [], earlyCheckin: true }, DateTime.fromISO('2026-10-04T10:00')).map(c => c.takes),
@@ -246,9 +249,9 @@ test("a card reads the server's window and works none out of checkin_days", () =
   assert.deepEqual([shut.over, shut.current, shut.open, shut.takes], [false, true, false, false]);
   assert.equal(roundCards({ rounds, answers: [], earlyCheckin: true }, DateTime.fromISO('2026-09-20T10:00:00Z'))[0].takes, false);
   inZone('UTC', () => {
-    assert.equal(checkinLine(at('2026-09-17T12:00:00Z')), 'Check-in opens 19 Sep, 22:00');
-    assert.equal(checkinLine(at('2026-09-19T22:30:00Z')), 'Check-in closes 19 Sep, 23:30');
-    assert.equal(roundStateChip(shut), 'Check-in closed 19 Sep, 23:30');
+    assert.equal(checkinLine(at('2026-09-17T12:00:00Z')), 'Check-in opens 19 Sep 2026, 22:00 UTC');
+    assert.equal(checkinLine(at('2026-09-19T22:30:00Z')), 'Check-in closes 19 Sep 2026, 23:30 UTC');
+    assert.equal(roundStateChip(shut), 'Check-in closed 19 Sep 2026, 23:30 UTC');
   });
   // a close at the round's end is the round's end line, not a check-in line
   inZone('UTC', () => assert.equal(checkinLine(windowCards('2026-09-22T10:00')[0]), ''));

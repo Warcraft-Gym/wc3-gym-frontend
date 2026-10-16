@@ -12,6 +12,11 @@ export const timeText = (value) => (value
   ? DateTime.fromISO(value, { zone: 'utc' }).toLocal().toFormat('d LLL yyyy, HH:mm')
   : '—');
 
+// A stored instant on the reader's clock with the zone named: "20 Oct 2026, 18:00 CEST"
+export const zonedTimeText = (value) => (value
+  ? DateTime.fromISO(value, { zone: 'utc' }).toLocal().toFormat('d LLL yyyy, HH:mm ZZZZ')
+  : '—');
+
 // An event runs between two days, starts on one, or carries no dates at all; an event
 // that starts and ends on the same day, a KOTH night among them, names that day once
 export const dateRange = (event) => {

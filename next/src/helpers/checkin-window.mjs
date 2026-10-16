@@ -43,12 +43,12 @@ export const durationText = (minutes) => {
   return `${count} ${count === 1 ? unit.slice(0, -1) : unit}`;
 };
 
-// What the window counts from and where it closes by default, by the kind of event that takes it.
-// A runner closes a cup's check-in, or one round's, by hand; a GNL round closes at its end.
-const SHAPES = {
-  cup: { start: 'the start', ends: 'at the draw', byHand: true, timed: true },
-  rounds: { start: 'each round', ends: "at the round's draw", byHand: true, timed: false },
-  gnl: { start: 'a round', ends: 'when the round ends (late check-in)', byHand: false, timed: false },
+// Per kind of event: what the window counts from, its default close, whether a runner closes it, and the early-close hint
+const DRAW_HINT = 'Leaves time before the draw, for example 15 to 30 minutes for a cast cup.';
+export const CHECKIN_SHAPES = {
+  cup: { start: 'the start', ends: 'at the draw', byHand: true, timed: true, hint: DRAW_HINT },
+  rounds: { start: 'each round', ends: "at the round's draw", byHand: true, timed: false, hint: DRAW_HINT },
+  gnl: { start: 'a round', ends: 'when the round ends (late check-in)', byHand: false, timed: false, hint: 'Leaves time to set up the round before it starts.' },
 };
 
 /** One line that says when check-in opens and closes. `startsAt` names the opening on the
@@ -56,7 +56,7 @@ const SHAPES = {
  *  @param {any} settings @param {'cup'|'rounds'|'gnl'} kind @param {string|null} [startsAt] */
 export const checkinSummary = (settings, kind, startsAt = null) => {
   if (settings.checkin_enabled === false) return 'No check-in.';
-  const shape = SHAPES[kind];
+  const shape = CHECKIN_SHAPES[kind];
   const opens = settings.checkin_opens_minutes;
   const closes = settings.checkin_closes_minutes;
   const at = shape.timed && startsAt && opens != null ? ` (${zonedTimeText(DateTime.fromISO(startsAt, { zone: 'utc' }).minus({ minutes: opens }).toISO())})` : '';

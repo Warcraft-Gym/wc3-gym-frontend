@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Settings } from 'luxon';
-import { checkinOpenNow, checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, editOpening, openingAmount, toMinutes, unitOf } from './checkin-window.mjs';
+import { CHECKIN_SHAPES, checkinOpenNow, checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, editOpening, openingAmount, toMinutes, unitOf } from './checkin-window.mjs';
 
 // The reader's clock: Berlin, an hour ahead of UTC once summer time ends on 25 Oct 2026
 Settings.defaultZone = 'Europe/Berlin';
@@ -63,6 +63,12 @@ test('a GNL season reads its window per round, and late check-in until the round
   assert.equal(checkinSummary({ ...SEASON, checkin_opens_minutes: 1440, checkin_closes_minutes: 60, early_checkin: false }, 'gnl'), 'Opens 1 day before a round, closes 1 hour before a round.');
   // a season has no one start, so it names no time even when one is passed
   assert.equal(checkinSummary({ ...SEASON, early_checkin: false }, 'gnl', '2026-10-30T19:00:00Z'), 'Opens 3 days before a round, closes when the round ends (late check-in).');
+});
+
+test('the close of a GNL season counts back from a round and names no draw', () => {
+  assert.equal(CHECKIN_SHAPES.gnl.start, 'a round');
+  assert.doesNotMatch(CHECKIN_SHAPES.gnl.hint, /draw|cast/);
+  assert.equal(CHECKIN_SHAPES.cup.hint, 'Leaves time before the draw, for example 15 to 30 minutes for a cast cup.');
 });
 
 test('the settings cannot close check-in after it opens, nor close it before the start with no minutes', () => {

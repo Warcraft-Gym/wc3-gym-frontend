@@ -29,7 +29,8 @@ const UNRATED = "[&_.player-name]:min-w-0 [&_.name]:truncate";
 
 /** One series of a stage: a side per row with its race, the score, and the state as a word.
  *  A team side reads as the team name over the roster it fields. A free for all lobby reads
- *  one row a seat with its place. The winning side wears the win token; a click opens the series. */
+ *  one row a seat with its place, or "Left" for a seat whose entrant withdrew. The winning side
+ *  wears the win token; a click opens the series. */
 export function SeriesBox({
   series,
   label = "", // the grand final and the third place name themselves
@@ -126,6 +127,7 @@ export function SeriesBox({
             SIDE,
             index && "border-t",
             seat.result === "won" && "font-bold",
+            seat.left && "opacity-(--v-medium-emphasis-opacity)",
             me != null && (seat.user?.id === me || (seat.players || []).some((one: Row) => one.id === me)) && "bg-primary/15",
           )}
         >
@@ -146,7 +148,7 @@ export function SeriesBox({
           ) : (
             <span className="text-[0.8125rem] text-muted-foreground">{fed ? "To be decided" : "Empty seat"}</span>
           )}
-          <span className="tnum ml-auto font-bold">{seat.place ?? ""}</span>
+          {seat.left ? <span className="ml-auto text-xs">Left</span> : <span className="tnum ml-auto font-bold">{seat.place ?? ""}</span>}
         </div>
       ))
     : [1, 2].map((side, index) => (

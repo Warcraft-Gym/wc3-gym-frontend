@@ -164,3 +164,19 @@ export const eventLabel = (event, league = null, { long = wide() } = {}) => {
   if (!name) return prefix;
   return name.toLowerCase().startsWith(short.toLowerCase()) ? name : `${prefix} · ${name}`;
 };
+
+// The line a shared link previews: each stage's format, the start in UTC, the state and the
+// entrant count, each left out when the event lacks it
+export const eventSummary = (event) => {
+  const formats = [...new Set((event?.stages ?? []).map((stage) => stage.format).filter(Boolean))];
+  const start = event?.starts_at
+    ? DateTime.fromISO(event.starts_at, { zone: 'utc' }).toFormat("ccc d LLL yyyy, HH:mm 'UTC'")
+    : event?.start_date && DateTime.fromISO(event.start_date).toFormat('ccc d LLL yyyy');
+  const count = event?.entrant_count;
+  return [
+    formats.map((format) => titleOf(FORMATS, format)).join(' then '),
+    start,
+    STATE_LABEL[stateOf(event)],
+    Number.isInteger(count) ? `${count} ${count === 1 ? 'entrant' : 'entrants'}` : null,
+  ].filter(Boolean).join(' · ');
+};

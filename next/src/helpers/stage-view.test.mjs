@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import {
   advancingRows, blocks, buchholz, columns, drawsByRound,
-  generateFields, inDivision, isByeSide, isLobby, layout, lobbySeats, lobbyTargets,
+  generateFields, inDivision, isByeSide, isLobby, layout, lobbyPlaces, lobbySeats, lobbyTargets,
   nextRound, ranking, seriesState, shownPlayer, shownTeam, sideName, sideSeed, emptyLabel, undrawResults,
   standingsGroups, standsOn, winnerSide, pathOf, championOf, currentColumn, drawing, withoutIdleReset, playedEntrants, playedCount,
 } from './stage-view.mjs';
@@ -488,6 +488,34 @@ test('the move picker drops a lobby that is already played', () => {
   assert.deepEqual(lobbyTargets([open, played], open), []);
 });
 
+test('a Left seat reads after the seats still in, in a lobby to play and in a played one', () => {
+  const open = { id: 74, sides: [seat(1, 41), { ...seat(2, 42), left: true }, seat(3, 43)] };
+  assert.deepEqual(lobbySeats(open).map((row) => row.side_no), [1, 3, 2]);
+  const played = { id: 75, sides: [seat(1, 51, 2), { ...seat(2, 52), left: true }, seat(3, 53, 1)] };
+  const rows = lobbySeats(played);
+  assert.deepEqual(rows.map((row) => row.side_no), [3, 1, 2]);
+  assert.deepEqual(rows.map((row) => row.result), ['won', 'lost', null]);
+  assert.deepEqual(rows.map((row) => !!row.left), [false, false, true]);
+});
+
+test('a lobby saves places 1 to N over the seats still in, and none for a Left seat', () => {
+  const order = [seat(3, 63), { ...seat(1, 61), left: true }, seat(2, 62)];
+  assert.deepEqual(lobbyPlaces(order), [{ side_no: 3, place: 1 }, { side_no: 2, place: 2 }]);
+  assert.deepEqual(lobbyPlaces([{ ...seat(1, 61), left: true }]), []);
+});
+
+test('a hidden lobby of a later round names no Left seat, and a first round one does', () => {
+  const lobby = { id: 76, sides: [seat(1, 71), { ...seat(2, 72), left: true }] };
+  assert.deepEqual(lobbySeats(lobby, true, true).map((row) => !!row.left), [false, false]);
+  assert.deepEqual(lobbySeats(lobby, true, false).map((row) => !!row.left), [false, true]);
+});
+
+test('the move picker names a Left seat as Left', () => {
+  const open = { id: 8, division_id: null, round_id: 1, sequence: 1, sides: [seat(1, 81), seat(2, 82), seat(3, 83)] };
+  const other = { id: 9, division_id: null, round_id: 1, sequence: 2, sides: [seat(1, 91), { ...seat(2, 92), left: true }] };
+  assert.equal(lobbyTargets([open, other], open)[0].label, 'Lobby 2: P91, P92 (Left)');
+});
+
 test('a path holds every series one entrant stands in', () => {
   const rows = [S(1, 1, 1, 1, 2), S(2, 1, 2, 3, 4), S(3, 2, 1, ['w', 1], ['w', 2])];
   rows[2].player1_id = 1;
@@ -519,6 +547,10 @@ test('a player has played once a series of theirs carries a result against someb
     S(3, 2, 1, 4, 5),
   ];
   assert.deepStrictEqual([...playedEntrants(rows)].sort(), [1, 2]);
+  // every seat of a lobby with places has played; a lobby with none has not
+  const lobby = (place) => ({ id: 9, sides: [{ side_no: 1, entrant_id: 21, place }, { side_no: 2, entrant_id: 22, place: null }] });
+  assert.deepStrictEqual([...playedEntrants([lobby(1)])].sort(), [21, 22]);
+  assert.deepStrictEqual([...playedEntrants([lobby(null)])], []);
   assert.strictEqual(playedCount(rows), 1);
   assert.strictEqual(playedCount([]), 0);
 });

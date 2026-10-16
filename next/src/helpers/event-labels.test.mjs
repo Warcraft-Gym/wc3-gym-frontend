@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import process from 'node:process';
 
 import {
-  dateRange, ENTRANT_KINDS, eventLabel, leaguePayload, ROUND_END_ZONES, SEED_SOURCES, seriesPerEntrant, seriesPerFixture,
+  dateRange, ENTRANT_KINDS, eventLabel, eventSummary, leaguePayload, ROUND_END_ZONES, SEED_SOURCES, seriesPerEntrant, seriesPerFixture,
   STATE_COLOR, STATE_LABEL, stateOf, titleOf,
 } from './event-labels.mjs';
 
@@ -92,4 +92,25 @@ test('no seed source offers a qualifier, and the previous stage stays', () => {
   const values = SEED_SOURCES.map((row) => row.value);
   assert.ok(!values.includes('qualifier'));
   assert.ok(values.includes('previous_stage'));
+});
+
+test('a shared link reads the format, the start in UTC, the state and the entrant count', () => {
+  const cup = {
+    stages: [{ format: 'single_elimination' }],
+    starts_at: '2026-10-17T08:00:00Z',
+    phase: 'signups_open',
+    entrant_count: 12,
+  };
+  assert.equal(eventSummary(cup), 'Single elimination \u00b7 Sat 17 Oct 2026, 08:00 UTC \u00b7 Signups open \u00b7 12 entrants');
+  assert.equal(eventSummary({ ...cup, starts_at: '2026-10-17T08:00:00+00:00' }), eventSummary(cup));
+  const stages = [{ format: 'round_robin' }, { format: 'single_elimination' }, { format: 'single_elimination' }];
+  assert.equal(eventSummary({ stages }), 'Round robin then Single elimination');
+});
+
+test('a shared link leaves out each part the event lacks', () => {
+  assert.equal(eventSummary({ start_date: '2026-10-01', phase: 'running', entrant_count: 1, stages: [] }), 'Thu 1 Oct 2026 \u00b7 Running \u00b7 1 entrant');
+  assert.equal(eventSummary({ phase: 'finished', entrant_count: 0 }), 'Finished \u00b7 0 entrants');
+  assert.equal(eventSummary({ phase: 'running', entrant_count: null }), 'Running');
+  assert.equal(eventSummary({}), '');
+  assert.equal(eventSummary(null), '');
 });

@@ -173,6 +173,8 @@ test('a lobby offers its places to a player seated in it and to its organizers',
   const lobby = { id: 5, sides: [{ side_no: 1, entrant_id: 11, user_id: 7 }, { side_no: 2, entrant_id: 12, user_id: 8 }, { side_no: 3, entrant_id: 13, user_id: 9 }] };
   assert.equal(lobbyReportOf(lobby, { id: 8 }), 'report');
   assert.equal(lobbyReportOf(lobby, { id: 4 }), null);
+  // a player whose seat reads Left has left the cup
+  assert.equal(lobbyReportOf({ ...lobby, sides: lobby.sides.map((seat) => ({ ...seat, left: seat.user_id === 8 })) }, { id: 8 }), null);
   assert.equal(lobbyReportOf(lobby, { id: 4, runs: true }), 'report');
   assert.equal(lobbyReportOf({ ...lobby, player1_score: 1, player2_score: 0 }, { id: 7 }), 'edit');
   // a seat still waiting for the round before, and a two-sided series, offer nothing here

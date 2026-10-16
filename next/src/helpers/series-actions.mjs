@@ -152,8 +152,8 @@ export const lobbyReportOf = (series, viewer = {}) => {
   const seats = series?.sides || [];
   if (!seats.length || series.entrant1_id || series.entrant2_id) return null;
   if (seats.some((seat) => !seat.entrant_id)) return null;
-  // a seat of the viewer's own, or of a team the viewer plays in
-  const seated = viewer.id != null && seats.some((seat) => seat.user_id === viewer.id || seat.user?.id === viewer.id || (seat.players || []).some((/** @type {any} */ one) => one.id === viewer.id));
+  // a seat of the viewer's own, or of a team the viewer plays in; a Left seat reports nothing
+  const seated = viewer.id != null && seats.some((seat) => !seat.left && (seat.user_id === viewer.id || seat.user?.id === viewer.id || (seat.players || []).some((/** @type {any} */ one) => one.id === viewer.id)));
   if (!seated && !viewer.isAdmin && !viewer.runs) return null;
   return holdsResult(series) ? 'edit' : 'report';
 };

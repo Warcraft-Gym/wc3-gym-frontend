@@ -547,6 +547,10 @@ test('a player has played once a series of theirs carries a result against someb
     S(3, 2, 1, 4, 5),
   ];
   assert.deepStrictEqual([...playedEntrants(rows)].sort(), [1, 2]);
+  // every seat of a lobby with places has played; a lobby with none has not
+  const lobby = (place) => ({ id: 9, sides: [{ side_no: 1, entrant_id: 21, place }, { side_no: 2, entrant_id: 22, place: null }] });
+  assert.deepStrictEqual([...playedEntrants([lobby(1)])].sort(), [21, 22]);
+  assert.deepStrictEqual([...playedEntrants([lobby(null)])], []);
   assert.strictEqual(playedCount(rows), 1);
   assert.strictEqual(playedCount([]), 0);
 });

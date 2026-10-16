@@ -392,11 +392,16 @@ export function championOf(cols = []) {
 }
 
 /** The entrants who have played a match: both sides of every series with a result and two
- *  named sides. A bye walks its player on without a match, so it counts for nobody.
+ *  named sides, and every seat of a lobby that holds places. A bye walks its player on
+ *  without a match, so it counts for nobody.
  *  @param {any[]} series @returns {Set<number>} */
 export function playedEntrants(series = []) {
   const played = new Set();
   for (const row of series) {
+    if (row.sides?.length) {
+      if (row.sides.some((/** @type {any} */ seat) => seat.place != null)) row.sides.forEach((/** @type {any} */ seat) => seat.entrant_id != null && played.add(seat.entrant_id));
+      continue;
+    }
     const [one, two] = [standsOn(row, 1), standsOn(row, 2)];
     if (isScored(row) && one != null && two != null) {
       played.add(one);

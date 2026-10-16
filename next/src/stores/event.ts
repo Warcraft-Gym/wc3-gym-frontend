@@ -145,6 +145,10 @@ const store = {
   async checkIn(event_id: number, entrant_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/entrants/${entrant_id}/checkin`);
   },
+  // A runner closes the cup's check-in to players by hand, or reopens it; it answers the event
+  async closeCheckin(event_id: number, closed: boolean) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/checkin/${closed ? "close" : "reopen"}`);
+  },
   // The caller checks in the way the event asks: the event shape posts the entrant row,
   // the round shape answers the next round's availability
   async checkInRow(row: any) {
@@ -173,6 +177,10 @@ const store = {
   },
   async checkEveryoneInLeg(event_id: number, leg_id: number) {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkins/everyone`);
+  },
+  // The same for one round of a cup over rounds; it answers every round
+  async closeLegCheckin(event_id: number, leg_id: number, closed: boolean) {
+    return await fetchWrapper.post(`${backendUrl}/events/${event_id}/legs/${leg_id}/checkin/${closed ? "close" : "reopen"}`);
   },
   // A cup's rounds after creation: rename or move one, add one after the last, remove one not drawn
   async updateLeg(event_id: number, leg_id: number, changes: { name?: string | null; starts_at?: string | null }) {

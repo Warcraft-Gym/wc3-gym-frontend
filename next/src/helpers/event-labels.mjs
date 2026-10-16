@@ -129,8 +129,8 @@ export const MAP_RULES = [
   { value: 'fixed', title: 'Fixed map' },
 ];
 
-// A round of an event that names no zone ends at midnight where the reader is
-export const NO_ROUND_END_ZONE = "Each reader's own zone";
+// A round of an event that names no zone ends at 00:00 UTC, as the server ends it
+export const NO_ROUND_END_ZONE = 'No zone (rounds end at 00:00 UTC)';
 export const ROUND_END_ZONES = [
   { value: '', title: NO_ROUND_END_ZONE },
   ...[...new Set(['UTC', ...Intl.supportedValuesOf('timeZone')])].map((value) => ({ value, title: value })),

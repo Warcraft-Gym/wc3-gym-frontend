@@ -2,6 +2,7 @@
 
 ## 2026-10-16
 
+* **Update**: a blank round end zone in the season settings reads "No zone (rounds end at 00:00 UTC)". [The GNL season](pages/gnl-season.md) states it.
 * **Update**: a round of an event with no round end zone names its end on Home and on the round cards, "Ends 27 Sep 00:00 UTC · 26 Sep 20:00 EDT your time", and the reader's time names its zone on every round end line. [Players and stats](pages/players-and-stats.md) states it.
 * **Update**: every check-in time names the reader's zone: the opening in the check-in settings line, a cup round's window line, the closed-on line and a round card's check-in line, "Check-in opens 24 Sep 2026, 02:00 CEST". [Event management](pages/event-management.md) and [players and stats](pages/players-and-stats.md) state it.
 * **Update**: a new sign-up list sends `checkin_days` as null with check-in off, so it stores no check-in window. [Event management](pages/event-management.md) states it.

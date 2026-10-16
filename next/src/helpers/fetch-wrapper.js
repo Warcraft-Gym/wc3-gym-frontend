@@ -55,7 +55,7 @@ function getAllPages(method) {
 }
 
 function request(method) {
-    // options reach fetch as they are, so a caller can ask for a fresh read with { cache: 'no-store' }
+    // options reach fetch as they are, so a caller can ask for a fresh read with { cache: 'reload' }, which also refreshes the browser's copy
     return async (url, body, options) => {  // Mark as async
         let requestMethod = method;
         let fileUpload = false;

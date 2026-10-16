@@ -4,7 +4,7 @@ title: Run a cup
 description: A cup from its creation to the awards, run by an admin or an organizer, with the members' signups and results in between, each step on its page with the route it writes.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-14T20:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-16T12:00:00Z }
 sources:
   - id: event-management
     resource: ../pages/event-management.md
@@ -24,10 +24,11 @@ This flow takes a cup from its creation to its awards. Its runner, an admin or a
 | Step | Who | Where | Writes | Owner |
 |---|---|---|---|---|
 | 1. Make the league | admin | `/leagues` | `POST /leagues` | [Event management](../pages/event-management.md) |
-| 2. Make the cup, with its best-of per bracket part and its map pool | organizer or admin | `/events/new/cup` | `POST /events` with the stages and the pool | [Event management](../pages/event-management.md) |
+| 2. Make the cup, with its best-of per bracket part, its map pool and its check-in settings | organizer or admin | `/events/new/cup` | `POST /events` with the stages, the pool, `checkin_opens_minutes`, `checkin_closes_minutes` and `early_checkin` | [Event management](../pages/event-management.md) |
 | 3a. On a team cup, sign a team up, and every invited player accepts | member | `/events/:id`, "Sign up a team", the invitation | `POST /events/{id}/cup-teams`, `POST /events/{id}/cup-teams/{team_id}/accept` | [Leagues and events](../pages/leagues-and-events.md) |
 | 3b. On a cup over rounds, check in for each round before its draw | member for their own entry; organizer or admin for anyone | `/events/:id`, "Check in for Round n"; `/events/:id/admin`, the rounds bar | `POST` and `DELETE /events/{id}/legs/{leg_id}/checkins`, `POST /events/{id}/legs/{leg_id}/checkins/everyone` | [Event management](../pages/event-management.md) |
 | 3. Sign up, and check in when the event asks for it | member; an admin adds anyone by hand on `/events/:id/entrants` | `/events/:id`, the signup dialog | `POST /events/{id}/entrants`, `POST /events/{id}/entrants/{entrant_id}/checkin` | [Leagues and events](../pages/leagues-and-events.md) |
+| 3c. Change the check-in settings until the draw, and close check-in or reopen it by hand | organizer or admin | `/events/:id/admin`, the check-in settings over the draw, "Close check-in" there or on each round of the rounds bar | `PUT /events/{id}`; `POST /events/{id}/checkin/close` and `/checkin/reopen`; on a cup over rounds `POST /events/{id}/legs/{leg_id}/checkin/close` and `/checkin/reopen` | [Event management](../pages/event-management.md) |
 | 4. On a cup made with divisions, cut them; then set the seeds | organizer or admin | `/events/:id/admin`, the Participants tab's Divisions panel and the Draw tab's Seeds | `PUT /events/{id}/divisions`, `POST /events/{id}/divisions/assign`, `PUT /events/{id}/stages/{stage_id}/seeds` | [Event management](../pages/event-management.md) |
 | 5. The draw locks the seeds | organizer or admin | `/events/:id/admin`, Generate | `POST /events/{id}/stages/{stage_id}/generate` | [Event management](../pages/event-management.md) |
 | 6. Generate the stage | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/generate`; a Swiss stage draws each round with `POST /events/{id}/stages/{stage_id}/rounds` | [Event management](../pages/event-management.md) |
@@ -72,6 +73,7 @@ sequenceDiagram
 # Rules
 
 - "Create event" writes the event and its stages in one body, so no event exists without its stages: [event management](../pages/event-management.md).
+- Check-in opens 2 hours before the start of a new cup, or of each round over rounds, and closes at the draw or when a runner closes it. Under "Advanced" the runner sets "Opens" in minutes, hours or days, "Closes" "At the draw" or "M minutes before the start", and "Early check-in", which lets players check in at any time before it opens: [event management](../pages/event-management.md).
 - The eligibility warnings show as chips after a signup and never block it: [leagues and events](../pages/leagues-and-events.md).
 - A locked stage takes no reorder, and the public page shows the seeds once they are locked: [event management](../pages/event-management.md).
 - "Advance" waits until every series of the stage carries a result, and the last stage never shows it. A reopen of a series that the engine refuses asks once more and forces: [event management](../pages/event-management.md).

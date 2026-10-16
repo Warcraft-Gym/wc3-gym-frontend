@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-16
+
+* **Update**: one check-in settings block in Create cup, on the cup run page and in the GNL season settings: a "Check-in" switch and one line that says when it opens and closes, with "Opens" in minutes, hours or days, "Closes" and "Early check-in" under "Advanced". A new cup opens 2 hours before the start and closes at the draw; the run page closes and reopens check-in by hand, for the cup or for one round of a cup over rounds. The round cards read the server's window and end a round with no zone at midnight UTC. [Event management](pages/event-management.md), [the GNL season](pages/gnl-season.md), [players and stats](pages/players-and-stats.md), [member self-service](pages/member.md) and [run a cup](flows/run-a-cup.md) state it.
+
 ## 2026-10-15
 
 * **Update**: the cup pages offer only the writes the backend takes. A finished or cancelled cup offers no report, veto or result dialog; "Repeat this cup" and a recurring cup's "Edit" and "Create" need the organizer grant; the Events cards name the member's own state; a cup that takes check-in counts its Generate field on the players who checked in, and its minimum too while the check-in window stands open. [Leagues and events](pages/leagues-and-events.md), [event management](pages/event-management.md) and [member self-service](pages/member.md) state it.

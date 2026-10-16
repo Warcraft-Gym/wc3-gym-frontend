@@ -55,6 +55,15 @@ test('a wide screen reads the long league name, and a phone or a missing one kee
   assert.equal(eventLabel(season), 'GNL \u00b7 Season 18');  // node has no matchMedia, so a test reads narrow
 });
 
+test('a sign-up list in no league reads its own name at either width', () => {
+  // the event read of a list with no league answers both league names as null
+  const list = { name: 'Coaching night', league_id: null, league_short_name: null, league_name: null };
+  assert.equal(eventLabel(list, null, { long: true }), 'Coaching night');
+  assert.equal(eventLabel(list, null, { long: false }), 'Coaching night');
+  // a page passes the league it found for the event, which is none
+  assert.equal(eventLabel(list, undefined, { long: true }), 'Coaching night');
+});
+
 test('a GNL season phase is named and coloured', () => {
   assert.equal(STATE_LABEL.complete, 'Complete');
   assert.equal(STATE_LABEL.finished, 'Finished');

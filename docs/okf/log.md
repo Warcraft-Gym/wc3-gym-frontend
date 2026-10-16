@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-16
+
+* **Update**: "New Sign-up List" makes a plain list of names: one short form with the name, an optional date and start time, a description, a page link and a sign-up cap. The list is part of no league, takes members only and has no eligibility check, no check-in, no stage and no division. The league page has no "New event" button, and the kind reads "Sign-up list". [Event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md), [the app shell](concepts/app-shell-and-routing.md), [run a cup](flows/run-a-cup.md) and [capture the screens](runbooks/capture-the-screens.md) state it.
+
 ## 2026-10-15
 
 * **Update**: the cup pages offer only the writes the backend takes. A finished or cancelled cup offers no report, veto or result dialog; "Repeat this cup" and a recurring cup's "Edit" and "Create" need the organizer grant; the Events cards name the member's own state; a cup that takes check-in counts its Generate field on the players who checked in, and its minimum too while the check-in window stands open. [Leagues and events](pages/leagues-and-events.md), [event management](pages/event-management.md) and [member self-service](pages/member.md) state it.

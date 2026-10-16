@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/Icon";
 import { Progress } from "@/components/ui/progress";
@@ -21,8 +20,7 @@ const phoneCell = "hidden min-[960px]:table-cell";
 const stateColor = STATE_COLOR as Record<string, string>;
 const stateLabel = STATE_LABEL as Record<string, string>;
 
-/** One league and the events it has run, newest first. An admin adds the next run
- *  here; the stages and the map pool are set on the event's own page. */
+/** One league and the events it has run, newest first; an admin also reads the drafts. */
 export function LeagueView({ id }: { id: string }) {
   const auth = useAuth();
   const store = useEventStore();
@@ -68,15 +66,6 @@ export function LeagueView({ id }: { id: string }) {
       </div>
 
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
-
-      {auth.isAdmin ? (
-        <div className="mb-4 flex justify-end">
-          <Button nativeButton={false} render={<Link href={`/events/new?league=${leagueId}`} />}>
-            <Icon name="mdi-plus" />
-            New event
-          </Button>
-        </div>
-      ) : null}
 
       <Card className="card">
         {loading ? <Progress value={null} /> : null}

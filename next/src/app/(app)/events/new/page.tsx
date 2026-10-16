@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { EventWizardView } from "./EventWizardView";
 
-export const metadata: Metadata = { title: "New Event" };
+export const metadata: Metadata = { title: "New Sign-up List" };
 
 export default function EventWizardPage() {
-  return (
-    <Suspense>
-      <EventWizardView />
-    </Suspense>
-  );
+  return <EventWizardView />;
 }

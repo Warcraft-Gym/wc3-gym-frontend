@@ -70,7 +70,7 @@ export const EVENT_KINDS = [
   { value: 'gnl', title: 'GNL season' },
   { value: 'cup', title: 'Cup' },
   { value: 'koth', title: 'KOTH' },
-  { value: 'signup', title: 'Signup only' },
+  { value: 'signup', title: 'Sign-up list' },
 ];
 
 export const FORMATS = [

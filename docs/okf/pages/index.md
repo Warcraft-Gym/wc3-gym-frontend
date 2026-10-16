@@ -1,6 +1,6 @@
 # Pages
 
-* [Event management](event-management.md) - The admin's path from an empty league to a finished event with awards; the wizard, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
+* [Event management](event-management.md) - The admin's path from an empty league to a finished event with awards; the sign-up list form, the entrants writes, the run page and the KOTH nights, each step with the route it calls.
 * [Fantasy](fantasy.md) - The fantasy leaderboard, the bets, the player tiers and the member's own fantasy team and bets.
 * [Fixtures and series](fixtures-and-series.md) - The GNL fixture page with its published series and the captains' round planner, one series of any event, the map veto, the upcoming series, and the Report Result, schedule and cast dialogs.
 * [KOTH](koth.md) - The KOTH nights list, the run page an admin drives one night from, and the public night page that draws a night's brackets for members and for the stream.

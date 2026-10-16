@@ -72,7 +72,7 @@ sequenceDiagram
 
 # Rules
 
-- "Create event" writes the event and its stages in one body, so no event exists without its stages: [event management](../pages/event-management.md).
+- "Create cup" writes the cup and its stages in one body, so no event exists without its stages: [event management](../pages/event-management.md).
 - Check-in opens 2 hours before the start of a new cup, or of each round over rounds, and closes at the draw or when a runner closes it. Under "Advanced" the runner sets "Opens" in minutes, hours or days, "Closes" "At the draw" or "M minutes before the start", and "Early check-in", which lets players check in at any time before it opens: [event management](../pages/event-management.md).
 - The eligibility warnings show as chips after a signup and never block it: [leagues and events](../pages/leagues-and-events.md).
 - A locked stage takes no reorder, and the public page shows the seeds once they are locked: [event management](../pages/event-management.md).

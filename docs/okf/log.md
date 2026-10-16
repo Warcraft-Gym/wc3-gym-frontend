@@ -2,6 +2,7 @@
 
 ## 2026-10-16
 
+* **Update**: the places dialog offers "Move" only while the lobby holds three entrants or more still in; a Left seat counts for none. [Event management](pages/event-management.md) states it.
 * **Update**: the run page shows the check-in settings on a cup only, so a sign-up list's run page has no check-in block. [Event management](pages/event-management.md) states it.
 * **Update**: the "Closes" minutes of the check-in settings count back from the start on a cup, from each round on a cup over rounds and from a round on a GNL season, whose hint names no draw, and the field takes whole minutes. [Event management](pages/event-management.md) and [the GNL season](pages/gnl-season.md) state it.
 * **Update**: a blank round end zone in the season settings reads "No zone (rounds end at 00:00 UTC)". [The GNL season](pages/gnl-season.md) states it.

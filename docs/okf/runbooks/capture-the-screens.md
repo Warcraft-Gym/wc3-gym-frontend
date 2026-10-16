@@ -4,7 +4,7 @@ title: Capture the screens
 description: Build the app at one commit, then screenshot a route list and the dialogs behind clicks, with every backend write answered in the browser.
 resource: ../../../next/scripts/shots/shoot.mjs
 tags: [testing, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-16T10:54:18Z }
 stale_after: 2027-04-06T00:00:00Z
 sources:
   - id: shoot
@@ -54,7 +54,7 @@ sources:
 | `draft` | `/match/<id>`, required | the Plan round tab on Who plays, with the stats panel of a team 1 player open |
 | `kothcard` | `/koth/nights/<id>`, required | the first bracket card, clipped |
 | `signup` | `/signup` | the season signup form |
-| `wizard` | `/events/new` | each step of the event wizard, on the first league |
+| `signuplist` | `/events/new` | the New Sign-up List form with a name typed in |
 | `viewas` | `/` | the account menu and the View as dialog |
 | `theme` | `/` | the theme menu |
 | `phonenav` | `/` | the tab bar, the My Team picker and the account menu; run it with `SHOTS_PHONE=1` |

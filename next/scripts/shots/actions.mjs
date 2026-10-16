@@ -99,24 +99,10 @@ export function actions({ open, capture }) {
       await page.close();
     },
 
-    async wizard(route = '/events/new') {
+    async signuplist(route = '/events/new') {
       const page = await open(route);
-      await page.getByLabel('Name', { exact: true }).fill('Sample cup');
-      await page.getByLabel('League', { exact: true }).click();
-      await page.waitForTimeout(500);
-      await page.getByRole('option').first().click();
-      await page.waitForTimeout(1500);
-      for (let i = 1; i <= 10; i++) {
-        // the header reads "Step n of m · Title"
-        const stepText = await page.locator('text=/Step \\d+ of \\d+/').first().innerText().catch(() => '');
-        const title = (stepText.split('·')[1] || `step-${i}`).trim().toLowerCase().replace(/\W+/g, '-');
-        await capture(page, `dialog-wizard-${i}-${title}`, route, { note: `Event wizard ${stepText || 'step ' + i}; Create event never pressed` });
-        const next = page.getByRole('button', { name: 'Next', exact: true });
-        if (!(await next.count())) break; // the last step offers Create event, which is never pressed
-        if (await next.isDisabled()) { console.log('wizard: Next disabled on step', i); break; }
-        await next.click();
-        await page.waitForTimeout(1200);
-      }
+      await page.getByLabel('Name', { exact: true }).fill('Sample list');
+      await capture(page, 'signup-list-form', route, { note: 'New Sign-up List form with a name; Create list never pressed' });
       await page.close();
     },
 

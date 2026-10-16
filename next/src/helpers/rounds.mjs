@@ -40,8 +40,15 @@ export const roundEndLine = (end, zone = null, viewer = null) => {
   return `Ends ${stamp(end)} ${zone}${mine?.isValid ? ` · ${stamp(mine)} your time` : ''}`;
 };
 
-// "Check-in opens 10 Oct" for a round whose window is still ahead; '' once it has opened
-export const checkinOpensLine = (card) => (card?.opens && !card.open ? `Check-in opens ${card.opens.toFormat('d LLL')}` : '');
+// On the reader's clock: "Check-in opens 10 Oct, 02:00" while the window is ahead, and "Check-in
+// closes 16 Oct, 22:00" or "Check-in closed ..." when it closes before the round ends; else ''
+export const checkinLine = (card) => {
+  if (!card || card.over) return '';
+  const stamp = (at) => at.toLocal().toFormat('d LLL, HH:mm');
+  if (card.opens && !card.open && !card.shut) return `Check-in opens ${stamp(card.opens)}`;
+  if (card.closesEarly) return `Check-in ${card.shut ? 'closed' : 'closes'} ${stamp(card.closes)}`;
+  return '';
+};
 
 // The round in play: the first one not over in the event's zone. Null once every round is done.
 /** @param {any[]} [rounds] @param {*} [today] @param {string|null} [zone] */
@@ -49,29 +56,32 @@ export const currentRound = (rounds = [], today = DateTime.now(), zone = null) =
 
 // One card per round of a season: the round window, the team the player's team
 // meets, the player's series of that round, the answer they gave and the check-in
-// window. A season with no rounds falls back to the weeks its unplayed series carry.
-// `answers` of null means no answers were read (yet), and every card is pending.
-// `earlyCheckin` is the event switch that takes an answer before the window opens.
+// window the server sends with the round. A season with no rounds falls back to the
+// weeks its unplayed series carry. `answers` of null means no answers were read (yet),
+// and every card is pending. `earlyCheckin` is the event switch that takes an answer
+// before the window opens. A round ends at midnight in `zone`, else in UTC, as the server ends it.
 export const roundCards = (
-  { rounds = [], series = [], matches = [], teamId = null, answers = null, checkinDays = null, earlyCheckin = false, zone = null },
+  { rounds = [], series = [], matches = [], teamId = null, answers = null, earlyCheckin = false, zone = null },
   today = DateTime.now(),
 ) => {
+  const clock = zone || 'utc';
+  const instant = (iso) => (iso ? DateTime.fromISO(iso, { zone: 'utc' }) : null);
   const weeks = rounds.length ? rounds : [...new Set(
     series.filter(isUnscored).map(s => s.match?.playday).filter(Boolean),
   )].sort((a, b) => a - b).map(playday => ({ playday }));
 
   let currentSeen = false;
   return weeks.map(round => {
-    const over = roundOver(round, today, zone);
+    const over = roundOver(round, today, clock);
     const current = !over && !currentSeen;
     if (current) currentSeen = true;
     const match = matches.find(m => m.playday === round.playday && [m.team1_id, m.team2_id].includes(teamId));
-    // The check-in window opens checkinDays before the round starts; a season
-    // that names no checkin_days has no window, so the check-in is always open
-    const opens = round.start_date && checkinDays != null
-      ? DateTime.fromISO(round.start_date, { zone: 'utc' }).minus({ days: checkinDays })
-      : null;
-    const open = opens === null ? true : today >= opens && !over;
+    // No opening is open from sign-up; the close is the round's end, an early close or the event's close
+    const opens = instant(round.checkin_opens_at);
+    const closes = instant(round.checkin_closes_at);
+    const endsAt = roundEnd(round, clock);
+    const shut = !!closes && today >= closes;
+    const open = opens === null ? !shut : today >= opens && !over && !shut;
     const answer = answers?.find(a => a.playday === round.playday) ?? null;
     // A round may hold more than one series of the player, so a list keeps every one
     const seriesList = series.filter(s => s.match?.playday === round.playday);
@@ -83,10 +93,14 @@ export const roundCards = (
       over,
       current,
       opens,
+      closes,
       open,
-      // Early check-in takes an answer before the window opens; a round that is over takes none
-      takes: !over && (open || earlyCheckin),
-      endsAt: roundEnd(round, zone),
+      shut,
+      // The check-in closes before the round ends, so the card names the close
+      closesEarly: !!closes && !!endsAt && closes < endsAt,
+      // Early check-in takes an answer before the window opens; a closed window takes none
+      takes: !over && !shut && (open || earlyCheckin),
+      endsAt,
       series: seriesList[0] ?? null,
       seriesList,
       // An unread answer is not "no answer": a pending card draws no state of its own
@@ -131,7 +145,7 @@ export const roundStateChip = (card, asks = true) => {
   if (!asks) return card.over ? 'Not paired' : 'Not paired yet';
   if (card.answer === true) return title;
   if (card.over) return 'Not paired';
-  if (!card.takes) return checkinOpensLine(card) || 'Not paired yet';
+  if (!card.takes) return checkinLine(card) || 'Not paired yet';
   return title;
 };
 

@@ -76,7 +76,7 @@ export function RoundCards({
   // The answers are still on their way, so the count would read every round as unanswered
   const pending = cards.some((card) => card.pending);
 
-  // The round's own clock beside the reader's; an event with no zone shows neither
+  // The round's own clock beside the reader's; an event with no zone ends its rounds at 00:00 UTC
   const endLine = (card: Row) => roundEndLine(card.endsAt, zone, viewerZone());
 
   // The answer, as one chip; a derived "Out (blocked times)" opens the blocked times that made it

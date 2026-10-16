@@ -329,7 +329,7 @@ const lobbyNames = (row) => (row.sides || [])
 
 // The seats of one lobby as its box reads them: the winner first, then the rest by
 // place, then the seats nobody placed yet, a Left seat last. While results are hidden
-// every seat keeps its seat order and carries no place, so the box gives nothing away.
+// the seats read in seat order, a Left seat last, and carry no place, so the box gives nothing away.
 // A fed lobby takes its seats from the round before it, so a hidden one names nobody either.
 export function lobbySeats(row, hidden = false, fed = false) {
   const seats = [...(row?.sides || [])].sort((a, b) => a.side_no - b.side_no);
@@ -337,7 +337,7 @@ export function lobbySeats(row, hidden = false, fed = false) {
     return seats.map((seat) => ({
       ...seat, key: seat.side_no, place: null, result: null, user: fed ? null : seat.user,
       team: fed ? null : seat.team, players: fed ? [] : seat.players, left: !fed && !!seat.left,
-    }));
+    })).sort((a, b) => Number(a.left) - Number(b.left) || a.side_no - b.side_no);
   }
   return seats
     .map((seat) => ({

@@ -20,6 +20,7 @@ test('a sign-up list is a list of members in no league, with no stage and no che
     entrant_kind: 'solo',
     eligibility_required: false,
     checkin_enabled: false,
+    checkin_days: null,
     // an explicit empty list writes no stage, where a missing field writes a default one
     stages: [],
   });

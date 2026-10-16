@@ -57,8 +57,8 @@ export function LobbyPlacesDialog({
   const empty = order.filter((seat) => !seat.entrant_id).length;
   // the seats still in come first and take the places; a Left seat sits after them
   const placing = order.filter((seat) => !seat.left).length;
-  // a lobby seats two entrants or more, so the third seat is the first one free to leave
-  const movable = !!onMove && !played && order.filter((seat) => seat.entrant_id).length > 2;
+  // a lobby keeps two entrants still in, so Move needs a third; a Left seat counts for none
+  const movable = !!onMove && !played && order.filter((seat) => seat.entrant_id && !seat.left).length > 2;
   const nameOf = (seat: Row) => seat.team?.name || seat.user?.name || `seat ${seat.side_no}`;
 
   const move = (from: number | null, to: number) => {

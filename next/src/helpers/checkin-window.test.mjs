@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Settings } from 'luxon';
-import { checkinOpenNow, checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, editOpening, openingAmount, toMinutes, unitOf } from './checkin-window.mjs';
+import { CHECKIN_SHAPES, checkinOpenNow, checkinPayload, checkinProblem, checkinSummary, checkinWindowLine, durationText, editOpening, openingAmount, toMinutes, unitOf } from './checkin-window.mjs';
 
 // The reader's clock: Berlin, an hour ahead of UTC once summer time ends on 25 Oct 2026
 Settings.defaultZone = 'Europe/Berlin';
+// The locale names the zone: "GMT+1" in en-US, where en-GB reads "CET"
+Settings.defaultLocale = 'en-US';
 
 const CUP = { checkin_enabled: true, checkin_opens_minutes: 120, checkin_closes_minutes: null, early_checkin: false };
 const SEASON = { checkin_enabled: true, checkin_opens_minutes: 4320, checkin_closes_minutes: null, early_checkin: true };
@@ -49,7 +51,7 @@ test('the Opens field keeps its unit while the runner types, and changes it only
 test('a cup reads when its check-in opens and that it closes at the draw or by hand', () => {
   assert.equal(checkinSummary(CUP, 'cup'), 'Opens 2 hours before the start, closes at the draw or when you close it.');
   // the opening on the reader's clock: 19:00 UTC is 20:00 in Berlin, so it opens at 18:00
-  assert.equal(checkinSummary(CUP, 'cup', '2026-10-30T19:00:00Z'), 'Opens 2 hours before the start (30 Oct 2026, 18:00), closes at the draw or when you close it.');
+  assert.equal(checkinSummary(CUP, 'cup', '2026-10-30T19:00:00Z'), 'Opens 2 hours before the start (30 Oct 2026, 18:00 GMT+1), closes at the draw or when you close it.');
   assert.equal(checkinSummary({ ...CUP, checkin_closes_minutes: 30 }, 'cup'), 'Opens 2 hours before the start, closes 30 minutes before the start or when you close it.');
   assert.equal(checkinSummary({ ...CUP, checkin_enabled: false }, 'cup'), 'No check-in.');
   assert.equal(checkinSummary({ ...CUP, early_checkin: true, checkin_opens_minutes: null }, 'rounds'), "Opens at sign-up, closes at the round's draw or when you close it. Early check-in is on.");
@@ -61,6 +63,12 @@ test('a GNL season reads its window per round, and late check-in until the round
   assert.equal(checkinSummary({ ...SEASON, checkin_opens_minutes: 1440, checkin_closes_minutes: 60, early_checkin: false }, 'gnl'), 'Opens 1 day before a round, closes 1 hour before a round.');
   // a season has no one start, so it names no time even when one is passed
   assert.equal(checkinSummary({ ...SEASON, early_checkin: false }, 'gnl', '2026-10-30T19:00:00Z'), 'Opens 3 days before a round, closes when the round ends (late check-in).');
+});
+
+test('the close of a GNL season counts back from a round and names no draw', () => {
+  assert.equal(CHECKIN_SHAPES.gnl.start, 'a round');
+  assert.doesNotMatch(CHECKIN_SHAPES.gnl.hint, /draw|cast/);
+  assert.equal(CHECKIN_SHAPES.cup.hint, 'Leaves time before the draw, for example 15 to 30 minutes for a cast cup.');
 });
 
 test('the settings cannot close check-in after it opens, nor close it before the start with no minutes', () => {
@@ -82,10 +90,10 @@ test('the write sends the minutes and early check-in, and a blank close as the d
 
 test("a round's window reads the server's times, or the time a runner closed it", () => {
   const leg = { checkin_opens_at: '2026-10-30T17:00:00Z', checkin_closes_at: null, checkin_closed_at: null };
-  assert.equal(checkinWindowLine(leg, false), 'Check-in from 30 Oct 2026, 18:00 until the draw.');
+  assert.equal(checkinWindowLine(leg, false), 'Check-in from 30 Oct 2026, 18:00 GMT+1 until the draw.');
   assert.equal(checkinWindowLine(leg, true), 'Check-in from sign-up until the draw.');
-  assert.equal(checkinWindowLine({ ...leg, checkin_closes_at: '2026-10-30T18:30:00Z' }, false), 'Check-in from 30 Oct 2026, 18:00 until 30 Oct 2026, 19:30.');
-  assert.equal(checkinWindowLine({ ...leg, checkin_closes_at: '2026-10-30T18:10:00Z', checkin_closed_at: '2026-10-30T18:10:00Z' }, false), 'Check-in closed on 30 Oct 2026, 19:10.');
+  assert.equal(checkinWindowLine({ ...leg, checkin_closes_at: '2026-10-30T18:30:00Z' }, false), 'Check-in from 30 Oct 2026, 18:00 GMT+1 until 30 Oct 2026, 19:30 GMT+1.');
+  assert.equal(checkinWindowLine({ ...leg, checkin_closes_at: '2026-10-30T18:10:00Z', checkin_closed_at: '2026-10-30T18:10:00Z' }, false), 'Check-in closed on 30 Oct 2026, 19:10 GMT+1.');
 });
 
 test('a round takes a player between its opening and its close, and early check-in skips the opening', () => {

@@ -289,8 +289,8 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         ) : null}
       </div>
 
-      {/* the check-in settings change until the draw; a cup over rounds closes each round on its bar */}
-      {!closed && !event.cancelled_at && (overRounds || !drawn) ? (
+      {/* a cup's check-in settings change until the draw; a cup over rounds closes each round on its bar */}
+      {event.kind === "cup" && !closed && !event.cancelled_at && (overRounds || !drawn) ? (
         <div className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2">
           <CheckinSettings id="console-checkin" kind={overRounds ? "rounds" : "cup"} value={checkin} onChange={(patch) => setCheckinDraft({ ...checkin, ...patch })} startsAt={event.starts_at} />
           {!overRounds && event.checkin_enabled && event.checkin_closed_at ? <p className="text-sm">{checkinWindowLine(event, false)}</p> : null}

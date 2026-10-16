@@ -12,6 +12,11 @@ export const timeText = (value) => (value
   ? DateTime.fromISO(value, { zone: 'utc' }).toLocal().toFormat('d LLL yyyy, HH:mm')
   : '—');
 
+// A stored instant on the reader's clock with the zone named: "20 Oct 2026, 18:00 CEST"
+export const zonedTimeText = (value) => (value
+  ? DateTime.fromISO(value, { zone: 'utc' }).toLocal().toFormat('d LLL yyyy, HH:mm ZZZZ')
+  : '—');
+
 // An event runs between two days, starts on one, or carries no dates at all; an event
 // that starts and ends on the same day, a KOTH night among them, names that day once
 export const dateRange = (event) => {
@@ -124,8 +129,8 @@ export const MAP_RULES = [
   { value: 'fixed', title: 'Fixed map' },
 ];
 
-// A round of an event that names no zone ends at midnight where the reader is
-export const NO_ROUND_END_ZONE = "Each reader's own zone";
+// A round of an event that names no zone ends at 00:00 UTC, as the server ends it
+export const NO_ROUND_END_ZONE = 'No zone (rounds end at 00:00 UTC)';
 export const ROUND_END_ZONES = [
   { value: '', title: NO_ROUND_END_ZONE },
   ...[...new Set(['UTC', ...Intl.supportedValuesOf('timeZone')])].map((value) => ({ value, title: value })),

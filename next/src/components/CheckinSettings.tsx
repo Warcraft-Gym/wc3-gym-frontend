@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { CHECKIN_UNITS, checkinProblem, checkinSummary, editOpening, openingAmount, toMinutes, unitOf } from "@/helpers/checkin-window.mjs";
+import { CHECKIN_SHAPES, CHECKIN_UNITS, checkinProblem, checkinSummary, editOpening, openingAmount, toMinutes, unitOf } from "@/helpers/checkin-window.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -42,7 +42,7 @@ export function CheckinSettings({
   const before = closes !== null && closes !== undefined;
   const on = kind === "rounds" || value.checkin_enabled !== false;
   const problem: string | null = checkinProblem({ ...value, checkin_enabled: on });
-  const start = kind === "gnl" ? "a round" : kind === "rounds" ? "each round" : "the start";
+  const { start, hint } = CHECKIN_SHAPES[kind];
 
   return (
     <div className="flex flex-col gap-2">
@@ -124,22 +124,24 @@ export function CheckinSettings({
                     {kind === "gnl" ? "When the round ends (late check-in)" : "At the draw"}
                   </label>
                   <div className="flex min-h-11 flex-wrap items-center gap-2 text-sm">
-                    <RadioGroupItem id={`${id}-closes-before`} value="before" aria-label="Minutes before the start" />
+                    <RadioGroupItem id={`${id}-closes-before`} value="before" aria-label={`Minutes before ${start}`} />
                     <Input
                       id={`${id}-closes`}
                       type="number"
                       min={0}
+                      step={1}
+                      inputMode="numeric"
                       className="w-24"
-                      aria-label="Minutes before the start check-in closes"
+                      aria-label={`Minutes before ${start} check-in closes`}
                       value={before ? String(closes) : ""}
                       // typing a number picks this close
                       onChange={(e) => onChange({ checkin_closes_minutes: e.target.value === "" ? "" : toMinutes(e.target.value, "minutes") })}
                     />
-                    <label htmlFor={`${id}-closes`}>minutes before the start</label>
+                    <label htmlFor={`${id}-closes`}>minutes before {start}</label>
                   </div>
                 </RadioGroup>
                 <p id={`${id}-closes-hint`} className="text-xs text-muted-foreground">
-                  Leaves time before the draw, for example 15 to 30 minutes for a cast cup.
+                  {hint}
                 </p>
               </div>
 

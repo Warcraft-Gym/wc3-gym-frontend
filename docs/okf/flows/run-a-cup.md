@@ -4,7 +4,7 @@ title: Run a cup
 description: A cup from its creation to the awards, run by an admin or an organizer, with the members' signups and results in between, each step on its page with the route it writes.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-14T20:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-16T10:54:18Z }
 sources:
   - id: event-management
     resource: ../pages/event-management.md
@@ -71,7 +71,7 @@ sequenceDiagram
 
 # Rules
 
-- "Create event" writes the event and its stages in one body, so no event exists without its stages: [event management](../pages/event-management.md).
+- "Create cup" writes the cup and its stages in one body, so no event exists without its stages: [event management](../pages/event-management.md).
 - The eligibility warnings show as chips after a signup and never block it: [leagues and events](../pages/leagues-and-events.md).
 - A locked stage takes no reorder, and the public page shows the seeds once they are locked: [event management](../pages/event-management.md).
 - "Advance" waits until every series of the stage carries a result, and the last stage never shows it. A reopen of a series that the engine refuses asks once more and forces: [event management](../pages/event-management.md).

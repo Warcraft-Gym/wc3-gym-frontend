@@ -4,7 +4,7 @@ title: Leagues and events, the public side
 description: The leagues list, one league, the events list, one event with its draw, and the entrants list as a member reads them.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-16T10:47:14Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-16T10:54:18Z }
 sources:
   - id: leagues
     resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
@@ -47,7 +47,7 @@ Outside its own page an event is named by its league and its name, "GNL · Seaso
 
 **Leagues (`/leagues`).** One row per league: name, linked to `/koth/dashboard` for KOTH (which lands on tonight's night page) and to `/leagues/:id` for every other kind, GNL included, kind (GNL, KOTH, custom), what an entrant is (solo players, pre-made teams, drafted teams), the count of events, and the next event, which is the soonest one not finished. The count leaves out archived KOTH nights. An admin sees "New league", a dialog with name, short name, kind, entrant kind and page link.
 
-**One league (`/leagues/:id`).** The league's events, newest first, with kind, dates and state. It leaves out archived KOTH nights, which [the KOTH page](koth.md) lists. A member reads the published events; an admin also reads the drafts. An admin sees "New event", which opens the wizard with this league preset.
+**One league (`/leagues/:id`).** The league's events, newest first, with kind, dates and state. It leaves out archived KOTH nights, which [the KOTH page](koth.md) lists. A member reads the published events; an admin also reads the drafts.
 
 **Events (`/events`).** The Events tab of every member. A member with team invitations not answered reads "Team invitations" first, one row an invitation, the captain, the team and the cup, with "Accept" and "Decline" (`GET /me/team-invites`). A kind filter (Cups, KOTH nights, GNL seasons, All) leads with cups. The events fall in three groups, from the phase the backend answers: "Live now" (running), "Upcoming" as cards, soonest first, each with its state, its kind or its size ("2v2 cup"), its time and one button into the cup, and "Past" as a table, newest first, where a cancelled cup reads "Cancelled". An organizer, and an admin, also read "Your cups" (`GET /me/organized-events`, drafts included), each with a "Run it" link to its run page, and the "Create cup" button. A member who is no organizer reads "Want to run a cup?" with "Request organizer access", a dialog with an optional note that writes `POST /organizers/requests`; once sent, the card reads "Request sent" until an admin answers. A guest reads neither card. A card's button names where a signed-in member stands, from their own row of `GET /me/events`, read once for the page and matched by event id (`cardButton` in `next/src/helpers/events.mjs`): "Sign up" and "Check in" filled, "Signed up", "Checked in", "On the waitlist" and, on a cup closed to them, "View" outlined. A guest, and a member on a cup they hold no row of, read "Sign up" while the sign-ups stand open and "View" after, since only an entrant checks in. `next/src/helpers/events-page.mjs` holds the grouping and the card rules. Archived KOTH nights are left out. Under the Past table a reader who can open [the KOTH page](koth.md) reads one muted line, "Archived KOTH nights are on KOTH Events.", whose last words link to `/koth`; the line takes the same role test as the route guard of `/koth`, so every other reader sees nothing.
 

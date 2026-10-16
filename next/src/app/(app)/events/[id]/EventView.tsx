@@ -99,8 +99,7 @@ export function EventView({ id }: { id: string }) {
   const [legIndex, setLegIndex] = useState(0);
   // the overall table's rows, which place a finished cup over rounds on its podium
   const [overallRows, setOverallRows] = useState<Row[]>([]);
-  // the wizard lands here when the event was written but its divisions were not
-  const [error, setError] = useState<string | null>(search.get("divisions") === "unsaved" ? "The event was created, but its divisions were not saved." : null);
+  const [error, setError] = useState<string | null>(null);
 
   // The switch is per viewer and per browser, not per event, and every stage drawing reads it
   const [hideResults, setHideResults] = useHideResultsSwitch();

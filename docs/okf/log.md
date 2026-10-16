@@ -2,6 +2,7 @@
 
 ## 2026-10-16
 
+* **Update**: "New Sign-up List" makes a plain list of names: one short form with the name, an optional date and start time, a description, a page link and a sign-up cap. The list is part of no league, takes members only and has no eligibility check, no check-in, no stage and no division. The league page has no "New event" button, and the kind reads "Sign-up list". [Event management](pages/event-management.md), [leagues and events](pages/leagues-and-events.md), [the app shell](concepts/app-shell-and-routing.md), [run a cup](flows/run-a-cup.md) and [capture the screens](runbooks/capture-the-screens.md) state it.
 * **Update**: an FFA lobby seat whose entrant withdrew before the lobby was placed reads "Left" in the lobby box, the results line and the places dialog; it takes no place and offers no "Move", and the other seats take places 1 to their count. "Move" is one write, `POST /cup-series/{id}/move`, in place of two `PUT /cup-series/{id}/sides` writes. [Event management](pages/event-management.md)
 
 ## 2026-10-15

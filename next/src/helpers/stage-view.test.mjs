@@ -510,6 +510,12 @@ test('a hidden lobby of a later round names no Left seat, and a first round one 
   assert.deepEqual(lobbySeats(lobby, true, false).map((row) => !!row.left), [false, true]);
 });
 
+test('a hidden first round lobby reads its Left seat last, and a later round one keeps seat order', () => {
+  const lobby = { id: 77, sides: [{ ...seat(1, 81), left: true }, seat(2, 82), seat(3, 83)] };
+  assert.deepEqual(lobbySeats(lobby, true, false).map((row) => row.side_no), [2, 3, 1]);
+  assert.deepEqual(lobbySeats(lobby, true, true).map((row) => row.side_no), [1, 2, 3]);
+});
+
 test('the move picker names a Left seat as Left', () => {
   const open = { id: 8, division_id: null, round_id: 1, sequence: 1, sides: [seat(1, 81), seat(2, 82), seat(3, 83)] };
   const other = { id: 9, division_id: null, round_id: 1, sequence: 2, sides: [seat(1, 91), { ...seat(2, 92), left: true }] };

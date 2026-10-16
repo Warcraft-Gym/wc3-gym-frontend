@@ -24,6 +24,8 @@ export const createPayload = (form) => ({
   entrant_kind: 'solo',
   eligibility_required: false,
   checkin_enabled: false,
+  // a null opening day stores no check-in window, where a missing one stores the default 3 days
+  checkin_days: null,
   // an explicit empty list writes no stage, where a missing field writes a default one
   stages: [],
 });

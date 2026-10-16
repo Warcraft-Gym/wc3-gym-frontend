@@ -157,8 +157,9 @@ export function CupRoundsBar({
       <div className="flex flex-col gap-3 p-3">
         {state === "checkin" ? (
           <>
+            {/* the sentence keeps 14rem, so on a phone the buttons wrap under it */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="flex-1 text-sm">
+              <span className="min-w-[14rem] flex-1 text-sm">
                 <span className="tnum font-bold">{checked.size}</span> of{" "}
                 {playing.length} checked in for {legTitle(leg)}. The draw takes
                 the players checked in.

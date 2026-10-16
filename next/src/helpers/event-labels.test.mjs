@@ -84,6 +84,8 @@ test('the two series settings each read only where they apply', () => {
 
 test('the round end zones open on the clear item and offer UTC', () => {
   assert.equal(ROUND_END_ZONES[0].value, '');
+  // a season with no zone ends its rounds at 00:00 UTC, as the server does
+  assert.equal(ROUND_END_ZONES[0].title, 'No zone (rounds end at 00:00 UTC)');
   assert.ok(ROUND_END_ZONES.some((item) => item.value === 'UTC'));
   assert.equal(ROUND_END_ZONES.filter((item) => item.value === 'UTC').length, 1);
 });

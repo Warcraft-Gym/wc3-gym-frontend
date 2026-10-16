@@ -1,7 +1,7 @@
 // The check-in window an organizer sets: how long before the start it opens, when it closes, and
 // whether a player may check in early. The server counts both in minutes from the start.
 import { DateTime } from 'luxon';
-import { timeText } from './event-labels.mjs';
+import { zonedTimeText } from './event-labels.mjs';
 
 // The units the opening is typed in, largest last
 export const CHECKIN_UNITS = [
@@ -43,12 +43,12 @@ export const durationText = (minutes) => {
   return `${count} ${count === 1 ? unit.slice(0, -1) : unit}`;
 };
 
-// What the window counts from and where it closes by default, by the kind of event that takes it.
-// A runner closes a cup's check-in, or one round's, by hand; a GNL round closes at its end.
-const SHAPES = {
-  cup: { start: 'the start', ends: 'at the draw', byHand: true, timed: true },
-  rounds: { start: 'each round', ends: "at the round's draw", byHand: true, timed: false },
-  gnl: { start: 'a round', ends: 'when the round ends (late check-in)', byHand: false, timed: false },
+// Per kind of event: what the window counts from, its default close, whether a runner closes it, and the early-close hint
+const DRAW_HINT = 'Leaves time before the draw, for example 15 to 30 minutes for a cast cup.';
+export const CHECKIN_SHAPES = {
+  cup: { start: 'the start', ends: 'at the draw', byHand: true, timed: true, hint: DRAW_HINT },
+  rounds: { start: 'each round', ends: "at the round's draw", byHand: true, timed: false, hint: DRAW_HINT },
+  gnl: { start: 'a round', ends: 'when the round ends (late check-in)', byHand: false, timed: false, hint: 'Leaves time to set up the round before it starts.' },
 };
 
 /** One line that says when check-in opens and closes. `startsAt` names the opening on the
@@ -56,10 +56,10 @@ const SHAPES = {
  *  @param {any} settings @param {'cup'|'rounds'|'gnl'} kind @param {string|null} [startsAt] */
 export const checkinSummary = (settings, kind, startsAt = null) => {
   if (settings.checkin_enabled === false) return 'No check-in.';
-  const shape = SHAPES[kind];
+  const shape = CHECKIN_SHAPES[kind];
   const opens = settings.checkin_opens_minutes;
   const closes = settings.checkin_closes_minutes;
-  const at = shape.timed && startsAt && opens != null ? ` (${timeText(DateTime.fromISO(startsAt, { zone: 'utc' }).minus({ minutes: opens }).toISO())})` : '';
+  const at = shape.timed && startsAt && opens != null ? ` (${zonedTimeText(DateTime.fromISO(startsAt, { zone: 'utc' }).minus({ minutes: opens }).toISO())})` : '';
   const opening = opens == null ? 'Opens at sign-up' : `Opens ${durationText(opens)} before ${shape.start}${at}`;
   const closing = closes === null || closes === undefined || closes === '' ? shape.ends : `${durationText(Number(closes))} before ${shape.start}`;
   return `${opening}, closes ${closing}${shape.byHand ? ' or when you close it' : ''}.${settings.early_checkin ? ' Early check-in is on.' : ''}`;
@@ -94,7 +94,7 @@ export const checkinOpenNow = (target, early, now = Date.now()) =>
  *  sign-up with early check-in, until its close or its draw; or the time a runner closed it.
  *  @param {any} leg @param {boolean} early */
 export const checkinWindowLine = (leg, early) => {
-  if (leg.checkin_closed_at) return `Check-in closed on ${timeText(leg.checkin_closed_at)}.`;
-  const from = early || !leg.checkin_opens_at ? 'sign-up' : timeText(leg.checkin_opens_at);
-  return `Check-in from ${from} until ${leg.checkin_closes_at ? timeText(leg.checkin_closes_at) : 'the draw'}.`;
+  if (leg.checkin_closed_at) return `Check-in closed on ${zonedTimeText(leg.checkin_closed_at)}.`;
+  const from = early || !leg.checkin_opens_at ? 'sign-up' : zonedTimeText(leg.checkin_opens_at);
+  return `Check-in from ${from} until ${leg.checkin_closes_at ? zonedTimeText(leg.checkin_closes_at) : 'the draw'}.`;
 };

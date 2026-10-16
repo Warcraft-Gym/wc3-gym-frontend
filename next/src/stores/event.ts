@@ -329,9 +329,9 @@ const store = {
   async clearLobby(series_id: number) {
     return await fetchWrapper.delete(`${backendUrl}/cup-series/${series_id}/result`);
   },
-  // Seats a lobby again before it is played, so an entrant moves between lobbies
-  async setLobbySides(series_id: number, entrant_ids: number[]) {
-    return await fetchWrapper.put(`${backendUrl}/cup-series/${series_id}/sides`, { entrant_ids });
+  // Moves one entrant to another unplayed lobby of the round in one write; answers both lobbies
+  async moveSeat(series_id: number, entrant_id: number, to_series_id: number) {
+    return await fetchWrapper.post(`${backendUrl}/cup-series/${series_id}/move`, { entrant_id, to_series_id });
   },
   // Closes the event: the table of its last stage becomes the places it awards
   async finishEvent(event_id: number) {

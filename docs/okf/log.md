@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-16
+
+* **Update**: an FFA lobby seat whose entrant withdrew before the lobby was placed reads "Left" in the lobby box, the results line and the places dialog; it takes no place and offers no "Move", and the other seats take places 1 to their count. "Move" is one write, `POST /cup-series/{id}/move`, in place of two `PUT /cup-series/{id}/sides` writes. [Event management](pages/event-management.md)
+
 ## 2026-10-15
 
 * **Update**: the cup pages offer only the writes the backend takes. A finished or cancelled cup offers no report, veto or result dialog; "Repeat this cup" and a recurring cup's "Edit" and "Create" need the organizer grant; the Events cards name the member's own state; a cup that takes check-in counts its Generate field on the players who checked in, and its minimum too while the check-in window stands open. [Leagues and events](pages/leagues-and-events.md), [event management](pages/event-management.md) and [member self-service](pages/member.md) state it.

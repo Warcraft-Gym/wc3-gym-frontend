@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DateTime, Settings } from 'luxon';
 import { checkinLine, currentRound, roundCards, roundEnd, roundEndLine, roundLabel, roundOver, roundStateChip, sitOutUndo, waitingLines, nextAnswer } from './rounds.mjs';
 
-// The locale names the zone: "GMT+2" for Berlin in en-US, where en-GB reads "CEST"
+// The locale names the zone: "GMT+2" for Berlin and "EDT" for New York in en-US, where en-GB reads "CEST" and "GMT-4"
 Settings.defaultLocale = 'en-US';
 
 test('a round is labelled by its window', () => {
@@ -265,13 +265,19 @@ test('a season with no zone ends its rounds at midnight UTC, as the server does'
   });
 });
 
+test("a round of an event with no zone ends at 00:00 UTC, on the reader's clock too", () => {
+  const end = roundEnd({ playday: 1, start_date: '2026-09-20', end_date: '2026-09-26' }, 'utc');
+  assert.equal(roundEndLine(end, null, 'America/New_York'), 'Ends 27 Sep 00:00 UTC · 26 Sep 20:00 EDT your time');
+  assert.equal(roundEndLine(end, null, 'UTC'), 'Ends 27 Sep 00:00 UTC');
+  assert.equal(roundEndLine(end, null), 'Ends 27 Sep 00:00 UTC');
+});
+
 test('a round ends at midnight in the event zone', () => {
   const round = { playday: 1, start_date: '2026-09-20', end_date: '2026-09-26' };
   // 27 Sep 00:00 in Berlin is 26 Sep 15:00 in Los Angeles
   const end = roundEnd(round, 'Europe/Berlin');
-  assert.equal(roundEndLine(end, 'Europe/Berlin', 'America/Los_Angeles'), 'Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 15:00 your time');
+  assert.equal(roundEndLine(end, 'Europe/Berlin', 'America/Los_Angeles'), 'Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 15:00 PDT your time');
   assert.equal(roundEndLine(end, 'Europe/Berlin', 'Europe/Berlin'), 'Ends 27 Sep 00:00 Europe/Berlin');
-  assert.equal(roundEndLine(end, null, 'Europe/Berlin'), '');
   assert.equal(roundEndLine(roundEnd({ playday: 2 }, 'Europe/Berlin'), 'Europe/Berlin'), '');
   // the zone decides when the round is over: Berlin midnight has passed, Los Angeles has three hours left
   const midnight = DateTime.fromISO('2026-09-26T22:30Z');

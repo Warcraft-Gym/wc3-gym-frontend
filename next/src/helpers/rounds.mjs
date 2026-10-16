@@ -32,13 +32,14 @@ export const roundOver = (round, today = DateTime.now(), zone = null) => {
   return !!end && end <= today;
 };
 
-// "Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 18:00 your time", or '' for an event with no zone
+// "Ends 27 Sep 00:00 Europe/Berlin · 26 Sep 18:00 EDT your time"; an event with no zone ends at 00:00 UTC
 /** @param {*} end @param {string|null} [zone] @param {string|null} [viewer] */
 export const roundEndLine = (end, zone = null, viewer = null) => {
-  if (!end || !zone) return '';
+  if (!end) return '';
+  const clock = zone || 'UTC';
   const stamp = (dt) => dt.toFormat('d LLL HH:mm');
-  const mine = viewer && viewer !== zone ? end.setZone(viewer) : null;
-  return `Ends ${stamp(end)} ${zone}${mine?.isValid ? ` · ${stamp(mine)} your time` : ''}`;
+  const mine = viewer && viewer !== clock ? end.setZone(viewer) : null;
+  return `Ends ${stamp(end.setZone(clock))} ${clock}${mine?.isValid ? ` · ${stamp(mine)} ${mine.toFormat('ZZZZ')} your time` : ''}`;
 };
 
 // "Check-in opens 10 Oct 2026, 02:00 CEST" ahead of the window, "Check-in closes/closed ..." before the round ends, else ''

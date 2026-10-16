@@ -2,6 +2,7 @@
 
 ## 2026-10-16
 
+* **Update**: a round of an event with no round end zone names its end on Home and on the round cards, "Ends 27 Sep 00:00 UTC · 26 Sep 20:00 EDT your time", and the reader's time names its zone on every round end line. [Players and stats](pages/players-and-stats.md) states it.
 * **Update**: every check-in time names the reader's zone: the opening in the check-in settings line, a cup round's window line, the closed-on line and a round card's check-in line, "Check-in opens 24 Sep 2026, 02:00 CEST". [Event management](pages/event-management.md) and [players and stats](pages/players-and-stats.md) state it.
 * **Update**: a new sign-up list sends `checkin_days` as null with check-in off, so it stores no check-in window. [Event management](pages/event-management.md) states it.
 * **Update**: one check-in settings block in Create cup, on the cup run page and in the GNL season settings: a "Check-in" switch and one line that says when it opens and closes, with "Opens" in minutes, hours or days, "Closes" and "Early check-in" under "Advanced". A new cup opens 2 hours before the start and closes at the draw; the run page closes and reopens check-in by hand, for the cup or for one round of a cup over rounds. The round cards read the server's window and end a round with no zone at midnight UTC. [Event management](pages/event-management.md), [the GNL season](pages/gnl-season.md), [players and stats](pages/players-and-stats.md), [member self-service](pages/member.md) and [run a cup](flows/run-a-cup.md) state it.

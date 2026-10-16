@@ -17,12 +17,14 @@ import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, cupCheckin, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
 import { dayText } from "@/helpers/cup-recurrence.mjs";
 import { dayIso } from "@/helpers/date-input.mjs";
+import { checkinSummary } from "@/helpers/checkin-window.mjs";
+import { CheckinSettings } from "@/components/CheckinSettings";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
 
@@ -168,7 +170,7 @@ export function CupCreateView() {
             .join(", ") + ". You create each next cup on its page."
         : "No, this cup stands alone",
     },
-    { k: "Check-in", v: rounds ? "Players check in for each round" : form.checkin_enabled ? "Players check in before the start" : "No check-in" },
+    { k: "Check-in", v: checkinSummary(cupCheckin(form), rounds ? "rounds" : "cup", cupPayload(form).starts_at) },
     { k: "Visible", v: form.published ? (form.signups_open ? "Published, sign-ups open" : "Published, sign-ups closed") : "Draft: only you and the admins see it" },
   ];
 
@@ -571,14 +573,9 @@ export function CupCreateView() {
               </Label>
               <p className="text-sm text-muted-foreground">You cut the divisions by MMR on the run page once the players have signed up. Each division plays its own bracket.</p>
             </div>
-            {rounds ? (
-              <p className="col-span-12 text-sm text-muted-foreground">Players check in for each round on the cup&apos;s page; a round is drawn with the players checked in for it.</p>
-            ) : (
-              <Label className="col-span-12 flex min-h-11 items-center gap-2">
-                <Switch checked={!!form.checkin_enabled} onCheckedChange={(checkin_enabled) => set({ checkin_enabled })} />
-                Players check in before the start
-              </Label>
-            )}
+            <div className="col-span-12">
+              <CheckinSettings id="cup-checkin" kind={rounds ? "rounds" : "cup"} value={cupCheckin(form)} onChange={set} startsAt={cupPayload(form).starts_at} />
+            </div>
             <Label className="col-span-12 flex min-h-11 items-center gap-2">
               <Switch checked={!!form.published} onCheckedChange={(published) => set({ published })} />
               Publish now; off keeps it a draft only you and the admins see

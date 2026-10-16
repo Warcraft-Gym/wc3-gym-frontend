@@ -12,6 +12,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
 import { CupTeamName } from "@/components/CupTeamName";
+import { CheckinSettings } from "@/components/CheckinSettings";
 import { raceWrapper } from "@/helpers/races.js";
 import { toneClass } from "@/components/ui/tone";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
@@ -19,6 +20,8 @@ import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { eveningOf, moveStartBody, moveStartForm, waitlistOf } from "@/helpers/events-page.mjs";
 import { playedEntrants } from "@/helpers/stage-view.mjs";
 import { missing, teamState } from "@/helpers/cup-teams.mjs";
+import { legsOf } from "@/helpers/cup-rounds.mjs";
+import { checkinPayload, checkinProblem, checkinWindowLine } from "@/helpers/checkin-window.mjs";
 import type { EventOrganizer } from "@/hooks/event-runner";
 import { useEventStore, usePlayerStore } from "@/stores";
 
@@ -110,6 +113,11 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const [time, setTime] = useState("");
   const [coId, setCoId] = useState("");
   const [coName, setCoName] = useState("");
+  // the check-in settings while the runner edits them; null shows the cup's own
+  const [checkinDraft, setCheckinDraft] = useState<Row | null>(null);
+  // a cup over rounds checks in per round, and each round closes on the rounds bar
+  const overRounds = legsOf(event).length > 0;
+  const checkin: Row = checkinDraft ?? { checkin_enabled: !!event.checkin_enabled, ...checkinPayload(event) };
 
   const work = async (key: string, task: () => Promise<void>) => {
     setBusy(key);
@@ -224,6 +232,13 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     setAsk("move");
   };
   const moveStart = () => work("move", async () => onEvent(await store.updateEvent(event.id, moveStartBody(event, day, time))));
+  // a cup over rounds keeps its check-in switch off, as it checks in per round
+  const saveCheckin = () =>
+    work("checkin", async () => {
+      onEvent(await store.updateEvent(event.id, overRounds ? checkinPayload(checkin) : { checkin_enabled: !!checkin.checkin_enabled, ...checkinPayload(checkin) }));
+      setCheckinDraft(null);
+    });
+  const closeCheckin = (closed: boolean) => work("close", async () => onEvent(await store.closeCheckin(event.id, closed)));
   const addCo = () =>
     work("co", async () => {
       await store.addEventOrganizer(event.id, coId.trim(), coName.trim());
@@ -273,6 +288,30 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
           </Button>
         ) : null}
       </div>
+
+      {/* the check-in settings change until the draw; a cup over rounds closes each round on its bar */}
+      {!closed && !event.cancelled_at && (overRounds || !drawn) ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2">
+          <CheckinSettings id="console-checkin" kind={overRounds ? "rounds" : "cup"} value={checkin} onChange={(patch) => setCheckinDraft({ ...checkin, ...patch })} startsAt={event.starts_at} />
+          {!overRounds && event.checkin_enabled && event.checkin_closed_at ? <p className="text-sm">{checkinWindowLine(event, false)}</p> : null}
+          {checkinDraft || (!overRounds && event.checkin_enabled) ? (
+            <div className="flex flex-wrap gap-2">
+              {checkinDraft ? (
+                <Button size="sm" disabled={!!checkinProblem({ ...checkin, checkin_enabled: overRounds || checkin.checkin_enabled }) || busy === "checkin"} onClick={saveCheckin}>
+                  {busy === "checkin" ? <Icon name="mdi-loading mdi-spin" /> : null}
+                  Save check-in
+                </Button>
+              ) : null}
+              {!overRounds && event.checkin_enabled ? (
+                <Button id="console-checkin-close" size="sm" variant="outline" disabled={busy === "close"} onClick={() => closeCheckin(!event.checkin_closed_at)}>
+                  <Icon name={busy === "close" ? "mdi-loading mdi-spin" : event.checkin_closed_at ? "mdi-lock-open-variant-outline" : "mdi-lock-outline"} />
+                  {event.checkin_closed_at ? "Reopen check-in" : "Close check-in"}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {evening.belowMin && !drawn && !closed ? (
         <Alert className="alert border-loss">

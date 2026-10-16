@@ -21,6 +21,11 @@ test('the general step needs a name and a round', () => {
   assert.match(stepProblem({ season: { name: 'S1', round_count: 5, min_games_seasons: 0 } }, 'general'), /W3C season/);
   assert.match(stepProblem({ season: { name: 'S1', round_count: 5 }, maxMmr: { 3: '0' } }, 'general'), /MMR/);
   assert.equal(stepProblem({ season: { name: 'S1', round_count: '5', min_games_seasons: '' }, maxMmr: { 3: '' } }, 'general'), null);
+  // check-in closes fewer minutes before a round starts than it opens
+  const season = { name: 'S1', round_count: 5, checkin_enabled: true, checkin_opens_minutes: 4320 };
+  assert.match(stepProblem({ season: { ...season, checkin_closes_minutes: 4320 } }, 'general'), /fewer minutes/);
+  assert.match(stepProblem({ season: { ...season, checkin_closes_minutes: '' } }, 'general'), /minutes before the start/);
+  assert.equal(stepProblem({ season: { ...season, checkin_closes_minutes: 60 } }, 'general'), null);
 });
 
 test('a round map must be in the pool', () => {

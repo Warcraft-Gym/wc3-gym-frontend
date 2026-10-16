@@ -1,5 +1,6 @@
 import { DEFAULT_RULES } from './best-of.mjs';
 import { orderOf, orderProblem } from './pick-ban.mjs';
+import { checkinProblem } from './checkin-window.mjs';
 
 // The season wizard's steps. A season with no map rules plays DEFAULT_RULES; the round maps
 // step is the fixed game-1 map of each round, so a season whose rules name no fixed game skips it.
@@ -26,6 +27,7 @@ export const stepProblem = (form, key) => {
     const over = season.min_games_seasons;
     if (over !== '' && over != null && !(Number(over) >= 1)) return 'Count the recent games over one W3C season or more.';
     if (Object.values(form.maxMmr || {}).some((value) => value !== '' && !(Number(value) >= 1))) return 'The largest MMR difference is 1 or more.';
+    return checkinProblem(season);
   }
   // Drawn matchups need a round for every week they fill
   if (key === 'matchups' && form.matchups) {

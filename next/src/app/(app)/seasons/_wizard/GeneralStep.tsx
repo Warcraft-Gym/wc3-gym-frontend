@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CheckinSettings } from "@/components/CheckinSettings";
 import { Combobox } from "@/components/ui/Combobox";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/input";
@@ -111,31 +112,9 @@ export function GeneralStep({
           onChange={(e) => set({ min_games_seasons: e.target.value === "" ? "" : Number(e.target.value) })}
         />
       </Field>
-      <Label className="flex items-center gap-2">
-        <Switch checked={!!season.checkin_enabled} onCheckedChange={(checked) => set({ checkin_enabled: checked })} />
-        Check-in
-      </Label>
-      {/* A season with no check-in asks nobody, so the days and the early switch belong to it */}
-      {season.checkin_enabled ? (
-        <>
-          <Field label="Check-in opens (days before a round)" hint="Blank keeps check-in open all season." htmlFor="edit-checkin">
-            <Input
-              id="edit-checkin"
-              type="number"
-              min={0}
-              value={season.checkin_days ?? ""}
-              onChange={(e) => set({ checkin_days: e.target.value === "" ? "" : Number(e.target.value) })}
-            />
-          </Field>
-          <div className="flex flex-col gap-1.5">
-            <Label className="flex items-center gap-2">
-              <Switch aria-describedby="edit-early-checkin-help" checked={!!season.early_checkin} onCheckedChange={(checked) => set({ early_checkin: checked })} />
-              Early check-in
-            </Label>
-            <p id="edit-early-checkin-help" className="text-xs text-muted-foreground">Players may check in for any round that has not ended</p>
-          </div>
-        </>
-      ) : null}
+      <div className="md:col-span-2">
+        <CheckinSettings id="edit-checkin" kind="gnl" value={season} onChange={set} />
+      </div>
       {/* The largest MMR difference belongs to a captain draft, so every other stage format leaves it out */}
       {stages
         .filter((stage) => stage.format === "gnl")

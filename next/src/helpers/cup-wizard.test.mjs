@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -131,6 +131,22 @@ test('a cup over rounds dates them a week apart and checks its players in per ro
   assert.equal(body.checkin_enabled, false);
   assert.deepEqual(cupSteps(form).map((row) => row.key), ['basics', 'format', 'maps', 'signups', 'points', 'review']);
   assert.equal(cupProblem(form, 'basics'), null);
+});
+
+test('a cup opens its check-in 2 hours before the start and closes it at the draw', () => {
+  const body = cupPayload(blankCup());
+  assert.deepEqual([body.checkin_enabled, body.checkin_opens_minutes, body.checkin_closes_minutes, body.early_checkin], [true, 120, null, false]);
+  // a cup over rounds checks in for each round, from sign-up unless the organizer turns early check-in off
+  const rounds = cupPayload({ ...blankCup(), play: 'rounds' });
+  assert.deepEqual([rounds.checkin_enabled, rounds.checkin_opens_minutes, rounds.checkin_closes_minutes, rounds.early_checkin], [false, 120, null, true]);
+  assert.equal(cupCheckin({ ...blankCup(), play: 'rounds' }).checkin_enabled, true);
+  assert.equal(cupPayload({ ...blankCup(), play: 'rounds', early_checkin: false }).early_checkin, false);
+  // the advanced settings: a day ahead, closing half an hour before the start
+  const early = cupPayload({ ...blankCup(), checkin_opens_minutes: 1440, checkin_closes_minutes: 30, early_checkin: true });
+  assert.deepEqual([early.checkin_opens_minutes, early.checkin_closes_minutes, early.early_checkin], [1440, 30, true]);
+  assert.equal(cupProblem({ ...blankCup(), checkin_closes_minutes: '' }, 'signups'), 'Say how many minutes before the start check-in closes.');
+  assert.equal(cupProblem({ ...blankCup(), checkin_closes_minutes: 120 }, 'signups'), 'Check-in must close fewer minutes before the start than it opens.');
+  assert.equal(cupProblem({ ...blankCup(), checkin_closes_minutes: 30 }, 'signups'), null);
 });
 
 test('a round the organizer moved keeps its day when the first round moves', () => {

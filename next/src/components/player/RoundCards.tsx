@@ -9,7 +9,7 @@ import { TeamName } from "@/components/TeamName";
 import { openBlockedTimes, useMatchStore } from "@/stores";
 import { formatDateTime } from "@/helpers/datetime";
 import { record } from "@/helpers/figures.mjs";
-import { cardStatus, checkinOpensLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
+import { cardStatus, checkinLine, roundCards, roundEndLine, roundStateChip } from "@/helpers/rounds.mjs";
 import { viewerZone, zoneLabel } from "@/helpers/timezone.mjs";
 import { isUnscored } from "@/helpers/season-phase.mjs";
 import { cn } from "@/lib/utils";
@@ -63,7 +63,6 @@ export function RoundCards({
     matches,
     teamId,
     answers,
-    checkinDays: season?.checkin_days ?? null,
     earlyCheckin: !!season?.early_checkin,
     zone,
   } as any);
@@ -184,7 +183,7 @@ export function RoundCards({
             ) : null}
           </div>
           {asks && card.takes ? question?.(card) : null}
-          {asks && card.takes && checkinOpensLine(card) ? <div className={CAPTION}>{checkinOpensLine(card)}</div> : null}
+          {asks && card.takes && checkinLine(card) ? <div className={CAPTION}>{checkinLine(card)}</div> : null}
         </div>
       )}
       {/* The round closes at midnight in the event's zone, so the reader gets both clocks */}

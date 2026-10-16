@@ -8,7 +8,7 @@ import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
 import { CupTeamName } from "@/components/CupTeamName";
-import { isScored, lobbySeats } from "@/helpers/stage-view.mjs";
+import { isScored, lobbyPlaces, lobbySeats } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -16,11 +16,13 @@ type Row = Record<string, any>;
 
 const seatsOf = lobbySeats as (row: Row) => Row[];
 const scoredOf = isScored as (row: Row | null) => boolean;
+const placesOf = lobbyPlaces as (order: Row[]) => { side_no: number; place: number }[];
 
 /** Where every seat of a free for all lobby finished: the order is the result, best place first.
  *  A seat drags to its place, or takes a typed place committed on Enter or on leaving the field,
- *  which works on a phone too. A player of the lobby and a runner use it alike; the run page adds
- *  the runner's map change, the clear of a played lobby and the move of a seat to another lobby. */
+ *  which works on a phone too. A Left seat, whose entrant withdrew, reads last and takes no place.
+ *  A player of the lobby and a runner use it alike; the run page adds the runner's map change,
+ *  the clear of a played lobby and the move of a seat to another lobby. */
 export function LobbyPlacesDialog({
   lobby,
   title = "Enter the places",
@@ -53,12 +55,14 @@ export function LobbyPlacesDialog({
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const played = scoredOf(lobby);
   const empty = order.filter((seat) => !seat.entrant_id).length;
+  // the seats still in come first and take the places; a Left seat sits after them
+  const placing = order.filter((seat) => !seat.left).length;
   // a lobby seats two entrants or more, so the third seat is the first one free to leave
   const movable = !!onMove && !played && order.filter((seat) => seat.entrant_id).length > 2;
   const nameOf = (seat: Row) => seat.team?.name || seat.user?.name || `seat ${seat.side_no}`;
 
   const move = (from: number | null, to: number) => {
-    if (from == null || from === to || to < 0 || to >= order.length) return;
+    if (from == null || from === to || from >= placing || to < 0 || to >= placing) return;
     const rows = [...order];
     rows.splice(to, 0, ...rows.splice(from, 1));
     setOrder(rows);
@@ -92,38 +96,52 @@ export function LobbyPlacesDialog({
             {order.map((seat, index) => (
               <li
                 key={seat.side_no}
-                className={cn("flex items-center gap-2.5 border-t py-1 first:border-t-0", dragFrom === index && "opacity-50")}
-                draggable={!saving}
+                className={cn(
+                  "flex items-center gap-2.5 border-t py-1 first:border-t-0",
+                  dragFrom === index && "opacity-50",
+                  seat.left && "opacity-(--v-medium-emphasis-opacity)",
+                )}
+                draggable={!saving && !seat.left}
                 onDragStart={() => setDragFrom(index)}
                 onDragEnd={() => setDragFrom(null)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => move(dragFrom, index)}
               >
-                <Icon name="mdi-drag-horizontal-variant" size={18} className="cursor-grab text-muted-foreground" />
-                <Input
-                  // the box reads its place again whenever it is not being typed into
-                  ref={(el) => {
-                    if (el && document.activeElement !== el) el.value = String(index + 1);
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  className="tnum h-9 w-12 px-1 text-center"
-                  aria-label={`Place of ${nameOf(seat)}`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                    if (e.key === "Escape") {
-                      e.currentTarget.value = String(index + 1);
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // an emptied field or a word puts the place back and moves nobody
-                    const typed = e.target.value.trim();
-                    e.target.value = String(index + 1);
-                    if (/^\d+$/.test(typed)) move(index, Math.min(Math.max(Number(typed), 1), order.length) - 1);
-                  }}
-                />
+                {seat.left ? (
+                  <>
+                    <span className="w-[18px] shrink-0" />
+                    <span className="flex h-9 w-12 shrink-0 items-center justify-center text-sm">Left</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="mdi-drag-horizontal-variant" size={18} className="cursor-grab text-muted-foreground" />
+                    <Input
+                      id={`lobby-place-${seat.side_no}`}
+                      // the box reads its place again whenever it is not being typed into
+                      ref={(el) => {
+                        if (el && document.activeElement !== el) el.value = String(index + 1);
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="tnum h-9 w-12 px-1 text-center"
+                      aria-label={`Place of ${nameOf(seat)}`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                        if (e.key === "Escape") {
+                          e.currentTarget.value = String(index + 1);
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // an emptied field or a word puts the place back and moves nobody
+                        const typed = e.target.value.trim();
+                        e.target.value = String(index + 1);
+                        if (/^\d+$/.test(typed)) move(index, Math.min(Math.max(Number(typed), 1), placing) - 1);
+                      }}
+                    />
+                  </>
+                )}
                 {seat.team ? (
                   <span className="flex min-w-0 flex-col">
                     <CupTeamName team={seat.team} />
@@ -135,8 +153,8 @@ export function LobbyPlacesDialog({
                   <span className="text-muted-foreground">Empty seat</span>
                 )}
                 <span className="flex-1" />
-                {movable && seat.entrant_id ? (
-                  <Button variant="ghost" size="sm" disabled={saving} onClick={() => onMove!(seat)}>
+                {movable && seat.entrant_id && !seat.left ? (
+                  <Button id={`lobby-move-${seat.side_no}`} variant="ghost" size="sm" aria-label={`Move ${nameOf(seat)}`} disabled={saving} onClick={() => onMove!(seat)}>
                     Move
                   </Button>
                 ) : null}
@@ -157,7 +175,7 @@ export function LobbyPlacesDialog({
             <Button variant="ghost" disabled={saving} onClick={() => onOpenChange(false)}>
               Close
             </Button>
-            <Button disabled={!!empty || saving} onClick={() => onSave(order.map((seat, index) => ({ side_no: seat.side_no, place: index + 1 })))}>
+            <Button disabled={!!empty || saving} onClick={() => onSave(placesOf(order))}>
               <Icon name={saving ? "mdi-loading mdi-spin" : "mdi-content-save"} />
               {played ? "Save the corrected places" : "Save places"}
             </Button>

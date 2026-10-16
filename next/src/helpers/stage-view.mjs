@@ -324,18 +324,19 @@ export function lobbyTargets(series = [], picked = null) {
     .filter((item) => item.id !== picked.id && !isScored(item.row));
 }
 
-const lobbyNames = (row) => (row.sides || []).map((seat) => seat.user?.name || 'empty').join(', ');
+const lobbyNames = (row) => (row.sides || [])
+  .map((seat) => `${seat.user?.name || 'empty'}${seat.left ? ' (Left)' : ''}`).join(', ');
 
 // The seats of one lobby as its box reads them: the winner first, then the rest by
-// place, then the seats nobody placed yet. While results are hidden every seat keeps
-// its seat order and carries no place, so the box gives nothing away. A fed lobby takes
-// its seats from the round before it, so a hidden one names nobody either.
+// place, then the seats nobody placed yet, a Left seat last. While results are hidden
+// every seat keeps its seat order and carries no place, so the box gives nothing away.
+// A fed lobby takes its seats from the round before it, so a hidden one names nobody either.
 export function lobbySeats(row, hidden = false, fed = false) {
   const seats = [...(row?.sides || [])].sort((a, b) => a.side_no - b.side_no);
   if (hidden) {
     return seats.map((seat) => ({
       ...seat, key: seat.side_no, place: null, result: null, user: fed ? null : seat.user,
-      team: fed ? null : seat.team, players: fed ? [] : seat.players,
+      team: fed ? null : seat.team, players: fed ? [] : seat.players, left: !fed && !!seat.left,
     }));
   }
   return seats
@@ -344,8 +345,14 @@ export function lobbySeats(row, hidden = false, fed = false) {
       key: seat.side_no,
       result: seat.place == null ? null : (seat.place === 1 ? 'won' : 'lost'),
     }))
-    .sort((a, b) => (a.place ?? Infinity) - (b.place ?? Infinity) || a.side_no - b.side_no);
+    .sort((a, b) => (a.place ?? Infinity) - (b.place ?? Infinity)
+      || Number(!!a.left) - Number(!!b.left) || a.side_no - b.side_no);
 }
+
+// The places a lobby saves from its seats in finishing order: 1 to N, a Left seat taking none
+export const lobbyPlaces = (order = []) => order
+  .filter((seat) => !seat.left)
+  .map((seat, index) => ({ side_no: seat.side_no, place: index + 1 }));
 
 // The series one entrant plays in, so a bracket lights up that entrant's way through it
 /** @param {any[]} series @param {number | null} entrant */

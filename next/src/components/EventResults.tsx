@@ -196,8 +196,8 @@ export function EventResults({
                                 </span>
                                 <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                                   {seats.map((seat) => (
-                                    <span key={seat.side_no} className={cn("inline-flex items-center gap-1", seat.place === 1 && "font-bold")}>
-                                      <span className="tnum text-xs text-muted-foreground">{seat.place}.</span>
+                                    <span key={seat.side_no} className={cn("inline-flex items-center gap-1", seat.place === 1 && "font-bold", seat.left && "opacity-(--v-medium-emphasis-opacity)")}>
+                                      <span className="tnum text-xs text-muted-foreground">{seat.left ? "Left" : `${seat.place}.`}</span>
                                       {seat.team ? <CupTeamName team={seat.team} /> : seat.user ? <PlayerName player={seat.user} plain /> : <span>Seat {seat.side_no}</span>}
                                     </span>
                                   ))}

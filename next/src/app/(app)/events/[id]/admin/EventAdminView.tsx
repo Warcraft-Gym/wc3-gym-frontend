@@ -22,7 +22,7 @@ import { winsFor } from "@/helpers/best-of.mjs";
 import { gameSlots, scoreOf } from "@/helpers/map-order.mjs";
 import {
   advancingRows, drawsByRound, generateFields, isLobby, isScored,
-  lobbySeats, lobbyTargets, nextRound, sideName, standsOn, undrawResults,
+  lobbyTargets, nextRound, sideName, standsOn, undrawResults,
 } from "@/helpers/stage-view.mjs";
 import { awardList, placeIcon, placeMedal } from "@/helpers/awards.mjs";
 import { playedCount } from "@/helpers/stage-view.mjs";
@@ -55,7 +55,6 @@ const awardsOf = awardList as unknown as (standings: Row[]) => Row[];
 const targetsOf = lobbyTargets as unknown as (series: Row[], picked: Row | null) => { id: number; label: string }[];
 const nextRoundOf = nextRound as unknown as (stage: Row | null, series: Row[], divisions?: Row[]) => { number: number; done: boolean; blocked: string | null };
 const rostersOf = rostersByEntrant as unknown as (entrants: Row[], teams: Row[], eventId: number) => Record<string, Row[]>;
-const seatsOf = lobbySeats as (row: Row) => Row[];
 
 // The one refusal a force answers, as app/services/stage_engine.py on_reopened words it
 const NEEDS_FORCE = "A later series already carries a result";
@@ -349,16 +348,9 @@ export function EventAdminView({ id }: { id: string }) {
     setMoveOpen(true);
   };
 
-  // A move is two writes: the target seats the entrant and the lobby he leaves drops him
+  // A move is one write; a refusal stays in the move dialog
   const moveEntrant = async () => {
-    const target = series.find((row) => row.id === moveTo);
-    const taken = (target?.sides || []).map((seat: Row) => seat.entrant_id).filter(Boolean);
-    const left = seatsOf(picked!).map((seat) => seat.entrant_id).filter((entrantId) => entrantId && entrantId !== moving!.entrant_id);
-    const refused = await run(async () => {
-      await store.setLobbySides(target!.id, [...taken, moving!.entrant_id]);
-      await store.setLobbySides(picked!.id, left);
-    });
-    if (!refused) {
+    if (!(await run(() => store.moveSeat(picked!.id, moving!.entrant_id, moveTo!)))) {
       setMoveOpen(false);
       setLobbyOpen(false);
     }

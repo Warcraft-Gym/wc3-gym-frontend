@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { eligibilityLines, eveningOf, groupEvents, joinsWaitlist, moveStartBody, moveStartForm, organizerCard, runsEvent, waitlistOf } from './events-page.mjs';
+import { eligibilityLines, eveningOf, groupEvents, joinsWaitlist, KIND_FILTERS, moveStartBody, moveStartForm, organizerCard, runsEvent, waitlistOf } from './events-page.mjs';
 
 const event = (id, kind, phase, starts_at = null) => ({ id, kind, phase, starts_at });
 
@@ -17,7 +17,20 @@ test('a running event is live, a finished one past, and every other phase still 
   assert.deepEqual(live.map((e) => e.id), [1]);
   assert.deepEqual(past.map((e) => e.id), [2]);
   assert.deepEqual(upcoming.map((e) => e.id).sort(), [3, 4, 5]);
-  assert.deepEqual(groupEvents(rows, 'all').live.map((e) => e.id), [6, 1]);
+});
+
+test('the events page leaves KOTH nights out of every group and every filter', () => {
+  const rows = [event(1, 'cup', 'running'), event(6, 'koth', 'running'), event(7, 'koth', 'signups_open'), event(8, 'koth', 'finished')];
+  const all = groupEvents(rows, 'all');
+  assert.deepEqual([all.live, all.upcoming, all.past].map((list) => list.map((e) => e.id)), [[1], [], []]);
+  assert.deepEqual(groupEvents(rows, 'koth').live, []);
+  assert.equal(KIND_FILTERS.some((filter) => filter.value === 'koth'), false);
+});
+
+test('two events starting together read by status: check-in, sign-ups, seeded, then a draft', () => {
+  const at = '2026-10-20T18:00:00Z';
+  const rows = [event(1, 'cup', 'draft', at), event(2, 'cup', 'seeded', at), event(3, 'cup', 'signups_open', at), event(4, 'cup', 'checkin', at), event(5, 'cup', 'signups_open', '2026-10-19T18:00:00Z')];
+  assert.deepEqual(groupEvents(rows).upcoming.map((e) => e.id), [5, 4, 3, 2, 1]);
 });
 
 test('upcoming reads soonest first with the undated last; past reads newest first', () => {

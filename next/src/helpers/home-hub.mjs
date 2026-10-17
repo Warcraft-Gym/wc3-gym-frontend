@@ -6,6 +6,7 @@ import { rulesOf } from './map-order.mjs';
 import { isUnscored } from './season-phase.mjs';
 import { isLobby } from './stage-view.mjs';
 import { myNight } from './koth.mjs';
+import { modeLabel } from './event-labels.mjs';
 
 /** The CSS order of each Home panel. One order drives both layouts: the phone stack, and the panels
  *  inside each desktop column, where the GNL panels stand on the left and the events on the right.
@@ -17,18 +18,6 @@ const EVENT_KINDS = ['cup', 'signup'];
 
 // A start that sorts an event with no date last
 const startKey = (value) => String(value ?? '9999');
-
-/** The format an event row names in one short chip: "2v2 cup", "FFA, teams of 2", "Custom game, 1v1".
- *  A sign-up list plays nothing, and every other kind names no format.
- *  @param {any} row a GET /me/events row, or an event */
-export const formatChip = (row) => {
-  if (row?.kind === 'signup') return 'Sign-up list';
-  if (row?.kind !== 'cup') return null;
-  const size = Number(row.team_size) || 1;
-  const lobby = size > 1 ? `FFA, teams of ${size}` : 'FFA, solo';
-  if (row.custom_game) return `Custom game, ${row.ffa ? lobby : `${size}v${size}`}`;
-  return row.ffa ? lobby : `${size}v${size} cup`;
-};
 
 /** The cups and sign-up lists the member may still enter, soonest first. One the member joined or
  *  is invited to is in My events instead. One they run stays here until they sign up for it, since
@@ -87,7 +76,7 @@ export const myEventCards = ({ events = [], organized = [], invites = [], series
       const row = one.row ?? events.find((event) => Number(event.id) === one.id) ?? null;
       return {
         ...one,
-        format: formatChip(row ?? one),
+        format: modeLabel(row ?? one),
         role: one.organizer ? 'organizer' : row?.cup_team ? 'team' : one.row ? 'player' : one.invite ? 'invited' : 'player',
         team: row?.cup_team ?? null,
         checkIn: one.row?.action === 'check_in',

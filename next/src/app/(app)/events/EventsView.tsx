@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import {
   dateRange,
   EVENT_KINDS,
+  modeLabel,
   STATE_COLOR,
   STATE_LABEL,
   stateOf,
@@ -53,48 +55,22 @@ const StateBadge = ({ event }: { event: Row }) => (
   </Badge>
 );
 
-/** One event still to come, as a card: its state, its name, when and how it plays, and a button
- *  into it that names where the caller stands once their /me/events row says so. */
-function EventCard({ event, row }: { event: Row; row?: Row }) {
+// A cup names the mode it is played in, "2v2 cup"; every other kind names itself
+const modeOf = (event: Row) => (modeLabel(event) as string | null) || titleOf(EVENT_KINDS, event.kind);
+
+/** The button into an event still to come, named for where the caller stands once their
+ *  /me/events row says so. */
+function EventAction({ event, row }: { event: Row; row?: Row }) {
   const button = cardButton(row, stateOf(event)) as { text: string; outline: boolean };
   return (
-    <Card className="card">
-      <CardContent className="flex h-full flex-col gap-3 p-4">
-        <div className="flex items-center justify-between gap-2">
-          <StateBadge event={event} />
-          {/* a team cup names its size, "2v2 cup" */}
-          <span className="text-sm text-muted-foreground">
-            {event.team_size
-              ? `${event.team_size}v${event.team_size} cup`
-              : titleOf(EVENT_KINDS, event.kind)}
-          </span>
-        </div>
-        <Link
-          href={`/events/${event.id}`}
-          className="font-heading text-lg font-bold text-foreground"
-        >
-          {event.name}
-        </Link>
-        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-          {dateRange(event) ? <span>{dateRange(event)}</span> : null}
-          {event.stages?.[0]?.format ? (
-            <span>
-              {event.stages.length} stage{event.stages.length > 1 ? "s" : ""}
-            </span>
-          ) : null}
-        </div>
-        <div className="mt-auto">
-          <Button
-            className="w-full"
-            variant={button.outline ? "outline" : "default"}
-            nativeButton={false}
-            render={<Link href={`/events/${event.id}`} />}
-          >
-            {button.text}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <Button
+      size="sm"
+      variant={button.outline ? "outline" : "default"}
+      nativeButton={false}
+      render={<Link href={`/events/${event.id}`} />}
+    >
+      {button.text}
+    </Button>
   );
 }
 
@@ -336,20 +312,18 @@ export function EventsView() {
         </Card>
       ) : null}
 
-      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Kind">
-        {KIND_FILTERS.map((filter) => (
-          <Button
-            key={filter.value}
-            size="sm"
-            variant={filter.value === kind ? "secondary" : "outline"}
-            aria-pressed={filter.value === kind}
-            className="rounded-full"
-            onClick={() => setKind(filter.value)}
-          >
-            {filter.title}
-          </Button>
-        ))}
-      </div>
+      {/* the kinds read as the tab bar a cup page uses, so the one picked stands out in both themes */}
+      <Tabs value={kind} onValueChange={(value) => setKind(value as string)} className="mb-5">
+        <div className="border-b border-border">
+          <TabsList variant="line" aria-label="Kind" className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
+            {KIND_FILTERS.map((filter) => (
+              <TabsTrigger key={filter.value} value={filter.value} className="flex-none px-3">
+                {filter.title}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+      </Tabs>
 
       {loading ? <Progress value={null} className="mb-4" /> : null}
 
@@ -413,7 +387,7 @@ export function EventsView() {
                       {event.name}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {[titleOf(EVENT_KINDS, event.kind), dateRange(event)]
+                      {[modeOf(event), dateRange(event)]
                         .filter(Boolean)
                         .join(" · ")}
                     </div>
@@ -437,11 +411,46 @@ export function EventsView() {
           <section className="mb-6">
             <h2 className="mb-3 text-xl">Upcoming</h2>
             {upcoming.length ? (
-              <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
-                {upcoming.map((event) => (
-                  <EventCard key={event.id} event={event} row={own.get(Number(event.id))} />
-                ))}
-              </div>
+              <Card className="card">
+                <div className="table-scroll overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Event</TableHead>
+                        <TableHead className={phoneCell}>Mode</TableHead>
+                        <TableHead className={phoneCell}>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">
+                          <span className="sr-only">Action</span>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {upcoming.map((event) => (
+                        <TableRow key={event.id}>
+                          <TableCell className="py-3">
+                            <Link href={`/events/${event.id}`}>
+                              <strong>{event.name}</strong>
+                            </Link>
+                            {/* a phone drops the middle columns, so their words ride under the name */}
+                            <div className="text-xs text-muted-foreground min-[960px]:hidden">
+                              {[modeOf(event), dateRange(event)].filter(Boolean).join(" · ")}
+                            </div>
+                          </TableCell>
+                          <TableCell className={phoneCell}>{modeOf(event)}</TableCell>
+                          <TableCell className={cn(phoneCell, "whitespace-nowrap")}>{dateRange(event) || "—"}</TableCell>
+                          <TableCell>
+                            {event.published === false ? <Badge variant="outline">Draft</Badge> : <StateBadge event={event} />}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <EventAction event={event} row={own.get(Number(event.id))} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
             ) : (
               <p className="text-muted-foreground">
                 {loading ? "" : "Nothing is coming up yet."}
@@ -457,7 +466,7 @@ export function EventsView() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Event</TableHead>
-                      <TableHead className={phoneCell}>Kind</TableHead>
+                      <TableHead className={phoneCell}>Mode</TableHead>
                       <TableHead className={phoneCell}>Date</TableHead>
                       <TableHead>State</TableHead>
                     </TableRow>
@@ -472,7 +481,7 @@ export function EventsView() {
                           {/* a phone drops the middle columns, so their words ride under the name */}
                           <div className="text-xs text-muted-foreground min-[960px]:hidden">
                             {[
-                              titleOf(EVENT_KINDS, event.kind),
+                              modeOf(event),
                               dateRange(event),
                             ]
                               .filter(Boolean)
@@ -480,7 +489,7 @@ export function EventsView() {
                           </div>
                         </TableCell>
                         <TableCell className={phoneCell}>
-                          {titleOf(EVENT_KINDS, event.kind)}
+                          {modeOf(event)}
                         </TableCell>
                         <TableCell
                           className={cn(phoneCell, "whitespace-nowrap")}

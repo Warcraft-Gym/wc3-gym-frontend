@@ -5,27 +5,34 @@ import { dayDate, dayIso } from './date-input.mjs';
 import { pickerParts, storedUtc, viewerZone } from './timezone.mjs';
 
 // Cups lead, because they are what a member joins from this page; the other kinds have homes
-// of their own and read here too
+// of their own and read here too. A KOTH night is not one of them: the public site shows the
+// nights, and the admins run them from the admin panel
 export const KIND_FILTERS = [
   { value: 'cup', title: 'Cups' },
   // the rules cups repeat on, in place of the events
   { value: 'recurring', title: 'Recurring cups' },
-  { value: 'koth', title: 'KOTH nights' },
   { value: 'gnl', title: 'GNL seasons' },
   { value: 'all', title: 'All' },
 ];
 
 const startOf = (event) => event?.starts_at || event?.start_date || null;
 
-/** Live, upcoming and past, for one kind or every kind. A running event is live, a finished
- *  one is past and every other phase, a draft among them, is still to come. Upcoming reads
- *  soonest first with the undated last; live and past read newest first. */
+// Two events starting together read the one nearer its start first: check-in, then sign-ups,
+// then seeded, and a draft last
+const UPCOMING_ORDER = { checkin: 0, signups_open: 1, seeded: 2, draft: 3 };
+const statusRank = (event) => UPCOMING_ORDER[event?.phase] ?? 4;
+
+/** Live, upcoming and past, for one kind or every kind, KOTH nights left out. A running event is
+ *  live, a finished one is past and every other phase, a draft among them, is still to come.
+ *  Upcoming reads soonest first, then by status, with the undated last; live and past read
+ *  newest first. */
 export function groupEvents(events, kind = 'all') {
-  const rows = (events || []).filter((event) => kind === 'all' || event.kind === kind);
+  const rows = (events || []).filter((event) => event.kind !== 'koth' && (kind === 'all' || event.kind === kind));
   const byStartAsc = (a, b) => {
     const [x, y] = [startOf(a), startOf(b)];
-    if (x && y) return x < y ? -1 : x > y ? 1 : b.id - a.id;
-    return x ? -1 : y ? 1 : b.id - a.id;
+    if (x && y && x !== y) return x < y ? -1 : 1;
+    if (!x !== !y) return x ? -1 : 1;
+    return statusRank(a) - statusRank(b) || b.id - a.id;
   };
   const byNewest = (a, b) => {
     const [x, y] = [startOf(a), startOf(b)];

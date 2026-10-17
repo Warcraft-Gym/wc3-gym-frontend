@@ -2,6 +2,8 @@
 
 ## 2026-10-17
 
+* **Update**: Create cup's Sign-ups step reads in two sections, "Sign-up information" and "Sign-up rules"; the eligibility check turns every rule off with it, a new switch counts only the sign-up race, and the Battle.net link, "Who may sign up" and "Open sign-ups now" leave. [Event management](pages/event-management.md) states it.
+* **Update**: the Events page takes its kinds as tabs, lists the upcoming events as one table with their status, leaves KOTH nights out, and every page names a cup's mode ("2v2 cup", "FFA, solo"). [Leagues and events](pages/leagues-and-events.md) states it.
 * **Update**: an error a page raises while a dialog is open shows in that dialog under its title, and a line tab bar that scrolls sideways no longer scrolls up and down. [Shared components](concepts/shared-components.md) states it.
 * **Update**: a cup's "Organizers" card and the admin's "Add organizer" dialog pick the person with `OrganizerPicker`, a search of the player base by name or Discord tag, in place of a typed Discord id. [Event management](pages/event-management.md) and [site admin](pages/site-admin.md) state it.
 * **Update**: body text, controls and player and team names are set in Inter, a step heavier in light (450, medium 560) than in dark (400, medium 500); small text is 13 px; faded text is the solid `on-surface-muted` ink; the light `surface` is `#F9FAF6`. [Theme](concepts/theme.md) states it.

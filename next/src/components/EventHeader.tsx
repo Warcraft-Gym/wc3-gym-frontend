@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/Icon";
 import { toneClass } from "@/components/ui/tone";
-import { dateRange, eventLabel, STATE_COLOR, STATE_LABEL, stateOf } from "@/helpers/event-labels.mjs";
+import { dateRange, eventLabel, modeLabel, STATE_COLOR, STATE_LABEL, stateOf } from "@/helpers/event-labels.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type EventRow = Record<string, any>;
@@ -18,6 +18,8 @@ export function EventHeader({ event, league = null }: { event: EventRow; league?
   // The league beside the name, dropped when the event name already repeats it
   const label = label_(event, league);
   const state = stateOf(event);
+  // a cup names the mode it is played in, "2v2 cup", beside its state
+  const mode = modeLabel(event) as string | null;
   const when = dateRange(event);
   // One gap for every icon-and-text pair, and one nudge that centres the icon on the x-height
   const link = "inline-flex items-center gap-1.5 whitespace-nowrap text-inherit no-underline [&>.mdi]:-translate-y-[3%]";
@@ -26,6 +28,7 @@ export function EventHeader({ event, league = null }: { event: EventRow; league?
       <div className="flex flex-wrap items-center gap-3">
         <h1>{label}</h1>
         {state ? <Badge className={toneClass(stateColor[state])}>{stateLabel[state] || state}</Badge> : null}
+        {mode ? <Badge variant="outline">{mode}</Badge> : null}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1">
         {when ? (

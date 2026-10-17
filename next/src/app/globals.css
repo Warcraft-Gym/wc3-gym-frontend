@@ -121,10 +121,18 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  --font-sans: var(--font-lato), Lato, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-inter), Inter, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-heading: var(--font-cardo), Cardo, Georgia, serif;
   --font-display: var(--font-cardo), Cardo, Georgia, serif;
   --font-title: var(--font-cinzel), Cinzel, Georgia, serif;
+
+  /* font-normal and font-medium follow the theme's weights, set below with the body rule */
+  --font-weight-normal: var(--body-weight);
+  --font-weight-medium: var(--medium-weight);
+
+  /* Small text is 13 px: the MMR, hints, chips and "vs" read at 12 px as a blur */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.125rem;
 }
 
 /* The shadcn components read these names, so they take their colours from the same palette. */
@@ -143,7 +151,8 @@
   --secondary: rgb(var(--v-theme-secondary));
   --secondary-foreground: rgb(var(--v-theme-on-secondary));
   --muted: rgb(var(--v-theme-surface-light));
-  --muted-foreground: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  /* A solid ink, so faded text keeps whole strokes; palette.mjs sets it at AA on every ground */
+  --muted-foreground: rgb(var(--v-theme-on-surface-muted));
   --accent: rgb(var(--v-theme-surface-light));
   --accent-foreground: rgb(var(--v-theme-on-surface));
   --destructive: rgb(var(--v-theme-error));
@@ -170,13 +179,31 @@
   /* A border utility with no colour draws the theme hairline, not the text colour. */
   *, ::before, ::after { border-color: var(--color-border); }
 
-  /* Lato for body, controls and every figure; numbers use lining, equal-width digits so columns line up. */
+  /* Inter for body, controls, names and every figure; numbers use lining, equal-width digits so columns line up. */
   html,
   body {
     background-color: rgb(var(--v-theme-background));
     color: rgb(var(--v-theme-on-background));
     font-family: var(--font-sans);
+    font-weight: var(--body-weight);
     font-variant-numeric: lining-nums tabular-nums;
+    -webkit-font-smoothing: var(--font-smoothing);
+    -moz-osx-font-smoothing: var(--font-smoothing-moz);
+  }
+
+  /* Dark lays the public site's leather texture behind the page, so a near-black card reads as a
+     plate on it. Fixed on pointer devices; touch browsers ignore fixed, so there it scrolls at full width. */
+  body {
+    @variant dark {
+      background-image: url("/keyart/leather_bg.webp");
+      background-size: cover;
+      background-position: center top;
+      background-attachment: fixed;
+      @media (hover: none) {
+        background-attachment: scroll;
+        background-size: 100% auto;
+      }
+    }
   }
 
   /* Cardo for headings, Cinzel for the page title. Cinzel has capitals only, so a name never takes it. */
@@ -204,10 +231,11 @@
 .text-on-primary { color: rgb(var(--v-theme-on-primary)); }
 .text-on-error { color: rgb(var(--v-theme-on-error)); }
 
-/* A player or team name reads in Cardo 700, in its own case. */
+/* A player or team name reads in Inter 600, in its own case: a serif's hairlines blur at row size,
+   and a handle such as lIlI1 needs an l, an I and a 1 that differ. */
 .player-name .name,
 .team-name .name,
-.font-name { font-family: var(--font-heading); font-weight: 700; text-transform: none; }
+.font-name { font-family: var(--font-sans); font-weight: 600; text-transform: none; }
 
 /* A banner is a dark warm bar with cream text and a gold title, embossed like the public site's nav bar. */
 .banner {
@@ -227,6 +255,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) { --btn-gold-edge: oklch(50% 0.1 70 / 0.6); --btn-gold-drop: 0 1px 2px oklch(0% 0 0 / 0.6); }
 }
+
+/* Dark text on a light ground reads thinner than light text on a dark one, so light sets the body a step
+   heavier. Dark keeps macOS's grayscale smoothing; light drops it, because it thins dark strokes. */
+:root { --body-weight: 450; --medium-weight: 560; --font-smoothing: auto; --font-smoothing-moz: auto; }
+:root[data-theme="dark"] { --body-weight: 400; --medium-weight: 500; --font-smoothing: antialiased; --font-smoothing-moz: grayscale; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) { --body-weight: 400; --medium-weight: 500; --font-smoothing: antialiased; --font-smoothing-moz: grayscale; }
+}
 @layer components {
   .btn-gold {
     color: oklch(22% 0.04 60);
@@ -243,8 +279,21 @@
 .tnum { font-variant-numeric: lining-nums tabular-nums; }
 
 /* The look DESIGN.md asks for, over the shadcn primitives. */
-.card { background-color: rgb(var(--v-theme-surface)); border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); }
-.chip { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0 0.5rem; font-size: 0.75rem; line-height: 1.5rem; }
+/* In dark a card is the public site's panel: a near-black plate with a warm gold hairline, a lit top
+   edge and a deep shadow. The shadow replaces the Card ring, so the border stays the card's one line. */
+:root {
+  --panel-line: oklch(70% 0.03 75 / 0.18);
+  --panel-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.06), 0 12px 40px -18px oklch(0% 0 0 / 0.9);
+}
+.card {
+  background-color: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  @variant dark {
+    border-color: var(--panel-line);
+    box-shadow: var(--panel-shadow);
+  }
+}
+.chip { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0 0.5rem; font-size: var(--text-xs); line-height: 1.5rem; }
 .alert { border-inline-start: 4px solid currentColor; }
 .skeleton { background-color: rgb(var(--v-theme-surface-light)); }
 /* A hatch marks a cell the reader cannot use, so it reads apart from a plain fill in both themes. */
@@ -278,8 +327,8 @@
 @media (max-width: 599.98px) {
   .stack-label {
     display: inline;
-    font-weight: 500;
-    opacity: var(--v-medium-emphasis-opacity);
+    font-weight: var(--medium-weight);
+    color: var(--muted-foreground);
   }
   .table-sort-select { display: flex; }
   .table-stack,

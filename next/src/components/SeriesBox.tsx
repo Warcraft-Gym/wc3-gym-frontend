@@ -136,7 +136,7 @@ export function SeriesBox({
             <div className="flex min-w-0 flex-col gap-px">
               {cup ? <CupTeamName team={seat.team} /> : <TeamName team={seat.team} plain={!readonly} />}
               {(seat.players || []).length ? (
-                <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
+                <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-xs font-normal">
                   {(seat.players as Row[]).map((one) => (
                     <PlayerName key={one.id} player={one} plain={!readonly} />
                   ))}
@@ -146,7 +146,7 @@ export function SeriesBox({
           ) : seat.user ? (
             <PlayerName player={seat.user} plain={!readonly} />
           ) : (
-            <span className="text-[0.8125rem] text-muted-foreground">{fed ? "To be decided" : "Empty seat"}</span>
+            <span className="text-xs text-muted-foreground">{fed ? "To be decided" : "Empty seat"}</span>
           )}
           {seat.left ? <span className="ml-auto text-xs">Left</span> : <span className="tnum ml-auto font-bold">{seat.place ?? ""}</span>}
         </div>
@@ -165,19 +165,19 @@ export function SeriesBox({
             <div className="flex min-w-0 flex-col gap-px">
               {cup ? <CupTeamName team={team(side)} /> : <TeamName team={team(side)} plain={!readonly} />}
               {roster(side).length ? (
-                <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[0.8125rem] font-normal">
+                <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-xs font-normal">
                   {roster(side).map((seat) => (
                     <PlayerName key={seat.player.id} player={seat.player} race={seat.race || undefined} mmr={rated ? seat.mmr : false} plain={!readonly} />
                   ))}
                 </span>
               ) : series.pick_rule ? (
-                <span className="flex text-[0.8125rem] font-normal text-muted-foreground">Roster not named</span>
+                <span className="flex text-xs font-normal text-muted-foreground">Roster not named</span>
               ) : null}
             </div>
           ) : player(side) ? (
             <PlayerName player={player(side)} race={race(side)} mmr={rated ? mmr(side) : false} plain={!readonly} />
           ) : (
-            <span className="min-w-0 truncate text-[0.8125rem] font-normal text-muted-foreground" title={empty(side)}>{empty(side)}</span>
+            <span className="min-w-0 truncate text-xs font-normal text-muted-foreground" title={empty(side)}>{empty(side)}</span>
           )}
           <span className="tnum ml-auto font-bold">{score(side)}</span>
         </div>

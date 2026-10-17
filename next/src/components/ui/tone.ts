@@ -9,5 +9,6 @@ const TONE: Record<string, string> = {
   draw: "bg-draw/12 text-foreground",  // the draw grey is under 3:1 as text, so a draw reads in body ink
 };
 
-/** The classes a tonal chip wears for one theme token; a chip with no colour stays neutral. */
-export const toneClass = (color?: string | null) => TONE[color ?? ""] ?? "bg-muted text-foreground";
+/** The classes a tonal chip wears for one theme token; a chip with no colour stays neutral. In dark
+ *  the neutral fill is close to the textured page, so the chip also takes the panel's hairline. */
+export const toneClass = (color?: string | null) => TONE[color ?? ""] ?? "bg-muted text-foreground dark:ring-1 dark:ring-inset dark:ring-(--panel-line)";

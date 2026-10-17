@@ -53,6 +53,13 @@ for (const [name, theme] of Object.entries(themes)) {
     }
   });
 
+  test(`${name}: faded text passes AA on every ground it sits on`, () => {
+    const ink = colors['on-surface-muted'];
+    for (const ground of [colors.surface, colors.background, colors['surface-light'], colors['surface-bright']]) {
+      assert.ok(contrast(ink, ground) >= AA, `on-surface-muted ${ink} on ${ground} is ${contrast(ink, ground).toFixed(2)}:1`);
+    }
+  });
+
   test(`${name}: every tier fill names its own ink`, () => {
     for (let tier = 1; tier <= 6; tier++) {
       assert.ok(colors[`on-tier-${tier}`], `tier-${tier} falls back to Vuetify's white, which is under AA on these fills`);

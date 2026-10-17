@@ -53,7 +53,7 @@ export function PlayerLadderPanel({
   return (
     <div className="flex items-start gap-7">
       <div className="flex w-[250px] shrink-0 flex-col gap-2">
-        <span className="text-[11px] leading-[14px] font-medium text-muted-foreground">Against each race</span>
+        <span className="text-xs font-medium text-muted-foreground">Against each race</span>
         {raceRows.length ? (
           <div className="flex flex-col">
             {raceRows.map((r) => (
@@ -63,7 +63,7 @@ export function PlayerLadderPanel({
                   {r.wPx ? <div style={{ width: `${r.wPx}px`, background: WIN }} className="h-[10px]" /> : null}
                   {r.lPx ? <div style={{ width: `${r.lPx}px`, background: LOSS, marginLeft: r.wPx ? "2px" : 0 }} className="h-[10px]" /> : null}
                 </div>
-                <span className="text-[0.8125rem] tnum whitespace-nowrap">{record(r.w, r.l) ?? "—"}</span>
+                <span className="text-xs tnum whitespace-nowrap">{record(r.w, r.l) ?? "—"}</span>
               </div>
             ))}
           </div>

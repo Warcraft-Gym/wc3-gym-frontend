@@ -4,7 +4,8 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 // The edge may serve a running read up to 720 s old (s-maxage 120 + stale 600), so this tab reads past it that long after its own series write
 const EDGE_STALE_MS = 720_000;
 let wroteAt = -Infinity;
-const wrote = () => {
+// Exported for the dialogs that write /player-series without this store
+export const wrote = () => {
   wroteAt = Date.now();
 };
 const afterWrite = () => (Date.now() - wroteAt < EDGE_STALE_MS ? `?t=${Date.now()}` : "");

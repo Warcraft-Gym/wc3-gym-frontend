@@ -20,6 +20,7 @@ import { seriesContext } from "@/helpers/series-actions.mjs";
 import { pickedInstant, pickerParts, viewerZone } from "@/helpers/timezone.mjs";
 import { useBreakpoint, XS } from "@/hooks/breakpoint";
 import { cn } from "@/lib/utils";
+import { wrote } from "@/stores/series";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -370,6 +371,7 @@ export function ScheduleDialog({
         const errorData = await response.json();
         throw new Error(errorData.error || "Update failed");
       }
+      wrote();
       setBooked(chosen);
       onSaved?.("Schedule updated successfully!");
     } catch (error) {

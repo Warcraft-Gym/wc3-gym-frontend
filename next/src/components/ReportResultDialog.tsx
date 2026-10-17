@@ -23,6 +23,7 @@ import { holdsResult } from "@/helpers/series-actions.mjs";
 import { sideName } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 import { useAuth, useMapStore, useMatchStore, useSeriesStore } from "@/stores";
+import { wrote } from "@/stores/series";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -378,6 +379,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref, cup = false }: { onS
         missing = series.listsReplays ? (await response.json()).replays_missing || [] : [];
       }
 
+      wrote();
       close();
       onSaved?.(missing.length ? `Result reported. ${missingLine(missing)} Add ${missing.length > 1 ? "them" : "it"} with Edit result.` : "Result reported successfully!");
     } catch (error) {

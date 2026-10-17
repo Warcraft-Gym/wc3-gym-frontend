@@ -10,7 +10,7 @@
 - **A conversation.** No quote, and no sentence about what people wanted, agreed, settled, considered or rejected. State the rule as it stands. A decision keeps its date and its why, one sentence each.
 - **A value.** No token, password, connection string, hostname, bucket, database, project, guild, channel, role or account id, and no default credential, even a local one. An environment variable name is fine. Its value never.
 - **A posture.** Nothing about which safeguards exist or are missing, which checks are on or off, what is reachable from where, what data an environment holds, or which plan, quota or cost applies. Write the operator instruction instead.
-- **A weakness.** No unfixed defect, bypass or lost data. Open an issue with the detail. The bundle states the rule that holds once it is fixed.
+- **A weakness.** No unfixed defect, bypass or lost data. Put the detail in [the backlog](docs/backlog.md). The bundle states the rule that holds once it is fixed.
 - **Another organisation.** The vendors the code depends on are fine: Vercel, Supabase, Clerk, Cloudflare, GitHub, Discord, W3Champions, Nightbot. No other site, community, sponsor or person.
 
 ### Before you commit
@@ -29,3 +29,4 @@ The review that merges the pull request repeats step 1.
 - `just okf-validate` checks the bundle with a third-party OKF validator, and `just okf-drift` lists the concepts to re-read after a code change. Both run from the repository root.
 - A new backend read that every visitor of a page makes follows [read cost and the edge cache](docs/okf/concepts/backend-contract.md#read-cost-and-the-edge-cache): an edge-cached route, listed in `EDGE_CACHED`, and the narrowest route the page needs.
 - A pull request that changes a page, a store action, a contract or a decision rewrites the concept in `docs/okf/` that states it, in the same pull request.
+- Open work, bugs and stories alike, lives in [`docs/backlog.md`](docs/backlog.md) until the first production release; after it, in GitHub issues. A pull request that ships an item deletes it there.

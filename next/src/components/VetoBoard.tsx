@@ -14,6 +14,7 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 import { DEFAULT_RULES } from "@/helpers/best-of.mjs";
 import { hideMissingImage } from "@/helpers/team-image";
 import { useAuth, useMapStore } from "@/stores";
+import { wrote } from "@/stores/series";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -234,6 +235,7 @@ export function VetoBoard({
     chain.current = chain.current.then(async () => {
       try {
         const answer = await fetchWrapper.put(vetoUrl, body);
+        wrote();
         setBoard(answer);
         setErrorMessage(null);
         onChange?.(answer);

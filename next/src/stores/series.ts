@@ -4,11 +4,12 @@ import { backendUrl, fetchWrapper } from "@/helpers";
 // The edge may serve a running read up to 720 s old (s-maxage 120 + stale 600), so this tab reads past it that long after its own series write
 const EDGE_STALE_MS = 720_000;
 let wroteAt = -Infinity;
-// Exported for the dialogs that write /player-series without this store
+// Exported for the dialogs and the veto board, which write a series without this store
 export const wrote = () => {
   wroteAt = Date.now();
 };
-const afterWrite = () => (Date.now() - wroteAt < EDGE_STALE_MS ? `?t=${Date.now()}` : "");
+const recent = () => Date.now() - wroteAt < EDGE_STALE_MS;
+const afterWrite = () => (recent() ? `?t=${Date.now()}` : "");
 
 const store = {
   async updateSeries(series: any) {
@@ -109,9 +110,9 @@ const store = {
   async playerMeetings(user_a: number, user_b: number) {
     return await fetchWrapper.get(`${backendUrl}/users/${user_a}/meetings/${user_b}`);
   },
-  // One match's series; a read after a write refetches it and refreshes the browser's copy, which a later plain read serves
+  // One match's series; a read soon after this tab wrote a series refetches it and refreshes the browser's copy
   async getSeriesByMatchId(season_id: number, match_id: number, fresh = false) {
-    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/series?match_id=${match_id}`, undefined, fresh ? { cache: "reload" } : undefined);
+    return await fetchWrapper.get(`${backendUrl}/events/${season_id}/series?match_id=${match_id}`, undefined, fresh || recent() ? { cache: "reload" } : undefined);
   },
   // One player's series in one season, filtered on the server
   async playerSeries(season_id: number, user_id: number) {

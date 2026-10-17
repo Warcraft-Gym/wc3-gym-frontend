@@ -702,7 +702,7 @@ export function EventView({ id }: { id: string }) {
           {tabbed ? (
             <Tabs value={tab} onValueChange={(value) => pickTab(value as string)} className="mt-6">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border">
-                <TabsList variant="line" className="max-w-full justify-start overflow-x-auto">
+                <TabsList variant="line" className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
                   <TabsTrigger value="draw" className="flex-none px-3">
                     <Icon name="mdi-tournament" />
                     Draw

@@ -9,32 +9,7 @@ How to use it:
 
 ## Bugs
 
-### An error from a dialog shows on the page behind it
-
-When a write started in a dialog fails, the error appears on the page behind the dialog. Example: a cup's run page, Participants tab, "Add player": the error shows above the page, and the dialog stays open without a message.
-
-Acceptance criteria:
-- An error from a write started in a dialog shows inside that dialog, above its buttons, and the dialog stays open.
-- The page's own alert does not repeat it.
-- The dialog's error clears when the dialog closes or the next write starts.
-- Holds for every dialog that writes, at least the cup console's Add player, Add team and Swap.
-
-Notes:
-- `CupConsole` sends every write error through the page's `onError` prop (`next/src/components/CupConsole.tsx`, the `work` helper), so a dialog's error lands in the page's `StatusAlert`.
-- About 34 files take an `onError` prop. A shared pattern, such as an error state per dialog rendered with `StatusAlert` inside `DialogContent`, fixes them in one place.
-
-### The cup page's tab bar shows a scroll bar in Chrome
-
-In Chrome, the tab bar of a cup page (Draw, Participants, Results) shows a small scroll bar beside "Results".
-
-Acceptance criteria:
-- No scroll bar on the tab bar in Chrome, Edge and Firefox at desktop width.
-- On a phone the bar still scrolls sideways when the tabs do not fit.
-- The run page (`/events/:id/admin`), which uses the same bar, is fixed too.
-
-Notes:
-- Likely cause: `TabsList` is `h-8` with `overflow-x-auto` (`EventView.tsx`, `EventAdminView.tsx`), and the active tab's line sits 5 px below the bar (`after:bottom-[-5px]` in `next/src/components/ui/tabs.tsx`). With `overflow-x: auto` that overflow also makes the bar scroll vertically.
-- Fix idea: `overflow-y-hidden` with bottom padding for the line, or let the bar grow (`h-auto` with `pb-1.5`).
+None open.
 
 ## Stories
 

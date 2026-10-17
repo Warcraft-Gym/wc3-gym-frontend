@@ -4,7 +4,7 @@ title: Site admin
 description: The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
 resource: ../../../next/src/app/(app)/config/ConfigView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-15T19:30:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-17T20:00:00Z }
 sources:
   - id: config
     resource: ../../../next/src/app/(app)/config/ConfigView.tsx
@@ -42,7 +42,7 @@ sources:
 
 **Discord roles (`/config/discord-roles`).** One card per role of the Discord server, in three columns: managed, where the sync grants and removes the role; ignored, bound but applied by hand; and not bound. A card moves by drag, by double click or by its buttons, and a binding names the group it points at: a season's players, a team's roster, a captains group and so on, counted over the current season, one season or every season. A role that sits above the bot's own role is locked. Roles that do not matter are hidden under the last column. A table view lists the same roles in rows. "Sync all" applies every managed binding; the report under it lists the accounts whose Discord roles differ from the database, with a sync per account and per role.
 
-**Access (`/config/access`).** The gym admins: the player, when granted, and the source, app or environment. "Add admin" takes a player from the list or a Discord id. An app-granted admin can be removed; an admin cannot remove their own row. Under the admins, "Event Organizers": the requests members sent, each with its note and whether the account has a player profile, answered with "Approve" (`POST /organizers/requests/{discord_id}/approve`) or "Decline"; then every organizer with the date of the grant and the count of cups they run, and "Revoke" (`DELETE /organizers/{discord_id}`). "Add organizer" takes a player from the list or a Discord id, as "Add admin" does, and writes `POST /organizers`.
+**Access (`/config/access`).** The gym admins: the player, when granted, and the source, app or environment. "Add admin" takes a player from the list or a Discord id. An app-granted admin can be removed; an admin cannot remove their own row. Under the admins, "Event Organizers": the requests members sent, each with its note and whether the account has a player profile, answered with "Approve" (`POST /organizers/requests/{discord_id}/approve`) or "Decline"; then every organizer with the date of the grant and the count of cups they run, and "Revoke" (`DELETE /organizers/{discord_id}`). "Add organizer" takes a player through `OrganizerPicker`, which searches the player base by name or Discord tag (`GET /organizers/candidates?q=`, ten at most, past the accounts holding a grant), and writes `POST /organizers`.
 
 **Maps (`/maps`).** Every map as a card with its picture, its short name and the modes it is played as ("1v1 · 2v2", or "No mode set"). Add a map (name, short name, "Played as" 1v1 to 8v8 and FFA, picture), edit one, delete one, and import the W3Champions ladder pool, which names the mode of its ladder.
 
@@ -63,6 +63,7 @@ sources:
 | `config.addAdmin` | `POST /config/admins` |
 | `config.removeAdmin` | `DELETE /config/admins/{discord_id}` |
 | `config.fetchOrganizers` | `GET /organizers` |
+| `config.organizerCandidates` | `GET /organizers/candidates?q=` |
 | `config.addOrganizer` | `POST /organizers` |
 | `config.removeOrganizer` | `DELETE /organizers/{discord_id}` |
 | `config.fetchOrganizerRequests` | `GET /organizers/requests` |

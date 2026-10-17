@@ -38,6 +38,10 @@ const store = {
   async fetchOrganizers() {
     return await fetchWrapper.get(`${backendUrl}/organizers`);
   },
+  // The players an admin may grant: a name or Discord tag holding the text, ten at most
+  async organizerCandidates(q: string) {
+    return await fetchWrapper.get(`${backendUrl}/organizers/candidates?q=${encodeURIComponent(q)}`);
+  },
   async addOrganizer({ discord_id, name }: { discord_id: string; name: string }) {
     return await fetchWrapper.post(`${backendUrl}/organizers`, { discord_id, name });
   },

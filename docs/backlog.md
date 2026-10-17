@@ -9,7 +9,19 @@ How to use it:
 
 ## Bugs
 
-None open.
+### A picked player or map is cut off in its picker button
+
+A picker whose list rows stack two lines, such as a name over its Discord tag, draws the chosen row in the button the same way, and the button is one line tall, so the second line is cut off. Seen in the cup console's "Swap" and "Add a player" dialogs.
+
+Acceptance criteria:
+- The button shows the chosen item on one line, ending in an ellipsis when it is too long.
+- The open list keeps its two-line rows.
+- Holds for every picker with two-line rows.
+
+Notes:
+- `Combobox` (`next/src/components/ui/Combobox.tsx`) draws the chosen item in the button with the same `row` as the list. A `flex flex-col` row is cut there.
+- Pickers with two-line rows: `CupConsole`, `AccessView`, `OrganizersCard`, `EntrantsView`, `CustomMapPicker`, `MapPoolPicker`, `TeamSignupDialog`.
+- Fix idea: `Combobox` takes an optional one-line `chosen` renderer for the button, or the rows go to one line, the second part muted beside the first, as `OrganizerPicker` draws them.
 
 ## Stories
 

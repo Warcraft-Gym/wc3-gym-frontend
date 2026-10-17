@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { createPortal } from "react-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { InDialog, isOpenDialogAlertSlot, useTopDialogAlertSlot } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +34,17 @@ export function StatusAlert({
   // An alert with no retry clears itself, as StatusAlert.vue does, so a caller need pass no handler
   // dismissedMessage holds the message that was closed, so a later, different message still shows
   const [dismissedMessage, setDismissedMessage] = useState<string | null>(null);
+  // A page error that appears while a dialog is open shows in that dialog, under its title, for as
+  // long as the dialog stays open; an error already on the page when a dialog opens stays on the page
+  const inDialog = useContext(InDialog);
+  const topSlot = useTopDialogAlertSlot();
+  const [raised, setRaised] = useState<{ message: string | null | undefined; slot: HTMLElement | null }>({ message: modelValue, slot: null });
+  if (raised.message !== modelValue) setRaised({ message: modelValue, slot: modelValue ? topSlot : null });
+  const target = type === "error" && !inDialog && isOpenDialogAlertSlot(raised.slot) ? raised.slot : null;
   // DESIGN.md: colour never carries meaning alone, so the type draws its icon too
   if (!modelValue || modelValue === dismissedMessage) return null;
   const tone = type === "error" ? "text-error" : type === "success" ? "text-success" : type === "warning" ? "text-warning" : "text-info";
-  return (
+  const alert = (
     <Alert className={cn("alert mb-4", tone, className)}>
       <AlertDescription className="text-foreground">
         <div className="flex items-start gap-2">
@@ -58,6 +67,7 @@ export function StatusAlert({
       </AlertDescription>
     </Alert>
   );
+  return target ? createPortal(alert, target) : alert;
 }
 
 export default StatusAlert;

@@ -172,7 +172,7 @@ Use these instead of drawing the same thing again.
 | `GroupedTable` | Groups of rows, each under one header row that opens and closes. Detail rows share the group's columns, so they add up under its total. Never put a table inside a table cell. |
 | `RowActions` | The buttons at the end of a row. Three or more fold into a menu; `menu` folds fewer, next to a row's main task as its own button. |
 | `ColumnNote` | A column title with a help note. |
-| `StatusAlert` | A load or save message. It offers a retry when the page can load again. |
+| `StatusAlert` | A load or save message. It offers a retry when the page can load again. An error that appears while a dialog is open shows in the dialog, under its title. |
 | `EventHeader`, `PlayerHeader` | The top of an event page and of a player page. |
 | `TeamRoster` | The captains and the members of one team in one event, as one card and one aligned list. A page that edits the roster fills its slots, and a GNL page passes the two empty lines that say season. |
 | `PlayedAs` | "as TAG" in muted text under a season row, only when the row's `played_as` differs from the person's tag today. No icon, no link. |

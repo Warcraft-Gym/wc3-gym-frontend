@@ -295,6 +295,11 @@
 }
 .chip { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0 0.5rem; font-size: var(--text-xs); line-height: 1.5rem; }
 .alert { border-inline-start: 4px solid currentColor; }
+/* A page error drawn in an open dialog sits under the title bar, lined up with the dialog's body; a
+   dialog that pads itself already lines it up. Empty, the slot is hidden and takes no room. */
+[data-slot="dialog-alert"] { padding: 0.75rem 1rem 0; }
+[data-slot="dialog-alert"] > .alert { margin-bottom: 0; }
+[data-slot="dialog-content"]:not(.p-0) [data-slot="dialog-alert"] { padding: 0; }
 .skeleton { background-color: rgb(var(--v-theme-surface-light)); }
 /* A hatch marks a cell the reader cannot use, so it reads apart from a plain fill in both themes. */
 .hatched { background-image: repeating-linear-gradient(45deg, rgba(var(--v-theme-on-surface), 0.18) 0 2px, transparent 2px 5px); }

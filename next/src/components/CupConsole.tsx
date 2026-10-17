@@ -12,6 +12,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
 import { CupTeamName } from "@/components/CupTeamName";
+import { OrganizerPicker, type OrganizerCandidate } from "@/components/OrganizerPicker";
 import { CheckinSettings } from "@/components/CheckinSettings";
 import { raceWrapper } from "@/helpers/races.js";
 import { toneClass } from "@/components/ui/tone";
@@ -111,8 +112,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const [pickedRace, setPickedRace] = useState<string | null>(null);
   const [day, setDay] = useState<Date | null>(null);
   const [time, setTime] = useState("");
-  const [coId, setCoId] = useState("");
-  const [coName, setCoName] = useState("");
+  const [co, setCo] = useState<OrganizerCandidate | null>(null);
   // the check-in settings while the runner edits them; null shows the cup's own
   const [checkinDraft, setCheckinDraft] = useState<Row | null>(null);
   // a cup over rounds checks in per round, and each round closes on the rounds bar
@@ -241,9 +241,9 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const closeCheckin = (closed: boolean) => work("close", async () => onEvent(await store.closeCheckin(event.id, closed)));
   const addCo = () =>
     work("co", async () => {
-      await store.addEventOrganizer(event.id, coId.trim(), coName.trim());
-      setCoId("");
-      setCoName("");
+      if (!co) return;
+      await store.addEventOrganizer(event.id, co.discord_id, co.name);
+      setCo(null);
       await onOrganizers();
     });
   const removeCo = (discordId: string) =>
@@ -527,13 +527,10 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
             {!organizers.length ? <li className="text-sm text-muted-foreground">Only the admins run this event.</li> : null}
           </ul>
           <div className="flex flex-wrap items-end gap-2">
-            <Field label="Discord ID" htmlFor="co-id" className="flex-[1_1_200px]">
-              <Input id="co-id" value={coId} placeholder="Their Discord ID" onChange={(e) => setCoId(e.target.value)} />
+            <Field label="Player" hint="Search by name or Discord tag" htmlFor="co-player" className="flex-[1_1_260px]">
+              <OrganizerPicker id="co-player" search={(q) => store.organizerCandidates(event.id, q)} picked={co} onPick={setCo} />
             </Field>
-            <Field label="Name" htmlFor="co-name" className="flex-[1_1_160px]">
-              <Input id="co-name" value={coName} placeholder="How to show them" onChange={(e) => setCoName(e.target.value)} />
-            </Field>
-            <Button variant="outline" disabled={!coId.trim() || busy === "co"} onClick={addCo}>
+            <Button variant="outline" disabled={!co || busy === "co"} onClick={addCo}>
               <Icon name="mdi-account-plus" />
               Add co-organizer
             </Button>

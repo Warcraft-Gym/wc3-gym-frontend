@@ -1,5 +1,11 @@
 # Bundle history
 
+## 2026-10-17
+
+* **Update**: body text, controls and player and team names are set in Inter, a step heavier in light (450, medium 560) than in dark (400, medium 500); small text is 13 px; faded text is the solid `on-surface-muted` ink; the light `surface` is `#F9FAF6`. [Theme](concepts/theme.md) states it.
+* **Update**: a wide bracket and a wide placement bracket sit on a card, and a mouse pans either by dragging it; a press that does not move stays a click. [Shared components](concepts/shared-components.md) states it.
+* **Update**: dark mode lays the public site's leather texture behind the page; cards, the hero and banners are near-black plates on it with a warm gold hairline and a drop shadow. [Theme](concepts/theme.md) states it.
+
 ## 2026-10-16
 
 * **Update**: the places dialog offers "Move" only while the lobby holds three entrants or more still in; a Left seat counts for none. [Event management](pages/event-management.md) states it.

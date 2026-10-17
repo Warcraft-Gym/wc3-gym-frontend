@@ -7,6 +7,7 @@ import { SeriesBox } from "@/components/SeriesBox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useHideResults } from "@/components/hide-results";
 import { SM_AND_DOWN, useBreakpoint } from "@/hooks/breakpoint";
+import { DRAG_SCROLL, useDragScroll } from "@/hooks/drag-scroll";
 import {
   buchholz,
   championOf,
@@ -126,6 +127,8 @@ export function StageView({
   const [focus, setFocus] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [phoneRound, setPhoneRound] = useState<Record<string, number>>({});
+  // a mouse pans a wide draw by dragging it, not only by its thin scroll bar
+  const pan = useDragScroll();
   // The spoiler switch of the page around this stage; the standings give the whole result away
   const hidden = useHideResults();
   const stacked = useBreakpoint(SM_AND_DOWN);
@@ -369,7 +372,8 @@ export function StageView({
                   <div
                     key={place.key}
                     className={cn(
-                      "flex flex-col gap-1.5 rounded-lg border p-2",
+                      // the card's ground, so a phone, which shows the groups without the canvas card, still reads them as cards
+                      "flex flex-col gap-1.5 rounded-lg border bg-surface p-2",
                       place.from === 1 ? "border-primary/60" : "border-border",
                     )}
                   >
@@ -403,7 +407,7 @@ export function StageView({
                   </div>
                 );
                 return !stacked ? (
-                  <div className="flex items-start gap-4 overflow-x-auto pb-2">
+                  <div {...pan} className={cn("card flex items-start gap-4 overflow-x-auto rounded-lg p-4", DRAG_SCROLL)}>
                     {cols.map((column: Row) => (
                       <section
                         key={column.key}
@@ -470,8 +474,10 @@ export function StageView({
                     </Button>
                   ))}
                 </div>
+                {/* the bracket sits on a card, so a finished box's faint tint reads on the card's ground and not the page */}
                 <div
-                  className="overflow-x-auto"
+                  {...pan}
+                  className={cn("card overflow-x-auto rounded-lg px-4 pt-4", DRAG_SCROLL)}
                   onMouseLeave={() => setFocus(null)}
                 >
                   {(() => {

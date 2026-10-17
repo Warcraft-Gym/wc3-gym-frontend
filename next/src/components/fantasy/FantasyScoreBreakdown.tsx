@@ -37,7 +37,7 @@ const betColumns: GroupedColumn[] = [
 // pushes the points column an eye-travel away from the row it belongs to.
 const NARROW = "[&_table]:w-auto";
 // The label keeps its width, so the round names line up over the opponents.
-const WEEK_LABEL = "inline-block min-w-16 opacity-(--v-medium-emphasis-opacity)";
+const WEEK_LABEL = "inline-block min-w-16 text-muted-foreground";
 const ICON = "size-6 object-contain";
 
 // The breakdown names the drafted GNL team flat, so the team line is built from the three fields it carries
@@ -122,7 +122,7 @@ export function FantasyScoreBreakdown({
           <AccordionTrigger className="items-center gap-2 font-normal hover:no-underline">
             <span className="flex w-full flex-wrap items-center gap-2">
               {/* inside the accordion button, so the team line is plain text, and it reads as quiet as the grind name under it */}
-              <TeamName team={draftedTeam(breakdown.team_breakdown)} plain className="opacity-(--v-medium-emphasis-opacity)" />
+              <TeamName team={draftedTeam(breakdown.team_breakdown)} plain className="text-muted-foreground" />
               <strong>Team Points Details</strong>
               <Badge className="ml-auto mr-2">{breakdown.totals.team_points} points</Badge>
             </span>
@@ -159,7 +159,7 @@ export function FantasyScoreBreakdown({
             <span className="flex w-full flex-wrap items-center gap-2">
               <img className={ICON} src={teamImageUrl(breakdown.grind_breakdown.team_id)} onError={showDefaultTeamImage} alt="" />
               <strong>Grind Points Details</strong>
-              <span className="opacity-(--v-medium-emphasis-opacity)">{breakdown.grind_breakdown.team_name}</span>
+              <span className="text-muted-foreground">{breakdown.grind_breakdown.team_name}</span>
               <Badge className="ml-auto mr-2">{breakdown.totals.grind_points} points</Badge>
             </span>
           </AccordionTrigger>
@@ -199,7 +199,7 @@ export function FantasyScoreBreakdown({
           <span className="flex w-full flex-wrap items-center gap-2">
             <RaceIcon raceIdentifier={breakdown.race_breakdown.race} size={24} />
             <strong>Race Points Details</strong>
-            <span className="opacity-(--v-medium-emphasis-opacity)">
+            <span className="text-muted-foreground">
               {raceName} · {record(breakdown.race_breakdown.season_stats.wins, breakdown.race_breakdown.season_stats.losses) ?? "—"}
             </span>
             <Badge className={toneClass("primary")}>
@@ -231,11 +231,11 @@ export function FantasyScoreBreakdown({
                     {week.rank ? (
                       <Badge className={week.rank === 1 ? "bg-success text-on-success" : week.rank === 2 ? "bg-info text-on-info" : "bg-warning text-on-warning"}>#{week.rank}</Badge>
                     ) : (
-                      <span className="opacity-(--v-medium-emphasis-opacity)">-</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {week.points_awarded > 0 ? <strong>+{week.points_awarded}</strong> : <span className="opacity-(--v-medium-emphasis-opacity)">0</span>}
+                    {week.points_awarded > 0 ? <strong>+{week.points_awarded}</strong> : <span className="text-muted-foreground">0</span>}
                   </TableCell>
                 </TableRow>
               ))}
@@ -286,14 +286,14 @@ export function FantasyScoreBreakdown({
                           <Icon name="mdi-seat" className="text-sm" /> Benched
                         </span>
                       ) : (
-                        <span className="opacity-(--v-medium-emphasis-opacity)">No games</span>
+                        <span className="text-muted-foreground">No games</span>
                       )}
                     </td>
                     <td />
                     <td />
                     <td />
                     <td className="text-right">
-                      {week.bench_points > 0 ? <span className="text-warning">+{week.bench_points}</span> : <span className="opacity-(--v-medium-emphasis-opacity)">0</span>}
+                      {week.bench_points > 0 ? <span className="text-warning">+{week.bench_points}</span> : <span className="text-muted-foreground">0</span>}
                     </td>
                     <td />
                   </tr>
@@ -305,7 +305,7 @@ export function FantasyScoreBreakdown({
                       <td>
                         <span className="flex flex-wrap items-center gap-1">
                           <span className={WEEK_LABEL}>{idx ? "" : `Round ${week.week}`}</span>
-                          <span className="opacity-(--v-medium-emphasis-opacity)">vs</span>
+                          <span className="text-muted-foreground">vs</span>
                           <PlayerName player={resolve(series.opponent)} race={series.opponent_race} mmr={false} />
                         </span>
                       </td>
@@ -343,7 +343,7 @@ export function FantasyScoreBreakdown({
               group={({ group: week }) => (
                 <>
                   <TableCell>Round {week.week}</TableCell>
-                  <TableCell className="opacity-(--v-medium-emphasis-opacity)">{week.summary}</TableCell>
+                  <TableCell className="text-muted-foreground">{week.summary}</TableCell>
                   <TableCell className="text-right">
                     <strong className={week.net >= 0 ? "text-win" : "text-loss"}>
                       {week.net > 0 ? "+" : ""}
@@ -362,7 +362,7 @@ export function FantasyScoreBreakdown({
                         <span className="flex flex-wrap items-center gap-1">
                           {[bet.player1, bet.player2].map((side: string) => (
                             <Fragment key={side}>
-                              {side === bet.player2 ? <span className="opacity-(--v-medium-emphasis-opacity)">{bet.score}</span> : null}
+                              {side === bet.player2 ? <span className="text-muted-foreground">{bet.score}</span> : null}
                               <span className={side === bet.actual_winner ? "font-bold" : undefined}>
                                 <PlayerName player={resolve(side)} race={resolve(side).signup_race} />
                               </span>

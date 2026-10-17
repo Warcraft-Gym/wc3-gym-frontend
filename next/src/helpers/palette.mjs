@@ -6,13 +6,15 @@ export const themes = {
         dark: false,
         colors: {
             background: '#E8E9E3',
-            surface: '#F4F5F1',
-            'surface-bright': '#FAFBF8',
+            surface: '#F9FAF6',  // a whiter card than the page, so text on it carries more contrast
+            'surface-bright': '#FFFFFF',
             'surface-light': '#E1E4DD',
             'surface-variant': '#1C2420',
             'on-surface-variant': '#F2F4ED',
             'on-background': '#1A241E',
             'on-surface': '#1A241E',
+            // Faded text is a solid ink, never on-surface at an opacity: a see-through grey loses its strokes
+            'on-surface-muted': '#3E4842',
             primary: '#E7B643',
             'primary-darken-1': '#D3A329',
             'on-primary': '#1A140C',
@@ -76,8 +78,9 @@ export const themes = {
     dark: {
         dark: true,
         colors: {
-            // Dark grounds are the public site's warm near-black, so both products share one ground
-            background: '#080503',
+            // The dark page is the public site's leather texture (globals.css); this is its average
+            // colour, so a fill that stands in for the page matches it
+            background: '#201715',
             surface: '#0C0805',
             'surface-bright': '#16140F',
             'surface-light': '#1B1915',
@@ -85,10 +88,11 @@ export const themes = {
             'on-surface-variant': '#1A241E',
             'on-background': '#E7EBE3',
             'on-surface': '#E7EBE3',
+            'on-surface-muted': '#B3B8AF',
             primary: '#E7B643',
             'primary-darken-1': '#D3A329',
             'on-primary': '#1A140C',
-            banner: '#1E1710',
+            banner: '#0C0805',  // the card's own colour, like the app bar: bar and body read as one plate, the gold line parts them
             'on-banner': '#FBF7F1',
             secondary: '#C3CCC1',
             'secondary-darken-1': '#A7B1A4',
@@ -100,7 +104,7 @@ export const themes = {
             'primary-text': '#E7B643',
             band: '#050301',
             'on-band': '#F2F4ED',
-            hero: '#1E1710',  // lighter than the page, so the hero stands out from it
+            hero: '#0C0805',  // a near-black plate on the textured page, like a card
             'on-hero': '#F2F4ED',
             'band-muted': '#B9C4B6',
             tag: '#221F19',

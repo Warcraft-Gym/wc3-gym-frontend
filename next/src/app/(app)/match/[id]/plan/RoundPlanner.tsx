@@ -387,7 +387,7 @@ export function RoundPlanner({
       <>
         {rows.length}
         {selection.length ? (
-          <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 text-[11px] text-on-primary" aria-label={`${selection.length} selected`}>
+          <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary px-1.5 text-xs text-on-primary" aria-label={`${selection.length} selected`}>
             <Icon name="mdi-check" size={11} />
             {selection.length}
           </span>
@@ -487,7 +487,7 @@ export function RoundPlanner({
           <TabsList variant="line" aria-label="Steps" className="min-w-full justify-start">
             {STEPS.map((one, n) => (
               <TabsTrigger key={one.id} value={one.id} className="flex-none gap-2 px-3">
-                <span className={cn("inline-grid size-5 place-items-center rounded-full text-[11px] tnum", one.id === current ? "bg-primary text-on-primary" : "bg-muted text-foreground")}>
+                <span className={cn("inline-grid size-5 place-items-center rounded-full text-xs tnum", one.id === current ? "bg-primary text-on-primary" : "bg-muted text-foreground")}>
                   {n + 1}
                 </span>
                 {narrow ? one.short : one.label}

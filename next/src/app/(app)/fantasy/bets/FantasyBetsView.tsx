@@ -326,7 +326,7 @@ export function FantasyBetsView() {
         <>
           {/* no race: the fantasy captain bets, they don't play */}
           {row.original.user ? <PlayerName player={row.original.user} /> : "N/A"}
-          <div className="text-xs opacity-(--v-medium-emphasis-opacity)">{teamNameByCaptain.get(row.original.user_id) ?? "No team"}</div>
+          <div className="text-xs text-muted-foreground">{teamNameByCaptain.get(row.original.user_id) ?? "No team"}</div>
         </>
       ),
     },

@@ -43,7 +43,7 @@ export function TeamPickChips({ teams, value, onChange, pending, player }: {
             </span>
             {team.name}
             {others > 0 ? (
-              <span className="ml-0.5 rounded-full bg-muted px-1 text-[10px] leading-4 text-muted-foreground tnum" aria-label={`${others} other ${others === 1 ? "pick" : "picks"} in the next set`}>
+              <span className="ml-0.5 rounded-full bg-muted px-1 text-xs leading-4 text-muted-foreground tnum" aria-label={`${others} other ${others === 1 ? "pick" : "picks"} in the next set`}>
                 {others}
               </span>
             ) : null}

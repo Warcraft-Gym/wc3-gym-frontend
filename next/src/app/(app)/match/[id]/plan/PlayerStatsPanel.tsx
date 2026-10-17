@@ -190,9 +190,9 @@ function PanelBody({
                     <span className="inline-flex flex-wrap items-center gap-1.5">
                       <RaceIcon raceIdentifier={one.race} size={16} />
                       {raceName(one.race)}
-                      {one.race === player.race ? <span className="rounded-full border px-1.5 text-[11px] text-muted-foreground">signed up</span> : null}
-                      {one.race === player.main_race ? <span className="rounded-full border px-1.5 text-[11px] text-muted-foreground">main</span> : null}
-                      {one.stale ? <span className="text-[11px] text-muted-foreground">season {one.wc3_season}</span> : null}
+                      {one.race === player.race ? <span className="rounded-full border px-1.5 text-xs text-muted-foreground">signed up</span> : null}
+                      {one.race === player.main_race ? <span className="rounded-full border px-1.5 text-xs text-muted-foreground">main</span> : null}
+                      {one.stale ? <span className="text-xs text-muted-foreground">season {one.wc3_season}</span> : null}
                     </span>
                   </td>
                   <td className="py-1.5 text-right tnum">{one.mmr ?? "—"}</td>

@@ -7,6 +7,54 @@ import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
+/*
+ * An error the page shows while a dialog is open comes from what the dialog just did, so it
+ * belongs in the dialog: every open dialog lays an alert slot under its title, the last one opened
+ * on top, and StatusAlert draws a page error there (see components/StatusAlert.tsx).
+ */
+const alertSlots: HTMLElement[] = []
+let slotsVersion = 0
+const slotListeners = new Set<() => void>()
+const announceSlots = () => {
+  slotsVersion += 1
+  slotListeners.forEach((listener) => listener())
+}
+const subscribeSlots = (listener: () => void) => {
+  slotListeners.add(listener)
+  return () => {
+    slotListeners.delete(listener)
+  }
+}
+
+/** The alert slot of the dialog on top, or null with no dialog open; it re-renders as dialogs open and close. */
+function useTopDialogAlertSlot(): HTMLElement | null {
+  React.useSyncExternalStore(subscribeSlots, () => slotsVersion, () => 0)
+  return alertSlots[alertSlots.length - 1] ?? null
+}
+
+/** Whether that slot still belongs to an open dialog. */
+function isOpenDialogAlertSlot(slot: HTMLElement | null): slot is HTMLElement {
+  return !!slot && alertSlots.includes(slot)
+}
+
+/** True inside a dialog, so an alert a dialog draws itself stays where the dialog put it. */
+const InDialog = React.createContext(false)
+
+/** The place under a dialog's title where a page error shows; empty, it takes no room. */
+function DialogAlertSlot() {
+  const register = React.useCallback((el: HTMLDivElement | null) => {
+    if (!el) return
+    alertSlots.push(el)
+    announceSlots()
+    return () => {
+      const at = alertSlots.indexOf(el)
+      if (at >= 0) alertSlots.splice(at, 1)
+      announceSlots()
+    }
+  }, [])
+  return <div ref={register} data-slot="dialog-alert" className="empty:hidden" />
+}
+
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
@@ -86,7 +134,7 @@ function DialogContent({
         )}
         {...props}
       >
-        {children}
+        <InDialog.Provider value={true}>{children}</InDialog.Provider>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
@@ -147,14 +195,17 @@ function DialogFooter({
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
-    <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={cn(
-        "font-heading text-base leading-none font-bold",
-        className
-      )}
-      {...props}
-    />
+    <>
+      <DialogPrimitive.Title
+        data-slot="dialog-title"
+        className={cn(
+          "font-heading text-base leading-none font-bold",
+          className
+        )}
+        {...props}
+      />
+      <DialogAlertSlot />
+    </>
   )
 }
 
@@ -176,6 +227,9 @@ function DialogDescription({
 
 export {
   type DialogSize,
+  InDialog,
+  isOpenDialogAlertSlot,
+  useTopDialogAlertSlot,
   Dialog,
   DialogClose,
   DialogContent,

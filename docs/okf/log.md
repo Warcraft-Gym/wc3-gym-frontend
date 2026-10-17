@@ -2,6 +2,7 @@
 
 ## 2026-10-17
 
+* **Update**: an error a page raises while a dialog is open shows in that dialog under its title, and a line tab bar that scrolls sideways no longer scrolls up and down. [Shared components](concepts/shared-components.md) states it.
 * **Update**: body text, controls and player and team names are set in Inter, a step heavier in light (450, medium 560) than in dark (400, medium 500); small text is 13 px; faded text is the solid `on-surface-muted` ink; the light `surface` is `#F9FAF6`. [Theme](concepts/theme.md) states it.
 * **Update**: a wide bracket and a wide placement bracket sit on a card, and a mouse pans either by dragging it; a press that does not move stays a click. [Shared components](concepts/shared-components.md) states it.
 * **Update**: dark mode lays the public site's leather texture behind the page; cards, the hero and banners are near-black plates on it with a warm gold hairline and a drop shadow. [Theme](concepts/theme.md) states it.

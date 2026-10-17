@@ -421,7 +421,7 @@ export function EventAdminView({ id }: { id: string }) {
   // The stages of an event that plays more than one, over the draw and over the results
   const stagePicker = (
     <Tabs value={tab} onValueChange={(value) => pickTab(value as number)} className="mb-4">
-      <TabsList variant="line" className="max-w-full justify-start overflow-x-auto">
+      <TabsList variant="line" className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
         {stages.map((one, index) => (
           <TabsTrigger key={one.id} value={index} className="flex-none px-3">
             {one.name || `Stage ${one.position}`}
@@ -480,7 +480,7 @@ export function EventAdminView({ id }: { id: string }) {
 
           {tabbed ? (
             <Tabs value={view} onValueChange={(value) => pickView(value as string)} className="mt-4">
-              <TabsList variant="line" className="max-w-full justify-start overflow-x-auto">
+              <TabsList variant="line" className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
                 <TabsTrigger value="draw" className="flex-none px-3">
                   <Icon name="mdi-tournament" />
                   Draw

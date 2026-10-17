@@ -212,11 +212,6 @@ export const PLACEMENT_LIVES = [
  *  @param {number | null | undefined} lives */
 export const livesLine = (lives) => (lives ? `a run ends after ${lives} ${lives === 1 ? 'loss' : 'losses'}` : 'every place played out');
 
-export const SIGNUP_POLICIES = [
-  { value: 'members', title: 'Members of the Discord' },
-  { value: 'anyone', title: 'Anyone with a battle tag' },
-];
-
 export const blankCup = () => ({
   name: '',
   description: '',
@@ -239,15 +234,14 @@ export const blankCup = () => ({
   best_of_plan: {},
   // the maps the players veto from, in order: { id, name }
   pool: [],
-  signup_policy: 'members',
-  // who may sign up at all: a battle tag W3Champions rates, inside these bounds
+  // who may sign up at all: a battle tag W3Champions rates, inside these bounds; off, no bound applies
   eligibility_required: true,
-  // on top of that, the tag verified through Battle.net; off while the community starts out
-  bnet_required: false,
   mmr_min: '',
   mmr_max: '',
   min_games: '',
-  // the lifetime games a race needs before its MMR counts, so a few games on another race never decide
+  // on: only the race a player signs up with counts for the MMR bounds
+  signup_race_only: false,
+  // off: the lifetime games another race needs before its MMR counts, so a few games never decide
   race_games_min: 20,
   entrant_min: '',
   entrant_cap: '',
@@ -281,8 +275,8 @@ export const blankCup = () => ({
   checkin_closes_minutes: null,
   // null takes the cup's default: off on one evening, on over rounds, so a round takes players from sign-up
   early_checkin: null,
+  // off keeps the cup a draft; a published cup takes sign-ups, a draft takes none
   published: true,
-  signups_open: true,
 });
 
 /** The check-in settings of the cup: a cup over rounds checks in for each round, always.
@@ -309,14 +303,16 @@ export const cupPayload = (form) => ({
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played
   end_date: null,
   starts_at: form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null,
-  // a battle tag alone proves no Battle.net link, so a cup that asks for one takes members only
-  signup_policy: form.eligibility_required && form.bnet_required ? 'members' : form.signup_policy,
+  // every player signs up as a member of the Discord, and no cup asks for a Battle.net link
+  signup_policy: 'members',
   eligibility_required: !!form.eligibility_required,
-  bnet_required: !!form.eligibility_required && !!form.bnet_required,
-  mmr_min: count(form.mmr_min),
-  mmr_max: count(form.mmr_max),
-  min_games: count(form.min_games),
-  race_games_min: count(form.race_games_min),
+  bnet_required: false,
+  // the bounds apply only to eligible players: with the rule off, the cup sends none
+  mmr_min: form.eligibility_required ? count(form.mmr_min) : null,
+  mmr_max: form.eligibility_required ? count(form.mmr_max) : null,
+  min_games: form.eligibility_required ? count(form.min_games) : null,
+  // none checks the sign-up race alone; a count lets another race's MMR count from that many games
+  race_games_min: form.eligibility_required && !form.signup_race_only ? count(form.race_games_min) : null,
   entrant_min: count(form.entrant_min),
   // one lobby seats the whole field, so it takes no more players than its seats
   entrant_cap: isFfa(form) && form.ffa_mode === 'league' ? Math.min(count(form.entrant_cap) ?? Infinity, Number(form.lobby_size)) : count(form.entrant_cap),
@@ -327,7 +323,8 @@ export const cupPayload = (form) => ({
   ...roundsPayload(form),
   recurrence: repeatPayload(form),
   published: !!form.published,
-  signups_open: !!form.signups_open,
+  // a draft takes no sign-ups whatever this says, so publishing it later opens them
+  signups_open: true,
   // every series vetoes from the pool by its own best-of, and game 1 plays the map left over
   // a lobby is one game, and a custom game plays its one map, so neither vetoes
   veto_by_best_of: !isFfa(form) && !isCustom(form),
@@ -492,10 +489,13 @@ export function cupProblem(form, step) {
     if (least !== null && least < 2) return 'A cup needs at least 2 players.';
     if (most !== null && most < 2) return 'The maximum must be at least 2.';
     if (least !== null && most !== null && least > most) return 'The minimum cannot be above the maximum.';
-    const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
-    if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
-    if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
-    if (count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
+    // the bounds are checked only while they apply
+    if (form.eligibility_required) {
+      const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
+      if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
+      if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
+      if (!form.signup_race_only && count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
+    }
     return checkinProblem(cupCheckin(form));
   }
   return null;

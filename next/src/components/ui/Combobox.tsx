@@ -9,7 +9,9 @@ import { cn } from "@/lib/utils";
 export type ComboboxItem = { value: string; title: string };
 
 /** The port of `v-autocomplete`: a Command inside a Popover. `row` draws an item the way
- *  the Vue item slot did, so a row can carry a race icon, a flag or a PlayerName. */
+ *  the Vue item slot did, so a row can carry a race icon, a flag or a PlayerName.
+ *  With `onSearch` the list is the server's answer: each keystroke reaches the caller,
+ *  which passes the matching items back, and the Command filters nothing itself. */
 export function Combobox<T extends ComboboxItem>({
   items,
   value,
@@ -21,6 +23,7 @@ export function Combobox<T extends ComboboxItem>({
   className,
   id,
   disabled,
+  onSearch,
 }: {
   items: T[];
   value: string | null;
@@ -32,8 +35,10 @@ export function Combobox<T extends ComboboxItem>({
   className?: string;
   id?: string;
   disabled?: boolean;
+  onSearch?: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
   const chosen = items.find((i) => i.value === value) ?? null;
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -47,14 +52,26 @@ export function Combobox<T extends ComboboxItem>({
         }
       />
       <PopoverContent className="w-(--anchor-width) p-0" align="start">
-        <Command>
-          <CommandInput placeholder={placeholder} />
+        <Command shouldFilter={!onSearch}>
+          {onSearch ? (
+            <CommandInput
+              placeholder={placeholder}
+              value={text}
+              onValueChange={(next) => {
+                setText(next);
+                onSearch(next);
+              }}
+            />
+          ) : (
+            <CommandInput placeholder={placeholder} />
+          )}
           <CommandList>
             <CommandEmpty>{empty}</CommandEmpty>
             {items.map((item) => (
               <CommandItem
                 key={item.value}
-                value={item.title}
+                // the Command matches on the title; a server list keys on the value, so two equal names stay apart
+                value={onSearch ? item.value : item.title}
                 onSelect={() => {
                   onChange(item.value);
                   setOpen(false);

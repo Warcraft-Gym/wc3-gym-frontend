@@ -193,7 +193,7 @@ export function AccessView() {
         </CardContent>
       </Card>
 
-      <OrganizersCard players={players} />
+      <OrganizersCard />
 
       <Dialog open={addDialog} onOpenChange={setAddDialog} disablePointerDismissal>
         <DialogContent showCloseButton={false} size="sm" className="gap-0 p-0">

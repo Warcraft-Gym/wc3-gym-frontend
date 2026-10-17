@@ -378,6 +378,10 @@ const store = {
   async fetchEventOrganizers(event_id: number) {
     return await fetchWrapper.get(`${backendUrl}/events/${event_id}/organizers`);
   },
+  // The players a runner may add: a name or Discord tag holding the text, ten at most; a guarded read
+  async organizerCandidates(event_id: number, q: string) {
+    return await fetchWrapper.get(`${backendUrl}/events/${event_id}/organizer-candidates?q=${encodeURIComponent(q)}`);
+  },
   async addEventOrganizer(event_id: number, discord_id: string, name = "") {
     return await fetchWrapper.post(`${backendUrl}/events/${event_id}/organizers`, { discord_id, name });
   },

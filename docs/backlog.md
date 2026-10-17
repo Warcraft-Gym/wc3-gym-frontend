@@ -20,7 +20,7 @@ Acceptance criteria:
 
 Notes:
 - `Combobox` (`next/src/components/ui/Combobox.tsx`) draws the chosen item in the button with the same `row` as the list. A `flex flex-col` row is cut there.
-- Pickers with two-line rows: `CupConsole`, `AccessView`, `OrganizersCard`, `EntrantsView`, `CustomMapPicker`, `MapPoolPicker`, `TeamSignupDialog`.
+- Pickers with two-line rows: `CupConsole`, `AccessView`, `EntrantsView`, `CustomMapPicker`, `MapPoolPicker`, `TeamSignupDialog`.
 - Fix idea: `Combobox` takes an optional one-line `chosen` renderer for the button, or the rows go to one line, the second part muted beside the first, as `OrganizerPicker` draws them.
 
 ## Stories

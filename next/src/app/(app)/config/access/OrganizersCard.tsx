@@ -1,15 +1,13 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Combobox } from "@/components/ui/Combobox";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { OrganizerPicker, type OrganizerCandidate } from "@/components/OrganizerPicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import { formatDateTime } from "@/helpers/datetime";
 import { useConfigStore } from "@/stores";
@@ -22,18 +20,14 @@ const phoneCell = "hidden min-[960px]:table-cell";
 /** The organizers beside the admins: the requests members sent, waiting for an answer, then
  *  everyone who may create cups. A revoke stops new cups; the cups an organizer already runs
  *  keep them until a runner of that cup removes them. */
-export function OrganizersCard({ players }: { players: any[] }) {
+export function OrganizersCard() {
   const configStore = useConfigStore();
   const [organizers, setOrganizers] = useState<Organizer[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const [picked, setPicked] = useState("");
-
-  const playerItems = players
-    .filter((player) => player.discordId)
-    .map((player) => ({ value: String(player.discordId), title: player.name, tag: player.discordTag || String(player.discordId) }));
+  const [picked, setPicked] = useState<OrganizerCandidate | null>(null);
 
   const load = async () => {
     const [rows, waiting] = await Promise.all([configStore.fetchOrganizers(), configStore.fetchOrganizerRequests()]);
@@ -62,9 +56,11 @@ export function OrganizersCard({ players }: { players: any[] }) {
   };
 
   const add = async () => {
-    const discord_id = picked.trim();
-    const name = players.find((p) => String(p.discordId) === discord_id)?.name || "";
-    if (await act("add", () => configStore.addOrganizer({ discord_id, name }))) setAdding(false);
+    if (!picked) return;
+    if (await act("add", () => configStore.addOrganizer({ discord_id: picked.discord_id, name: picked.name }))) {
+      setAdding(false);
+      setPicked(null);
+    }
   };
 
   return (
@@ -111,7 +107,7 @@ export function OrganizersCard({ players }: { players: any[] }) {
         ) : null}
 
         <div className="flex sm:justify-end">
-          <Button className="w-full sm:w-auto" variant="outline" onClick={() => { setPicked(""); setAdding(true); }}>
+          <Button className="w-full sm:w-auto" variant="outline" onClick={() => { setPicked(null); setAdding(true); }}>
             <Icon name="mdi-plus" />
             Add organizer
           </Button>
@@ -159,27 +155,15 @@ export function OrganizersCard({ players }: { players: any[] }) {
             Add organizer
           </DialogTitle>
           <div className="p-4">
-            <Field label="User" hint="Pick a user or type a Discord ID" htmlFor="organizer-user">
-              <Combobox
-                label="Pick a user"
-                items={playerItems}
-                value={picked || null}
-                onChange={(value) => setPicked(value ?? "")}
-                row={(item) => (
-                  <span className="flex flex-col text-left">
-                    <span>{item.title}</span>
-                    <span className="text-xs text-muted-foreground">{item.tag}</span>
-                  </span>
-                )}
-              />
-              <Input id="organizer-user" value={picked} placeholder="Discord ID" onChange={(event) => setPicked(event.target.value)} />
+            <Field label="Player" hint="Search by name or Discord tag" htmlFor="organizer-user">
+              <OrganizerPicker id="organizer-user" search={(q) => configStore.organizerCandidates(q)} picked={picked} onPick={setPicked} />
             </Field>
           </div>
           <div className="flex justify-end gap-2 px-4 py-3">
             <Button variant="ghost" onClick={() => setAdding(false)}>
               Cancel
             </Button>
-            <Button onClick={add} disabled={!picked.trim() || busy === "add"}>
+            <Button onClick={add} disabled={!picked || busy === "add"}>
               <Icon name={busy === "add" ? "mdi-loading mdi-spin" : "mdi-check"} />
               Add organizer
             </Button>

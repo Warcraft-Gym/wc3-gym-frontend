@@ -596,11 +596,6 @@ export function EventView({ id }: { id: string }) {
                   <li key={line}>{line}</li>
                 ))}
               </ul>
-              {event.eligibility_required && event.bnet_required ? (
-                <p className="mt-2 text-muted-foreground">
-                  Link your battle tag to Battle.net on <Link href="/profile">your profile</Link> before you sign up.
-                </p>
-              ) : null}
             </div>
           ) : null}
 

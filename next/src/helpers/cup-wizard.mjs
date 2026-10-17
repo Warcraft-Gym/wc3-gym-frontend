@@ -242,8 +242,6 @@ export const blankCup = () => ({
   signup_policy: 'members',
   // who may sign up at all: a battle tag W3Champions rates, inside these bounds
   eligibility_required: true,
-  // on top of that, the tag verified through Battle.net; off while the community starts out
-  bnet_required: false,
   mmr_min: '',
   mmr_max: '',
   min_games: '',
@@ -309,10 +307,8 @@ export const cupPayload = (form) => ({
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played
   end_date: null,
   starts_at: form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null,
-  // a battle tag alone proves no Battle.net link, so a cup that asks for one takes members only
-  signup_policy: form.eligibility_required && form.bnet_required ? 'members' : form.signup_policy,
+  signup_policy: form.signup_policy,
   eligibility_required: !!form.eligibility_required,
-  bnet_required: !!form.eligibility_required && !!form.bnet_required,
   mmr_min: count(form.mmr_min),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),

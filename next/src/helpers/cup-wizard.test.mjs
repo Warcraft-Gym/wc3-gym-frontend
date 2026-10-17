@@ -78,13 +78,10 @@ test('blank bounds write nothing', () => {
   assert.deepEqual([body.entrant_min, body.entrant_cap, body.starts_at, body.mmr_min, body.mmr_max, body.min_games], [null, null, null, null, null, null]);
 });
 
-test('a cup checks who signs up by default, and only a cup that asks for Battle.net takes members only', () => {
+test('a cup checks who signs up by default, and a checked cup may take anyone', () => {
   const body = cupPayload({ ...blankCup(), signup_policy: 'anyone', mmr_min: '1400', mmr_max: '1800', min_games: '20' });
-  assert.deepEqual([body.eligibility_required, body.bnet_required, body.signup_policy, body.mmr_min, body.mmr_max, body.min_games], [true, false, 'anyone', 1400, 1800, 20]);
-  const linked = cupPayload({ ...blankCup(), signup_policy: 'anyone', bnet_required: true });
-  assert.deepEqual([linked.bnet_required, linked.signup_policy], [true, 'members']);
-  // the link is a part of the check, so it goes with it
-  assert.equal(cupPayload({ ...blankCup(), eligibility_required: false, bnet_required: true }).bnet_required, false);
+  assert.deepEqual([body.eligibility_required, body.signup_policy, body.mmr_min, body.mmr_max, body.min_games], [true, 'anyone', 1400, 1800, 20]);
+  assert.equal('bnet_required' in body, false);
   const open = cupPayload({ ...blankCup(), eligibility_required: false, signup_policy: 'anyone' });
   assert.deepEqual([open.eligibility_required, open.signup_policy], [false, 'anyone']);
   assert.equal(cupProblem({ ...blankCup(), mmr_min: '1800', mmr_max: '1400' }, 'signups'), 'The lowest MMR cannot be above the highest.');

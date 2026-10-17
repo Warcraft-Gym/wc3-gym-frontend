@@ -37,7 +37,6 @@ Acceptance criteria:
   - publish now, or keep as a draft.
 - "Open sign-ups now" is removed: a published cup takes sign-ups, a draft does not.
 - **Sign-up rules**, the second section, starts with "Only eligible players can sign up". While it is off, every field that depends on it is disabled.
-- "The battle tag must be linked to Battle.net too" is removed.
 - MMR from, MMR to and Games at least stay.
 - A new switch: "Only the sign-up race counts for the MMR check".
   - On: "A race counts from" is hidden, since it no longer applies.
@@ -48,7 +47,7 @@ Notes:
 - Only `next/src/app/(app)/events/new/cup/CupCreateView.tsx` (the `signups` step) and `next/src/helpers/cup-wizard.mjs` hold these fields.
 - The new switch may need no backend change. The backend checks only the sign-up race when `race_games_min` is empty, and the best race with that many lifetime games when it is set (`app/services/events.py`, `rating()`). So On sends `race_games_min: null` and Off a number, default 20. Confirm before building.
 - Check how `signups_open` is set once "Open sign-ups now" goes away, so a published cup opens its sign-ups.
-- **Open:** does the backend keep `bnet_required` and `signup_policy` with fixed values (`false`, `members`), or drop them?
+- **Open:** does the backend keep `signup_policy` with a fixed value (`members`), or drop it?
 - **Open:** with eligibility off, the MMR and games limits still warn on a player's row today. Does disabling the fields also drop those warnings?
 
 ### Events page: clearer kind filters, upcoming events as one table, no KOTH nights

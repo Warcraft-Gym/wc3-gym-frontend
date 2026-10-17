@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-18
+
+* **Update**: Create cup no longer offers the Battle.net switch, and an event page no longer asks a player to verify their tag through Battle.net before signing up; a cup's "Add player" also takes a battle tag for a player who is not in the list. [Leagues and events](pages/leagues-and-events.md) and [event management](pages/event-management.md) state it.
+
 ## 2026-10-17
 
 * **Update**: an error a page raises while a dialog is open shows in that dialog under its title, and a line tab bar that scrolls sideways no longer scrolls up and down. [Shared components](concepts/shared-components.md) states it.

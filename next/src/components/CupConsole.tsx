@@ -19,6 +19,7 @@ import { toneClass } from "@/components/ui/tone";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { eveningOf, moveStartBody, moveStartForm, waitlistOf } from "@/helpers/events-page.mjs";
+import { battleTagError } from "@/helpers/signup.mjs";
 import { playedEntrants } from "@/helpers/stage-view.mjs";
 import { missing, teamState } from "@/helpers/cup-teams.mjs";
 import { legsOf } from "@/helpers/cup-rounds.mjs";
@@ -110,6 +111,8 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const [roster, setRoster] = useState<Row[]>([]);
   const [pickedId, setPickedId] = useState<string>("");
   const [pickedRace, setPickedRace] = useState<string | null>(null);
+  // a player not in the list enters by battle tag, as on a KOTH night
+  const [addTag, setAddTag] = useState("");
   const [day, setDay] = useState<Date | null>(null);
   const [time, setTime] = useState("");
   const [co, setCo] = useState<OrganizerCandidate | null>(null);
@@ -170,6 +173,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     setMemberOut(member);
     setPickedId("");
     setPickedRace(null);
+    setAddTag("");
     setAsk("add");
     if (!roster.length) {
       try {
@@ -183,7 +187,11 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     work("add", async () => {
       if (memberOut) await store.replaceTeamMember(event.id, memberOut.entrant.team.id, memberOut.user.id, Number(pickedId));
       else if (swapping) await store.replaceEntrant(event.id, swapping.id, { user_id: Number(pickedId), race: pickedRace });
-      else await store.addEntrant(event.id, { user_id: Number(pickedId), race: pickedRace });
+      else if (addTag.trim()) {
+        const shape = battleTagError(addTag);
+        if (shape) throw new Error(shape);
+        await store.addEntrant(event.id, { battle_tag: addTag.trim(), race: pickedRace });
+      } else await store.addEntrant(event.id, { user_id: Number(pickedId), race: pickedRace });
       onEntrants(await store.fetchEntrants(event.id, true));
       // a swap rewrites the bracket boxes of the player it takes out
       if (swapping || memberOut) await onSeries?.();
@@ -639,7 +647,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         title={swapping || memberOut ? `Swap ${outName}` : "Add a player"}
         busy={busy === "add"}
         confirm={swapping || memberOut ? "Swap" : "Add"}
-        onConfirm={() => pickedId && (pickedRace || memberOut) && addOne()}
+        onConfirm={() => (pickedId || addTag.trim()) && (pickedRace || memberOut) && addOne()}
       >
         <div className="flex flex-col gap-3">
           <Field label="Player" hint="Players already in are left out" htmlFor="console-add-player">
@@ -650,6 +658,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
               value={pickedId || null}
               onChange={(value) => {
                 setPickedId(value ?? "");
+                setAddTag("");
                 const player = roster.find((one) => String(one.id) === value);
                 setPickedRace(player?.race ?? null);
               }}
@@ -661,6 +670,18 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
               )}
             />
           </Field>
+          {swapping || memberOut ? null : (
+            <Field label="Or a battle tag" hint="The name and the numbers, like Mirren#4410." htmlFor="console-add-tag">
+              <Input
+                id="console-add-tag"
+                value={addTag}
+                onChange={(e) => {
+                  setAddTag(e.target.value);
+                  setPickedId("");
+                }}
+              />
+            </Field>
+          )}
           {memberOut ? null : <Pick label="Race" items={RACE_ITEMS} value={pickedRace} onChange={setPickedRace} />}
           <p className="text-sm text-muted-foreground">
             {swapping || memberOut

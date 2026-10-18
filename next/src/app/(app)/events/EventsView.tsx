@@ -38,7 +38,6 @@ import {
 import { cardButton } from "@/helpers/events.mjs";
 import { dayText, ruleLine } from "@/helpers/cup-recurrence.mjs";
 import { useAuth, useEventStore } from "@/stores";
-import { canSeeRole, metaOf } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -138,7 +137,8 @@ export function EventsView() {
     const load = async () => {
       try {
         const [eventRows, mineRows] = await Promise.all([
-          store.fetchEvents(),
+          // the page is about cups: GNL seasons, sign-up lists and KOTH nights have homes of their own
+          store.fetchEvents(null, "cup"),
           card === "organizer"
             ? store.myOrganizedEvents()
             : Promise.resolve([]),
@@ -302,7 +302,7 @@ export function EventsView() {
                                 <strong>{event.name}</strong>
                               </Link>
                               {/* a phone drops the middle columns, so their words ride under the name */}
-                              <div className="text-xs text-muted-foreground min-[960px]:hidden">
+                              <div className="text-xs whitespace-normal text-muted-foreground min-[960px]:hidden">
                                 {[modeOf(event), dateRange(event)].filter(Boolean).join(" · ")}
                               </div>
                               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground min-[960px]:hidden">
@@ -423,7 +423,7 @@ export function EventsView() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Event</TableHead>
+                        <TableHead>Cup</TableHead>
                         <TableHead className={phoneCell}>Mode</TableHead>
                         <TableHead className={phoneCell}>Date</TableHead>
                         <TableHead className={phoneCell}>Status</TableHead>
@@ -440,7 +440,7 @@ export function EventsView() {
                               <strong>{event.name}</strong>
                             </Link>
                             {/* a phone drops the middle columns, so their words ride under the name and the button stays in reach */}
-                            <div className="text-xs text-muted-foreground min-[960px]:hidden">
+                            <div className="text-xs whitespace-normal text-muted-foreground min-[960px]:hidden">
                               {[modeOf(event), dateRange(event)].filter(Boolean).join(" · ")}
                             </div>
                             <div className="mt-1 min-[960px]:hidden">
@@ -463,7 +463,7 @@ export function EventsView() {
               </Card>
             ) : (
               <p className="text-muted-foreground">
-                {loading ? "" : "Nothing is coming up yet."}
+                {loading ? "" : "No cup is coming up yet."}
               </p>
             )}
           </section>
@@ -475,7 +475,7 @@ export function EventsView() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Event</TableHead>
+                      <TableHead>Cup</TableHead>
                       <TableHead className={phoneCell}>Mode</TableHead>
                       <TableHead className={phoneCell}>Date</TableHead>
                       <TableHead>State</TableHead>
@@ -489,7 +489,7 @@ export function EventsView() {
                             <strong>{event.name}</strong>
                           </Link>
                           {/* a phone drops the middle columns, so their words ride under the name */}
-                          <div className="text-xs text-muted-foreground min-[960px]:hidden">
+                          <div className="text-xs whitespace-normal text-muted-foreground min-[960px]:hidden">
                             {[
                               modeOf(event),
                               dateRange(event),
@@ -521,7 +521,7 @@ export function EventsView() {
                           colSpan={4}
                           className="py-6 text-center text-muted-foreground"
                         >
-                          Nothing has been played yet.
+                          No cup has been played yet.
                         </TableCell>
                       </TableRow>
                     ) : null}
@@ -529,14 +529,6 @@ export function EventsView() {
                 </Table>
               </div>
             </Card>
-
-            {/* The same test as the route guard of /koth */}
-            {me && canSeeRole(me.role, metaOf("/koth").role) ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Archived KOTH nights are on{" "}
-                <Link href="/koth">KOTH Events</Link>.
-              </p>
-            ) : null}
           </section>
         </>
       )}

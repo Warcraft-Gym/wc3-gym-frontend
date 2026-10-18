@@ -2,7 +2,7 @@
 
 ## 2026-10-18
 
-* **Update**: the Events page reads in two tabs, "Events" with the Upcoming and Past tables for everyone and "Organizers" with the cups a member runs, their sign-ups, check-ins and waitlist, and the recurring cups; "Create cup" sits at the end of the tab bar, and a running event leads Upcoming. [Leagues and events](pages/leagues-and-events.md) states it.
+* **Update**: the Events page reads in two tabs, "Events" with the Upcoming and Past tables of cups for everyone and "Organizers" with the cups a member runs, their sign-ups, check-ins and waitlist, and the recurring cups; "Create cup" sits at the end of the tab bar, and a running cup leads Upcoming. The page reads cups only (`GET /events?kind=cup`): GNL seasons, sign-up lists and KOTH nights stay off it, and the line pointing to archived KOTH nights is gone. [Leagues and events](pages/leagues-and-events.md) states it.
 
 ## 2026-10-17
 

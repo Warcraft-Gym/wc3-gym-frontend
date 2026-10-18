@@ -11,12 +11,12 @@ const startOf = (event) => event?.starts_at || event?.start_date || null;
 const UPCOMING_ORDER = { running: 0, checkin: 1, signups_open: 2, seeded: 3, draft: 4 };
 const statusRank = (event) => UPCOMING_ORDER[event?.phase] ?? 5;
 
-/** Upcoming and past, KOTH nights left out: the public site shows the nights and the admins run
- *  them from the admin panel. A finished event is past and every other phase is upcoming, a
- *  running one and a draft among them. Upcoming reads the running events first, then soonest
- *  first and by status at one start, the undated last; past reads newest first. */
+/** Upcoming and past, cups only: GNL seasons, sign-up lists and KOTH nights have pages of their
+ *  own. A finished cup is past and every other phase is upcoming, a running one and a draft
+ *  among them. Upcoming reads the running cups first, then soonest first and by status at one
+ *  start, the undated last; past reads newest first. */
 export function groupEvents(events) {
-  const rows = (events || []).filter((event) => event.kind !== 'koth');
+  const rows = (events || []).filter((event) => event.kind === 'cup');
   const running = (event) => (event.phase === 'running' ? 0 : 1);
   const byStartAsc = (a, b) => {
     if (running(a) !== running(b)) return running(a) - running(b);

@@ -106,9 +106,10 @@ export function eligibilityLines(event) {
   const [low, high] = [event?.mmr_min ?? null, event?.mmr_max ?? null];
   // An event that counts a race by its lifetime games rates the best of the races played
   const counted = event?.race_games_min ?? null;
+  if (event?.bnet_required) lines.push('A battle tag verified with Battle.net');
   if (counted !== null) {
     if (event?.eligibility_required) {
-      lines.push(event.bnet_required ? 'A battle tag linked to Battle.net, rated by W3Champions' : 'A battle tag W3Champions rates');
+      lines.push('A battle tag W3Champions rates');
     }
     const races = `of the races with ${counted} games or more`;
     if (low !== null && high !== null) lines.push(`Highest MMR ${races} from ${low} to ${high}`);
@@ -119,9 +120,7 @@ export function eligibilityLines(event) {
     return lines;
   }
   if (event?.eligibility_required) {
-    lines.push(event.bnet_required
-      ? 'A battle tag linked to Battle.net, rated by W3Champions on the race you sign up with'
-      : 'A battle tag W3Champions rates on the race you sign up with');
+    lines.push('A battle tag W3Champions rates on the race you sign up with');
   }
   if (low !== null && high !== null) lines.push(`MMR from ${low} to ${high} on that race`);
   else if (low !== null) lines.push(`MMR ${low} or more on that race`);

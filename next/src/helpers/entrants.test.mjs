@@ -208,3 +208,7 @@ test('a cup team rosters from its entrant row, the captain first', () => {
   assert.deepEqual(rosters[90].map((seat) => [seat.player.name, seat.race, seat.captain]), [['P2', 'OC', true], ['P1', 'NE', false]]);
   assert.deepEqual(cupRosters(), {});
 });
+
+test('a row that is not verified with Battle.net says so', () => {
+  assert.equal(warningLabel('not_verified'), 'not verified with Battle.net');
+});

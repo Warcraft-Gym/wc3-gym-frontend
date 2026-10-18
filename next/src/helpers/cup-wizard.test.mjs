@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine, rulesForm, rulesPayload, rulesProblem } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -296,4 +296,21 @@ test('a custom game plays its one map with no veto, as a match or a free for all
   assert.equal(cupTeamSize({ ...ffa, ffa_team_size: 3 }), 3);
   // any other cup is no custom game
   assert.equal(cupPayload({ ...blankCup() }).custom_game, false);
+});
+
+test('the sign-up rules dialog reads an event as Create cup shows it and writes the rule fields alone', () => {
+  // a checked event with no count checks the sign-up race alone
+  const form = rulesForm({ eligibility_required: true, bnet_required: true, signup_policy: 'members', mmr_min: 1400, mmr_max: null, min_games: 20, race_games_min: null });
+  assert.deepEqual(form, { eligibility_required: true, mmr_min: 1400, mmr_max: '', min_games: 20, signup_race_only: true, race_games_min: 20 });
+  assert.deepEqual(rulesPayload({ ...form, mmr_max: '1800' }), { eligibility_required: true, mmr_min: 1400, mmr_max: 1800, min_games: 20, race_games_min: null });
+  // with the switch off another race counts from its games
+  assert.equal(rulesPayload({ ...form, signup_race_only: false }).race_games_min, 20);
+  // the dialog writes neither who may sign up nor Battle.net verification, so a cup keeps its own
+  assert.deepEqual(['signup_policy', 'bnet_required'].filter((key) => key in rulesPayload(form)), []);
+  // a cup that checks nobody opens with Create cup's defaults, and turning the check off sends no bound
+  assert.deepEqual(rulesForm({ eligibility_required: false, race_games_min: null }), { eligibility_required: false, mmr_min: '', mmr_max: '', min_games: '', signup_race_only: false, race_games_min: 20 });
+  assert.deepEqual(rulesPayload({ ...form, eligibility_required: false }), { eligibility_required: false, mmr_min: null, mmr_max: null, min_games: null, race_games_min: null });
+  assert.equal(rulesProblem({ ...form, mmr_max: '1200' }), 'The lowest MMR cannot be above the highest.');
+  assert.equal(rulesProblem({ ...form, eligibility_required: false, mmr_max: '1200' }), null);
+  assert.equal(rulesProblem(form), null);
 });

@@ -8,12 +8,12 @@ import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { SignupRulesFields } from "@/components/SignupRulesFields";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/PageHeader";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { StatusAlert } from "@/components/StatusAlert";
-import { Note } from "@/components/ui/Note";
 import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { CustomMapPicker } from "@/components/CustomMapPicker";
@@ -544,57 +544,7 @@ export function CupCreateView() {
 
             <section className="grid grid-cols-12 gap-3" aria-labelledby="cup-signup-rules">
               <h3 id="cup-signup-rules" className="col-span-12 text-lg">Sign-up rules</h3>
-              <div className="col-span-12">
-                <Label className="flex min-h-11 items-center gap-2">
-                  <Switch checked={!!form.eligibility_required} onCheckedChange={(eligibility_required) => set({ eligibility_required })} />
-                  Only eligible players can sign up
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {form.eligibility_required
-                    ? "A player needs a W3Champions rating on the race they sign up with, and the MMR and games below. Anyone else is refused, also when you add them by hand."
-                    : "Everyone can sign up. The rules below are off until you turn this on."}
-                </p>
-              </div>
-              {/* the rules below apply only to eligible players, so they wait, disabled, while the check is off */}
-              <TextField className="col-span-6 min-[600px]:col-span-4" type="number" min="0" label="MMR from" placeholder="No floor" disabled={!form.eligibility_required} value={form.mmr_min} onChange={(e) => set({ mmr_min: e.target.value })} />
-              <TextField className="col-span-6 min-[600px]:col-span-4" type="number" min="0" label="MMR to" placeholder="No cap" disabled={!form.eligibility_required} value={form.mmr_max} onChange={(e) => set({ mmr_max: e.target.value })} />
-              <TextField
-                className="col-span-12 min-[600px]:col-span-4"
-                type="number"
-                min="0"
-                label="Games at least"
-                hint="Over all races, this W3C season and the one before"
-                placeholder="No minimum"
-                disabled={!form.eligibility_required}
-                value={form.min_games}
-                onChange={(e) => set({ min_games: e.target.value })}
-              />
-              <div className="col-span-12">
-                <Label className="flex min-h-11 items-center gap-2">
-                  <Switch
-                    checked={!!form.signup_race_only}
-                    disabled={!form.eligibility_required}
-                    onCheckedChange={(signup_race_only) => set({ signup_race_only })}
-                  />
-                  Only the sign-up race counts for the MMR check
-                </Label>
-              </div>
-              {form.signup_race_only ? null : (
-                <>
-                  {form.eligibility_required ? <Note className="col-span-12">{"The MMR of a player's other races also counts toward the MMR range: the best race with enough games is checked."}</Note> : null}
-                  <TextField
-                    className="col-span-12 min-[600px]:col-span-4"
-                    type="number"
-                    min="1"
-                    label="A race counts from"
-                    hint="Lifetime games on a race before its MMR counts, so a few games on an off race never decide"
-                    placeholder="20"
-                    disabled={!form.eligibility_required}
-                    value={form.race_games_min}
-                    onChange={(e) => set({ race_games_min: e.target.value })}
-                  />
-                </>
-              )}
+              <SignupRulesFields className="col-span-12" form={form} set={set} />
             </section>
           </div>
         ) : key === "points" ? (

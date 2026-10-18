@@ -2,7 +2,9 @@
 
 ## 2026-10-18
 
+* **Update**: Create cup again asks for no Battle.net verification and shows no "Who may sign up"; a cup that already asks for verification keeps it, and the event page and Add player still follow it. The run page's "Sign-up rules" dialog edits the same rules with the same fields as Create cup's sign-up step (`SignupRulesFields`): the eligibility check turns the limits off with it, the sign-up race switch hides "A race counts from", and it writes neither verification nor who may sign up. [Event management](pages/event-management.md) states it.
 * **Update**: the Events page reads in two tabs, "Events" with the Upcoming and Past tables of cups for everyone and "Organizers" with the cups a member runs, their sign-ups, check-ins and waitlist, and the recurring cups; "Create cup" sits at the end of the tab bar, and a running cup leads Upcoming. The page reads cups only (`GET /events?kind=cup`): GNL seasons, sign-up lists and KOTH nights stay off it, and the line pointing to archived KOTH nights is gone. [Leagues and events](pages/leagues-and-events.md) states it.
+* **Update**: "Only players verified with Battle.net" is a switch of its own in Create cup, off by default, beside the rating check, and the event page names it and points at "Verify with Battle.net"; "Anyone with a battle tag" reads "(not built yet)" on a cup. A cup's run page adds "Sign-up rules" until the draw, names the players already in that verification would mark, and shows each player's warnings on their row; "Add player" searches by name or battle tag and lists verified players alone while verification is on. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.
 
 ## 2026-10-17
 

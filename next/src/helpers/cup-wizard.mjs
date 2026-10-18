@@ -303,16 +303,10 @@ export const cupPayload = (form) => ({
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played
   end_date: null,
   starts_at: form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null,
-  // every player signs up as a member of the Discord, and no cup asks for a Battle.net link
+  // every player signs up as a member of the Discord, and Create cup asks for no Battle.net verification
   signup_policy: 'members',
-  eligibility_required: !!form.eligibility_required,
   bnet_required: false,
-  // the bounds apply only to eligible players: with the rule off, the cup sends none
-  mmr_min: form.eligibility_required ? count(form.mmr_min) : null,
-  mmr_max: form.eligibility_required ? count(form.mmr_max) : null,
-  min_games: form.eligibility_required ? count(form.min_games) : null,
-  // none checks the sign-up race alone; a count lets another race's MMR count from that many games
-  race_games_min: form.eligibility_required && !form.signup_race_only ? count(form.race_games_min) : null,
+  ...rulesPayload(form),
   entrant_min: count(form.entrant_min),
   // one lobby seats the whole field, so it takes no more players than its seats
   entrant_cap: isFfa(form) && form.ffa_mode === 'league' ? Math.min(count(form.entrant_cap) ?? Infinity, Number(form.lobby_size)) : count(form.entrant_cap),
@@ -430,6 +424,43 @@ function swissStages(form) {
   return stages;
 }
 
+/** The rule fields of an event, as the run page's Sign-up rules dialog edits them. A cup that
+ *  checks nobody opens with Create cup's defaults, so turning the check on reads as it does there. */
+export const rulesForm = (event) => {
+  const checked = !!event?.eligibility_required;
+  return {
+    eligibility_required: checked,
+    mmr_min: event?.mmr_min ?? '',
+    mmr_max: event?.mmr_max ?? '',
+    min_games: event?.min_games ?? '',
+    // no count checks the sign-up race alone
+    signup_race_only: checked && event?.race_games_min == null,
+    race_games_min: event?.race_games_min ?? 20,
+  };
+};
+
+/** The rule fields an event writes, from Create cup and the Sign-up rules dialog alike. The bounds
+ *  apply only to eligible players, so with the rule off none is sent, and no count checks the
+ *  sign-up race alone. Who may sign up and Battle.net verification are not among them, so the
+ *  dialog leaves them as they are. */
+export const rulesPayload = (form) => ({
+  eligibility_required: !!form.eligibility_required,
+  mmr_min: form.eligibility_required ? count(form.mmr_min) : null,
+  mmr_max: form.eligibility_required ? count(form.mmr_max) : null,
+  min_games: form.eligibility_required ? count(form.min_games) : null,
+  race_games_min: form.eligibility_required && !form.signup_race_only ? count(form.race_games_min) : null,
+});
+
+/** What keeps the rules from being saved, or null; the bounds are checked only while they apply. */
+export function rulesProblem(form) {
+  if (!form.eligibility_required) return null;
+  const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
+  if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
+  if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
+  if (!form.signup_race_only && count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
+  return null;
+}
+
 /** What keeps a step from being left, or null when it is complete. */
 export function cupProblem(form, step) {
   if (step === 'format' && isFfa(form)) {
@@ -489,14 +520,7 @@ export function cupProblem(form, step) {
     if (least !== null && least < 2) return 'A cup needs at least 2 players.';
     if (most !== null && most < 2) return 'The maximum must be at least 2.';
     if (least !== null && most !== null && least > most) return 'The minimum cannot be above the maximum.';
-    // the bounds are checked only while they apply
-    if (form.eligibility_required) {
-      const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
-      if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
-      if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
-      if (!form.signup_race_only && count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
-    }
-    return checkinProblem(cupCheckin(form));
+    return rulesProblem(form) || checkinProblem(cupCheckin(form));
   }
   return null;
 }

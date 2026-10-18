@@ -11,6 +11,7 @@ export function warningLabel(code, event = {}) {
   if (code === 'over_mmr_max') return 'over the MMR cap';
   if (code === 'under_mmr_min') return event.mmr_min ? `under ${event.mmr_min} MMR` : 'under the MMR floor';
   if (code === 'banned') return 'banned';
+  if (code === 'not_verified') return 'not verified with Battle.net';
   return code;
 }
 

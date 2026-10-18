@@ -1,34 +1,25 @@
-// The Events page: the kind a reader filters on, the three groups the events fall in, and the
-// one organizer card a session sees. The backend derives every event's phase; nothing here
-// stores one.
+// The Events page: the two groups the events fall in, the counts an organizer reads of their own
+// cups, and the one organizer card a session sees. The backend derives every event's phase;
+// nothing here stores one.
 import { dayDate, dayIso } from './date-input.mjs';
 import { pickerParts, storedUtc, viewerZone } from './timezone.mjs';
 
-// Cups lead, because they are what a member joins from this page; the other kinds have homes
-// of their own and read here too. A KOTH night is not one of them: the public site shows the
-// nights, and the admins run them from the admin panel
-export const KIND_FILTERS = [
-  { value: 'cup', title: 'Cups' },
-  // the rules cups repeat on, in place of the events
-  { value: 'recurring', title: 'Recurring cups' },
-  { value: 'gnl', title: 'GNL seasons' },
-  { value: 'all', title: 'All' },
-];
-
 const startOf = (event) => event?.starts_at || event?.start_date || null;
 
-// Two events starting together read the one nearer its start first: check-in, then sign-ups,
-// then seeded, and a draft last
-const UPCOMING_ORDER = { checkin: 0, signups_open: 1, seeded: 2, draft: 3 };
-const statusRank = (event) => UPCOMING_ORDER[event?.phase] ?? 4;
+// Two events starting together read the one further along first: running, check-in, sign-ups,
+// seeded, and a draft last
+const UPCOMING_ORDER = { running: 0, checkin: 1, signups_open: 2, seeded: 3, draft: 4 };
+const statusRank = (event) => UPCOMING_ORDER[event?.phase] ?? 5;
 
-/** Live, upcoming and past, for one kind or every kind, KOTH nights left out. A running event is
- *  live, a finished one is past and every other phase, a draft among them, is still to come.
- *  Upcoming reads soonest first, then by status, with the undated last; live and past read
- *  newest first. */
-export function groupEvents(events, kind = 'all') {
-  const rows = (events || []).filter((event) => event.kind !== 'koth' && (kind === 'all' || event.kind === kind));
+/** Upcoming and past, KOTH nights left out: the public site shows the nights and the admins run
+ *  them from the admin panel. A finished event is past and every other phase is upcoming, a
+ *  running one and a draft among them. Upcoming reads the running events first, then soonest
+ *  first and by status at one start, the undated last; past reads newest first. */
+export function groupEvents(events) {
+  const rows = (events || []).filter((event) => event.kind !== 'koth');
+  const running = (event) => (event.phase === 'running' ? 0 : 1);
   const byStartAsc = (a, b) => {
+    if (running(a) !== running(b)) return running(a) - running(b);
     const [x, y] = [startOf(a), startOf(b)];
     if (x && y && x !== y) return x < y ? -1 : 1;
     if (!x !== !y) return x ? -1 : 1;
@@ -40,11 +31,17 @@ export function groupEvents(events, kind = 'all') {
     return b.id - a.id;
   };
   return {
-    live: rows.filter((event) => event.phase === 'running').sort(byNewest),
-    upcoming: rows.filter((event) => event.phase !== 'running' && event.phase !== 'finished').sort(byStartAsc),
+    upcoming: rows.filter((event) => event.phase !== 'finished').sort(byStartAsc),
     past: rows.filter((event) => event.phase === 'finished').sort(byNewest),
   };
 }
+
+/** The players in a cup the organizer runs, "12 / 16" against its cap, else "12".
+ *  @param {any} event a GET /me/organized-events row */
+export const signedUpText = (event) => {
+  const count = Number(event?.entrant_count) || 0;
+  return event?.entrant_cap ? `${count} / ${event.entrant_cap}` : String(count);
+};
 
 /** Which organizer card the page shows: `organizer` (Your cups and Create cup), `pending` (the
  *  request waits for an admin), `ask` (a member may ask), or null for a guest or no session. */

@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-18
+
+* **Update**: the Events page reads in two tabs, "Events" with the Upcoming and Past tables for everyone and "Organizers" with the cups a member runs, their sign-ups, check-ins and waitlist, and the recurring cups; "Create cup" sits at the end of the tab bar, and a running event leads Upcoming. [Leagues and events](pages/leagues-and-events.md) states it.
+
 ## 2026-10-17
 
 * **Update**: Create cup's Sign-ups step reads in two sections, "Sign-up information" and "Sign-up rules"; the eligibility check turns every rule off with it, a new switch counts only the sign-up race, and the Battle.net link, "Who may sign up" and "Open sign-ups now" leave. [Event management](pages/event-management.md) states it.

@@ -144,11 +144,12 @@ export function CupCreateView() {
     custom
       ? { k: "Map", v: form.custom_map ? `${form.custom_map.name}, every game; no veto` : "No map yet" }
       : { k: "Maps", v: form.pool.length ? form.pool.map((row: PoolMap) => row.name).join(", ") : "No maps" },
-    { k: "Who may sign up", v: SIGNUP_POLICIES.find((item) => item.value === (form.eligibility_required && form.bnet_required ? "members" : form.signup_policy))?.title },
+    { k: "Who may sign up", v: SIGNUP_POLICIES.find((item) => item.value === (form.bnet_required ? "members" : form.signup_policy))?.title },
     {
       k: "Eligibility",
       v: [
-        form.eligibility_required ? (form.bnet_required ? "Battle.net-linked, rated players only" : "Rated players only") : "Warnings only",
+        form.eligibility_required ? "Rated players only" : "Warnings only",
+        form.bnet_required ? "verified with Battle.net" : null,
         form.mmr_min || form.mmr_max ? `MMR ${form.mmr_min || "any"} to ${form.mmr_max || "any"}` : null,
         form.min_games ? `at least ${form.min_games} games` : null,
         form.race_games_min ? `a race counts from ${form.race_games_min} games` : null,
@@ -524,12 +525,17 @@ export function CupCreateView() {
                   ? "A player needs a W3Champions rating on the race they sign up with, and the MMR and games below. Anyone else is refused, also when you add them by hand."
                   : "Everyone can sign up; a player outside the MMR or games below only gets a warning on their row."}
               </p>
-              {form.eligibility_required ? (
-                <Label className="flex min-h-11 items-center gap-2 pl-1">
-                  <Switch checked={!!form.bnet_required} onCheckedChange={(bnet_required) => set({ bnet_required })} />
-                  The battle tag must be linked to Battle.net too
-                </Label>
-              ) : null}
+            </div>
+            <div className="col-span-12 flex flex-col gap-1 rounded-lg border border-border p-3">
+              <Label className="flex min-h-11 items-center gap-2">
+                <Switch checked={!!form.bnet_required} onCheckedChange={(bnet_required) => set({ bnet_required })} />
+                Only players verified with Battle.net
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {form.bnet_required
+                  ? "A player verifies their battle tag on their profile with \"Verify with Battle.net\" before they sign up. Anyone else is refused, also when you add them by hand."
+                  : "A battle tag linked to the player's Discord account is enough."}
+              </p>
             </div>
             <TextField className="col-span-6 min-[600px]:col-span-4" type="number" min="0" label="MMR from" placeholder="No floor" value={form.mmr_min} onChange={(e) => set({ mmr_min: e.target.value })} />
             <TextField className="col-span-6 min-[600px]:col-span-4" type="number" min="0" label="MMR to" placeholder="No cap" value={form.mmr_max} onChange={(e) => set({ mmr_max: e.target.value })} />
@@ -556,8 +562,9 @@ export function CupCreateView() {
             <div className="col-span-12">
               <Choice
                 label="Who may sign up"
-                items={SIGNUP_POLICIES.map((item) => ({ ...item, ready: item.value === "members" || !(form.eligibility_required && form.bnet_required) }))}
-                value={form.eligibility_required && form.bnet_required ? "members" : form.signup_policy}
+                // a cup open to any battle tag would leave every step to its organizer, so it waits
+                items={SIGNUP_POLICIES.map((item) => (item.value === "members" ? item : { ...item, title: `${item.title} (not built yet)`, ready: false }))}
+                value={form.bnet_required ? "members" : form.signup_policy}
                 onChange={(signup_policy) => set({ signup_policy })}
               />
             </div>

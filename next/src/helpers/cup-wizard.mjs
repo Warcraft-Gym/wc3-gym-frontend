@@ -242,7 +242,7 @@ export const blankCup = () => ({
   signup_policy: 'members',
   // who may sign up at all: a battle tag W3Champions rates, inside these bounds
   eligibility_required: true,
-  // on top of that, the tag verified through Battle.net; off while the community starts out
+  // only players whose battle tag Battle.net verified; off, a tag linked to their Discord account is enough
   bnet_required: false,
   mmr_min: '',
   mmr_max: '',
@@ -309,10 +309,10 @@ export const cupPayload = (form) => ({
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played
   end_date: null,
   starts_at: form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null,
-  // a battle tag alone proves no Battle.net link, so a cup that asks for one takes members only
-  signup_policy: form.eligibility_required && form.bnet_required ? 'members' : form.signup_policy,
+  // a battle tag alone proves no Battle.net account, so a cup that asks for one takes members only
+  signup_policy: form.bnet_required ? 'members' : form.signup_policy,
   eligibility_required: !!form.eligibility_required,
-  bnet_required: !!form.eligibility_required && !!form.bnet_required,
+  bnet_required: !!form.bnet_required,
   mmr_min: count(form.mmr_min),
   mmr_max: count(form.mmr_max),
   min_games: count(form.min_games),
@@ -434,6 +434,35 @@ function swissStages(form) {
 }
 
 /** What keeps a step from being left, or null when it is complete. */
+// The sign-up rules a runner changes until the draw, as the Sign-up rules dialog edits them
+export const rulesForm = (event) => ({
+  eligibility_required: !!event.eligibility_required,
+  bnet_required: !!event.bnet_required,
+  mmr_min: event.mmr_min ?? '',
+  mmr_max: event.mmr_max ?? '',
+  min_games: event.min_games ?? '',
+  race_games_min: event.race_games_min ?? '',
+});
+
+export const rulesPayload = (form) => ({
+  // a battle tag alone proves no Battle.net account, so verification takes members only
+  ...(form.bnet_required ? { signup_policy: 'members' } : {}),
+  eligibility_required: !!form.eligibility_required,
+  bnet_required: !!form.bnet_required,
+  mmr_min: count(form.mmr_min),
+  mmr_max: count(form.mmr_max),
+  min_games: count(form.min_games),
+  race_games_min: count(form.race_games_min),
+});
+
+export function rulesProblem(form) {
+  const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
+  if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
+  if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
+  if (count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
+  return null;
+}
+
 export function cupProblem(form, step) {
   if (step === 'format' && isFfa(form)) {
     const seats = Number(form.lobby_size);
@@ -492,11 +521,7 @@ export function cupProblem(form, step) {
     if (least !== null && least < 2) return 'A cup needs at least 2 players.';
     if (most !== null && most < 2) return 'The maximum must be at least 2.';
     if (least !== null && most !== null && least > most) return 'The minimum cannot be above the maximum.';
-    const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
-    if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
-    if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
-    if (count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
-    return checkinProblem(cupCheckin(form));
+    return rulesProblem(form) || checkinProblem(cupCheckin(form));
   }
   return null;
 }

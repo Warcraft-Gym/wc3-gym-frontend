@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine } from './cup-wizard.mjs';
+import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine, rulesForm, rulesPayload, rulesProblem } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -83,8 +83,8 @@ test('a cup checks who signs up by default, and only a cup that asks for Battle.
   assert.deepEqual([body.eligibility_required, body.bnet_required, body.signup_policy, body.mmr_min, body.mmr_max, body.min_games], [true, false, 'anyone', 1400, 1800, 20]);
   const linked = cupPayload({ ...blankCup(), signup_policy: 'anyone', bnet_required: true });
   assert.deepEqual([linked.bnet_required, linked.signup_policy], [true, 'members']);
-  // the link is a part of the check, so it goes with it
-  assert.equal(cupPayload({ ...blankCup(), eligibility_required: false, bnet_required: true }).bnet_required, false);
+  // verification is its own rule, so it stands with the rating check off
+  assert.equal(cupPayload({ ...blankCup(), eligibility_required: false, bnet_required: true }).bnet_required, true);
   const open = cupPayload({ ...blankCup(), eligibility_required: false, signup_policy: 'anyone' });
   assert.deepEqual([open.eligibility_required, open.signup_policy], [false, 'anyone']);
   assert.equal(cupProblem({ ...blankCup(), mmr_min: '1800', mmr_max: '1400' }, 'signups'), 'The lowest MMR cannot be above the highest.');
@@ -281,4 +281,16 @@ test('a custom game plays its one map with no veto, as a match or a free for all
   assert.equal(cupTeamSize({ ...ffa, ffa_team_size: 3 }), 3);
   // any other cup is no custom game
   assert.equal(cupPayload({ ...blankCup() }).custom_game, false);
+});
+
+test('the sign-up rules dialog reads the event and writes the rules alone', () => {
+  const form = rulesForm({ eligibility_required: true, bnet_required: false, mmr_min: 1400, mmr_max: null, min_games: 20 });
+  assert.deepEqual(form, { eligibility_required: true, bnet_required: false, mmr_min: 1400, mmr_max: '', min_games: 20, race_games_min: '' });
+  assert.deepEqual(rulesPayload({ ...form, bnet_required: true, mmr_max: '1800' }), {
+    signup_policy: 'members', eligibility_required: true, bnet_required: true, mmr_min: 1400, mmr_max: 1800, min_games: 20, race_games_min: null,
+  });
+  // without verification the dialog leaves who may sign up alone
+  assert.equal('signup_policy' in rulesPayload(form), false);
+  assert.equal(rulesProblem({ ...form, mmr_max: '1200' }), 'The lowest MMR cannot be above the highest.');
+  assert.equal(rulesProblem(form), null);
 });

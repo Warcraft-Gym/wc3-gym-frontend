@@ -11,11 +11,23 @@ export function warningLabel(code, event = {}) {
   if (code === 'over_mmr_max') return 'over the MMR cap';
   if (code === 'under_mmr_min') return event.mmr_min ? `under ${event.mmr_min} MMR` : 'under the MMR floor';
   if (code === 'banned') return 'banned';
+  if (code === 'not_verified') return 'not verified with Battle.net';
   return code;
 }
 
 // What a row is called: the team of a team entrant, else the player.
 export const entrantName = (row) => row.team?.name || row.user?.name || '';
+
+// The players still in, waitlist included, whom rules that ask for Battle.net verification
+// would mark on their row: no verified main tag. Nobody leaves. The MMR and games limits are
+// left to the row warnings, which rate a player on the race the event counts.
+export function rulesBreakers(rows, rules) {
+  if (!rules.bnet_required) return [];
+  return rows
+    .filter((row) => row.user && !row.withdrawn_at)
+    .filter((row) => !(row.user.tags || []).some((tag) => tag.active && tag.verified))
+    .map(entrantName);
+}
 
 // The rating a row prints: the one the read answers, which for a team is the mean of
 // its roster, and the rating the seed was cut from when the read rates it no longer.

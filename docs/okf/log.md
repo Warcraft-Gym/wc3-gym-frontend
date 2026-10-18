@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-18
+
+* **Update**: "Only players verified with Battle.net" is a switch of its own in Create cup, off by default, beside the rating check, and the event page names it and points at "Verify with Battle.net"; "Anyone with a battle tag" reads "(not built yet)" on a cup. A cup's run page adds "Sign-up rules" until the draw, names the players already in that verification would mark, and shows each player's warnings on their row; "Add player" searches by name or battle tag and lists verified players alone while verification is on. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.
+
 ## 2026-10-17
 
 * **Update**: an error a page raises while a dialog is open shows in that dialog under its title, and a line tab bar that scrolls sideways no longer scrolls up and down. [Shared components](concepts/shared-components.md) states it.

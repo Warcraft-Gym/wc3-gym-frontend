@@ -6,7 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 
-export type ComboboxItem = { value: string; title: string };
+// keywords: more text the search matches, such as a player's battle tags
+export type ComboboxItem = { value: string; title: string; keywords?: string[] };
 
 /** The port of `v-autocomplete`: a Command inside a Popover. `row` draws an item the way
  *  the Vue item slot did, so a row can carry a race icon, a flag or a PlayerName.
@@ -72,6 +73,7 @@ export function Combobox<T extends ComboboxItem>({
                 key={item.value}
                 // the Command matches on the title; a server list keys on the value, so two equal names stay apart
                 value={onSearch ? item.value : item.title}
+                keywords={item.keywords}
                 onSelect={() => {
                   onChange(item.value);
                   setOpen(false);

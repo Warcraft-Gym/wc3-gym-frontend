@@ -18,17 +18,14 @@ export function warningLabel(code, event = {}) {
 // What a row is called: the team of a team entrant, else the player.
 export const entrantName = (row) => row.team?.name || row.user?.name || '';
 
-// The players still in that new rules would mark on their row: no active tag verified with
-// Battle.net where the rules ask for one, or a rating outside the new bounds. Nobody leaves.
+// The players still in, waitlist included, whom rules that ask for Battle.net verification
+// would mark on their row: no verified main tag. Nobody leaves. The MMR and games limits are
+// left to the row warnings, which rate a player on the race the event counts.
 export function rulesBreakers(rows, rules) {
-  const [low, high] = [rules.mmr_min ?? null, rules.mmr_max ?? null];
+  if (!rules.bnet_required) return [];
   return rows
     .filter((row) => row.user && !row.withdrawn_at)
-    .filter((row) => {
-      const verified = (row.user.tags || []).some((tag) => tag.active && tag.verified);
-      const mmr = row.mmr ?? null;
-      return (rules.bnet_required && !verified) || (mmr !== null && ((low !== null && mmr < low) || (high !== null && mmr > high)));
-    })
+    .filter((row) => !(row.user.tags || []).some((tag) => tag.active && tag.verified))
     .map(entrantName);
 }
 

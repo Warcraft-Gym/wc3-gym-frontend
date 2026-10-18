@@ -223,10 +223,13 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     ...players.map((row) => row.user?.id),
     ...players.flatMap((row) => [...(row.roster || []).map((one: Row) => one.user?.id), ...(row.invited || []).map((one: Row) => one.id)]),
   ]);
-  // a cup that takes members lists the players with a Discord login, so the hand-add takes them all
-  const members = event.signup_policy !== "anyone";
+  // a cup that asks for verification lists the players with a verified main tag alone
+  // ponytail: a player with no Discord login still shows, as /users hides the login from
+  // organizers; the hand-add refuses them on a members cup. A member search would hide them
+  const verifiedOnly = !!event.bnet_required;
   const playerItems = roster
-    .filter((player) => !entered.has(player.id) && (!members || (player.discordId || "").trim()))
+    .filter((player) => !entered.has(player.id))
+    .filter((player) => !verifiedOnly || (player.tags || []).some((one: Row) => one.active && one.verified))
     .map((player) => ({
       value: String(player.id),
       title: player.name,
@@ -234,7 +237,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       keywords: [player.battleTag, ...(player.tags || []).map((one: Row) => one.tag)].filter(Boolean),
     }));
   const rulesBody = rulesPayload(rules);
-  const marked = rulesBreakers(players, rulesBody) as string[];
+  const marked = rulesBreakers(entrants, rulesBody) as string[];
   const openRules = () => {
     setRules(rulesForm(event));
     setAsk("rules");
@@ -678,7 +681,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         onConfirm={() => pickedId && (pickedRace || memberOut) && addOne()}
       >
         <div className="flex flex-col gap-3">
-          <Field label="Player" hint={members ? "Gym members not in yet, by name or battle tag" : "Players not in yet, by name or battle tag"} htmlFor="console-add-player">
+          <Field label="Player" hint={`${verifiedOnly ? "Verified players" : "Players"} not in yet, by name or battle tag`} htmlFor="console-add-player">
             <Combobox
               id="console-add-player"
               label="Pick a player"
@@ -733,10 +736,10 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
           {rulesProblem(rules) ? <p className="text-sm text-error">{rulesProblem(rules)}</p> : null}
           {marked.length ? (
             <p className="text-sm">
-              {marked.length === 1 ? "1 player already in does" : `${marked.length} players already in do`} not meet these rules: {marked.join(", ")}. They stay in, and their rows show a warning; remove them by hand if they should not play.
+              {marked.length === 1 ? "1 player already in is" : `${marked.length} players already in are`} not verified with Battle.net: {marked.join(", ")}. They stay in, and their rows show a warning; remove them by hand if they should not play.
             </p>
           ) : null}
-          <p className="text-sm text-muted-foreground">The rules hold for every new sign-up and every player you add, until the bracket is drawn.</p>
+          <p className="text-sm text-muted-foreground">The rules hold for every new sign-up and every player you add, until the bracket is drawn. A player already in who falls outside new MMR or games limits stays in too, marked on their row.</p>
         </div>
       </Confirm>
 

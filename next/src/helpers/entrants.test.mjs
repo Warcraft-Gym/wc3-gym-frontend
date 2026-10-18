@@ -209,7 +209,7 @@ test('a cup team rosters from its entrant row, the captain first', () => {
   assert.deepEqual(cupRosters(), {});
 });
 
-test('new sign-up rules name the players already in they would mark, and nobody leaves', () => {
+test('rules that ask for verification name the players already in they would mark, and nobody leaves', () => {
   const tagged = (verified) => [{ tag: 'A#1', active: true, verified }, { tag: 'B#2', active: false, verified: true }];
   const field = [
     { id: 1, mmr: 1700, user: { name: 'Grubbstep', tags: tagged(true) } },
@@ -217,9 +217,8 @@ test('new sign-up rules name the players already in they would mark, and nobody 
     { id: 3, mmr: 1300, user: { name: 'Wispy', tags: tagged(true) } },
     { id: 4, mmr: 1200, user: { name: 'Gone', tags: [] }, withdrawn_at: '2026-10-18T10:00:00Z' },
   ];
-  // a verified spare tag is no verified active tag
-  assert.deepEqual(rulesBreakers(field, { bnet_required: true, mmr_min: null, mmr_max: null }), ['Kaelthas']);
-  assert.deepEqual(rulesBreakers(field, { bnet_required: false, mmr_min: 1400, mmr_max: 1600 }), ['Grubbstep', 'Wispy']);
-  assert.deepEqual(rulesBreakers(field, { bnet_required: false, mmr_min: null, mmr_max: null }), []);
+  // a verified spare tag is no verified main tag, and a withdrawn row is out already
+  assert.deepEqual(rulesBreakers(field, { bnet_required: true }), ['Kaelthas']);
+  assert.deepEqual(rulesBreakers(field, { bnet_required: false, mmr_min: 1400, mmr_max: 1600 }), []);
   assert.equal(warningLabel('not_verified'), 'not verified with Battle.net');
 });

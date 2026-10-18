@@ -287,8 +287,10 @@ test('the sign-up rules dialog reads the event and writes the rules alone', () =
   const form = rulesForm({ eligibility_required: true, bnet_required: false, mmr_min: 1400, mmr_max: null, min_games: 20 });
   assert.deepEqual(form, { eligibility_required: true, bnet_required: false, mmr_min: 1400, mmr_max: '', min_games: 20, race_games_min: '' });
   assert.deepEqual(rulesPayload({ ...form, bnet_required: true, mmr_max: '1800' }), {
-    eligibility_required: true, bnet_required: true, mmr_min: 1400, mmr_max: 1800, min_games: 20, race_games_min: null,
+    signup_policy: 'members', eligibility_required: true, bnet_required: true, mmr_min: 1400, mmr_max: 1800, min_games: 20, race_games_min: null,
   });
+  // without verification the dialog leaves who may sign up alone
+  assert.equal('signup_policy' in rulesPayload(form), false);
   assert.equal(rulesProblem({ ...form, mmr_max: '1200' }), 'The lowest MMR cannot be above the highest.');
   assert.equal(rulesProblem(form), null);
 });

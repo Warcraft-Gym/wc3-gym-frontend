@@ -445,6 +445,8 @@ export const rulesForm = (event) => ({
 });
 
 export const rulesPayload = (form) => ({
+  // a battle tag alone proves no Battle.net account, so verification takes members only
+  ...(form.bnet_required ? { signup_policy: 'members' } : {}),
   eligibility_required: !!form.eligibility_required,
   bnet_required: !!form.bnet_required,
   mmr_min: count(form.mmr_min),

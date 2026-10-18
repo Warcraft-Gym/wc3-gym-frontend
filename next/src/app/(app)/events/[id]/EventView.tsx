@@ -590,12 +590,17 @@ export function EventView({ id }: { id: string }) {
           {/* What a player needs before signing up; a checked event refuses anyone without it */}
           {(eligibilityLines(event) as string[]).length ? (
             <div className="mt-3 max-w-[70ch] rounded-lg border border-border p-3 text-sm">
-              <p className="mb-1 font-bold">{event.eligibility_required ? "Who can sign up" : "What the organizers look at"}</p>
+              <p className="mb-1 font-bold">{event.eligibility_required || event.bnet_required ? "Who can sign up" : "What the organizers look at"}</p>
               <ul className="list-disc pl-5">
                 {(eligibilityLines(event) as string[]).map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>
+              {event.bnet_required ? (
+                <p className="mt-2 text-muted-foreground">
+                  Verify your battle tag on <Link href="/profile">your profile</Link> with &quot;Verify with Battle.net&quot; before you sign up.
+                </p>
+              ) : null}
             </div>
           ) : null}
 

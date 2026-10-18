@@ -102,6 +102,7 @@ export function eligibilityLines(event) {
   const [low, high] = [event?.mmr_min ?? null, event?.mmr_max ?? null];
   // An event that counts a race by its lifetime games rates the best of the races played
   const counted = event?.race_games_min ?? null;
+  if (event?.bnet_required) lines.push('A battle tag verified with Battle.net');
   if (counted !== null) {
     if (event?.eligibility_required) {
       lines.push('A battle tag W3Champions rates');

@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/Combobox";
 import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
@@ -19,11 +21,12 @@ import { toneClass } from "@/components/ui/tone";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { eveningOf, moveStartBody, moveStartForm, waitlistOf } from "@/helpers/events-page.mjs";
-import { battleTagError } from "@/helpers/signup.mjs";
 import { playedEntrants } from "@/helpers/stage-view.mjs";
 import { missing, teamState } from "@/helpers/cup-teams.mjs";
 import { legsOf } from "@/helpers/cup-rounds.mjs";
 import { checkinPayload, checkinProblem, checkinWindowLine } from "@/helpers/checkin-window.mjs";
+import { rulesBreakers, warningLabel } from "@/helpers/entrants.mjs";
+import { rulesForm, rulesPayload, rulesProblem } from "@/helpers/cup-wizard.mjs";
 import type { EventOrganizer } from "@/hooks/event-runner";
 import { useEventStore, usePlayerStore } from "@/stores";
 
@@ -94,7 +97,9 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const editable = !drawn && !event.closed_at;
   const closed = !!event.closed_at;
   const [busy, setBusy] = useState<string | null>(null);
-  const [ask, setAsk] = useState<"cancel" | "move" | "remove" | "withdraw" | "add" | "team" | "incomplete" | "swapin" | null>(null);
+  const [ask, setAsk] = useState<"cancel" | "move" | "remove" | "withdraw" | "add" | "team" | "incomplete" | "swapin" | "rules" | null>(null);
+  // the sign-up rules as the dialog edits them; they lock at the draw
+  const [rules, setRules] = useState<Row>(() => rulesForm(event));
   // the waitlist: a late signup comes in before the draw, or after it in the place of one who has not played
   const [waiting, setWaiting] = useState<Row | null>(null);
   const [outId, setOutId] = useState<number | null>(null);
@@ -111,8 +116,6 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   const [roster, setRoster] = useState<Row[]>([]);
   const [pickedId, setPickedId] = useState<string>("");
   const [pickedRace, setPickedRace] = useState<string | null>(null);
-  // a player not in the list enters by battle tag, as on a KOTH night
-  const [addTag, setAddTag] = useState("");
   const [day, setDay] = useState<Date | null>(null);
   const [time, setTime] = useState("");
   const [co, setCo] = useState<OrganizerCandidate | null>(null);
@@ -173,7 +176,6 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     setMemberOut(member);
     setPickedId("");
     setPickedRace(null);
-    setAddTag("");
     setAsk("add");
     if (!roster.length) {
       try {
@@ -187,11 +189,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     work("add", async () => {
       if (memberOut) await store.replaceTeamMember(event.id, memberOut.entrant.team.id, memberOut.user.id, Number(pickedId));
       else if (swapping) await store.replaceEntrant(event.id, swapping.id, { user_id: Number(pickedId), race: pickedRace });
-      else if (addTag.trim()) {
-        const shape = battleTagError(addTag);
-        if (shape) throw new Error(shape);
-        await store.addEntrant(event.id, { battle_tag: addTag.trim(), race: pickedRace });
-      } else await store.addEntrant(event.id, { user_id: Number(pickedId), race: pickedRace });
+      else await store.addEntrant(event.id, { user_id: Number(pickedId), race: pickedRace });
       onEntrants(await store.fetchEntrants(event.id, true));
       // a swap rewrites the bracket boxes of the player it takes out
       if (swapping || memberOut) await onSeries?.();
@@ -225,9 +223,27 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
     ...players.map((row) => row.user?.id),
     ...players.flatMap((row) => [...(row.roster || []).map((one: Row) => one.user?.id), ...(row.invited || []).map((one: Row) => one.id)]),
   ]);
+  // a cup that takes members lists the players with a Discord login, so the hand-add takes them all
+  const members = event.signup_policy !== "anyone";
   const playerItems = roster
-    .filter((player) => !entered.has(player.id))
-    .map((player) => ({ value: String(player.id), title: player.name, tag: player.battleTag || "" }));
+    .filter((player) => !entered.has(player.id) && (!members || (player.discordId || "").trim()))
+    .map((player) => ({
+      value: String(player.id),
+      title: player.name,
+      tag: player.battleTag || "",
+      keywords: [player.battleTag, ...(player.tags || []).map((one: Row) => one.tag)].filter(Boolean),
+    }));
+  const rulesBody = rulesPayload(rules);
+  const marked = rulesBreakers(players, rulesBody) as string[];
+  const openRules = () => {
+    setRules(rulesForm(event));
+    setAsk("rules");
+  };
+  const saveRules = () =>
+    work("rules", async () => {
+      onEvent(await store.updateEvent(event.id, rulesBody));
+      onEntrants(await store.fetchEntrants(event.id, true));
+    });
 
   // the draw takes the players who checked in; a runner who skipped the check-in checks everyone in
   const checkEveryoneIn = () => work("everyone", async () => onEntrants(await store.checkInEveryone(event.id)));
@@ -358,6 +374,12 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                 {event.checkin_enabled ? `, ${evening.checkedIn} checked in` : ""}
               </span>
               {editable ? (
+                <Button variant="outline" size="sm" onClick={openRules}>
+                  <Icon name="mdi-account-check" />
+                  Sign-up rules
+                </Button>
+              ) : null}
+              {editable ? (
                 <Button variant="outline" size="sm" onClick={() => (teams ? openTeam() : openAdd())}>
                   <Icon name="mdi-account-plus" />
                   {teams ? "Add team" : "Add player"}
@@ -371,6 +393,12 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                   <span className="min-w-0 flex-1">
                     {row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team ? <CupTeamName team={row.team} /> : "Entrant"}
                   </span>
+                  {(row.warnings || []).map((code: string) => (
+                    <Badge key={code} className={toneClass("warning")}>
+                      <Icon name="mdi-alert" />
+                      {warningLabel(code, event)}
+                    </Badge>
+                  ))}
                   {teams ? <Badge variant="outline">{teamState(row, event.team_size)}</Badge> : null}
                   {event.checkin_enabled ? (
                     row.checked_in_at ? (
@@ -647,10 +675,10 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
         title={swapping || memberOut ? `Swap ${outName}` : "Add a player"}
         busy={busy === "add"}
         confirm={swapping || memberOut ? "Swap" : "Add"}
-        onConfirm={() => (pickedId || addTag.trim()) && (pickedRace || memberOut) && addOne()}
+        onConfirm={() => pickedId && (pickedRace || memberOut) && addOne()}
       >
         <div className="flex flex-col gap-3">
-          <Field label="Player" hint="Players already in are left out" htmlFor="console-add-player">
+          <Field label="Player" hint={members ? "Gym members not in yet, by name or battle tag" : "Players not in yet, by name or battle tag"} htmlFor="console-add-player">
             <Combobox
               id="console-add-player"
               label="Pick a player"
@@ -658,7 +686,6 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
               value={pickedId || null}
               onChange={(value) => {
                 setPickedId(value ?? "");
-                setAddTag("");
                 const player = roster.find((one) => String(one.id) === value);
                 setPickedRace(player?.race ?? null);
               }}
@@ -670,24 +697,46 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
               )}
             />
           </Field>
-          {swapping || memberOut ? null : (
-            <Field label="Or a battle tag" hint="The name and the numbers, like Mirren#4410." htmlFor="console-add-tag">
-              <Input
-                id="console-add-tag"
-                value={addTag}
-                onChange={(e) => {
-                  setAddTag(e.target.value);
-                  setPickedId("");
-                }}
-              />
-            </Field>
-          )}
           {memberOut ? null : <Pick label="Race" items={RACE_ITEMS} value={pickedRace} onChange={setPickedRace} />}
           <p className="text-sm text-muted-foreground">
             {swapping || memberOut
               ? `Who comes in for ${outName}: they take ${outName}'s seed and matches, and a map veto ${outName} began starts over. ${outName} leaves the cup.`
               : "The player is entered whether sign-ups are open or not."}
           </p>
+        </div>
+      </Confirm>
+
+      <Confirm open={ask === "rules"} onOpenChange={(open) => setAsk(open ? "rules" : null)} title="Sign-up rules" busy={busy === "rules"} confirm="Save" onConfirm={() => !rulesProblem(rules) && saveRules()}>
+        <div className="flex flex-col gap-3">
+          <Label className="flex min-h-11 items-center gap-2">
+            <Switch checked={!!rules.eligibility_required} onCheckedChange={(eligibility_required) => setRules({ ...rules, eligibility_required })} />
+            Only eligible players can sign up
+          </Label>
+          <Label className="flex min-h-11 items-center gap-2">
+            <Switch checked={!!rules.bnet_required} onCheckedChange={(bnet_required) => setRules({ ...rules, bnet_required })} />
+            Only players verified with Battle.net
+          </Label>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="MMR from" htmlFor="rules-mmr-min">
+              <Input id="rules-mmr-min" type="number" min="0" placeholder="No floor" value={rules.mmr_min} onChange={(e) => setRules({ ...rules, mmr_min: e.target.value })} />
+            </Field>
+            <Field label="MMR to" htmlFor="rules-mmr-max">
+              <Input id="rules-mmr-max" type="number" min="0" placeholder="No cap" value={rules.mmr_max} onChange={(e) => setRules({ ...rules, mmr_max: e.target.value })} />
+            </Field>
+            <Field label="Games at least" htmlFor="rules-games">
+              <Input id="rules-games" type="number" min="0" placeholder="No minimum" value={rules.min_games} onChange={(e) => setRules({ ...rules, min_games: e.target.value })} />
+            </Field>
+            <Field label="A race counts from" htmlFor="rules-race-games">
+              <Input id="rules-race-games" type="number" min="1" placeholder="20" value={rules.race_games_min} onChange={(e) => setRules({ ...rules, race_games_min: e.target.value })} />
+            </Field>
+          </div>
+          {rulesProblem(rules) ? <p className="text-sm text-error">{rulesProblem(rules)}</p> : null}
+          {marked.length ? (
+            <p className="text-sm">
+              {marked.length === 1 ? "1 player already in does" : `${marked.length} players already in do`} not meet these rules: {marked.join(", ")}. They stay in, and their rows show a warning; remove them by hand if they should not play.
+            </p>
+          ) : null}
+          <p className="text-sm text-muted-foreground">The rules hold for every new sign-up and every player you add, until the bracket is drawn.</p>
         </div>
       </Confirm>
 

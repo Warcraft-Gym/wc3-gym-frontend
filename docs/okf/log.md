@@ -2,7 +2,7 @@
 
 ## 2026-10-18
 
-* **Update**: Create cup no longer offers the Battle.net switch, and an event page no longer asks a player to verify their tag through Battle.net before signing up; a cup's "Add player" also takes a battle tag for a player who is not in the list. [Leagues and events](pages/leagues-and-events.md) and [event management](pages/event-management.md) state it.
+* **Update**: "Only players verified with Battle.net" is a switch of its own in Create cup, off by default, beside the rating check, and the event page names it and points at "Verify with Battle.net"; "Anyone with a battle tag" reads "(not built yet)" on a cup. A cup's run page adds "Sign-up rules" until the draw, names the players already in that new rules would mark, and shows each player's warnings on their row; "Add player" searches by name or battle tag and lists Gym members alone on a cup that takes members. [Event management](pages/event-management.md) and [leagues and events](pages/leagues-and-events.md) state it.
 
 ## 2026-10-17
 

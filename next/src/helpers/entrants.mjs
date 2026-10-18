@@ -11,11 +11,26 @@ export function warningLabel(code, event = {}) {
   if (code === 'over_mmr_max') return 'over the MMR cap';
   if (code === 'under_mmr_min') return event.mmr_min ? `under ${event.mmr_min} MMR` : 'under the MMR floor';
   if (code === 'banned') return 'banned';
+  if (code === 'not_verified') return 'not verified with Battle.net';
   return code;
 }
 
 // What a row is called: the team of a team entrant, else the player.
 export const entrantName = (row) => row.team?.name || row.user?.name || '';
+
+// The players still in that new rules would mark on their row: no active tag verified with
+// Battle.net where the rules ask for one, or a rating outside the new bounds. Nobody leaves.
+export function rulesBreakers(rows, rules) {
+  const [low, high] = [rules.mmr_min ?? null, rules.mmr_max ?? null];
+  return rows
+    .filter((row) => row.user && !row.withdrawn_at)
+    .filter((row) => {
+      const verified = (row.user.tags || []).some((tag) => tag.active && tag.verified);
+      const mmr = row.mmr ?? null;
+      return (rules.bnet_required && !verified) || (mmr !== null && ((low !== null && mmr < low) || (high !== null && mmr > high)));
+    })
+    .map(entrantName);
+}
 
 // The rating a row prints: the one the read answers, which for a team is the mean of
 // its roster, and the rating the seed was cut from when the read rates it no longer.

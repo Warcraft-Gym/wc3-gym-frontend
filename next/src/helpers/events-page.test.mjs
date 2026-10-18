@@ -87,13 +87,15 @@ test('a cup that takes check-in is short of its minimum by the players who check
 test('the eligibility reads one line per rule the event names', () => {
   assert.deepEqual(eligibilityLines({}), []);
   assert.deepEqual(eligibilityLines({ eligibility_required: true })[0], 'A battle tag W3Champions rates on the race you sign up with');
-  // a cup made with the old Battle.net switch on reads the same: verifying is never asked for
   assert.deepEqual(eligibilityLines({ eligibility_required: true, bnet_required: true, mmr_min: 1400, mmr_max: 1800, min_games: 20 }), [
+    'A battle tag verified with Battle.net',
     'A battle tag W3Champions rates on the race you sign up with',
     'MMR from 1400 to 1800 on that race',
     'At least 20 games on that race recently',
   ]);
   assert.deepEqual(eligibilityLines({ mmr_max: 1600 }), ['MMR up to 1600 on that race']);
+  // verification stands without the rating check
+  assert.deepEqual(eligibilityLines({ bnet_required: true }), ['A battle tag verified with Battle.net']);
   assert.deepEqual(eligibilityLines({ mmr_min: 1200 }), ['MMR 1200 or more on that race']);
 });
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { PANEL_ORDER, captainRow, cupSeriesLine, formatChip, homeRounds, myEventCards, ownScore, rowContext, seasonFixtures, seasonState, seriesWhen, teamMatch, upcomingEvents } from './home-hub.mjs';
+import { PANEL_ORDER, captainRow, cupSeriesLine, homeRounds, myEventCards, ownScore, rowContext, seasonFixtures, seasonState, seriesWhen, teamMatch, upcomingEvents } from './home-hub.mjs';
 
 test('on a phone the own season and the own events come first, then the upcoming series and events, then fantasy', () => {
   assert.deepEqual(PANEL_ORDER, { games: 1, mine: 2, next: 3, upcoming: 4, fantasy: 5 });
@@ -14,17 +14,6 @@ test('a series already under way reads the time it started', () => {
   assert.equal(seriesWhen({ date_time: '2026-09-21T19:00:00Z' }, now), at('2026-09-21T19:00:00Z').toFormat('ccc d LLL, HH:mm'));
   assert.equal(seriesWhen({ date_time: null }, now), 'No time booked');
   assert.equal(seriesWhen(null, now), 'No time booked');
-});
-
-test('a format chip names the cup: its side size, a free for all and a custom game', () => {
-  assert.equal(formatChip({ kind: 'cup' }), '1v1 cup');
-  assert.equal(formatChip({ kind: 'cup', team_size: 2 }), '2v2 cup');
-  assert.equal(formatChip({ kind: 'cup', ffa: true }), 'FFA, solo');
-  assert.equal(formatChip({ kind: 'cup', ffa: true, team_size: 3 }), 'FFA, teams of 3');
-  assert.equal(formatChip({ kind: 'cup', custom_game: true, team_size: 4 }), 'Custom game, 4v4');
-  assert.equal(formatChip({ kind: 'cup', custom_game: true, ffa: true }), 'Custom game, FFA, solo');
-  assert.equal(formatChip({ kind: 'signup' }), 'Sign-up list');
-  assert.equal(formatChip({ kind: 'gnl' }), null);
 });
 
 test('upcoming events are the cups and lists open to the member, soonest first, and none they joined or are invited to', () => {

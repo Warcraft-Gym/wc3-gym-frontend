@@ -212,11 +212,6 @@ export const PLACEMENT_LIVES = [
  *  @param {number | null | undefined} lives */
 export const livesLine = (lives) => (lives ? `a run ends after ${lives} ${lives === 1 ? 'loss' : 'losses'}` : 'every place played out');
 
-export const SIGNUP_POLICIES = [
-  { value: 'members', title: 'Members of the Discord' },
-  { value: 'anyone', title: 'Anyone with a battle tag' },
-];
-
 export const blankCup = () => ({
   name: '',
   description: '',
@@ -239,15 +234,14 @@ export const blankCup = () => ({
   best_of_plan: {},
   // the maps the players veto from, in order: { id, name }
   pool: [],
-  signup_policy: 'members',
-  // who may sign up at all: a battle tag W3Champions rates, inside these bounds
+  // who may sign up at all: a battle tag W3Champions rates, inside these bounds; off, no bound applies
   eligibility_required: true,
-  // only players whose battle tag Battle.net verified; off, a tag linked to their Discord account is enough
-  bnet_required: false,
   mmr_min: '',
   mmr_max: '',
   min_games: '',
-  // the lifetime games a race needs before its MMR counts, so a few games on another race never decide
+  // on: only the race a player signs up with counts for the MMR bounds
+  signup_race_only: false,
+  // off: the lifetime games another race needs before its MMR counts, so a few games never decide
   race_games_min: 20,
   entrant_min: '',
   entrant_cap: '',
@@ -281,8 +275,8 @@ export const blankCup = () => ({
   checkin_closes_minutes: null,
   // null takes the cup's default: off on one evening, on over rounds, so a round takes players from sign-up
   early_checkin: null,
+  // off keeps the cup a draft; a published cup takes sign-ups, a draft takes none
   published: true,
-  signups_open: true,
 });
 
 /** The check-in settings of the cup: a cup over rounds checks in for each round, always.
@@ -309,14 +303,10 @@ export const cupPayload = (form) => ({
   // no end date: a cup ends on its finish or its last result, never at midnight while it is played
   end_date: null,
   starts_at: form.start_date && form.start_time ? storedUtc(form.start_date, form.start_time) : null,
-  // a battle tag alone proves no Battle.net account, so a cup that asks for one takes members only
-  signup_policy: form.bnet_required ? 'members' : form.signup_policy,
-  eligibility_required: !!form.eligibility_required,
-  bnet_required: !!form.bnet_required,
-  mmr_min: count(form.mmr_min),
-  mmr_max: count(form.mmr_max),
-  min_games: count(form.min_games),
-  race_games_min: count(form.race_games_min),
+  // every player signs up as a member of the Discord, and Create cup asks for no Battle.net verification
+  signup_policy: 'members',
+  bnet_required: false,
+  ...rulesPayload(form),
   entrant_min: count(form.entrant_min),
   // one lobby seats the whole field, so it takes no more players than its seats
   entrant_cap: isFfa(form) && form.ffa_mode === 'league' ? Math.min(count(form.entrant_cap) ?? Infinity, Number(form.lobby_size)) : count(form.entrant_cap),
@@ -327,7 +317,8 @@ export const cupPayload = (form) => ({
   ...roundsPayload(form),
   recurrence: repeatPayload(form),
   published: !!form.published,
-  signups_open: !!form.signups_open,
+  // a draft takes no sign-ups whatever this says, so publishing it later opens them
+  signups_open: true,
   // every series vetoes from the pool by its own best-of, and game 1 plays the map left over
   // a lobby is one game, and a custom game plays its one map, so neither vetoes
   veto_by_best_of: !isFfa(form) && !isCustom(form),
@@ -433,36 +424,44 @@ function swissStages(form) {
   return stages;
 }
 
-/** What keeps a step from being left, or null when it is complete. */
-// The sign-up rules a runner changes until the draw, as the Sign-up rules dialog edits them
-export const rulesForm = (event) => ({
-  eligibility_required: !!event.eligibility_required,
-  bnet_required: !!event.bnet_required,
-  mmr_min: event.mmr_min ?? '',
-  mmr_max: event.mmr_max ?? '',
-  min_games: event.min_games ?? '',
-  race_games_min: event.race_games_min ?? '',
-});
+/** The rule fields of an event, as the run page's Sign-up rules dialog edits them. A cup that
+ *  checks nobody opens with Create cup's defaults, so turning the check on reads as it does there. */
+export const rulesForm = (event) => {
+  const checked = !!event?.eligibility_required;
+  return {
+    eligibility_required: checked,
+    mmr_min: event?.mmr_min ?? '',
+    mmr_max: event?.mmr_max ?? '',
+    min_games: event?.min_games ?? '',
+    // no count checks the sign-up race alone
+    signup_race_only: checked && event?.race_games_min == null,
+    race_games_min: event?.race_games_min ?? 20,
+  };
+};
 
+/** The rule fields an event writes, from Create cup and the Sign-up rules dialog alike. The bounds
+ *  apply only to eligible players, so with the rule off none is sent, and no count checks the
+ *  sign-up race alone. Who may sign up and Battle.net verification are not among them, so the
+ *  dialog leaves them as they are. */
 export const rulesPayload = (form) => ({
-  // a battle tag alone proves no Battle.net account, so verification takes members only
-  ...(form.bnet_required ? { signup_policy: 'members' } : {}),
   eligibility_required: !!form.eligibility_required,
-  bnet_required: !!form.bnet_required,
-  mmr_min: count(form.mmr_min),
-  mmr_max: count(form.mmr_max),
-  min_games: count(form.min_games),
-  race_games_min: count(form.race_games_min),
+  mmr_min: form.eligibility_required ? count(form.mmr_min) : null,
+  mmr_max: form.eligibility_required ? count(form.mmr_max) : null,
+  min_games: form.eligibility_required ? count(form.min_games) : null,
+  race_games_min: form.eligibility_required && !form.signup_race_only ? count(form.race_games_min) : null,
 });
 
+/** What keeps the rules from being saved, or null; the bounds are checked only while they apply. */
 export function rulesProblem(form) {
+  if (!form.eligibility_required) return null;
   const [low, high] = [count(form.mmr_min), count(form.mmr_max)];
   if (low !== null && high !== null && low > high) return 'The lowest MMR cannot be above the highest.';
   if (count(form.min_games) !== null && count(form.min_games) < 0) return 'The games cannot be below zero.';
-  if (count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
+  if (!form.signup_race_only && count(form.race_games_min) !== null && count(form.race_games_min) < 1) return 'A race counts from 1 game or more.';
   return null;
 }
 
+/** What keeps a step from being left, or null when it is complete. */
 export function cupProblem(form, step) {
   if (step === 'format' && isFfa(form)) {
     const seats = Number(form.lobby_size);

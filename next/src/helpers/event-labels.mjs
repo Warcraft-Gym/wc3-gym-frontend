@@ -53,6 +53,20 @@ export const STATE_COLOR = {
 // The reads answer the state under `phase`
 export const stateOf = (event) => event?.state ?? event?.phase ?? null;
 
+/** The mode a cup is played in, the one way every page names it: "2v2 cup", "FFA, teams of 2",
+ *  "Custom game, 1v1". A sign-up list plays nothing, and every other kind names no mode. Every
+ *  cup read carries `ffa` and `custom_game`; a row without `ffa` falls back to its stages.
+ *  @param {any} event an event read, a list row or a GET /me/events row */
+export const modeLabel = (event) => {
+  if (event?.kind === 'signup') return 'Sign-up list';
+  if (event?.kind !== 'cup') return null;
+  const size = Number(event.team_size) || 1;
+  const ffa = event.ffa ?? (event.stages || []).some((stage) => stage?.format === 'ffa');
+  const lobby = size > 1 ? `FFA, teams of ${size}` : 'FFA, solo';
+  if (event.custom_game) return `Custom game, ${ffa ? lobby : `${size}v${size}`}`;
+  return ffa ? lobby : `${size}v${size} cup`;
+};
+
 export const LEAGUE_KINDS = [
   { value: 'gnl', title: 'GNL' },
   { value: 'koth', title: 'KOTH' },

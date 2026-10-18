@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { SignupRulesFields } from "@/components/SignupRulesFields";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/PageHeader";
 import { SimpleDatePicker } from "@/components/SimpleDatePicker";
@@ -17,7 +18,7 @@ import { BestOfPlan } from "@/components/BestOfPlan";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, cupCheckin, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SIGNUP_POLICIES, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, cupCheckin, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -144,15 +145,13 @@ export function CupCreateView() {
     custom
       ? { k: "Map", v: form.custom_map ? `${form.custom_map.name}, every game; no veto` : "No map yet" }
       : { k: "Maps", v: form.pool.length ? form.pool.map((row: PoolMap) => row.name).join(", ") : "No maps" },
-    { k: "Who may sign up", v: SIGNUP_POLICIES.find((item) => item.value === (form.bnet_required ? "members" : form.signup_policy))?.title },
     {
       k: "Eligibility",
       v: [
-        form.eligibility_required ? "Rated players only" : "Warnings only",
-        form.bnet_required ? "verified with Battle.net" : null,
-        form.mmr_min || form.mmr_max ? `MMR ${form.mmr_min || "any"} to ${form.mmr_max || "any"}` : null,
-        form.min_games ? `at least ${form.min_games} games` : null,
-        form.race_games_min ? `a race counts from ${form.race_games_min} games` : null,
+        form.eligibility_required ? "Rated players only" : "Everyone can sign up",
+        form.eligibility_required && (form.mmr_min || form.mmr_max) ? `MMR ${form.mmr_min || "any"} to ${form.mmr_max || "any"}` : null,
+        form.eligibility_required && form.min_games ? `at least ${form.min_games} games` : null,
+        form.eligibility_required ? (form.signup_race_only ? "only the sign-up race counts" : form.race_games_min ? `another race counts from ${form.race_games_min} games` : null) : null,
       ]
         .filter(Boolean)
         .join(", "),
@@ -172,7 +171,7 @@ export function CupCreateView() {
         : "No, this cup stands alone",
     },
     { k: "Check-in", v: checkinSummary(cupCheckin(form), rounds ? "rounds" : "cup", cupPayload(form).starts_at) },
-    { k: "Visible", v: form.published ? (form.signups_open ? "Published, sign-ups open" : "Published, sign-ups closed") : "Draft: only you and the admins see it" },
+    { k: "Visible", v: form.published ? "Published, sign-ups open" : "Draft: only you and the admins see it, and it takes no sign-ups" },
   ];
 
   return (
@@ -514,83 +513,39 @@ export function CupCreateView() {
             mode={ffa ? "ffa" : cupMode(teamSizeOf(form.game))}
           />
         ) : key === "signups" ? (
-          <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-12 flex flex-col gap-1 rounded-lg border border-border p-3">
-              <Label className="flex min-h-11 items-center gap-2">
-                <Switch checked={!!form.eligibility_required} onCheckedChange={(eligibility_required) => set({ eligibility_required })} />
-                Only eligible players can sign up
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {form.eligibility_required
-                  ? "A player needs a W3Champions rating on the race they sign up with, and the MMR and games below. Anyone else is refused, also when you add them by hand."
-                  : "Everyone can sign up; a player outside the MMR or games below only gets a warning on their row."}
+          <div className="flex flex-col gap-6">
+            <section className="grid grid-cols-12 gap-3" aria-labelledby="cup-signup-info">
+              <h3 id="cup-signup-info" className="col-span-12 text-lg">Sign-up information</h3>
+              <TextField className="col-span-6" type="number" min="2" label="Minimum players" placeholder="No minimum" value={form.entrant_min} onChange={(e) => set({ entrant_min: e.target.value })} />
+              <TextField className="col-span-6" type="number" min="2" label="Maximum players" placeholder="No maximum" value={form.entrant_cap} onChange={(e) => set({ entrant_cap: e.target.value })} />
+              <p className="col-span-12 text-sm text-muted-foreground">
+                The bracket is drawn with the players who are still in on the evening. Below the minimum you choose to wait, move the start or cancel.
               </p>
-            </div>
-            <div className="col-span-12 flex flex-col gap-1 rounded-lg border border-border p-3">
-              <Label className="flex min-h-11 items-center gap-2">
-                <Switch checked={!!form.bnet_required} onCheckedChange={(bnet_required) => set({ bnet_required })} />
-                Only players verified with Battle.net
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {form.bnet_required
-                  ? "A player verifies their battle tag on their profile with \"Verify with Battle.net\" before they sign up. Anyone else is refused, also when you add them by hand."
-                  : "A battle tag linked to the player's Discord account is enough."}
-              </p>
-            </div>
-            <TextField className="col-span-6 min-[600px]:col-span-4" type="number" min="0" label="MMR from" placeholder="No floor" value={form.mmr_min} onChange={(e) => set({ mmr_min: e.target.value })} />
-            <TextField className="col-span-6 min-[600px]:col-span-4" type="number" min="0" label="MMR to" placeholder="No cap" value={form.mmr_max} onChange={(e) => set({ mmr_max: e.target.value })} />
-            <TextField
-              className="col-span-12 min-[600px]:col-span-4"
-              type="number"
-              min="0"
-              label="Games at least"
-              hint="Over all races, this W3C season and the one before"
-              placeholder="No minimum"
-              value={form.min_games}
-              onChange={(e) => set({ min_games: e.target.value })}
-            />
-            <TextField
-              className="col-span-12 min-[600px]:col-span-4"
-              type="number"
-              min="1"
-              label="A race counts from"
-              hint="Lifetime games on a race before its MMR counts; the best of those races is checked"
-              placeholder="20"
-              value={form.race_games_min}
-              onChange={(e) => set({ race_games_min: e.target.value })}
-            />
-            <div className="col-span-12">
-              <Choice
-                label="Who may sign up"
-                // a cup open to any battle tag would leave every step to its organizer, so it waits
-                items={SIGNUP_POLICIES.map((item) => (item.value === "members" ? item : { ...item, title: `${item.title} (not built yet)`, ready: false }))}
-                value={form.bnet_required ? "members" : form.signup_policy}
-                onChange={(signup_policy) => set({ signup_policy })}
-              />
-            </div>
-            <TextField className="col-span-6" type="number" min="2" label="Minimum players" placeholder="No minimum" value={form.entrant_min} onChange={(e) => set({ entrant_min: e.target.value })} />
-            <TextField className="col-span-6" type="number" min="2" label="Maximum players" placeholder="No maximum" value={form.entrant_cap} onChange={(e) => set({ entrant_cap: e.target.value })} />
-            <p className="col-span-12 text-sm text-muted-foreground">
-              The bracket is drawn with the players who are still in on the evening. Below the minimum you choose to wait, move the start or cancel.
-            </p>
-            <div className="col-span-12">
-              <Label className="flex min-h-11 items-center gap-2">
-                <Switch checked={!!form.uses_divisions} onCheckedChange={(uses_divisions) => set({ uses_divisions })} />
-                Split the players into divisions
-              </Label>
-              <p className="text-sm text-muted-foreground">You cut the divisions by MMR on the run page once the players have signed up. Each division plays its own bracket.</p>
-            </div>
-            <div className="col-span-12">
-              <CheckinSettings id="cup-checkin" kind={rounds ? "rounds" : "cup"} value={cupCheckin(form)} onChange={set} startsAt={cupPayload(form).starts_at} />
-            </div>
-            <Label className="col-span-12 flex min-h-11 items-center gap-2">
-              <Switch checked={!!form.published} onCheckedChange={(published) => set({ published })} />
-              Publish now; off keeps it a draft only you and the admins see
-            </Label>
-            <Label className="col-span-12 flex min-h-11 items-center gap-2">
-              <Switch checked={!!form.signups_open} onCheckedChange={(signups_open) => set({ signups_open })} />
-              Open sign-ups now
-            </Label>
+              <div className="col-span-12">
+                <Label className="flex min-h-11 items-center gap-2">
+                  <Switch checked={!!form.uses_divisions} onCheckedChange={(uses_divisions) => set({ uses_divisions })} />
+                  Split the players into divisions
+                </Label>
+                <p className="text-sm text-muted-foreground">You cut the divisions by MMR on the run page once the players have signed up. Each division plays its own bracket.</p>
+              </div>
+              <div className="col-span-12">
+                <CheckinSettings id="cup-checkin" kind={rounds ? "rounds" : "cup"} value={cupCheckin(form)} onChange={set} startsAt={cupPayload(form).starts_at} />
+              </div>
+              <div className="col-span-12">
+                <Label className="flex min-h-11 items-center gap-2">
+                  <Switch checked={!!form.published} onCheckedChange={(published) => set({ published })} />
+                  Publish now
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {form.published ? "Players see the cup and can sign up as soon as you create it." : "A draft only you and the admins see. It takes no sign-ups until it is published."}
+                </p>
+              </div>
+            </section>
+
+            <section className="grid grid-cols-12 gap-3" aria-labelledby="cup-signup-rules">
+              <h3 id="cup-signup-rules" className="col-span-12 text-lg">Sign-up rules</h3>
+              <SignupRulesFields className="col-span-12" form={form} set={set} />
+            </section>
           </div>
         ) : key === "points" ? (
           <div className="flex flex-col gap-3">

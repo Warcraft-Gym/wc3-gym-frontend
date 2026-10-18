@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { HomePanel, ROW, SkeletonRows } from "@/components/home/HomePanel";
 import { dateRange } from "@/helpers/event-labels.mjs";
-import { formatChip } from "@/helpers/home-hub.mjs";
+import { modeLabel } from "@/helpers/event-labels.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -45,7 +45,7 @@ export function UpcomingEvents({
                 {team ? "Sign up a team" : "Sign up"}
               </Button>
               <div className="flex basis-full flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                {formatChip(row) ? <Badge variant="outline">{formatChip(row)}</Badge> : null}
+                {modeLabel(row) ? <Badge variant="outline">{modeLabel(row)}</Badge> : null}
                 {dates ? <span className="tnum">{dates}</span> : null}
               </div>
             </div>

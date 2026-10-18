@@ -4,8 +4,7 @@ import process from 'node:process';
 
 import {
   dateRange, ENTRANT_KINDS, eventLabel, eventSummary, leaguePayload, ROUND_END_ZONES, SEED_SOURCES, seriesPerEntrant, seriesPerFixture,
-  STATE_COLOR, STATE_LABEL, stateOf, titleOf,
-} from './event-labels.mjs';
+  STATE_COLOR, STATE_LABEL, stateOf, titleOf, modeLabel } from './event-labels.mjs';
 
 process.env.TZ = 'Australia/Sydney';  // UTC+10, so a wall time and its stored instant differ
 
@@ -115,4 +114,23 @@ test('a shared link leaves out each part the event lacks', () => {
   assert.equal(eventSummary({ phase: 'running', entrant_count: null }), 'Running');
   assert.equal(eventSummary({}), '');
   assert.equal(eventSummary(null), '');
+});
+
+test('the mode label names the cup: its side size, a free for all and a custom game', () => {
+  assert.equal(modeLabel({ kind: 'cup' }), '1v1 cup');
+  assert.equal(modeLabel({ kind: 'cup', team_size: 2 }), '2v2 cup');
+  assert.equal(modeLabel({ kind: 'cup', ffa: true }), 'FFA, solo');
+  assert.equal(modeLabel({ kind: 'cup', ffa: true, team_size: 3 }), 'FFA, teams of 3');
+  assert.equal(modeLabel({ kind: 'cup', custom_game: true, team_size: 4 }), 'Custom game, 4v4');
+  assert.equal(modeLabel({ kind: 'cup', custom_game: true, ffa: true }), 'Custom game, FFA, solo');
+  assert.equal(modeLabel({ kind: 'signup' }), 'Sign-up list');
+  assert.equal(modeLabel({ kind: 'gnl' }), null);
+});
+
+test('a list row carries no ffa flag, so a free for all stage tells it', () => {
+  assert.equal(modeLabel({ kind: 'cup', stages: [{ format: 'ffa' }] }), 'FFA, solo');
+  assert.equal(modeLabel({ kind: 'cup', team_size: 2, stages: [{ format: 'ffa' }] }), 'FFA, teams of 2');
+  assert.equal(modeLabel({ kind: 'cup', stages: [{ format: 'swiss' }, { format: 'single_elimination' }] }), '1v1 cup');
+  // a read that names the flag is believed over the stages
+  assert.equal(modeLabel({ kind: 'cup', ffa: false, stages: [{ format: 'ffa' }] }), '1v1 cup');
 });

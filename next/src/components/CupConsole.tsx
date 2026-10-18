@@ -8,11 +8,10 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/Combobox";
 import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
+import { SignupRulesFields } from "@/components/SignupRulesFields";
 import { CupTeamName } from "@/components/CupTeamName";
 import { OrganizerPicker, type OrganizerCandidate } from "@/components/OrganizerPicker";
 import { CheckinSettings } from "@/components/CheckinSettings";
@@ -25,7 +24,7 @@ import { playedEntrants } from "@/helpers/stage-view.mjs";
 import { missing, teamState } from "@/helpers/cup-teams.mjs";
 import { legsOf } from "@/helpers/cup-rounds.mjs";
 import { checkinPayload, checkinProblem, checkinWindowLine } from "@/helpers/checkin-window.mjs";
-import { rulesBreakers, warningLabel } from "@/helpers/entrants.mjs";
+import { warningLabel } from "@/helpers/entrants.mjs";
 import { rulesForm, rulesPayload, rulesProblem } from "@/helpers/cup-wizard.mjs";
 import type { EventOrganizer } from "@/hooks/event-runner";
 import { useEventStore, usePlayerStore } from "@/stores";
@@ -237,7 +236,6 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       keywords: [player.battleTag, ...(player.tags || []).map((one: Row) => one.tag)].filter(Boolean),
     }));
   const rulesBody = rulesPayload(rules);
-  const marked = rulesBreakers(entrants, rulesBody) as string[];
   const openRules = () => {
     setRules(rulesForm(event));
     setAsk("rules");
@@ -710,36 +708,11 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
       </Confirm>
 
       <Confirm open={ask === "rules"} onOpenChange={(open) => setAsk(open ? "rules" : null)} title="Sign-up rules" busy={busy === "rules"} confirm="Save" onConfirm={() => !rulesProblem(rules) && saveRules()}>
+        {/* the same rules, laid out the same way, as Create cup's sign-up step */}
         <div className="flex flex-col gap-3">
-          <Label className="flex min-h-11 items-center gap-2">
-            <Switch checked={!!rules.eligibility_required} onCheckedChange={(eligibility_required) => setRules({ ...rules, eligibility_required })} />
-            Only eligible players can sign up
-          </Label>
-          <Label className="flex min-h-11 items-center gap-2">
-            <Switch checked={!!rules.bnet_required} onCheckedChange={(bnet_required) => setRules({ ...rules, bnet_required })} />
-            Only players verified with Battle.net
-          </Label>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="MMR from" htmlFor="rules-mmr-min">
-              <Input id="rules-mmr-min" type="number" min="0" placeholder="No floor" value={rules.mmr_min} onChange={(e) => setRules({ ...rules, mmr_min: e.target.value })} />
-            </Field>
-            <Field label="MMR to" htmlFor="rules-mmr-max">
-              <Input id="rules-mmr-max" type="number" min="0" placeholder="No cap" value={rules.mmr_max} onChange={(e) => setRules({ ...rules, mmr_max: e.target.value })} />
-            </Field>
-            <Field label="Games at least" htmlFor="rules-games">
-              <Input id="rules-games" type="number" min="0" placeholder="No minimum" value={rules.min_games} onChange={(e) => setRules({ ...rules, min_games: e.target.value })} />
-            </Field>
-            <Field label="A race counts from" htmlFor="rules-race-games">
-              <Input id="rules-race-games" type="number" min="1" placeholder="20" value={rules.race_games_min} onChange={(e) => setRules({ ...rules, race_games_min: e.target.value })} />
-            </Field>
-          </div>
+          <SignupRulesFields form={rules} set={(patch) => setRules({ ...rules, ...patch })} />
           {rulesProblem(rules) ? <p className="text-sm text-error">{rulesProblem(rules)}</p> : null}
-          {marked.length ? (
-            <p className="text-sm">
-              {marked.length === 1 ? "1 player already in is" : `${marked.length} players already in are`} not verified with Battle.net: {marked.join(", ")}. They stay in, and their rows show a warning; remove them by hand if they should not play.
-            </p>
-          ) : null}
-          <p className="text-sm text-muted-foreground">The rules hold for every new sign-up and every player you add, until the bracket is drawn. A player already in who falls outside new MMR or games limits stays in too, marked on their row.</p>
+          <p className="text-sm text-muted-foreground">The rules hold for every new sign-up and every player you add, until the bracket is drawn. A player already in who falls outside new limits stays in, marked on their row.</p>
         </div>
       </Confirm>
 

@@ -146,6 +146,7 @@ Below 960 px, `h1` is 1.6rem and `h2` is 1.3rem.
 - Page titles (`h1`) and app bar and menu entries use Title Case: "Fantasy Bets", "Team Details".
 - A banner, card, dialog or section title or a sidebar group label that names a thing uses Title Case: "App Settings", "Upcoming Series", "My Accounts". One that reads as a sentence or an action uses sentence case: "Sign in as a player", "Open signups", "Add team".
 - The league is "Gym Newbie League" in a title or a group label. "GNL" stays only where the full name would wrap: a chip, a table cell, a column title, a filter option. Never "the league" for it.
+- A cup names the mode it is played in wherever it shows, through `modeLabel` in `next/src/helpers/event-labels.mjs`: "1v1 cup", "2v2 cup", "FFA, solo", "FFA, teams of 2", "Custom game, 1v1". The event header carries it as an outlined badge beside the state; a list carries it in a Mode column.
 - Everything else uses sentence case: buttons, field labels, hints, table columns, alerts, chips.
 - Buttons show their label as written, in sentence case.
 - A column title is a short noun. It has no legend in brackets. On a wide screen it stays on one line.

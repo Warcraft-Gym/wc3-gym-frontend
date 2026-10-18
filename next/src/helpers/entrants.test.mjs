@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cupRosters, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, rulesBreakers, seedLock, seedPayload, SEEDS_LOCKED, signupCount, STAGE_DRAWN, teamRoster, warningLabel } from './entrants.mjs';
+import { bandNames, bandsPayload, byPlayer, bySeed, bySignup, cupRosters, cutsOf, entrantMmr, entrantName, groupByDivision, idsOf, mergeSeeds, raceRows, rostersByEntrant, seedLock, seedPayload, SEEDS_LOCKED, signupCount, STAGE_DRAWN, teamRoster, warningLabel } from './entrants.mjs';
 
 const DIVISIONS = [
   { id: 9, position: 1, name: 'Pro', lower_bound: 1600 },
@@ -209,16 +209,6 @@ test('a cup team rosters from its entrant row, the captain first', () => {
   assert.deepEqual(cupRosters(), {});
 });
 
-test('rules that ask for verification name the players already in they would mark, and nobody leaves', () => {
-  const tagged = (verified) => [{ tag: 'A#1', active: true, verified }, { tag: 'B#2', active: false, verified: true }];
-  const field = [
-    { id: 1, mmr: 1700, user: { name: 'Grubbstep', tags: tagged(true) } },
-    { id: 2, mmr: 1500, user: { name: 'Kaelthas', tags: tagged(false) } },
-    { id: 3, mmr: 1300, user: { name: 'Wispy', tags: tagged(true) } },
-    { id: 4, mmr: 1200, user: { name: 'Gone', tags: [] }, withdrawn_at: '2026-10-18T10:00:00Z' },
-  ];
-  // a verified spare tag is no verified main tag, and a withdrawn row is out already
-  assert.deepEqual(rulesBreakers(field, { bnet_required: true }), ['Kaelthas']);
-  assert.deepEqual(rulesBreakers(field, { bnet_required: false, mmr_min: 1400, mmr_max: 1600 }), []);
+test('a row that is not verified with Battle.net says so', () => {
   assert.equal(warningLabel('not_verified'), 'not verified with Battle.net');
 });

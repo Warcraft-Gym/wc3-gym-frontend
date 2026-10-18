@@ -78,16 +78,31 @@ test('blank bounds write nothing', () => {
   assert.deepEqual([body.entrant_min, body.entrant_cap, body.starts_at, body.mmr_min, body.mmr_max, body.min_games], [null, null, null, null, null, null]);
 });
 
-test('a cup checks who signs up by default, and only a cup that asks for Battle.net takes members only', () => {
-  const body = cupPayload({ ...blankCup(), signup_policy: 'anyone', mmr_min: '1400', mmr_max: '1800', min_games: '20' });
-  assert.deepEqual([body.eligibility_required, body.bnet_required, body.signup_policy, body.mmr_min, body.mmr_max, body.min_games], [true, false, 'anyone', 1400, 1800, 20]);
-  const linked = cupPayload({ ...blankCup(), signup_policy: 'anyone', bnet_required: true });
-  assert.deepEqual([linked.bnet_required, linked.signup_policy], [true, 'members']);
-  // verification is its own rule, so it stands with the rating check off
-  assert.equal(cupPayload({ ...blankCup(), eligibility_required: false, bnet_required: true }).bnet_required, true);
-  const open = cupPayload({ ...blankCup(), eligibility_required: false, signup_policy: 'anyone' });
-  assert.deepEqual([open.eligibility_required, open.signup_policy], [false, 'anyone']);
+test('a cup checks who signs up by default, takes members only and asks for no Battle.net link', () => {
+  const body = cupPayload({ ...blankCup(), mmr_min: '1400', mmr_max: '1800', min_games: '20' });
+  assert.deepEqual([body.eligibility_required, body.bnet_required, body.signup_policy, body.mmr_min, body.mmr_max, body.min_games], [true, false, 'members', 1400, 1800, 20]);
   assert.equal(cupProblem({ ...blankCup(), mmr_min: '1800', mmr_max: '1400' }, 'signups'), 'The lowest MMR cannot be above the highest.');
+});
+
+test('with eligibility off a cup sends no bound and checks none', () => {
+  const form = { ...blankCup(), eligibility_required: false, mmr_min: '1800', mmr_max: '1400', min_games: '20', race_games_min: '0' };
+  const body = cupPayload(form);
+  assert.deepEqual([body.eligibility_required, body.mmr_min, body.mmr_max, body.min_games, body.race_games_min], [false, null, null, null, null]);
+  // the typed values stay in the form for when the rule is turned back on, and are not checked meanwhile
+  assert.equal(cupProblem(form, 'signups'), null);
+});
+
+test('only the sign-up race counts when the switch says so, else another race counts from its games', () => {
+  assert.equal(cupPayload(blankCup()).race_games_min, 20);
+  assert.equal(cupPayload({ ...blankCup(), signup_race_only: true }).race_games_min, null);
+  assert.equal(cupProblem({ ...blankCup(), race_games_min: '0' }, 'signups'), 'A race counts from 1 game or more.');
+  assert.equal(cupProblem({ ...blankCup(), signup_race_only: true, race_games_min: '0' }, 'signups'), null);
+});
+
+test('a cup always opens its sign-ups, and the publish switch decides whether anyone sees it', () => {
+  assert.deepEqual([cupPayload(blankCup()).published, cupPayload(blankCup()).signups_open], [true, true]);
+  const draft = cupPayload({ ...blankCup(), published: false });
+  assert.deepEqual([draft.published, draft.signups_open], [false, true]);
 });
 
 test('a step names what it still needs', () => {
@@ -283,14 +298,19 @@ test('a custom game plays its one map with no veto, as a match or a free for all
   assert.equal(cupPayload({ ...blankCup() }).custom_game, false);
 });
 
-test('the sign-up rules dialog reads the event and writes the rules alone', () => {
-  const form = rulesForm({ eligibility_required: true, bnet_required: false, mmr_min: 1400, mmr_max: null, min_games: 20 });
-  assert.deepEqual(form, { eligibility_required: true, bnet_required: false, mmr_min: 1400, mmr_max: '', min_games: 20, race_games_min: '' });
-  assert.deepEqual(rulesPayload({ ...form, bnet_required: true, mmr_max: '1800' }), {
-    signup_policy: 'members', eligibility_required: true, bnet_required: true, mmr_min: 1400, mmr_max: 1800, min_games: 20, race_games_min: null,
-  });
-  // without verification the dialog leaves who may sign up alone
-  assert.equal('signup_policy' in rulesPayload(form), false);
+test('the sign-up rules dialog reads an event as Create cup shows it and writes the rule fields alone', () => {
+  // a checked event with no count checks the sign-up race alone
+  const form = rulesForm({ eligibility_required: true, bnet_required: true, signup_policy: 'members', mmr_min: 1400, mmr_max: null, min_games: 20, race_games_min: null });
+  assert.deepEqual(form, { eligibility_required: true, mmr_min: 1400, mmr_max: '', min_games: 20, signup_race_only: true, race_games_min: 20 });
+  assert.deepEqual(rulesPayload({ ...form, mmr_max: '1800' }), { eligibility_required: true, mmr_min: 1400, mmr_max: 1800, min_games: 20, race_games_min: null });
+  // with the switch off another race counts from its games
+  assert.equal(rulesPayload({ ...form, signup_race_only: false }).race_games_min, 20);
+  // the dialog writes neither who may sign up nor Battle.net verification, so a cup keeps its own
+  assert.deepEqual(['signup_policy', 'bnet_required'].filter((key) => key in rulesPayload(form)), []);
+  // a cup that checks nobody opens with Create cup's defaults, and turning the check off sends no bound
+  assert.deepEqual(rulesForm({ eligibility_required: false, race_games_min: null }), { eligibility_required: false, mmr_min: '', mmr_max: '', min_games: '', signup_race_only: false, race_games_min: 20 });
+  assert.deepEqual(rulesPayload({ ...form, eligibility_required: false }), { eligibility_required: false, mmr_min: null, mmr_max: null, min_games: null, race_games_min: null });
   assert.equal(rulesProblem({ ...form, mmr_max: '1200' }), 'The lowest MMR cannot be above the highest.');
+  assert.equal(rulesProblem({ ...form, eligibility_required: false, mmr_max: '1200' }), null);
   assert.equal(rulesProblem(form), null);
 });

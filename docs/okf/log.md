@@ -2,6 +2,7 @@
 
 ## 2026-10-22
 
+* **Update**: the run page carries "Delete the cup" ("Delete the event" on any other kind but a GNL season) under its header; a red confirm names what goes, and the delete lands on `/events`. [Event management](pages/event-management.md) states it.
 * **Remove**: the Settings page no longer offers the captain/coach and admin role ids or the signup, player profile, fantasy dashboard and scheduling channel ids, which nothing reads; the user guide and its help say so. [Site admin](pages/site-admin.md) states it.
 
 ## 2026-10-18

@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-22
+
+* **Remove**: the Settings page no longer offers the captain/coach and admin role ids or the signup, player profile, fantasy dashboard and scheduling channel ids, which nothing reads; the user guide and its help say so. [Site admin](pages/site-admin.md) states it.
+
 ## 2026-10-18
 
 * **Update**: Create cup again asks for no Battle.net verification and shows no "Who may sign up"; a cup that already asks for verification keeps it, and the event page and Add player still follow it. The run page's "Sign-up rules" dialog edits the same rules with the same fields as Create cup's sign-up step (`SignupRulesFields`): the eligibility check turns the limits off with it, the sign-up race switch hides "A race counts from", and it writes neither verification nor who may sign up. [Event management](pages/event-management.md) states it.

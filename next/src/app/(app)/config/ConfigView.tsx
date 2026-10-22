@@ -29,14 +29,8 @@ const EMPTY_SETTINGS: SettingsMap = {
   fantasy_min_bet_points: "",
   fantasy_max_bet_points: "",
   discord_invite_url: "",
-  captain_coach_role: "",
-  admin_role: "",
-  signup_channel_id: "",
-  dashboard_channel_id: "",
-  scheduling_channel_id: "",
   results_channel_id: "",
   content_channel_id: "",
-  fantasy_dashboard_channel_id: "",
   announcement_channel_id: "",
   announcement_role_id: "",
 };
@@ -44,12 +38,6 @@ const EMPTY_SETTINGS: SettingsMap = {
 // The Discord channel and role ids, each with its label, hint and icon
 const DISCORD_FIELDS = [
   { key: "discord_invite_url", label: "Discord invite URL", hint: "Offered to a signed-in visitor not in the server", icon: "mdi-link-variant", wide: true },
-  { key: "captain_coach_role", label: "Captain/coach role ID", hint: "Discord role ID for team captains and coaches", icon: "mdi-account-star", wide: true },
-  { key: "admin_role", label: "Admin role ID", hint: "Discord role ID for bot commands", icon: "mdi-shield-account", wide: true },
-  { key: "signup_channel_id", label: "Signup channel ID", hint: "Discord channel for player signup button", icon: "mdi-account-plus", wide: false },
-  { key: "dashboard_channel_id", label: "Player profile channel ID", hint: "Discord channel for the player profile button", icon: "mdi-view-dashboard", wide: false },
-  { key: "fantasy_dashboard_channel_id", label: "Fantasy dashboard channel ID", hint: "Discord channel for fantasy league dashboard button", icon: "mdi-dice-multiple", wide: false },
-  { key: "scheduling_channel_id", label: "Scheduling channel ID", hint: "Where match scheduling notifications are posted", icon: "mdi-calendar-clock", wide: false },
   { key: "results_channel_id", label: "Results channel ID", hint: "Where match results and replays are posted", icon: "mdi-trophy-outline", wide: false },
   { key: "content_channel_id", label: "Content channel ID", hint: "Where cast claims and stream reminders are posted", icon: "mdi-broadcast", wide: false },
   { key: "announcement_channel_id", label: "Announcement channel ID", hint: "Where cups announce their signups, check-in, draws and podium", icon: "mdi-bullhorn-outline", wide: false },
@@ -555,10 +543,7 @@ export function ConfigView() {
               <li><strong>Discord IDs:</strong> Role and channel IDs can be found by enabling Developer Mode in Discord and right-clicking on roles/channels.</li>
               <li><strong>Current GNL season:</strong> The current season is used for public player signups, fantasy team registration, and all league operations.</li>
               <li><strong>W3Champions:</strong> The W3C season and URL are used for fetching player statistics and MMR data.</li>
-              <li><strong>Player profile channel:</strong> The channel where the button that opens a player&apos;s own profile is posted.</li>
-              <li><strong>Scheduling channel:</strong> Where scheduling notifications are posted when players schedule their matches from their profile.</li>
               <li><strong>Results channel:</strong> Where score update notifications and replay files are posted when players submit results from their profile.</li>
-              <li><strong>Fantasy dashboard channel:</strong> The channel where the fantasy league dashboard button is posted.</li>
             </ul>
           </AccordionContent>
         </AccordionItem>

@@ -56,9 +56,11 @@ not here.
 
 - **Discord invite URL**: the invite offered to a signed-in visitor who is not in the
   server. Without it the join card on `/profile` has nothing to click.
-- **Captain/coach role ID** and **Admin role ID**: the two Discord roles the bot reads.
-- The channel ids say where the bot posts: signup, player profile, fantasy dashboard,
-  scheduling, results and content (cast claims and stream reminders).
+- The channel ids say where the bot posts: results, content (cast claims and stream
+  reminders) and cup announcements.
+- **Announcement role ID**: the role members take on Home to hear about cups.
+- The roles the app manages and the site admins are set elsewhere; see
+  [Discord roles and access](#discord-roles-and-access).
 
 To read an id in Discord, turn on Settings → Advanced → Developer Mode, then right-click a
 role or channel and choose Copy ID.
@@ -331,7 +333,6 @@ On a bracket card:
 - Check **Signups open** on the season, and that the season has not commenced. A commenced
   season takes a request only, and a complete one takes nothing.
 - Check **Current GNL season** on `/config`.
-- Check the **Signup channel ID**.
 
 ### A guest sees no way to join the Discord
 

@@ -136,6 +136,7 @@ export function EventAdminView({ id }: { id: string }) {
   const [confirmAdvance, setConfirmAdvance] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [confirmUndraw, setConfirmUndraw] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [resultsToDelete, setResultsToDelete] = useState<number | null>(null); // the results a confirmed redraw deletes
   const [confirmForce, setConfirmForce] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
@@ -312,6 +313,19 @@ export function EventAdminView({ id }: { id: string }) {
   const reopenEvent = async () => {
     if (!(await run(() => store.reopenEvent(event!.id)))) await readEvent();
   };
+  // The event's entrants, series, places and organizers follow it through their foreign keys, so
+  // nothing is read again: the page leaves for the events list
+  const deleteEvent = async () => {
+    setSaving(true);
+    setDialogError(null);
+    try {
+      await store.deleteEvent(event!.id);
+      router.replace("/events");
+    } catch (e) {
+      setDialogError((e as Error).message || "The delete failed");
+      setSaving(false);
+    }
+  };
 
   // One series in the dialog: its games open on the score it already carries. A free for
   // all lobby carries places instead of a score, so it opens the placement dialog.
@@ -460,20 +474,36 @@ export function EventAdminView({ id }: { id: string }) {
             ← {event.name}
           </Link>
           <EventHeader event={event} league={league} />
-          {/* a cup made from a rule names it; an organizer with the grant can set any other cup to repeat */}
-          {event.kind === "cup" && (event.cup_recurrence || isOrganizer) ? (
+          {/* a cup made from a rule names it; an organizer with the grant can set any other cup to repeat.
+              The delete sits at the far end, away from the routine actions; a GNL season is deleted on
+              the Seasons page */}
+          {event.kind !== "gnl" ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              {event.cup_recurrence ? (
+              {event.kind === "cup" && event.cup_recurrence ? (
                 <Link href={`/events/recurring/${event.cup_recurrence.id}`} className="inline-flex items-center gap-1 text-sm">
                   <Icon name="mdi-calendar-sync" />
                   Part of {event.cup_recurrence.name}
                 </Link>
-              ) : (
+              ) : event.kind === "cup" && isOrganizer ? (
                 <Button size="sm" variant="outline" disabled={!event.starts_at} onClick={() => setRepeating(true)}>
                   <Icon name="mdi-calendar-sync" />
                   Repeat this cup
                 </Button>
-              )}
+              ) : null}
+              <span className="flex-1" />
+              <Button
+                id="delete-event"
+                size="sm"
+                variant="ghost"
+                className="text-error"
+                onClick={() => {
+                  setDialogError(null);
+                  setConfirmDelete(true);
+                }}
+              >
+                <Icon name="mdi-delete-outline" />
+                Delete the {event.kind === "cup" ? "cup" : "event"}
+              </Button>
             </div>
           ) : null}
           {repeating ? <RepeatCupDialog event={event} open onOpenChange={setRepeating} /> : null}
@@ -799,6 +829,31 @@ export function EventAdminView({ id }: { id: string }) {
           </p>
         )}
         <p className="text-muted-foreground">Every player stays in. Add or remove players, seed again and draw again.</p>
+      </Ask>
+
+      {/* Deleting takes the event and every row under it, so the confirm names what goes */}
+      <Ask
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Delete ${event?.name || "this event"}`}
+        tone="error"
+        size="confirm"
+        actions={
+          <>
+            <Button variant="ghost" disabled={saving} onClick={() => setConfirmDelete(false)}>Cancel</Button>
+            <Button id="delete-event-confirm" variant="destructive" disabled={saving} onClick={deleteEvent}>
+              {busyIcon(saving, "mdi-delete-outline")}
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
+        <p className="mb-2">
+          {event?.kind === "cup" ? "Deletes the cup with its sign-ups, teams, draw, results and places." : "Deletes the event with its sign-ups and everything else in it."} This cannot be
+          undone.
+        </p>
+        {event?.cup_recurrence ? <p className="text-muted-foreground">If it is the last cup of {event.cup_recurrence.name}, the recurring cup goes too.</p> : null}
       </Ask>
 
       {/* Finishing writes the places, so it names who takes each one first */}

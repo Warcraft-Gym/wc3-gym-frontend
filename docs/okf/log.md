@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-24
+
+* **Update**: a cup's Divisions panel offers one to five divisions; one division has no cut, takes every player, the unrated included, and its preview card reads "MMR any". [Event management](pages/event-management.md) states it.
+
 ## 2026-10-22
 
 * **Update**: the run page carries "Delete the cup" ("Delete the event" on any other kind but a GNL season) under its header; a red confirm names what goes, and the delete lands on `/events`. [Event management](pages/event-management.md) states it.

@@ -20,7 +20,8 @@ import { useEventStore } from "@/stores";
 type Row = Record<string, any>;
 type Group = { id: number | null; title: string | null; rows: Row[] };
 
-const COUNTS = [2, 3, 4, 5].map((value) => ({ value, title: String(value) }));
+// One division takes every player, for a cup with too few sign-ups to split
+const COUNTS = [1, 2, 3, 4, 5].map((value) => ({ value, title: String(value) }));
 // One bronze step per band, light to dark: a division is a band of amounts, not a category
 const RAMP = ["heat-1", "heat-2", "heat-3", "heat-4", "heat-5"];
 const groupsOf = divisionGroups as (entrants: Row[], divisions: Row[], uses: boolean) => Group[];
@@ -41,7 +42,7 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
   const store = useEventStore();
   const divisions: Row[] = event.divisions || [];
   const live = entrants.filter((row) => !row.withdrawn_at && !row.waitlisted_at);
-  const [count, setCount] = useState(Math.max(2, divisions.length));
+  const [count, setCount] = useState(divisions.length || 2);
   const [cuts, setCuts] = useState<number[]>(() => (divisions.length ? cutsOf_(divisions) : (quantileCuts(live.map(mmrOf).filter(Boolean), 2) as number[])));
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +99,7 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
         onEvent(await store.assignDivisions(event.id));
         await readEntrants();
       },
-      `${count} divisions saved and the players placed by MMR.`,
+      `${count} ${count === 1 ? "division" : "divisions"} saved and the players placed by MMR.`,
     );
   const moveTo = (row: Row, division: Row) =>
     run("move", async () => {
@@ -137,7 +138,7 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
             </span>
             <span className="flex-1" />
             <Pick labelAfter className="w-[130px]" label="Divisions" items={COUNTS} value={count} onChange={pickCount} />
-            <Button variant="outline" disabled={!rated.length} onClick={() => evenSplit()}>
+            <Button variant="outline" disabled={!rated.length || count === 1} onClick={() => evenSplit()}>
               <Icon name="mdi-scale-balance" />
               Even split
             </Button>

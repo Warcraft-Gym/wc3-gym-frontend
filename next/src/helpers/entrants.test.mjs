@@ -66,6 +66,8 @@ test('the ascending cuts write divisions strongest first, the weakest without a 
     { name: 'Open', lower_bound: 1450 },
     { name: 'Division 3', lower_bound: null },
   ]);
+  // no cut writes one division with no bound
+  assert.deepEqual(bandsPayload([], ['Division 1']), [{ name: 'Division 1', lower_bound: null }]);
 });
 
 test('the strip reads the stored divisions back as ascending cuts and names', () => {

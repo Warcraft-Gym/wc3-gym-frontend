@@ -56,10 +56,11 @@ export function previewDivisions(entrants = [], cuts = [], names = [], divisions
   });
 }
 
-/** How a preview band reads its MMR range: "1800+", "1500–1799" or "below 1500".
+/** How a preview band reads its MMR range: "1800+", "1500–1799", "below 1500", or "any" for the one
+ *  division of a cup that does not split its players.
  *  @param {{ low: number | null, high: number | null }} band */
 export const bandRange = ({ low, high }) =>
-  low == null && high == null ? 'everyone' : low == null ? `below ${high}` : high == null ? `${low}+` : `${low}–${high - 1}`;
+  low == null && high == null ? 'any' : low == null ? `below ${high}` : high == null ? `${low}+` : `${low}–${high - 1}`;
 
 /** Whether the draw would leave a player out: a cup with divisions and a player in none of them.
  *  @param {any[]} entrants @param {any[]} divisions @param {boolean} usesDivisions */

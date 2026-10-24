@@ -96,3 +96,12 @@ test('the preview places every player by MMR, strongest division first, and name
   // before anything is saved, nobody moves from anywhere
   assert.ok(previewDivisions(rows, [1700], ['Division 2', 'Division 1'], []).every((group) => group.rows.every((row) => row.from === null)));
 });
+
+test('one division has no cut and takes every player who plays, the unrated included', () => {
+  const field = [...rows, { id: 7, division_id: null, mmr: null, user: { name: 'P7' } }];
+  const groups = previewDivisions(field, [], ['Division 1'], []);
+  assert.deepEqual(groups.map((group) => [group.title, bandRange(group), group.rows.map((row) => row.id)]), [
+    ['Division 1', 'any', [1, 2, 3, 4, 7]],
+  ]);
+  assert.equal(cutChanged([], [{ id: 9, position: 1, name: 'Division 1', lower_bound: null }]), false);
+});

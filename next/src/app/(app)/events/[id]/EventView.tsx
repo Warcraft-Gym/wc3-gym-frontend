@@ -35,7 +35,7 @@ import { seasonSlug } from "@/helpers/season-slug.mjs";
 import { useAuth, useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
 import { ReportResultDialog, type ReportResultDialogHandle } from "@/components/ReportResultDialog";
-import { lobbyReportOf, reportOf } from "@/helpers/series-actions.mjs";
+import { lobbyReportOf, reportOf, vetoOf } from "@/helpers/series-actions.mjs";
 import { isLobby } from "@/helpers/stage-view.mjs";
 import { LobbyPlacesDialog } from "@/components/LobbyPlacesDialog";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -186,6 +186,18 @@ export function EventView({ id }: { id: string }) {
   const cup = event?.kind === "cup";
   // The map veto of one series, opened in place from the draw or from the waiting match
   const [vetoing, setVetoing] = useState<Row | null>(null);
+  // A Discord message links each series to its veto with ?veto=<id>: once the draw is read the veto
+  // opens for a side of that series, by the same rule as the draw's Veto button, until it is closed;
+  // anyone else reads the draw with that series in view
+  const vetoLink = Number(search.get("veto")) || null;
+  const [linkClosed, setLinkClosed] = useState(false);
+  const linked = vetoLink && !linkClosed ? drawn.flatMap((stage) => stage.series as Row[]).find((one) => one.id === vetoLink) ?? null : null;
+  const linkedVeto = linked && reports && vetoOf(linked, viewer) ? linked : null;
+  const shownVeto = vetoing ?? linkedVeto;
+  useEffect(() => {
+    if (linked && !linkedVeto) document.getElementById(`series-${linked.id}`)?.scrollIntoView({ block: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linked?.id]);
   // a lobby takes its places in the places dialog instead of a score
   const [placing, setPlacing] = useState<Row | null>(null);
   const [placingError, setPlacingError] = useState<string | null>(null);
@@ -804,12 +816,19 @@ export function EventView({ id }: { id: string }) {
             />
           ) : null}
           {dialog ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={() => reload()} /> : null}
-          {vetoing ? (
-            <Dialog open onOpenChange={(open) => !open && setVetoing(null)}>
+          {shownVeto ? (
+            <Dialog
+              open
+              onOpenChange={(open) => {
+                if (open) return;
+                setVetoing(null);
+                setLinkClosed(true);
+              }}
+            >
               <DialogContent size="xl" className="gap-0 p-0">
                 <DialogTitle className="banner bg-banner px-4 py-3 text-primary">Map veto</DialogTitle>
                 <div className="max-h-[80vh] overflow-y-auto p-4">
-                  <VetoBoard seriesId={vetoing.id} cup={cup} />
+                  <VetoBoard seriesId={shownVeto.id} cup={cup} />
                 </div>
               </DialogContent>
             </Dialog>

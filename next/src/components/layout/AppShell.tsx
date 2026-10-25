@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/Icon";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AdminFrame } from "@/components/admin/AdminFrame";
 import { PlayerPanel } from "@/components/player/PlayerPanel";
+import { AnnouncementPrompt } from "@/components/AnnouncementPrompt";
 import { BlockedTimesDialog } from "@/components/BlockedTimesDialog";
 import { ViewAsDialog } from "@/components/layout/ViewAsDialog";
 import { ConstructionBanner } from "@/components/layout/ConstructionBanner";
@@ -184,6 +185,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         {/* A player name opens the panel over the page, so nothing typed is lost: the panel slot. */}
         <PlayerPanel />
+        {/* A cup sign-up asks once about the cup announcements, over whatever page it came from */}
+        <AnnouncementPrompt />
         {/* Blocked times open over any page from Home, the profile and the account menu, and close back onto it */}
         {me?.user ? <BlockedTimesDialog /> : null}
       </main>

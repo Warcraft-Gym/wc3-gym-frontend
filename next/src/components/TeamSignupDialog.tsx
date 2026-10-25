@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/input";
 import { StatusAlert } from "@/components/StatusAlert";
 import { useEventStore, usePlayerStore } from "@/stores";
+import { askAboutAnnouncements } from "@/components/AnnouncementPrompt";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -69,7 +70,10 @@ function TeamSignupBody({
     setBusy(true);
     setError(null);
     try {
-      if (mode === "signup") await store.signUpTeam(event.id, name.trim(), picked.map(Number));
+      if (mode === "signup") {
+        await store.signUpTeam(event.id, name.trim(), picked.map(Number));
+        askAboutAnnouncements();
+      }
       else await store.inviteToTeam(event.id, Number(teamId), Number(picked[0]));
       onOpenChange(false);
       await onDone();

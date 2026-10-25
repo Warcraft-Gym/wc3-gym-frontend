@@ -6,7 +6,7 @@ import { CupTeamName } from "@/components/CupTeamName";
 import { useHideResults } from "@/components/hide-results";
 import { sideRoster } from "@/helpers/fixture.mjs";
 import { teamLabel } from "@/helpers/teams.mjs";
-import { emptyLabel, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, sideSeed, standsOn, winnerSide } from "@/helpers/stage-view.mjs";
+import { emptyLabel, hostOf, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, sideSeed, standsOn, winnerSide } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -111,7 +111,9 @@ export function SeriesBox({
   const sideName = (side: number) => (team(side) ? teamLabel(team(side)) : player(side)?.name) || empty(side);
   // a grand final whose upper-bracket winner starts ahead says so until its result stands
   const lead = Number(series.head_start) || 0;
-  const tag = lead && series.player1_score == null ? [label, `starts ${lead}–0`].filter(Boolean).join(" · ") : label;
+  // a cup series set and unplayed names its game and its host, as its Discord message does
+  const host = cup ? hostOf(series, hidden) : null;
+  const tag = [label, lead && series.player1_score == null ? `starts ${lead}–0` : null, host != null ? series.game_name : null].filter(Boolean).join(" · ");
   const where = [round, tag].filter(Boolean).join(", ");
   const who = seats.length ? `${seats.length} seats` : `${sideName(1)} vs ${sideName(2)}`;
   const name = `${where ? `${where}: ` : ""}${who}, ${stateWord}`;
@@ -151,6 +153,7 @@ export function SeriesBox({
           ) : (
             <span className="text-xs text-muted-foreground">{fed ? "To be decided" : "Empty seat"}</span>
           )}
+          {host === seat.side_no ? <Icon name="mdi-home-variant-outline" size={14} className="shrink-0 text-primary-text" title="Hosts the game" /> : null}
           {seat.left ? <span className="ml-auto text-xs">Left</span> : <span className="tnum ml-auto font-bold">{seat.place ?? ""}</span>}
         </div>
       ))
@@ -182,6 +185,8 @@ export function SeriesBox({
           ) : (
             <span className="min-w-0 truncate text-xs font-normal text-muted-foreground" title={empty(side)}>{empty(side)}</span>
           )}
+          {/* the host creates the game; a small mark, so the name keeps its room in a narrow box */}
+          {host === side ? <Icon name="mdi-home-variant-outline" size={14} className="shrink-0 text-primary-text" title="Hosts the game" /> : null}
           <span className="tnum ml-auto font-bold">{score(side)}</span>
         </div>
       ));
@@ -241,11 +246,11 @@ export function SeriesBox({
 
   // a box with nothing to open is no button: the draw of the event page opens no series page
   const box = readonly || !onOpen ? (
-    <div role="group" aria-label={name} className={shell}>
+    <div role="group" id={`series-${series.id}`} aria-label={name} className={shell}>
       {body}
     </div>
   ) : (
-    <button type="button" aria-label={name} className={shell} onClick={() => onOpen?.(series)}>
+    <button type="button" id={`series-${series.id}`} aria-label={name} className={shell} onClick={() => onOpen?.(series)}>
       {body}
     </button>
   );

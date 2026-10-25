@@ -13,6 +13,7 @@ import { Pick } from "@/components/ui/Pick";
 import { PlayerName } from "@/components/PlayerName";
 import { SignupRulesFields } from "@/components/SignupRulesFields";
 import { CupTeamName } from "@/components/CupTeamName";
+import { useCupStats } from "@/components/CupPlayerStats";
 import { OrganizerPicker, type OrganizerCandidate } from "@/components/OrganizerPicker";
 import { CheckinSettings } from "@/components/CheckinSettings";
 import { raceWrapper } from "@/helpers/races.js";
@@ -86,6 +87,9 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
   onError: (message: string | null) => void;
 }) {
   const store = useEventStore();
+  // on the run page a name opens the stats panel beside it; elsewhere it keeps its link
+  const openStats = useCupStats();
+  const statsOf = (row: Row, member?: Row) => (openStats ? () => openStats(row, member) : undefined);
   const playerStore = usePlayerStore();
   const evening = eveningOf(event, entrants) as Evening;
   // the players still in, in seed order once seeded and else in signup order; the waitlist stands apart
@@ -392,7 +396,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                 <li key={row.id} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border py-1">
                   {row.seed != null ? <span className="tnum w-5 text-right text-xs text-muted-foreground">{row.seed}</span> : null}
                   <span className="min-w-0 flex-1">
-                    {row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team ? <CupTeamName team={row.team} /> : "Entrant"}
+                    {row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} onClick={statsOf(row)} /> : row.team ? <CupTeamName team={row.team} /> : "Entrant"}
                   </span>
                   {(row.warnings || []).map((code: string) => (
                     <Badge key={code} className={toneClass("warning")}>
@@ -459,7 +463,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                     <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 pl-8 text-sm">
                       {(row.roster || []).map((one: Row) => (
                         <span key={one.user.id} className="inline-flex items-center gap-1">
-                          <PlayerName player={one.user} />
+                          <PlayerName player={one.user} onClick={statsOf(row, one)} />
                           {one.captain ? <span className="text-xs text-muted-foreground">captain</span> : null}
                           {!closed && !played.has(row.id) ? (
                             <Button size="sm" variant="ghost" aria-label={`Swap ${one.user.name}`} onClick={() => openAdd(null, { entrant: row, user: one.user })}>
@@ -495,7 +499,7 @@ export function CupConsole({ part, event, entrants, drawn, series = [], organize
                 {waitlist.map((row, index) => (
                   <li key={row.id} className="flex min-h-11 flex-wrap items-center gap-3 border-t border-border py-1">
                     <span className="tnum w-5 text-right text-xs text-muted-foreground">{index + 1}</span>
-                    <span className="min-w-0 flex-1">{row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} /> : row.team ? <CupTeamName team={row.team} /> : "A team"}</span>
+                    <span className="min-w-0 flex-1">{row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} onClick={statsOf(row)} /> : row.team ? <CupTeamName team={row.team} /> : "A team"}</span>
                     {!closed && !drawn ? (
                       <Button size="sm" variant="outline" disabled={busy === `admit-${row.id}`} onClick={() => admit(row)}>
                         <Icon name={busy === `admit-${row.id}` ? "mdi-loading mdi-spin" : "mdi-account-arrow-right"} />

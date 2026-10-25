@@ -26,6 +26,11 @@ const members = ({ ladders, syncProgress }: LadderState) => {
       const suffix = seasonId == null ? "" : `?season_id=${seasonId}`;
       return await fetchWrapper.get(`${backendUrl}/users/${user_id}/ladder${suffix}`);
     },
+    // One player's ladder over the current W3Champions season on one race, for a cup's stats panel
+    async userW3cSeason(user_id: number, race: string | null = null) {
+      const suffix = race ? `?race=${race}` : "";
+      return await fetchWrapper.get(`${backendUrl}/users/${user_id}/ladder/w3c-season${suffix}`);
+    },
     // The sync route answers one chunk of players and where the next one starts
     async syncSeason(season_id: number) {
       const result: { synced: any[]; skipped: any[]; failed: any[] } = { synced: [], skipped: [], failed: [] };

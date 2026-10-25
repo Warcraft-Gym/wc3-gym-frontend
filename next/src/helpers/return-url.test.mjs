@@ -1,6 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { isSafePath, saveReturnUrl, takeReturnUrl } from './return-url.mjs';
+
+const SRC = fileURLToPath(new URL('../', import.meta.url));
+
+function sourceFiles(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? sourceFiles(join(dir, e.name)) : /\.(tsx?|mjs)$/.test(e.name) && !e.name.includes('.test.') ? [join(dir, e.name)] : [],
+  );
+}
 
 const memoryStore = () => {
   const data = new Map();
@@ -43,4 +54,17 @@ test('an unsafe stored value gives the fallback and is cleared', () => {
   store.setItem('returnUrl', 'https://evil.com');
   assert.equal(takeReturnUrl('/profile', store), '/profile');
   assert.equal(store.getItem('returnUrl'), null);
+});
+
+// The saved path is read once, so a second reader after a sign-in finds it gone and sends the
+// player home. The route guard alone leaves the login pages; "Continue as Super Admin" is the one
+// other way off /admin-login, where the guard waits for the choice.
+test('only the route guard and the admin choice take the saved path', () => {
+  const takers = sourceFiles(SRC)
+    .filter((file) => /takeReturnUrl\(/.test(readFileSync(file, 'utf8')))
+    .map((file) => relative(SRC, file).replaceAll('\\', '/'))
+    .sort();
+  assert.deepEqual(takers, ['lib/guard.tsx', 'stores/auth.ts']);
+  const auth = readFileSync(join(SRC, 'stores/auth.ts'), 'utf8');
+  assert.deepEqual([...auth.matchAll(/^.*takeReturnUrl\(.*$/gm)].map(([line]) => line.trim()), ['const continueAsAdmin = () => navigate(takeReturnUrl("/"));']);
 });

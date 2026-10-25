@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { PlayerName } from "@/components/PlayerName";
 import { StatusAlert } from "@/components/StatusAlert";
 import { CupTeamName } from "@/components/CupTeamName";
+import { useCupStats } from "@/components/CupPlayerStats";
 import { divisionGroups, inSeedOrder, placedOrder, seedBody } from "@/helpers/cup-divisions.mjs";
 import { entrantMmr } from "@/helpers/entrants.mjs";
 import { useEventStore } from "@/stores";
@@ -47,6 +48,7 @@ export function CupSeedsPanel({
   onRedrawn?: () => Promise<void>;
 }) {
   const store = useEventStore();
+  const openStats = useCupStats();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // the change that waits for its confirm: what it writes, and the backend's question
@@ -188,7 +190,7 @@ export function CupSeedsPanel({
                   ) : (
                     <span className="tnum w-6 text-right text-muted-foreground">{row.seed ?? "–"}</span>
                   )}
-                  <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
+                  <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain onClick={openStats ? () => openStats(row) : undefined} />}</span>
                   <span className="tnum text-xs text-muted-foreground">{(entrantMmr(row) as number) || ""}</span>
                   {/* a pinned seed stays where it is through "By MMR" and "Shuffle"; a finished cup still shows it */}
                   {editable ? (

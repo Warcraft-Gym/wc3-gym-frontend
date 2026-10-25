@@ -9,6 +9,11 @@ import { cn } from "@/lib/utils";
 // keywords: more text the search matches, such as a player's battle tags
 export type ComboboxItem = { value: string; title: string; keywords?: string[] };
 
+// The button is one line tall, so a row that stacks two lines in the list lies flat in it: the
+// second line goes beside the first, and the end of it gives way to an ellipsis
+const CHOSEN =
+  "flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap [&_.flex-col]:min-w-0 [&_.flex-col]:flex-row [&_.flex-col]:items-baseline [&_.flex-col]:gap-2 [&_.flex-col>*:last-child]:truncate";
+
 /** The port of `v-autocomplete`: a Command inside a Popover. `row` draws an item the way
  *  the Vue item slot did, so a row can carry a race icon, a flag or a PlayerName.
  *  With `onSearch` the list is the server's answer: each keystroke reaches the caller,
@@ -47,7 +52,7 @@ export function Combobox<T extends ComboboxItem>({
       <PopoverTrigger
         render={
           <Button id={id} variant="outline" role="combobox" aria-label={id ? undefined : label} disabled={disabled} className={cn("w-full justify-between font-normal", className)}>
-            <span className="flex items-center gap-2 truncate">{chosen ? (row ? row(chosen) : chosen.title) : (label ?? placeholder)}</span>
+            <span className={CHOSEN}>{chosen ? (row ? row(chosen) : chosen.title) : (label ?? placeholder)}</span>
             <Icon name="mdi-chevron-down" className="opacity-60" />
           </Button>
         }

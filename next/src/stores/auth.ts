@@ -73,29 +73,30 @@ const logout = async () => {
   navigate("/login");
 };
 
-// the admin-token login at /admin-login; a super admin session with no Discord account.
-// `stay` keeps the page, so the admin picks between continuing and the local dev login
-const login = async (adminToken: string, { stay = false } = {}) => {
+// the admin-token login at /admin-login; a super admin session with no Discord account. The route
+// guard then leaves the page for the saved path, unless the local dev login is on: then the admin
+// stays and picks between continuing and a player
+const login = async (adminToken: string) => {
   const user = await fetchWrapper.post(`${backendUrl}/login`, { token: adminToken });
   localStorage.setItem("user", JSON.stringify(user));
   patch({ user });
   await fetchMe(); // /me answers the legacy token: the name, the role and the running seasons
-  if (!stay) navigate(takeReturnUrl("/"));
 };
 
 // leave the /admin-login choice as the super admin
 const continueAsAdmin = () => navigate(takeReturnUrl("/"));
 
 // the local dev login: a session for one player, as the role asked for; only the admin token's session
-// reaches it, and the player's token replaces it. The backend answers 404 unless it is on
+// reaches it, and the player's token replaces it. The backend answers 404 unless it is on. The route
+// guard leaves /admin-login for the saved path, as it does after every sign-in
 const devLogin = async (userId: number, role: "member" | "guest" | "admin") => {
   const answer = await fetchWrapper.post(`${backendUrl}/dev/login`, { user_id: userId, role });
   const user = { access_token: answer.access_token, dev: true };
   localStorage.setItem("user", JSON.stringify(user));
-  patch({ user, viewAs: null });
+  // the admin's me goes with the admin's token, so the guard waits for the player's
+  patch({ user, me: null, viewAs: null });
   localStorage.removeItem("viewAs");
-  const me = await fetchMe();
-  navigate(takeReturnUrl(me?.role === "guest" ? "/profile" : "/"));
+  await fetchMe();
 };
 
 // see the app as a lower role for debugging; null restores the admin

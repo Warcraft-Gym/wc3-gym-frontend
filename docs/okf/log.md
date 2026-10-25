@@ -1,5 +1,12 @@
 # Bundle history
 
+## 2026-10-25
+
+* **Update**: on a cup's run page a player's name opens the stats panel of the GNL round planner, now `PlayerStatsPanel` in `next/src/components/`: W3Champions by race, the ladder over the current W3Champions season from `GET /users/{id}/ladder/w3c-season`, and "In this cup" in place of the GNL season, with links to the profile and W3Champions. [Event management](pages/event-management.md), [shared components](concepts/shared-components.md) and [fixtures and series](pages/fixtures-and-series.md) state it.
+* **Update**: the best-of editor of Create cup and of the run page's format card is one "Best of" row and a "Longer rounds" list that "+ Another round" fills; the stored plan is the same. [Event management](pages/event-management.md) states it.
+* **Update**: after a sign-in the route guard alone leaves `/login` and `/admin-login` for the saved path, so a sign-in from an event page lands back on it. [The app shell](concepts/app-shell-and-routing.md) states it.
+* **Update**: a picker row that stacks two lines lies flat in the picker's button, cut short with an ellipsis. [Shared components](concepts/shared-components.md) states it.
+
 ## 2026-10-24
 
 * **Update**: a cup's Divisions panel offers one to five divisions; one division has no cut, takes every player, the unrated included, and its preview card reads "MMR any". [Event management](pages/event-management.md) states it.

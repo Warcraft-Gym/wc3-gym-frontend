@@ -4,7 +4,7 @@ title: Fixtures and series
 description: The GNL fixture page with its published series and the captains' round planner, one series of any event, the map veto, the upcoming series, and the Report Result, schedule and cast dialogs.
 resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-12T21:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:00:00Z }
 sources:
   - id: match
     resource: ../../../next/src/app/(app)/match/[id]/MatchDetailsView.tsx
@@ -40,7 +40,7 @@ sources:
     resource: ../../../next/src/app/(app)/match/[id]/plan/ReplaceSeries.tsx
     title: Find a replacement for a published series
   - id: player-stats
-    resource: ../../../next/src/app/(app)/match/[id]/plan/PlayerStatsPanel.tsx
+    resource: ../../../next/src/components/PlayerStatsPanel.tsx
     title: A player's stats for pairing him
   - id: pair-time
     resource: ../../../next/src/app/(app)/match/[id]/plan/PairTimeDialog.tsx
@@ -100,7 +100,7 @@ The four steps:
 - **GNL this season.** Series played, won and lost, the rounds sat out, and the races faced in order, from the roster record.
 - **This matchup**, opened from a matchup row only: the MMR difference, the ladder record against the opponent's race, the hours both are free with the clock warning, the races faced with the opponent's race ringed, and the head to head, whose meetings load only when the reader opens them.
 
-"Open on W3Champions" leads to the rest.
+"Open on W3Champions" leads to the rest. The panel is `PlayerStatsPanel` in `next/src/components/`; a cup's run page opens the same one, with the cup's facts in place of the GNL season (see [Event management](event-management.md)).
 
 **Find a replacement.** Opened from a published series, the plan shows this search in place of its steps, with "Back to the plan" to leave it:
 - **Who is replaced.** One of the two players, or both; until one is chosen the search shows no matchup.

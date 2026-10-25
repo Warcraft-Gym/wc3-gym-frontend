@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import test from 'node:test';
 
-import { bestOfLine, largestBestOf, parsePlan, partsOf, planText, poolProblem } from './best-of-plan.mjs';
+import { bestOfLine, freeParts, largestBestOf, listedParts, parsePlan, partsOf, planText, poolProblem, stepFrom } from './best-of-plan.mjs';
 
 test('each format names the parts of its bracket, latest last', () => {
   assert.deepStrictEqual(partsOf('single_elimination').map((part) => part.role), ['quarterfinal', 'semifinal', 'final']);
@@ -30,6 +30,31 @@ test('the pool holds a map for every game of the longest series', () => {
   assert.strictEqual(poolProblem(5, 1, { final: 5 }, 'single_elimination'), null);
   assert.strictEqual(poolProblem(4, 1, { final: 5 }, 'single_elimination'), 'A Bo5 needs at least 5 maps in the pool; it holds 4.');
   assert.strictEqual(poolProblem(0, 1, {}, 'single_elimination'), 'A Bo1 needs at least 1 map in the pool; it holds 0.');
+});
+
+test('the editor lists the parts the plan names and offers the rest, in bracket order', () => {
+  const plan = { final: 5, semifinal: 3, upper_final: 3 };
+  assert.deepStrictEqual(listedParts(plan, 'single_elimination').map((part) => part.role), ['semifinal', 'final']);
+  assert.deepStrictEqual(freeParts(plan, 'single_elimination').map((part) => part.role), ['quarterfinal']);
+  // a part another format left in the plan is neither listed nor free
+  assert.deepStrictEqual(listedParts(plan, 'double_elimination').map((part) => part.role), ['upper_final']);
+  assert.deepStrictEqual(listedParts({}, 'swiss'), []);
+  assert.deepStrictEqual(freeParts({}, 'swiss'), []);
+});
+
+test('a newly listed part starts one step longer, or shorter from the longest', () => {
+  assert.strictEqual(stepFrom(1), 3);
+  assert.strictEqual(stepFrom(3), 5);
+  assert.strictEqual(stepFrom(5), 3);
+});
+
+test('a stored plan opens with its parts listed and saves back the same text', () => {
+  const stored = 'semifinal:3,final:5';
+  const plan = parsePlan(stored);
+  assert.deepStrictEqual(listedParts(plan, 'single_elimination').map((part) => part.role), ['semifinal', 'final']);
+  assert.strictEqual(planText(plan, 'single_elimination', 1), stored);
+  // a listed part that plays the cup's best-of is not stored
+  assert.strictEqual(planText({ ...plan, quarterfinal: 1 }, 'single_elimination', 1), stored);
 });
 
 test('the longest series counts only the parts the format plays', () => {

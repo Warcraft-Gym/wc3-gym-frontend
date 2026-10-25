@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/Icon";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -6,15 +7,18 @@ import { HeadToHeadCell } from "@/components/HeadToHeadCell";
 import { PlayerName } from "@/components/PlayerName";
 import { RaceIcon } from "@/components/RaceIcon";
 import { record } from "@/helpers/figures.mjs";
+import { playerPath } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { syncedAgo, w3cPlayerUrl } from "@/helpers/w3c-stats.js";
 import { cn } from "@/lib/utils";
-import type { Loaded } from "./PairTimeDialog";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
 
+export type Loaded = { state: "loading" } | { state: "ok"; data: Row } | { state: "error"; message: string };
 export type PanelTarget = { player: Row; opponent?: Row | null; row?: Row | null };
+/** What a cup knows of the player, shown in place of the GNL season */
+export type CupFacts = { race: string | null; seed: number | null; division: string | null; checkedIn: boolean | null; team: string | null; waiting: boolean };
 
 const raceName = (race?: string | null) => raceWrapper.getRaceObject(race)?.name ?? race ?? "";
 const winRate = (wins?: number | null, losses?: number | null) => {
@@ -83,11 +87,14 @@ function RaceList({ races, opponentRace }: { races: (string | null)[]; opponentR
 
 /** One player's figures for pairing him: his W3Champions ladder by race, his signup race over the
  *  season so far with the highest MMR, his GNL record this season, and, opened from a matchup, what
- *  that matchup holds. W3Champions has the rest, one click away. */
+ *  that matchup holds. W3Champions has the rest, one click away.
+ *  A cup's run page passes `cup`: the ladder then reads the current W3Champions season, the cup's
+ *  facts stand where the GNL season does, and the header links the profile beside W3Champions. */
 export function PlayerStatsPanel({
   target,
   team,
   ladder,
+  cup = null,
   onClose,
   onRetry,
   onMeetings,
@@ -95,9 +102,10 @@ export function PlayerStatsPanel({
   target: PanelTarget | null;
   team: Row | null;
   ladder?: Loaded;
+  cup?: CupFacts | null;
   onClose: () => void;
   onRetry: () => void;
-  onMeetings: (userA: number, userB: number) => Promise<Row[]>;
+  onMeetings?: (userA: number, userB: number) => Promise<Row[]>;
 }) {
   const player = target?.player;
   const opponent = target?.opponent ?? null;
@@ -106,7 +114,7 @@ export function PlayerStatsPanel({
     <Sheet open={!!target} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <SheetContent side="right" showCloseButton={false} className="gap-0 overflow-y-auto p-0 data-[side=right]:w-full data-[side=right]:sm:w-[480px] data-[side=right]:sm:max-w-[480px]">
         <SheetTitle className="sr-only">{player ? `${player.name}: stats` : "Player stats"}</SheetTitle>
-        {player ? <PanelBody player={player} opponent={opponent} row={row} team={team} ladder={ladder} onClose={onClose} onRetry={onRetry} onMeetings={onMeetings} /> : null}
+        {player ? <PanelBody player={player} opponent={opponent} row={row} team={team} ladder={ladder} cup={cup} onClose={onClose} onRetry={onRetry} onMeetings={onMeetings} /> : null}
       </SheetContent>
     </Sheet>
   );
@@ -118,6 +126,7 @@ function PanelBody({
   row,
   team,
   ladder,
+  cup,
   onClose,
   onRetry,
   onMeetings,
@@ -127,9 +136,10 @@ function PanelBody({
   row: Row | null;
   team: Row | null;
   ladder?: Loaded;
+  cup: CupFacts | null;
   onClose: () => void;
   onRetry: () => void;
-  onMeetings: (userA: number, userB: number) => Promise<Row[]>;
+  onMeetings?: (userA: number, userB: number) => Promise<Row[]>;
 }) {
   const w3c = player.battleTag ? w3cPlayerUrl(player.battleTag) : null;
   // the signup race first, then the rest by MMR; a race with no games has nothing to say
@@ -145,6 +155,13 @@ function PanelBody({
   const inWindow: Row | null = ladder?.state === "ok" ? ladder.data : null;
   const mmr = inWindow?.mmr || {};
   const ladderRace = inWindow?.race ?? player.race;
+  // a cup's read carries the form and the record by race; a GNL row carries its own of the games-rule window
+  const form: string = cup ? inWindow?.form ?? "" : player.form;
+  const vsRace: Record<string, number[]> = (cup ? inWindow?.vs_race : player.vs_race) || {};
+  // a cup reads the current W3Champions season; a GNL season its own window
+  const span = cup
+    ? { scope: "This W3Champions season, as the app syncs the ladder games", none: "No ladder games synced this W3Champions season. Check W3Champions.", last: "Last 10 games this W3Champions season, newest first", vs: "Against each race this W3Champions season" }
+    : { scope: "This season so far, as the app syncs the ladder games", none: "No ladder games synced since the season started. Check W3Champions.", last: "Last 10 games in the games-rule window of this event, newest first", vs: "Against each race in that window" };
 
   return (
     <div className="flex flex-col">
@@ -153,6 +170,11 @@ function PanelBody({
           <Icon name="mdi-close" />
         </Button>
         <span className="grow" />
+        {cup && player.id != null ? (
+          <Link href={playerPath(player)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Profile
+          </Link>
+        ) : null}
         {w3c ? (
           <a href={w3c} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
             Open on W3Champions
@@ -166,9 +188,9 @@ function PanelBody({
           <PlayerName player={player} race={player.race} mmr={player.mmr ?? null} plain />
         </span>
         <span className="text-sm text-muted-foreground">
-          {team?.long_name || team?.name || ""}
-          {player.race ? ` · signed up as ${raceName(player.race)}` : ""}
-          {player.w3c_synced_at ? ` · W3Champions synced ${syncedAgo(player)}` : ""}
+          {[team?.long_name || team?.name || cup?.team, player.race ? `signed up as ${raceName(player.race)}` : null, player.w3c_synced_at ? `W3Champions synced ${syncedAgo(player)}` : null]
+            .filter(Boolean)
+            .join(" · ")}
         </span>
       </div>
 
@@ -210,7 +232,7 @@ function PanelBody({
       </Section>
 
       <Section title={`Ladder on ${raceName(ladderRace) || "the signup race"}`}>
-        <span className="text-xs text-muted-foreground">This season so far, as the app syncs the ladder games</span>
+        <span className="text-xs text-muted-foreground">{span.scope}</span>
         {!ladder || ladder.state === "loading" ? (
           <p role="status" className="text-sm text-muted-foreground">
             Loading the ladder record
@@ -223,7 +245,7 @@ function PanelBody({
             </Button>
           </p>
         ) : !inWindow?.games && mmr.max == null ? (
-          <p className="text-sm text-muted-foreground">No ladder games synced since the season started. Check W3Champions.</p>
+          <p className="text-sm text-muted-foreground">{span.none}</p>
         ) : (
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm min-[420px]:grid-cols-3">
             <Fact label="Highest MMR">{mmr.max ?? "—"}</Fact>
@@ -237,14 +259,14 @@ function PanelBody({
           </dl>
         )}
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Last 10 games in the games-rule window of this event, newest first</span>
-          <FormStrip player={player} />
+          <span className="text-xs text-muted-foreground">{span.last}</span>
+          <FormStrip player={{ form }} />
         </div>
-        {Object.keys(player.vs_race || {}).length ? (
+        {Object.keys(vsRace).length ? (
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Against each race in that window</span>
+            <span className="text-xs text-muted-foreground">{span.vs}</span>
             <span className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              {Object.entries(player.vs_race as Record<string, number[]>).map(([race, pairOf]) => (
+              {Object.entries(vsRace).map(([race, pairOf]) => (
                 <span key={race} className="inline-flex items-center gap-1.5" title={raceName(race)}>
                   <RaceIcon raceIdentifier={race} size={14} />
                   <span className="tnum">{record(pairOf?.[0], pairOf?.[1]) ?? "—"}</span>
@@ -255,17 +277,29 @@ function PanelBody({
         ) : null}
       </Section>
 
-      <Section title="GNL this season">
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm min-[420px]:grid-cols-3">
-          <Fact label="Series played">{gnl.games ?? player.played ?? 0}</Fact>
-          <Fact label="Won – lost">{record(gnl.wins, gnl.losses) ?? "—"}</Fact>
-          <Fact label="Sits out">{gnl.out_rounds?.length ? `round ${gnl.out_rounds.join(", ")}` : "no round"}</Fact>
-        </dl>
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Races faced, in order</span>
-          <RaceList races={player.faced || []} opponentRace={opponent?.race} />
-        </div>
-      </Section>
+      {cup ? (
+        <Section title="In this cup">
+          {/* the header names the sign-up race and the team, so the section holds what only the cup knows */}
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm min-[420px]:grid-cols-3">
+            <Fact label="Seed">{cup.seed ?? "—"}</Fact>
+            {cup.division ? <Fact label="Division">{cup.division}</Fact> : null}
+            {cup.checkedIn != null ? <Fact label="Check-in">{cup.checkedIn ? "Checked in" : "Not checked in"}</Fact> : null}
+            {cup.waiting ? <Fact label="Place">On the waitlist</Fact> : null}
+          </dl>
+        </Section>
+      ) : (
+        <Section title="GNL this season">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm min-[420px]:grid-cols-3">
+            <Fact label="Series played">{gnl.games ?? player.played ?? 0}</Fact>
+            <Fact label="Won – lost">{record(gnl.wins, gnl.losses) ?? "—"}</Fact>
+            <Fact label="Sits out">{gnl.out_rounds?.length ? `round ${gnl.out_rounds.join(", ")}` : "no round"}</Fact>
+          </dl>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">Races faced, in order</span>
+            <RaceList races={player.faced || []} opponentRace={opponent?.race} />
+          </div>
+        </Section>
+      )}
 
       {opponent && row ? (
         <Section title={`This matchup: vs ${opponent.name}`}>
@@ -286,7 +320,7 @@ function PanelBody({
           </div>
           <div className="flex flex-col gap-1 text-sm">
             <span className="text-xs text-muted-foreground">Head to head in series</span>
-            <HeadToHeadCell pair={pair} onMeetings={() => onMeetings(player.user_id, opponent.user_id)} />
+            <HeadToHeadCell pair={pair} onMeetings={() => onMeetings?.(player.user_id, opponent.user_id) ?? Promise.resolve([])} />
           </div>
         </Section>
       ) : null}

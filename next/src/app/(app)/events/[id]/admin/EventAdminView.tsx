@@ -32,6 +32,7 @@ import { cupRosters, rostersByEntrant } from "@/helpers/entrants.mjs";
 import { useAuth, useEventStore, useTeamStore } from "@/stores";
 import { useEventRunner } from "@/hooks/event-runner";
 import { CupConsole } from "@/components/CupConsole";
+import { CupPlayerStats } from "@/components/CupPlayerStats";
 import { CupFormatCard } from "@/components/CupFormatCard";
 import { CupOverallTable } from "@/components/CupOverallTable";
 import { CupRoundPicker } from "@/components/CupRoundPicker";
@@ -509,154 +510,156 @@ export function EventAdminView({ id }: { id: string }) {
           {repeating ? <RepeatCupDialog event={event} open onOpenChange={setRepeating} /> : null}
 
           {tabbed ? (
-            <Tabs value={view} onValueChange={(value) => pickView(value as string)} className="mt-4">
-              <TabsList variant="line" className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
-                <TabsTrigger value="draw" className="flex-none px-3">
-                  <Icon name="mdi-tournament" />
-                  Draw
-                </TabsTrigger>
-                <TabsTrigger value="participants" className="flex-none px-3">
-                  <Icon name="mdi-account-multiple" />
-                  Participants
-                  <span className="tnum text-muted-foreground">{entrants.filter((row) => !row.withdrawn_at).length}</span>
-                </TabsTrigger>
-                <TabsTrigger value="results" className="flex-none px-3">
-                  <Icon name="mdi-podium" />
-                  Results
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="draw" className="mt-4">
-                <CupConsole part="evening" {...consoleProps} />
-                {legs.length ? (
-                  <CupRoundsBar
-                    event={event}
-                    legs={legs}
-                    legIndex={legIndex}
-                    onLeg={pickLeg}
-                    entrants={entrants}
-                    drawn={tab > 0 || series.length > 0}
-                    played={lastStage && complete}
-                    onLegs={(cup_legs) => setEvent({ ...event, cup_legs })}
-                    onFinished={afterLeg}
-                    onChanged={async () => {
-                      // a round added or removed changes the stages, so the round shown is read again
-                      const fresh = await store.fetchEvent(event.id, true);
-                      const index = Math.min(legIndex, Math.max(legsOf(fresh).length - 1, 0));
-                      setEvent(fresh);
-                      setLegIndex(index);
-                      setTab(0);
-                      await loadStage(fresh, stagesOf(fresh, legsOf(fresh)[index] || null)[0] || null);
-                    }}
-                    onError={setError}
-                  />
-                ) : null}
-                {/* a cup's best-of and maps change until its bracket is drawn */}
-                {event.kind === "cup" && stage ? <CupFormatCard key={stage.id} event={event} stage={stage} drawn={series.length > 0} onEvent={setEvent} /> : null}
-                {stages.length > 1 ? stagePicker : null}
+            <CupPlayerStats event={event} on={event.kind === "cup"}>
+              <Tabs value={view} onValueChange={(value) => pickView(value as string)} className="mt-4">
+                <TabsList variant="line" className="max-w-full justify-start overflow-x-auto overflow-y-hidden">
+                  <TabsTrigger value="draw" className="flex-none px-3">
+                    <Icon name="mdi-tournament" />
+                    Draw
+                  </TabsTrigger>
+                  <TabsTrigger value="participants" className="flex-none px-3">
+                    <Icon name="mdi-account-multiple" />
+                    Participants
+                    <span className="tnum text-muted-foreground">{entrants.filter((row) => !row.withdrawn_at).length}</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="results" className="flex-none px-3">
+                    <Icon name="mdi-podium" />
+                    Results
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="draw" className="mt-4">
+                  <CupConsole part="evening" {...consoleProps} />
+                  {legs.length ? (
+                    <CupRoundsBar
+                      event={event}
+                      legs={legs}
+                      legIndex={legIndex}
+                      onLeg={pickLeg}
+                      entrants={entrants}
+                      drawn={tab > 0 || series.length > 0}
+                      played={lastStage && complete}
+                      onLegs={(cup_legs) => setEvent({ ...event, cup_legs })}
+                      onFinished={afterLeg}
+                      onChanged={async () => {
+                        // a round added or removed changes the stages, so the round shown is read again
+                        const fresh = await store.fetchEvent(event.id, true);
+                        const index = Math.min(legIndex, Math.max(legsOf(fresh).length - 1, 0));
+                        setEvent(fresh);
+                        setLegIndex(index);
+                        setTab(0);
+                        await loadStage(fresh, stagesOf(fresh, legsOf(fresh)[index] || null)[0] || null);
+                      }}
+                      onError={setError}
+                    />
+                  ) : null}
+                  {/* a cup's best-of and maps change until its bracket is drawn */}
+                  {event.kind === "cup" && stage ? <CupFormatCard key={stage.id} event={event} stage={stage} drawn={series.length > 0} onEvent={setEvent} /> : null}
+                  {stages.length > 1 ? stagePicker : null}
 
-                {stage ? (
-                  <>
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <Badge className={toneClass(null)}>{titleOf(FORMATS, stage.format)}</Badge>
-                      {stage.format === "placement" ? <Badge className={toneClass(null)}>{livesLine(stage.placement_lives)}</Badge> : null}
-                      {stage.format === "ffa" ? null : <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>}
-                      {entrantSeries ? <Badge className={toneClass(null)}>{entrantSeries} series each entrant a round</Badge> : null}
-                      {fixtureSeries ? <Badge className={toneClass(null)}>{fixtureSeries} series per fixture</Badge> : null}
-                      {stage.auto_advance ? (
-                        <Badge className={toneClass("info")}>
-                          <Icon name="mdi-fast-forward" />
-                          Advance is automatic
-                        </Badge>
-                      ) : null}
-                      <span className="flex-1" />
-                      {/* a Swiss stage pairs one round at a time, so it is drawn round by round and
-                          never generated whole */}
-                      {drawsRounds ? (
-                        <Button disabled={saving || draw.done || !!draw.blocked} onClick={() => setConfirmDraw(true)}>
-                          <Icon name="mdi-cards-playing-outline" />
-                          Draw the next round
-                        </Button>
-                      ) : !series.length ? (
-                        <Button disabled={saving} onClick={() => setConfirmGenerate(true)}>
-                          <Icon name="mdi-tournament" />
-                          Generate
-                        </Button>
-                      ) : null}
-                      {/* advancing seeds the next stage, so a cup, which plays one stage, never offers it */}
-                      {complete && !lastStage ? (
-                        <Button disabled={saving} onClick={() => setConfirmAdvance(true)}>
-                          <Icon name="mdi-arrow-right-bold" />
-                          Advance
-                        </Button>
-                      ) : null}
-                    {/* a drawn stage can be taken back and drawn again, until the event or its round is finished */}
-                      {series.length > 0 && !event.closed_at && event.kind !== "gnl" && !leg?.finished_at ? (
-                        <Button variant="outline" className="text-error" disabled={saving} onClick={() => setConfirmUndraw(true)}>
-                          <Icon name="mdi-undo-variant" />
-                          Undo the draw
-                        </Button>
-                      ) : null}
-                      {/* The event ends on its last stage, so only that stage's table pays the places */}
-                      {finishes ? (
-                        <Button variant="outline" className="text-primary-text" disabled={saving} onClick={() => setConfirmFinish(true)}>
-                          <Icon name="mdi-trophy" />
-                          Finish
-                        </Button>
-                      ) : null}
-                      {/* Finish stamps the event closed; the reopen clears the stamp and the places it paid */}
-                      {finishes && event.closed_at ? (
-                        <Button variant="outline" disabled={saving} onClick={reopenEvent}>
-                          <Icon name="mdi-lock-open-variant" />
-                          Reopen
-                        </Button>
-                      ) : null}
-                    </div>
-                    {drawNote ? <p className="mt-1 text-xs text-muted-foreground">{drawNote}</p> : null}
-
-                    <div className={seedsAside ? "mt-4 grid items-start gap-4 min-[1100px]:grid-cols-[minmax(0,1fr)_20rem]" : "mt-4"}>
-                      <div className="min-w-0">
-                        <StageView cup={event.kind === "cup"} stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={seriesOpener} />
+                  {stage ? (
+                    <>
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        <Badge className={toneClass(null)}>{titleOf(FORMATS, stage.format)}</Badge>
+                        {stage.format === "placement" ? <Badge className={toneClass(null)}>{livesLine(stage.placement_lives)}</Badge> : null}
+                        {stage.format === "ffa" ? null : <Badge className={toneClass(null)}>{stage.best_of_by_round ? bestOfLine(stage.best_of, parsePlan(stage.best_of_by_round), stage.format) : `Best of ${stage.best_of}`}</Badge>}
+                        {entrantSeries ? <Badge className={toneClass(null)}>{entrantSeries} series each entrant a round</Badge> : null}
+                        {fixtureSeries ? <Badge className={toneClass(null)}>{fixtureSeries} series per fixture</Badge> : null}
+                        {stage.auto_advance ? (
+                          <Badge className={toneClass("info")}>
+                            <Icon name="mdi-fast-forward" />
+                            Advance is automatic
+                          </Badge>
+                        ) : null}
+                        <span className="flex-1" />
+                        {/* a Swiss stage pairs one round at a time, so it is drawn round by round and
+                            never generated whole */}
+                        {drawsRounds ? (
+                          <Button disabled={saving || draw.done || !!draw.blocked} onClick={() => setConfirmDraw(true)}>
+                            <Icon name="mdi-cards-playing-outline" />
+                            Draw the next round
+                          </Button>
+                        ) : !series.length ? (
+                          <Button disabled={saving} onClick={() => setConfirmGenerate(true)}>
+                            <Icon name="mdi-tournament" />
+                            Generate
+                          </Button>
+                        ) : null}
+                        {/* advancing seeds the next stage, so a cup, which plays one stage, never offers it */}
+                        {complete && !lastStage ? (
+                          <Button disabled={saving} onClick={() => setConfirmAdvance(true)}>
+                            <Icon name="mdi-arrow-right-bold" />
+                            Advance
+                          </Button>
+                        ) : null}
+                      {/* a drawn stage can be taken back and drawn again, until the event or its round is finished */}
+                        {series.length > 0 && !event.closed_at && event.kind !== "gnl" && !leg?.finished_at ? (
+                          <Button variant="outline" className="text-error" disabled={saving} onClick={() => setConfirmUndraw(true)}>
+                            <Icon name="mdi-undo-variant" />
+                            Undo the draw
+                          </Button>
+                        ) : null}
+                        {/* The event ends on its last stage, so only that stage's table pays the places */}
+                        {finishes ? (
+                          <Button variant="outline" className="text-primary-text" disabled={saving} onClick={() => setConfirmFinish(true)}>
+                            <Icon name="mdi-trophy" />
+                            Finish
+                          </Button>
+                        ) : null}
+                        {/* Finish stamps the event closed; the reopen clears the stamp and the places it paid */}
+                        {finishes && event.closed_at ? (
+                          <Button variant="outline" disabled={saving} onClick={reopenEvent}>
+                            <Icon name="mdi-lock-open-variant" />
+                            Reopen
+                          </Button>
+                        ) : null}
                       </div>
-                      {seedsAside ? <CupSeedsPanel
-                          event={event}
-                          stage={stage}
-                          entrants={field}
-                          drawn={series.length > 0}
-                          editable={!event.closed_at && !leg?.finished_at}
-                          onSeeded={(rows) => {
-                            // the panel seeds the round's field, so its rows replace their copies in the whole list
-                            const byId = new Map(rows.map((row) => [row.id, row]));
-                            consoleProps.onEntrants(entrants.map((row) => byId.get(row.id) ?? row));
-                          }}
-                          onRedrawn={async () => {
-                            await loadStage();
-                            setEvent(await store.fetchEvent(event.id, true));
-                          }}
-                        /> : null}
-                    </div>
-                  </>
-                ) : null}
-              </TabsContent>
-              <TabsContent value="participants" className="mt-4">
-                {event.kind === "cup" && event.uses_divisions ? <CupDivisionsPanel event={event} entrants={entrants} drawn={series.length > 0} onEvent={setEvent} onEntrants={consoleProps.onEntrants} /> : null}
-                <CupConsole part="people" {...consoleProps} />
-              </TabsContent>
-              <TabsContent value="results" className="mt-4">
-                {legs.length ? <CupOverallTable event={event} fresh version={overallVersion} onRows={setOverallRows} /> : null}
-                {legs.length ? <CupRoundPicker event={event} legs={legs} legIndex={legIndex} onLeg={pickLeg} entry={null} drawn onLegs={() => {}} onError={setError} /> : null}
-                {stages.length > 1 ? stagePicker : null}
-                {stage ? (
-                  <EventResults
-                    event={event}
-                    stages={[{ ...stage, series, rounds, standings: lastStage ? standings : [] }]}
-                    entrants={entrants}
-                    onOpenSeries={seriesOpener}
-                    places={legs.length ? overallRows.filter((row: Row) => row.legs?.length).map((row: Row) => ({ entrant_id: row.entrant_id, position: row.position, name: row.name, user_id: row.user?.id ?? null })) : undefined}
-                    matchesTitle={leg ? `Matches · ${legTitle(leg)}` : undefined}
-                  />
-                ) : null}
-              </TabsContent>
-            </Tabs>
+                      {drawNote ? <p className="mt-1 text-xs text-muted-foreground">{drawNote}</p> : null}
+
+                      <div className={seedsAside ? "mt-4 grid items-start gap-4 min-[1100px]:grid-cols-[minmax(0,1fr)_20rem]" : "mt-4"}>
+                        <div className="min-w-0">
+                          <StageView cup={event.kind === "cup"} stage={stage} series={series} rounds={rounds} divisions={event.divisions} standings={tabbed && BRACKETS.includes(stage.format) ? [] : standings} rosters={rosters} onOpenSeries={seriesOpener} />
+                        </div>
+                        {seedsAside ? <CupSeedsPanel
+                            event={event}
+                            stage={stage}
+                            entrants={field}
+                            drawn={series.length > 0}
+                            editable={!event.closed_at && !leg?.finished_at}
+                            onSeeded={(rows) => {
+                              // the panel seeds the round's field, so its rows replace their copies in the whole list
+                              const byId = new Map(rows.map((row) => [row.id, row]));
+                              consoleProps.onEntrants(entrants.map((row) => byId.get(row.id) ?? row));
+                            }}
+                            onRedrawn={async () => {
+                              await loadStage();
+                              setEvent(await store.fetchEvent(event.id, true));
+                            }}
+                          /> : null}
+                      </div>
+                    </>
+                  ) : null}
+                </TabsContent>
+                <TabsContent value="participants" className="mt-4">
+                  {event.kind === "cup" && event.uses_divisions ? <CupDivisionsPanel event={event} entrants={entrants} drawn={series.length > 0} onEvent={setEvent} onEntrants={consoleProps.onEntrants} /> : null}
+                  <CupConsole part="people" {...consoleProps} />
+                </TabsContent>
+                <TabsContent value="results" className="mt-4">
+                  {legs.length ? <CupOverallTable event={event} fresh version={overallVersion} onRows={setOverallRows} /> : null}
+                  {legs.length ? <CupRoundPicker event={event} legs={legs} legIndex={legIndex} onLeg={pickLeg} entry={null} drawn onLegs={() => {}} onError={setError} /> : null}
+                  {stages.length > 1 ? stagePicker : null}
+                  {stage ? (
+                    <EventResults
+                      event={event}
+                      stages={[{ ...stage, series, rounds, standings: lastStage ? standings : [] }]}
+                      entrants={entrants}
+                      onOpenSeries={seriesOpener}
+                      places={legs.length ? overallRows.filter((row: Row) => row.legs?.length).map((row: Row) => ({ entrant_id: row.entrant_id, position: row.position, name: row.name, user_id: row.user?.id ?? null })) : undefined}
+                      matchesTitle={leg ? `Matches · ${legTitle(leg)}` : undefined}
+                    />
+                  ) : null}
+                </TabsContent>
+              </Tabs>
+            </CupPlayerStats>
           ) : (
             <>
               {stages.length > 1 ? stagePicker : null}

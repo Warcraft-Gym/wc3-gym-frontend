@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, grandFinalLine, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, leadChoices, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine, rulesForm, rulesPayload, rulesProblem } from './cup-wizard.mjs';
+import { blankCup, cupCheckin, cupForm, cupPayload, cupProblem, editLocks, editPayload, cupSteps, cupTeamSize, grandFinalLine, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, leadChoices, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine, rulesForm, rulesPayload, rulesProblem } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -328,4 +328,77 @@ test('the sign-up rules dialog reads an event as Create cup shows it and writes 
   assert.equal(rulesProblem({ ...form, mmr_max: '1200' }), 'The lowest MMR cannot be above the highest.');
   assert.equal(rulesProblem({ ...form, eligibility_required: false, mmr_max: '1200' }), null);
   assert.equal(rulesProblem(form), null);
+});
+
+// The event read of a cup Create cup made from this body: its stages and maps as the backend
+// answers them, a cup over rounds with one copy of the stages per round
+const asRead = (body) => {
+  const legs = body.legs || [];
+  const copies = legs.length || 1;
+  const stages = Array.from({ length: copies }, (unused, leg) => body.stages.map((stage, index) => ({ ...stage, id: leg * 10 + index + 1, position: leg * body.stages.length + index + 1 }))).flat();
+  return {
+    ...body,
+    id: 7,
+    stages,
+    maps: body.map_ids.map((id) => ({ id, name: `Map ${id}`, shortname: `M${id}` })),
+    cup_legs: legs.length ? legs.map((leg, index) => ({ id: 100 + index, number: index + 1, starts_at: leg.starts_at, stage_ids: body.stages.map((unused, at) => index * 10 + at + 1) })) : null,
+    ffa: body.stages.some((stage) => stage.format === 'ffa'),
+  };
+};
+
+// Edit cup opens on what the cup plays: the form read back writes the body the cup was made from
+const roundTrip = (form) => {
+  const body = cupPayload(form);
+  assert.deepEqual(editPayload(cupForm(asRead(body))), editPayload(form));
+};
+
+const dated = { ...blankCup(), name: 'Friday Cup', start_date: day, start_time: '20:00' };
+
+test('Edit cup reads a bracket cup back as Create cup wrote it', () => {
+  roundTrip({ ...dated, best_of: 1, best_of_plan: { semi_final: 3, final: 5 }, third_place: true, pool: [1, 2, 3, 4, 5].map((id) => ({ id, name: `Map ${id}` })), entrant_min: '4', entrant_cap: '16', hide_seeds: true });
+  roundTrip({ ...dated, format: 'double_elimination', best_of: 3, best_of_plan: { grand_final: 5 }, grand_final: 'lead', grand_final_lead: 2 });
+  roundTrip({ ...dated, format: 'double_elimination', grand_final: 'reset' });
+  roundTrip({ ...dated, format: 'placement', placement_lives: 2 });
+  roundTrip({ ...dated, game: '3v3', uses_divisions: true, eligibility_required: false });
+  roundTrip({ ...dated, mmr_min: '1400', mmr_max: '2000', min_games: '30', signup_race_only: true, checkin_opens_minutes: 60, checkin_closes_minutes: 15 });
+});
+
+test('Edit cup reads a Swiss cup and its playoff back', () => {
+  roundTrip({ ...dated, format: 'swiss', swiss_rounds: 4, playoff: 4, third_place: true, best_of_plan: { final: 5 } });
+  roundTrip({ ...dated, format: 'swiss', swiss_mode: 'all', playoff: 0 });
+});
+
+test('Edit cup reads a free for all and a custom game back', () => {
+  roundTrip({ ...dated, game: 'ffa', ffa_team_size: 2, lobby_size: 6, lobby_advance: '3', ffa_points: ['9', '6', '4', '3', '2', '1'], pool: [{ id: 4, name: 'Map 4' }] });
+  roundTrip({ ...dated, game: 'ffa', ffa_mode: 'league', lobby_size: 8, ffa_games: 4, pool: [{ id: 4, name: 'Map 4' }] });
+  roundTrip({ ...dated, game: 'custom', custom_mode: '2v2', custom_map: { id: 9, name: 'Footmen Frenzy' } });
+  roundTrip({ ...dated, game: 'custom', custom_mode: 'ffa', ffa_team_size: 1, custom_map: { id: 9, name: 'Footmen Frenzy' } });
+  const league = cupForm(asRead(cupPayload({ ...dated, game: 'ffa', ffa_mode: 'league', lobby_size: 8, entrant_cap: '6' })));
+  // one lobby's seats are the cup's cap, so a smaller cap reads as the lobby
+  assert.deepEqual([league.ffa_mode, league.lobby_size, league.entrant_cap], ['league', 6, 6]);
+});
+
+test('Edit cup reads a cup over rounds back with its days and its points table', () => {
+  const form = { ...dated, play: 'rounds', round_count: 3, points: ['12', '9', '7'] };
+  const body = cupPayload(form);
+  const read = cupForm({ ...asRead(body), points_by_place: [12, 9, 7] });
+  assert.deepEqual([read.play, read.round_count, read.later_rounds.length], ['rounds', 3, 2]);
+  assert.ok(read.later_rounds.every((row) => row.edited && row.date instanceof Date && row.time === '20:00'));
+  assert.deepEqual(editPayload(read), editPayload(form));
+  // an edit sends the points table but never the rounds: they change on the run page
+  assert.deepEqual(editPayload(form).points_by_place, [12, 9, 7]);
+  assert.equal('legs' in editPayload(form), false);
+});
+
+test('an edit leaves the kind, who signs up, the repeat rule and the sign-ups switch alone', () => {
+  const body = editPayload({ ...dated, repeat: true });
+  assert.deepEqual(['kind', 'signup_policy', 'bnet_required', 'end_date', 'legs', 'recurrence', 'signups_open'].filter((key) => key in body), []);
+  assert.deepEqual([body.name, body.stages.length, body.custom_game], ['Friday Cup', 1, false]);
+});
+
+test('the game mode locks at the first sign-up, and one evening or rounds never changes', () => {
+  assert.equal(editLocks({}, []).mode, null);
+  assert.equal(editLocks({}, [{ id: 1, withdrawn_at: '2026-10-20T19:00:00' }]).mode, 'Players have signed up, so the game mode stays.');
+  assert.match(editLocks({}, []).play, /one evening stays one/);
+  assert.match(editLocks({ cup_legs: [{ number: 1 }, { number: 2 }] }, []).play, /over rounds stays one/);
 });

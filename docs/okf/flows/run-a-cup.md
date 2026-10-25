@@ -4,7 +4,7 @@ title: Run a cup
 description: A cup from its creation to the awards, run by an admin or an organizer, with the members' signups and results in between, each step on its page with the route it writes.
 resource: ../../../next/src/app/(app)/leagues/LeaguesView.tsx
 tags: [pages, events, series]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-16T12:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T21:00:00Z }
 sources:
   - id: event-management
     resource: ../pages/event-management.md
@@ -25,10 +25,11 @@ This flow takes a cup from its creation to its awards. Its runner, an admin or a
 |---|---|---|---|---|
 | 1. Make the league | admin | `/leagues` | `POST /leagues` | [Event management](../pages/event-management.md) |
 | 2. Make the cup, with its best-of per bracket part, its map pool and its check-in settings | organizer or admin | `/events/new/cup` | `POST /events` with the stages, the pool, `checkin_opens_minutes`, `checkin_closes_minutes` and `early_checkin` | [Event management](../pages/event-management.md) |
+| 2a. Change the cup until its first draw: the name, the start, the format, the maps, the sign-ups, the rules and the check-in, and the game mode until the first sign-up | organizer or admin | `/events/:id/edit`, "Edit cup" on the run page | `PUT /events/{id}` with the stages, `map_ids`, `custom_game` and `points_by_place` | [Event management](../pages/event-management.md) |
 | 3a. On a team cup, sign a team up, and every invited player accepts | member | `/events/:id`, "Sign up a team", the invitation | `POST /events/{id}/cup-teams`, `POST /events/{id}/cup-teams/{team_id}/accept` | [Leagues and events](../pages/leagues-and-events.md) |
 | 3b. On a cup over rounds, check in for each round before its draw | member for their own entry; organizer or admin for anyone | `/events/:id`, "Check in for Round n"; `/events/:id/admin`, the rounds bar | `POST` and `DELETE /events/{id}/legs/{leg_id}/checkins`, `POST /events/{id}/legs/{leg_id}/checkins/everyone` | [Event management](../pages/event-management.md) |
 | 3. Sign up, and check in when the event asks for it | member; an admin adds anyone by hand on `/events/:id/entrants` | `/events/:id`, the signup dialog | `POST /events/{id}/entrants`, `POST /events/{id}/entrants/{entrant_id}/checkin` | [Leagues and events](../pages/leagues-and-events.md) |
-| 3c. Change the check-in settings until the draw, and close check-in or reopen it by hand | organizer or admin | `/events/:id/admin`, the check-in settings over the draw, "Close check-in" there or on each round of the rounds bar | `PUT /events/{id}`; `POST /events/{id}/checkin/close` and `/checkin/reopen`; on a cup over rounds `POST /events/{id}/legs/{leg_id}/checkin/close` and `/checkin/reopen` | [Event management](../pages/event-management.md) |
+| 3c. Close check-in or reopen it by hand; after its first draw a cup over rounds changes its check-in settings here | organizer or admin | `/events/:id/admin`, "Close check-in" over the draw or on each round of the rounds bar, and the check-in settings | `PUT /events/{id}`; `POST /events/{id}/checkin/close` and `/checkin/reopen`; on a cup over rounds `POST /events/{id}/legs/{leg_id}/checkin/close` and `/checkin/reopen` | [Event management](../pages/event-management.md) |
 | 4. On a cup made with divisions, cut them; then set the seeds | organizer or admin | `/events/:id/admin`, the Participants tab's Divisions panel and the Draw tab's Seeds | `PUT /events/{id}/divisions`, `POST /events/{id}/divisions/assign`, `PUT /events/{id}/stages/{stage_id}/seeds` | [Event management](../pages/event-management.md) |
 | 5. The draw locks the seeds | organizer or admin | `/events/:id/admin`, Generate | `POST /events/{id}/stages/{stage_id}/generate` | [Event management](../pages/event-management.md) |
 | 6. Generate the stage | admin | `/events/:id/admin` | `POST /events/{id}/stages/{stage_id}/generate`; a Swiss stage draws each round with `POST /events/{id}/stages/{stage_id}/rounds` | [Event management](../pages/event-management.md) |

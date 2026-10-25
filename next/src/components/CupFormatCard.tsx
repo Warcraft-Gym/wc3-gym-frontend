@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -27,17 +28,21 @@ import { useEventStore } from "@/stores";
 type Row = Record<string, any>;
 
 /** What a cup plays, over its draw on the run page: the best-of of each bracket part and the map
- *  pool the players veto from. Both change until the bracket is drawn; after it the rounds keep
- *  the best-of the draw wrote, so the card only reads. */
+ *  pool the players veto from. Until the cup's first draw they change in Edit cup, which
+ *  `editHref` opens on its Format step. After it a round of a cup over rounds that is not drawn
+ *  yet still changes here, and every drawn round keeps the best-of the draw wrote, so the card
+ *  only reads. */
 export function CupFormatCard({
   event,
   stage,
   drawn,
+  editHref = null,
   onEvent,
 }: {
   event: Row;
   stage: Row;
   drawn: boolean;
+  editHref?: string | null;
   onEvent: (event: Row) => void;
 }) {
   const store = useEventStore();
@@ -143,7 +148,12 @@ export function CupFormatCard({
     <Card className="card mb-4">
       <CardHeader className="flex flex-row flex-wrap items-center gap-2">
         <CardTitle className="flex-1">Format and maps</CardTitle>
-        {editable ? (
+        {editHref ? (
+          <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`${editHref}?step=format`} />}>
+            <Icon name="mdi-pencil" />
+            Edit
+          </Button>
+        ) : editable ? (
           <Button variant="outline" size="sm" onClick={edit}>
             <Icon name="mdi-pencil" />
             Edit

@@ -47,6 +47,7 @@ export const ROUTES: { path: string; meta: RouteMeta }[] = [
   { path: "/events/recurring/:id", meta: { role: "public" } },
   { path: "/events/:id/entrants", meta: { role: "member" } },
   { path: "/events/:id/admin", meta: { role: "member" } },
+  { path: "/events/:id/edit", meta: { role: "member" } },
   { path: "/events/:id", meta: { role: "public" } },
   { path: "/teams", meta: { role: "member" } },
   { path: "/config", meta: { role: "admin" } },

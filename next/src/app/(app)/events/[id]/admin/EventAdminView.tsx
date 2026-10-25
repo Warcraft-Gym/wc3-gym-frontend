@@ -274,7 +274,11 @@ export function EventAdminView({ id }: { id: string }) {
   const readEvent = async () => setEvent(await store.fetchEvent(Number(id)));
 
   const generate = async () => {
-    if (!(await run(() => store.generateStage(event!.id, stage!.id)))) setConfirmGenerate(false);
+    if (!(await run(() => store.generateStage(event!.id, stage!.id)))) {
+      setConfirmGenerate(false);
+      // the cup reads drawn from now on, so Edit cup closes on every round
+      await readEvent();
+    }
   };
   const drawRound = async () => {
     if (!(await run(() => store.drawNextRound(event!.id, stage!.id)))) setConfirmDraw(false);
@@ -414,10 +418,14 @@ export function EventAdminView({ id }: { id: string }) {
   const oneField = event?.kind === "cup" && !event.uses_divisions;
   // A cup's first stage is seeded beside its draw; a later stage plays what the stage before sends on
   const seedsAside = event?.kind === "cup" && !!stage && stage.position === stages[0]?.position;
+  // Edit cup opens until the cup's first draw: the read names a draw of any stage, and the series
+  // shown name one made on this page since
+  const editHref = event?.kind === "cup" && !event.drawn && !series.length && !event.closed_at && !event.cancelled_at ? `/events/${event.id}/edit` : null;
   const consoleProps = {
     event: event as Row,
     entrants,
     drawn: series.length > 0,
+    editHref,
     organizers: runner.organizers,
     onEvent: setEvent,
     // a team's roster fills its boxes in the draw, so a swap or an added team reads the teams again
@@ -494,6 +502,13 @@ export function EventAdminView({ id }: { id: string }) {
                   Repeat this cup
                 </Button>
               ) : null}
+              {/* a cup's settings change in the Create cup wizard until the draw */}
+              {editHref ? (
+                <Button size="sm" variant="outline" nativeButton={false} render={<Link href={editHref} />}>
+                  <Icon name="mdi-pencil" />
+                  Edit cup
+                </Button>
+              ) : null}
               <span className="flex-1" />
               <Button
                 id="delete-event"
@@ -555,8 +570,8 @@ export function EventAdminView({ id }: { id: string }) {
                       onError={setError}
                     />
                   ) : null}
-                  {/* a cup's best-of and maps change until its bracket is drawn */}
-                  {event.kind === "cup" && stage ? <CupFormatCard key={stage.id} event={event} stage={stage} drawn={series.length > 0} onEvent={setEvent} /> : null}
+                  {/* a cup's best-of and maps change in Edit cup until its first draw, and a later round's after it */}
+                  {event.kind === "cup" && stage ? <CupFormatCard key={stage.id} event={event} stage={stage} drawn={series.length > 0} editHref={editHref} onEvent={setEvent} /> : null}
                   {stages.length > 1 ? stagePicker : null}
 
                   {stage ? (

@@ -15,10 +15,11 @@ import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
+import { GrandFinalRules } from "@/components/GrandFinalRules";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, cupCheckin, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, cupCheckin, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, grandFinalLine, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -131,7 +132,7 @@ export function CupCreateView() {
       v: ffa ? ffaLine(form) : [
         format?.title,
         form.format === "single_elimination" && form.third_place ? "a match for third place" : null,
-        form.format === "double_elimination" ? (form.grand_final_reset ? "grand final reset" : "one grand final") : null,
+        form.format === "double_elimination" ? grandFinalLine(form.grand_final, form.grand_final_lead) : null,
         form.format === "placement" ? livesLine(form.placement_lives) : null,
         form.format === "swiss" ? swissLine(form) : null,
       ]
@@ -390,10 +391,13 @@ export function CupCreateView() {
                 Play a match for third place
               </Label>
             ) : form.format === "double_elimination" ? (
-              <Label className="flex min-h-11 items-center gap-2">
-                <Switch checked={!!form.grand_final_reset} onCheckedChange={(grand_final_reset) => set({ grand_final_reset })} />
-                Grand final reset: the lower-bracket winner must win twice
-              </Label>
+              <GrandFinalRules
+                value={form.grand_final}
+                lead={form.grand_final_lead}
+                bestOf={Number(form.best_of)}
+                plan={form.best_of_plan}
+                onChange={(grand_final, grand_final_lead) => set({ grand_final, grand_final_lead })}
+              />
             ) : form.format === "swiss" ? (
               <div className="flex flex-col gap-3">
                 <div role="radiogroup" aria-label="How long it runs" className="flex flex-wrap items-center gap-2">

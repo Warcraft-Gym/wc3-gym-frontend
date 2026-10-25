@@ -212,6 +212,29 @@ export const PLACEMENT_LIVES = [
  *  @param {number | null | undefined} lives */
 export const livesLine = (lives) => (lives ? `a run ends after ${lives} ${lives === 1 ? 'loss' : 'losses'}` : 'every place played out');
 
+// What a double elimination's grand final holds, one of three; the stage stores it as
+// `grand_final_modifier`, and a head start names its games in `grand_final_lead`
+export const GRAND_FINALS = [
+  { value: 'one', title: 'One grand final', hint: 'The upper- and lower-bracket winners play one series.' },
+  { value: 'reset', title: 'Grand final reset', hint: 'The lower-bracket winner must win twice: if they take the grand final, a second series decides.' },
+  { value: 'lead', title: 'Upper-bracket winner starts ahead', hint: 'The upper-bracket winner opens the grand final with games already won.' },
+];
+
+/** The head starts a grand final of this best-of allows: 1 game up to one fewer than a win takes,
+ *  so a Bo1 allows none, a Bo3 one game and a Bo5 one or two.
+ *  @param {number} bestOf the cup's best-of @param {Record<string, number>} [plan] the parts' own */
+export function leadChoices(bestOf, plan = {}) {
+  const games = Number(plan?.grand_final) || Number(bestOf) || 1;
+  const wins = Math.floor(games / 2) + 1;
+  return Array.from({ length: wins - 1 }, (unused, index) => index + 1);
+}
+
+/** How a grand final rule reads in a line: "one grand final", "grand final reset" or "the
+ *  upper-bracket winner starts 1–0".
+ *  @param {string | null | undefined} modifier @param {number | null | undefined} lead */
+export const grandFinalLine = (modifier, lead) =>
+  modifier === 'reset' ? 'grand final reset' : modifier === 'lead' ? `the upper-bracket winner starts ${Number(lead) || 1}–0` : 'one grand final';
+
 export const blankCup = () => ({
   name: '',
   description: '',
@@ -220,7 +243,9 @@ export const blankCup = () => ({
   game: '1v1',
   format: 'single_elimination',
   third_place: false,
-  grand_final_reset: true,
+  // a double elimination plays one grand final unless the organizer picks a reset or a head start
+  grand_final: 'one',
+  grand_final_lead: 1,
   // on: only the organizers and admins read the seed numbers
   hide_seeds: false,
   // a placement bracket: the losses that end a run, null playing every place
@@ -333,7 +358,8 @@ export const cupPayload = (form) => ({
       // A cup is played on the evening: a series starts when both sides are there
       scheduling_mode: 'immediate',
       third_place: form.format === 'single_elimination' && !!form.third_place,
-      grand_final_modifier: form.format === 'double_elimination' && form.grand_final_reset ? 'reset' : 'one',
+      grand_final_modifier: form.format === 'double_elimination' ? form.grand_final || 'one' : 'one',
+      grand_final_lead: form.format === 'double_elimination' && form.grand_final === 'lead' ? Number(form.grand_final_lead) : null,
       placement_lives: form.format === 'placement' ? form.placement_lives ?? null : null,
     },
   ],
@@ -477,6 +503,11 @@ export function cupProblem(form, step) {
     const points = ffaPoints(form);
     if (points.some((value) => !Number.isInteger(value) || value < 0)) return 'Points are whole numbers, 0 or more.';
     return null;
+  }
+  if (step === 'format' && form.format === 'double_elimination' && form.grand_final === 'lead') {
+    const choices = leadChoices(form.best_of, form.best_of_plan);
+    if (!choices.length) return 'A head start needs a grand final of Bo3 or longer.';
+    if (!choices.includes(Number(form.grand_final_lead))) return `The head start in this grand final is ${choices.join(' or ')} ${choices.at(-1) === 1 ? 'game' : 'games'}.`;
   }
   if (step === 'format' && form.format === 'swiss' && form.swiss_mode !== 'all') {
     const rounds = Number(form.swiss_rounds);

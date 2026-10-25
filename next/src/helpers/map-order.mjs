@@ -83,12 +83,13 @@ export const scoreOf = (winners) => {
 
 // How many game rows to show over a best-of of this many games: every game answered, plus
 // the next while the series is open. A season counts its games off its map rules and a
-// stage carries its best_of, so both hand over a count.
-export const gameSlots = (games, winners) => {
+// stage carries its best_of, so both hand over a count. A grand final whose upper-bracket
+// winner starts `lead` games up plays that many fewer at most.
+export const gameSlots = (games, winners, lead = 0) => {
   const [a, b] = scoreOf(winners);
   const wins = winsFor(games);
-  if (a >= wins || b >= wins) return a + b;
-  return Math.min(games, a + b + 1);
+  if (a + lead >= wins || b >= wins) return a + b;
+  return Math.min(games - lead, a + b + 1);
 };
 
 // The games to report: one entry per game played, as the backend checks them

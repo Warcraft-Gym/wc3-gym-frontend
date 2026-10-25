@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { BestOfPlan } from "@/components/BestOfPlan";
+import { GrandFinalRules } from "@/components/GrandFinalRules";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -15,6 +16,7 @@ import {
   planText,
   poolProblem,
 } from "@/helpers/best-of-plan.mjs";
+import { grandFinalLine, leadChoices } from "@/helpers/cup-wizard.mjs";
 import { readStagesPayload } from "@/helpers/event-wizard.mjs";
 import { legStages } from "@/helpers/cup-rounds.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
@@ -42,6 +44,9 @@ export function CupFormatCard({
   const [open, setOpen] = useState(false);
   const [bestOf, setBestOf] = useState<number>(stage.best_of);
   const [plan, setPlan] = useState<Record<string, number>>({});
+  // a double elimination's grand final: one series, a reset or a head start
+  const [grandFinal, setGrandFinal] = useState<string>(stage.grand_final_modifier || "one");
+  const [lead, setLead] = useState<number>(stage.grand_final_lead || 1);
   const [pool, setPool] = useState<PoolMap[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +56,9 @@ export function CupFormatCard({
   const editable = !drawn && !event.closed_at;
   // a free for all lobby is one game on one map of the pool, so it names no best-of
   const ffa = stage.format === "ffa";
+  const double = stage.format === "double_elimination";
+  const leads: number[] = leadChoices(bestOf, plan);
+  const leadProblem = double && grandFinal === "lead" && !leads.includes(lead) ? (leads.length ? `The head start in this grand final is ${leads.join(" or ")} ${leads[leads.length - 1] === 1 ? "game" : "games"}.` : "A head start needs a grand final of Bo3 or longer.") : null;
   // a custom game is played on its one map, every game on it
   const custom = !!event.custom_game;
   const problem = custom
@@ -61,11 +69,13 @@ export function CupFormatCard({
       ? pool.length
         ? null
         : "Add at least one map; every lobby plays a map of the pool."
-      : poolProblem(pool.length, bestOf, plan, stage.format);
+      : leadProblem || poolProblem(pool.length, bestOf, plan, stage.format);
 
   const edit = () => {
     setBestOf(stage.best_of);
     setPlan(stored);
+    setGrandFinal(stage.grand_final_modifier || "one");
+    setLead(stage.grand_final_lead || 1);
     setPool(
       maps.map((row) => ({
         id: row.id,
@@ -95,6 +105,7 @@ export function CupFormatCard({
                 ...row,
                 best_of: bestOf,
                 best_of_by_round: planText(plan, stage.format, bestOf),
+                ...(double ? { grand_final_modifier: grandFinal, grand_final_lead: grandFinal === "lead" ? lead : null } : {}),
               }
             : row,
       );
@@ -146,6 +157,12 @@ export function CupFormatCard({
             {bestOfLine(stage.best_of, stored, stage.format)}
           </div>
         )}
+        {double ? (
+          <div>
+            <span className="text-muted-foreground">Grand final: </span>
+            {grandFinalLine(stage.grand_final_modifier, stage.grand_final_lead)}
+          </div>
+        ) : null}
         {custom ? (
           <div>
             <span className="text-muted-foreground">Map: </span>
@@ -165,7 +182,7 @@ export function CupFormatCard({
         )}
         {drawn ? (
           <div className="text-xs text-muted-foreground">
-            The bracket is drawn, so its best-of and its maps stay as they are.
+            The bracket is drawn, so its best-of, its grand final and its maps stay as they are.
           </div>
         ) : null}
       </CardContent>
@@ -188,6 +205,18 @@ export function CupFormatCard({
                 }}
               />
             )}
+            {double ? (
+              <GrandFinalRules
+                value={grandFinal}
+                lead={lead}
+                bestOf={bestOf}
+                plan={plan}
+                onChange={(next, games) => {
+                  setGrandFinal(next);
+                  setLead(games);
+                }}
+              />
+            ) : null}
             {custom ? (
               <CustomMapPicker
                 value={pool[0] ? { id: pool[0].id, name: pool[0].name } : null}

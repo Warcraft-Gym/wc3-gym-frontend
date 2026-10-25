@@ -76,6 +76,9 @@ test('a stage write carries back what the read gave, and the MMR limit is a capt
   assert.equal(readStagesPayload(read, { 7: '' })[0].max_mmr_difference, null);
   // an untouched stage carries the value it was read with
   assert.equal(readStagesPayload(read, {})[0].max_mmr_difference, 100);
+  // a grand final head start goes back with its rule, so a save elsewhere keeps it
+  const [lead] = readStagesPayload([{ id: 9, format: 'double_elimination', best_of: 3, grand_final_modifier: 'lead', grand_final_lead: 1 }]);
+  assert.deepEqual([lead.grand_final_modifier, lead.grand_final_lead], ['lead', 1]);
   assert.deepEqual(readStagesPayload(null), []);
 });
 

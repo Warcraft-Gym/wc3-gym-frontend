@@ -37,6 +37,8 @@ type Form = {
   solo?: boolean;
   tags: (string | undefined)[];
   map_rules?: string;
+  // the games side 1 starts with: a grand final's head start, else none
+  lead?: number;
   races: { player1?: string | null; player2?: string | null };
   raceOpen?: boolean;
   reported?: number;
@@ -157,7 +159,9 @@ export function ReportResultDialog({ onSaved, onMoved, ref, cup = false }: { onS
         races: { player1: item.player1_race, player2: item.player2_race },
         raceOpen: !!(item.player1_off_race || item.player2_off_race),
         // games already reported: their stored replays stay unless a new file is picked
-        reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score : 0,
+        // a grand final whose upper-bracket winner starts ahead counts those games in its score
+        lead: item.head_start || 0,
+        reported: item.player1_score != null && item.player2_score != null ? item.player1_score + item.player2_score - (item.head_start || 0) : 0,
         scored: holdsResult(item),
         // ponytail: only a fixture's page lists its replays, so a series without one takes no file until a page shows it
         listsReplays: !cup && item.match_id != null,
@@ -212,7 +216,8 @@ export function ReportResultDialog({ onSaved, onMoved, ref, cup = false }: { onS
   };
 
   // The score the tapped winners add up to, the season's maps to win, and the file picked for a game
-  const reportedScore: number[] = scoreOf(series.winners || []);
+  const lead: number = series.lead || 0;
+  const reportedScore: number[] = scoreOf(series.winners || []).map((games: number, side: number) => (side === 0 ? games + lead : games));
   const seriesGames = gamesOf(series.map_rules);
   const seriesWins = winsFor(seriesGames);
   // What the folded row says the veto stands at
@@ -227,7 +232,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref, cup = false }: { onS
   const needsFile = (game: number) => game > (series.reported || 0);
 
   // One row per game played, plus the next while neither side has won the series
-  const gameRows = Array.from({ length: gameSlots(seriesGames, series.winners || []) }, (_, index) => index + 1);
+  const gameRows = Array.from({ length: gameSlots(seriesGames, series.winners || [], lead) }, (_, index) => index + 1);
 
   const setMap = (game: number, mapId: number | null) => setSeries((form) => ({ ...form, maps: { ...form.maps, [game]: mapId } }));
 
@@ -330,7 +335,7 @@ export function ReportResultDialog({ onSaved, onMoved, ref, cup = false }: { onS
     try {
       const games = gamesReported(series.winners, mapOf);
 
-      const played = replaysNeeded(p1, p2);
+      const played = replaysNeeded(p1, p2) - lead;
       const id = series.id!;
       const fix = played === series.reported && JSON.stringify(games) === series.storedGames;
       const uploaded: number[] = [];
@@ -432,6 +437,11 @@ export function ReportResultDialog({ onSaved, onMoved, ref, cup = false }: { onS
               <span className="truncate font-name font-bold">{name(2)}</span>
             </span>
           </div>
+          {lead ? (
+            <p className="text-sm text-muted-foreground">
+              The upper-bracket winner, {name(1)}, starts {lead}–0, so the games below are the ones played.
+            </p>
+          ) : null}
 
           {series.solo && !series.raceOpen ? (
             <div>

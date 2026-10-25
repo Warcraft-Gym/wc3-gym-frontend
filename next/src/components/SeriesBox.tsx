@@ -109,7 +109,10 @@ export function SeriesBox({
 
   // What a screen reader hears for the box: where it sits, who plays, and the state
   const sideName = (side: number) => (team(side) ? teamLabel(team(side)) : player(side)?.name) || empty(side);
-  const where = [round, label].filter(Boolean).join(", ");
+  // a grand final whose upper-bracket winner starts ahead says so until its result stands
+  const lead = Number(series.head_start) || 0;
+  const tag = lead && series.player1_score == null ? [label, `starts ${lead}–0`].filter(Boolean).join(" · ") : label;
+  const where = [round, tag].filter(Boolean).join(", ");
   const who = seats.length ? `${seats.length} seats` : `${sideName(1)} vs ${sideName(2)}`;
   const name = `${where ? `${where}: ` : ""}${who}, ${stateWord}`;
 
@@ -217,13 +220,13 @@ export function SeriesBox({
         // the draw names no state: the corner holds the buttons, the label rides on the left
         <div className={cn("flex min-h-5 items-center gap-1.5 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", (reporting || vetoing) && "min-h-7")}>
           {done ? <Icon name="mdi-check-circle" size={14} className="text-success" title={stateWord} /> : null}
-          <span className="min-w-0 truncate">{label}</span>
+          <span className="min-w-0 truncate">{tag}</span>
         </div>
       ) : (
         <div className={cn("flex justify-between gap-2 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", (reporting || vetoing) && "min-h-7 items-center pr-24")}>
           {/* the report button takes the corner, so the label rides beside the state */}
-          <span>{reporting && label ? `${stateWord} · ${label}` : stateWord}</span>
-          {label && !reporting ? <span>{label}</span> : null}
+          <span>{reporting && tag ? `${stateWord} · ${tag}` : stateWord}</span>
+          {tag && !reporting ? <span>{tag}</span> : null}
         </div>
       )}
     </>

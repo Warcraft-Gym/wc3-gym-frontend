@@ -338,7 +338,8 @@ export function EventAdminView({ id }: { id: string }) {
       setLobbyOpen(true);
       return;
     }
-    const [a, b] = [row.player1_score ?? 0, row.player2_score ?? 0];
+    // a grand final's head start sits in side 1's score but was never played, so it taps no game
+    const [a, b] = [Math.max((row.player1_score ?? 0) - (Number(row.head_start) || 0), 0), row.player2_score ?? 0];
     setWinners([...Array(a).fill("A"), ...Array(b).fill("B")]);
     setResultOpen(true);
   };
@@ -376,9 +377,11 @@ export function EventAdminView({ id }: { id: string }) {
   // the series' own best-of: a bracket part may play its own, such as a Bo3 final after Bo1 rounds
   const bestOf: number = picked?.rules?.best_of ?? stage?.best_of ?? 3;
   const wins = winsFor(bestOf);
-  const score: number[] = scoreOf(winners);
+  // the games side 1 opens with: a grand final's head start, which the score counts
+  const lead = Number(picked?.head_start) || 0;
+  const score: number[] = scoreOf(winners).map((games: number, side: number) => (side === 0 ? games + lead : games));
   // every game answered, plus the next while the series is open
-  const gameRows = Array.from({ length: gameSlots(bestOf, winners) }, (unused, index) => index + 1);
+  const gameRows = Array.from({ length: gameSlots(bestOf, winners, lead) }, (unused, index) => index + 1);
   const validScore = bothSides && (score[0] === wins) !== (score[1] === wins) && Math.max(score[0], score[1]) === wins;
 
   const nameOf = (side: number) => sideName(picked, side) || `Side ${side}`;
@@ -959,9 +962,10 @@ export function EventAdminView({ id }: { id: string }) {
         }
       >
         <StatusAlert modelValue={dialogError} onClose={() => setDialogError(null)} />
-        <p className="mb-4 text-base">
+        <p className={lead ? "mb-1 text-base" : "mb-4 text-base"}>
           {nameOf(1)} {score[0]} – {score[1]} {nameOf(2)}
         </p>
+        {lead ? <p className="mb-4 text-sm text-muted-foreground">The upper-bracket winner, {nameOf(1)}, starts {lead}–0, so the games below are the ones played.</p> : null}
 
         {scored ? (
           <Alert className="alert mb-4 text-info">

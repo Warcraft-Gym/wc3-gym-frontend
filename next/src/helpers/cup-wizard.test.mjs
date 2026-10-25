@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine, rulesForm, rulesPayload, rulesProblem } from './cup-wizard.mjs';
+import { blankCup, cupCheckin, cupPayload, cupProblem, cupSteps, cupTeamSize, grandFinalLine, isCustom, isFfa, ffaLine, ffaModeLine, ffaPoints, laterRounds, leadChoices, livesLine, planFormat, pointsOf, repeatChoices, repeatName, swissLine, rulesForm, rulesPayload, rulesProblem } from './cup-wizard.mjs';
 import { bestOfLine } from './best-of-plan.mjs';
 
 const day = new Date(2026, 9, 16);
@@ -16,7 +16,7 @@ test('a cup writes one immediate elimination stage and the bounds it was given',
   assert.ok(body.starts_at);
   assert.deepEqual([body.entrant_min, body.entrant_cap], [8, 16]);
   assert.deepEqual(body.stages, [
-    { format: 'single_elimination', best_of: 3, best_of_by_round: null, scheduling_mode: 'immediate', third_place: false, grand_final_modifier: 'one', placement_lives: null },
+    { format: 'single_elimination', best_of: 3, best_of_by_round: null, scheduling_mode: 'immediate', third_place: false, grand_final_modifier: 'one', grand_final_lead: null, placement_lives: null },
   ]);
   assert.equal(body.veto_by_best_of, true);
   assert.equal(body.team_size, null);
@@ -44,13 +44,28 @@ test('a cup names the best-of of its bracket parts and the maps it vetoes from',
   assert.equal(cupProblem(kept, 'maps'), null);
 });
 
-test('the third place plays only in single elimination, the reset only in double', () => {
-  const single = cupPayload({ ...blankCup(), third_place: true, grand_final_reset: true });
-  assert.deepEqual([single.stages[0].third_place, single.stages[0].grand_final_modifier], [true, 'one']);
-  const double = cupPayload({ ...blankCup(), format: 'double_elimination', third_place: true, grand_final_reset: true });
-  assert.deepEqual([double.stages[0].third_place, double.stages[0].grand_final_modifier], [false, 'reset']);
-  const noReset = cupPayload({ ...blankCup(), format: 'double_elimination', grand_final_reset: false });
-  assert.equal(noReset.stages[0].grand_final_modifier, 'one');
+test('the third place plays only in single elimination, the grand final rules only in double', () => {
+  const single = cupPayload({ ...blankCup(), third_place: true, grand_final: 'reset' });
+  assert.deepEqual([single.stages[0].third_place, single.stages[0].grand_final_modifier, single.stages[0].grand_final_lead], [true, 'one', null]);
+  const double = cupPayload({ ...blankCup(), format: 'double_elimination', third_place: true, grand_final: 'reset' });
+  assert.deepEqual([double.stages[0].third_place, double.stages[0].grand_final_modifier, double.stages[0].grand_final_lead], [false, 'reset', null]);
+  // a new cup plays one grand final, no reset
+  const plain = cupPayload({ ...blankCup(), format: 'double_elimination' });
+  assert.deepEqual([plain.stages[0].grand_final_modifier, plain.stages[0].grand_final_lead], ['one', null]);
+  const lead = cupPayload({ ...blankCup(), format: 'double_elimination', grand_final: 'lead', grand_final_lead: 2 });
+  assert.deepEqual([lead.stages[0].grand_final_modifier, lead.stages[0].grand_final_lead], ['lead', 2]);
+});
+
+test('a head start fits the grand final: none in a Bo1, one game in a Bo3, one or two in a Bo5', () => {
+  assert.deepEqual(leadChoices(1), []);
+  assert.deepEqual(leadChoices(1, { grand_final: 3 }), [1]);
+  assert.deepEqual(leadChoices(3, { upper_final: 5 }), [1]);
+  assert.deepEqual(leadChoices(1, { grand_final: 5 }), [1, 2]);
+  const form = { ...blankCup(), name: 'Cup', format: 'double_elimination', grand_final: 'lead', grand_final_lead: 1, best_of: 1, best_of_plan: {} };
+  assert.equal(cupProblem(form, 'format'), 'A head start needs a grand final of Bo3 or longer.');
+  assert.equal(cupProblem({ ...form, best_of_plan: { grand_final: 3 }, grand_final_lead: 2 }, 'format'), 'The head start in this grand final is 1 game.');
+  assert.equal(cupProblem({ ...form, best_of_plan: { grand_final: 5 }, grand_final_lead: 2 }, 'format'), null);
+  assert.deepEqual([grandFinalLine('one'), grandFinalLine('reset'), grandFinalLine('lead', 2)], ['one grand final', 'grand final reset', 'the upper-bracket winner starts 2–0']);
 });
 
 test('the seeds show to everyone by default, and the switch hides them through the event setting', () => {

@@ -1,5 +1,15 @@
 # Bundle history
 
+## 2026-10-25
+
+* **Add**: "Edit cup" on a cup's run page opens `/events/:id/edit`, the Create cup wizard filled from the cup, until its first draw: any step in any order, "Save" from every step in one `PUT /events/{id}`, the game mode read only once anyone has signed up, and one evening or rounds never changing. The run page's format card, check-in line and "Sign-up rules" link into it in place of their own editors, which a cup over rounds keeps for its later rounds after the first draw. [Event management](pages/event-management.md) and [run a cup](flows/run-a-cup.md) state it.
+* **Update**: a cup sign-up asks a member who has never chosen, once, whether they want the cup announcements: subscribe, not now or no and not again. Home's "Announcements" switch turned off counts as no. The event page opens a series' veto from `?veto=`, the link each line of a cup's Discord draw and series messages carries, and a cup series box names its game name and its host. [Member self-service](pages/member.md) and [leagues and events](pages/leagues-and-events.md) state it.
+* **Update**: Create cup's Format step and the run page's format card hold "Grand final rules" on a double elimination, one choice of three: one grand final (the default, so a new cup has no reset), a reset, or a head start for the upper-bracket winner that the grand final's best-of allows. The report dialog counts the head start in side 1's score and the series box names it. [Event management](pages/event-management.md) and [fixtures and series](pages/fixtures-and-series.md) state it.
+* **Update**: on a cup's run page a player's name opens the stats panel of the GNL round planner, now `PlayerStatsPanel` in `next/src/components/`: W3Champions by race, the ladder over the current W3Champions season from `GET /users/{id}/ladder/w3c-season`, and "In this cup" in place of the GNL season, with links to the profile and W3Champions. [Event management](pages/event-management.md), [shared components](concepts/shared-components.md) and [fixtures and series](pages/fixtures-and-series.md) state it.
+* **Update**: the best-of editor of Create cup and of the run page's format card is one "Best of" row and a "Longer rounds" list that "+ Another round" fills; the stored plan is the same. [Event management](pages/event-management.md) states it.
+* **Update**: after a sign-in the route guard alone leaves `/login` and `/admin-login` for the saved path, so a sign-in from an event page lands back on it. [The app shell](concepts/app-shell-and-routing.md) states it.
+* **Update**: a picker row that stacks two lines lies flat in the picker's button, cut short with an ellipsis. [Shared components](concepts/shared-components.md) states it.
+
 ## 2026-10-24
 
 * **Update**: a cup's Divisions panel offers one to five divisions; one division has no cut, takes every player, the unrated included, and its preview card reads "MMR any". [Event management](pages/event-management.md) states it.

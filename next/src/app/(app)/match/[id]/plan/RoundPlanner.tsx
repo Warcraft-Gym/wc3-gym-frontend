@@ -28,7 +28,7 @@ import { InfoTip, Notice } from "./InfoTip";
 import { MatchupTable, type SortKey, type SortOrder } from "./MatchupTable";
 import { MmrRange } from "./MmrRange";
 import type { Loaded } from "./PairTimeDialog";
-import { PlayerStatsPanel, type PanelTarget } from "./PlayerStatsPanel";
+import { PlayerStatsPanel, type PanelTarget } from "@/components/PlayerStatsPanel";
 import { ReplaceSeries } from "./ReplaceSeries";
 import { PlayerFocus } from "./PlayerFocus";
 import { SelectionTray, type SelectionEntry } from "./SelectionTray";

@@ -2,9 +2,9 @@
 import { useEffect } from "react";
 import { useAuth as useClerk } from "@clerk/clerk-react";
 import { useRouter } from "next/navigation";
-import { saveReturnUrl, takeReturnUrl } from "@/helpers/return-url.mjs";
+import { saveReturnUrl } from "@/helpers/return-url.mjs";
 import { useAuthStore, useSeasonStore, setNavigate, useClerkAuth } from "@/stores";
-import { homePath, metaOf } from "@/lib/routes";
+import { metaOf } from "@/lib/routes";
 import { clerkEnabled } from "@/lib/clerk-provider";
 
 export function ClerkBridge() {
@@ -53,7 +53,8 @@ function ClerkSessionBridge() {
         return;
       }
       ensureSeasons().catch(() => {}); // the menu links the current season by slug
-      if (path === "/login") router.push(takeReturnUrl(homePath(session.role)));
+      // the route guard leaves /login for the saved path once `me` is set; a second take here
+      // would find the path gone and land on the home page
     })();
     return () => { stale = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,10 +1,11 @@
 // The pure parts of Create cup: the blank form, the one body POST /events takes, and what a step
 // still needs. A cup plays one elimination stage on the evening it starts, so the form asks only
 // what an organizer decides; everything else keeps the backend's default.
-import { planText, poolProblem } from './best-of-plan.mjs';
-import { dayIso } from './date-input.mjs';
+import { parsePlan, planText, poolProblem } from './best-of-plan.mjs';
+import { dayDate, dayIso } from './date-input.mjs';
 import { text } from './event-labels.mjs';
-import { storedUtc, viewerZone } from './timezone.mjs';
+import { pickerParts, storedUtc, viewerZone } from './timezone.mjs';
+import { legsOf, legStages } from './cup-rounds.mjs';
 import { WEEKDAYS } from './cup-recurrence.mjs';
 import { checkinPayload, checkinProblem } from './checkin-window.mjs';
 
@@ -212,6 +213,29 @@ export const PLACEMENT_LIVES = [
  *  @param {number | null | undefined} lives */
 export const livesLine = (lives) => (lives ? `a run ends after ${lives} ${lives === 1 ? 'loss' : 'losses'}` : 'every place played out');
 
+// What a double elimination's grand final holds, one of three; the stage stores it as
+// `grand_final_modifier`, and a head start names its games in `grand_final_lead`
+export const GRAND_FINALS = [
+  { value: 'one', title: 'One grand final', hint: 'The upper- and lower-bracket winners play one series.' },
+  { value: 'reset', title: 'Grand final reset', hint: 'The lower-bracket winner must win twice: if they take the grand final, a second series decides.' },
+  { value: 'lead', title: 'Upper-bracket winner starts ahead', hint: 'The upper-bracket winner opens the grand final with games already won.' },
+];
+
+/** The head starts a grand final of this best-of allows: 1 game up to one fewer than a win takes,
+ *  so a Bo1 allows none, a Bo3 one game and a Bo5 one or two.
+ *  @param {number} bestOf the cup's best-of @param {Record<string, number>} [plan] the parts' own */
+export function leadChoices(bestOf, plan = {}) {
+  const games = Number(plan?.grand_final) || Number(bestOf) || 1;
+  const wins = Math.floor(games / 2) + 1;
+  return Array.from({ length: wins - 1 }, (unused, index) => index + 1);
+}
+
+/** How a grand final rule reads in a line: "one grand final", "grand final reset" or "the
+ *  upper-bracket winner starts 1–0".
+ *  @param {string | null | undefined} modifier @param {number | null | undefined} lead */
+export const grandFinalLine = (modifier, lead) =>
+  modifier === 'reset' ? 'grand final reset' : modifier === 'lead' ? `the upper-bracket winner starts ${Number(lead) || 1}–0` : 'one grand final';
+
 export const blankCup = () => ({
   name: '',
   description: '',
@@ -220,7 +244,9 @@ export const blankCup = () => ({
   game: '1v1',
   format: 'single_elimination',
   third_place: false,
-  grand_final_reset: true,
+  // a double elimination plays one grand final unless the organizer picks a reset or a head start
+  grand_final: 'one',
+  grand_final_lead: 1,
   // on: only the organizers and admins read the seed numbers
   hide_seeds: false,
   // a placement bracket: the losses that end a run, null playing every place
@@ -333,7 +359,8 @@ export const cupPayload = (form) => ({
       // A cup is played on the evening: a series starts when both sides are there
       scheduling_mode: 'immediate',
       third_place: form.format === 'single_elimination' && !!form.third_place,
-      grand_final_modifier: form.format === 'double_elimination' && form.grand_final_reset ? 'reset' : 'one',
+      grand_final_modifier: form.format === 'double_elimination' ? form.grand_final || 'one' : 'one',
+      grand_final_lead: form.format === 'double_elimination' && form.grand_final === 'lead' ? Number(form.grand_final_lead) : null,
       placement_lives: form.format === 'placement' ? form.placement_lives ?? null : null,
     },
   ],
@@ -478,6 +505,11 @@ export function cupProblem(form, step) {
     if (points.some((value) => !Number.isInteger(value) || value < 0)) return 'Points are whole numbers, 0 or more.';
     return null;
   }
+  if (step === 'format' && form.format === 'double_elimination' && form.grand_final === 'lead') {
+    const choices = leadChoices(form.best_of, form.best_of_plan);
+    if (!choices.length) return 'A head start needs a grand final of Bo3 or longer.';
+    if (!choices.includes(Number(form.grand_final_lead))) return `The head start in this grand final is ${choices.join(' or ')} ${choices.at(-1) === 1 ? 'game' : 'games'}.`;
+  }
   if (step === 'format' && form.format === 'swiss' && form.swiss_mode !== 'all') {
     const rounds = Number(form.swiss_rounds);
     if (!Number.isInteger(rounds) || rounds < 2) return 'A Swiss cup plays at least 2 rounds.';
@@ -524,3 +556,88 @@ export function cupProblem(form, step) {
   }
   return null;
 }
+
+const listed = (value) => (value === null || value === undefined ? '' : value);
+
+/** The Create cup form of a cup as the event read answers it, so Edit cup opens on what the cup
+ *  plays. A cup over rounds reads its first round's stages, as every round plays the same, and
+ *  its later rounds as days the organizer picked. Times read in the viewer's zone.
+ *  @param {any} event */
+export function cupForm(event, zone = viewerZone()) {
+  const legs = legsOf(event);
+  const [first, second] = legStages(event?.stages || [], legs[0]);
+  const size = event?.team_size || null;
+  const ffa = first?.format === 'ffa';
+  const custom = !!event?.custom_game;
+  const swiss = first?.format === 'swiss' || first?.format === 'round_robin';
+  // one FFA lobby seats the whole field, so its seats are the cup's cap
+  const league = ffa && first.lobby_size == null;
+  // the stage whose bracket parts play their own best-of: a Swiss cup's playoff, or the one stage
+  const bracket = swiss ? second : first;
+  const maps = (event?.maps || []).map((row) => ({ id: row.id, name: row.name, shortname: row.shortname }));
+  const when = (at) => (at ? pickerParts(at, zone) : { date: null, time: '' });
+  const start = event?.starts_at ? when(event.starts_at) : { date: dayDate(event?.start_date), time: '' };
+  const blank = blankCup();
+  return {
+    ...blank,
+    name: event?.name || '',
+    description: event?.description || '',
+    start_date: start.date,
+    start_time: start.time,
+    game: custom ? 'custom' : ffa ? 'ffa' : size ? `${size}v${size}` : '1v1',
+    custom_mode: ffa ? 'ffa' : size ? `${size}v${size}` : '1v1',
+    ffa_team_size: ffa ? size || 1 : 1,
+    format: swiss ? 'swiss' : ffa || !first ? blank.format : first.format,
+    third_place: !!bracket?.third_place,
+    grand_final: first?.format === 'double_elimination' && GRAND_FINALS.some((item) => item.value === first.grand_final_modifier) ? first.grand_final_modifier : 'one',
+    grand_final_lead: first?.grand_final_lead || 1,
+    hide_seeds: !!event?.hide_seeds,
+    placement_lives: first?.format === 'placement' ? first.placement_lives ?? null : null,
+    swiss_mode: first?.format === 'round_robin' ? 'all' : 'rounds',
+    swiss_rounds: first?.format === 'swiss' ? first.swiss_rounds ?? blank.swiss_rounds : blank.swiss_rounds,
+    playoff: swiss && second ? Number(first.advance_count) || 0 : 0,
+    best_of: ffa || !first ? blank.best_of : first.best_of,
+    best_of_plan: ffa || !bracket ? {} : parsePlan(bracket.best_of_by_round),
+    pool: custom ? [] : maps,
+    custom_map: custom && maps[0] ? { id: maps[0].id, name: maps[0].name } : null,
+    ...rulesForm(event),
+    entrant_min: listed(event?.entrant_min),
+    entrant_cap: listed(event?.entrant_cap),
+    uses_divisions: !!event?.uses_divisions,
+    play: legs.length ? 'rounds' : 'one',
+    round_count: legs.length || blank.round_count,
+    later_rounds: legs.slice(1).map((leg) => ({ ...when(leg.starts_at), edited: true })),
+    points: (event?.points_by_place?.length ? event.points_by_place : DEFAULT_POINTS).map(String),
+    ffa_mode: league ? 'league' : 'heats',
+    lobby_size: ffa ? (league ? event.entrant_cap ?? blank.lobby_size : first.lobby_size) : blank.lobby_size,
+    lobby_advance: ffa && !league ? String(listed(first.group_advance)) : '',
+    ffa_games: league ? first.swiss_rounds ?? blank.ffa_games : blank.ffa_games,
+    ffa_points: ffa && first.points_by_place ? String(first.points_by_place).split(',').map((value) => value.trim()) : [],
+    checkin_enabled: !!event?.checkin_enabled,
+    checkin_opens_minutes: event?.checkin_opens_minutes ?? null,
+    checkin_closes_minutes: event?.checkin_closes_minutes ?? null,
+    early_checkin: !!event?.early_checkin,
+    published: !!event?.published,
+  };
+}
+
+/** The body Edit cup sends to PUT /events/{id}: Create cup's body less what an edit leaves alone,
+ *  which is the kind, who may sign up, the rounds, the repeat rule and the sign-ups switch. The
+ *  stages, the pool and the points table go in the same write, so the backend checks the pool
+ *  against the stages once both are in.
+ *  @param {any} form */
+export function editPayload(form) {
+  /** @type {Record<string, any>} */
+  const body = cupPayload(form);
+  for (const key of ['kind', 'signup_policy', 'bnet_required', 'end_date', 'legs', 'recurrence', 'signups_open']) delete body[key];
+  return body;
+}
+
+/** Why a part of Edit cup reads only, or null where it changes: the game mode until the first
+ *  sign-up, a withdrawn or waiting one included, and one evening or rounds never, a cup over
+ *  rounds changing its later rounds on the run page's rounds bar.
+ *  @param {any} event @param {any[]} entrants every entrant row of the cup */
+export const editLocks = (event, entrants) => ({
+  mode: entrants.length ? 'Players have signed up, so the game mode stays.' : null,
+  play: legsOf(event).length ? 'A cup over rounds stays one. Its later rounds change on the run page.' : 'A cup of one evening stays one. Create a new cup to play over rounds.',
+});

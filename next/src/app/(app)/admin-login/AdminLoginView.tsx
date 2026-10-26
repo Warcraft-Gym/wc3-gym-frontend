@@ -49,7 +49,7 @@ export function AdminLoginView() {
 
     setIsSubmitting(true);
     try {
-      await login(password, { stay: devLoginEnabled });
+      await login(password);
     } catch (error) {
       setApiError((error as Error).message);
     } finally {

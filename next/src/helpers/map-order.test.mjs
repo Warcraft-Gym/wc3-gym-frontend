@@ -68,6 +68,17 @@ test('a row opens for the next game until the series is won', () => {
   assert.equal(gameSlots(5, ['A', 'A']), 3);
 });
 
+test('a grand final with a head start plays fewer games, and side A needs fewer wins', () => {
+  // a Bo3 where side A starts 1-0: one game decides it for A, two at most
+  assert.equal(gameSlots(3, [], 1), 1);
+  assert.equal(gameSlots(3, ['A'], 1), 1);
+  assert.equal(gameSlots(3, ['B'], 1), 2);
+  assert.equal(gameSlots(3, ['B', 'B'], 1), 2);
+  // a Bo5 where side A starts 2-0: side B needs three in a row
+  assert.equal(gameSlots(5, ['B', 'B'], 2), 3);
+  assert.equal(gameSlots(5, ['B', 'B', 'A'], 2), 3);
+});
+
 test('the report names one game per map played', () => {
   const maps = { 1: 7, 2: 22 };
   assert.deepEqual(gamesReported(['A', 'B', null], (game) => maps[game]), [

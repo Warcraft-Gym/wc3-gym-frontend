@@ -4,7 +4,7 @@ title: App shell and routing
 description: One router on plain paths, a role rank per route, a guard that saves the return path, and a nav built from the hats a session wears, drawn as a top bar, a phone tab bar and an admin frame.
 resource: ../../../next/src/lib/routes.ts
 tags: [router, session]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-16T10:54:18Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-25T10:00:00Z }
 sources:
   - id: router
     resource: ../../../next/src/lib/routes.ts
@@ -37,7 +37,7 @@ sources:
 
 `/player-dashboard` redirects to the member's own player page and `/player-stats` to `/players`. What each page does is in the [pages](../pages/index.md) directory.
 
-The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A signed-in session on `/login` or `/admin-login` is sent on the same way, except the admin token's session on `/admin-login` while `NEXT_PUBLIC_DEV_LOGIN=1`, which stays to pick between the super admin and a player. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else; a member who is no organizer goes to `/no-access?role=organizer`, which points at the Events page. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/player/:id` does, is not drawn again.
+The guard is a client component in `next/src/lib/guard.tsx` that wraps every page and draws nothing until the route is allowed. A public route opens for anyone. Otherwise, with no session the path is saved and the browser goes to `/login`; a login lands on the saved path, else on `/` for a member and `/profile` for a guest. A signed-in session on `/login` or `/admin-login` is sent on the same way, except the admin token's session on `/admin-login` while `NEXT_PUBLIC_DEV_LOGIN=1`, which stays to pick between the super admin and a player. The saved path is read once, so the guard is the only reader after a sign-in, whether Discord, the admin token or the local dev login signed in; "Continue as Super Admin" is the one other reader, on `/admin-login`, where the guard waits for that choice. A session below the role goes to `/profile` for a guest and to `/no-access` for everyone else; a member who is no organizer goes to `/no-access?role=organizer`, which points at the Events page. An unknown path redirects to `/` rather than a blank page, because old links from Discord and the website exist. The season list is loaded once; a page that rewrites its own path, as `/player/:id` does, is not drawn again.
 
 Routes are plain paths since 2026-09-04; there is no bridge for old `/#/x` links. See [the decision](../decisions/history-routing.md).
 
@@ -49,7 +49,7 @@ A season in a path is its slug, `gnl-s18`, made from its name; a bare id still r
 
 The bar opens with the app title, "WC3 Gym Dashboard", which links to `/` from every page and is the way home. The same words are the default title of the browser tab, and a page title reads `<page> · WC3 Gym Dashboard`.
 
-`AppShell.tsx` draws the account from `/me`: the name and avatar, the role, and the theme menu (light, dark, system, stored in `localStorage`). `?theme=dark` or `?theme=light` in the address wins over the stored choice and is never stored. `?mode=clean` on `/events/:id` or `/koth/dashboard` cuts the bar down to the app title and the theme menu and drops the tabs, the account and the footer, for a KOTH night on a stream. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state, calls `/me` once the session lands, and routes to the saved path. A failed `/me` shows its message on the login page and signs out.
+`AppShell.tsx` draws the account from `/me`: the name and avatar, the role, and the theme menu (light, dark, system, stored in `localStorage`). `?theme=dark` or `?theme=light` in the address wins over the stored choice and is never stored. `?mode=clean` on `/events/:id` or `/koth/dashboard` cuts the bar down to the app title and the theme menu and drops the tabs, the account and the footer, for a KOTH night on a stream. The server renders a signed-out shell, so the account slot waits for hydration and never shows "Sign in" to a signed-in reader. `ClerkBridge` in `next/src/lib/clerk-bridge.tsx` hands Clerk's `useAuth()` to the auth store, watches the sign-in state and calls `/me` once the session lands; the guard then routes to the saved path. A failed `/me` shows its message on the login page and signs out.
 
 # The nav
 

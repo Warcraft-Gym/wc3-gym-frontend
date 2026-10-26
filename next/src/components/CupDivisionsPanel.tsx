@@ -10,6 +10,7 @@ import { PlayerName } from "@/components/PlayerName";
 import { RowActions, type RowAction } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
 import { CupTeamName } from "@/components/CupTeamName";
+import { useCupStats } from "@/components/CupPlayerStats";
 import { W3CMmr } from "@/components/W3CMmr";
 import { bandRange, cutChanged, divisionGroups, previewDivisions } from "@/helpers/cup-divisions.mjs";
 import { bandOf, domainOf, quantileCuts } from "@/helpers/divisions.mjs";
@@ -40,6 +41,7 @@ const rangeOf = bandRange as (band: Band) => string;
  *  cup is drawn the divisions stay, and the panel only reads. */
 export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants }: { event: Row; entrants: Row[]; drawn: boolean; onEvent: (event: Row) => void; onEntrants: (rows: Row[]) => void }) {
   const store = useEventStore();
+  const openStats = useCupStats();
   const divisions: Row[] = event.divisions || [];
   const live = entrants.filter((row) => !row.withdrawn_at && !row.waitlisted_at);
   const [count, setCount] = useState(divisions.length || 2);
@@ -178,7 +180,7 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
                   <ul className="flex flex-col gap-1">
                     {band.rows.map((row) => (
                       <li key={row.id} className="flex items-center gap-2">
-                        <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
+                        <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain onClick={openStats ? () => openStats(row) : undefined} />}</span>
                         {row.from ? (
                           <Badge className={toneClass("info")}>
                             <Icon name="mdi-arrow-right" />
@@ -207,7 +209,7 @@ export function CupDivisionsPanel({ event, entrants, drawn, onEvent, onEntrants 
               <ul className="flex flex-col gap-1">
                 {group.rows.map((row) => (
                   <li key={row.id} className="flex items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain />}</span>
+                    <span className="min-w-0 flex-1 truncate">{row.team ? <CupTeamName team={row.team} /> : <PlayerName player={row.user} race={row.race || undefined} plain onClick={openStats ? () => openStats(row) : undefined} />}</span>
                     {row.division_pinned ? <Icon name="mdi-pin" className="text-muted-foreground" aria-label="Placed by hand" /> : null}
                     <span className="tnum text-sm text-muted-foreground">{mmrOf(row) || "–"}</span>
                     <RowActions actions={actionsFor(row)} menu />

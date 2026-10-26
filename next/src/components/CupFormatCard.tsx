@@ -1,10 +1,12 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/Icon";
 import { BestOfPlan } from "@/components/BestOfPlan";
+import { GrandFinalRules } from "@/components/GrandFinalRules";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -15,6 +17,7 @@ import {
   planText,
   poolProblem,
 } from "@/helpers/best-of-plan.mjs";
+import { grandFinalLine, leadChoices } from "@/helpers/cup-wizard.mjs";
 import { readStagesPayload } from "@/helpers/event-wizard.mjs";
 import { legStages } from "@/helpers/cup-rounds.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
@@ -25,23 +28,30 @@ import { useEventStore } from "@/stores";
 type Row = Record<string, any>;
 
 /** What a cup plays, over its draw on the run page: the best-of of each bracket part and the map
- *  pool the players veto from. Both change until the bracket is drawn; after it the rounds keep
- *  the best-of the draw wrote, so the card only reads. */
+ *  pool the players veto from. Until the cup's first draw they change in Edit cup, which
+ *  `editHref` opens on its Format step. After it a round of a cup over rounds that is not drawn
+ *  yet still changes here, and every drawn round keeps the best-of the draw wrote, so the card
+ *  only reads. */
 export function CupFormatCard({
   event,
   stage,
   drawn,
+  editHref = null,
   onEvent,
 }: {
   event: Row;
   stage: Row;
   drawn: boolean;
+  editHref?: string | null;
   onEvent: (event: Row) => void;
 }) {
   const store = useEventStore();
   const [open, setOpen] = useState(false);
   const [bestOf, setBestOf] = useState<number>(stage.best_of);
   const [plan, setPlan] = useState<Record<string, number>>({});
+  // a double elimination's grand final: one series, a reset or a head start
+  const [grandFinal, setGrandFinal] = useState<string>(stage.grand_final_modifier || "one");
+  const [lead, setLead] = useState<number>(stage.grand_final_lead || 1);
   const [pool, setPool] = useState<PoolMap[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +61,9 @@ export function CupFormatCard({
   const editable = !drawn && !event.closed_at;
   // a free for all lobby is one game on one map of the pool, so it names no best-of
   const ffa = stage.format === "ffa";
+  const double = stage.format === "double_elimination";
+  const leads: number[] = leadChoices(bestOf, plan);
+  const leadProblem = double && grandFinal === "lead" && !leads.includes(lead) ? (leads.length ? `The head start in this grand final is ${leads.join(" or ")} ${leads[leads.length - 1] === 1 ? "game" : "games"}.` : "A head start needs a grand final of Bo3 or longer.") : null;
   // a custom game is played on its one map, every game on it
   const custom = !!event.custom_game;
   const problem = custom
@@ -61,11 +74,13 @@ export function CupFormatCard({
       ? pool.length
         ? null
         : "Add at least one map; every lobby plays a map of the pool."
-      : poolProblem(pool.length, bestOf, plan, stage.format);
+      : leadProblem || poolProblem(pool.length, bestOf, plan, stage.format);
 
   const edit = () => {
     setBestOf(stage.best_of);
     setPlan(stored);
+    setGrandFinal(stage.grand_final_modifier || "one");
+    setLead(stage.grand_final_lead || 1);
     setPool(
       maps.map((row) => ({
         id: row.id,
@@ -95,6 +110,7 @@ export function CupFormatCard({
                 ...row,
                 best_of: bestOf,
                 best_of_by_round: planText(plan, stage.format, bestOf),
+                ...(double ? { grand_final_modifier: grandFinal, grand_final_lead: grandFinal === "lead" ? lead : null } : {}),
               }
             : row,
       );
@@ -132,7 +148,12 @@ export function CupFormatCard({
     <Card className="card mb-4">
       <CardHeader className="flex flex-row flex-wrap items-center gap-2">
         <CardTitle className="flex-1">Format and maps</CardTitle>
-        {editable ? (
+        {editHref ? (
+          <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`${editHref}?step=format`} />}>
+            <Icon name="mdi-pencil" />
+            Edit
+          </Button>
+        ) : editable ? (
           <Button variant="outline" size="sm" onClick={edit}>
             <Icon name="mdi-pencil" />
             Edit
@@ -146,6 +167,12 @@ export function CupFormatCard({
             {bestOfLine(stage.best_of, stored, stage.format)}
           </div>
         )}
+        {double ? (
+          <div>
+            <span className="text-muted-foreground">Grand final: </span>
+            {grandFinalLine(stage.grand_final_modifier, stage.grand_final_lead)}
+          </div>
+        ) : null}
         {custom ? (
           <div>
             <span className="text-muted-foreground">Map: </span>
@@ -165,7 +192,7 @@ export function CupFormatCard({
         )}
         {drawn ? (
           <div className="text-xs text-muted-foreground">
-            The bracket is drawn, so its best-of and its maps stay as they are.
+            The bracket is drawn, so its best-of, its grand final and its maps stay as they are.
           </div>
         ) : null}
       </CardContent>
@@ -188,6 +215,18 @@ export function CupFormatCard({
                 }}
               />
             )}
+            {double ? (
+              <GrandFinalRules
+                value={grandFinal}
+                lead={lead}
+                bestOf={bestOf}
+                plan={plan}
+                onChange={(next, games) => {
+                  setGrandFinal(next);
+                  setLead(games);
+                }}
+              />
+            ) : null}
             {custom ? (
               <CustomMapPicker
                 value={pool[0] ? { id: pool[0].id, name: pool[0].name } : null}

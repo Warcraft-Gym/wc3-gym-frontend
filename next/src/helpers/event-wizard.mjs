@@ -43,8 +43,8 @@ const STAGE_WRITE_FIELDS = [
   'name', 'format', 'best_of', 'series_per_entrant_per_round', 'swiss_rounds', 'points_by_place',
   'lobby_size', 'group_advance', 'map_rules', 'scheduling_mode', 'ranking_rule',
   'points_series_won', 'points_series_drawn', 'points_game_won', 'advance_count', 'group_size',
-  'auto_advance', 'third_place', 'grand_final_modifier', 'best_of_by_round', 'placement_lives',
-  'seed_source',
+  'auto_advance', 'third_place', 'grand_final_modifier', 'grand_final_lead', 'best_of_by_round',
+  'placement_lives', 'seed_source',
 ];
 
 // The write replaces every field of every stage, so each stage goes back as it was read

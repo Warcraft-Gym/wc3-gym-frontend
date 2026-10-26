@@ -28,6 +28,24 @@ export const PARTS = {
 /** @param {string | null | undefined} format */
 export const partsOf = (format) => PARTS[/** @type {keyof typeof PARTS} */ (format)] || [];
 
+/** The parts the editor lists under "Longer rounds": those the plan names, in bracket order. A
+ *  part of another format, left over from a format change, is not one of them.
+ *  @param {Record<string, number>} plan @param {string | null | undefined} format */
+export const listedParts = (plan, format) => partsOf(format).filter((part) => plan?.[part.role]);
+
+/** The parts "+ Another round" still offers: the format's parts the plan does not name.
+ *  @param {Record<string, number>} plan @param {string | null | undefined} format */
+export const freeParts = (plan, format) => partsOf(format).filter((part) => !plan?.[part.role]);
+
+/** The best-of a newly listed part starts on: one step longer than the cup's, or one shorter
+ *  when the cup already plays the longest.
+ *  @param {number} bestOf */
+export function stepFrom(bestOf) {
+  const at = BEST_OFS.indexOf(Number(bestOf));
+  if (at < 0) return BEST_OFS[0];
+  return BEST_OFS[at + 1] ?? BEST_OFS[at - 1] ?? BEST_OFS[at];
+}
+
 /** The plan the stage stores, as an object of part to best-of.
  *  @param {string | null | undefined} text
  *  @returns {Record<string, number>} */

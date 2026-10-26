@@ -38,6 +38,7 @@ import {
 import { cardButton } from "@/helpers/events.mjs";
 import { dayText, ruleLine } from "@/helpers/cup-recurrence.mjs";
 import { useAuth, useEventStore } from "@/stores";
+import { askAboutAnnouncements } from "@/components/AnnouncementPrompt";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -102,7 +103,10 @@ export function EventsView() {
   const answer = async (invite: Row, accept: boolean) => {
     setAnswering(`${invite.event_id}-${invite.team.id}`);
     try {
-      if (accept) await store.acceptInvite(invite.event_id, invite.team.id);
+      if (accept) {
+        await store.acceptInvite(invite.event_id, invite.team.id);
+        askAboutAnnouncements();
+      }
       else await store.declineInvite(invite.event_id, invite.team.id);
       setInvites(await store.myTeamInvites());
     } catch (e) {

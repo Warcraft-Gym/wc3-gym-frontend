@@ -19,6 +19,7 @@ import { cupSeriesLine } from "@/helpers/home-hub.mjs";
 import { backendUrl, fetchWrapper } from "@/helpers";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
+import { askAboutAnnouncements } from "@/components/AnnouncementPrompt";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -180,7 +181,10 @@ export function MyEvents({
                   <Button variant="outline" size="sm" disabled={!!busy} onClick={() => work(`decline-${card.id}`, () => store.declineInvite(card.id, card.invite.team.id), "Invitation declined.")}>
                     Decline
                   </Button>
-                  <Button size="sm" disabled={!!busy} onClick={() => work(`accept-${card.id}`, () => store.acceptInvite(card.id, card.invite.team.id), `You joined ${card.invite.team?.name}.`)}>
+                  <Button size="sm" disabled={!!busy} onClick={() => work(`accept-${card.id}`, async () => {
+                      await store.acceptInvite(card.id, card.invite.team.id);
+                      askAboutAnnouncements();
+                    }, `You joined ${card.invite.team?.name}.`)}>
                     {busy === `accept-${card.id}` ? <Icon name="mdi-loading mdi-spin" /> : <Icon name="mdi-check" />}
                     Accept
                   </Button>

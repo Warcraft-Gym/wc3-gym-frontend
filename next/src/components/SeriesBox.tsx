@@ -6,7 +6,7 @@ import { CupTeamName } from "@/components/CupTeamName";
 import { useHideResults } from "@/components/hide-results";
 import { sideRoster } from "@/helpers/fixture.mjs";
 import { teamLabel } from "@/helpers/teams.mjs";
-import { emptyLabel, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, sideSeed, standsOn, winnerSide } from "@/helpers/stage-view.mjs";
+import { emptyLabel, hostOf, isLobby, lobbySeats, seriesState, shownPlayer, shownTeam, sideSeed, standsOn, winnerSide } from "@/helpers/stage-view.mjs";
 import { cn } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -109,7 +109,12 @@ export function SeriesBox({
 
   // What a screen reader hears for the box: where it sits, who plays, and the state
   const sideName = (side: number) => (team(side) ? teamLabel(team(side)) : player(side)?.name) || empty(side);
-  const where = [round, label].filter(Boolean).join(", ");
+  // a grand final whose upper-bracket winner starts ahead says so until its result stands
+  const lead = Number(series.head_start) || 0;
+  // a cup series set and unplayed names its game and its host, as its Discord message does
+  const host = cup ? hostOf(series, hidden) : null;
+  const tag = [label, lead && series.player1_score == null ? `starts ${lead}–0` : null, host != null ? series.game_name : null].filter(Boolean).join(" · ");
+  const where = [round, tag].filter(Boolean).join(", ");
   const who = seats.length ? `${seats.length} seats` : `${sideName(1)} vs ${sideName(2)}`;
   const name = `${where ? `${where}: ` : ""}${who}, ${stateWord}`;
 
@@ -148,6 +153,7 @@ export function SeriesBox({
           ) : (
             <span className="text-xs text-muted-foreground">{fed ? "To be decided" : "Empty seat"}</span>
           )}
+          {host === seat.side_no ? <Icon name="mdi-home-variant-outline" size={14} className="shrink-0 text-primary-text" title="Hosts the game" /> : null}
           {seat.left ? <span className="ml-auto text-xs">Left</span> : <span className="tnum ml-auto font-bold">{seat.place ?? ""}</span>}
         </div>
       ))
@@ -179,6 +185,8 @@ export function SeriesBox({
           ) : (
             <span className="min-w-0 truncate text-xs font-normal text-muted-foreground" title={empty(side)}>{empty(side)}</span>
           )}
+          {/* the host creates the game; a small mark, so the name keeps its room in a narrow box */}
+          {host === side ? <Icon name="mdi-home-variant-outline" size={14} className="shrink-0 text-primary-text" title="Hosts the game" /> : null}
           <span className="tnum ml-auto font-bold">{score(side)}</span>
         </div>
       ));
@@ -217,13 +225,13 @@ export function SeriesBox({
         // the draw names no state: the corner holds the buttons, the label rides on the left
         <div className={cn("flex min-h-5 items-center gap-1.5 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", (reporting || vetoing) && "min-h-7")}>
           {done ? <Icon name="mdi-check-circle" size={14} className="text-success" title={stateWord} /> : null}
-          <span className="min-w-0 truncate">{label}</span>
+          <span className="min-w-0 truncate">{tag}</span>
         </div>
       ) : (
         <div className={cn("flex justify-between gap-2 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", (reporting || vetoing) && "min-h-7 items-center pr-24")}>
           {/* the report button takes the corner, so the label rides beside the state */}
-          <span>{reporting && label ? `${stateWord} · ${label}` : stateWord}</span>
-          {label && !reporting ? <span>{label}</span> : null}
+          <span>{reporting && tag ? `${stateWord} · ${tag}` : stateWord}</span>
+          {tag && !reporting ? <span>{tag}</span> : null}
         </div>
       )}
     </>
@@ -238,11 +246,11 @@ export function SeriesBox({
 
   // a box with nothing to open is no button: the draw of the event page opens no series page
   const box = readonly || !onOpen ? (
-    <div role="group" aria-label={name} className={shell}>
+    <div role="group" id={`series-${series.id}`} aria-label={name} className={shell}>
       {body}
     </div>
   ) : (
-    <button type="button" aria-label={name} className={shell} onClick={() => onOpen?.(series)}>
+    <button type="button" id={`series-${series.id}`} aria-label={name} className={shell} onClick={() => onOpen?.(series)}>
       {body}
     </button>
   );

@@ -12,6 +12,7 @@ import { TeamSignupDialog } from "@/components/TeamSignupDialog";
 import { missing, myTeam, teamState } from "@/helpers/cup-teams.mjs";
 import { useEventStore } from "@/stores";
 import { cn } from "@/lib/utils";
+import { askAboutAnnouncements } from "@/components/AnnouncementPrompt";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -80,7 +81,10 @@ export function TeamCupPanel({
             <Button variant="outline" disabled={!!busy} onClick={() => work("decline", () => store.declineInvite(event.id, invite.team.id))}>
               Decline
             </Button>
-            <Button disabled={!!busy} onClick={() => work("accept", () => store.acceptInvite(event.id, invite.team.id))}>
+            <Button disabled={!!busy} onClick={() => work("accept", async () => {
+                await store.acceptInvite(event.id, invite.team.id);
+                askAboutAnnouncements();
+              })}>
               {busy === "accept" ? <Icon name="mdi-loading mdi-spin" /> : <Icon name="mdi-check" />}
               Accept
             </Button>

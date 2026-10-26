@@ -19,6 +19,7 @@ import { defaultSignupRace } from "@/helpers/players.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { battleTagError, isTagError } from "@/helpers/signup.mjs";
 import { useAuthStore, useEventStore } from "@/stores";
+import { askAboutAnnouncements } from "@/components/AnnouncementPrompt";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -92,6 +93,8 @@ export function SignupDialog({
         note: note.trim() || null,
         battle_tag: needsTag ? battleTag.trim() : null,
       });
+      // a cup sign-up asks once about the cup announcements
+      if (event.kind === "cup") askAboutAnnouncements();
       // One fresh read past the edge cache: where the night put the new row in its bracket's line
       let board: Row | null = null;
       if (koth && row?.division_id != null) {

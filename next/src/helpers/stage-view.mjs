@@ -349,6 +349,19 @@ export function lobbySeats(row, hidden = false, fed = false) {
       || Number(!!a.left) - Number(!!b.left) || a.side_no - b.side_no);
 }
 
+/** The side that hosts a cup series' game while it is set and unplayed: side 2, the bottom row of
+ *  the box, or a lobby's last seat, as the read names it in `host_side`. Null while a side or a
+ *  seat still waits, once a result stands, on any series that is not a cup's, and while results
+ *  are hidden. The Discord message of the series names the same host.
+ *  @param {any} series @param {boolean} [hidden] */
+export function hostOf(series, hidden = false) {
+  if (hidden || !series?.game_name || series.player1_score != null || series.player2_score != null) return null;
+  const seats = series.sides || [];
+  const lobby = new Set(seats.map((/** @type {any} */ seat) => seat.side_no)).size > 2;
+  const set = lobby ? seats.every((/** @type {any} */ seat) => seat.entrant_id) : standsOn(series, 1) != null && standsOn(series, 2) != null;
+  return set ? Number(series.host_side) || 2 : null;
+}
+
 // The places a lobby saves from its seats in finishing order: 1 to N, a Left seat taking none
 export const lobbyPlaces = (order = []) => order
   .filter((seat) => !seat.left)

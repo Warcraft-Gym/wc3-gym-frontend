@@ -15,10 +15,11 @@ import { SimpleDatePicker } from "@/components/SimpleDatePicker";
 import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { StatusAlert } from "@/components/StatusAlert";
 import { BestOfPlan } from "@/components/BestOfPlan";
+import { GrandFinalRules } from "@/components/GrandFinalRules";
 import { MapPoolPicker, type PoolMap } from "@/components/MapPoolPicker";
 import { CustomMapPicker } from "@/components/CustomMapPicker";
 import { bestOfLine } from "@/helpers/best-of-plan.mjs";
-import { blankCup, cupCheckin, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
+import { blankCup, cupCheckin, cupForm, CUP_FORMATS, CUP_GAMES, CUSTOM_MODES, cupTeamSize, editLocks, editPayload, isCustom, FFA_MODES, FFA_TEAM_SIZES, ffaModeLine, ffaAdvance, ffaLine, ffaPoints, grandFinalLine, isFfa, CUP_PLAYS, cupPayload, cupProblem, cupSteps, DEFAULT_POINTS, laterRounds, livesLine, MAX_ROUNDS, PLACEMENT_LIVES, planFormat, PLAYOFFS, pointsOf, repeatChoices, repeatName, SWISS_MODES, swissLine, teamSizeOf } from "@/helpers/cup-wizard.mjs";
 import { ladderModeOf } from "@/helpers/cup-teams.mjs";
 import { cupMode } from "@/helpers/map-modes.mjs";
 import { dateRange } from "@/helpers/event-labels.mjs";
@@ -44,8 +45,9 @@ function TextField({ label, hint, className, ...rest }: { label: string; hint?: 
   );
 }
 
-/** A row of choices where one is picked, as large buttons a thumb reaches. */
-function Choice<V extends string | number>({ label, items, value, onChange }: { label: string; items: { value: V; title: string; ready?: boolean }[]; value: V; onChange: (value: V) => void }) {
+/** A row of choices where one is picked, as large buttons a thumb reaches; `disabled` keeps the
+ *  pick as it is. */
+function Choice<V extends string | number>({ label, items, value, onChange, disabled = false }: { label: string; items: { value: V; title: string; ready?: boolean }[]; value: V; onChange: (value: V) => void; disabled?: boolean }) {
   return (
     <div role="radiogroup" aria-label={label} className="flex flex-col gap-2">
       <span className="text-sm text-muted-foreground">{label}</span>
@@ -56,7 +58,7 @@ function Choice<V extends string | number>({ label, items, value, onChange }: { 
             role="radio"
             aria-checked={item.value === value}
             variant={item.value === value ? "secondary" : "outline"}
-            disabled={item.ready === false}
+            disabled={item.ready === false || (disabled && item.value !== value)}
             className={cn("min-h-11", item.value === value && "ring-2 ring-primary")}
             onClick={() => onChange(item.value)}
           >
@@ -71,18 +73,29 @@ function Choice<V extends string | number>({ label, items, value, onChange }: { 
 /** Create cup: the few things an organizer decides for a cup, in five short steps, or six for a
  *  cup played over rounds, which also sets the points each place of a round pays.
  *  The cup is created with one elimination stage; seeding, check-in and the draw happen on its
- *  run page on the evening. */
-export function CupCreateView() {
+ *  run page on the evening.
+ *
+ *  Given a cup, it is Edit cup until the draw: the form opens on what the cup plays, at the step
+ *  named, every step is a click away and Save writes from any of them. The game mode stays once
+ *  anyone has signed up, one evening or rounds stays as created, and a cup over rounds changes
+ *  its later rounds on the run page. */
+export function CupCreateView({ event = null, entrants = [], startStep = null }: { event?: Row | null; entrants?: Row[]; startStep?: string | null } = {}) {
   const router = useRouter();
   const store = useEventStore();
-  const [form, setForm] = useState<Row>(blankCup());
-  const [step, setStep] = useState(1);
+  const editing = !!event;
+  const [form, setForm] = useState<Row>(() => (event ? cupForm(event) : blankCup()));
+  const [step, setStep] = useState(() => Math.max(cupSteps(form).findIndex((item: Row) => item.key === startStep) + 1, 1));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const set = (patch: Row) => setForm((current) => ({ ...current, ...patch }));
   const steps = cupSteps(form);
   const key = steps[step - 1].key;
+  // what an edit keeps as it is, and why
+  const locks: { mode: string | null; play: string | null } = editing ? editLocks(event, entrants) : { mode: null, play: null };
+  // an edit saves from any step, so it waits on the first step that still needs something
+  const blocking = editing ? steps.find((item: Row) => cupProblem(form, item.key)) : null;
+  const runPage = event ? `/events/${event.id}/admin` : "/events";
   const rounds = form.play === "rounds";
   const later: Row[] = laterRounds(form);
   // a round the organizer changed keeps its own day and time from then on
@@ -102,10 +115,22 @@ export function CupCreateView() {
     setSaving(true);
     setError(null);
     try {
-      const event = await store.createEvent(cupPayload(form));
-      router.push(`/events/${event.id}/admin`);
+      const made = await store.createEvent(cupPayload(form));
+      router.push(`/events/${made.id}/admin`);
     } catch (e) {
       setError(`The cup was not created: ${(e as Error).message}`);
+      setSaving(false);
+    }
+  };
+  // the event fields, the stages, the pool and the points go in one write
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await store.updateEvent(event!.id, editPayload(form));
+      router.push(runPage);
+    } catch (e) {
+      setError(`The cup was not saved: ${(e as Error).message}`);
       setSaving(false);
     }
   };
@@ -131,7 +156,7 @@ export function CupCreateView() {
       v: ffa ? ffaLine(form) : [
         format?.title,
         form.format === "single_elimination" && form.third_place ? "a match for third place" : null,
-        form.format === "double_elimination" ? (form.grand_final_reset ? "grand final reset" : "one grand final") : null,
+        form.format === "double_elimination" ? grandFinalLine(form.grand_final, form.grand_final_lead) : null,
         form.format === "placement" ? livesLine(form.placement_lives) : null,
         form.format === "swiss" ? swissLine(form) : null,
       ]
@@ -162,42 +187,65 @@ export function CupCreateView() {
     },
     { k: "Divisions", v: form.uses_divisions ? "Split by MMR on the run page" : "One field" },
     ...(rounds ? [{ k: "Points per place", v: pointsOf(form).join(", ") }] : []),
-    {
+    // a cup's repeat rule is set on its run page once it exists
+    ...(editing ? [] : [{
       k: "Repeats",
       v: form.repeat
         ? [`"${repeatName(form)}": ${repeatsAs?.title ?? "every week"} at ${form.start_time || "the start time"}`, form.repeat_until ? `until ${dayText(dayIso(form.repeat_until))}` : null]
             .filter(Boolean)
             .join(", ") + ". You create each next cup on its page."
         : "No, this cup stands alone",
-    },
+    }]),
     { k: "Check-in", v: checkinSummary(cupCheckin(form), rounds ? "rounds" : "cup", cupPayload(form).starts_at) },
     { k: "Visible", v: form.published ? "Published, sign-ups open" : "Draft: only you and the admins see it, and it takes no sign-ups" },
   ];
 
   return (
     <>
-      <Link href="/events" className="mb-2 inline-block text-sm">
-        ← Events
+      <Link href={runPage} className="mb-2 inline-block text-sm">
+        ← {editing ? event!.name : "Events"}
       </Link>
-      <PageHeader title={<><Icon name="mdi-trophy-outline" className="mr-2" />Create Cup</>} />
+      <PageHeader title={<><Icon name={editing ? "mdi-pencil" : "mdi-trophy-outline"} className="mr-2" />{editing ? "Edit Cup" : "Create Cup"}</>} />
 
       <StatusAlert modelValue={error} onClose={() => setError(null)} />
 
-      {/* five step names do not fit a phone, so it reads the one it is on */}
-      <div className="mb-2 text-muted-foreground min-[600px]:hidden">
+      {/* five step names do not fit a phone, so it reads the one it is on; an edit picks any step */}
+      <div className={cn("mb-2 text-muted-foreground min-[600px]:hidden", editing && "hidden")}>
         Step {step} of {steps.length} · {steps[step - 1].title}
       </div>
-      <ol className="mb-4 hidden items-center gap-3 min-[600px]:flex">
-        {steps.map((item, index) => (
-          <li key={item.key} aria-current={index + 1 === step ? "step" : undefined} className={cn("flex flex-1 items-center gap-2", index + 1 !== step && "text-muted-foreground")}>
-            <span className={cn("tnum flex size-6 items-center justify-center rounded-full text-xs", index + 1 <= step ? "bg-primary text-on-primary" : "bg-muted")}>
-              {index + 1 < step ? <Icon name="mdi-check" /> : index + 1}
-            </span>
-            {item.title}
-            {index < steps.length - 1 ? <span className="h-px flex-1 bg-border" /> : null}
-          </li>
-        ))}
-      </ol>
+      {editing ? (
+        <div role="tablist" aria-label="Steps" className="mb-4 flex flex-wrap gap-2">
+          {steps.map((item, index) => {
+            const missing = !!cupProblem(form, item.key);
+            return (
+              <Button
+                key={item.key}
+                role="tab"
+                aria-selected={index + 1 === step}
+                variant={index + 1 === step ? "secondary" : "outline"}
+                size="sm"
+                className="min-h-10 rounded-full"
+                onClick={() => setStep(index + 1)}
+              >
+                {missing ? <Icon name="mdi-alert-circle-outline" className="text-error" /> : null}
+                {item.title}
+              </Button>
+            );
+          })}
+        </div>
+      ) : (
+        <ol className="mb-4 hidden items-center gap-3 min-[600px]:flex">
+          {steps.map((item, index) => (
+            <li key={item.key} aria-current={index + 1 === step ? "step" : undefined} className={cn("flex flex-1 items-center gap-2", index + 1 !== step && "text-muted-foreground")}>
+              <span className={cn("tnum flex size-6 items-center justify-center rounded-full text-xs", index + 1 <= step ? "bg-primary text-on-primary" : "bg-muted")}>
+                {index + 1 < step ? <Icon name="mdi-check" /> : index + 1}
+              </span>
+              {item.title}
+              {index < steps.length - 1 ? <span className="h-px flex-1 bg-border" /> : null}
+            </li>
+          ))}
+        </ol>
+      )}
 
       <div className="card mx-auto max-w-[860px] rounded-lg p-4">
         {key === "basics" ? (
@@ -210,14 +258,20 @@ export function CupCreateView() {
               <SimpleTimePicker modelValue={form.start_time} label="Start time" onUpdateModelValue={(start_time) => set({ start_time })} />
             </div>
             <div className="col-span-12">
-              <Choice label="How it is played" items={CUP_PLAYS} value={form.play} onChange={(play) => set({ play })} />
+              <Choice label="How it is played" items={CUP_PLAYS} value={form.play} onChange={(play) => set({ play })} disabled={!!locks.play} />
               <p className="mt-1 text-sm text-muted-foreground">
                 {rounds
                   ? "Each round is a cup of its own with the same format. Players sign up once and check in for each round; every round's places pay points into an overall table."
                   : "The whole cup is played on one evening."}
+                {locks.play ? ` ${locks.play}` : ""}
               </p>
             </div>
-            {rounds ? (
+            {/* an edit names the later rounds; the run page's rounds bar moves, adds and removes them */}
+            {rounds && editing ? (
+              <p className="col-span-12 text-sm">
+                {later.map((row, index) => `Round ${index + 2}: ${row.date ? dayText(dayIso(row.date)) : "no day"}${row.time ? ` at ${row.time}` : ""}`).join(" · ")}
+              </p>
+            ) : rounds ? (
               <>
                 <TextField
                   className="col-span-12 min-[600px]:col-span-4"
@@ -241,7 +295,7 @@ export function CupCreateView() {
                 ))}
               </>
             ) : null}
-            <div className="col-span-12 flex flex-col gap-3 rounded-lg border border-border p-3">
+            <div className={cn("col-span-12 flex flex-col gap-3 rounded-lg border border-border p-3", editing && "hidden")}>
               <Label className="flex min-h-11 items-center gap-2">
                 <Switch checked={!!form.repeat} onCheckedChange={(repeat) => set({ repeat })} />
                 Repeat this cup on a schedule
@@ -273,26 +327,27 @@ export function CupCreateView() {
               ) : null}
             </div>
             <div className="col-span-12">
-              <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} />
+              <Choice label="Game" items={CUP_GAMES} value={form.game} onChange={(game) => set({ game })} disabled={!!locks.mode} />
               {custom ? (
                 <div className="mt-3">
-                  <Choice label="Mode" items={CUSTOM_MODES} value={form.custom_mode} onChange={(custom_mode) => set({ custom_mode })} />
+                  <Choice label="Mode" items={CUSTOM_MODES} value={form.custom_mode} onChange={(custom_mode) => set({ custom_mode })} disabled={!!locks.mode} />
                 </div>
               ) : null}
               {ffa ? (
                 <div className="mt-3">
-                  <Choice label="FFA mode" items={FFA_TEAM_SIZES} value={Number(form.ffa_team_size) || 1} onChange={(ffa_team_size) => set({ ffa_team_size })} />
+                  <Choice label="FFA mode" items={FFA_TEAM_SIZES} value={Number(form.ffa_team_size) || 1} onChange={(ffa_team_size) => set({ ffa_team_size })} disabled={!!locks.mode} />
                 </div>
               ) : null}
+              {locks.mode ? <p className="mt-1 text-sm">{locks.mode}</p> : null}
               <p className="mt-1 text-sm text-muted-foreground">
                 {custom ? "A custom game is played on one map you pick in the Maps step, every game on it and nothing vetoed. " : ""}
                 {ffa
                   ? teamSize
                     ? `Free for all of teams of ${teamSize}: every lobby seats as many teams as play in it (${teamSize}v${teamSize}v${teamSize}…). A captain signs a team up and invites the others, every player confirms, and any player of a team in a lobby reports its places.`
                     : "Free for all, every player for themselves: every lobby seats as many players as play in it (1v1v1…), is one game, and a player of the lobby reports its places."
-                  : teamSizeOf(form.game)
-                    ? `A captain signs a team of ${teamSizeOf(form.game)} up and invites the others; every player confirms. Custom game cups come later.`
-                    : "Custom game cups come later."}
+                  : cupTeamSize(form)
+                    ? `A captain signs a team of ${cupTeamSize(form)} up and invites the others; every player confirms.`
+                    : "Every player signs up for themselves and plays one against one."}
               </p>
             </div>
             <Field className="col-span-12" label="Description" htmlFor="cup-description">
@@ -390,10 +445,13 @@ export function CupCreateView() {
                 Play a match for third place
               </Label>
             ) : form.format === "double_elimination" ? (
-              <Label className="flex min-h-11 items-center gap-2">
-                <Switch checked={!!form.grand_final_reset} onCheckedChange={(grand_final_reset) => set({ grand_final_reset })} />
-                Grand final reset: the lower-bracket winner must win twice
-              </Label>
+              <GrandFinalRules
+                value={form.grand_final}
+                lead={form.grand_final_lead}
+                bestOf={Number(form.best_of)}
+                plan={form.best_of_plan}
+                onChange={(grand_final, grand_final_lead) => set({ grand_final, grand_final_lead })}
+              />
             ) : form.format === "swiss" ? (
               <div className="flex flex-col gap-3">
                 <div role="radiogroup" aria-label="How long it runs" className="flex flex-wrap items-center gap-2">
@@ -508,6 +566,7 @@ export function CupCreateView() {
             pool={form.pool}
             onChange={(pool) => set({ pool })}
             problem={problem}
+            excludeEventId={event?.id ?? null}
             // no FFA ladder pool to import: the FFA maps of the app come first
             ladderMode={ffa ? null : (ladderModeOf(teamSizeOf(form.game)) as string | null)}
             mode={ffa ? "ffa" : cupMode(teamSizeOf(form.game))}
@@ -531,15 +590,20 @@ export function CupCreateView() {
               <div className="col-span-12">
                 <CheckinSettings id="cup-checkin" kind={rounds ? "rounds" : "cup"} value={cupCheckin(form)} onChange={set} startsAt={cupPayload(form).starts_at} />
               </div>
-              <div className="col-span-12">
-                <Label className="flex min-h-11 items-center gap-2">
-                  <Switch checked={!!form.published} onCheckedChange={(published) => set({ published })} />
-                  Publish now
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  {form.published ? "Players see the cup and can sign up as soon as you create it." : "A draft only you and the admins see. It takes no sign-ups until it is published."}
-                </p>
-              </div>
+              {/* a published cup stays published; an edit publishes a draft */}
+              {editing && event!.published ? null : (
+                <div className="col-span-12">
+                  <Label className="flex min-h-11 items-center gap-2">
+                    <Switch checked={!!form.published} onCheckedChange={(published) => set({ published })} />
+                    Publish now
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {form.published
+                      ? `Players see the cup and can sign up as soon as you ${editing ? "save" : "create"} it.`
+                      : "A draft only you and the admins see. It takes no sign-ups until it is published."}
+                  </p>
+                </div>
+              )}
             </section>
 
             <section className="grid grid-cols-12 gap-3" aria-labelledby="cup-signup-rules">
@@ -589,29 +653,55 @@ export function CupCreateView() {
         )}
       </div>
 
-      <div className="mx-auto mt-4 flex max-w-[860px] flex-wrap items-center gap-3">
-        {step === 1 ? (
-          <Button variant="ghost" nativeButton={false} render={<Link href="/events" />}>
+      {editing ? (
+        <div className="mx-auto mt-4 flex max-w-[860px] flex-wrap items-center gap-3">
+          <Button variant="ghost" nativeButton={false} render={<Link href={runPage} />}>
             Cancel
           </Button>
-        ) : (
-          <Button variant="ghost" onClick={() => setStep(step - 1)}>
-            Back
+          {/* the step shown names its own problem; another step's is named with the step */}
+          {problem ? (
+            <span className="text-sm text-muted-foreground">{problem}</span>
+          ) : blocking ? (
+            <span className="text-sm text-muted-foreground">
+              {blocking.title}: {cupProblem(form, blocking.key)}
+            </span>
+          ) : null}
+          <span className="flex-1" />
+          {step < steps.length ? (
+            <Button variant="outline" onClick={() => setStep(step + 1)}>
+              Next
+            </Button>
+          ) : null}
+          <Button disabled={saving || !!blocking} onClick={save}>
+            {saving ? <Icon name="mdi-loading mdi-spin" /> : <Icon name="mdi-content-save" />}
+            Save
           </Button>
-        )}
-        {problem ? <span className="text-sm text-muted-foreground">{problem}</span> : null}
-        <span className="flex-1" />
-        {step < steps.length ? (
-          <Button disabled={!!problem} onClick={() => setStep(step + 1)}>
-            Next
-          </Button>
-        ) : (
-          <Button disabled={saving} onClick={create}>
-            {saving ? <Icon name="mdi-loading mdi-spin" /> : null}
-            Create cup
-          </Button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="mx-auto mt-4 flex max-w-[860px] flex-wrap items-center gap-3">
+          {step === 1 ? (
+            <Button variant="ghost" nativeButton={false} render={<Link href="/events" />}>
+              Cancel
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={() => setStep(step - 1)}>
+              Back
+            </Button>
+          )}
+          {problem ? <span className="text-sm text-muted-foreground">{problem}</span> : null}
+          <span className="flex-1" />
+          {step < steps.length ? (
+            <Button disabled={!!problem} onClick={() => setStep(step + 1)}>
+              Next
+            </Button>
+          ) : (
+            <Button disabled={saving} onClick={create}>
+              {saving ? <Icon name="mdi-loading mdi-spin" /> : null}
+              Create cup
+            </Button>
+          )}
+        </div>
+      )}
     </>
   );
 }

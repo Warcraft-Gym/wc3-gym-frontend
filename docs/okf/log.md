@@ -1,5 +1,10 @@
 # Bundle history
 
+## 2026-10-26
+
+* **Update**: a cup closes itself with the result that plays it out, or the finish of its last round, and the run page reads the cup again after every write, so the close and "Reopen" show at once. [Event management](pages/event-management.md) states it.
+* **Update**: a cup series box copies its game name, now `GYM_` and the series id, from a "GN:" button in its corner before "Veto" and "Report", in place of the name in its label, which ran under the buttons. [Leagues and events](pages/leagues-and-events.md) states it.
+
 ## 2026-10-25
 
 * **Add**: "Edit cup" on a cup's run page opens `/events/:id/edit`, the Create cup wizard filled from the cup, until its first draw: any step in any order, "Save" from every step in one `PUT /events/{id}`, the game mode read only once anyone has signed up, and one evening or rounds never changing. The run page's format card, check-in line and "Sign-up rules" link into it in place of their own editors, which a cup over rounds keeps for its later rounds after the first draw. [Event management](pages/event-management.md) and [run a cup](flows/run-a-cup.md) state it.

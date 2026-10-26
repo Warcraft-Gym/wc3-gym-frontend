@@ -581,14 +581,14 @@ test('a phone opens on the first round with a series still to play', () => {
 });
 
 test('a cup series set and unplayed is hosted by side 2, a lobby by its last seat, else by nobody', () => {
-  const pair = { id: 7, game_name: 'GYM 7', host_side: 2, entrant1_id: 1, entrant2_id: 2, player1_score: null, player2_score: null };
+  const pair = { id: 7, game_name: 'GYM_7', host_side: 2, entrant1_id: 1, entrant2_id: 2, player1_score: null, player2_score: null };
   assert.equal(hostOf(pair), 2);
   // a side still waiting, a result, hidden results and a series with no game name host nothing
   assert.equal(hostOf({ ...pair, entrant2_id: null }), null);
   assert.equal(hostOf({ ...pair, player1_score: 2, player2_score: 0 }), null);
   assert.equal(hostOf(pair, true), null);
   assert.equal(hostOf({ ...pair, game_name: '' }), null);
-  const lobby = { id: 8, game_name: 'GYM 8', host_side: 4, sides: [1, 2, 3, 4].map((side_no) => ({ side_no, entrant_id: side_no + 10 })) };
+  const lobby = { id: 8, game_name: 'GYM_8', host_side: 4, sides: [1, 2, 3, 4].map((side_no) => ({ side_no, entrant_id: side_no + 10 })) };
   assert.equal(hostOf(lobby), 4);
   assert.equal(hostOf({ ...lobby, sides: [...lobby.sides.slice(0, 3), { side_no: 4, entrant_id: null }] }), null);
 });

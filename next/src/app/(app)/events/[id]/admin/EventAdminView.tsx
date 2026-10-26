@@ -218,6 +218,8 @@ export function EventAdminView({ id }: { id: string }) {
   const afterLeg = async () => {
     setEntrants(await store.fetchEntrants(event!.id, true));
     setOverallVersion((version) => version + 1);
+    // finishing the last round closes the cup
+    setEvent(await store.fetchEvent(event!.id, true));
   };
 
   useEffect(() => {
@@ -261,6 +263,8 @@ export function EventAdminView({ id }: { id: string }) {
     try {
       await work();
       await loadStage();
+      // the result that plays a cup out closes it, so the page reads the close at once
+      if (event?.kind === "cup") setEvent(await store.fetchEvent(Number(id), true));
       return null;
     } catch (e) {
       const message = (e as Error).message || "The write failed";

@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { PlayerName } from "@/components/PlayerName";
 import { Icon } from "@/components/ui/Icon";
 import { TeamName } from "@/components/TeamName";
@@ -26,6 +27,8 @@ export const SIDE = "flex items-center gap-1.5 px-2 py-[3px] min-h-[26px]";
 // A side of the draw holds no MMR and a narrow box, so a name longer than the room ends in an
 // ellipsis instead of running past the score
 const UNRATED = "[&_.player-name]:min-w-0 [&_.name]:truncate";
+// The label row leaves the buttons in the box's corner their room, by how many stand there
+const CORNER_ROOM = ["", "pr-16", "pr-34", "pr-52"];
 
 /** One series of a stage: a side per row with its race, the score, and the state as a word.
  *  A team side reads as the team name over the roster it fields. A free for all lobby reads
@@ -111,9 +114,10 @@ export function SeriesBox({
   const sideName = (side: number) => (team(side) ? teamLabel(team(side)) : player(side)?.name) || empty(side);
   // a grand final whose upper-bracket winner starts ahead says so until its result stands
   const lead = Number(series.head_start) || 0;
-  // a cup series set and unplayed names its game and its host, as its Discord message does
+  // a cup series set and unplayed marks its host and copies its game name, as its Discord
+  // message names them
   const host = cup ? hostOf(series, hidden) : null;
-  const tag = [label, lead && series.player1_score == null ? `starts ${lead}–0` : null, host != null ? series.game_name : null].filter(Boolean).join(" · ");
+  const tag = [label, lead && series.player1_score == null ? `starts ${lead}–0` : null].filter(Boolean).join(" · ");
   const where = [round, tag].filter(Boolean).join(", ");
   const who = seats.length ? `${seats.length} seats` : `${sideName(1)} vs ${sideName(2)}`;
   const name = `${where ? `${where}: ` : ""}${who}, ${stateWord}`;
@@ -217,18 +221,20 @@ export function SeriesBox({
       {report === "edit" ? "Edit result" : "Report"}
     </button>
   ) : null;
+  const gameButton = host != null && series.game_name ? <GameNameButton name={series.game_name} className={corner} /> : null;
+  const cornerCount = [gameButton, vetoButton, reportButton].filter(Boolean).length;
 
   const body = (
     <>
       {rows}
       {stateless ? (
         // the draw names no state: the corner holds the buttons, the label rides on the left
-        <div className={cn("flex min-h-5 items-center gap-1.5 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", (reporting || vetoing) && "min-h-7")}>
+        <div className={cn("flex min-h-5 items-center gap-1.5 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", cornerCount && cn("min-h-7", CORNER_ROOM[cornerCount]))}>
           {done ? <Icon name="mdi-check-circle" size={14} className="text-success" title={stateWord} /> : null}
-          <span className="min-w-0 truncate">{tag}</span>
+          <span className="min-w-0 truncate" title={tag || undefined}>{tag}</span>
         </div>
       ) : (
-        <div className={cn("flex justify-between gap-2 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", (reporting || vetoing) && "min-h-7 items-center pr-24")}>
+        <div className={cn("flex justify-between gap-2 px-2 pt-0.5 pb-1 text-xs leading-tight text-muted-foreground", cornerCount && cn("min-h-7 items-center", CORNER_ROOM[cornerCount]))}>
           {/* the report button takes the corner, so the label rides beside the state */}
           <span>{reporting && tag ? `${stateWord} · ${tag}` : stateWord}</span>
           {tag && !reporting ? <span>{tag}</span> : null}
@@ -254,17 +260,50 @@ export function SeriesBox({
       {body}
     </button>
   );
-  // a button holds no button, so the report button sits beside the box, over its corner
-  return reportButton || vetoButton ? (
+  // a button holds no button, so the corner's buttons sit beside the box, over its corner
+  return cornerCount ? (
     <div className="relative">
       {box}
       <div className="absolute right-1 bottom-1 flex gap-1">
+        {gameButton}
         {vetoButton}
         {reportButton}
       </div>
     </div>
   ) : (
     box
+  );
+}
+
+/** "GN:" and a copy mark: copies the name the series' game is hosted under, as its Discord
+ *  line names it. A browser that refuses the copy shows the name instead, which one tap marks. */
+function GameNameButton({ name, className }: { name: string; className: string }) {
+  const [copied, setCopied] = useState(false);
+  const [refused, setRefused] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(name);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setRefused(true);
+    }
+  };
+
+  if (refused) return <span className={cn(className, "border bg-surface px-1 font-normal text-foreground select-all")}>{name}</span>;
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={`Copy the game name ${name}`}
+      aria-label={copied ? `Game name ${name} copied` : `Copy the game name ${name}`}
+      // narrower than its neighbours, so GN, Veto and Report fit the 204px box of the draw
+      className={cn(className, "gap-0.5 border bg-surface px-1 text-muted-foreground hover:bg-primary/15 hover:text-foreground")}
+    >
+      GN:
+      <Icon name={copied ? "mdi-check" : "mdi-content-copy"} />
+    </button>
   );
 }
 

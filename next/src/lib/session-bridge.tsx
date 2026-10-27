@@ -5,7 +5,7 @@ import { useAuthStore, useSeasonStore, setNavigate } from "@/stores";
 
 /** Hands the router to the store, and reads /me again once per load, so a role,
  *  seat or name change shows without a new sign-in. A dead session answers 401,
- *  which the fetch wrapper turns into a sign-out. */
+ *  which the fetch wrapper turns into a new Discord sign-in, or a sign-out. */
 export function SessionBridge() {
   const router = useRouter();
   const auth = useAuthStore();

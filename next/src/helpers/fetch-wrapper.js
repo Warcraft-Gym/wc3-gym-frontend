@@ -1,4 +1,7 @@
 import { backendUrl } from './backend-url';
+import { saveReturnUrl } from './return-url.mjs';
+import { clearSession } from './session-keys.mjs';
+import { canSignInAgain } from './session-recovery.mjs';
 import { useAuthStore } from '@/stores';
 
 export const fetchWrapper = {
@@ -135,11 +138,21 @@ function responseError(body, text, status) {
 
 async function handleResponse(response, receiveBinary, receivePage = false) {
     if (!response.ok) {
-        const { me, viewAs, logout } = useAuthStore();
+        const store = useAuthStore();
+        const { me, viewAs, logout } = store;
 
         // only a dead session (401) ends the session; a 403 is a permission refusal to show
         if (response.status === 401 && me && !viewAs) {
-            logout();
+            if (canSignInAgain(store)) {
+                // the dead session goes first: a token the backend refuses on the way back then has
+                // no me to renew, so it shows the sign-in error instead of coming back here
+                clearSession();
+                saveReturnUrl(window.location.pathname + window.location.search);
+                // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+                window.location.href = `${backendUrl}/auth/discord/start`;
+            } else {
+                logout();
+            }
         }
 
         // **Properly await the response before rejecting**

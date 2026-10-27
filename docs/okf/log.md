@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-27
+
+* **Update**: a member signs in with Discord through the backend: "Sign in with Discord" goes to the backend's `/auth/discord/start`, and `/sso-callback` takes the session token the backend hands back and keeps it under `user`. The Clerk SDK, its proxy route and the `CLERK_*` and `NEXT_PUBLIC_CLERK_*` variables are gone, and with them the decision on Clerk's proxy mode and the pitfall of the proxy's encoding headers. The screen capture signs in with `SHOTS_TOKEN`. [Session and auth](concepts/session-and-auth.md) states it.
+
 ## 2026-10-26
 
 * **Update**: a cup closes itself with the result that plays it out, or the finish of its last round, and the run page reads the cup again after every write, so the close and "Reopen" show at once. [Event management](pages/event-management.md) states it.

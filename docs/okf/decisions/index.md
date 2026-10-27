@@ -1,6 +1,5 @@
 # Decisions
 
-* [Clerk in proxy mode on production](clerk-proxy-mode.md) - Production runs the Clerk production instance through an edge function on this domain, because Clerk cannot own a vercel.app subdomain.
 * [Colours are tokens, in one file](design-tokens-only.md) - Every colour is a theme token from palette.mjs with a light and a dark value; no hex value or Tailwind palette name in a view.
 * [History routing, no hash bridge](history-routing.md) - The router runs on plain paths, and old hash links get no redirect.
 * [One grouped table component](grouped-table.md) - Groups of rows with subtotals are drawn by GroupedTable, never by a table nested in a cell.

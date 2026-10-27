@@ -1,10 +1,10 @@
 ---
 type: Repository
 title: wc3-gym-frontend
-description: The Next.js web app of the Warcraft Gym league, on Vercel, signed in through Clerk, reading everything from the backend API.
+description: The Next.js web app of the Warcraft Gym league, on Vercel, signed in with Discord through the backend, reading everything from the backend API.
 resource: https://github.com/Warcraft-Gym/wc3-gym-frontend
 tags: [design, deploy]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-09T12:46:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T12:00:00Z }
 sources:
   - id: readme
     resource: ../../README.md
@@ -25,9 +25,9 @@ One app for everyone: the public event and series pages, a member's profile, sig
 
 | Target | What |
 |---|---|
-| production | Vercel project `wc3-gym-frontend`, built from a GitHub Release of a commit on `main`, through the deploy workflow; Clerk production instance in proxy mode |
-| staging | the preview of `main`, built by the deploy workflow on every merge that changed the app, on the Clerk dev instance and pointed at the staging backend |
-| other branches | no deployment from a push; a preview exists when someone makes one by hand, on the Clerk dev instance and pointed at the staging backend |
+| production | Vercel project `wc3-gym-frontend`, built from a GitHub Release of a commit on `main`, through the deploy workflow, pointed at the production backend |
+| staging | the preview of `main`, built by the deploy workflow on every merge that changed the app, pointed at the staging backend |
+| other branches | no deployment from a push; a preview exists when someone makes one by hand, pointed at the staging backend |
 | local | `pnpm dev` in `next/` on port 3000, with `PROXY_TARGET` naming the backend that `/api` reaches |
 
 # The system in one picture
@@ -35,13 +35,14 @@ One app for everyone: the public event and series pages, a member's profile, sig
 ```mermaid
 flowchart LR
     browser["Browser: the Next.js app"]
-    clerk["Clerk: Discord OAuth, production through the /__clerk proxy route"]
+    discord["Discord: the consent page of the login"]
     cache["Vercel edge cache: open reads without a bearer"]
     api["Backend API: owns every rule, GET /me is the session"]
     db[("Supabase Postgres")]
     w3c["W3Champions API"]
     bot["Discord bot: posts cards"]
-    browser -->|"sign in"| clerk
+    browser -->|"sign in: /auth/discord/start"| api
+    api -->|"OAuth code exchange"| discord
     browser -->|"open read, no bearer"| cache
     cache -->|"miss"| api
     browser -->|"bearer: every write, every admin read, a read after a write"| api
@@ -57,13 +58,13 @@ Two request paths leave the browser. An open read listed in `EDGE_CACHED` leaves
 
 ```
 next/                the app; every command runs from here
-  next.config.ts     the dev proxy for /api, the /__clerk rewrite, one redirect
+  next.config.ts     the dev proxy for /api, one redirect
   vercel.json        which branches deploy and when a build is skipped
-  src/app/           layout.tsx (fonts, the palette, Clerk), globals.css, the Clerk proxy route
+  src/app/           layout.tsx (fonts, the palette), globals.css
   src/app/(app)/     one folder per route: page.tsx and the view it draws
   src/components/    the shared pieces; ui/ holds the shadcn/ui kit, layout/ the app shell
   src/stores/        one module per area, all fetches
-  src/lib/           the route table, the guard, the Clerk bridge
+  src/lib/           the route table, the guard, the session bridge
   src/hooks/         theme, breakpoint, player panel, delete dialog
   src/helpers/       fetch wrapper, backend URL, and the pure .mjs rules with tests
   src/assets/        race icons, media, the Discord mark

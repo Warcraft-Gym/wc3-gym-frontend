@@ -13,8 +13,6 @@ COPY next/ ./
 
 # Next inlines every NEXT_PUBLIC_ value into the browser bundle at build time.
 ARG NEXT_PUBLIC_BACKEND_URL
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-ARG NEXT_PUBLIC_CLERK_PROXY_URL
 RUN pnpm build
 
 EXPOSE 5003

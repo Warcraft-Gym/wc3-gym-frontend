@@ -32,9 +32,6 @@ Next inlines every `NEXT_PUBLIC_` value into the public bundle at build time. Do
 | Name | Purpose |
 |------|---------|
 | `NEXT_PUBLIC_BACKEND_URL` | Base URL for API calls: `/api` behind the proxy, else the backend's absolute URL. |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key. |
-| `NEXT_PUBLIC_CLERK_PROXY_URL` | Clerk proxy URL. Set on the production project only. |
-| `CLERK_SECRET_KEY` | Read by the Clerk proxy route on the server. It never reaches the browser. |
 | `PROXY_TARGET` | Backend the dev server proxies `/api/*` to. Read from the shell, not from `.env`. |
 
 Vercel holds its own values for the production and preview builds.
@@ -60,7 +57,7 @@ wc3-gym-frontend/
 │   ├── src/components/     # shared components
 │   ├── src/helpers/        # framework-free logic, with its tests
 │   ├── src/hooks/          # client state: theme, player panel, delete dialog
-│   ├── src/lib/            # route table, session guard, Clerk wiring
+│   ├── src/lib/            # route table, session guard, session bridge
 │   ├── src/stores/         # API clients, one module per resource
 │   ├── next.config.ts      # rewrites and redirects
 │   └── vercel.json         # Vercel reads this file; the project root is next/
@@ -81,7 +78,7 @@ The image builds `next/` and serves it on port 5003. Every `NEXT_PUBLIC_` value 
 
 ## Authentication
 
-Sign-in runs through Clerk. The admin-token login at `/admin-login` still works: the token is the one the backend reads from `ADMIN_TOKEN`, and every API request carries `Authorization: Bearer <token>`.
+Sign-in is Discord, through the backend's `/auth/discord/start`; the backend hands back a session token. The admin-token login at `/admin-login` still works: the token is the one the backend reads from `ADMIN_TOKEN`, and every API request carries `Authorization: Bearer <token>`.
 
 ## Troubleshooting
 

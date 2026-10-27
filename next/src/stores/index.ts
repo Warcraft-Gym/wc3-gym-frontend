@@ -1,4 +1,4 @@
-export { authBox, useAuth, useAuthStore, useClerkAuth, setNavigate } from "./auth";
+export { authBox, useAuth, useAuthStore, setNavigate } from "./auth";
 export type { Me, Seat, ViewAs } from "./auth";
 export { ladderBox, useLadder, useLadderStore } from "./ladder";
 export { seasonBox, useSeason, useSeasonStore, gnlLeague } from "./season";

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Cardo, Cinzel, Inter } from "next/font/google";
-import { AppClerkProvider } from "@/lib/clerk-provider";
 import { paletteStyle, THEME_SCRIPT } from "./palette-style";
 import { MEASURE_GUARD } from "./dev-measure-guard";
 import "./globals.css";
@@ -28,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {process.env.NODE_ENV === "development" ? <script dangerouslySetInnerHTML={{ __html: MEASURE_GUARD }} /> : null}
       </head>
       <body className="min-h-full">
-        <AppClerkProvider>{children}</AppClerkProvider>
+        {children}
       </body>
     </html>
   );

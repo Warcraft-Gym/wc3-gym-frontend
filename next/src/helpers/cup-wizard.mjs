@@ -451,8 +451,7 @@ function swissStages(form) {
   return stages;
 }
 
-/** The rule fields of an event, as the run page's Sign-up rules dialog edits them. A cup that
- *  checks nobody opens with Create cup's defaults, so turning the check on reads as it does there. */
+/** An event's rule fields as Edit cup reads them; a cup with no check opens on Create cup's defaults. */
 export const rulesForm = (event) => {
   const checked = !!event?.eligibility_required;
   return {
@@ -460,8 +459,8 @@ export const rulesForm = (event) => {
     mmr_min: event?.mmr_min ?? '',
     mmr_max: event?.mmr_max ?? '',
     min_games: event?.min_games ?? '',
-    // no count checks the sign-up race alone
-    signup_race_only: checked && event?.race_games_min == null,
+    // no check, or a check with no count, counts the sign-up race alone
+    signup_race_only: !checked || event?.race_games_min == null,
     race_games_min: event?.race_games_min ?? 20,
   };
 };

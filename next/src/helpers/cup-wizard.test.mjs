@@ -323,7 +323,9 @@ test('the sign-up rules dialog reads an event as Create cup shows it and writes 
   // the dialog writes neither who may sign up nor Battle.net verification, so a cup keeps its own
   assert.deepEqual(['signup_policy', 'bnet_required'].filter((key) => key in rulesPayload(form)), []);
   // a cup that checks nobody opens with Create cup's defaults, and turning the check off sends no bound
-  assert.deepEqual(rulesForm({ eligibility_required: false, race_games_min: null }), { eligibility_required: false, mmr_min: '', mmr_max: '', min_games: '', signup_race_only: false, race_games_min: 20 });
+  assert.deepEqual(rulesForm({ eligibility_required: false, race_games_min: null }), { eligibility_required: false, mmr_min: '', mmr_max: '', min_games: '', signup_race_only: true, race_games_min: 20 });
+  // a cup with a stored count keeps the best-race rule
+  assert.equal(rulesForm({ eligibility_required: true, race_games_min: 20 }).signup_race_only, false);
   assert.deepEqual(rulesPayload({ ...form, eligibility_required: false }), { eligibility_required: false, mmr_min: null, mmr_max: null, min_games: null, race_games_min: null });
   assert.equal(rulesProblem({ ...form, mmr_max: '1200' }), 'The lowest MMR cannot be above the highest.');
   assert.equal(rulesProblem({ ...form, eligibility_required: false, mmr_max: '1200' }), null);

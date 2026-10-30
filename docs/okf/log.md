@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-30
+
+* **Update**: a new cup counts only the race a player signs up with for the MMR check. Create cup's "Only the sign-up race counts for the MMR check" is on by default. Switched off, the player's best race with 20 lifetime games or more counts, and "A race counts from" changes that number. A cup already made keeps its rule. [Event management](pages/event-management.md) states it.
+
 ## 2026-10-26
 
 * **Update**: a cup closes itself with the result that plays it out, or the finish of its last round, and the run page reads the cup again after every write, so the close and "Reopen" show at once. [Event management](pages/event-management.md) states it.

@@ -20,8 +20,8 @@ test('a cup writes one immediate elimination stage and the bounds it was given',
   ]);
   assert.equal(body.veto_by_best_of, true);
   assert.equal(body.team_size, null);
-  // a race counts from 20 lifetime games unless the organizer names another number
-  assert.equal(body.race_games_min, 20);
+  // only the sign-up race counts, so a new cup sends no race games
+  assert.equal(body.race_games_min, null);
   assert.deepEqual(body.map_ids, []);
 });
 
@@ -108,10 +108,10 @@ test('with eligibility off a cup sends no bound and checks none', () => {
 });
 
 test('only the sign-up race counts when the switch says so, else another race counts from its games', () => {
-  assert.equal(cupPayload(blankCup()).race_games_min, 20);
-  assert.equal(cupPayload({ ...blankCup(), signup_race_only: true }).race_games_min, null);
-  assert.equal(cupProblem({ ...blankCup(), race_games_min: '0' }, 'signups'), 'A race counts from 1 game or more.');
-  assert.equal(cupProblem({ ...blankCup(), signup_race_only: true, race_games_min: '0' }, 'signups'), null);
+  assert.equal(cupPayload(blankCup()).race_games_min, null);
+  assert.equal(cupPayload({ ...blankCup(), signup_race_only: false }).race_games_min, 20);
+  assert.equal(cupProblem({ ...blankCup(), signup_race_only: false, race_games_min: '0' }, 'signups'), 'A race counts from 1 game or more.');
+  assert.equal(cupProblem({ ...blankCup(), race_games_min: '0' }, 'signups'), null);
 });
 
 test('a cup always opens its sign-ups, and the publish switch decides whether anyone sees it', () => {
@@ -360,7 +360,7 @@ test('Edit cup reads a bracket cup back as Create cup wrote it', () => {
   roundTrip({ ...dated, format: 'double_elimination', grand_final: 'reset' });
   roundTrip({ ...dated, format: 'placement', placement_lives: 2 });
   roundTrip({ ...dated, game: '3v3', uses_divisions: true, eligibility_required: false });
-  roundTrip({ ...dated, mmr_min: '1400', mmr_max: '2000', min_games: '30', signup_race_only: true, checkin_opens_minutes: 60, checkin_closes_minutes: 15 });
+  roundTrip({ ...dated, mmr_min: '1400', mmr_max: '2000', min_games: '30', signup_race_only: false, checkin_opens_minutes: 60, checkin_closes_minutes: 15 });
 });
 
 test('Edit cup reads a Swiss cup and its playoff back', () => {

@@ -266,7 +266,7 @@ export const blankCup = () => ({
   mmr_max: '',
   min_games: '',
   // on: only the race a player signs up with counts for the MMR bounds
-  signup_race_only: false,
+  signup_race_only: true,
   // off: the lifetime games another race needs before its MMR counts, so a few games never decide
   race_games_min: 20,
   entrant_min: '',

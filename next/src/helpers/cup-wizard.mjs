@@ -550,8 +550,9 @@ export function cupProblem(form, step) {
   if (step === 'signups') {
     const [least, most] = [count(form.entrant_min), count(form.entrant_cap)];
     if (least !== null && least < 2) return 'A cup needs at least 2 players.';
-    if (most !== null && most < 2) return 'The maximum must be at least 2.';
-    if (least !== null && most !== null && least > most) return 'The minimum cannot be above the maximum.';
+    if (most !== null && most < 2) return form.uses_divisions ? 'A division takes at least 2 players.' : 'The maximum must be at least 2.';
+    // with divisions the cap counts one division, and the minimum counts the whole cup
+    if (least !== null && most !== null && least > most && !form.uses_divisions) return 'The minimum cannot be above the maximum.';
     return rulesProblem(form) || checkinProblem(cupCheckin(form));
   }
   return null;

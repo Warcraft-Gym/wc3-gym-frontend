@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { eligibilityLines, eveningOf, groupEvents, joinsWaitlist, moveStartBody, moveStartForm, organizerCard, runsEvent, signedUpText, waitlistOf } from './events-page.mjs';
+import { eligibilityLines, eveningOf, groupEvents, joinsWaitlist, linePlaces, moveStartBody, moveStartForm, organizerCard, runsEvent, signedUpText, waitlistNote, waitlistOf } from './events-page.mjs';
 
 const event = (id, kind, phase, starts_at = null) => ({ id, kind, phase, starts_at });
 
@@ -148,10 +148,36 @@ test('a signup on the waitlist stands in no field, and a drawn or full cup takes
   const rows = [{ id: 1 }, { id: 2, waitlisted_at: '2026-10-12T10:00:00Z' }, { id: 3, waitlisted_at: '2026-10-12T09:00:00Z' }, { id: 4, waitlisted_at: '2026-10-12T08:00:00Z', withdrawn_at: '2026-10-12T08:30:00Z' }];
   assert.equal(eveningOf(cup, rows).live, 1);
   assert.deepEqual(waitlistOf(rows).map((row) => row.id), [3, 2]);
-  assert.equal(joinsWaitlist(cup, rows, false), false);
-  assert.equal(joinsWaitlist(cup, rows, true), true);
+  // the next signup stands behind the waitlist; a withdrawn row stands in no line
+  assert.equal(joinsWaitlist(cup, rows, false), true);
+  assert.equal(joinsWaitlist(cup, rows.slice(0, 1), false), false);
+  assert.equal(joinsWaitlist(cup, rows.slice(0, 1), true), true);
   assert.equal(joinsWaitlist(cup, [{ id: 1 }, { id: 5 }], false), true);
   assert.equal(joinsWaitlist({ kind: 'koth', entrant_cap: 1 }, [{ id: 1 }], true), false);
   // a cup over rounds takes a late player for its later rounds
   assert.equal(joinsWaitlist({ kind: 'cup', cup_legs: [{ id: 1 }] }, [{ id: 1 }], true), false);
+});
+
+test('a cup with divisions takes its line a whole division at a time', () => {
+  assert.deepEqual([3, 4, 5, 7, 8, 11, 12].map((total) => linePlaces(total, 4, true)), [3, 4, 4, 4, 8, 8, 12]);
+  assert.deepEqual([3, 4, 6].map((total) => linePlaces(total, 4, false)), [3, 4, 4]);
+  assert.equal(linePlaces(9, null, true), 9);
+
+  const cup = { kind: 'cup', entrant_cap: 4, uses_divisions: true };
+  const line = (count) => Array.from({ length: count }, (unused, index) => ({ id: index + 1 }));
+  // the fifth to seventh signups wait; the eighth fills the second division and comes in
+  assert.deepEqual([3, 4, 5, 6, 7].map((count) => joinsWaitlist(cup, line(count))), [false, true, true, true, false]);
+});
+
+test('a waiting player reads when they come in, to check in, and who decides', () => {
+  const line = (count) => Array.from({ length: count }, (unused, index) => ({ id: index + 1 }));
+  const divisions = waitlistNote({ kind: 'cup', entrant_cap: 4, uses_divisions: true }, line(6));
+  assert.match(divisions, /Each division takes 4 players, and the next one opens once 2 more players sign up/);
+  assert.match(divisions, /Check in as usual/);
+  assert.match(divisions, /final call/);
+  assert.match(waitlistNote({ kind: 'cup', entrant_cap: 4, uses_divisions: true, team_size: 2 }, line(7)), /once 1 more team signs up/);
+  assert.match(waitlistNote({ kind: 'cup', entrant_cap: 2 }, line(3)), /The first place that frees up goes to the first in line/);
+  assert.match(waitlistNote({ kind: 'cup', entrant_cap: 2 }, line(3), true), /swaps you in/);
+  // a cup over rounds keeps its line moving after a draw
+  assert.match(waitlistNote({ kind: 'cup', entrant_cap: 2, cup_legs: [{ id: 1 }] }, line(3), true), /first in line/);
 });

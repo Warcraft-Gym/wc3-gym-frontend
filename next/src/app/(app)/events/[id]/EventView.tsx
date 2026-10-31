@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toneClass } from "@/components/ui/tone";
+import { Note } from "@/components/ui/Note";
 import { ColumnNote } from "@/components/ColumnNote";
 import { EventHeader } from "@/components/EventHeader";
 import { EventResults } from "@/components/EventResults";
@@ -43,7 +44,7 @@ import { VetoBoard } from "@/components/VetoBoard";
 import { TeamCupPanel } from "@/components/TeamCupPanel";
 import { teamIdsOf } from "@/helpers/cup-teams.mjs";
 import { backendUrl, fetchWrapper } from "@/helpers";
-import { eligibilityLines, joinsWaitlist, waitlistOf } from "@/helpers/events-page.mjs";
+import { eligibilityLines, joinsWaitlist, waitlistNote, waitlistOf } from "@/helpers/events-page.mjs";
 import { homeTab, tabOf, withTab } from "@/helpers/event-tabs.mjs";
 import { bestOfLine, parsePlan } from "@/helpers/best-of-plan.mjs";
 import { rulesOf } from "@/helpers/map-order.mjs";
@@ -129,6 +130,8 @@ export function EventView({ id }: { id: string }) {
   // a team cup signs teams up through its own panel, so the one-player action stays off
   const button = keepsEntrants && !event?.team_size && !(tabbed && row?.action === "view") ? eventActionButton(row?.action) : null;
   const hint = blocksHint(row);
+  // the caller's entry waits on the cup's waitlist, the action then being its leave or its check-in
+  const waiting = !!row?.waitlisted || row?.action === "waitlisted";
   const held: string[] = myRaces(entrants, auth.me?.user?.id);
   // The chip counts players: a player on two races holds two rows and is one entrant
   const entered = entrants.length ? byPlayer(entrants).length : event?.entrant_count ?? 0;
@@ -628,6 +631,13 @@ export function EventView({ id }: { id: string }) {
               </Badge>
             ) : null}
 
+            {/* a signup on a cup's waitlist checks in as one that is in does, beside the chip; a team's panel shows its own */}
+            {waiting && !event.team_size ? (
+              <Badge className={toneClass("warning")}>
+                <Icon name="mdi-account-clock" />
+                On the waitlist
+              </Badge>
+            ) : null}
             {/* The one action the server picked for this caller; a chip once he is checked in */}
             {row?.action === "checked_in" ? (
               <Badge className={toneClass("success")}>
@@ -643,19 +653,11 @@ export function EventView({ id }: { id: string }) {
                 </Button>
               ))
             ) : button ? (
-              <>
-                {row?.action === "waitlisted" ? (
-                  <Badge className={toneClass("warning")}>
-                    <Icon name="mdi-account-clock" />
-                    On the waitlist
-                  </Badge>
-                ) : null}
-                <ActionButton
-                  button={row?.action === "sign_up" && joinsWaitlist(event, entrants, drawn.length > 0) ? { ...button, text: "Join the waitlist" } : button}
-                  busy={acting === true}
-                  onClick={() => act()}
-                />
-              </>
+              <ActionButton
+                button={row?.action === "sign_up" && joinsWaitlist(event, entrants, drawn.length > 0) ? { ...button, text: "Join the waitlist" } : button}
+                busy={acting === true}
+                onClick={() => act()}
+              />
             ) : anonymous && event.signups_open && keepsEntrants ? (
               <Button size="sm" onClick={logIn}>
                 <Icon name="mdi-login" />
@@ -706,6 +708,7 @@ export function EventView({ id }: { id: string }) {
               </Button>
             ) : null}
           </div>
+          {waiting ? <Note className="mt-3 max-w-[70ch]">{waitlistNote(event, entrants, drawn.length > 0)}</Note> : null}
 
           {event.team_size ? (
             <TeamCupPanel event={event} entrants={entrants} userId={auth.me?.user?.id ?? null} invites={teamInvites} onChanged={() => reload()} onError={setError} />
@@ -739,7 +742,7 @@ export function EventView({ id }: { id: string }) {
                     legs={legs}
                     legIndex={legIndex}
                     onLeg={setLegIndex}
-                    entry={ownEntry(entrants, auth.me?.user?.id)}
+                    entry={ownEntry(entrants, auth.me?.user?.id, { waiting: true })}
                     drawn={shownDrawn.length > 0}
                     onLegs={(cup_legs) => setEvent((old) => (old ? { ...old, cup_legs } : old))}
                     onError={setError}
@@ -815,7 +818,7 @@ export function EventView({ id }: { id: string }) {
               }}
             />
           ) : null}
-          {dialog ? <SignupDialog event={event} held={held} open onOpenChange={setDialog} onSignedUp={() => reload()} /> : null}
+          {dialog ? <SignupDialog event={event} held={held} entrants={entrants} open onOpenChange={setDialog} onSignedUp={() => reload()} /> : null}
           {shownVeto ? (
             <Dialog
               open

@@ -291,17 +291,15 @@ export function EntrantsView({ id }: { id: string }) {
     setAddRace((race) => players.find((row) => row.id === playerId)?.race ?? race);
   };
 
+  // a cup's hand-added player joins its line like a sign-up, so past the places they wait
   const addEntrant = () =>
-    run(
-      "add",
-      async () => {
-        const body = takesTeams ? { team_id: addTeamId, race: addRace } : { user_id: addPlayerId, race: addRace };
-        await store.addEntrant(eventId, body);
-        setAdding(false);
-        await readEntrants();
-      },
-      "The entrant is added.",
-    );
+    run("add", async () => {
+      const body = takesTeams ? { team_id: addTeamId, race: addRace } : { user_id: addPlayerId, race: addRace };
+      const added = await store.addEntrant(eventId, body);
+      setAdding(false);
+      await readEntrants();
+      setSaved(added?.waitlisted_at ? "The entrant is on the waitlist: every place is taken." : "The entrant is added.");
+    });
 
   const askBan = (row: Row) => {
     setBanTarget(row);

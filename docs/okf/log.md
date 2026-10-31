@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-27
+
+* **Update**: a cup's waitlist is the end of its line. With divisions on, Create cup's maximum reads "Players per division", and "Join the waitlist" follows the line's places (`linePlaces`), so a signup that fills a division comes in. A waiting player reads "On the waitlist" beside the check-in, on the event page, the round picker and Home, and a note says when they come in, to check in as usual, and that the organizers make the final call. The run page's Waitlist shows each waiting player's check-in and offers "Add to the cup" between the rounds of a cup over rounds. "Add player" and "Add team" say that a player or team past the places joins the waitlist. [Leagues and events](pages/leagues-and-events.md) and [Event management](pages/event-management.md) state it.
+
 ## 2026-10-26
 
 * **Update**: a cup closes itself with the result that plays it out, or the finish of its last round, and the run page reads the cup again after every write, so the close and "Reopen" show at once. [Event management](pages/event-management.md) states it.

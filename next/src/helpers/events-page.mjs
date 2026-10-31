@@ -89,13 +89,48 @@ export function eveningOf(event, entrants) {
 export const waitlistOf = (entrants = []) =>
   entrants.filter((row) => row.waitlisted_at && !row.withdrawn_at).sort((a, b) => String(a.waitlisted_at).localeCompare(String(b.waitlisted_at)));
 
-/** Whether a signup now lands on the waitlist: the cup is drawn, or it holds as many as it takes.
- *  A cup played over rounds takes a late player for its later rounds, so only its cap counts.
+/** How many of a cup's line are in, as app/services/cup_waitlist.py counts them: no cap takes
+ *  everyone, one field takes up to its cap, and a cup with divisions, whose cap is one division,
+ *  takes its first division as it fills and then every division its line fills completely.
+ *  @param {number} total @param {number | null | undefined} cap @param {boolean} divisions */
+export function linePlaces(total, cap, divisions) {
+  if (cap == null || cap < 1 || total <= cap) return total;
+  return divisions ? Math.floor(total / cap) * cap : cap;
+}
+
+// A cup's line: every entrant that has not withdrawn, the waitlist included
+const lineLength = (entrants = []) => (entrants || []).filter((row) => !row.withdrawn_at).length;
+
+/** Whether a signup now lands on the waitlist: a cup played on one evening is drawn, or the
+ *  places of its line do not reach the end of it. A cup played over rounds takes a late player
+ *  for its later rounds, so only its places count. A signup that fills a division comes in.
  *  @param {any} event @param {any[]} entrants @param {boolean} drawn */
 export function joinsWaitlist(event, entrants = [], drawn = false) {
   if (event?.kind !== 'cup') return false;
   if (drawn && !(event.cup_legs || []).length) return true;
-  return event.entrant_cap != null && eveningOf(event, entrants).live >= event.entrant_cap;
+  const total = lineLength(entrants) + 1;
+  return linePlaces(total, event.entrant_cap ?? null, !!event.uses_divisions) < total;
+}
+
+/** What a player on a cup's waitlist reads: when they come in by themselves, that they check in
+ *  as usual so an organizer can add them in the place of one who does not show, and that the
+ *  organizers decide in the end. A cup played on one evening is set once drawn, so its organizers
+ *  swap a waiting player in.
+ *  @param {any} event @param {any[]} entrants @param {boolean} drawn */
+export function waitlistNote(event, entrants = [], drawn = false) {
+  const last = 'The organizers make the final call on who plays.';
+  const who = event?.team_size ? 'teams' : 'players';
+  if (drawn && !(event?.cup_legs || []).length) {
+    return `You are on the waitlist. The bracket is drawn, so an organizer swaps you in when a place opens. ${last}`;
+  }
+  const cap = event?.entrant_cap ?? null;
+  if (event?.uses_divisions && cap) {
+    const total = lineLength(entrants);
+    const more = cap - (total - linePlaces(total, cap, true));
+    const opens = more > 0 && more < cap ? `the next one opens once ${more} more ${more === 1 ? (event?.team_size ? 'team signs' : 'player signs') : `${who} sign`} up` : 'the next one opens once it fills';
+    return `You are on the waitlist. Each division takes ${cap} ${who}, and ${opens}. Then everyone waiting moves into the cup by themselves. Check in as usual, so the organizers can add you if a place frees up. ${last}`;
+  }
+  return `You are on the waitlist. The first place that frees up goes to the first in line. Check in as usual, so the organizers can add you if someone does not check in. ${last}`;
 }
 
 /** What a player needs to sign up, as the event page states it: one line per rule, or none

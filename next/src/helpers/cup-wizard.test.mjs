@@ -127,6 +127,10 @@ test('a step names what it still needs', () => {
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '1' }, 'signups'), 'A cup needs at least 2 players.');
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '9', entrant_cap: '8' }, 'signups'), 'The minimum cannot be above the maximum.');
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '8', entrant_cap: '16' }, 'signups'), null);
+  // with divisions the cap is one division's, and the minimum counts the whole cup
+  assert.equal(cupProblem({ ...blankCup(), uses_divisions: true, entrant_min: '9', entrant_cap: '8' }, 'signups'), null);
+  assert.equal(cupProblem({ ...blankCup(), uses_divisions: true, entrant_cap: '1' }, 'signups'), 'A division takes at least 2 players.');
+  assert.equal(cupPayload({ ...blankCup(), uses_divisions: true, entrant_cap: '8' }).entrant_cap, 8);
 });
 
 test('a Swiss cup writes its rounds, and a playoff as a second stage the last result draws', () => {

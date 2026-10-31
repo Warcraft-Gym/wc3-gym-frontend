@@ -65,6 +65,8 @@ export function CupRoundsBar({
     (row) => !row.withdrawn_at && !row.waitlisted_at,
   );
   const checked = new Set<number>(leg?.checked_in || []);
+  // a player on the waitlist may check in too, but the round draws the players who are in
+  const checkedIn = playing.filter((row) => checked.has(row.id)).length;
 
   const work = async (
     key: string,
@@ -160,7 +162,7 @@ export function CupRoundsBar({
             {/* the sentence keeps 14rem, so on a phone the buttons wrap under it */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="min-w-[14rem] flex-1 text-sm">
-                <span className="tnum font-bold">{checked.size}</span> of{" "}
+                <span className="tnum font-bold">{checkedIn}</span> of{" "}
                 {playing.length} checked in for {legTitle(leg)}. The draw takes
                 the players checked in.
               </span>
@@ -168,7 +170,7 @@ export function CupRoundsBar({
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={busy === "all" || checked.size === playing.length}
+                  disabled={busy === "all" || checkedIn === playing.length}
                   onClick={() =>
                     work("all", () =>
                       store.checkEveryoneInLeg(event.id, leg.id),
@@ -249,8 +251,8 @@ export function CupRoundsBar({
         ) : state === "playing" ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="flex-1 text-sm">
-              {checked.size}{" "}
-              {checked.size === 1 ? "player plays" : "players play"}{" "}
+              {checkedIn}{" "}
+              {checkedIn === 1 ? "player plays" : "players play"}{" "}
               {legTitle(leg)}.{" "}
               {played
                 ? "Every series has a result: finish the round to count its places."

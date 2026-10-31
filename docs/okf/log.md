@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-10-30
+
+* **Update**: a new cup counts only the race a player signs up with for the MMR check. Create cup's "Only the sign-up race counts for the MMR check" is on by default. Switched off, the player's best race with 20 lifetime games or more counts, and "A race counts from" changes that number. A cup already made keeps its rule. [Event management](pages/event-management.md) states it.
+
 ## 2026-10-27
 
 * **Update**: a cup's waitlist is the end of its line. With divisions on, Create cup's maximum reads "Players per division", and "Join the waitlist" follows the line's places (`linePlaces`), so a signup that fills a division comes in. A waiting player reads "On the waitlist" beside the check-in, on the event page, the round picker and Home, and a note says when they come in, to check in as usual, and that the organizers make the final call. The run page's Waitlist shows each waiting player's check-in and offers "Add to the cup" between the rounds of a cup over rounds. "Add player" and "Add team" say that a player or team past the places joins the waitlist. [Leagues and events](pages/leagues-and-events.md) and [Event management](pages/event-management.md) state it.

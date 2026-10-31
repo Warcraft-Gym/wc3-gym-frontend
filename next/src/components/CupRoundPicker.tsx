@@ -33,7 +33,7 @@ export function CupRoundPicker({
   legs: Row[];
   legIndex: number;
   onLeg: (index: number) => void;
-  // the viewer's own playing entry, or null
+  // the viewer's own playing entry, one on the waitlist too, or null
   entry: Row | null;
   // the round shown holds its draw
   drawn: boolean;
@@ -86,7 +86,9 @@ export function CupRoundPicker({
             </Badge>
           ) : (
             <span className="flex-1 text-sm">
-              {open
+              {open && entry.waitlisted_at
+                ? `You are on the waitlist. Check in for ${legTitle(leg)} anyway: if a place frees up, the organizers can add you before it is drawn.`
+                : open
                 ? `Playing ${legTitle(leg)}? Check in before it is drawn; the draw takes the players checked in.`
                 : short
                   ? `Your team checks in for ${legTitle(leg)} once every player has accepted their invitation.`

@@ -23,7 +23,7 @@ import { SimpleTimePicker } from "@/components/SimpleTimePicker";
 import { eveningOf, moveStartBody, moveStartForm, waitlistOf } from "@/helpers/events-page.mjs";
 import { playedEntrants } from "@/helpers/stage-view.mjs";
 import { missing, teamState } from "@/helpers/cup-teams.mjs";
-import { legsOf } from "@/helpers/cup-rounds.mjs";
+import { legsOf, legTitle, openLegIndex } from "@/helpers/cup-rounds.mjs";
 import { checkinPayload, checkinProblem, checkinSummary, checkinWindowLine } from "@/helpers/checkin-window.mjs";
 import { warningLabel } from "@/helpers/entrants.mjs";
 import type { EventOrganizer } from "@/hooks/event-runner";
@@ -146,6 +146,32 @@ export function CupConsole({ part, event, entrants, drawn, editHref = null, seri
       onEntrants(entrants.map((old) => (old.id === done.id ? { ...old, ...done } : old)));
     });
   const waitlist = waitlistOf(entrants) as Row[];
+  // a waiting player checks in as one who is in does: for the cup, or for its next round over rounds
+  const nextLeg: Row | null = overRounds ? legsOf(event)[openLegIndex(legsOf(event))] ?? null : null;
+  const checksIn = overRounds || !!event.checkin_enabled;
+  const waitingIn = (row: Row) => (nextLeg ? (nextLeg.checked_in || []).includes(row.id) : !!row.checked_in_at);
+  // a cup played on one evening is set once drawn; a cup over rounds lets a player in between rounds
+  const fieldSet = drawn && !overRounds;
+  const who = teams ? "team" : "player";
+  const waitlistText = fieldSet
+    ? teams
+      ? "The bracket is drawn, so a waiting team comes in only if you undo the draw."
+      : "The bracket is drawn: swap a waiting player in for one who has not played, a no-show for example."
+    : [
+        event.uses_divisions && event.entrant_cap
+          ? `The waitlist moves into the cup by itself once it fills a division of ${event.entrant_cap}.`
+          : "A place that frees up goes to the first in line by itself.",
+        `Add a ${who} who checked in to take the place of one who does not show; they stay in.`,
+        drawn && event.uses_divisions ? `A ${who} who comes in now joins no division: place them in one before the next round is drawn.` : null,
+      ]
+        .filter(Boolean)
+        .join(" ");
+  // a hand-add joins the line like a sign-up
+  const addNote = fieldSet
+    ? ` The bracket is drawn, so the ${who} joins the waitlist.`
+    : event.entrant_cap
+      ? ` With every place taken, the ${who} joins the waitlist like a sign-up; Add to the cup lets them in from there.`
+      : "";
   const admit = (row: Row) =>
     work(`admit-${row.id}`, async () => {
       await store.admitEntrant(event.id, row.id);
@@ -293,7 +319,7 @@ export function CupConsole({ part, event, entrants, drawn, editHref = null, seri
         ) : null}
         {evening.min !== null || event.entrant_cap ? (
           <span className="text-sm text-muted-foreground">
-            {[evening.min !== null ? `at least ${evening.min}` : null, event.entrant_cap ? `at most ${event.entrant_cap}` : null].filter(Boolean).join(", ")}
+            {[evening.min !== null ? `at least ${evening.min}` : null, event.entrant_cap ? (event.uses_divisions ? `${event.entrant_cap} per division` : `at most ${event.entrant_cap}`) : null].filter(Boolean).join(", ")}
           </span>
         ) : null}
         <span className="flex-1" />
@@ -490,25 +516,29 @@ export function CupConsole({ part, event, entrants, drawn, editHref = null, seri
           {waitlist.length ? (
             <div className="flex flex-col gap-1">
               <h3 className="text-sm font-bold text-muted-foreground uppercase">Waitlist</h3>
-              <p className="text-sm text-muted-foreground">
-                {drawn
-                  ? teams
-                    ? "The bracket is drawn, so a waiting team comes in only if you undo the draw."
-                    : "The bracket is drawn: swap a waiting player in for one who has not played, a no-show for example."
-                  : "Signed up after the cup was full. Add them to the cup, past the maximum if you like."}
-              </p>
+              <p className="text-sm text-muted-foreground">{waitlistText}</p>
               <ul className="flex flex-col">
                 {waitlist.map((row, index) => (
                   <li key={row.id} className="flex min-h-11 flex-wrap items-center gap-3 border-t border-border py-1">
                     <span className="tnum w-5 text-right text-xs text-muted-foreground">{index + 1}</span>
                     <span className="min-w-0 flex-1">{row.user ? <PlayerName player={row.user} race={row.race || undefined} mmr={row.mmr ?? undefined} onClick={statsOf(row)} /> : row.team ? <CupTeamName team={row.team} /> : "A team"}</span>
-                    {!closed && !drawn ? (
+                    {checksIn ? (
+                      waitingIn(row) ? (
+                        <Badge className={toneClass("success")}>
+                          <Icon name="mdi-check" />
+                          {nextLeg ? `Checked in for ${legTitle(nextLeg)}` : "Checked in"}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Not checked in</Badge>
+                      )
+                    ) : null}
+                    {!closed && !fieldSet ? (
                       <Button size="sm" variant="outline" disabled={busy === `admit-${row.id}`} onClick={() => admit(row)}>
                         <Icon name={busy === `admit-${row.id}` ? "mdi-loading mdi-spin" : "mdi-account-arrow-right"} />
                         Add to the cup
                       </Button>
                     ) : null}
-                    {!closed && drawn && !teams && row.user ? (
+                    {!closed && fieldSet && !teams && row.user ? (
                       <Button
                         size="sm"
                         variant="outline"
@@ -607,7 +637,7 @@ export function CupConsole({ part, event, entrants, drawn, editHref = null, seri
               />
             </Field>
           ))}
-          <p className="text-sm text-muted-foreground">Every player is in at once, and each is checked against the cup&apos;s rules.</p>
+          <p className="text-sm text-muted-foreground">Every player is on the team at once, and each is checked against the cup&apos;s rules.{addNote}</p>
         </div>
       </Confirm>
 
@@ -708,7 +738,7 @@ export function CupConsole({ part, event, entrants, drawn, editHref = null, seri
           <p className="text-sm text-muted-foreground">
             {swapping || memberOut
               ? `Who comes in for ${outName}: they take ${outName}'s seed and matches, and a map veto ${outName} began starts over. ${outName} leaves the cup.`
-              : "The player is entered whether sign-ups are open or not."}
+              : `The player is entered whether sign-ups are open or not.${addNote}`}
           </p>
         </div>
       </Confirm>

@@ -20,8 +20,8 @@ test('a cup writes one immediate elimination stage and the bounds it was given',
   ]);
   assert.equal(body.veto_by_best_of, true);
   assert.equal(body.team_size, null);
-  // a race counts from 20 lifetime games unless the organizer names another number
-  assert.equal(body.race_games_min, 20);
+  // only the sign-up race counts, so a new cup sends no race games
+  assert.equal(body.race_games_min, null);
   assert.deepEqual(body.map_ids, []);
 });
 
@@ -108,10 +108,10 @@ test('with eligibility off a cup sends no bound and checks none', () => {
 });
 
 test('only the sign-up race counts when the switch says so, else another race counts from its games', () => {
-  assert.equal(cupPayload(blankCup()).race_games_min, 20);
-  assert.equal(cupPayload({ ...blankCup(), signup_race_only: true }).race_games_min, null);
-  assert.equal(cupProblem({ ...blankCup(), race_games_min: '0' }, 'signups'), 'A race counts from 1 game or more.');
-  assert.equal(cupProblem({ ...blankCup(), signup_race_only: true, race_games_min: '0' }, 'signups'), null);
+  assert.equal(cupPayload(blankCup()).race_games_min, null);
+  assert.equal(cupPayload({ ...blankCup(), signup_race_only: false }).race_games_min, 20);
+  assert.equal(cupProblem({ ...blankCup(), signup_race_only: false, race_games_min: '0' }, 'signups'), 'A race counts from 1 game or more.');
+  assert.equal(cupProblem({ ...blankCup(), race_games_min: '0' }, 'signups'), null);
 });
 
 test('a cup always opens its sign-ups, and the publish switch decides whether anyone sees it', () => {
@@ -127,6 +127,10 @@ test('a step names what it still needs', () => {
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '1' }, 'signups'), 'A cup needs at least 2 players.');
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '9', entrant_cap: '8' }, 'signups'), 'The minimum cannot be above the maximum.');
   assert.equal(cupProblem({ ...blankCup(), entrant_min: '8', entrant_cap: '16' }, 'signups'), null);
+  // with divisions the cap is one division's, and the minimum counts the whole cup
+  assert.equal(cupProblem({ ...blankCup(), uses_divisions: true, entrant_min: '9', entrant_cap: '8' }, 'signups'), null);
+  assert.equal(cupProblem({ ...blankCup(), uses_divisions: true, entrant_cap: '1' }, 'signups'), 'A division takes at least 2 players.');
+  assert.equal(cupPayload({ ...blankCup(), uses_divisions: true, entrant_cap: '8' }).entrant_cap, 8);
 });
 
 test('a Swiss cup writes its rounds, and a playoff as a second stage the last result draws', () => {
@@ -323,7 +327,9 @@ test('the sign-up rules dialog reads an event as Create cup shows it and writes 
   // the dialog writes neither who may sign up nor Battle.net verification, so a cup keeps its own
   assert.deepEqual(['signup_policy', 'bnet_required'].filter((key) => key in rulesPayload(form)), []);
   // a cup that checks nobody opens with Create cup's defaults, and turning the check off sends no bound
-  assert.deepEqual(rulesForm({ eligibility_required: false, race_games_min: null }), { eligibility_required: false, mmr_min: '', mmr_max: '', min_games: '', signup_race_only: false, race_games_min: 20 });
+  assert.deepEqual(rulesForm({ eligibility_required: false, race_games_min: null }), { eligibility_required: false, mmr_min: '', mmr_max: '', min_games: '', signup_race_only: true, race_games_min: 20 });
+  // a cup with a stored count keeps the best-race rule
+  assert.equal(rulesForm({ eligibility_required: true, race_games_min: 20 }).signup_race_only, false);
   assert.deepEqual(rulesPayload({ ...form, eligibility_required: false }), { eligibility_required: false, mmr_min: null, mmr_max: null, min_games: null, race_games_min: null });
   assert.equal(rulesProblem({ ...form, mmr_max: '1200' }), 'The lowest MMR cannot be above the highest.');
   assert.equal(rulesProblem({ ...form, eligibility_required: false, mmr_max: '1200' }), null);
@@ -360,7 +366,7 @@ test('Edit cup reads a bracket cup back as Create cup wrote it', () => {
   roundTrip({ ...dated, format: 'double_elimination', grand_final: 'reset' });
   roundTrip({ ...dated, format: 'placement', placement_lives: 2 });
   roundTrip({ ...dated, game: '3v3', uses_divisions: true, eligibility_required: false });
-  roundTrip({ ...dated, mmr_min: '1400', mmr_max: '2000', min_games: '30', signup_race_only: true, checkin_opens_minutes: 60, checkin_closes_minutes: 15 });
+  roundTrip({ ...dated, mmr_min: '1400', mmr_max: '2000', min_games: '30', signup_race_only: false, checkin_opens_minutes: 60, checkin_closes_minutes: 15 });
 });
 
 test('Edit cup reads a Swiss cup and its playoff back', () => {

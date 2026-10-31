@@ -266,7 +266,7 @@ export const blankCup = () => ({
   mmr_max: '',
   min_games: '',
   // on: only the race a player signs up with counts for the MMR bounds
-  signup_race_only: false,
+  signup_race_only: true,
   // off: the lifetime games another race needs before its MMR counts, so a few games never decide
   race_games_min: 20,
   entrant_min: '',
@@ -451,8 +451,7 @@ function swissStages(form) {
   return stages;
 }
 
-/** The rule fields of an event, as the run page's Sign-up rules dialog edits them. A cup that
- *  checks nobody opens with Create cup's defaults, so turning the check on reads as it does there. */
+/** An event's rule fields as Edit cup reads them; a cup with no check opens on Create cup's defaults. */
 export const rulesForm = (event) => {
   const checked = !!event?.eligibility_required;
   return {
@@ -460,8 +459,8 @@ export const rulesForm = (event) => {
     mmr_min: event?.mmr_min ?? '',
     mmr_max: event?.mmr_max ?? '',
     min_games: event?.min_games ?? '',
-    // no count checks the sign-up race alone
-    signup_race_only: checked && event?.race_games_min == null,
+    // no check, or a check with no count, counts the sign-up race alone
+    signup_race_only: !checked || event?.race_games_min == null,
     race_games_min: event?.race_games_min ?? 20,
   };
 };
@@ -550,8 +549,9 @@ export function cupProblem(form, step) {
   if (step === 'signups') {
     const [least, most] = [count(form.entrant_min), count(form.entrant_cap)];
     if (least !== null && least < 2) return 'A cup needs at least 2 players.';
-    if (most !== null && most < 2) return 'The maximum must be at least 2.';
-    if (least !== null && most !== null && least > most) return 'The minimum cannot be above the maximum.';
+    if (most !== null && most < 2) return form.uses_divisions ? 'A division takes at least 2 players.' : 'The maximum must be at least 2.';
+    // with divisions the cap counts one division, and the minimum counts the whole cup
+    if (least !== null && most !== null && least > most && !form.uses_divisions) return 'The minimum cannot be above the maximum.';
     return rulesProblem(form) || checkinProblem(cupCheckin(form));
   }
   return null;

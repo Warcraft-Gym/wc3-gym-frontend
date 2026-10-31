@@ -147,6 +147,13 @@ export function MyEvents({
                       Checked in
                     </Badge>
                   ) : null}
+                  {/* a player on a cup's waitlist checks in as one who is in does, so the chip says where they stand */}
+                  {card.row?.waitlisted ? (
+                    <Badge className={toneClass("warning")}>
+                      <Icon name="mdi-account-clock" />
+                      On the waitlist
+                    </Badge>
+                  ) : null}
                   {dates ? <span className="tnum">{dates}</span> : null}
                 </div>
                 {card.team ? (

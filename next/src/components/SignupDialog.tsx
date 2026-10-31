@@ -13,6 +13,7 @@ import { RaceSelect } from "@/components/RaceSelect";
 import { StatusAlert } from "@/components/StatusAlert";
 import { warningLabel } from "@/helpers/entrants.mjs";
 import { eventLabel } from "@/helpers/event-labels.mjs";
+import { waitlistNote } from "@/helpers/events-page.mjs";
 import { noStatsWarning } from "@/helpers/games-rule.mjs";
 import { bracketName, signupPlace } from "@/helpers/koth-signup.mjs";
 import { defaultSignupRace } from "@/helpers/players.mjs";
@@ -36,12 +37,14 @@ const raceName = (race: string) => raceWrapper.getRaceObject(race)?.name || race
 export function SignupDialog({
   event,
   held = [], // the races the caller already entered on
+  entrants, // the event's entrants as the page read them, so a waiting player reads how far the line is
   open,
   onOpenChange,
   onSignedUp,
 }: {
   event: Row;
   held?: string[];
+  entrants?: Row[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSignedUp?: (entrant: Row, board: Row | null) => void; // board: the fresh KOTH board the dialog read, or null
@@ -182,10 +185,10 @@ export function SignupDialog({
             </div>
           ) : (
             <>
-              {/* a cup that is drawn or full keeps the signup on its waitlist until an organizer lets it in */}
+              {/* a cup with no place left keeps the signup on its waitlist until the line or an organizer lets it in */}
               <p>
                 {entrant.waitlisted_at
-                  ? "You are on the waitlist. The bracket is drawn or the cup is full, so an organizer lets you in when a place opens."
+                  ? waitlistNote(event, [...(entrants || []).filter((row) => row.id !== entrant.id), entrant], !!event.drawn)
                   : "You are in. See you on the ladder."}
               </p>
               {warnings.length ? (

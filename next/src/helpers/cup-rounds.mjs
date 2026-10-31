@@ -35,15 +35,17 @@ export const legField = (entrants, leg) => (leg ? entrants.filter((row) => leg.c
  *  @param {boolean} drawn */
 export const legState = (leg, drawn) => (leg.finished_at ? 'finished' : drawn ? 'playing' : 'checkin');
 
-/** The playing entry of this user: their own, or the cup team they play in.
+/** The playing entry of this user: their own, or the cup team they play in. With `waiting` an
+ *  entry on the cup's waitlist counts too, as it checks in for a round as one that is in does.
  *  @param {any[]} entrants
- *  @param {number | null | undefined} userId */
-export const ownEntry = (entrants, userId) =>
+ *  @param {number | null | undefined} userId
+ *  @param {{ waiting?: boolean }} [options] */
+export const ownEntry = (entrants, userId, { waiting = false } = {}) =>
   userId
     ? entrants.find(
         (row) =>
           !row.withdrawn_at &&
-          !row.waitlisted_at &&
+          (waiting || !row.waitlisted_at) &&
           (row.user?.id === userId || row.user_id === userId || (row.roster || []).some((/** @type {any} */ one) => one.user?.id === userId)),
       ) || null
     : null;

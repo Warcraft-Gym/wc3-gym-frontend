@@ -44,6 +44,10 @@ test('a player finds their own entry, or the cup team they play in', () => {
   assert.equal(ownEntry(entrants, 4)?.id, 3);
   assert.equal(ownEntry(entrants, 8), null);
   assert.equal(ownEntry(entrants, null), null);
+  // an entry on the waitlist checks in for a round, so the round picker finds it
+  const waiting = [...entrants, { id: 5, user: { id: 7 }, waitlisted_at: '2026-11-02' }];
+  assert.equal(ownEntry(waiting, 7), null);
+  assert.equal(ownEntry(waiting, 7, { waiting: true })?.id, 5);
 });
 
 test('the overall table reads a round a player missed as empty', () => {

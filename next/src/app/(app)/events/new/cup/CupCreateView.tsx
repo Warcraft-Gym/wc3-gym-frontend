@@ -183,7 +183,7 @@ export function CupCreateView({ event = null, entrants = [], startStep = null }:
     },
     {
       k: "Players",
-      v: [form.entrant_min ? `at least ${form.entrant_min}` : null, form.entrant_cap ? `at most ${form.entrant_cap}` : null].filter(Boolean).join(", ") || "No bounds",
+      v: [form.entrant_min ? `at least ${form.entrant_min}` : null, form.entrant_cap ? (form.uses_divisions ? `${form.entrant_cap} per division` : `at most ${form.entrant_cap}`) : null].filter(Boolean).join(", ") || "No bounds",
     },
     { k: "Divisions", v: form.uses_divisions ? "Split by MMR on the run page" : "One field" },
     ...(rounds ? [{ k: "Points per place", v: pointsOf(form).join(", ") }] : []),
@@ -378,7 +378,17 @@ export function CupCreateView({ event = null, entrants = [], startStep = null }:
                 min={3}
                 max={form.ffa_mode === "league" ? 12 : 8}
                 label={form.ffa_mode === "league" ? (teamSize ? "Teams in the lobby" : "Players in the lobby") : teamSize ? "Teams per heat" : "Players per heat"}
-                hint={form.ffa_mode === "league" ? (teamSize ? "Also the most teams the cup takes" : "Also the most players the cup takes") : "Uneven fields share out over the heats"}
+                hint={
+                  form.ffa_mode === "league"
+                    ? form.uses_divisions
+                      ? teamSize
+                        ? "Also the teams of one division"
+                        : "Also the players of one division"
+                      : teamSize
+                        ? "Also the most teams the cup takes"
+                        : "Also the most players the cup takes"
+                    : "Uneven fields share out over the heats"
+                }
                 value={form.lobby_size}
                 onChange={(e) => set({ lobby_size: e.target.value, ffa_points: [] })}
               />
@@ -576,9 +586,21 @@ export function CupCreateView({ event = null, entrants = [], startStep = null }:
             <section className="grid grid-cols-12 gap-3" aria-labelledby="cup-signup-info">
               <h3 id="cup-signup-info" className="col-span-12 text-lg">Sign-up information</h3>
               <TextField className="col-span-6" type="number" min="2" label="Minimum players" placeholder="No minimum" value={form.entrant_min} onChange={(e) => set({ entrant_min: e.target.value })} />
-              <TextField className="col-span-6" type="number" min="2" label="Maximum players" placeholder="No maximum" value={form.entrant_cap} onChange={(e) => set({ entrant_cap: e.target.value })} />
+              {/* with divisions the cap counts one division, and the cup takes a further division each time one fills */}
+              <TextField
+                className="col-span-6"
+                type="number"
+                min="2"
+                label={form.uses_divisions ? "Players per division" : "Maximum players"}
+                placeholder="No maximum"
+                value={form.entrant_cap}
+                onChange={(e) => set({ entrant_cap: e.target.value })}
+              />
               <p className="col-span-12 text-sm text-muted-foreground">
-                The bracket is drawn with the players who are still in on the evening. Below the minimum you choose to wait, move the start or cancel.
+                The bracket is drawn with the players who are still in on the evening. Below the minimum you choose to wait, move the start or cancel.{" "}
+                {form.uses_divisions
+                  ? "Each division takes this many. Sign-ups past it wait on the waitlist and come in together once they fill the next division."
+                  : "Sign-ups past the maximum wait on the waitlist; the first in line comes in when a place frees up."}
               </p>
               <div className="col-span-12">
                 <Label className="flex min-h-11 items-center gap-2">

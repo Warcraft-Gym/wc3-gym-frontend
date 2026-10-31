@@ -14,7 +14,7 @@ import { AnnouncementPrompt } from "@/components/AnnouncementPrompt";
 import { BlockedTimesDialog } from "@/components/BlockedTimesDialog";
 import { ViewAsDialog } from "@/components/layout/ViewAsDialog";
 import { ConstructionBanner } from "@/components/layout/ConstructionBanner";
-import { ClerkBridge } from "@/lib/clerk-bridge";
+import { SessionBridge } from "@/lib/session-bridge";
 import { Guard } from "@/lib/guard";
 import { useTheme } from "@/hooks/theme";
 import type { ThemeMode } from "@/hooks/theme";
@@ -41,8 +41,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // useAuth answers the signed-out server snapshot until hydration, so the account slot waits for it
   const hydrated = useSyncExternalStore(() => () => {}, () => true, () => false);
   const [viewAsOpen, setViewAsOpen] = useState(false);
-  // view-as: an admin sees the app as a lower role; the legacy token session cannot, a local dev login can
-  const canViewAs = me?.actual_role === "admin" && (!user || !!user.dev);
+  // view-as: an admin sees the app as a lower role; the admin token's session cannot, a local dev login can
+  const canViewAs = me?.actual_role === "admin" && !me?.superadmin;
 
   const themeIcon = THEMES.find((t) => t.value === themeMode)?.icon || "mdi-theme-light-dark";
 
@@ -85,7 +85,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     // the phone's tab bar is fixed over the bottom edge, so the page ends above it
     <div className={cn("flex min-h-dvh flex-col", tabs.length > 0 && "pb-[calc(3.5rem+env(safe-area-inset-bottom))] min-[960px]:pb-0")}>
-      <ClerkBridge />
+      <SessionBridge />
       <header className="flex items-center gap-2 border-b border-border bg-surface px-2 py-1.5">
         {/* the app title is the way home from every page, so it always points at /; truncate keeps it on one line */}
         <Link href="/" className="truncate font-title text-lg font-bold text-foreground no-underline">WC3 Gym Dashboard</Link>

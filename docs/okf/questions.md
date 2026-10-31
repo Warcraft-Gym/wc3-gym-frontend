@@ -28,7 +28,6 @@ sources:
 - Which backend fields does this app rely on, by route? [The backend contract](concepts/backend-contract.md).
 - When does a player name open the side panel instead of linking? [Shared components](concepts/shared-components.md), by [the panel decision](decisions/player-panel-drafting-only.md).
 - Which table draws grouped rows? [One grouped table](decisions/grouped-table.md).
-- Why does Clerk run in proxy mode on this domain? [Clerk proxy mode](decisions/clerk-proxy-mode.md).
 
 # The pages
 

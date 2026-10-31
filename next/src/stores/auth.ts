@@ -10,8 +10,6 @@ export type Me = Record<string, any> | null; // eslint-disable-line @typescript-
 type User = { access_token?: string; dev?: boolean } | null;
 type AuthState = { user: User; me: Me; viewAs: ViewAs; loginError: string | null };
 
-const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
 const read = (key: string) => {
   if (typeof window === "undefined") return null;
   try {
@@ -26,12 +24,8 @@ const staleView = (v: ViewAs): ViewAs => (v?.role === "captain" && !v.seats?.len
 
 function start(): AuthState {
   if (typeof window === "undefined") return { user: null, me: null, viewAs: null, loginError: null };
-  if (!localStorage.getItem("me")) localStorage.removeItem("user"); // a pre-Clerk token has no me; it would shadow the Clerk session
-  // a cached me belongs to one Clerk instance; a key change (dev to production) starts clean
-  if (localStorage.getItem("clerk_key") !== CLERK_KEY) {
-    clearSession(); // a view-as role left behind would follow the admin into the other instance
-    localStorage.setItem("clerk_key", CLERK_KEY ?? "");
-  }
+  // a me with no token (one the Clerk login cached) is no session; a token with no me reads it on load
+  if (!localStorage.getItem("user")) clearSession();
   return { user: read("user"), me: read("me"), viewAs: staleView(read("viewAs")), loginError: null };
 }
 
@@ -40,20 +34,13 @@ const SIGNED_OUT: AuthState = { user: null, me: null, viewAs: null, loginError: 
 export const authBox = box<AuthState>(start(), SIGNED_OUT);
 const patch = (part: Partial<AuthState>) => authBox.set({ ...authBox.get(), ...part });
 
-// Clerk's useAuth(), handed over by ClerkBridge where hooks are legal
-let getToken: (() => Promise<string | null>) | null = null;
-let signOut: (() => Promise<void>) | null = null;
 let navigate: (path: string) => void = () => {};
 
-export const useClerkAuth = (auth: { getToken: () => Promise<string | null>; signOut: () => Promise<void> }) => {
-  getToken = auth.getToken;
-  signOut = auth.signOut;
-};
 /** The shell hands the router in, so a store action can route the way `router.push` did. */
 export const setNavigate = (go: (path: string) => void) => { navigate = go; };
 
-// the legacy token wins; every other session sends the Clerk session JWT
-const token = async () => authBox.get().user?.access_token || (getToken ? await getToken() : null);
+// every session is a bearer the backend signed: a member's Discord login, the admin token, a dev login
+const token = async () => authBox.get().user?.access_token || null;
 
 const fetchMe = async (): Promise<Me> => {
   const me = await fetchWrapper.get(`${backendUrl}/me`);
@@ -67,10 +54,19 @@ const clear = () => {
   patch({ user: null, me: null, viewAs: null });
 };
 
+// the session is the token in localStorage, so dropping it signs out
 const logout = async () => {
-  if (!authBox.get().user) await signOut?.(); // the legacy token has no Clerk session
   clear();
   navigate("/login");
+};
+
+// the Discord login: the backend's callback hands /sso-callback a session token for the account
+const signIn = async (accessToken: string) => {
+  const user = { access_token: accessToken };
+  localStorage.setItem("user", JSON.stringify(user));
+  patch({ user });
+  // a token /me refuses is no session; keeping it would leave a token with no me behind
+  await fetchMe().catch((e) => { clear(); throw e; });
 };
 
 // the admin-token login at /admin-login; a super admin session with no Discord account. The route
@@ -126,6 +122,7 @@ const members = ({ user, me, viewAs, loginError }: AuthState) => {
       (me?.seats ?? []).some((seat: { team_id: number; season_id: number }) => Number(seat.team_id) === Number(teamId) && Number(seat.season_id) === Number(seasonId)),
     token,
     fetchMe,
+    signIn,
     login,
     continueAsAdmin,
     devLogin,
@@ -133,7 +130,6 @@ const members = ({ user, me, viewAs, loginError }: AuthState) => {
     clear,
     setViewAs,
     setLoginError,
-    useClerkAuth,
   };
 };
 

@@ -135,7 +135,7 @@ export function MyEvents({
                 </Link>
                 <Button nativeButton={false} variant="outline" size="sm" className="text-primary-text" render={<Link href={card.to} />}>
                   <Icon name={card.organizer ? "mdi-cog-outline" : "mdi-tournament"} />
-                  {card.organizer ? (card.kind === "cup" ? "Run the cup" : "Run the event") : "Open"}
+                  {card.organizer ? (card.kind === "cup" ? "Manage cup" : "Run the event") : "Open"}
                 </Button>
                 <div className="flex basis-full flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <Badge variant="outline">{ROLE_CHIP[card.role]}</Badge>

@@ -28,7 +28,7 @@ import { StatusAlert } from "@/components/StatusAlert";
 import { placeIcon, placeMedal, placings } from "@/helpers/awards.mjs";
 import { byPlayer, bySeed, bySignup, cupRosters, entrantName, raceRows, rostersByEntrant, signupCount } from "@/helpers/entrants.mjs";
 import { FORMATS, SCHEDULING_MODES, SERIES_PER_ENTRANT_PER_ROUND, seriesPerEntrant, seriesPerFixture, stateOf, titleOf } from "@/helpers/event-labels.mjs";
-import { actOnEvent, blocksHint, eventActionButton } from "@/helpers/events.mjs";
+import { actOnEvent, blocksHint, eventActionButton, leaveWord } from "@/helpers/events.mjs";
 import { myRaces } from "@/helpers/koth.mjs";
 import { raceWrapper } from "@/helpers/races.js";
 import { saveReturnUrl } from "@/helpers/return-url.mjs";
@@ -129,6 +129,7 @@ export function EventView({ id }: { id: string }) {
   // The tabs open on the draw, so a tabbed page drops the "view" word that only pointed at it
   // a team cup signs teams up through its own panel, so the one-player action stays off
   const button = keepsEntrants && !event?.team_size && !(tabbed && row?.action === "view") ? eventActionButton(row?.action) : null;
+  const leaving = leaveWord(row, event);
   const hint = blocksHint(row);
   // the caller's entry waits on the cup's waitlist, the action then being its leave or its check-in
   const waiting = !!row?.waitlisted || row?.action === "waitlisted";
@@ -243,7 +244,9 @@ export function EventView({ id }: { id: string }) {
           })
         : Promise.resolve([]),
     ]);
-    const list = (loaded.stages || []).length ? bySeed(rows) : bySignup(rows);
+    // a cup not drawn yet lists nobody who left, though a row kept from before that rule remains
+    const listed = loaded.kind === "cup" && !loaded.drawn ? rows.filter((one: Row) => !one.withdrawn_at) : rows;
+    const list = (loaded.stages || []).length ? bySeed(listed) : bySignup(listed);
     setEntrants(list);
     setRow(mine.find((one: Row) => one.id === loaded.id) ?? null);
     // a team cup reads the invitations of the caller, for its panel
@@ -270,14 +273,13 @@ export function EventView({ id }: { id: string }) {
 
   // One action word, one thing to do. The dialog and the draw are this page's own; every
   // other word goes through the shared act.
-  const act = async (race: string | null = null) => {
-    const action = row?.action;
+  const act = async (race: string | null = null, action = row?.action) => {
     if (action === "sign_up") return setDialog(true);
     if (action === "view") {
       pickTab("draw");
       return document.getElementById("the-draw")?.scrollIntoView({ behavior: "smooth" });
     }
-    setActing(race ?? true);
+    setActing(race ?? (action === row?.action ? true : action));
     setError(await act_(action, { store, eventId: event!.id, row, reload, race, raceName: race ? raceName(race) : race, drawn: drawn.length > 0 }));
     setActing(false);
   };
@@ -665,6 +667,9 @@ export function EventView({ id }: { id: string }) {
               </Button>
             ) : null}
 
+            {/* Check-in took the one action; a cup's player may still leave beside it */}
+            {leaving ? <ActionButton button={eventActionButton(leaving) as Row} busy={acting === leaving} onClick={() => act(null, leaving)} /> : null}
+
             {/* An event that takes one entry per race lets a player in on another race beside his own row */}
             {event.multi_entry && event.signups_open && held.length > 0 && held.length < raceWrapper.races.length ? (
               <Button size="sm" variant="outline" className="text-primary-text" onClick={() => setDialog(true)}>
@@ -698,7 +703,7 @@ export function EventView({ id }: { id: string }) {
             {runner.runs && event.kind !== "gnl" ? (
               <Button nativeButton={false} size="sm" className="text-on-primary" render={<Link href={`/events/${event.id}/admin`} />}>
                 <Icon name="mdi-tune-variant" />
-                Run the {event.kind === "cup" ? "cup" : "event"}
+                {event.kind === "cup" ? "Manage cup" : "Run the event"}
               </Button>
             ) : null}
             {!anonymous && event.kind === "gnl" ? (

@@ -1,5 +1,9 @@
 # Bundle history
 
+## 2026-11-01
+
+* **Update**: on a [cup's page](pages/leagues-and-events.md) a player keeps Withdraw, or Leave the waitlist, beside Check in and the Checked in chip (`leaveWord`), and a cup not drawn yet lists and counts nobody who left. The button to a cup's run page reads "Manage cup", on the page and on [Home](pages/member.md).
+
 ## 2026-10-30
 
 * **Update**: a new cup counts only the race a player signs up with for the MMR check. Create cup's "Only the sign-up race counts for the MMR check" is on by default. Switched off, the player's best race with 20 lifetime games or more counts, and "A race counts from" changes that number. A cup already made keeps its rule. [Event management](pages/event-management.md) states it.

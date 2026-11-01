@@ -13,6 +13,7 @@ import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { MAP_MODES, modesLine, modesOf, modesText } from "@/helpers/map-modes.mjs";
 import { LadderImportDialog } from "@/components/LadderImportDialog";
 import type { ImportRow } from "@/components/LadderImportDialog";
+import { MapSourceImportDialog } from "@/components/MapSourceImportDialog";
 import { PageHeader } from "@/components/PageHeader";
 import { RowActions } from "@/components/RowActions";
 import { StatusAlert } from "@/components/StatusAlert";
@@ -38,6 +39,7 @@ export function MapsView() {
   const [importOpen, setImportOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importRows, setImportRows] = useState<ImportRow[]>([]);
+  const [sourceImportOpen, setSourceImportOpen] = useState(false);
   // the picked file while one is picked, else the picture the map already has
   const picturePreview = useMemo(() => (pictureFile ? URL.createObjectURL(pictureFile) : selectedMap?.image), [pictureFile, selectedMap?.image]);
   // the file input holds the picked file itself, so clearing the state clears the input as well
@@ -191,6 +193,10 @@ export function MapsView() {
               <W3CIcon size={20} />
               Import W3C map pool
             </Button>
+            <Button variant="outline" onClick={() => setSourceImportOpen(true)}>
+              <Icon name="mdi-download" />
+              Import from a map site
+            </Button>
             <Button onClick={openCreateMap}>
               <Icon name="mdi-plus" />
               Add map
@@ -317,6 +323,8 @@ export function MapsView() {
       </Dialog>
 
       <LadderImportDialog modelValue={importOpen} rows={importRows} loading={importLoading} onUpdateModelValue={setImportOpen} onConfirm={confirmImport} />
+
+      {sourceImportOpen ? <MapSourceImportDialog onClose={() => setSourceImportOpen(false)} onImported={() => fetchMaps(true)} /> : null}
 
       <ConfirmDeleteDialog
         modelValue={showDeleteDialog}

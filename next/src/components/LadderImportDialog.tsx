@@ -4,7 +4,9 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/Icon";
+import { Note } from "@/components/ui/Note";
 import { Progress } from "@/components/ui/progress";
+import { unreachedNote } from "@/helpers/map-sources.mjs";
 import { hideMissingImage } from "@/helpers/team-image";
 
 export type ImportRow = {
@@ -13,6 +15,8 @@ export type ImportRow = {
   shortname?: string | null;
   image_url?: string | null;
   status: string;
+  source?: string | null;
+  unreached?: string[];
 };
 
 const STATUS: Record<string, string> = {
@@ -50,6 +54,7 @@ export function LadderImportDialog({
     setSkipped([]);
   }
 
+  const sourceNote = unreachedNote(rows);
   const offLadderRows = rows.filter((row) => row.status === "off_ladder");
   const poolRows = rows.filter((row) => row.status !== "off_ladder");
   const isSkipped = (row: ImportRow) => skipped.includes(row.w3c_name);
@@ -60,7 +65,7 @@ export function LadderImportDialog({
 
   return (
     <Dialog open={modelValue} onOpenChange={(open) => onUpdateModelValue?.(open)}>
-      <DialogContent showCloseButton={false} size="lg" className="gap-0 p-0">
+      <DialogContent showCloseButton={false} size="lg" className="flex flex-col gap-0 overflow-hidden p-0">
         <DialogTitle className="flex items-center gap-2 banner bg-banner px-4 py-3 text-primary">
           <Icon name="mdi-download" />
           <span>Import W3C map pool</span>
@@ -70,7 +75,12 @@ export function LadderImportDialog({
         </DialogTitle>
         {/* null is the indeterminate bar, which is what the read of the ladder pool shows */}
         {loading ? <Progress value={null} /> : null}
-        <ul className="max-h-[500px] overflow-y-auto">
+        {sourceNote ? (
+          <Note type="warning" className="mx-4 mt-3 w-auto">
+            {sourceNote}
+          </Note>
+        ) : null}
+        <ul className="min-h-0 flex-1 overflow-y-auto">
           {rows.map((row) => (
             <li key={row.w3c_name}>
               {row === offLadderRows[0] ? (

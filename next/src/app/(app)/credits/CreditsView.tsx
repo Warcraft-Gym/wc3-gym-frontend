@@ -21,6 +21,11 @@ export function CreditsView() {
         <li>
           Country flags: <a href="https://flagpack.xyz" target="_blank" rel="noopener">Flagpack</a>
         </li>
+        <li>
+          Map pictures: <a href="https://liquipedia.net/warcraft/Portal:Maps" target="_blank" rel="noopener">Liquipedia</a>,{" "}
+          <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>, and{" "}
+          <a href="https://warcraft3.info/maps" target="_blank" rel="noopener">warcraft3.info</a>
+        </li>
       </ul>
     </div>
   );

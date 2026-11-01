@@ -4,7 +4,7 @@ title: Site admin
 description: The settings, the Discord role bindings, the admin list, the map catalogue and the user guide.
 resource: ../../../next/src/app/(app)/config/ConfigView.tsx
 tags: [pages]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-22T11:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-11-01T12:00:00Z }
 sources:
   - id: config
     resource: ../../../next/src/app/(app)/config/ConfigView.tsx
@@ -44,7 +44,7 @@ sources:
 
 **Access (`/config/access`).** The gym admins: the player, when granted, and the source, app or environment. "Add admin" takes a player from the list or a Discord id. An app-granted admin can be removed; an admin cannot remove their own row. Under the admins, "Event Organizers": the requests members sent, each with its note and whether the account has a player profile, answered with "Approve" (`POST /organizers/requests/{discord_id}/approve`) or "Decline"; then every organizer with the date of the grant and the count of cups they run, and "Revoke" (`DELETE /organizers/{discord_id}`). "Add organizer" takes a player through `OrganizerPicker`, which searches the player base by name or Discord tag (`GET /organizers/candidates?q=`, ten at most, past the accounts holding a grant), and writes `POST /organizers`.
 
-**Maps (`/maps`).** Every map as a card with its picture, its short name and the modes it is played as ("1v1 · 2v2", or "No mode set"). Add a map (name, short name, "Played as" 1v1 to 8v8 and FFA, picture), edit one, delete one, and import the W3Champions ladder pool, which names the mode of its ladder.
+**Maps (`/maps`).** Every map as a card with its picture, its short name and the modes it is played as ("1v1 · 2v2", or "No mode set"). Add a map (name, short name, "Played as" 1v1 to 8v8 and FFA, picture), edit one, delete one, and import the W3Champions ladder pool, which names the mode of its ladder and says when a map site could not be reached. "Import from a map site" opens `MapSourceImportDialog`: pick a site (it opens on the first the backend lists), search it or narrow it with "Played as", which offers the modes its rows hold, tick maps, and set what each is played as, prefilled from what the site suggests. A row says when the map is already in the app, picked rows stay picked and in sight across searches and filters, and the dialog ends on the credit the site asks for. "Import N maps" sends 10 maps per call with a progress bar, and what is already in stays out of a retry. A site that lists no pictures says they come in with the import. A map that came in without a picture is named in a note, and the dialog stays open on it.
 
 **User guide (`/user-guide`).** The admin guide `ADMIN_UI_USER_GUIDE.md`, rendered from the repository file.
 
@@ -74,6 +74,9 @@ sources:
 | `map.uploadMapImage` | `POST /maps/{id}/image` |
 | `map.deleteMap` | `DELETE /maps/{id}` |
 | `map.importLadderMaps` | `POST /maps/ladder-import` |
+| `map.fetchMapSources` | `GET /maps/sources` |
+| `map.fetchSourceMaps` | `GET /maps/sources/{key}?q=` |
+| `map.importSourceMaps` | `POST /maps/sources/{key}` |
 
 # Rules
 

@@ -2,9 +2,9 @@
 import { backendUrl, fetchWrapper } from "@/helpers";
 
 const store = {
-  // The pool allows stale-while-revalidate, so fresh adds a query no cache holds for a re-read after a write
+  // Every map, past the default page. The pool allows stale-while-revalidate, so fresh adds a query no cache holds for a re-read after a write
   async fetchMaps(fresh = false) {
-    return await fetchWrapper.get(`${backendUrl}/maps${fresh ? `?t=${Date.now()}` : ""}`);
+    return await fetchWrapper.get(`${backendUrl}/maps?limit=500${fresh ? `&t=${Date.now()}` : ""}`);
   },
   async updateMap(map: any) {
     await fetchWrapper.put(`${backendUrl}/maps/${map.id}`, map);
@@ -31,6 +31,17 @@ const store = {
   // Creates, renames and pictures the named maps of one ladder, 1v1 unless named
   async importLadderMaps(names: string[], mode: string = "1v1") {
     await fetchWrapper.post(`${backendUrl}/maps/ladder-import${mode === "1v1" ? "" : `?mode=${mode}`}`, { names });
+  },
+  // The sites an admin can take maps from
+  async fetchMapSources() {
+    return await fetchWrapper.get(`${backendUrl}/maps/sources`);
+  },
+  async fetchSourceMaps(key: string, q = "") {
+    return await fetchWrapper.get(`${backendUrl}/maps/sources/${key}${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+  },
+  // Adds the picked maps of a site, at most 10 per call
+  async importSourceMaps(key: string, maps: { name: string; modes: string | null }[]) {
+    return await fetchWrapper.post(`${backendUrl}/maps/sources/${key}`, { maps });
   },
 };
 

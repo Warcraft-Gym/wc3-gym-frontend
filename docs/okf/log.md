@@ -3,6 +3,15 @@
 ## 2026-11-01
 
 * **Update**: on a [cup's page](pages/leagues-and-events.md) a player keeps Withdraw, or Leave the waitlist, beside Check in and the Checked in chip (`leaveWord`), and a cup not drawn yet lists and counts nobody who left. The button to a cup's run page reads "Manage cup", on the page and on [Home](pages/member.md).
+* **Update**: the [cup page](pages/leagues-and-events.md) folds a "Map pool" row under the description (`CupMapPool`), which opens the maps of its pool. Each opens warcraft3.info's list searched by the map's name (`mapSearchUrl`), where a player finds it to download.
+* **Update**: `MapSourceImportDialog` names a map that came in without a picture (`missingPicturesNote`) and stays open on the note, and a "Played as" filter narrows its list to one mode. [Site admin](pages/site-admin.md) states it.
+* **Update**: `MapPoolPicker` opens `MapSourceImportDialog`, so an organizer imports a map from a site in the cup wizard and in Edit cup, and what it imports joins the pool. [Event management](pages/event-management.md) states it.
+
+## 2026-10-31
+
+* **Add**: "Import from a map site" on the [Maps page](pages/site-admin.md) opens `MapSourceImportDialog`, where an admin picks maps from a site and sets what each is played as. The site list comes from the backend, so a new site needs no change here. The Credits page credits the map pictures.
+* **Update**: the ladder import dialog and the cup's map pool say when a map site could not be reached and where the pictures come from (`unreachedNote`).
+* **Update**: `map.fetchMaps` reads `/maps?limit=500`, so every picker sees every map. `EDGE_CACHED` holds that query, so the read stays on the edge. The [backend contract](concepts/backend-contract.md) states it.
 
 ## 2026-10-30
 

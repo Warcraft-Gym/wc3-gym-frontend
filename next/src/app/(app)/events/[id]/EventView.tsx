@@ -51,6 +51,7 @@ import { rulesOf } from "@/helpers/map-order.mjs";
 import { cn } from "@/lib/utils";
 import { livesLine } from "@/helpers/cup-wizard.mjs";
 import { legsOf, legTitle, openLegIndex, ownEntry } from "@/helpers/cup-rounds.mjs";
+import { CupMapPool } from "@/components/CupMapPool";
 import { CupOverallTable } from "@/components/CupOverallTable";
 import { CupRoundPicker } from "@/components/CupRoundPicker";
 import { CupTeamName } from "@/components/CupTeamName";
@@ -604,6 +605,7 @@ export function EventView({ id }: { id: string }) {
             <p className="mt-2 text-sm text-muted-foreground">Run by {runner.organizers.map((one) => one.name || "an organizer").join(", ")}</p>
           ) : null}
           {event.description ? <p className="mt-3 max-w-[70ch] whitespace-pre-line">{event.description}</p> : null}
+          {cup ? <CupMapPool maps={event.maps || []} customGame={!!event.custom_game} /> : null}
           {/* What a player needs before signing up; a checked event refuses anyone without it */}
           {(eligibilityLines(event) as string[]).length ? (
             <div className="mt-3 max-w-[70ch] rounded-lg border border-border p-3 text-sm">

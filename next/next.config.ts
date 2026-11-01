@@ -7,8 +7,6 @@ const nextConfig: NextConfig = {
     const target = process.env.PROXY_TARGET;
     return [
       ...(target ? [{ source: "/api/:path*", destination: `${target}/:path*` }] : []),
-      // Clerk proxy mode: an app folder starting with _ is private, so the handler sits here.
-      { source: "/__clerk/:path*", destination: "/clerk-proxy/:path*" },
     ];
   },
   async redirects() {

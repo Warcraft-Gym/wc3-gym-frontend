@@ -4,7 +4,7 @@ title: Code style
 description: Next.js and React with shadcn/ui and Tailwind, pure helpers in .mjs files with node tests, theme tokens instead of colour values, Title Case page titles, and one-line comments.
 resource: ../../../next/package.json
 tags: [design, tooling]
-generated: { by: claude-code/claude-fable-5-1, at: 2026-10-06T10:33:26Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-27T12:00:00Z }
 sources:
   - id: package
     resource: ../../../next/package.json
@@ -19,7 +19,7 @@ sources:
 
 # Stack
 
-Next.js App Router with React and TypeScript, in `next/`. shadcn/ui on Base UI for every control, Tailwind for layout, TanStack Table under the one shared `DataTable`. The stores are plain modules; see [stores](../concepts/stores.md). Clerk's React SDK owns the member session. Luxon for dates, d3 for chart maths, flagpack for flags, Material Design Icons for glyphs. `pnpm lint` runs ESLint with the Next.js config. pnpm is the package manager.
+Next.js App Router with React and TypeScript, in `next/`. shadcn/ui on Base UI for every control, Tailwind for layout, TanStack Table under the one shared `DataTable`. The stores are plain modules; see [stores](../concepts/stores.md). The member session is a token the backend signs; see [session and auth](../concepts/session-and-auth.md). Luxon for dates, d3 for chart maths, flagpack for flags, Material Design Icons for glyphs. `pnpm lint` runs ESLint with the Next.js config. pnpm is the package manager.
 
 # Where logic goes
 

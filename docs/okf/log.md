@@ -18,6 +18,8 @@
 
 ## 2026-10-27
 
+* **Update**: a member signs in with Discord through the backend: "Sign in with Discord" goes to the backend's `/auth/discord/start`, and `/sso-callback` takes the session token the backend hands back and keeps it under `user`. The Clerk SDK, its proxy route and the `CLERK_*` and `NEXT_PUBLIC_CLERK_*` variables are gone, and with them the decision on Clerk's proxy mode and the pitfall of the proxy's encoding headers. The screen capture signs in with `SHOTS_TOKEN`. [Session and auth](concepts/session-and-auth.md) states it.
+
 * **Update**: a cup's waitlist is the end of its line. With divisions on, Create cup's maximum reads "Players per division", and "Join the waitlist" follows the line's places (`linePlaces`), so a signup that fills a division comes in. A waiting player reads "On the waitlist" beside the check-in, on the event page, the round picker and Home, and a note says when they come in, to check in as usual, and that the organizers make the final call. The run page's Waitlist shows each waiting player's check-in and offers "Add to the cup" between the rounds of a cup over rounds. "Add player" and "Add team" say that a player or team past the places joins the waitlist. [Leagues and events](pages/leagues-and-events.md) and [Event management](pages/event-management.md) state it.
 
 ## 2026-10-26

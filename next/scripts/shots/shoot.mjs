@@ -28,16 +28,16 @@ const CAP = 2400; // the tallest full-page capture, in CSS pixels
 const SUFFIX = (PHONE ? '-phone' : '') + (VIEWAS ? `-${JSON.parse(VIEWAS).role}` : '') + (ANON ? '-anon' : '');
 fs.mkdirSync(OUT, { recursive: true });
 
-if (!ANON && !(process.env.SHOTS_CLERK_SECRET_KEY && process.env.SHOTS_CLERK_USER_ID)) {
-  console.error('set SHOTS_CLERK_SECRET_KEY and SHOTS_CLERK_USER_ID, or SHOTS_ANON=1');
+if (!ANON && !process.env.SHOTS_TOKEN) {
+  console.error('set SHOTS_TOKEN, or SHOTS_ANON=1');
   process.exit(2);
 }
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext(PHONE ? { ...devices['iPhone 14'], locale: 'en-US' } : { viewport: { width: 1280, height: 900 }, locale: 'en-US' });
 
-// Every non-GET to the backend answers {} without leaving the browser. Clerk passes a URL object,
-// and a throw here signs the session out, so any doubt falls through to the real fetch.
+// Every non-GET to the backend answers {} without leaving the browser. A throw here would
+// sign the session out, so any doubt falls through to the real fetch.
 await ctx.addInitScript(() => {
   const orig = window.fetch.bind(window);
   window.__stubbed = [];
@@ -91,44 +91,27 @@ await ctx.addInitScript(() => {
   };
 });
 
-// The network guard catches what the stub cannot see (XHR, beacons, form posts): only Clerk may write.
+// The network guard catches what the stub cannot see (XHR, beacons, form posts): nothing writes.
 const netBlocked = [];
 await ctx.route('**/*', (route) => {
   const req = route.request();
   const method = req.method();
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return route.continue();
   const u = new URL(req.url());
-  const clerk = u.pathname.startsWith('/__clerk/') || u.pathname.startsWith('/clerk-proxy/') || u.hostname.includes('clerk');
-  if (clerk) return route.continue();
   netBlocked.push(`${method} ${u.host}${u.pathname}`);
   return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
 });
 
-// A real Clerk session from a one-time sign-in ticket for SHOTS_CLERK_USER_ID. The secret key must
-// belong to the Clerk instance whose publishable key the app was built with.
+// A real session: SHOTS_TOKEN is a session token the backend signed, the `access_token` under
+// `user` in localStorage of a browser signed in on the same backend. /me answers what it sees.
 async function signIn() {
-  const ticket = await fetch('https://api.clerk.com/v1/sign_in_tokens', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.SHOTS_CLERK_SECRET_KEY}`, 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) shots' },
-    body: JSON.stringify({ user_id: process.env.SHOTS_CLERK_USER_ID, expires_in_seconds: 600 }),
-  }).then((r) => r.json());
-  if (!ticket.token) {
-    console.error('no sign-in ticket:', JSON.stringify(ticket.errors?.[0]?.message ?? ticket).slice(0, 200));
-    process.exit(1);
-  }
   const page = await ctx.newPage();
   await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => window.Clerk?.loaded, null, { timeout: 30000 });
-  const status = await page.evaluate(async (token) => {
-    if (window.Clerk.session) await window.Clerk.signOut();
-    const attempt = await window.Clerk.client.signIn.create({ strategy: 'ticket', ticket: token });
-    await window.Clerk.setActive({ session: attempt.createdSessionId });
-    return attempt.status;
-  }, ticket.token);
+  await page.evaluate((token) => localStorage.setItem('user', JSON.stringify({ access_token: token })), process.env.SHOTS_TOKEN);
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!localStorage.getItem('me'), null, { timeout: 30000 });
   const me = await page.evaluate(() => JSON.parse(localStorage.getItem('me') || '{}'));
-  console.log('sign-in', status, '| role', me.role, '| player row', me.user ? 'yes' : 'no');
+  console.log('sign-in | role', me.role, '| player row', me.user ? 'yes' : 'no');
   await page.close();
 }
 if (!ANON) await signIn();

@@ -17,5 +17,4 @@ Since 2026-09-04. Hash routing came with the starter template, not with a reason
 # Consequences
 
 - Deep links are plain paths, and each one is a real page of the Next.js app; an unknown path redirects to `/`.
-- Clerk needs no dashboard change for a same-origin path change.
 - A page reads its query with `useSearchParams()` inside a `Suspense` boundary; the server never sees a hash.

@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/Combobox";
 import { Icon } from "@/components/ui/Icon";
 import { Pick } from "@/components/ui/Pick";
+import { MapSourceImportDialog } from "@/components/MapSourceImportDialog";
 import { useEventStore, useMapStore } from "@/stores";
 import { forMode, modesLine } from "@/helpers/map-modes.mjs";
+import { unreachedNote } from "@/helpers/map-sources.mjs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Row = Record<string, any>;
@@ -14,8 +16,8 @@ export type PoolMap = { id: number; name: string; shortname?: string | null };
 const asPoolMap = (row: Row): PoolMap => ({ id: row.id, name: row.name, shortname: row.shortname ?? null });
 
 /** A cup's map pool, in the order the veto board lists it. It fills from the current 1v1 ladder
- *  pool, from the pool of an earlier cup, or one map at a time, and each map leaves on its own
- *  row. A ladder map the app does not hold yet is named, since only an admin adds a map. */
+ *  pool, from the pool of an earlier cup, from a map site, or one map at a time, and each map leaves
+ *  on its own row. A ladder map that could not be added is named. */
 export function MapPoolPicker({
   pool,
   onChange,
@@ -40,6 +42,7 @@ export function MapPoolPicker({
   const [copyFrom, setCopyFrom] = useState<number | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -67,6 +70,8 @@ export function MapPoolPicker({
     try {
       const mode = ladderMode || "1v1";
       let rows: Row[] = await mapStore.fetchLadderMapImport(mode);
+      // the read that looked the new maps up says which site could not be reached
+      const sourceNote = unreachedNote(rows);
       const lacking = rows.filter((row) => row.status !== "off_ladder" && row.map_id == null).map((row) => row.w3c_name);
       let all = maps;
       if (lacking.length) {
@@ -79,7 +84,8 @@ export function MapPoolPicker({
       const byId = new Map(all.map((row: Row) => [row.id, row]));
       add(known.map((row) => asPoolMap(byId.get(row.map_id) ?? { id: row.map_id, name: row.matched_name || row.w3c_name, shortname: row.shortname })));
       const missing = ladder.filter((row) => row.map_id == null).map((row) => row.w3c_name);
-      setNote(missing.length ? `These ladder maps could not be added: ${missing.join(", ")}.` : `${known.length} ladder maps added.`);
+      const added = missing.length ? `These ladder maps could not be added: ${missing.join(", ")}.` : `${known.length} ladder maps added.`;
+      setNote(sourceNote ? `${added} ${sourceNote}` : added);
     } catch (e) {
       setNote(`The ladder pool did not load: ${(e as Error).message}`);
     } finally {
@@ -118,6 +124,10 @@ export function MapPoolPicker({
             Use the {ladderMode} ladder pool
           </Button>
         ) : null}
+        <Button variant="outline" onClick={() => setImporting(true)}>
+          <Icon name="mdi-download" />
+          Import from a map site
+        </Button>
         <div className="flex min-w-[260px] flex-[1_1_260px] items-end gap-2">
           <Pick
             className="flex-1"
@@ -193,6 +203,16 @@ export function MapPoolPicker({
           map left over.
         </p>
       </div>
+
+      {importing ? (
+        <MapSourceImportDialog
+          onClose={() => setImporting(false)}
+          onImported={async (rows) => {
+            setMaps(await mapStore.fetchMaps(true));
+            add(rows.map(asPoolMap));
+          }}
+        />
+      ) : null}
     </div>
   );
 }

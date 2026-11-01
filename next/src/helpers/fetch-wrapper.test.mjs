@@ -25,7 +25,7 @@ test('a read with a query of its own misses the pattern, so it carries the beare
 
 test('the open league, map, config, player and team reads are edge cached', () => {
   for (const url of [
-    '/api/leagues', '/api/maps', '/api/config/w3c', '/api/config/settings/fantasy_bet_points_value',
+    '/api/leagues', '/api/maps', '/api/maps?limit=500', '/api/config/w3c', '/api/config/settings/fantasy_bet_points_value',
     '/api/events/12/ladder/players', '/api/users/3/ladder', '/api/users/3/ladder?season_id=2', '/api/users/3/history',
     '/api/users/3/ladder/w3c-season', '/api/users/3/ladder/w3c-season?race=HU',
     '/api/events/12/teams', '/api/events/12/teams/basic', '/api/events/12/teams/7',
@@ -60,7 +60,8 @@ test('career pages use the edge cache while fresh reads keep the bearer', () => 
 
 test('caller-dependent reads and other queries keep the bearer', () => {
   for (const url of [
-    '/api/leagues/5', '/api/leagues/5?archived=false', '/api/events/5', '/api/config/settings', '/api/maps/ladder-import',
+    '/api/maps/sources', '/api/maps/sources/liquipedia', '/api/maps/sources/liquipedia?q=autumn',
+    '/api/leagues/5', '/api/leagues/5?archived=false', '/api/events/5', '/api/config/settings', '/api/maps/ladder-import', '/api/maps/sources', '/api/maps?limit=500&t=123',
     '/api/users/3/ladder?t=123', '/api/users/3/ladder?season_id=2&t=123', '/api/users/3/ladder/w3c-season?race=HU&t=123', '/api/events/12/teams?t=123',
     '/api/events/12/teams/7/availability', '/api/config/discord-roles',
     '/api/events/12/series', '/api/events/12/series?match_id=5', '/api/events/12/series?team_id=5', '/api/events/12/entrants', '/api/events/12/entrants?t=123', '/api/events/12/stages/4/series?t=123',

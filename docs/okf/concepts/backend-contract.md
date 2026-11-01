@@ -4,7 +4,7 @@ title: The backend contract, as consumed here
 description: What this app relies on from the wc3-gym-backend API, named by route and field, and where those reliances live in the code.
 resource: ../../../next/src/stores
 tags: [stores]
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-17T20:00:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-31T12:00:00Z }
 sources:
   - id: stores
     resource: ../../../next/src/stores
@@ -56,7 +56,7 @@ A user row carries `tags`: a list of `{id, tag, verified, active, source, first_
 | `series` | `/series`, `/series/{id}`, `/series/{id}/result`, `/series/{id}/casts...`, `/casts/last`, `/events/{event_id}/series` (bare, or filtered by `match_id`, `player_id` or `is_fantasy_match`), `/home/series`, `/home/series/upcoming`, `/users/{a}/meetings/{b}`, `/draft-series...`, `/matches/{id}/draft-board` |
 | no store: called from a view or a component | `/series/{id}/games`, `/cup-series/{id}`, `/cup-series/{id}/games`, `/cup-series/{id}/report`, `/cup-series/{id}/veto`, `/cup-series/{id}/result`, `/player-series`, `/player-series/{id}`, `/player-series/{id}/veto`, `/player-series/{id}/replays/{game}/upload-url`, `/player-series/{id}/free-time` |
 | `availability` | `/player-availability`, `/player-blocks...`, `/events/{event_id}/teams/{team_id}/availability` |
-| `map` | `/maps`, `/maps/{id}`, `/maps/ladder-import`, `/maps/{id}/image` |
+| `map` | `/maps?limit=500`, `/maps/{id}`, `/maps/ladder-import`, `/maps/sources`, `/maps/sources/{key}`, `/maps/{id}/image` |
 | `config` | `/config/settings`, `/config/settings/{key}`, `/config/w3c`, `/config/admins`, `/organizers...`, `/organizers/requests...`, `/config/discord-role-bindings...`, `/config/discord-hidden-roles`, `/config/discord-roles`, `/config/discord-roles/sync`, `/config/discord-guild-roles`, `/config/discord-role-groups`, `/config/koth/nightbot-token` |
 | `fantasy` | `/fantasy/teams...`, `/fantasy/bets...`, `/events/{event_id}/fantasy/tiers`, `/events/{event_id}/fantasy/teams/{team_id}/breakdown`, `/fantasy-team`, `/fantasy-bet` |
 | `ladder` | `/events/{id}/ladder`, `/events/{id}/ladder-sync`, `/users/{id}/ladder` |

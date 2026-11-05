@@ -27,6 +27,15 @@ const ACTION_BUTTON = {
 
 export const eventActionButton = (action) => ACTION_BUTTON[action] ?? null;
 
+/** The word of the second button a cup's player gets, or null. Check-in takes the one action, and
+ *  the player may still leave beside it; a team leaves on its own panel, and every other kind of
+ *  event keeps its one action.
+ *  @param {any} row a GET /me/events row @param {any} event */
+export const leaveWord = (row, event) => {
+  if (event?.kind !== 'cup' || event.team_size || !['check_in', 'checked_in'].includes(row?.action)) return null;
+  return row.waitlisted ? 'waitlisted' : 'withdraw';
+};
+
 // The Events tab's card button from the caller's own /me/events row. Every card button opens
 // the cup, so it names where the caller stands; an action to take is filled, a state is outlined.
 const CARD_BUTTON = {

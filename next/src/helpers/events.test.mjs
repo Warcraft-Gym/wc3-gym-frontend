@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { actOnEvent, blocksHint, cardButton, checkInFor, eventActionButton, hideResultsStored, seasonAction, storeHideResults } from './events.mjs';
+import { actOnEvent, blocksHint, cardButton, checkInFor, eventActionButton, leaveWord, hideResultsStored, seasonAction, storeHideResults } from './events.mjs';
 
 // one row of GET /me/events; the caller's own state rides on it
 const row = (over) => ({
@@ -121,4 +121,21 @@ test('the shared act withdraws once the reader says so, checks in, and names a f
   assert.equal(await actOnEvent('withdraw', { store: broken, eventId: 7, row: null, reload }),
     'That did not go through: the server said no');
   globalThis.confirm = ask;
+});
+
+test('a cup player leaves beside check-in, and off the waitlist while waiting', () => {
+  const cup = { kind: 'cup' };
+  assert.equal(leaveWord({ action: 'check_in' }, cup), 'withdraw');
+  assert.equal(leaveWord({ action: 'checked_in' }, cup), 'withdraw');
+  assert.equal(leaveWord({ action: 'check_in', waitlisted: true }, cup), 'waitlisted');
+  assert.equal(leaveWord({ action: 'checked_in', waitlisted: true }, cup), 'waitlisted');
+});
+
+test('the second button stays off where the one action already leaves or nothing may', () => {
+  const cup = { kind: 'cup' };
+  for (const action of ['withdraw', 'waitlisted', 'sign_up', 'view', 'closed']) assert.equal(leaveWord({ action }, cup), null, action);
+  assert.equal(leaveWord(null, cup), null);
+  // a team leaves on its own panel, and no other kind of event changes
+  assert.equal(leaveWord({ action: 'check_in' }, { kind: 'cup', team_size: 2 }), null);
+  for (const kind of ['gnl', 'koth', 'signup']) assert.equal(leaveWord({ action: 'check_in' }, { kind }), null, kind);
 });
